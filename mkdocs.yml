@@ -1,0 +1,67 @@
+site_name: Quantum Crystallography Toolbox
+site_dir: .build/docs_site
+theme:
+  name: "material"
+  include_search_page: false
+  search_index_only: true
+
+  # Default values, taken from mkdocs_theme.yml
+  language: en
+  features:
+    - navigation.instant
+    - navigation.instant.prefetch
+    #- navigation.tabs
+    #- navigation.tabs.sticky
+    - navigation.path
+    - navigation.sections
+    - navigation.expand
+  font:
+    text: Roboto
+    code: Roboto Mono
+  palette:
+    primary: "deep purple"
+    accent: "purple"
+  logo: "images/logo_white.png"
+
+plugins:
+  - search
+  - awesome-pages:
+      collapse_single_pages: false
+
+markdown_extensions:
+
+  # Python Markdown
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - toc:
+      permalink: true
+
+  # Python Markdown Extensions
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.details
+#  - pymdownx.emoji:
+#      emoji_index: !!python/name:materialx.emoji.twemoji
+#      emoji_generator: !!python/name:materialx.emoji.to_svg
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_div_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde

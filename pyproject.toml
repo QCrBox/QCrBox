@@ -1,0 +1,26 @@
+[build-system]
+requires = ["hatchling", "hatch-requirements-txt"]
+build-backend = "hatchling.build"
+
+[project]
+name = "qcrbox"
+version = "0.0.1"
+authors = [
+  { name="Maximilian Albert", email="maximilian.albert@gmail.com" },
+]
+description = "Quantum Crystallography Toolbox"
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dynamic = ["dependencies"]
+
+[project.urls]
+"Repository" = "https://github.com/QCrBox/QCrBox/"
+"Issue Tracker" = "https://github.com/QCrBox/QCrBox/issues"
+
+[tool.hatch.metadata.hooks.requirements_txt]
+files = ["requirements-dev.txt"]

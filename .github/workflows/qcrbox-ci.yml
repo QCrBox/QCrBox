@@ -15,18 +15,50 @@ on:
   workflow_dispatch:
 
 jobs:
-  deploy_docs:
+  build_docs:
     runs-on: ubuntu-latest
     steps:
       # Checks out the  repository under $GITHUB_WORKSPACE, so the job can access it
       - uses: actions/checkout@v3
 
-      # Runs a single command using the runners shell
-      - name: Run a one-line script
-        run: echo Hello, world!
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip' # caching pip dependencies
 
-      # Runs a set of commands using the runners shell
-      - name: Run a multi-line script
-        run: |
-          echo Add other actions to build,
-          echo test, and deploy your project.
+      - name: Install dev dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Build the documentation
+        run: mkdocs build
+
+#      - name: Create .tar.gz archive containing the docs build
+#        run: cd .build/docs_site/ && tar -czvf ../qcrbox_docs.tar.gz .
+#
+      - name: Upload docs build output as GitHub pages artifact
+        uses: actions/upload-pages-artifact@v2
+        with:
+          path: .build/docs_site/
+
+  deploy_docs:
+    needs: build_docs
+
+    # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
+    permissions:
+      pages: write      # to deploy to Pages
+      id-token: write   # to verify the deployment originates from an appropriate source
+
+    # Deploy to the github-pages environment
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    # Specify runner + deployment step
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v3
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v2 # or the latest "vX.X.X" version tag for this action

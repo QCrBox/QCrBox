@@ -1,0 +1,10 @@
+# requirements-dev.in
+pip-tools
+doit
+ipython
+jupyterlab
+#materialx
+mkdocs
+mkdocs-awesome-pages-plugin
+mkdocs-material
+pymdown-extensions
