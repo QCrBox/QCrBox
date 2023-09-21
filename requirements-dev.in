@@ -1,5 +1,6 @@
 # requirements-dev.in
 pip-tools
+doit
 ipython
 jupyterlab
 mkdocs

@@ -44,6 +44,8 @@ click==8.1.7
     # via
     #   mkdocs
     #   pip-tools
+cloudpickle==2.2.1
+    # via doit
 comm==0.1.4
     # via ipykernel
 debugpy==1.8.0
@@ -52,6 +54,8 @@ decorator==5.1.1
     # via ipython
 defusedxml==0.7.1
     # via nbconvert
+doit==0.36.0
+    # via -r requirements-dev.in
 executing==1.2.0
     # via stack-data
 fastjsonschema==2.18.0
@@ -65,6 +69,8 @@ idna==3.4
     #   anyio
     #   jsonschema
     #   requests
+importlib-metadata==6.8.0
+    # via doit
 ipykernel==6.25.2
     # via jupyterlab
 ipython==8.15.0
@@ -299,6 +305,8 @@ websocket-client==1.6.3
     # via jupyter-server
 wheel==0.41.2
     # via pip-tools
+zipp==3.17.0
+    # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip
