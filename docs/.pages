@@ -1,0 +1,8 @@
+arrange:
+  - index.md
+  - tutorials
+  - how_to_guides
+  - discussions
+  - reference_guides
+  - ADRs
+  - CHANGELOG.md
