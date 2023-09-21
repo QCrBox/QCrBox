@@ -19,9 +19,9 @@ theme:
     text: Roboto
     code: Roboto Mono
   palette:
-    primary: "amber"
-    accent: "amber"
-  logo: "images/logo.png"
+    primary: "deep purple"
+    accent: "purple"
+  logo: "images/logo_white.png"
 
 plugins:
   - search
