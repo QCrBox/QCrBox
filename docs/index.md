@@ -7,8 +7,8 @@ Documentation:
 
 - [Tutorials](tutorials) (Start Here)
 - [How-To Guides](how_to_guides)
-- [Discussions](discussions)
 - [Reference Guides](reference_guides)
+- [Explanations](explanations)
 
 
 Technical reference:

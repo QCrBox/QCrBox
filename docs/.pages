@@ -2,7 +2,7 @@ arrange:
   - index.md
   - tutorials
   - how_to_guides
-  - discussions
   - reference_guides
+  - explanations
   - ADRs
   - CHANGELOG.md

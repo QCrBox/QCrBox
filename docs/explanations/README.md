@@ -1,8 +1,8 @@
 # Introduction
 
-This section contains _discussions_.
+This section contains _explanations_.
 
-_A discussion:_
+_An explanation:_
 
 - _is **understanding-oriented**_
 - _explains_

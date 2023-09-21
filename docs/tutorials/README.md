@@ -1,6 +1,6 @@
 # Introduction
 
-This section contains _Tutorials_.
+This section contains _tutorials_.
 
 _A tutorial:_
 
