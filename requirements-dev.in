@@ -3,4 +3,5 @@ pip-tools
 doit
 ipython
 jupyterlab
+materialx
 mkdocs
