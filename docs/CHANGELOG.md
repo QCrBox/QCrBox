@@ -22,7 +22,7 @@ However, there will be an initial period of stabilisation where this is not adhe
 
 ### Added
 
-- Initial project skeleton.
+- Documentation skeleton ([#3](https://github.com/QCrBox/QCrBox/pull/2))
 
 
 [unreleased]: https://github.com/QCrBox/QCrBox/compare/0.0.1...master
