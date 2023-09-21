@@ -22,6 +22,7 @@ theme:
     primary: "deep purple"
     accent: "purple"
   logo: "images/logo_white.png"
+  favicon: "images/logo_black.png"
 
 plugins:
   - search
