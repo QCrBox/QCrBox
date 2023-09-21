@@ -5,3 +5,6 @@ ipython
 jupyterlab
 #materialx
 mkdocs
+mkdocs-awesome-pages-plugin
+mkdocs-material
+pymdown-extensions
