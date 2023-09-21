@@ -8,4 +8,4 @@ _A tutorial:_
 * _allows newcomers to get started_
 * _is a lesson_
 
-_(See [here](https://documentation.divio.com/) for context and more information.)_
+_(See [here](https://documentation.divio.com/tutorials.html) for context and more information.)_

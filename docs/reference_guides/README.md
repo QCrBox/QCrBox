@@ -8,4 +8,4 @@ _A reference guide:_
 - _describes the machinery_
 - _is accurate and complete_
 
-_(See [here](https://documentation.divio.com/) for context and more information.)_
+_(See [here](https://documentation.divio.com/reference.html) for context and more information.)_

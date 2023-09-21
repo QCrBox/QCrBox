@@ -8,4 +8,4 @@ _An explanation:_
 - _explains_
 - _provides background and context_
 
-_(See [here](https://www.divio.com/blog/documentation/) for context and more information.)_
+_(See [here](https://documentation.divio.com/explanation.html) for context and more information.)_
