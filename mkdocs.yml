@@ -1,21 +1,26 @@
-site_name: Quantum Crystallography Toolbox - The future of small-molecule crystallography
+site_name: Quantum Crystallography Toolbox
 theme:
-   name: "material"
-   include_search_page: false
-   search_index_only: true
+  name: "material"
+  include_search_page: false
+  search_index_only: true
 
-   # Default values, taken from mkdocs_theme.yml
-   language: en
-   feature:
-     # Set to true to use tabs at the top, in addition to the side navbar
-     tabs: false
-   font:
-     text: Roboto
-     code: Roboto Mono
-   palette:
-     primary: "blue grey"
-     accent: "blue grey"
-   logo: "images/logo.png"
+  # Default values, taken from mkdocs_theme.yml
+  language: en
+  features:
+    - navigation.instant
+    - navigation.instant.prefetch
+    #- navigation.tabs
+    #- navigation.tabs.sticky
+    - navigation.path
+    - navigation.sections
+    - navigation.expand
+  font:
+    text: Roboto
+    code: Roboto Mono
+  palette:
+    primary: "amber"
+    accent: "amber"
+  logo: "images/logo.png"
 
 plugins:
   - search
