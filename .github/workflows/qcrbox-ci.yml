@@ -39,7 +39,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: github-pages
-          path: .build/docs_site/qcrbox_docs.tar.gz
+          path: .build/qcrbox_docs.tar.gz
 
   deploy_docs:
     needs: build_docs
