@@ -1,0 +1,15 @@
+# IDE
+.idea/
+.vscode/
+
+# Python
+.venv/
+venv/
+env/
+**/__pycache__
+/playground/
+.coverage
+.ipynb_checkpoints
+
+# Javascript
+node_modules
