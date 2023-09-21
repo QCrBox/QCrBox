@@ -1,0 +1,5 @@
+# requirements-dev.in
+pip-tools
+ipython
+jupyterlab
+mkdocs
