@@ -1,4 +1,5 @@
 site_name: Quantum Crystallography Toolbox
+site_dir: docs_site
 theme:
   name: "material"
   include_search_page: false

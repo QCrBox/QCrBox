@@ -13,3 +13,6 @@ env/
 
 # Javascript
 node_modules
+
+# Directory where the docs output files are created
+docs_site
