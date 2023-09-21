@@ -33,7 +33,7 @@ jobs:
         run: mkdocs build
 
       - name: Create .tar.gz archive containing the docs build
-        run: cd .build/docs_site/ && tar -czvf qcrbox_docs.tar.gz .
+        run: cd .build/docs_site/ && tar -czvf ../qcrbox_docs.tar.gz .
 
       - name: Upload docs build output
         uses: actions/upload-artifact@v2
