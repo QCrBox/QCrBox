@@ -3,6 +3,7 @@ pip-tools
 doit
 ipython
 jupyterlab
+loguru
 #materialx
 mkdocs
 mkdocs-awesome-pages-plugin

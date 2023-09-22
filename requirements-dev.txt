@@ -138,6 +138,8 @@ jupyterlab-pygments==0.2.2
     # via nbconvert
 jupyterlab-server==2.25.0
     # via jupyterlab
+loguru==0.7.2
+    # via -r requirements-dev.in
 markdown==3.4.4
     # via
     #   mkdocs
