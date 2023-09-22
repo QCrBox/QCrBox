@@ -1,8 +1,8 @@
 # Introduction
 
-This section contains _explanations_.
+This section contains _background information_.
 
-_An explanation:_
+_Background information:_
 
 - _is **understanding-oriented**_
 - _explains_
