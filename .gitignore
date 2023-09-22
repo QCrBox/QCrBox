@@ -2,6 +2,9 @@
 .idea/
 .vscode/
 
+# Misc
+.ackrc
+
 # Python
 .venv/
 venv/
