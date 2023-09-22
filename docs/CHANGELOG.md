@@ -22,7 +22,8 @@ However, there will be an initial period of stabilisation where this is not adhe
 
 ### Added
 
-- Documentation skeleton ([#3](https://github.com/QCrBox/QCrBox/pull/2))
+- Documentation skeleton ([#2](https://github.com/QCrBox/QCrBox/issues/2))
+- `doit`-based CLI script for common development tasks. ([#7](https://github.com/QCrBox/QCrBox/issues/7))
 
 
 [unreleased]: https://github.com/QCrBox/QCrBox/compare/0.0.1...master
