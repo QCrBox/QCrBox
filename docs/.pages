@@ -3,6 +3,6 @@ arrange:
   - tutorials
   - how_to_guides
   - reference_guides
-  - explanations
+  - background_info
   - ADRs
   - CHANGELOG.md

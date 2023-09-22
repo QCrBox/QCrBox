@@ -5,10 +5,10 @@ _TODO: Add a brief overview of the project here._
 
 Documentation:
 
-- [Tutorials](tutorials) (Start Here)
-- [How-To Guides](how_to_guides)
-- [Reference Guides](reference_guides)
-- [Explanations](explanations)
+- [Tutorials](tutorials/README.md) (Start Here)
+- [How-To Guides](how_to_guides/README.md)
+- [Reference Guides](reference_guides/README.md)
+- [Background Information](background_info/README.md)
 
 
 Technical reference:
