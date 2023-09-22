@@ -1,8 +1,8 @@
 # Introduction
 
-This section contains _reference guides_.
+This section contains _technical reference guides_.
 
-_A reference guide:_
+_Technical reference:_
 
 - _is **information-oriented**_
 - _describes the machinery_
