@@ -4,7 +4,7 @@ services:
   qcrbox-message-bus:
     image: "qcrbox/message-bus:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
     build:
-      context: services/core/QCRBOX_message_bus/
+      context: services/core/qcrbox_message_bus/
     networks:
       - qcrbox-net
     hostname: "qcrbox-message-bus"
