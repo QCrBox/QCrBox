@@ -1,6 +1,6 @@
 import click
 
-from .utils_docker import get_all_services
+from .utils_docker import get_all_services, get_dependency_chain
 from .utils_doit import run_tasks
 from .task_build import task_build_service
 
@@ -37,7 +37,7 @@ def build(no_deps: bool, compose_file: str, services: list[str]):
     if services == ():
         services = get_all_services(compose_file)
     click.echo(f"Building docker image for service {services!r} ({'without' if no_deps else 'including'} dependencies)")
-    tasks = [task_build_service(service, deps=None) for service in services]
+    tasks = [task_build_service(service, compose_file, with_deps=not no_deps) for service in services]
     run_tasks(tasks, ["run"])
 
 
