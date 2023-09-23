@@ -1,6 +1,20 @@
 version: "3.8"
 
 services:
+  base-ancestor:
+    image: "qcrbox/base-ancestor:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
+    build:
+      context: services/base_images/base_ancestor/
+      args:
+        QCRBOX_ROOT_DIR: ${QCRBOX_ROOT_DIR:?Must set env var QCRBOX_ROOT_DIR}
+        QCRBOX_SUPERVISORD_CONF_DIR: ${QCRBOX_SUPERVISORD_CONF_DIR:?Must set env var QCRBOX_SUPERVISORD_CONF_DIR}
+        QCRBOX_HOST_RABBITMQ: "qcrbox-message-bus"
+    environment:
+      QCRBOX_RABBITMQ_QUEUE_NAME: "qcrbox-base-ancestor"
+    networks:
+      - qcrbox-net
+    restart: "unless-stopped"
+
   qcrbox-message-bus:
     image: "qcrbox/message-bus:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
     build:
@@ -22,6 +36,31 @@ services:
       # (see https://github.com/docker/compose/issues/10830#issuecomment-1722514100)
       #start_interval: 1s
       retries: 5
+
+  qcrbox-registry:
+    image: "qcrbox/registry:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
+    build:
+      context: services/core/qcrbox_registry
+      args:
+        QCRBOX_DOCKER_TAG: ${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}
+        QCRBOX_ROOT_DIR: ${QCRBOX_ROOT_DIR:?Must set env var QCRBOX_ROOT_DIR}
+        QCRBOX_SUPERVISORD_CONF_DIR: ${QCRBOX_SUPERVISORD_CONF_DIR:?Must set env var QCRBOX_SUPERVISORD_CONF_DIR}
+    volumes:
+      - ./shared_files:${QCRBOX_SHARED_FILES_DIR:?Must set env var QCRBOX_SHARED_FILES_DIR}
+      #- ./services/base_images/base_ancestor/qcrbox_python_module:${QCRBOX_ROOT_DIR:?Must set env var QCRBOX_ROOT_DIR}/qcrbox_python_module
+    ports:
+      - "${QCRBOX_BIND_ADDRESS}:${QCRBOX_PORT_QCRBOX_REGISTRY:?Must set env var QCRBOX_PORT_QCRBOX_REGISTRY}:8000"
+    depends_on:
+      qcrbox-message-bus:
+        condition: service_healthy
+    environment:
+      QCRBOX_RABBITMQ_QUEUE_NAME: "qcrbox_registry"
+      QCRBOX_HOST_RABBITMQ: "qcrbox-message-bus"
+      QCRBOX_PORT_RABBITMQ: "5672"
+      QCRBOX_REGISTRY_SERVER_DB_PATH: "${QCRBOX_SHARED_FILES_DIR:?Must set env var QCRBOX_SHARED_FILES_DIR}/qcrbox_registry_database.db"
+    networks:
+      - qcrbox-net
+    restart: "unless-stopped"
 
 networks:
   qcrbox-net:

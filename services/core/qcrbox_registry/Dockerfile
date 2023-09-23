@@ -1,0 +1,6 @@
+ARG QCRBOX_DOCKER_TAG
+FROM qcrbox/base-ancestor:${QCRBOX_DOCKER_TAG}
+SHELL ["/bin/bash", "-c"]
+
+ARG QCRBOX_SUPERVISORD_CONF_DIR=${QCRBOX_SUPERVISORD_CONF_DIR}
+COPY supervisord.qcrbox_registry_server.conf ${QCRBOX_SUPERVISORD_CONF_DIR}/
