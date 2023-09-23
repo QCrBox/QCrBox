@@ -15,8 +15,8 @@ def cli():
 
 @cli.command()
 @click.option("-f", "--file", default="docker-compose.dev.yml", help="Docker compose file to search for services")
-def list_services(file):
-    click.echo(f"The following services are defined in the docker compose file: {file!r}")
+def list_services(file: str):
+    click.echo(f"Services defined in {file!r}:")
     click.echo()
     for service in get_all_services(file):
         click.echo(f"   - {service}")
@@ -36,8 +36,16 @@ def list_services(file):
 def build(no_deps: bool, compose_file: str, services: list[str]):
     if services == ():
         services = get_all_services(compose_file)
-    click.echo(f"Building docker image for service {services!r} ({'without' if no_deps else 'including'} dependencies)")
-    tasks = [task_build_service(service, compose_file, with_deps=not no_deps) for service in services]
+    click.echo(
+        f"Building docker image for the following services ({'without' if no_deps else 'including'} dependencies): "
+        f"{', '.join(services)}"
+    )
+    tasks = []
+    for service in services:
+        if not no_deps:
+            for dep in get_dependency_chain(service, compose_file):
+                tasks.append(task_build_service(dep, compose_file, with_deps=not no_deps))
+        tasks.append(task_build_service(service, compose_file, with_deps=not no_deps))
     run_tasks(tasks, ["run"])
 
 
