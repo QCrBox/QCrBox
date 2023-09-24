@@ -101,6 +101,7 @@ def get_dependency_chain(service_name, compose_file: PathLike):
     return deps_without_input_service
 
 
-def build_single_docker_image(target_image, compose_file: PathLike):
+def build_single_docker_image(target_image, compose_file: PathLike, dry_run: bool):
     logger.debug(f"Building docker image: {target_image}")
-    run_docker_compose_command("build", target_image, compose_file=Path(compose_file))
+    if not dry_run:
+        run_docker_compose_command("build", target_image, compose_file=Path(compose_file))
