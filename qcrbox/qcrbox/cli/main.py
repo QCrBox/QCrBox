@@ -8,7 +8,7 @@ from .task_build import task_build_service
 @click.group()
 def cli():
     """
-    The Quantum Crystallography Toolbox CLI.
+    Command line interface for the Quantum Crystallography Toolbox.
     """
     pass
 
