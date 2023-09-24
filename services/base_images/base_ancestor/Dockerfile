@@ -24,10 +24,13 @@ RUN mkdir -p ${QCRBOX_PYTHON_VENV_DIR} && \
 #COPY ./qubox_python_module ${QCRBOX_ROOT_DIR}/qubox_python_module
 #RUN ${QCRBOX_PYTHON_VENV_DIR}/bin/pip install -e ${QCRBOX_ROOT_DIR}/qubox_python_module/
 
+COPY ./qcrbox*.whl ${QCRBOX_ROOT_DIR}/
+RUN ${QCRBOX_PYTHON_VENV_DIR}/bin/pip install ${QCRBOX_ROOT_DIR}/qcrbox*.whl
+
 ARG QCRBOX_SUPERVISORD_CONF_DIR=${QCRBOX_SUPERVISORD_CONF_DIR}
 RUN mkdir -p ${QCRBOX_SUPERVISORD_CONF_DIR}/
 # Create 'global' file /etc/supervisord.conf. This simply includes any config files
-# present in QCRBOX_SUPERVISORD_CONF_DIR (which is where QuBox services will put them).
+# present in QCRBOX_SUPERVISORD_CONF_DIR (which is where QCrBox services will put them).
 RUN echo -e "[include]\nfiles = ${QCRBOX_SUPERVISORD_CONF_DIR}/*" > /etc/supervisord.conf
 COPY supervisord.base_ancestor.conf ${QCRBOX_SUPERVISORD_CONF_DIR}/
 
