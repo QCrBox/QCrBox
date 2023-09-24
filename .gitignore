@@ -22,3 +22,6 @@ node_modules
 
 # doit database
 .doit.db
+
+# qcrbox Python module
+qcrbox/dist/

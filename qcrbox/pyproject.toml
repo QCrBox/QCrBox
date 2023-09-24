@@ -21,9 +21,15 @@ dynamic = ["dependencies"]
 qcrbox = "qcrbox.cli.main:cli"
 qcb = "qcrbox.cli.main:cli"
 
-[tool.hatch.metadata.hooks.requirements_txt]
-files = ["requirements.txt"]
-
 [build-system]
 requires = ["hatchling", "hatch-requirements-txt"]
 build-backend = "hatchling.build"
+
+[tool.hatch.metadata.hooks.requirements_txt]
+files = ["requirements.txt"]
+
+[tool.hatch.build.targets.sdist]
+only-include = ["qcrbox"]
+
+[tool.hatch.build.targets.wheel]
+only-include = ["qcrbox"]
