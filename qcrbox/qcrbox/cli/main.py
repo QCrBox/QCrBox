@@ -34,6 +34,9 @@ def list_services(file: str):
 )
 @click.argument("services", nargs=-1)
 def build(no_deps: bool, compose_file: str, services: list[str]):
+    """
+    Build docker image(s) for QCrBox components.
+    """
     if services == ():
         services = get_all_services(compose_file)
     click.echo(
