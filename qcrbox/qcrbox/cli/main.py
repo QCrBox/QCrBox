@@ -2,7 +2,7 @@ import click
 
 from .utils_docker import get_all_services, get_dependency_chain
 from .utils_doit import run_tasks
-from .task_build import task_build_service
+from .task_build import task_build_docker_service, task_build_qcrbox_python_package
 
 
 @click.group()
@@ -35,7 +35,7 @@ def list_services(file: str):
 @click.argument("services", nargs=-1)
 def build(no_deps: bool, compose_file: str, services: list[str]):
     """
-    Build docker image(s) for QCrBox components.
+    Build QCrBox component(s).
     """
     if services == ():
         services = get_all_services(compose_file)
@@ -45,10 +45,13 @@ def build(no_deps: bool, compose_file: str, services: list[str]):
     )
     tasks = []
     for service in services:
-        if not no_deps:
-            for dep in get_dependency_chain(service, compose_file):
-                tasks.append(task_build_service(dep, compose_file, with_deps=not no_deps))
-        tasks.append(task_build_service(service, compose_file, with_deps=not no_deps))
+        if service == "qcrbox":
+            tasks.append(task_build_qcrbox_python_package())
+        else:
+            if not no_deps:
+                for dep in get_dependency_chain(service, compose_file):
+                    tasks.append(task_build_docker_service(dep, compose_file, with_deps=not no_deps))
+            tasks.append(task_build_docker_service(service, compose_file, with_deps=not no_deps))
     run_tasks(tasks, ["run"])
 
 
