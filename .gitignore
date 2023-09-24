@@ -23,5 +23,6 @@ node_modules
 # doit database
 .doit.db
 
-# qcrbox Python module
+# qcrbox Python package
 qcrbox/dist/
+services/base_ancestor/qcrbx*.whl
