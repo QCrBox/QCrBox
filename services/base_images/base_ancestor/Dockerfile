@@ -11,24 +11,25 @@ RUN apt-get update -y && \
     rm -rf /var/lib/apt/lists
 
 # Install system-wide Python virtual environment and set up RabbitMQ RPC server
-ARG QUBOX_ROOT_DIR
-ENV QUBOX_ROOT_DIR=${QUBOX_ROOT_DIR}
-WORKDIR ${QUBOX_ROOT_DIR}
+ARG QCRBOX_ROOT_DIR
+ENV QCRBOX_ROOT_DIR=${QCRBOX_ROOT_DIR}
+WORKDIR ${QCRBOX_ROOT_DIR}
 
-ARG QUBOX_PYTHON_VENV_DIR=${QUBOX_ROOT_DIR}/venv
-RUN mkdir -p ${QUBOX_PYTHON_VENV_DIR} && \
-    python -m venv ${QUBOX_PYTHON_VENV_DIR} && \
-    ${QUBOX_PYTHON_VENV_DIR}/bin/pip install -U pip wheel build
+ARG QCRBOX_PYTHON_VENV_DIR=${QCRBOX_ROOT_DIR}/venv
+RUN mkdir -p ${QCRBOX_PYTHON_VENV_DIR} && \
+    python -m venv ${QCRBOX_PYTHON_VENV_DIR} && \
+    ${QCRBOX_PYTHON_VENV_DIR}/bin/pip install -U pip wheel build
 
-#COPY ./qubox_python_module ${QUBOX_ROOT_DIR}/qubox_python_module
-#RUN ${QUBOX_PYTHON_VENV_DIR}/bin/pip install -e ${QUBOX_ROOT_DIR}/qubox_python_module/
 
-ARG QUBOX_SUPERVISORD_CONF_DIR=${QUBOX_SUPERVISORD_CONF_DIR}
-RUN mkdir -p ${QUBOX_SUPERVISORD_CONF_DIR}/
+#COPY ./qubox_python_module ${QCRBOX_ROOT_DIR}/qubox_python_module
+#RUN ${QCRBOX_PYTHON_VENV_DIR}/bin/pip install -e ${QCRBOX_ROOT_DIR}/qubox_python_module/
+
+ARG QCRBOX_SUPERVISORD_CONF_DIR=${QCRBOX_SUPERVISORD_CONF_DIR}
+RUN mkdir -p ${QCRBOX_SUPERVISORD_CONF_DIR}/
 # Create 'global' file /etc/supervisord.conf. This simply includes any config files
-# present in QUBOX_SUPERVISORD_CONF_DIR (which is where QuBox services will put them).
-RUN echo -e "[include]\nfiles = ${QUBOX_SUPERVISORD_CONF_DIR}/*" > /etc/supervisord.conf
-COPY supervisord.base_ancestor.conf ${QUBOX_SUPERVISORD_CONF_DIR}/
+# present in QCRBOX_SUPERVISORD_CONF_DIR (which is where QuBox services will put them).
+RUN echo -e "[include]\nfiles = ${QCRBOX_SUPERVISORD_CONF_DIR}/*" > /etc/supervisord.conf
+COPY supervisord.base_ancestor.conf ${QCRBOX_SUPERVISORD_CONF_DIR}/
 
 ARG APP_USER=app
 ARG APP_HOME=/home/app
@@ -43,7 +44,7 @@ ENV APP_USER=${APP_USER}
 ENV APP_HOME=${APP_HOME}
 WORKDIR ${APP_HOME}
 
-ARG QUBOX_HOST_RABBITMQ
-ENV QUBOX_HOST_RABBITMQ=${QUBOX_HOST_RABBITMQ}
+ARG QCRBOX_HOST_RABBITMQ
+ENV QCRBOX_HOST_RABBITMQ=${QCRBOX_HOST_RABBITMQ}
 
 CMD ["sh", "-c", "chown -R --dereference -L ${APP_USER}:${APP_USER} ${APP_HOME} /tmp /dev/stdout && exec gosu ${APP_USER} supervisord"]
