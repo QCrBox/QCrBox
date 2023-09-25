@@ -9,6 +9,7 @@ services:
         QCRBOX_ROOT_DIR: ${QCRBOX_ROOT_DIR:?Must set env var QCRBOX_ROOT_DIR}
         QCRBOX_SUPERVISORD_CONF_DIR: ${QCRBOX_SUPERVISORD_CONF_DIR:?Must set env var QCRBOX_SUPERVISORD_CONF_DIR}
         QCRBOX_HOST_RABBITMQ: "qcrbox-message-bus"
+        QCRBOX_PYTHON_PACKAGE_VERSION: ${QCRBOX_PYTHON_PACKAGE_VERSION:-${QCRBOX_DOCKER_TAG}}
     environment:
       QCRBOX_RABBITMQ_QUEUE_NAME: "qcrbox-base-ancestor"
     networks:
