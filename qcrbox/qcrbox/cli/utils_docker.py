@@ -111,3 +111,8 @@ def start_up_docker_containers(target_containers: list[str], compose_file: PathL
     logger.debug(f"Starting up docker containers: {', '.join(target_containers)}")
     if not dry_run:
         run_docker_compose_command("up", "-d", *target_containers, compose_file=Path(compose_file))
+
+
+def spin_down_docker_containers(compose_file: PathLike):
+    logger.debug(f"Stop and remove QCrBox docker containers")
+    run_docker_compose_command("down", compose_file=Path(compose_file))
