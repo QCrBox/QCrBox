@@ -14,5 +14,7 @@ importlib-metadata==6.8.0
     # via doit
 loguru==0.7.2
     # via -r requirements.in
+pyyaml==6.0.1
+    # via -r requirements.in
 zipp==3.17.0
     # via importlib-metadata
