@@ -2,7 +2,7 @@ import click
 
 from .utils_docker import get_all_services, get_dependency_chain
 from .utils_doit import run_tasks
-from .task_build import task_build_docker_service, task_build_qcrbox_python_package
+from .task_build import task_build_docker_service, populate_build_tasks
 from .task_up import task_start_up_docker_containers
 from .task_down import task_spin_down_docker_containers
 
@@ -47,19 +47,7 @@ def build(no_deps: bool, dry_run: bool, compose_file: str, services: list[str]):
         f"Building the following components ({'without' if no_deps else 'including'} dependencies): "
         f"{', '.join(services)}"
     )
-    tasks = []
-    for service in services:
-        if service == "qcrbox":
-            tasks.append(task_build_qcrbox_python_package(dry_run))
-        else:
-            if not no_deps:
-                for dep in get_dependency_chain(service, compose_file):
-                    if dep == "base-ancestor":
-                        tasks.append(task_build_qcrbox_python_package(dry_run))
-                    tasks.append(task_build_docker_service(dep, compose_file, with_deps=not no_deps, dry_run=dry_run))
-                if service == "base-ancestor":
-                    tasks.append(task_build_qcrbox_python_package(dry_run))
-            tasks.append(task_build_docker_service(service, compose_file, with_deps=not no_deps, dry_run=dry_run))
+    tasks = populate_build_tasks(services, with_deps=not no_deps, dry_run=dry_run, compose_file=compose_file)
     run_tasks(tasks, ["run"])
 
 
@@ -72,17 +60,22 @@ def build(no_deps: bool, dry_run: bool, compose_file: str, services: list[str]):
     default="docker-compose.dev.yml",
     help="Docker compose file to use",
 )
+@click.option("--rebuild-deps/--no-rebuild-deps", default=False)
 @click.option("--dry-run", is_flag=True, default=False)
 @click.argument("services", nargs=-1)
-def start_up_docker_services(compose_file: str, dry_run: bool, services: list[str]):
+def start_up_docker_services(compose_file: str, rebuild_deps: bool, dry_run: bool, services: list[str]):
     """
     Start up QCrBox component(s).
     """
     if services == ():
         services = get_all_services(compose_file)
 
-    tasks = []
-    tasks.append(task_start_up_docker_containers(services, compose_file, dry_run=dry_run))
+    if not rebuild_deps:
+        tasks = []
+    else:
+        tasks = populate_build_tasks(services, with_deps=True, dry_run=dry_run, compose_file=compose_file)
+
+    tasks.append(task_start_up_docker_containers(services, compose_file, rebuild_deps=rebuild_deps, dry_run=dry_run))
     run_tasks(tasks, ["run"])
 
 

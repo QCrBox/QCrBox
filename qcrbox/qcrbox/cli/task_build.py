@@ -33,3 +33,22 @@ def task_build_qcrbox_python_package(dry_run: bool):
                 f"cp dist/qcrbox-*.whl ../services/base_images/base_ancestor/"
             ],
         }
+
+
+def populate_build_tasks(services: list[str], with_deps: bool, dry_run: bool, compose_file: str, tasks=None):
+    tasks = tasks or []
+
+    for service in services:
+        if service == "qcrbox":
+            tasks.append(task_build_qcrbox_python_package(dry_run))
+        else:
+            if with_deps:
+                for dep in get_dependency_chain(service, compose_file):
+                    if dep == "base-ancestor":
+                        tasks.append(task_build_qcrbox_python_package(dry_run))
+                    tasks.append(task_build_docker_service(dep, compose_file, with_deps=with_deps, dry_run=dry_run))
+                if service == "base-ancestor":
+                    tasks.append(task_build_qcrbox_python_package(dry_run))
+            tasks.append(task_build_docker_service(service, compose_file, with_deps=with_deps, dry_run=dry_run))
+
+    return tasks

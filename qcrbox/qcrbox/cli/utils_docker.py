@@ -108,7 +108,7 @@ def build_single_docker_image(target_image: str, compose_file: PathLike, dry_run
 
 
 def start_up_docker_containers(target_containers: list[str], compose_file: PathLike, dry_run):
-    logger.debug(f"Starting up docker containers: {', '.join(target_containers)}")
+    logger.debug(f"Starting up docker container(s): {', '.join(target_containers)}")
     if not dry_run:
         run_docker_compose_command("up", "-d", *target_containers, compose_file=Path(compose_file))
 
