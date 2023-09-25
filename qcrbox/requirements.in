@@ -1,3 +1,4 @@
 # requirements.in
 click
 doit
+loguru
