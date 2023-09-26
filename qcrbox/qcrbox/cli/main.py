@@ -1,4 +1,9 @@
+from pathlib import Path
+from typing import Optional
+
 import click
+
+from git import Repo
 
 from .utils_docker import get_all_services, get_dependency_chain
 from .utils_doit import run_tasks
@@ -15,12 +20,22 @@ def cli():
     pass
 
 
+def get_repo_root():
+    repo = Repo(".", search_parent_directories=True)
+    return Path(repo.working_tree_dir)
+
+
+def get_toplevel_docker_compose_path():
+    return get_repo_root().joinpath("docker-compose.dev.yml")
+
+
 @cli.command()
-@click.option("-f", "--file", default="docker-compose.dev.yml", help="Docker compose file to use")
-def list_services(file: str):
-    click.echo(f"Services defined in {file!r}:")
+@click.option("-f", "--file", "compose_file", default=None, help="Docker compose file to use")
+def list_services(compose_file: Optional[str]):
+    compose_file = compose_file or get_toplevel_docker_compose_path()
+    click.echo(f"Services defined in {compose_file!r}:")
     click.echo()
-    for service in get_all_services(file):
+    for service in get_all_services(compose_file):
         click.echo(f"   - {service}")
 
 
@@ -32,14 +47,16 @@ def list_services(file: str):
     "--file",
     "compose_file",
     type=click.Path(exists=True),
-    default="docker-compose.dev.yml",
+    default=None,
     help="Docker compose file to use",
 )
 @click.argument("services", nargs=-1)
-def build(no_deps: bool, dry_run: bool, compose_file: str, services: list[str]):
+def build(no_deps: bool, dry_run: bool, compose_file: Optional[str], services: list[str]):
     """
     Build QCrBox component(s).
     """
+    compose_file = compose_file or get_toplevel_docker_compose_path()
+
     if services == ():
         services = get_all_services(compose_file)
 
@@ -57,16 +74,18 @@ def build(no_deps: bool, dry_run: bool, compose_file: str, services: list[str]):
     "--file",
     "compose_file",
     type=click.Path(exists=True),
-    default="docker-compose.dev.yml",
+    default=None,
     help="Docker compose file to use",
 )
 @click.option("--rebuild-deps/--no-rebuild-deps", default=False)
 @click.option("--dry-run", is_flag=True, default=False)
 @click.argument("services", nargs=-1)
-def start_up_docker_services(compose_file: str, rebuild_deps: bool, dry_run: bool, services: list[str]):
+def start_up_docker_services(compose_file: Optional[str], rebuild_deps: bool, dry_run: bool, services: list[str]):
     """
     Start up QCrBox component(s).
     """
+    compose_file = compose_file or get_toplevel_docker_compose_path()
+
     if services == ():
         services = get_all_services(compose_file)
 
@@ -85,13 +104,14 @@ def start_up_docker_services(compose_file: str, rebuild_deps: bool, dry_run: boo
     "--file",
     "compose_file",
     type=click.Path(exists=True),
-    default="docker-compose.dev.yml",
+    default=None,
     help="Docker compose file to use",
 )
 def spin_down_docker_services(compose_file: str):
     """
     Spin down all QCrBox component(s).
     """
+    compose_file = compose_file or get_toplevel_docker_compose_path()
     tasks = []
     tasks.append(task_spin_down_docker_containers(compose_file))
     run_tasks(tasks, ["run"])
