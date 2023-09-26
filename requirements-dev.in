@@ -2,6 +2,7 @@
 pip-tools
 hatch
 doit
+gitpython
 ipython
 jupyterlab
 loguru
