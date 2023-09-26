@@ -1,6 +1,5 @@
 [project]
 name = "qcrbox"
-version = "0.0.1"
 authors = [
   { name="Maximilian Albert", email="maximilian.albert@gmail.com" },
 ]
@@ -11,7 +10,10 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
 ]
-dynamic = ["dependencies"]
+dynamic = [
+    "dependencies",
+    "version",
+]
 
 [project.urls]
 "Repository" = "https://github.com/QCrBox/QCrBox/"
@@ -22,8 +24,15 @@ qcrbox = "qcrbox.cli.main:cli"
 qcb = "qcrbox.cli.main:cli"
 
 [build-system]
-requires = ["hatchling", "hatch-requirements-txt"]
+requires = ["hatchling", "hatch-requirements-txt", "hatch-vcs"]
 build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "vcs"
+raw-options = { root = ".." }
+
+[tool.hatch.build.hooks.vcs]
+version-file = "_version.py"
 
 [tool.hatch.metadata.hooks.requirements_txt]
 files = ["requirements.txt"]

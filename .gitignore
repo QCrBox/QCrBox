@@ -25,4 +25,5 @@ node_modules
 
 # qcrbox Python package
 qcrbox/dist/
+qcrbox/_version.py
 services/base_ancestor/qcrbx*.whl
