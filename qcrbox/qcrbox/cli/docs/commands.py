@@ -1,4 +1,7 @@
 import click
+import doit.task
+
+from ..helpers import run_tasks
 
 
 @click.group(name="docs")
@@ -12,6 +15,12 @@ def docs_group():
 @docs_group.command()
 def build():
     """
-    asdfasdfsdfasdf
+    Build the documentation.
     """
-    click.echo("This is the 'docs build' subcommand'")
+    task = doit.task.dict_to_task(
+        {
+            "name": "build-docs",
+            "actions": ["mkdocs build"],
+        }
+    )
+    run_tasks([task])
