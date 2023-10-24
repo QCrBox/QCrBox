@@ -28,10 +28,14 @@ def get_toplevel_docker_compose_path():
     return get_repo_root().joinpath("docker-compose.dev.yml")
 
 
+def get_toplevel_env_file_path():
+    return get_repo_root().joinpath(".env.dev").as_posix()
+
+
 def get_docker_compose_args(compose_file: Path):
     return [
         f"--project-name={DOCKER_COMPOSE_PROJECT_NAME}",
-        "--env-file=.env.dev",
+        f"--env-file={get_toplevel_env_file_path()}",
         f"--file={compose_file.as_posix()}",
     ]
 
