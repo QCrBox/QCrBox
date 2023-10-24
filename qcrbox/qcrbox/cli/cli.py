@@ -3,6 +3,7 @@ import click
 from .build.commands import build
 from .docs.commands import docs_group
 from .info.commands import info_group
+from .up.commands import start_up_docker_containers
 
 
 @click.group()
@@ -16,3 +17,4 @@ def entry_point():
 entry_point.add_command(docs_group)
 entry_point.add_command(build)
 entry_point.add_command(info_group)
+entry_point.add_command(start_up_docker_containers)
