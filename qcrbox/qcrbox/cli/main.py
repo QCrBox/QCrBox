@@ -5,8 +5,8 @@ import click
 
 from git import Repo
 
-from .utils_docker import get_all_services, get_dependency_chain
-from .utils_doit import run_tasks
+from .helpers.docker_helpers import get_all_services, get_dependency_chain
+from .helpers import run_tasks
 from .task_build import task_build_docker_service, populate_build_tasks
 from .task_up import task_start_up_docker_containers
 from .task_down import task_spin_down_docker_containers
@@ -37,35 +37,6 @@ def list_services(compose_file: Optional[str]):
     click.echo()
     for service in get_all_services(compose_file):
         click.echo(f"   - {service}")
-
-
-@cli.command()
-@click.option("--no-deps/--with-deps", default=False)
-@click.option("--dry-run", is_flag=True, default=False)
-@click.option(
-    "-f",
-    "--file",
-    "compose_file",
-    type=click.Path(exists=True),
-    default=None,
-    help="Docker compose file to use",
-)
-@click.argument("services", nargs=-1)
-def build(no_deps: bool, dry_run: bool, compose_file: Optional[str], services: list[str]):
-    """
-    Build QCrBox components.
-    """
-    compose_file = compose_file or get_toplevel_docker_compose_path()
-
-    if services == ():
-        services = get_all_services(compose_file)
-
-    click.echo(
-        f"Building the following components ({'without' if no_deps else 'including'} dependencies): "
-        f"{', '.join(services)}"
-    )
-    tasks = populate_build_tasks(services, with_deps=not no_deps, dry_run=dry_run, compose_file=compose_file)
-    run_tasks(tasks, ["run"])
 
 
 @cli.command(name="up")

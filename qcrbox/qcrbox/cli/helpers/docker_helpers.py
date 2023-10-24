@@ -4,16 +4,29 @@ import re
 import subprocess
 import sys
 
+from git import Repo
 from loguru import logger
 from pathlib import Path
 from typing import TypeVar
 
 import yaml
 
+__all__ = ["build_single_docker_image", "get_dependency_chain"]
+
 # Type alias
 PathLike = TypeVar("PathLike", str, pathlib.Path)
 
 DOCKER_COMPOSE_PROJECT_NAME = "qcrbox"
+
+
+def get_repo_root():
+    repo = Repo(".", search_parent_directories=True)
+    return Path(repo.working_tree_dir)
+
+
+def get_toplevel_docker_compose_path():
+    return get_repo_root().joinpath("docker-compose.dev.yml")
+
 
 def get_docker_compose_args(compose_file: Path):
     return [

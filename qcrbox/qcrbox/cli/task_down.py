@@ -1,4 +1,4 @@
-from .utils_doit import make_task
+from .helpers import make_task
 from .utils_docker import spin_down_docker_containers
 
 

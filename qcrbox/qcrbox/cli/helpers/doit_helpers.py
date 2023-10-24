@@ -2,6 +2,8 @@ from doit.cmd_base import TaskLoader2
 from doit.doit_cmd import DoitMain
 from doit.task import dict_to_task
 
+__all__ = ["make_task", "run_tasks"]
+
 
 def make_task(task_dict_func):
     """

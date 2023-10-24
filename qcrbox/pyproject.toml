@@ -20,8 +20,8 @@ dynamic = [
 "Issue Tracker" = "https://github.com/QCrBox/QCrBox/issues"
 
 [project.scripts]
-qcrbox = "qcrbox.cli.main:cli"
-qcb = "qcrbox.cli.main:cli"
+qcb = "qcrbox.cli:entry_point"
+qcb_old = "qcrbox.cli.main:cli"
 
 [build-system]
 requires = ["hatchling", "hatch-requirements-txt", "hatch-vcs"]

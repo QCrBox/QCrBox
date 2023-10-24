@@ -1,1 +1,1 @@
-from . import main
+from .cli import entry_point
