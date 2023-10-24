@@ -13,7 +13,7 @@ from ..helpers import run_tasks
 @click.group(name="docs")
 def docs_group():
     """
-    Build or serve the documentation.
+    Build/serve the documentation.
     """
     pass
 
