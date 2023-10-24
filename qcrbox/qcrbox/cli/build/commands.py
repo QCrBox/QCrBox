@@ -3,7 +3,7 @@ from typing import Optional
 
 import click
 from loguru import logger
-from ..helpers import make_task, run_tasks
+from ..helpers import make_task, run_tasks, print_command_help_string_and_exit, exit_with_msg
 from ..helpers.docker_helpers import (
     get_dependency_chain,
     build_single_docker_image,
@@ -13,6 +13,7 @@ from ..helpers.docker_helpers import (
 
 
 @click.command()
+@click.option("--all", "build_all_services", is_flag=True, default=False)
 @click.option("--no-deps/--with-deps", default=False)
 @click.option("--dry-run", is_flag=True, default=False)
 @click.option(
@@ -24,14 +25,21 @@ from ..helpers.docker_helpers import (
     help="Docker compose file to use",
 )
 @click.argument("services", nargs=-1)
-def build(no_deps: bool, dry_run: bool, compose_file: Optional[str], services: list[str]):
+def build(build_all_services: bool, no_deps: bool, dry_run: bool, compose_file: Optional[str], services: list[str]):
     """
     Build QCrBox components.
     """
     compose_file = compose_file or get_toplevel_docker_compose_path()
 
     if services == ():
-        services = get_all_services(compose_file)
+        if build_all_services:
+            services = get_all_services(compose_file)
+        else:
+            print_command_help_string_and_exit()
+    else:
+        if build_all_services:
+            services_list = ', '.join(repr(s) for s in services)
+            exit_with_msg(f"Cannot combine --all with explicit service names (here: {services_list})")
 
     click.echo(
         f"Building the following components ({'without' if no_deps else 'including'} dependencies): "
