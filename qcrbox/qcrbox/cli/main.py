@@ -53,7 +53,7 @@ def list_services(compose_file: Optional[str]):
 @click.argument("services", nargs=-1)
 def build(no_deps: bool, dry_run: bool, compose_file: Optional[str], services: list[str]):
     """
-    Build QCrBox component(s).
+    Build QCrBox components.
     """
     compose_file = compose_file or get_toplevel_docker_compose_path()
 
@@ -82,7 +82,7 @@ def build(no_deps: bool, dry_run: bool, compose_file: Optional[str], services: l
 @click.argument("services", nargs=-1)
 def start_up_docker_services(compose_file: Optional[str], rebuild_deps: bool, dry_run: bool, services: list[str]):
     """
-    Start up QCrBox component(s).
+    Start up QCrBox components.
     """
     compose_file = compose_file or get_toplevel_docker_compose_path()
 
@@ -109,7 +109,7 @@ def start_up_docker_services(compose_file: Optional[str], rebuild_deps: bool, dr
 )
 def spin_down_docker_services(compose_file: str):
     """
-    Spin down all QCrBox component(s).
+    Spin down all QCrBox components.
     """
     compose_file = compose_file or get_toplevel_docker_compose_path()
     tasks = []
