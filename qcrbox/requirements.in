@@ -1,5 +1,6 @@
 # requirements.in
 click
 doit
+gitpython
 loguru
 pyyaml
