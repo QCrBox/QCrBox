@@ -38,7 +38,7 @@ def build(no_deps: bool, dry_run: bool, compose_file: Optional[str], services: l
         f"{', '.join(services)}"
     )
     tasks = populate_build_tasks(services, with_deps=not no_deps, dry_run=dry_run, compose_file=compose_file)
-    run_tasks(tasks, ["run"])
+    run_tasks(tasks)
 
 
 @make_task

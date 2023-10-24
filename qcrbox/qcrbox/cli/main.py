@@ -66,7 +66,7 @@ def start_up_docker_services(compose_file: Optional[str], rebuild_deps: bool, dr
         tasks = populate_build_tasks(services, with_deps=True, dry_run=dry_run, compose_file=compose_file)
 
     tasks.append(task_start_up_docker_containers(services, compose_file, rebuild_deps=rebuild_deps, dry_run=dry_run))
-    run_tasks(tasks, ["run"])
+    run_tasks(tasks)
 
 
 @cli.command(name="down")
@@ -85,7 +85,7 @@ def spin_down_docker_services(compose_file: str):
     compose_file = compose_file or get_toplevel_docker_compose_path()
     tasks = []
     tasks.append(task_spin_down_docker_containers(compose_file))
-    run_tasks(tasks, ["run"])
+    run_tasks(tasks)
 
 
 if __name__ == "__main__":

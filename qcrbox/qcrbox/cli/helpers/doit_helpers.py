@@ -35,8 +35,8 @@ class Loader(TaskLoader2):
         return self.tasks
 
 
-def run_tasks(tasks, args):
+def run_tasks(tasks):
     """
     Given a list of `Task` objects and a list of arguments, execute the tasks.
     """
-    return DoitMain(Loader(tasks)).run(args)
+    return DoitMain(Loader(tasks)).run(["run"])
