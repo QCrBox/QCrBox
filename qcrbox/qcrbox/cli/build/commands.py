@@ -13,16 +13,16 @@ from ..helpers.docker_helpers import (
 
 
 @click.command()
-@click.option("--all", "build_all_services", is_flag=True, default=False)
-@click.option("--no-deps/--with-deps", default=False)
-@click.option("--dry-run", is_flag=True, default=False)
+@click.option("--all", "build_all_services", is_flag=True, default=False, help="Build all services.")
+@click.option("--no-deps/--with-deps", default=False, help="Build given services without/with dependencies.")
+@click.option("--dry-run", is_flag=True, default=False, help="Display actions that would be performed without actually doing anything.")
 @click.option(
     "-f",
     "--file",
     "compose_file",
     type=click.Path(exists=True),
     default=None,
-    help="Docker compose file to use",
+    help="Docker compose file to use.",
 )
 @click.argument("services", nargs=-1)
 def build(build_all_services: bool, no_deps: bool, dry_run: bool, compose_file: Optional[str], services: list[str]):
