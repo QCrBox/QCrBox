@@ -1,1 +1,1 @@
-from .commands import start_up_docker_containers
+from .commands import start_up_components

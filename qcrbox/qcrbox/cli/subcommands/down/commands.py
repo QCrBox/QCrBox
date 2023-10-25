@@ -4,7 +4,7 @@ from qcrbox.cli.helpers.docker_helpers import get_toplevel_docker_compose_path,r
 
 
 @click.command(name="down")
-def shut_down_docker_containers(target_containers: list[str], dry_run: bool):
+def shut_down_components(target_containers: list[str], dry_run: bool):
     """
     Shut down QCrBox components.
     """

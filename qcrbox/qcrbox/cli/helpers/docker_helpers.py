@@ -1,3 +1,4 @@
+import json
 import os
 import pathlib
 import re
@@ -35,21 +36,33 @@ def get_docker_compose_args(compose_file: Path):
     ]
 
 
-def run_docker_compose_command(cmd: str, *args, compose_file: Path):
+def run_docker_compose_command(cmd: str, *args, compose_file: Path, capture_output=False):
     docker_compose_args = get_docker_compose_args(compose_file)
     all_args = docker_compose_args + [cmd] + list(args)
     # all_kwargs = kwargs.copy()
     # all_kwargs.update(dict(_in=sys.stdin, _out=sys.stdout, _err=sys.stderr))
     # logger.info(f"Running docker compose build with args={all_args}, kwargs={all_kwargs}")
-    logger.info(f"Running docker compose {cmd} with args={all_args}")
+    logger.debug(f"Running docker compose {cmd} with args={all_args}")
     cmd = ["docker", "compose", *docker_compose_args, cmd, *args]
     # logger.info(f"Subprocess cmd={cmd}")
 
     env_vars = os.environ.copy()
     env_vars["QCRBOX_PYTHON_PACKAGE_VERSION"] = get_current_qcrbox_version()
 
-    proc = subprocess.run(cmd, shell=False, stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr, env=env_vars)
+    if capture_output:
+        output_kwargs = {"capture_output": capture_output}
+    else:
+        output_kwargs = {"stdout": sys.stdout, "stderr": sys.stderr}
+    proc = subprocess.run(
+        cmd,
+        shell=False,
+        stdin=sys.stdin,
+        env=env_vars,
+        **output_kwargs,
+    )
     proc.check_returncode()
+
+    return proc
 
 
 def get_all_services(compose_file: PathLike):
@@ -133,3 +146,13 @@ def start_up_docker_containers(target_containers: list[str], compose_file: PathL
 def spin_down_docker_containers(compose_file: PathLike):
     logger.info(f"Stopping and removing all QCrBox docker containers")
     run_docker_compose_command("down", compose_file=Path(compose_file))
+
+
+def get_status_of_docker_service(service, compose_file: PathLike):
+    proc = run_docker_compose_command("ps", "--format=json", service, compose_file=Path(compose_file), capture_output=True)
+    json_data = json.loads(proc.stdout)
+    assert len(json_data) == 1
+    service_info = json_data[0]
+    assert service_info["Service"] == service
+    status_string = f"{service_info['State']} ({service_info['Health']})"
+    logger.info(f"Status of '{service}': {status_string}")
