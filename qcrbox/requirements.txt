@@ -10,17 +10,9 @@ cloudpickle==2.2.1
     # via doit
 doit==0.36.0
     # via -r requirements.in
-gitdb==4.0.11
-    # via gitpython
-gitpython==3.1.40
-    # via -r requirements.in
 importlib-metadata==6.8.0
     # via doit
 loguru==0.7.2
     # via -r requirements.in
-pyyaml==6.0.1
-    # via -r requirements.in
-smmap==5.0.1
-    # via gitdb
 zipp==3.17.0
     # via importlib-metadata

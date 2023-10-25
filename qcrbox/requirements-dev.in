@@ -1,0 +1,5 @@
+# requirements-dev.in
+gitpython
+hatch
+pip-tools
+pyyaml
