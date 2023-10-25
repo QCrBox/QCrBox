@@ -13,8 +13,8 @@ from ...helpers.docker_helpers import (
 
 
 @click.command()
-@click.option("--all", "build_all_services", is_flag=True, default=False, help="Build all services.")
-@click.option("--no-deps/--with-deps", default=False, help="Build given services without/with dependencies.")
+@click.option("--all", "build_all_components", is_flag=True, default=False, help="Build all components.")
+@click.option("--no-deps/--with-deps", default=False, help="Build given components without/with dependencies.")
 @click.option("--dry-run", is_flag=True, default=False, help="Display actions that would be performed without actually doing anything.")
 @click.option(
     "-f",
@@ -24,28 +24,28 @@ from ...helpers.docker_helpers import (
     default=None,
     help="Docker compose file to use.",
 )
-@click.argument("services", nargs=-1)
-def build_components(build_all_services: bool, no_deps: bool, dry_run: bool, compose_file: Optional[str], services: list[str]):
+@click.argument("components", nargs=-1)
+def build_components(build_all_components: bool, no_deps: bool, dry_run: bool, compose_file: Optional[str], components: list[str]):
     """
     Build QCrBox components.
     """
     compose_file = compose_file or get_toplevel_docker_compose_path()
 
-    if services == ():
-        if build_all_services:
-            services = get_all_services(compose_file)
+    if components == ():
+        if build_all_components:
+            components = get_all_services(compose_file)
         else:
             print_command_help_string_and_exit()
     else:
-        if build_all_services:
-            services_list = ', '.join(repr(s) for s in services)
-            exit_with_msg(f"Cannot combine --all with explicit service names (here: {services_list})")
+        if build_all_components:
+            component_list = ', '.join(repr(s) for s in components)
+            exit_with_msg(f"Cannot combine --all with explicit component names (here: {component_list})")
 
     click.echo(
         f"Building the following components ({'without' if no_deps else 'including'} dependencies): "
-        f"{', '.join(services)}"
+        f"{', '.join(components)}"
     )
-    tasks = populate_build_tasks(services, with_deps=not no_deps, dry_run=dry_run, compose_file=compose_file)
+    tasks = populate_build_tasks(components, with_deps=not no_deps, dry_run=dry_run, compose_file=compose_file)
     run_tasks(tasks)
 
 
@@ -79,21 +79,21 @@ def task_build_docker_service(service: str, compose_file: str, with_deps: bool, 
     }
 
 
-def populate_build_tasks(services: list[str], with_deps: bool, dry_run: bool, compose_file: str, tasks=None):
+def populate_build_tasks(components: list[str], with_deps: bool, dry_run: bool, compose_file: str, tasks=None):
     tasks = tasks or []
 
-    for service in services:
-        if service == "qcrbox":
+    for component in components:
+        if component == "qcrbox":
             tasks.append(task_build_qcrbox_python_package(dry_run))
         else:
             if with_deps:
-                for dep in get_dependency_chain(service, compose_file):
+                for dep in get_dependency_chain(component, compose_file):
                     if dep == "base-ancestor":
                         tasks.append(task_build_qcrbox_python_package(dry_run))
                     tasks.append(task_build_docker_service(dep, compose_file, with_deps=with_deps, dry_run=dry_run))
-                if service == "base-ancestor":
+                if component == "base-ancestor":
                     tasks.append(task_build_qcrbox_python_package(dry_run))
-            tasks.append(task_build_docker_service(service, compose_file, with_deps=with_deps, dry_run=dry_run))
+            tasks.append(task_build_docker_service(component, compose_file, with_deps=with_deps, dry_run=dry_run))
 
     res = []
     for task in tasks:
