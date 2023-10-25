@@ -33,7 +33,7 @@ source = "vcs"
 raw-options = { root = ".." }
 
 [tool.hatch.build.hooks.vcs]
-version-file = "_version.py"
+version-file = "qcrbox/_version.py"
 
 [tool.hatch.metadata.hooks.requirements_txt]
 files = ["requirements.txt"]

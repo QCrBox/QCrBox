@@ -3,13 +3,14 @@ import pathlib
 import re
 import subprocess
 import sys
+import yaml
 
 from git import Repo
 from loguru import logger
 from pathlib import Path
 from typing import TypeVar
 
-import yaml
+from .qcrbox_helpers import get_current_qcrbox_version
 
 __all__ = ["build_single_docker_image", "get_dependency_chain"]
 
@@ -49,7 +50,11 @@ def run_docker_compose_command(cmd: str, *args, compose_file: Path):
     logger.info(f"Running docker compose {cmd} with args={all_args}")
     cmd = ["docker", "compose", *docker_compose_args, cmd, *args]
     # logger.info(f"Subprocess cmd={cmd}")
-    proc = subprocess.run(cmd, shell=False, stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr, env=os.environ)
+
+    env_vars = os.environ.copy()
+    env_vars["QCRBOX_PYTHON_PACKAGE_VERSION"] = get_current_qcrbox_version()
+
+    proc = subprocess.run(cmd, shell=False, stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr, env=env_vars)
     proc.check_returncode()
 
 
