@@ -1,8 +1,8 @@
 import click
 import doit.task
 
-from ..helpers import run_tasks
-from ..helpers.docker_helpers import get_toplevel_docker_compose_path, get_all_services
+from qcrbox.cli.helpers import run_tasks
+from qcrbox.cli.helpers.docker_helpers import get_toplevel_docker_compose_path, get_all_services
 
 
 @click.command(name="info")

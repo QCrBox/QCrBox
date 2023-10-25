@@ -1,6 +1,6 @@
 import click
 
-from ..helpers.docker_helpers import start_up_docker_containers, get_toplevel_docker_compose_path
+from qcrbox.cli.helpers.docker_helpers import start_up_docker_containers, get_toplevel_docker_compose_path
 
 
 @click.command(name="up")

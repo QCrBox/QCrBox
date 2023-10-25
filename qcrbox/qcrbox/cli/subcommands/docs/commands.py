@@ -8,11 +8,11 @@ from pathlib import Path
 import click
 import doit.task
 
-from ..helpers import run_tasks
+from qcrbox.cli.helpers import run_tasks
 
 
 @click.group(name="docs")
-def docs_group():
+def docs_build_and_serve():
     """
     Build/serve the documentation.
     """
@@ -20,10 +20,10 @@ def docs_group():
 
 
 def get_mkdocs_config_file_path():
-    return Path(__file__).parent.parent.parent.parent.parent.joinpath("mkdocs.yml").resolve().as_posix()
+    return Path(__file__).parent.parent.parent.parent.parent.parent.joinpath("mkdocs.yml").resolve().as_posix()
 
 
-@docs_group.command()
+@docs_build_and_serve.command()
 def build():
     """
     Build the documentation.
@@ -37,7 +37,7 @@ def build():
     run_tasks([task])
 
 
-@docs_group.command()
+@docs_build_and_serve.command()
 @click.option(
     "-h",
     "--host",

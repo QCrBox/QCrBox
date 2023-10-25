@@ -3,8 +3,8 @@ from typing import Optional
 
 import click
 from loguru import logger
-from ..helpers import make_task, run_tasks, print_command_help_string_and_exit, exit_with_msg
-from ..helpers.docker_helpers import (
+from ...helpers import make_task, run_tasks, print_command_help_string_and_exit, exit_with_msg
+from ...helpers.docker_helpers import (
     get_dependency_chain,
     build_single_docker_image,
     get_toplevel_docker_compose_path,
@@ -25,7 +25,7 @@ from ..helpers.docker_helpers import (
     help="Docker compose file to use.",
 )
 @click.argument("services", nargs=-1)
-def build(build_all_services: bool, no_deps: bool, dry_run: bool, compose_file: Optional[str], services: list[str]):
+def build_components(build_all_services: bool, no_deps: bool, dry_run: bool, compose_file: Optional[str], services: list[str]):
     """
     Build QCrBox components.
     """
