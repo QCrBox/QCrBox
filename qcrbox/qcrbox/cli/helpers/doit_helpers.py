@@ -29,6 +29,7 @@ class Loader(TaskLoader2):
         return {
             "verbosity": 2,
             "backend": "sqlite3",
+            "reporter": "zero",
         }
 
     def load_tasks(self, cmd, pos_args):
@@ -39,4 +40,6 @@ def run_tasks(tasks):
     """
     Given a list of `Task` objects and a list of arguments, execute the tasks.
     """
-    return DoitMain(Loader(tasks)).run(["run"])
+    doitmain = DoitMain(Loader(tasks))
+    res = doitmain.run(["run"])
+    return res

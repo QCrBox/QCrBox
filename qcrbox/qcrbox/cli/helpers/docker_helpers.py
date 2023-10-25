@@ -6,11 +6,11 @@ import sys
 import yaml
 
 from git import Repo
-from loguru import logger
 from pathlib import Path
 from typing import TypeVar
 
 from .qcrbox_helpers import get_current_qcrbox_version
+from ..logging import logger
 
 __all__ = ["build_single_docker_image", "get_dependency_chain"]
 
@@ -125,17 +125,17 @@ def get_dependency_chain(service_name, compose_file: PathLike):
 
 
 def build_single_docker_image(target_image: str, compose_file: PathLike, dry_run: bool):
-    logger.debug(f"Building docker image: {target_image}")
+    logger.info(f"Building docker image: {target_image}")
     if not dry_run:
         run_docker_compose_command("build", target_image, compose_file=Path(compose_file))
 
 
 def start_up_docker_containers(target_containers: list[str], compose_file: PathLike, dry_run):
-    logger.debug(f"Starting up docker container(s): {', '.join(target_containers)}")
+    logger.info(f"Starting up docker container(s): {', '.join(target_containers)}")
     if not dry_run:
         run_docker_compose_command("up", "-d", *target_containers, compose_file=Path(compose_file))
 
 
 def spin_down_docker_containers(compose_file: PathLike):
-    logger.debug(f"Stop and remove QCrBox docker containers")
+    logger.info(f"Stopping and removing all QCrBox docker containers")
     run_docker_compose_command("down", compose_file=Path(compose_file))

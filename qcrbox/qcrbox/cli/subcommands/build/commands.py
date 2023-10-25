@@ -2,7 +2,6 @@ from pathlib import Path
 from typing import Optional
 
 import click
-from loguru import logger
 from ...helpers import make_task, run_tasks, print_command_help_string_and_exit, exit_with_msg
 from ...helpers.docker_helpers import (
     get_dependency_chain,
@@ -10,9 +9,10 @@ from ...helpers.docker_helpers import (
     get_toplevel_docker_compose_path,
     get_all_services,
 )
+from ...logging import logger
 
 
-@click.command()
+@click.command(name="build")
 @click.option("--all", "build_all_components", is_flag=True, default=False, help="Build all components.")
 @click.option("--no-deps/--with-deps", default=False, help="Build given components without/with dependencies.")
 @click.option("--dry-run", is_flag=True, default=False, help="Display actions that would be performed without actually doing anything.")
@@ -43,7 +43,7 @@ def build_components(build_all_components: bool, no_deps: bool, dry_run: bool, c
 
     click.echo(
         f"Building the following components ({'without' if no_deps else 'including'} dependencies): "
-        f"{', '.join(components)}"
+        f"{', '.join(components)}\n"
     )
     tasks = populate_build_tasks(components, with_deps=not no_deps, dry_run=dry_run, compose_file=compose_file)
     run_tasks(tasks)
@@ -56,7 +56,7 @@ def task_build_qcrbox_python_package(dry_run: bool):
     if dry_run:
         return {
             "name": f"task_build_qcrbox_python_module",
-            "actions": [lambda: logger.debug("Building Python package: 'qcrbox'")],
+            "actions": [lambda: logger.info("Building Python package: qcrbox")],
         }
     else:
         return {
