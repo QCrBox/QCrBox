@@ -51,7 +51,8 @@ def build(build_all_services: bool, no_deps: bool, dry_run: bool, compose_file: 
 
 @make_task
 def task_build_qcrbox_python_package(dry_run: bool):
-    qcrbox_module_root = Path(__file__).parent.parent.parent.parent
+    qcrbox_module_root = Path(__file__).parent.parent.parent.parent.resolve()
+    base_ancestor_qcrbox_dist_dir = qcrbox_module_root.joinpath("../services/base_images/base_ancestor/qcrbox_dist/").resolve()
     if dry_run:
         return {
             "name": f"task_build_qcrbox_python_module",
@@ -63,7 +64,7 @@ def task_build_qcrbox_python_package(dry_run: bool):
             "actions": [
                 f"cd {qcrbox_module_root.as_posix()} && "
                 f"hatch build -t wheel && "
-                f"cp dist/qcrbox-*.whl ../services/base_images/base_ancestor/qcrbox_dist/"
+                f"cp dist/qcrbox-*.whl {base_ancestor_qcrbox_dist_dir.as_posix()}"
             ],
         }
 
