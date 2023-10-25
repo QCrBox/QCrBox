@@ -3,3 +3,10 @@ gitpython
 hatch
 pip-tools
 pyyaml
+setuptools_scm
+
+# docs-related
+mkdocs
+mkdocs-awesome-pages-plugin
+mkdocs-material
+pymdown-extensions

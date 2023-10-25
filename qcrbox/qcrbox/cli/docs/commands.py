@@ -3,6 +3,7 @@ import shutil
 import signal
 import subprocess
 import webbrowser
+from pathlib import Path
 
 import click
 import doit.task
@@ -18,6 +19,10 @@ def docs_group():
     pass
 
 
+def get_mkdocs_config_file_path():
+    return Path(__file__).parent.parent.parent.parent.parent.joinpath("mkdocs.yml").resolve().as_posix()
+
+
 @docs_group.command()
 def build():
     """
@@ -26,7 +31,7 @@ def build():
     task = doit.task.dict_to_task(
         {
             "name": "build-docs",
-            "actions": ["mkdocs build"],
+            "actions": [f"mkdocs build -f {get_mkdocs_config_file_path()}"],
         }
     )
     run_tasks([task])
@@ -53,9 +58,10 @@ def serve(host, port):
     """
     Serve the documentation using the MkDocs development server.
     """
+
     def build_and_serve_docs():
         mkdocs_executable = shutil.which("mkdocs")
-        proc = subprocess.Popen([mkdocs_executable, "serve", "-a", dev_addr])
+        proc = subprocess.Popen([mkdocs_executable, "serve", "-a", dev_addr, "-f", get_mkdocs_config_file_path()])
         atexit.register(wait_for_mkdocs_server_shutdown, proc)
 
     def wait_for_mkdocs_server_shutdown(proc):
@@ -75,7 +81,10 @@ def serve(host, port):
         }
     )
     task2 = doit.task.dict_to_task(
-        {"name": "open-browser", "actions": [(open_url, [url])],}
+        {
+            "name": "open-browser",
+            "actions": [(open_url, [url])],
+        }
     )
     run_tasks([task1, task2])
 
