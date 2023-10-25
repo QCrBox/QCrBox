@@ -9,22 +9,28 @@ However, there will be an initial period of stabilisation where this is not adhe
 
 ## [Unreleased]
 
-### Added
+### New Features
 
-### Changed
+### Enhancements
 
-### Fixed
+### Issues Fixed
 
-### Removed
+### Development
+
+### Development
 
 
 ## [0.0.1]
 
-### Added
+### New Features
 
-- Documentation skeleton ([#2](https://github.com/QCrBox/QCrBox/issues/2))
-- `doit`-based CLI script for common development tasks. ([#7](https://github.com/QCrBox/QCrBox/issues/7))
-- Core docker service: `qcrbox-message-bus` ([#9](https://github.com/QCrBox/QCrBox/issues/9))
+- CLI tool (`qcb`) for common development and deployment tasks. ([#10](https://github.com/QCrBox/QCrBox/issues/10))
+- Core docker service `qcrbox-message-bus`. ([#9](https://github.com/QCrBox/QCrBox/issues/9))
+
+### Documentation
+
+- Created documentation skeleton. ([#2](https://github.com/QCrBox/QCrBox/issues/2))
+- Set up GitHub Actions for continuous deployment of the [docs](https://qcrbox.github.io/QCrBox/) to GitHub pages. ([#11](https://github.com/QCrBox/QCrBox/issues/11))
 
 
 [unreleased]: https://github.com/QCrBox/QCrBox/compare/0.0.1...master
