@@ -1,11 +1,12 @@
 # requirements-dev.in
 gitpython
 hatch
+ipython
+jupyterlab
 pip-tools
 pyyaml
 setuptools_scm
 
-# docs-related
 mkdocs
 mkdocs-awesome-pages-plugin
 mkdocs-material
