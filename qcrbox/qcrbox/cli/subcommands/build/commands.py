@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Optional
 
 import click
-from ...helpers import make_task, run_tasks, print_command_help_string_and_exit, exit_with_msg
+from ...helpers import make_task, run_tasks, print_command_help_string_and_exit, exit_with_msg, get_repo_root
 from ...helpers.docker_helpers import (
     get_dependency_chain,
     build_single_docker_image,
@@ -15,7 +15,12 @@ from ...logging import logger
 @click.command(name="build")
 @click.option("--all", "build_all_components", is_flag=True, default=False, help="Build all components.")
 @click.option("--no-deps/--with-deps", default=False, help="Build given components without/with dependencies.")
-@click.option("--dry-run", is_flag=True, default=False, help="Display actions that would be performed without actually doing anything.")
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    default=False,
+    help="Display actions that would be performed without actually doing anything.",
+)
 @click.option(
     "-f",
     "--file",
@@ -25,7 +30,9 @@ from ...logging import logger
     help="Docker compose file to use.",
 )
 @click.argument("components", nargs=-1)
-def build_components(build_all_components: bool, no_deps: bool, dry_run: bool, compose_file: Optional[str], components: list[str]):
+def build_components(
+    build_all_components: bool, no_deps: bool, dry_run: bool, compose_file: Optional[str], components: list[str]
+):
     """
     Build QCrBox components.
     """
@@ -38,7 +45,7 @@ def build_components(build_all_components: bool, no_deps: bool, dry_run: bool, c
             print_command_help_string_and_exit()
     else:
         if build_all_components:
-            component_list = ', '.join(repr(s) for s in components)
+            component_list = ", ".join(repr(s) for s in components)
             exit_with_msg(f"Cannot combine --all with explicit component names (here: {component_list})")
 
     click.echo(
@@ -51,8 +58,9 @@ def build_components(build_all_components: bool, no_deps: bool, dry_run: bool, c
 
 @make_task
 def task_build_qcrbox_python_package(dry_run: bool):
-    qcrbox_module_root = Path(__file__).parent.parent.parent.parent.resolve()
-    base_ancestor_qcrbox_dist_dir = qcrbox_module_root.joinpath("../services/base_images/base_ancestor/qcrbox_dist/").resolve()
+    repo_root = get_repo_root()
+    qcrbox_module_root = repo_root.joinpath("qcrbox")
+    base_ancestor_qcrbox_dist_dir = repo_root.joinpath("services/base_images/base_ancestor/qcrbox_dist/")
     if dry_run:
         return {
             "name": f"task_build_qcrbox_python_module",

@@ -5,11 +5,10 @@ import subprocess
 import sys
 import yaml
 
-from git import Repo
 from pathlib import Path
 from typing import TypeVar
 
-from .qcrbox_helpers import get_current_qcrbox_version
+from .qcrbox_helpers import get_current_qcrbox_version, get_repo_root
 from ..logging import logger
 
 __all__ = ["build_single_docker_image", "get_dependency_chain"]
@@ -18,11 +17,6 @@ __all__ = ["build_single_docker_image", "get_dependency_chain"]
 PathLike = TypeVar("PathLike", str, pathlib.Path)
 
 DOCKER_COMPOSE_PROJECT_NAME = "qcrbox"
-
-
-def get_repo_root():
-    repo = Repo(".", search_parent_directories=True)
-    return Path(repo.working_tree_dir)
 
 
 def get_toplevel_docker_compose_path():
