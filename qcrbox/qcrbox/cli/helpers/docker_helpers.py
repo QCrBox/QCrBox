@@ -49,7 +49,8 @@ def run_docker_compose_command(cmd: str, *args, compose_file: Path):
     logger.info(f"Running docker compose {cmd} with args={all_args}")
     cmd = ["docker", "compose", *docker_compose_args, cmd, *args]
     # logger.info(f"Subprocess cmd={cmd}")
-    subprocess.run(cmd, shell=False, stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr, env=os.environ)
+    proc = subprocess.run(cmd, shell=False, stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr, env=os.environ)
+    proc.check_returncode()
 
 
 def get_all_services(compose_file: PathLike):
