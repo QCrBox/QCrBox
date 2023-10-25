@@ -5,26 +5,28 @@ from ..helpers import run_tasks
 from ..helpers.docker_helpers import get_toplevel_docker_compose_path, get_all_services
 
 
-@click.group(name="info")
-def info_group():
+@click.command(name="info")
+@click.option("-l", "--list-components/--no-list-components", is_flag=True, type=bool, default=True)
+def show_info(list_components: bool):
     """
     Show information on QCrBox components.
     """
-    pass
+    tasks = []
+
+    if list_components:
+        tasks.append(
+            doit.task.dict_to_task(
+                {
+                    "name": "list-components",
+                    "actions": [print_list_of_components],
+                }
+            )
+        )
+
+    run_tasks(tasks)
 
 
-@info_group.command()
-def components():
-    task = doit.task.dict_to_task(
-        {
-            "name": "list-components",
-            "actions": [list_components],
-        }
-    )
-    run_tasks([task])
-
-
-def list_components():
+def print_list_of_components():
     compose_file = get_toplevel_docker_compose_path()
     click.echo()
     click.echo(f"Components defined in {compose_file.as_posix()!r}:")
