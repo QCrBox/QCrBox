@@ -25,7 +25,7 @@ RUN mkdir -p ${QCRBOX_PYTHON_VENV_DIR} && \
 #COPY ./qubox_python_module ${QCRBOX_ROOT_DIR}/qubox_python_module
 #RUN ${QCRBOX_PYTHON_VENV_DIR}/bin/pip install -e ${QCRBOX_ROOT_DIR}/qubox_python_module/
 
-COPY ./qcrbox-${QCRBOX_PYTHON_PACKAGE_VERSION}-py3-none-any.whl ${QCRBOX_ROOT_DIR}/
+COPY ./qcrbox_dist/qcrbox-${QCRBOX_PYTHON_PACKAGE_VERSION}-py3-none-any.whl ${QCRBOX_ROOT_DIR}/
 RUN ${QCRBOX_PYTHON_VENV_DIR}/bin/pip install ${QCRBOX_ROOT_DIR}/qcrbox*.whl
 
 ARG QCRBOX_SUPERVISORD_CONF_DIR=${QCRBOX_SUPERVISORD_CONF_DIR}

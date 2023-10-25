@@ -63,7 +63,7 @@ def task_build_qcrbox_python_package(dry_run: bool):
             "actions": [
                 f"cd {qcrbox_module_root.as_posix()} && "
                 f"hatch build -t wheel && "
-                f"cp dist/qcrbox-*.whl ../services/base_images/base_ancestor/"
+                f"cp dist/qcrbox-*.whl ../services/base_images/base_ancestor/qcrbox_dist/"
             ],
         }
 
