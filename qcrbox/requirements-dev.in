@@ -4,6 +4,7 @@ hatch
 ipython
 jupyterlab
 pip-tools
+pydantic
 pyyaml
 setuptools_scm
 
