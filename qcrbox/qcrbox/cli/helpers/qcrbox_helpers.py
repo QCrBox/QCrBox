@@ -1,3 +1,4 @@
+import functools
 import subprocess
 from pathlib import Path
 from typing import Optional, TypeVar
@@ -8,6 +9,7 @@ from git import Repo
 PathLike = TypeVar("PathLike", str, Path)
 
 
+@functools.lru_cache(maxsize=1)
 def get_current_qcrbox_version() -> str:
     """
     Return the current version of the 'qcrbox' module.
