@@ -149,10 +149,12 @@ def spin_down_docker_containers(compose_file: PathLike):
 
 
 def get_status_of_docker_service(service, compose_file: PathLike):
-    proc = run_docker_compose_command("ps", "--format=json", service, compose_file=Path(compose_file), capture_output=True)
-    json_data = json.loads(proc.stdout)
-    assert len(json_data) == 1
-    service_info = json_data[0]
-    assert service_info["Service"] == service
-    status_string = f"{service_info['State']} ({service_info['Health']})"
-    logger.info(f"Status of '{service}': {status_string}")
+    logger.warning("TODO: finish the implementation of 'get_status_of_docker_service'")
+    raise NotImplementedError("TODO: finish the implementation")
+    # proc = run_docker_compose_command("ps", "--format=json", service, compose_file=Path(compose_file), capture_output=True)
+    # json_data = json.loads(proc.stdout)
+    # assert len(json_data) == 1
+    # service_info = json_data[0]
+    # assert service_info["Service"] == service
+    # status_string = f"{service_info['State']} ({service_info['Health']})"
+    # logger.info(f"Status of '{service}': {status_string}")
