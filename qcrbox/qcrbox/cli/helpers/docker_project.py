@@ -31,13 +31,13 @@ class DockerProject:
         self.repo_root = self._find_common_repo_root(*compose_files)
         self.compose_files = [Path(compose_file).resolve() for compose_file in compose_files]
 
-        self.data_by_compose_file = {
+        self._service_metadata_by_compose_file = {
             compose_file.relative_to(self.repo_root): load_docker_compose_data(compose_file)
             for compose_file in self.compose_files
         }
-        self.full_data = {}
-        for compose_file, data in self.data_by_compose_file.items():
-            self.full_data = deep_update(self.full_data, data)
+        self._full_service_metadata = {}
+        for compose_file, data in self._service_metadata_by_compose_file.items():
+            self._full_service_metadata = deep_update(self._full_service_metadata, data)
 
     def __repr__(self):
         clsname = self.__class__.__name__
@@ -63,14 +63,14 @@ class DockerProject:
 
     @property
     def services(self):
-        return list(self.full_data["services"].keys())
+        return list(self._full_service_metadata["services"].keys())
 
     def _construct_docker_compose_command(self, cmd: str, *cmd_args: str):
         env_dev_file = self.repo_root.joinpath(".env.dev")
 
         cmd = (
             [
-                "docker",
+                shutil.which("docker"),
                 "compose",
                 f"--project-name={self.project_name}",
                 f"--env-file={env_dev_file.as_posix()}",
