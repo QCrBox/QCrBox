@@ -94,7 +94,7 @@ class DockerProject:
             proc = subprocess.run(full_cmd, env=custom_env, shell=False, check=False, capture_output=capture_output)
             return proc
 
-    def build_single_docker_image(self, target_image: str, dry_run: bool, capture_output: bool = False):
+    def build_single_docker_image(self, target_image: str, dry_run: bool = False, capture_output: bool = False):
         logger.info(f"Building docker image: {target_image}")
         self.run_docker_compose_command("build", target_image, dry_run=dry_run, capture_output=capture_output)
 
@@ -121,3 +121,32 @@ class DockerProject:
             runtime_deps = []
 
         return runtime_deps
+
+    def get_build_and_runtime_dependencies(self, service_name):
+        return self.get_build_dependencies(service_name) + self.get_runtime_dependencies(service_name)
+
+    def get_dependency_chain(self, service_name):
+        deps_done = []
+        deps_todo = [service_name]
+
+        def tidy_up_deps(deps_done, deps_todo):
+            return list({x: None for x in deps_todo if x not in deps_done}.keys())
+
+        while deps_todo:
+            cur_dep = deps_todo.pop(0)
+            deps_done.append(cur_dep)
+            deps_todo += self.get_build_and_runtime_dependencies(cur_dep)
+            deps_todo = tidy_up_deps(deps_done, deps_todo)
+
+        return reversed(deps_done)
+
+    def _build_incl_dependencies(self, *target_images):
+        for target_image in target_images:
+            for service_name in self.get_dependency_chain(target_image):
+                self.build_single_docker_image(service_name)
+
+    def build_docker_images(self, *target_images, no_deps=False):
+        if no_deps:
+            self.run_docker_compose_command("build", *target_images)
+        else:
+            self._build_incl_dependencies(target_images)
