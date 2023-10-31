@@ -111,3 +111,13 @@ class DockerProject:
             re.match("^FROM qcrbox/(?P<image_name>.*):", line).group("image_name") for line in dependency_lines
         ]
         return dependency_names
+
+    def get_runtime_dependencies(self, service_name):
+        try:
+            runtime_deps_dict = self._full_service_metadata["services"][service_name]["depends_on"]
+            runtime_deps = list(runtime_deps_dict.keys())
+        except KeyError:
+            # no runtime dependencies
+            runtime_deps = []
+
+        return runtime_deps
