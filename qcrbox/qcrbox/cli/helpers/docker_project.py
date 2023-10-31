@@ -1,8 +1,8 @@
 import os
 import pathlib
+import re
 import shutil
 import subprocess
-import sys
 
 import yaml
 from pathlib import Path
@@ -97,3 +97,17 @@ class DockerProject:
     def build_single_docker_image(self, target_image: str, dry_run: bool, capture_output: bool = False):
         logger.info(f"Building docker image: {target_image}")
         self.run_docker_compose_command("build", target_image, dry_run=dry_run, capture_output=capture_output)
+
+    def get_dockerfile_for_service(self, service_name):
+        return self.repo_root.joinpath(
+            self._full_service_metadata["services"][service_name]["build"]["context"]
+        ).joinpath("Dockerfile")
+
+    def get_build_dependencies(self, service_name):
+        dockerfile = self.get_dockerfile_for_service(service_name)
+        contents = dockerfile.open().readlines()
+        dependency_lines = [line for line in contents if line.startswith("FROM qcrbox")]
+        dependency_names = [
+            re.match("^FROM qcrbox/(?P<image_name>.*):", line).group("image_name") for line in dependency_lines
+        ]
+        return dependency_names
