@@ -78,7 +78,7 @@ def task_build_qcrbox_python_package(dry_run: bool):
 
 
 @make_task
-def task_build_docker_service(service: str, compose_file: str, with_deps: bool, dry_run: bool):
+def task_build_docker_image(service: str, compose_file: str, with_deps: bool, dry_run: bool):
     dependencies = get_dependency_chain(service, compose_file) if with_deps else []
     return {
         "name": f"task_build_service:{service}",
@@ -98,10 +98,10 @@ def populate_build_tasks(components: list[str], with_deps: bool, dry_run: bool, 
                 for dep in get_dependency_chain(component, compose_file):
                     if dep == "base-ancestor":
                         tasks.append(task_build_qcrbox_python_package(dry_run))
-                    tasks.append(task_build_docker_service(dep, compose_file, with_deps=with_deps, dry_run=dry_run))
+                    tasks.append(task_build_docker_image(dep, compose_file, with_deps=with_deps, dry_run=dry_run))
                 if component == "base-ancestor":
                     tasks.append(task_build_qcrbox_python_package(dry_run))
-            tasks.append(task_build_docker_service(component, compose_file, with_deps=with_deps, dry_run=dry_run))
+            tasks.append(task_build_docker_image(component, compose_file, with_deps=with_deps, dry_run=dry_run))
 
     res = []
     for task in tasks:
