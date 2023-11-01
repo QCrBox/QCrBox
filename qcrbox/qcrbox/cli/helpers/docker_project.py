@@ -170,6 +170,9 @@ class DockerProject:
             deps_todo += self.get_build_and_runtime_dependencies(cur_dep)
             deps_todo = tidy_up_deps(deps_done, deps_todo)
 
+        # Remove the parent service name to avoid circular dependencies
+        deps_done.remove(service_name)
+
         return reversed(deps_done)
 
     def _build_incl_dependencies(self, *target_images, capture_output: bool = False):
