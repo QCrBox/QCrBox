@@ -3,6 +3,7 @@ import pathlib
 import re
 import shutil
 import subprocess
+import textwrap
 
 import yaml
 from pathlib import Path
@@ -16,6 +17,12 @@ from ..logging import logger
 
 # Type alias
 PathLike = TypeVar("PathLike", str, pathlib.Path)
+
+
+class QCrBoxSubprocessError(Exception):
+    """
+    Custom exception to indicate errors during the build process of QCrBox components.
+    """
 
 
 def load_docker_compose_data(*compose_files: PathLike):
@@ -92,6 +99,31 @@ class DockerProject:
 
         if not dry_run:
             proc = subprocess.run(full_cmd, env=custom_env, shell=False, check=False, capture_output=capture_output)
+            try:
+                proc.check_returncode()
+            except subprocess.CalledProcessError as exc:
+                cmd = " ".join(exc.cmd)
+                captured_stdout = textwrap.indent(
+                    f"\n\n{exc.stdout.decode()}\n" if exc.stdout else "(not captured)",
+                    prefix=" " * 24,
+                )
+                captured_stderr = textwrap.indent(
+                    f"\n\n{exc.stderr.decode()}\n" if exc.stderr else "(not captured)",
+                    prefix=" " * 24,
+                )
+                msg = textwrap.dedent(
+                    f"""\
+                    An error occurred when executing the following command:
+
+                        {cmd}
+
+                    Return code: {exc.returncode}
+
+                    Captured stdout: {captured_stdout}
+                    Captured stderr: {captured_stderr}
+                    """
+                )
+                raise QCrBoxSubprocessError(msg)
             return proc
 
     def build_single_docker_image(self, target_image: str, dry_run: bool = False, capture_output: bool = False):
@@ -140,13 +172,13 @@ class DockerProject:
 
         return reversed(deps_done)
 
-    def _build_incl_dependencies(self, *target_images):
+    def _build_incl_dependencies(self, *target_images, capture_output: bool = False):
         for target_image in target_images:
             for service_name in self.get_dependency_chain(target_image):
-                self.build_single_docker_image(service_name)
+                self.build_single_docker_image(service_name, capture_output=capture_output)
 
-    def build_docker_images(self, *target_images, no_deps=False):
+    def build_docker_images(self, *target_images, no_deps: bool = False, capture_output: bool = False):
         if no_deps:
-            self.run_docker_compose_command("build", *target_images)
+            self.run_docker_compose_command("build", *target_images, capture_output=capture_output)
         else:
-            self._build_incl_dependencies(target_images)
+            self._build_incl_dependencies(*target_images, capture_output=capture_output)
