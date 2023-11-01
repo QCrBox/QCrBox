@@ -1,14 +1,9 @@
-from pathlib import Path
 from typing import Optional
 
 import click
 from ...helpers import make_task, run_tasks, print_command_help_string_and_exit, exit_with_msg, get_repo_root
-from ...helpers.docker_helpers import (
-    get_dependency_chain,
-    build_single_docker_image,
-    get_toplevel_docker_compose_path,
-    get_all_services,
-)
+from ...helpers.docker_project import DockerProject
+from ...helpers.docker_helpers import get_toplevel_docker_compose_path
 from ...logging import logger
 
 
@@ -37,10 +32,11 @@ def build_components(
     Build QCrBox components.
     """
     compose_file = compose_file or get_toplevel_docker_compose_path()
+    dp = DockerProject("qcrbox", compose_file)
 
     if components == ():
         if build_all_components:
-            components = get_all_services(compose_file)
+            components = dp.services
         else:
             print_command_help_string_and_exit()
     else:
@@ -79,15 +75,21 @@ def task_build_qcrbox_python_package(dry_run: bool):
 
 @make_task
 def task_build_docker_image(service: str, compose_file: str, with_deps: bool, dry_run: bool):
-    dependencies = get_dependency_chain(service, compose_file) if with_deps else []
+    compose_file = compose_file or get_toplevel_docker_compose_path()
+    dp = DockerProject("qcrbox", compose_file)
+
+    dependencies = dp.get_dependency_chain(service) if with_deps else []
     return {
         "name": f"task_build_service:{service}",
-        "actions": [(build_single_docker_image, (service, compose_file, dry_run))],
+        "actions": [(dp.build_single_docker_image, (service, dry_run))],
         "task_dep": [f"task_build_service:{dep}" for dep in dependencies],
     }
 
 
 def populate_build_tasks(components: list[str], with_deps: bool, dry_run: bool, compose_file: str, tasks=None):
+    compose_file = compose_file or get_toplevel_docker_compose_path()
+    dp = DockerProject("qcrbox", compose_file)
+
     tasks = tasks or []
 
     for component in components:
@@ -95,7 +97,7 @@ def populate_build_tasks(components: list[str], with_deps: bool, dry_run: bool, 
             tasks.append(task_build_qcrbox_python_package(dry_run))
         else:
             if with_deps:
-                for dep in get_dependency_chain(component, compose_file):
+                for dep in dp.get_dependency_chain(component):
                     if dep == "base-ancestor":
                         tasks.append(task_build_qcrbox_python_package(dry_run))
                     tasks.append(task_build_docker_image(dep, compose_file, with_deps=with_deps, dry_run=dry_run))
