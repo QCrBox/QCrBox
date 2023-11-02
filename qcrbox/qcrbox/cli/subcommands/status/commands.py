@@ -11,7 +11,7 @@ from ...logging import logger
 
 
 @click.command(name="status")
-@click.option("--all", "include_all_components", is_flag=True, default=False, help="Build all components.")
+@click.option("--all", "include_all_components", is_flag=True, default=False, help="Include all components.")
 @click.option(
     "-f",
     "--file",
@@ -23,7 +23,7 @@ from ...logging import logger
 @click.argument("components", nargs=-1)
 def get_component_status(include_all_components: bool, compose_file: Optional[str], components: list[str]):
     """
-    Build QCrBox components.
+    Show status of QCrBox components.
     """
     compose_file = compose_file or get_toplevel_docker_compose_path()
 
