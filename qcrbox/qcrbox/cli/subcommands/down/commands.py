@@ -1,19 +1,19 @@
 import click
 
-from qcrbox.cli.helpers.docker_helpers import get_toplevel_docker_compose_path,run_docker_compose_command
+from ...helpers.docker_project import DockerProject
 
 
 @click.command(name="down")
-def shut_down_components(target_containers: list[str], dry_run: bool):
+def shut_down_components():
     """
     Shut down QCrBox components.
     """
-    compose_file = get_toplevel_docker_compose_path()
+    docker_project = DockerProject(name="qcrbox")
 
     def shut_down_docker_containers():
-        run_docker_compose_command("down", compose_file=compose_file)
+        docker_project.run_docker_compose_command("down")
 
     return {
         "name": f"task_shut_down_docker_containers",
-        "actions": [(shut_down_docker_containers, (target_containers, dry_run))],
+        "actions": [shut_down_docker_containers],
     }
