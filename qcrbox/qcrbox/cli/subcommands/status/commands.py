@@ -1,14 +1,12 @@
 from typing import Optional
 
 import click
-from ...helpers import make_task, run_tasks, print_command_help_string_and_exit, exit_with_msg
+from ...helpers import make_task, run_tasks
 from ...helpers.docker_project import DockerProject
 from ...helpers.docker_helpers import (
-    get_all_services,
     get_status_of_docker_service,
     get_toplevel_docker_compose_path,
 )
-from ...logging import logger
 
 
 @click.command(name="status")
@@ -25,9 +23,9 @@ def get_component_status(compose_file: Optional[str], components: list[str]):
     """
     Show status of QCrBox components.
     """
-    compose_file = compose_file or get_toplevel_docker_compose_path()
-    dp = DockerProject("qcrbox", compose_file)
+    dp = DockerProject(name="qcrbox")
     components = components or dp.services
+    compose_file = compose_file or get_toplevel_docker_compose_path()
     tasks = [task_get_status_of_docker_service(component, compose_file) for component in components]
     run_tasks(tasks)
 

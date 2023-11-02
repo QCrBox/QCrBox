@@ -10,7 +10,7 @@ from pathlib import Path
 
 from git.exc import InvalidGitRepositoryError
 from pydantic.v1.utils import deep_update
-from typing import TypeVar
+from typing import TypeVar, Optional
 
 from .qcrbox_helpers import get_repo_root, get_current_qcrbox_version
 from ..logging import logger
@@ -33,9 +33,10 @@ def load_docker_compose_data(*compose_files: PathLike):
 
 
 class DockerProject:
-    def __init__(self, name: str, *compose_files: PathLike):
+    def __init__(self, *compose_files: PathLike, name: str = "qcrbox"):
         self.project_name = name
         self.repo_root = self._find_common_repo_root(*compose_files)
+        compose_files = compose_files or self._get_toplevel_compose_files()
         self.compose_files = [Path(compose_file).resolve() for compose_file in compose_files]
 
         self._service_metadata_by_compose_file = {
@@ -54,9 +55,15 @@ class DockerProject:
         res += "\n >"
         return res
 
+    def _get_toplevel_compose_files(self):
+        return [
+            self.repo_root.joinpath("docker-compose.dev.yml"),
+        ]
+
     def _find_common_repo_root(self, *compose_files: PathLike):
-        if compose_files == ():
-            raise ValueError("No compose file specified.")
+        # If no compose files are given, assume we're being called from
+        # within a cloned qcrbox repo and look for its root folder.
+        compose_files = compose_files or [__file__]
 
         try:
             repo_candidates = set(get_repo_root(compose_file) for compose_file in compose_files)

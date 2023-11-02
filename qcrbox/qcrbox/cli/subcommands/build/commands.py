@@ -31,8 +31,7 @@ def build_components(
     """
     Build QCrBox components.
     """
-    compose_file = compose_file or get_toplevel_docker_compose_path()
-    dp = DockerProject("qcrbox", compose_file)
+    dp = DockerProject(name="qcrbox")
 
     if components == ():
         if build_all_components:
