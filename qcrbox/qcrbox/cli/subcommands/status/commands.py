@@ -25,14 +25,13 @@ def get_component_status(compose_file: Optional[str], components: list[str]):
     """
     dp = DockerProject(name="qcrbox")
     components = components or dp.services
-    compose_file = compose_file or get_toplevel_docker_compose_path()
-    tasks = [task_get_status_of_docker_service(component, compose_file) for component in components]
+    tasks = [task_get_status_of_docker_service(component, dp) for component in components]
     run_tasks(tasks)
 
 
 @make_task
-def task_get_status_of_docker_service(service: str, compose_file: str):
+def task_get_status_of_docker_service(service: str, docker_project: DockerProject):
     return {
         "name": f"task_get_status_of_docker_service:{service}",
-        "actions": [(get_status_of_docker_service, (service, compose_file))],
+        "actions": [(docker_project.get_service_status, (service,))],
     }

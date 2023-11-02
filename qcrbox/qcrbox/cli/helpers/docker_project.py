@@ -10,7 +10,7 @@ from pathlib import Path
 
 from git.exc import InvalidGitRepositoryError
 from pydantic.v1.utils import deep_update
-from typing import TypeVar, Optional
+from typing import TypeVar
 
 from .qcrbox_helpers import get_repo_root, get_current_qcrbox_version
 from ..logging import logger
@@ -192,3 +192,7 @@ class DockerProject:
             self.run_docker_compose_command("build", *target_images, capture_output=capture_output)
         else:
             self._build_incl_dependencies(*target_images, capture_output=capture_output)
+
+    def get_service_status(self, service_name):
+        logger.warning("TODO: finish the implementation of 'get_status_of_docker_service'")
+        raise NotImplementedError("TODO: finish the implementation")
