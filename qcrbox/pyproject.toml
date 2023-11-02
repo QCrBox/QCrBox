@@ -32,6 +32,9 @@ build-backend = "hatchling.build"
 source = "vcs"
 raw-options = { root = ".." }
 
+[tool.setuptools_scm]
+version_file = "qcrbox/_version.py"
+
 [tool.hatch.build.hooks.vcs]
 version-file = "qcrbox/_version.py"
 
