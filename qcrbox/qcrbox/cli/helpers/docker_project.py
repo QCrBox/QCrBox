@@ -55,6 +55,14 @@ class DockerProject:
         res += "\n >"
         return res
 
+    def print_list_of_components(self, print_func=print):
+        for compose_file in self.compose_files:
+            print_func()
+            print_func(f"Components defined in {compose_file.as_posix()!r}:")
+            print_func()
+            for service in self.get_services_for_compose_file(compose_file):
+                print_func(f"   - {service}")
+
     def _get_toplevel_compose_files(self):
         return [
             self.repo_root.joinpath("docker-compose.dev.yml"),
@@ -78,6 +86,10 @@ class DockerProject:
     @property
     def services(self):
         return list(self._full_service_metadata["services"].keys())
+
+    def get_services_for_compose_file(self, compose_file):
+        compose_file_relative_path = compose_file.relative_to(self.repo_root)
+        return list(self._service_metadata_by_compose_file[compose_file_relative_path]["services"].keys())
 
     def _construct_docker_compose_command(self, cmd: str, *cmd_args: str):
         env_dev_file = self.repo_root.joinpath(".env.dev")

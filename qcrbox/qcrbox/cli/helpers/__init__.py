@@ -6,5 +6,6 @@ from .docker_helpers import (
     spin_down_docker_containers,
     get_toplevel_docker_compose_path,
 )
+from .docker_project import DockerProject
 from .doit_helpers import make_task, run_tasks
 from .qcrbox_helpers import get_current_qcrbox_version, get_repo_root

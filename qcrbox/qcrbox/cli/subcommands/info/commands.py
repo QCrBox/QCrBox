@@ -1,8 +1,7 @@
 import click
 import doit.task
 
-from qcrbox.cli.helpers import run_tasks
-from qcrbox.cli.helpers.docker_helpers import get_toplevel_docker_compose_path, get_all_services
+from qcrbox.cli.helpers import run_tasks, DockerProject
 
 
 @click.command(name="info")
@@ -27,9 +26,5 @@ def show_info(list_components: bool):
 
 
 def print_list_of_components():
-    compose_file = get_toplevel_docker_compose_path()
-    click.echo()
-    click.echo(f"Components defined in {compose_file.as_posix()!r}:")
-    click.echo()
-    for service in get_all_services(compose_file):
-        click.echo(f"   - {service}")
+    dp = DockerProject(name="qcrbox")
+    dp.print_list_of_components(print_func=click.echo)
