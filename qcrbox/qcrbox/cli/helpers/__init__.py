@@ -3,6 +3,7 @@ from .docker_helpers import (
     get_dependency_chain,
     build_single_docker_image,
     start_up_docker_containers,
+    spin_down_docker_containers,
     get_toplevel_docker_compose_path,
 )
 from .doit_helpers import make_task, run_tasks

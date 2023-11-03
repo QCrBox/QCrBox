@@ -193,6 +193,12 @@ class DockerProject:
         else:
             self._build_incl_dependencies(*target_images, capture_output=capture_output)
 
+    def spin_down_docker_containers(self, *target_containers, capture_output: bool = False):
+        logger.info(f"Stopping and removing QCrBox docker containers: {target_containers}")
+        if target_containers != ():
+            logger.warning(f"Shutting down of individual components is not supported yet")
+        self.run_docker_compose_command("down")
+
     def get_service_status(self, service_name):
         logger.warning("TODO: finish the implementation of 'get_status_of_docker_service'")
         raise NotImplementedError("TODO: finish the implementation")
