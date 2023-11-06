@@ -21,10 +21,6 @@ RUN mkdir -p ${QCRBOX_PYTHON_VENV_DIR} && \
     python -m venv ${QCRBOX_PYTHON_VENV_DIR} && \
     ${QCRBOX_PYTHON_VENV_DIR}/bin/pip install -U pip wheel build
 
-
-#COPY ./qubox_python_module ${QCRBOX_ROOT_DIR}/qubox_python_module
-#RUN ${QCRBOX_PYTHON_VENV_DIR}/bin/pip install -e ${QCRBOX_ROOT_DIR}/qubox_python_module/
-
 COPY ./qcrbox_dist/qcrbox-${QCRBOX_PYTHON_PACKAGE_VERSION}-py3-none-any.whl ${QCRBOX_ROOT_DIR}/
 RUN ${QCRBOX_PYTHON_VENV_DIR}/bin/pip install ${QCRBOX_ROOT_DIR}/qcrbox*.whl
 

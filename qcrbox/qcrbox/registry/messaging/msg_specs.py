@@ -87,13 +87,13 @@ def represents_valid_qcrbox_response(cls):
 
 
 # Generate a list of all classes representing valid QCrBox action messages
-VALID_QUBOX_MESSAGES = [cls for cls in locals().values() if represents_valid_qcrbox_message(cls)]
-VALID_QUBOX_ACTIONS = [cls for cls in locals().values() if represents_valid_qcrbox_action(cls)]
-VALID_QUBOX_RESPONSES = [cls for cls in locals().values() if represents_valid_qcrbox_response(cls)]
+VALID_QCRBOX_MESSAGES = [cls for cls in locals().values() if represents_valid_qcrbox_message(cls)]
+VALID_QCRBOX_ACTIONS = [cls for cls in locals().values() if represents_valid_qcrbox_action(cls)]
+VALID_QCRBOX_RESPONSES = [cls for cls in locals().values() if represents_valid_qcrbox_response(cls)]
 
 # Ensure that QCrBoxGenericResponse comes last because it is the last fallback
 # after trying the more specific message types.
-VALID_QUBOX_MESSAGES.remove(QCrBoxGenericResponse)
-VALID_QUBOX_MESSAGES += [QCrBoxGenericResponse]
-VALID_QUBOX_RESPONSES.remove(QCrBoxGenericResponse)
-VALID_QUBOX_RESPONSES += [QCrBoxGenericResponse]
+VALID_QCRBOX_MESSAGES.remove(QCrBoxGenericResponse)
+VALID_QCRBOX_MESSAGES += [QCrBoxGenericResponse]
+VALID_QCRBOX_RESPONSES.remove(QCrBoxGenericResponse)
+VALID_QCRBOX_RESPONSES += [QCrBoxGenericResponse]
