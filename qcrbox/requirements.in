@@ -1,4 +1,11 @@
 # requirements.in
 click
 doit
+fastapi
+gitpython
 loguru
+propan[async-rabbit,doc]
+pydantic
+pyyaml
+sqlmodel
+uvicorn[standard]

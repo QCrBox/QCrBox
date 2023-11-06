@@ -1,11 +1,8 @@
 # requirements-dev.in
-gitpython
 hatch
 ipython
 jupyterlab
 pip-tools
-pydantic
-pyyaml
 setuptools_scm
 
 mkdocs

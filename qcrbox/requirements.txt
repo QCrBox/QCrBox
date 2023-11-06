@@ -4,15 +4,122 @@
 #
 #    pip-compile --strip-extras requirements.in
 #
+aio-pika==9.3.0
+    # via propan
+aiormq==6.7.7
+    # via aio-pika
+anyio==3.7.1
+    # via
+    #   fast-depends
+    #   fastapi
+    #   starlette
+    #   watchfiles
 click==8.1.7
-    # via -r requirements.in
-cloudpickle==2.2.1
+    # via
+    #   -r qcrbox/requirements.in
+    #   typer
+    #   uvicorn
+cloudpickle==3.0.0
     # via doit
+dnspython==2.4.2
+    # via email-validator
 doit==0.36.0
-    # via -r requirements.in
+    # via -r qcrbox/requirements.in
+email-validator==2.1.0.post1
+    # via propan
+faker==19.13.0
+    # via polyfactory
+fast-depends==2.2.1
+    # via propan
+fastapi==0.104.1
+    # via
+    #   -r qcrbox/requirements.in
+    #   propan
+gitdb==4.0.11
+    # via gitpython
+gitpython==3.1.40
+    # via -r qcrbox/requirements.in
+greenlet==3.0.1
+    # via sqlalchemy
+h11==0.14.0
+    # via uvicorn
+httptools==0.6.1
+    # via uvicorn
+idna==3.4
+    # via
+    #   anyio
+    #   email-validator
+    #   yarl
 importlib-metadata==6.8.0
     # via doit
+jsonref==1.1.0
+    # via propan
 loguru==0.7.2
-    # via -r requirements.in
+    # via -r qcrbox/requirements.in
+multidict==6.0.4
+    # via yarl
+pamqp==3.2.1
+    # via aiormq
+polyfactory==2.11.0
+    # via propan
+propan==0.1.5.24
+    # via -r qcrbox/requirements.in
+pydantic==1.10.13
+    # via
+    #   -r qcrbox/requirements.in
+    #   fast-depends
+    #   fastapi
+    #   sqlmodel
+python-dateutil==2.8.2
+    # via faker
+python-dotenv==1.0.0
+    # via uvicorn
+pyyaml==6.0.1
+    # via
+    #   -r qcrbox/requirements.in
+    #   propan
+    #   uvicorn
+six==1.16.0
+    # via python-dateutil
+smmap==5.0.1
+    # via gitdb
+sniffio==1.3.0
+    # via anyio
+sqlalchemy==1.4.50
+    # via sqlmodel
+sqlalchemy2-stubs==0.0.2a36
+    # via sqlmodel
+sqlmodel==0.0.11
+    # via -r qcrbox/requirements.in
+starlette==0.27.0
+    # via fastapi
+typer==0.9.0
+    # via propan
+typing-extensions==4.8.0
+    # via
+    #   fastapi
+    #   polyfactory
+    #   pydantic
+    #   pydantic-core
+    #   sqlalchemy2-stubs
+    #   typer
+uvicorn==0.24.0.post1
+    # via
+    #   -r qcrbox/requirements.in
+    #   propan
+uvloop==0.19.0
+    # via
+    #   propan
+    #   uvicorn
+watchfiles==0.21.0
+    # via
+    #   propan
+    #   uvicorn
+websockets==12.0
+    # via uvicorn
+yarl==1.9.2
+    # via
+    #   aio-pika
+    #   aiormq
 zipp==3.17.0
     # via importlib-metadata
