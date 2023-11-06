@@ -19,7 +19,7 @@ def build_components(no_deps: bool, dry_run: bool, components: list[str]):
     Build QCrBox components.
     """
     docker_project = DockerProject(name="qcrbox")
-    components = components or docker_project.services
+    components = components or docker_project.services_including_base_images
     click.echo(
         f"Building the following components ({'without' if no_deps else 'including'} dependencies): "
         f"{', '.join(components)}\n"

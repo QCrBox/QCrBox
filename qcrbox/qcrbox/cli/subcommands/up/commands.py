@@ -25,7 +25,7 @@ def start_up_components(rebuild_deps: bool, dry_run: bool, components: list[str]
     Start up QCrBox components.
     """
     docker_project = DockerProject(name="qcrbox")
-    components = components or docker_project.services
+    components = components or docker_project.services_excluding_base_images
 
     build_tasks = []
     if rebuild_deps:

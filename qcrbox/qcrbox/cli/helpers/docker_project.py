@@ -85,6 +85,10 @@ class DockerProject:
 
     @property
     def services(self):
+        return self.services_excluding_base_images
+
+    @property
+    def services_including_base_images(self):
         return list(self._full_service_metadata["services"].keys())
 
     @property
