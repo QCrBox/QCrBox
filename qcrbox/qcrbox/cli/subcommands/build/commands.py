@@ -14,9 +14,7 @@ from ...logging import logger
     help="Display actions that would be performed without actually doing anything.",
 )
 @click.argument("components", nargs=-1)
-def build_components(
-    no_deps: bool, dry_run: bool, components: list[str]
-):
+def build_components(no_deps: bool, dry_run: bool, components: list[str]):
     """
     Build QCrBox components.
     """
@@ -35,20 +33,19 @@ def task_build_qcrbox_python_package(dry_run: bool):
     repo_root = get_repo_root()
     qcrbox_module_root = repo_root.joinpath("qcrbox")
     base_ancestor_qcrbox_dist_dir = repo_root.joinpath("services/base_images/base_ancestor/qcrbox_dist/")
-    if dry_run:
-        return {
-            "name": f"task_build_qcrbox_python_module",
-            "actions": [lambda: logger.info("Building Python package: qcrbox")],
-        }
-    else:
-        return {
-            "name": f"task_build_qcrbox_python_module",
-            "actions": [
-                f"cd {qcrbox_module_root.as_posix()} && "
-                f"hatch build -t wheel && "
-                f"cp dist/qcrbox-*.whl {base_ancestor_qcrbox_dist_dir.as_posix()}"
-            ],
-        }
+
+    actions = [lambda: logger.info("Building Python package: qcrbox")]
+    if not dry_run:
+        actions.append(
+            f"cd {qcrbox_module_root.as_posix()} && "
+            f"hatch build -t wheel && "
+            f"cp dist/qcrbox-*.whl {base_ancestor_qcrbox_dist_dir.as_posix()}"
+        )
+
+    return {
+        "name": f"task_build_qcrbox_python_module",
+        "actions": actions,
+    }
 
 
 @make_task
