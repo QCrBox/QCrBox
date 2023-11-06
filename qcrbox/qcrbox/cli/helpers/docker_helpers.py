@@ -1,4 +1,3 @@
-import json
 import os
 import pathlib
 import re
@@ -11,7 +10,7 @@ from typing import TypeVar
 
 from .docker_project import DockerProject
 from .qcrbox_helpers import get_current_qcrbox_version, get_repo_root
-from ..logging import logger
+from ...logging import logger
 
 __all__ = ["build_single_docker_image", "get_dependency_chain"]
 

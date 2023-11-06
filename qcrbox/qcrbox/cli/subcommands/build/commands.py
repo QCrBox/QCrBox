@@ -1,7 +1,7 @@
 import click
 from ...helpers import make_task, run_tasks, get_repo_root
 from ...helpers.docker_project import DockerProject
-from ...logging import logger
+from ....logging import logger
 
 
 @click.command(name="build")

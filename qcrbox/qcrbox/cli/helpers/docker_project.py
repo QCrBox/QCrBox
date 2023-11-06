@@ -13,7 +13,7 @@ from pydantic.utils import deep_update
 from typing import TypeVar
 
 from .qcrbox_helpers import get_repo_root, get_current_qcrbox_version
-from ..logging import logger
+from ...logging import logger
 
 # Type alias
 PathLike = TypeVar("PathLike", str, pathlib.Path)
