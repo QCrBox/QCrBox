@@ -8,4 +8,5 @@ propan[async-rabbit,doc]
 pydantic
 pyyaml
 sqlmodel
+tenacity
 uvicorn[standard]

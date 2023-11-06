@@ -16,7 +16,7 @@ anyio==3.7.1
     #   watchfiles
 click==8.1.7
     # via
-    #   -r qcrbox/requirements.in
+    #   -r requirements.in
     #   typer
     #   uvicorn
 cloudpickle==3.0.0
@@ -24,7 +24,7 @@ cloudpickle==3.0.0
 dnspython==2.4.2
     # via email-validator
 doit==0.36.0
-    # via -r qcrbox/requirements.in
+    # via -r requirements.in
 email-validator==2.1.0.post1
     # via propan
 faker==19.13.0
@@ -33,12 +33,12 @@ fast-depends==2.2.1
     # via propan
 fastapi==0.104.1
     # via
-    #   -r qcrbox/requirements.in
+    #   -r requirements.in
     #   propan
 gitdb==4.0.11
     # via gitpython
 gitpython==3.1.40
-    # via -r qcrbox/requirements.in
+    # via -r requirements.in
 greenlet==3.0.1
     # via sqlalchemy
 h11==0.14.0
@@ -55,7 +55,7 @@ importlib-metadata==6.8.0
 jsonref==1.1.0
     # via propan
 loguru==0.7.2
-    # via -r qcrbox/requirements.in
+    # via -r requirements.in
 multidict==6.0.4
     # via yarl
 pamqp==3.2.1
@@ -63,10 +63,10 @@ pamqp==3.2.1
 polyfactory==2.11.0
     # via propan
 propan==0.1.5.24
-    # via -r qcrbox/requirements.in
+    # via -r requirements.in
 pydantic==1.10.13
     # via
-    #   -r qcrbox/requirements.in
+    #   -r requirements.in
     #   fast-depends
     #   fastapi
     #   sqlmodel
@@ -76,7 +76,7 @@ python-dotenv==1.0.0
     # via uvicorn
 pyyaml==6.0.1
     # via
-    #   -r qcrbox/requirements.in
+    #   -r requirements.in
     #   propan
     #   uvicorn
 six==1.16.0
@@ -90,9 +90,11 @@ sqlalchemy==1.4.50
 sqlalchemy2-stubs==0.0.2a36
     # via sqlmodel
 sqlmodel==0.0.11
-    # via -r qcrbox/requirements.in
+    # via -r requirements.in
 starlette==0.27.0
     # via fastapi
+tenacity==8.2.3
+    # via -r requirements.in
 typer==0.9.0
     # via propan
 typing-extensions==4.8.0
@@ -100,12 +102,11 @@ typing-extensions==4.8.0
     #   fastapi
     #   polyfactory
     #   pydantic
-    #   pydantic-core
     #   sqlalchemy2-stubs
     #   typer
 uvicorn==0.24.0.post1
     # via
-    #   -r qcrbox/requirements.in
+    #   -r requirements.in
     #   propan
 uvloop==0.19.0
     # via

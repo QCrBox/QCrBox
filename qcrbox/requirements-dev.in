@@ -1,4 +1,7 @@
 # requirements-dev.in
+
+-r requirements.txt
+
 hatch
 ipython
 jupyterlab
