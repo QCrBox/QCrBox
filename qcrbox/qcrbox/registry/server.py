@@ -49,6 +49,8 @@ fastapi_app.add_middleware(
 
 @router.after_startup
 async def init_db(_: FastAPI):
+    logger.debug(f"Established connection to RabbitMQ.")
+    logger.debug(f"Setting up QCrBox registry database.")
     create_db_and_tables()
     seed_database()
 
