@@ -2,7 +2,7 @@ import os
 
 from loguru import logger
 from sqlalchemy.exc import IntegrityError
-from sqlmodel import create_engine, Session
+from sqlmodel import create_engine, Session, select
 from .sql_models import QCrBoxBaseSQLModel, KeywordDB
 
 connect_args = {"check_same_thread": False}
@@ -39,3 +39,11 @@ def seed_database():
     except IntegrityError as exc:
         logger.debug("Keyword already present.")
     logger.debug("Done.")
+
+
+def retrieve_application(name, version):
+    from .sql_models import QCrBoxApplicationDB as cls
+
+    with Session(engine) as session:
+        result = session.exec(select(cls).where(cls.name == name, cls.version == version)).one()
+        return result
