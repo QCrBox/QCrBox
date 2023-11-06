@@ -9,6 +9,7 @@ import yaml
 from pathlib import Path
 from typing import TypeVar
 
+from .docker_project import DockerProject
 from .qcrbox_helpers import get_current_qcrbox_version, get_repo_root
 from ..logging import logger
 
@@ -137,10 +138,10 @@ def build_single_docker_image(target_image: str, compose_file: PathLike, dry_run
         run_docker_compose_command("build", target_image, compose_file=Path(compose_file))
 
 
-def start_up_docker_containers(target_containers: list[str], compose_file: PathLike, dry_run):
+def start_up_docker_containers(target_containers: list[str], docker_project: DockerProject, dry_run):
     logger.info(f"Starting up docker container(s): {', '.join(target_containers)}")
     if not dry_run:
-        run_docker_compose_command("up", "-d", *target_containers, compose_file=Path(compose_file))
+        docker_project.run_docker_compose_command("up", "-d", *target_containers, dry_run=dry_run)
 
 
 def spin_down_docker_containers(compose_file: PathLike):
