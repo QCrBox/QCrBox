@@ -5,6 +5,7 @@ from loguru import logger
 from propan.fastapi import RabbitRouter
 
 from ..cli.helpers.qcrbox_helpers import get_rabbitmq_connection_url
+from .database import create_db_and_tables, seed_database
 
 rabbitmq_url = get_rabbitmq_connection_url()
 router = RabbitRouter(rabbitmq_url)
@@ -16,6 +17,12 @@ fastapi_app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@router.after_startup
+async def init_db(_: FastAPI):
+    create_db_and_tables()
+    seed_database()
 
 
 def main():

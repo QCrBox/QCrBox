@@ -48,6 +48,7 @@ services:
         QCRBOX_SUPERVISORD_CONF_DIR: ${QCRBOX_SUPERVISORD_CONF_DIR:?Must set env var QCRBOX_SUPERVISORD_CONF_DIR}
     volumes:
       - ./shared_files:${QCRBOX_SHARED_FILES_DIR:?Must set env var QCRBOX_SHARED_FILES_DIR}
+      - qcrbox-registry-db:/mnt/qcrbox_registry_data/
       #- ./services/base_images/base_ancestor/qcrbox_python_module:${QCRBOX_ROOT_DIR:?Must set env var QCRBOX_ROOT_DIR}/qcrbox_python_module
     ports:
       - "${QCRBOX_BIND_ADDRESS}:${QCRBOX_PORT_QCRBOX_REGISTRY:?Must set env var QCRBOX_PORT_QCRBOX_REGISTRY}:8000"
@@ -58,10 +59,13 @@ services:
       QCRBOX_RABBITMQ_QUEUE_NAME: "qcrbox_registry"
       QCRBOX_HOST_RABBITMQ: "qcrbox-message-bus"
       QCRBOX_PORT_RABBITMQ: "5672"
-      QCRBOX_REGISTRY_SERVER_DB_PATH: "${QCRBOX_SHARED_FILES_DIR:?Must set env var QCRBOX_SHARED_FILES_DIR}/qcrbox_registry_database.db"
+      #QCRBOX_REGISTRY_SERVER_DB_DIR: "${QCRBOX_SHARED_FILES_DIR:?Must set env var QCRBOX_SHARED_FILES_DIR}"
     networks:
       - qcrbox-net
     restart: "unless-stopped"
 
 networks:
   qcrbox-net:
+
+volumes:
+  qcrbox-registry-db:
