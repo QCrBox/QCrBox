@@ -12,35 +12,25 @@ from ...helpers import (
 
 
 @click.command(name="down")
-@click.option("--all", "shut_down_all_components", is_flag=True, default=False, help="Shut down all components.")
 @click.option(
+    "-n",
     "--dry-run",
     is_flag=True,
     default=False,
     help="Display actions that would be performed without actually doing anything.",
 )
 @click.argument("components", nargs=-1)
-def shut_down_components(shut_down_all_components: bool, dry_run: bool, components: list[str]):
+def shut_down_components(dry_run: bool, components: list[str]):
     """
     Shut down QCrBox components.
     """
-    dp = DockerProject(name="qcrbox")
-
-    if components == ():
-        if shut_down_all_components:
-            components = dp.services
-        else:
-            print_command_help_string_and_exit()
-    else:
-        if shut_down_all_components:
-            component_list = ", ".join(repr(s) for s in components)
-            exit_with_msg(f"Cannot combine --all with explicit component names (here: {component_list})")
-
+    docker_project = DockerProject(name="qcrbox")
+    components = components or docker_project.services_excluding_base_images
     click.echo(f"Shutting down the following components: {', '.join(components)}\n")
     task = doit.task.dict_to_task(
         {
             "name": f"task_start_up_docker_containers",
-            "actions": [(dp.spin_down_docker_containers, (components,))],
+            "actions": [(docker_project.spin_down_docker_containers, (components, dry_run))],
         }
     )
 

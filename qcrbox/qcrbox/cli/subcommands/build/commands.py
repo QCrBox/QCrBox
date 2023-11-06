@@ -1,15 +1,13 @@
-from typing import Optional
-
 import click
-from ...helpers import make_task, run_tasks, print_command_help_string_and_exit, exit_with_msg, get_repo_root
+from ...helpers import make_task, run_tasks, get_repo_root
 from ...helpers.docker_project import DockerProject
 from ...logging import logger
 
 
 @click.command(name="build")
-@click.option("--all", "build_all_components", is_flag=True, default=False, help="Build all components.")
 @click.option("--no-deps/--with-deps", default=False, help="Build given components without/with dependencies.")
 @click.option(
+    "-n",
     "--dry-run",
     is_flag=True,
     default=False,
@@ -17,23 +15,13 @@ from ...logging import logger
 )
 @click.argument("components", nargs=-1)
 def build_components(
-    build_all_components: bool, no_deps: bool, dry_run: bool, components: list[str]
+    no_deps: bool, dry_run: bool, components: list[str]
 ):
     """
     Build QCrBox components.
     """
-    dp = DockerProject(name="qcrbox")
-
-    if components == ():
-        if build_all_components:
-            components = dp.services
-        else:
-            print_command_help_string_and_exit()
-    else:
-        if build_all_components:
-            component_list = ", ".join(repr(s) for s in components)
-            exit_with_msg(f"Cannot combine --all with explicit component names (here: {component_list})")
-
+    docker_project = DockerProject(name="qcrbox")
+    components = components or docker_project.services
     click.echo(
         f"Building the following components ({'without' if no_deps else 'including'} dependencies): "
         f"{', '.join(components)}\n"

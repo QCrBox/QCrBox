@@ -87,6 +87,14 @@ class DockerProject:
     def services(self):
         return list(self._full_service_metadata["services"].keys())
 
+    @property
+    def services_excluding_base_images(self):
+        return [
+            service_name
+            for service_name in self._full_service_metadata["services"].keys()
+            if not service_name.startswith("base-")
+        ]
+
     def get_services_for_compose_file(self, compose_file):
         compose_file_relative_path = compose_file.relative_to(self.repo_root)
         return list(self._service_metadata_by_compose_file[compose_file_relative_path]["services"].keys())
@@ -108,7 +116,7 @@ class DockerProject:
 
         return cmd
 
-    def run_docker_compose_command(self, cmd: str, *cmd_args: str, capture_output: bool = False, dry_run: bool = False):
+    def run_docker_compose_command(self, cmd: str, *cmd_args: str, dry_run: bool = False, capture_output: bool = False):
         full_cmd = self._construct_docker_compose_command(cmd, *cmd_args)
         logger.debug(f"Running docker compose command: {' '.join(full_cmd)!r}")
 
@@ -205,11 +213,11 @@ class DockerProject:
         else:
             self._build_incl_dependencies(*target_images, capture_output=capture_output)
 
-    def spin_down_docker_containers(self, *target_containers, capture_output: bool = False):
+    def spin_down_docker_containers(self, target_containers, dry_run: bool = False, capture_output: bool = False):
         logger.info(f"Stopping and removing QCrBox docker containers: {target_containers}")
         if target_containers != ():
             logger.warning(f"Shutting down of individual components is not supported yet")
-        self.run_docker_compose_command("down")
+        self.run_docker_compose_command("down", dry_run=dry_run, capture_output=capture_output)
 
     def get_service_status(self, service_name):
         logger.warning("TODO: finish the implementation of 'get_status_of_docker_service'")
