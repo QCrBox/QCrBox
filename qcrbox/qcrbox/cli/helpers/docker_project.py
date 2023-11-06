@@ -9,7 +9,7 @@ import yaml
 from pathlib import Path
 
 from git.exc import InvalidGitRepositoryError
-from pydantic.v1.utils import deep_update
+from pydantic.utils import deep_update
 from typing import TypeVar
 
 from .qcrbox_helpers import get_repo_root, get_current_qcrbox_version

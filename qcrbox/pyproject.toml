@@ -23,7 +23,7 @@ dynamic = [
 [project.scripts]
 qcb = "qcrbox.cli:entry_point"
 qcb_old = "qcrbox.cli.main:cli"
-#qcrbox-run-registry-server = "qcrbox.registry.server:main"
+qcrbox-run-registry-server = "qcrbox.registry.server:main"
 
 [build-system]
 requires = ["hatchling", "hatch-requirements-txt", "hatch-vcs"]
