@@ -1,6 +1,9 @@
 from fastapi import Request
 from propan.fastapi import RabbitRouter
+from sqlalchemy import select
+from sqlmodel import Session
 
+from ..database import sql_models, engine
 from .helpers import get_rabbitmq_connection_url, wrap_with_retry
 
 __all__ = ["router"]
@@ -27,3 +30,10 @@ async def hello_http(request: Request):
 @router.get("/ping")
 async def hello_http(request: Request):
     return {"status": "success", "message": "pong"}
+
+
+@router.get("/applications/", response_model=list[sql_models.QCrBoxApplicationRead])
+def get_registered_applications():
+    with Session(engine) as session:
+        applications = session.exec(select(sql_models.QCrBoxApplicationDB)).all()
+        return applications
