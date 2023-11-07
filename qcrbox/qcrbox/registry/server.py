@@ -1,3 +1,4 @@
+import pydantic
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -5,6 +6,7 @@ from loguru import logger
 
 from .api import router
 from .database import create_db_and_tables, seed_database
+from .messaging import msg_specs
 
 fastapi_app = FastAPI(lifespan=router.lifespan_context, logger=logger)
 fastapi_app.add_middleware(
@@ -27,6 +29,36 @@ async def init_db(_: FastAPI):
 @router.after_startup
 async def report_successful_startup(_: FastAPI):
     logger.info("QCrBox registry startup was successful.")
+
+
+@router.broker.handle("qcrbox_registry")
+async def handle_incoming_messages(msg_dict) -> msg_specs.QCrBoxGenericResponse:
+    logger.info(f"Received message: {msg_dict} (type: {type(msg_dict).__name__})")
+    for cls in msg_specs.VALID_QCRBOX_ACTIONS:
+        try:
+            msg_obj = cls(**msg_dict)
+            break
+        except pydantic.ValidationError as exc:
+            pass
+    else:
+        if "action" not in msg_dict:
+            # raise ValueError(f"Invalid message structure: message must have an 'action' key")
+            error_msg = f"Invalid message structure: message must have an 'action' key"
+            logger.error(error_msg)
+            return msg_specs.QCrBoxGenericResponse(response_to="incoming_message", status="error", msg=error_msg)
+        else:
+            # TODO: This doesn't currently distinguish between the following cases:
+            #         - 'action' key is invalid
+            #         - 'action' key is valid but the remaining arguments don't match the expected structure
+            #       In order to catch the second case, we need to inspect the `pydantic.ValidationError` above.
+            error_msg = f"Invalid action: {msg_dict['action']!r}"
+            # raise ValueError(f"Invalid action: {msg_dict['action']!r}")
+            logger.error(error_msg)
+            return msg_specs.QCrBoxGenericResponse(response_to="incoming_message", status="error", msg=error_msg)
+
+    # Process the message - it will be passed to the correct processing function based on
+    # its type/structure (the heavy lifting is done by `functools.singledispatch`).
+    return process_message(msg_obj)
 
 
 def main():
