@@ -35,5 +35,5 @@ async def hello_http(request: Request):
 @router.get("/applications/", response_model=list[sql_models.QCrBoxApplicationRead])
 def get_registered_applications():
     with Session(engine) as session:
-        applications = session.exec(select(sql_models.QCrBoxApplicationDB)).all()
+        applications = session.scalars(select(sql_models.QCrBoxApplicationDB)).all()
         return applications
