@@ -1,3 +1,5 @@
+import json
+
 import pydantic
 import uvicorn
 from fastapi import FastAPI
@@ -34,6 +36,18 @@ async def report_successful_startup(_: FastAPI):
 @router.broker.handle("qcrbox_registry")
 async def handle_incoming_messages(msg_dict) -> msg_specs.QCrBoxGenericResponse:
     logger.info(f"Received message: {msg_dict} (type: {type(msg_dict).__name__})")
+    if isinstance(msg_dict, (str, bytes)):
+        try:
+            msg_dict = json.loads(msg_dict)
+        except Exception as exc:
+            error_msg = (
+                f"Incoming message does not represent a valid JSON structure: {msg_dict}.\n"
+                f"The original error was: {exc}"
+            )
+            logger.error(error_msg)
+            return msg_specs.QCrBoxGenericResponse(
+                response_to="incoming_message", status="error", msg=error_msg)
+
     for cls in msg_specs.VALID_QCRBOX_ACTIONS:
         try:
             msg_obj = cls(**msg_dict)
