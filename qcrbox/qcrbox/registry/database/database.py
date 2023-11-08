@@ -25,7 +25,7 @@ def create_db_and_tables():
     # whenever the registry server starts up. Down the line, we probably want
     # to do something smarter where we check if any existing registered applications
     # are still active and only purge records that are stale.
-    QCrBoxBaseSQLModel.metadata.drop_all(engine)
+    #QCrBoxBaseSQLModel.metadata.drop_all(engine)
 
     QCrBoxBaseSQLModel.metadata.create_all(engine)
 
