@@ -47,3 +47,13 @@ def retrieve_application(name, version):
     with Session(engine) as session:
         result = session.exec(select(cls).where(cls.name == name, cls.version == version)).one()
         return result
+
+
+def retrieve_command(name, parameters, application_id):
+    from .sql_models import QCrBoxCommandDB as cls
+
+    with Session(engine) as session:
+        result = session.exec(
+            select(cls).where(cls.name == name, cls.parameters == parameters, cls.application_id == application_id)
+        ).one()
+        return result

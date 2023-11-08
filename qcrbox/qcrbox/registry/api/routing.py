@@ -37,3 +37,10 @@ def get_registered_applications():
     with Session(engine) as session:
         applications = session.scalars(select(sql_models.QCrBoxApplicationDB)).all()
         return applications
+
+
+@router.get("/commands/", response_model=list[sql_models.QCrBoxCommandRead])
+def get_registered_commands():
+    with Session(engine) as session:
+        commands = session.exec(select(sql_models.QCrBoxCommandDB)).all()
+        return commands
