@@ -188,7 +188,7 @@ class DockerProject:
     def get_build_and_runtime_dependencies(self, service_name):
         return self.get_build_dependencies(service_name) + self.get_runtime_dependencies(service_name)
 
-    def get_dependency_chain(self, service_name):
+    def get_dependency_chain(self, service_name, include_build_deps=False):
         deps_done = []
         deps_todo = [service_name]
 
@@ -198,7 +198,10 @@ class DockerProject:
         while deps_todo:
             cur_dep = deps_todo.pop(0)
             deps_done.append(cur_dep)
-            deps_todo += self.get_build_and_runtime_dependencies(cur_dep)
+            if include_build_deps:
+                deps_todo += self.get_build_and_runtime_dependencies(cur_dep)
+            else:
+                deps_todo += self.get_runtime_dependencies(cur_dep)
             deps_todo = tidy_up_deps(deps_done, deps_todo)
 
         # Remove the parent service name to avoid circular dependencies
@@ -218,10 +221,24 @@ class DockerProject:
             self._build_incl_dependencies(*target_images, capture_output=capture_output)
 
     def spin_down_docker_containers(self, target_containers, dry_run: bool = False, capture_output: bool = False):
-        logger.info(f"Stopping and removing QCrBox docker containers: {target_containers}")
-        if target_containers != ():
-            logger.warning(f"Shutting down of individual components is not supported yet")
-        self.run_docker_compose_command("down", dry_run=dry_run, capture_output=capture_output)
+        if target_containers == ():
+            logger.info(f"Stopping and removing all QCrBox docker containers ({', '.join(target_containers)}")
+            self.run_docker_compose_command("down", dry_run=dry_run, capture_output=capture_output)
+
+        else:
+            for target_container in target_containers:
+                target_container_incl_deps = [target_container] + list(self.get_dependency_chain(target_container))
+                logger.info(
+                    f"Stopping and removing the following QCrBox docker containers: {target_container_incl_deps}"
+                )
+                self.run_docker_compose_command(
+                    "rm",
+                    "--stop",
+                    "--force",
+                    *target_container_incl_deps,
+                    dry_run=dry_run,
+                    capture_output=capture_output,
+                )
 
     def get_service_status(self, service_name):
         logger.warning("TODO: finish the implementation of 'get_status_of_docker_service'")

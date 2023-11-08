@@ -50,7 +50,7 @@ def task_build_qcrbox_python_package(dry_run: bool):
 
 @make_task
 def task_build_docker_image(service: str, docker_project: DockerProject, with_deps: bool, dry_run: bool):
-    dependencies = docker_project.get_dependency_chain(service) if with_deps else []
+    dependencies = docker_project.get_dependency_chain(service, include_build_deps=True) if with_deps else []
     return {
         "name": f"task_build_service:{service}",
         "actions": [(docker_project.build_single_docker_image, (service, dry_run))],
@@ -68,7 +68,7 @@ def populate_build_tasks(components: list[str], with_deps: bool, dry_run: bool, 
             tasks.append(task_build_qcrbox_python_package(dry_run))
         else:
             if with_deps:
-                for dep in docker_project.get_dependency_chain(component):
+                for dep in docker_project.get_dependency_chain(component, include_build_deps=True):
                     if dep == "base-ancestor":
                         tasks.append(task_build_qcrbox_python_package(dry_run))
                     tasks.append(task_build_docker_image(dep, docker_project, with_deps=with_deps, dry_run=dry_run))
