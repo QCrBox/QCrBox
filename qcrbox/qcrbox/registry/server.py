@@ -6,7 +6,7 @@ from loguru import logger
 
 from .api import router
 from .database import create_db_and_tables, seed_database
-from .messaging import msg_specs
+from .messaging import msg_specs, process_message
 
 fastapi_app = FastAPI(lifespan=router.lifespan_context, logger=logger)
 fastapi_app.add_middleware(

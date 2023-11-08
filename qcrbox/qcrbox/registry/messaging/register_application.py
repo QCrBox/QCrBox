@@ -3,7 +3,7 @@ from sqlmodel import Session
 
 from ...logging import logger
 from ..database import sql_models, engine, retrieve_application
-from .process_message import process_message
+from .msg_processing import process_message
 from . import msg_specs
 
 
