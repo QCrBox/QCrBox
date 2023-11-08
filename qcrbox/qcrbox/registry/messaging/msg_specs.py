@@ -72,7 +72,9 @@ class RegisterApplicationResponse(QCrBoxGenericResponse):
 
 
 def represents_valid_qcrbox_message(cls):
-    return inspect.isclass(cls) and issubclass(cls, QCrBoxBaseMessage) and cls not in (QCrBoxBaseMessage, QCrBoxBaseAction)
+    return (
+        inspect.isclass(cls) and issubclass(cls, QCrBoxBaseMessage) and cls not in (QCrBoxBaseMessage, QCrBoxBaseAction)
+    )
 
 
 def represents_valid_qcrbox_action(cls):
@@ -80,10 +82,7 @@ def represents_valid_qcrbox_action(cls):
 
 
 def represents_valid_qcrbox_response(cls):
-    return (
-        inspect.isclass(cls)
-        and issubclass(cls, QCrBoxGenericResponse)
-    )
+    return inspect.isclass(cls) and issubclass(cls, QCrBoxGenericResponse)
 
 
 # Generate a list of all classes representing valid QCrBox action messages
