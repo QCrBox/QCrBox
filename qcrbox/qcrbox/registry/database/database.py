@@ -1,6 +1,9 @@
 import os
+import sqlite3
 
 from loguru import logger
+from sqlalchemy import event
+from sqlalchemy.engine import Engine
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import create_engine, Session, select
 from .sql_models import QCrBoxBaseSQLModel, KeywordDB
@@ -15,6 +18,15 @@ sqlite_file_name = os.path.join(registry_db_dir, "qcrbox_registry_database.db")
 sqlite_url = f"sqlite:///{sqlite_file_name}"
 
 engine = create_engine(sqlite_url, echo=True, connect_args=connect_args)
+
+
+@event.listens_for(Engine, "connect")
+def set_sqlite_pragma(dbapi_connection, connection_record):
+    if isinstance(dbapi_connection, sqlite3.Connection):
+        # ensure that foreign key constraints are enforced
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
 
 
 def create_db_and_tables():
