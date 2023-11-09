@@ -8,7 +8,7 @@ from loguru import logger
 
 from .api import router
 from .database import create_db_and_tables, seed_database
-from .messaging import msg_specs, process_message
+from .messaging import msg_specs, process_message_sync_or_async
 
 fastapi_app = FastAPI(lifespan=router.lifespan_context, logger=logger)
 fastapi_app.add_middleware(
@@ -82,7 +82,7 @@ async def handle_incoming_messages(msg_dict) -> msg_specs.QCrBoxGenericResponse:
 
     # Process the message - it will be passed to the correct processing function based on
     # its type/structure (the heavy lifting is done by `functools.singledispatch`).
-    return process_message(msg_obj)
+    return await process_message_sync_or_async(msg_obj)
 
 
 def main():
