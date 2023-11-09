@@ -49,6 +49,23 @@ services:
       - qcrbox-net
     restart: "unless-stopped"
 
+  shelx:
+    image: "qcrbox/shelx:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
+    build:
+      context: services/applications/shelx
+      args:
+        QCRBOX_DOCKER_TAG: ${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}
+    environment:
+      QCRBOX_RABBITMQ_QUEUE_NAME: "shelx"
+      QCRBOX_APPLICATION_CONFIG_FILE: "configure_shelx.py"
+    volumes:
+      - ./shared_files:${QCRBOX_SHARED_FILES_DIR:?Must set env var QCRBOX_SHARED_FILES_DIR}
+    depends_on:
+      - qcrbox-registry
+    networks:
+      - qcrbox-net
+    restart: unless-stopped
+
 networks:
   qcrbox-net:
 
