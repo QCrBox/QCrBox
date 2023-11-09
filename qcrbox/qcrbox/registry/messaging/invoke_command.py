@@ -3,7 +3,7 @@ from sqlmodel import Session, select
 
 from ...logging import logger
 from ..database import sql_models, engine
-from ..api.routing import router
+from ..api import router
 from .msg_processing import process_message
 from . import msg_specs
 
