@@ -5,13 +5,9 @@ import shutil
 import subprocess
 import textwrap
 
-import yaml
-from pathlib import Path
-
-from git.exc import InvalidGitRepositoryError
-from pydantic.utils import deep_update
 from typing import TypeVar
 
+from .compose_file_config import ComposeFileConfig
 from .qcrbox_helpers import get_repo_root, get_current_qcrbox_version
 from ...logging import logger
 
@@ -25,63 +21,27 @@ class QCrBoxSubprocessError(Exception):
     """
 
 
-def load_docker_compose_data(*compose_files: PathLike):
-    docker_compose_data = {}
-    for compose_file in compose_files:
-        docker_compose_data = deep_update(docker_compose_data, yaml.safe_load(Path(compose_file).open()))
-    return docker_compose_data
-
-
 class DockerProject:
-    def __init__(self, *compose_files: PathLike, name: str = "qcrbox"):
+    def __init__(self, *, name: str = "qcrbox", compose_file_config: ComposeFileConfig = None):
         self.project_name = name
-        self.repo_root = self._find_common_repo_root(*compose_files)
-        compose_files = compose_files or self._get_toplevel_compose_files()
-        self.compose_files = [Path(compose_file).resolve() for compose_file in compose_files]
-
-        self._service_metadata_by_compose_file = {
-            compose_file.relative_to(self.repo_root): load_docker_compose_data(compose_file)
-            for compose_file in self.compose_files
-        }
-        self._full_service_metadata = {}
-        for compose_file, data in self._service_metadata_by_compose_file.items():
-            self._full_service_metadata = deep_update(self._full_service_metadata, data)
+        self.compose_file_config = compose_file_config or ComposeFileConfig()
+        self.repo_root = self.compose_file_config.repo_root
 
     def __repr__(self):
         clsname = self.__class__.__name__
         res = f"<{clsname}: {self.project_name!r}\n   repo_root: {self.repo_root}"
-        for compose_file in self.compose_files:
-            res += f"\n    - {compose_file.relative_to(self.repo_root)}"
+        for compose_file in self.compose_file_config.get_compose_files(relative_path=True):
+            res += f"\n    - {compose_file}"
         res += "\n >"
         return res
 
     def print_list_of_components(self, print_func=print):
-        for compose_file in self.compose_files:
+        for compose_file in self.compose_file_config.compose_files:
             print_func()
             print_func(f"Components defined in {compose_file.as_posix()!r}:")
             print_func()
             for service in self.get_services_for_compose_file(compose_file):
                 print_func(f"   - {service}")
-
-    def _get_toplevel_compose_files(self):
-        return [
-            self.repo_root.joinpath("docker-compose.yml"),
-        ]
-
-    def _find_common_repo_root(self, *compose_files: PathLike):
-        # If no compose files are given, assume we're being called from
-        # within a cloned qcrbox repo and look for its root folder.
-        compose_files = compose_files or [__file__]
-
-        try:
-            repo_candidates = set(get_repo_root(compose_file) for compose_file in compose_files)
-        except InvalidGitRepositoryError:
-            raise ValueError("Unable to determine root repository of the given compose files.")
-
-        if len(repo_candidates) > 1:
-            raise ValueError("All specified compose files must live in the same repository.")
-
-        return repo_candidates.pop()
 
     @property
     def services(self):
@@ -89,19 +49,19 @@ class DockerProject:
 
     @property
     def services_including_base_images(self):
-        return list(self._full_service_metadata["services"].keys())
+        return list(self.compose_file_config._full_service_metadata["services"].keys())
 
     @property
     def services_excluding_base_images(self):
         return [
             service_name
-            for service_name in self._full_service_metadata["services"].keys()
+            for service_name in self.compose_file_config._full_service_metadata["services"].keys()
             if not service_name.startswith("base-")
         ]
 
     def get_services_for_compose_file(self, compose_file):
         compose_file_relative_path = compose_file.relative_to(self.repo_root)
-        return list(self._service_metadata_by_compose_file[compose_file_relative_path]["services"].keys())
+        return list(self.compose_file_config._service_metadata_by_compose_file[compose_file_relative_path]["services"].keys())
 
     def _construct_docker_compose_command(self, cmd: str, *cmd_args: str):
         env_dev_file = self.repo_root.joinpath(".env.dev")
@@ -113,7 +73,7 @@ class DockerProject:
                 f"--project-name={self.project_name}",
                 f"--env-file={env_dev_file.as_posix()}",
             ]
-            + [f"--file={compose_file.as_posix()}" for compose_file in self.compose_files]
+            + [f"--file={compose_file.as_posix()}" for compose_file in self.compose_file_config.compose_files]
             + [cmd]
             + list(cmd_args)
         )
@@ -161,13 +121,8 @@ class DockerProject:
         logger.info(f"Building docker image: {target_image}")
         self.run_docker_compose_command("build", target_image, dry_run=dry_run, capture_output=capture_output)
 
-    def get_dockerfile_for_service(self, service_name):
-        return self.repo_root.joinpath(
-            self._full_service_metadata["services"][service_name]["build"]["context"]
-        ).joinpath("Dockerfile")
-
     def get_build_dependencies(self, service_name):
-        dockerfile = self.get_dockerfile_for_service(service_name)
+        dockerfile = self.compose_file_config.get_dockerfile_for_service(service_name)
         contents = dockerfile.open().readlines()
         dependency_lines = [line for line in contents if line.startswith("FROM qcrbox")]
         dependency_names = [
@@ -177,7 +132,7 @@ class DockerProject:
 
     def get_runtime_dependencies(self, service_name):
         try:
-            runtime_deps_dict = self._full_service_metadata["services"][service_name]["depends_on"]
+            runtime_deps_dict = self.compose_file_config._full_service_metadata["services"][service_name]["depends_on"]
             runtime_deps = list(runtime_deps_dict.keys())
         except KeyError:
             # no runtime dependencies
