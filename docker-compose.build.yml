@@ -1,0 +1,26 @@
+version: "3.8"
+
+services:
+  base-ancestor:
+    image: "qcrbox/base-ancestor:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
+    build:
+      context: services/base_images/base_ancestor/
+      args:
+        QCRBOX_ROOT_DIR: ${QCRBOX_ROOT_DIR:?Must set env var QCRBOX_ROOT_DIR}
+        QCRBOX_SUPERVISORD_CONF_DIR: ${QCRBOX_SUPERVISORD_CONF_DIR:?Must set env var QCRBOX_SUPERVISORD_CONF_DIR}
+        QCRBOX_HOST_RABBITMQ: "qcrbox-message-bus"
+        QCRBOX_PYTHON_PACKAGE_VERSION: ${QCRBOX_PYTHON_PACKAGE_VERSION:-${QCRBOX_DOCKER_TAG}}
+
+  qcrbox-message-bus:
+    image: "qcrbox/message-bus:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
+    build:
+      context: services/core/qcrbox_message_bus/
+
+  qcrbox-registry:
+    image: "qcrbox/registry:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
+    build:
+      context: services/core/qcrbox_registry
+      args:
+        QCRBOX_DOCKER_TAG: ${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}
+        QCRBOX_ROOT_DIR: ${QCRBOX_ROOT_DIR:?Must set env var QCRBOX_ROOT_DIR}
+        QCRBOX_SUPERVISORD_CONF_DIR: ${QCRBOX_SUPERVISORD_CONF_DIR:?Must set env var QCRBOX_SUPERVISORD_CONF_DIR}
