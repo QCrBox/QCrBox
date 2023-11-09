@@ -1,11 +1,11 @@
 import sqlalchemy.exc
 from sqlmodel import Session, select
 
-from ...logging import logger
-from ..database import sql_models, engine
-from ..api import router
+from qcrbox.logging import logger
+from qcrbox.registry.server.database import sql_models, engine
+from qcrbox.registry.server.api import router
 from .msg_processing import process_message
-from . import msg_specs
+from qcrbox.registry.msg_specs import msg_specs
 
 __all__ = []
 
@@ -24,7 +24,8 @@ async def _invoke_command_impl(msg: msg_specs.InvokeCommand) -> msg_specs.QCrBox
     with Session(engine) as session:
         try:
             command = session.exec(
-                select(sql_models.QCrBoxCommandDB).where(sql_models.QCrBoxCommandDB.id == msg.payload.command_id)
+                select(sql_models.QCrBoxCommandDB).where(
+                    sql_models.QCrBoxCommandDB.id == msg.payload.command_id)
             ).one()
         except sqlalchemy.exc.NoResultFound:
             error_msg = f"No command found with command_id={msg.payload.command_id}"

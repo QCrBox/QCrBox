@@ -6,7 +6,7 @@ from sqlmodel import Session
 
 from . import router
 from ..database import sql_models, engine
-from ..messaging import msg_specs
+from ...msg_specs import msg_specs
 
 __all__ = []
 
@@ -21,10 +21,12 @@ async def ping(_: Request):
     return {"status": "success", "message": "pong"}
 
 
-@router.get("/applications/", response_model=list[sql_models.QCrBoxApplicationRead])
+@router.get("/applications/", response_model=list[
+    sql_models.QCrBoxApplicationRead])
 def get_registered_applications():
     with Session(engine) as session:
-        applications = session.scalars(select(sql_models.QCrBoxApplicationDB)).all()
+        applications = session.scalars(select(
+            sql_models.QCrBoxApplicationDB)).all()
         return applications
 
 
@@ -42,17 +44,20 @@ def get_registered_containers():
         return commands
 
 
-@router.get("/calculations/", response_model=list[sql_models.QCrBoxCalculationRead])
+@router.get("/calculations/", response_model=list[
+    sql_models.QCrBoxCalculationRead])
 def get_all_calculations():
     with Session(engine) as session:
-        calculations = session.scalars(select(sql_models.QCrBoxCalculationDB)).all()
+        calculations = session.scalars(select(
+            sql_models.QCrBoxCalculationDB)).all()
         return calculations
 
 
 @router.get("/calculations/{calculation_id}/", response_model=sql_models.QCrBoxCalculationRead)
 async def get_single_calculation(calculation_id: int):
     with Session(engine) as session:
-        statement = select(sql_models.QCrBoxCalculationDB).where(sql_models.QCrBoxCalculationDB.id == calculation_id)
+        statement = select(sql_models.QCrBoxCalculationDB).where(
+            sql_models.QCrBoxCalculationDB.id == calculation_id)
         try:
             calc = session.exec(statement).one()
         except sqlalchemy.exc.NoResultFound:

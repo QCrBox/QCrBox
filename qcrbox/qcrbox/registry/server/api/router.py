@@ -1,6 +1,6 @@
 from propan.fastapi import RabbitRouter
 
-from .helpers import wrap_with_retry, get_rabbitmq_connection_url
+from ...helpers import wrap_with_retry, get_rabbitmq_connection_url
 
 
 class RabbitRouterWithConnectionRetries(RabbitRouter):
