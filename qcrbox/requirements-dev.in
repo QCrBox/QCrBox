@@ -1,10 +1,13 @@
 # requirements-dev.in
-pip-tools
-doit
+
+-r requirements.txt
+
+hatch
 ipython
 jupyterlab
-loguru
-#materialx
+pip-tools
+setuptools_scm
+
 mkdocs
 mkdocs-awesome-pages-plugin
 mkdocs-material

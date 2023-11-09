@@ -2,6 +2,9 @@
 .idea/
 .vscode/
 
+# Misc
+.ackrc
+
 # Python
 .venv/
 venv/
@@ -19,3 +22,8 @@ node_modules
 
 # doit database
 .doit.db
+
+# qcrbox Python package
+qcrbox/dist/
+qcrbox/qcrbox/_version.py
+services/base_images/base_ancestor/qcrbox_dist/qcrbox-*.whl

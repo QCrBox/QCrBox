@@ -1,0 +1,13 @@
+**/__pycache__
+.ackrc
+.git
+.idea
+.ipynb_checkpoints
+*.swp
+docs
+playground
+venv
+**/node_modules
+
+services/base_images/base_ancestor/qcrbox_dist
+shared_files

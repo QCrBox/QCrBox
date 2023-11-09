@@ -1,0 +1,52 @@
+[project]
+name = "qcrbox"
+authors = [
+  { name="Maximilian Albert", email="maximilian.albert@gmail.com" },
+]
+description = "Quantum Crystallography Toolbox"
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+dynamic = [
+    "dependencies",
+    "optional-dependencies",
+    "version",
+]
+
+[project.urls]
+"Repository" = "https://github.com/QCrBox/QCrBox/"
+"Issue Tracker" = "https://github.com/QCrBox/QCrBox/issues"
+
+[project.scripts]
+qcb = "qcrbox.cli:entry_point"
+qcb_old = "qcrbox.cli.main:cli"
+qcrbox-run-registry-server = "qcrbox.registry.server:main"
+
+[build-system]
+requires = ["hatchling", "hatch-requirements-txt", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "vcs"
+raw-options = { root = ".." }
+
+[tool.setuptools_scm]
+version_file = "qcrbox/_version.py"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "qcrbox/_version.py"
+
+[tool.hatch.metadata.hooks.requirements_txt]
+files = ["requirements.txt"]
+
+[tool.hatch.metadata.hooks.requirements_txt.optional-dependencies]
+dev = ["requirements-dev.txt"]
+
+[tool.hatch.build.targets.sdist]
+only-include = ["qcrbox"]
+
+[tool.hatch.build.targets.wheel]
+only-include = ["qcrbox"]
