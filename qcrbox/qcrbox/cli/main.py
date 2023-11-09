@@ -26,7 +26,7 @@ def get_repo_root():
 
 
 def get_toplevel_docker_compose_path():
-    return get_repo_root().joinpath("docker-compose.dev.yml")
+    return get_repo_root().joinpath("docker-compose.yml")
 
 
 @cli.command()

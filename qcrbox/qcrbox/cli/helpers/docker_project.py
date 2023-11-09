@@ -65,7 +65,7 @@ class DockerProject:
 
     def _get_toplevel_compose_files(self):
         return [
-            self.repo_root.joinpath("docker-compose.dev.yml"),
+            self.repo_root.joinpath("docker-compose.yml"),
         ]
 
     def _find_common_repo_root(self, *compose_files: PathLike):

@@ -16,7 +16,7 @@ DOIT_CONFIG = {
     "backend": "sqlite3",
 }
 
-DOCKER_COMPOSE_FILE = "docker-compose.dev.yml"
+DOCKER_COMPOSE_FILE = "docker-compose.yml"
 
 DOCKER_COMPOSE_ARGS = [
     "--project-name=qcrbox",

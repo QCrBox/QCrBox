@@ -21,7 +21,7 @@ DOCKER_COMPOSE_PROJECT_NAME = "qcrbox"
 
 
 def get_toplevel_docker_compose_path():
-    return get_repo_root().joinpath("docker-compose.dev.yml")
+    return get_repo_root().joinpath("docker-compose.yml")
 
 
 def get_toplevel_env_file_path():
