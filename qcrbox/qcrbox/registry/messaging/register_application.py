@@ -6,6 +6,8 @@ from ..database import sql_models, engine, retrieve_application
 from .msg_processing import process_message
 from . import msg_specs
 
+__all__ = []
+
 
 @process_message.register
 def _(msg: msg_specs.RegisterApplication) -> msg_specs.QCrBoxGenericResponse:
@@ -56,6 +58,6 @@ def _(msg: msg_specs.RegisterApplication) -> msg_specs.QCrBoxGenericResponse:
         status="success",
         payload=msg_specs.RegisterApplicationPayload(
             application_id=assigned_application_id,
-            container_id=container_db.qcrbox_id,
+            container_id=container_db.id,
         ),
     )
