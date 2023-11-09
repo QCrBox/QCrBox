@@ -10,9 +10,6 @@ from .sql_models import QCrBoxBaseSQLModel, KeywordDB
 
 connect_args = {"check_same_thread": False}
 registry_db_dir = os.environ.get("QCRBOX_REGISTRY_SERVER_DB_DIR", "/mnt/qcrbox_registry_data/")
-if not os.path.exists(registry_db_dir):
-    logger.info(f"Creating registry database directory: {registry_db_dir}")
-    os.makedirs(registry_db_dir, exist_ok=True)
 
 sqlite_file_name = os.path.join(registry_db_dir, "qcrbox_registry_database.db")
 sqlite_url = f"sqlite:///{sqlite_file_name}"
@@ -30,6 +27,10 @@ def set_sqlite_pragma(dbapi_connection, connection_record):
 
 
 def create_db_and_tables():
+    if not os.path.exists(registry_db_dir):
+        logger.debug(f"Creating registry database directory: {registry_db_dir}")
+        os.makedirs(registry_db_dir, exist_ok=True)
+
     logger.debug(f"SQLite file name: {sqlite_file_name}")
     logger.debug("Creating database tables if they don't exist yet.")
 
