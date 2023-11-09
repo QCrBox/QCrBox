@@ -11,6 +11,15 @@ services:
         QCRBOX_HOST_RABBITMQ: "qcrbox-message-bus"
         QCRBOX_PYTHON_PACKAGE_VERSION: ${QCRBOX_PYTHON_PACKAGE_VERSION:-${QCRBOX_DOCKER_TAG}}
 
+  base-application:
+    image: "qcrbox/base-application:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
+    build:
+      context: services/base_images/base_application/
+      args:
+        QCRBOX_DOCKER_TAG: ${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}
+        QCRBOX_ROOT_DIR: ${QCRBOX_ROOT_DIR:?Must set env var QCRBOX_ROOT_DIR}
+        QCRBOX_SUPERVISORD_CONF_DIR: ${QCRBOX_SUPERVISORD_CONF_DIR:?Must set env var QCRBOX_SUPERVISORD_CONF_DIR}
+
   qcrbox-message-bus:
     image: "qcrbox/message-bus:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
     build:
