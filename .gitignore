@@ -27,6 +27,7 @@ node_modules
 qcrbox/dist/
 qcrbox/qcrbox/_version.py
 services/base_images/base_ancestor/qcrbox_dist/qcrbox-*.whl
+services/base_images/base_ancestor/qcrbox_dist/requirements*.txt
 
 # ShelX
 services/applications/shelx/shelx_executables/2018_shelxl
