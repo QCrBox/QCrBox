@@ -4,12 +4,14 @@ from fastapi import Request, HTTPException
 from sqlalchemy import select
 from sqlmodel import Session
 
-from . import router
-from ..database import engine
-from ...msg_specs import msg_specs, sql_models
+from .database import engine
+from ..helpers import get_rabbitmq_connection_url, RabbitRouterWithConnectionRetries
+from ..msg_specs import msg_specs, sql_models
 
-__all__ = []
+__all__ = ["router"]
 
+rabbitmq_url = get_rabbitmq_connection_url()
+router = RabbitRouterWithConnectionRetries(rabbitmq_url)
 
 @router.get("/")
 async def hello_http(_: Request):

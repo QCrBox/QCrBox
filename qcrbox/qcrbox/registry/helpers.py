@@ -4,6 +4,7 @@ from typing import Optional
 
 from aiormq import AMQPConnectionError
 from loguru import logger
+from propan.fastapi import RabbitRouter
 from tenacity import retry, wait_fixed, stop_after_attempt, retry_if_exception_type
 
 
@@ -74,3 +75,13 @@ def schedule_asyncio_task(coro, *, loop):
     else:
         loop.run_until_complete(task)
         return None
+
+
+class RabbitRouterWithConnectionRetries(RabbitRouter):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.broker.connect = wrap_with_retry(
+            self.broker.connect,
+            wait_interval=3,
+            max_attempt_number=50,
+        )
