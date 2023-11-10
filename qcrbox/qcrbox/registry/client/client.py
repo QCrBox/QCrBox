@@ -8,9 +8,10 @@ from propan.brokers.rabbit import RabbitQueue
 
 from ...logging import logger
 from .. import msg_specs
-from .messaging import process_message_sync_or_async
 from ..helpers import get_rabbitmq_connection_url, get_qcrbox_registry_api_connection_url, schedule_asyncio_task
+from .messaging import process_message_sync_or_async
 from .helpers import create_new_private_routing_key, create_new_container_qcrbox_id
+from .registered_application_client_side import RegisteredApplicationClientSide
 
 
 class QCrBoxRegistryClient:
@@ -49,7 +50,7 @@ class QCrBoxRegistryClient:
         await self.broker.start()  # ensure broker is started
         response = await self.broker.publish(
             msg,
-            queue="qubox_registry",
+            queue="qcrbox_registry",
             callback=True,
             callback_timeout=callback_timeout,
             raise_timeout=True,
@@ -67,9 +68,9 @@ class QCrBoxRegistryClient:
             raise RuntimeError(f"Unexpected response status: {response.status}")
         return response
 
-    def register_app(self, name, *, version, description=None, url=None, timeout=5.0):
+    def register_application(self, name, *, version, description=None, url=None, timeout=5.0):
         routing_key__registry_to_application = create_new_private_routing_key()
-        container_qubox_id = create_new_container_qcrbox_id()
+        container_qcrbox_id = create_new_container_qcrbox_id()
 
         application = RegisteredApplicationClientSide(
             name=name,
@@ -89,7 +90,7 @@ class QCrBoxRegistryClient:
                 description=description,
                 url=url,
                 routing_key__registry_to_application=routing_key__registry_to_application,
-                container_qubox_id=container_qubox_id,
+                container_qcrbox_id=container_qcrbox_id,
             ),
         )
 
@@ -118,7 +119,7 @@ class QCrBoxRegistryClient:
                     except pydantic.ValidationError as exc:
                         pass
                 else:
-                    error_msg = f"Incoming message is not a valid QuBox message: {msg_dict}"
+                    error_msg = f"Incoming message is not a valid QCrBox message: {msg_dict}"
                     logger.error(error_msg)
                     return msg_specs.QCrBoxGenericResponse(response_to="incoming_message", status="error", msg=error_msg)
 
