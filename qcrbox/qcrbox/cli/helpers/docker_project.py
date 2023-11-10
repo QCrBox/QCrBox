@@ -132,11 +132,14 @@ class DockerProject:
 
     def get_runtime_dependencies(self, service_name):
         try:
-            runtime_deps_dict = self.compose_file_config._full_service_metadata["services"][service_name]["depends_on"]
-            runtime_deps = list(runtime_deps_dict.keys())
+            runtime_deps = self.compose_file_config._full_service_metadata["services"][service_name]["depends_on"]
         except KeyError:
             # no runtime dependencies
             runtime_deps = []
+
+        if not isinstance(runtime_deps, list):
+            assert isinstance(runtime_deps, dict)
+            runtime_deps = list(runtime_deps.keys())
 
         return runtime_deps
 
