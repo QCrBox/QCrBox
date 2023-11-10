@@ -2,7 +2,7 @@ import inspect
 from pydantic import BaseModel, Extra
 from typing import Literal, Optional
 
-from qcrbox.registry.server.database.sql_models import QCrBoxApplicationCreate, QCrBoxCommandCreate, QCrBoxCalculationCreate
+from .sql_models import QCrBoxApplicationCreate, QCrBoxCommandCreate, QCrBoxCalculationCreate
 
 
 class QCrBoxBaseMessage(BaseModel):

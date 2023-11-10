@@ -5,8 +5,8 @@ from sqlalchemy import select
 from sqlmodel import Session
 
 from . import router
-from ..database import sql_models, engine
-from ...msg_specs import msg_specs
+from ..database import engine
+from ...msg_specs import msg_specs, sql_models
 
 __all__ = []
 

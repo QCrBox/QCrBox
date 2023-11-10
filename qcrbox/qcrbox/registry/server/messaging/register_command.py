@@ -1,10 +1,10 @@
 import sqlalchemy.exc
 from sqlmodel import Session
 
-from qcrbox.logging import logger
-from qcrbox.registry.server.database import sql_models, engine, retrieve_command
+from ....logging import logger
+from ...msg_specs import msg_specs, sql_models
+from ..database import engine, retrieve_command
 from .msg_processing import process_message
-from qcrbox.registry.msg_specs import msg_specs
 
 __all__ = []
 

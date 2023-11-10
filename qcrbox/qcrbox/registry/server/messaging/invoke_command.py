@@ -1,11 +1,11 @@
 import sqlalchemy.exc
 from sqlmodel import Session, select
 
-from qcrbox.logging import logger
-from qcrbox.registry.server.database import sql_models, engine
-from qcrbox.registry.server.api import router
+from ....logging import logger
+from ...msg_specs import msg_specs, sql_models
+from ..api import router
+from ..database import engine
 from .msg_processing import process_message
-from qcrbox.registry.msg_specs import msg_specs
 
 __all__ = []
 
