@@ -43,7 +43,6 @@ class QCrBoxRegistryClient:
         task = schedule_asyncio_task(coro, loop=self.event_loop)
         self._scheduled_startup_tasks.append((name, task))
 
-
     async def _send_register_application_message_and_assign_application_id_when_successful(
         self, *, msg, registered_app_client_side, callback_timeout
     ):
@@ -159,6 +158,11 @@ class QCrBoxRegistryClient:
             await task
             assert task.done()
             ensure_exceptions_are_raised(task)
+
+        # TODO: only write this if we're inside a container
+        logger.debug("Writing sentinel file /tmp/SENTINEL_QCRBOX_CLIENT_STARTUP_SUCCESSFUL.txt")
+        with open("/tmp/SENTINEL_QCRBOX_CLIENT_STARTUP_SUCCESSFUL.txt", "w") as f:
+            f.write("QCrBox client successfully started up.")
 
         logger.debug(f"All startup tasks completed successfully.")
 

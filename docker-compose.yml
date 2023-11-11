@@ -61,7 +61,8 @@ services:
     volumes:
       - ./shared_files:${QCRBOX_SHARED_FILES_DIR:?Must set env var QCRBOX_SHARED_FILES_DIR}
     depends_on:
-      - qcrbox-registry
+      qcrbox-registry:
+        condition: service_healthy
     networks:
       - qcrbox-net
     restart: unless-stopped
