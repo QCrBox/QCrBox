@@ -11,6 +11,8 @@ services:
 
   qcrbox-message-bus:
     image: "qcrbox/message-bus:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
+    volumes:
+      - qcrbox-rabbitmq-data:/var/lib/rabbitmq
     networks:
       - qcrbox-net
     hostname: "qcrbox-message-bus"
@@ -71,4 +73,5 @@ networks:
   qcrbox-net:
 
 volumes:
+  qcrbox-rabbitmq-data:
   qcrbox-registry-db:
