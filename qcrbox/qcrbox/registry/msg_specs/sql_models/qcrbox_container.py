@@ -35,7 +35,7 @@ class QCrBoxContainerDB(QCrBoxBaseSQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     qcrbox_id: str = Field(nullable=False, unique=True)
     registered_at: datetime = Field(default_factory=datetime.now)
-    application_id: int = Field(foreign_key="application.id", nullable=False, unique=True)
+    application_id: int = Field(foreign_key="application.id", nullable=False, unique=False)
     routing_key__registry_to_application: str = Field(nullable=False, unique=True)
     status: ContainerStatus
 
