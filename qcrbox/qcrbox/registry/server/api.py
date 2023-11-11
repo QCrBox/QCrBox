@@ -34,14 +34,14 @@ def get_registered_applications():
 @router.get("/commands/", response_model=list[sql_models.QCrBoxCommandRead])
 def get_registered_commands():
     with Session(engine) as session:
-        commands = session.exec(select(sql_models.QCrBoxCommandDB)).all()
+        commands = session.scalars(select(sql_models.QCrBoxCommandDB)).all()
         return commands
 
 
 @router.get("/containers/", response_model=list[sql_models.QCrBoxContainerRead])
 def get_registered_containers():
     with Session(engine) as session:
-        commands = session.exec(select(sql_models.QCrBoxContainerDB)).all()
+        commands = session.scalars(select(sql_models.QCrBoxContainerDB)).all()
         return commands
 
 
