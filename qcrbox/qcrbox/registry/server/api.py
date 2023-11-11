@@ -5,13 +5,12 @@ from sqlalchemy import select
 from sqlmodel import Session
 
 from .database import engine
-from ..helpers import get_rabbitmq_connection_url, RabbitRouterWithConnectionRetries
+from .messaging.invoke_command import _invoke_command_impl
+from .router import router
 from ..msg_specs import msg_specs, sql_models
 
-__all__ = ["router"]
+__all__ = []
 
-rabbitmq_url = get_rabbitmq_connection_url()
-router = RabbitRouterWithConnectionRetries(rabbitmq_url)
 
 @router.get("/")
 async def hello_http(_: Request):
@@ -76,3 +75,8 @@ async def get_single_calculation(calculation_id: int):
         )
         calc_with_status_details = sql_models.QCrBoxCalculationRead(**calc.dict(), status_details=response["payload"])
         return calc_with_status_details
+
+
+@router.post("/invoke_command/")
+async def invoke_command(msg: msg_specs.InvokeCommand) -> msg_specs.QCrBoxGenericResponse:
+    return await _invoke_command_impl(msg)

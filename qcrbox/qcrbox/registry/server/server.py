@@ -6,10 +6,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 
+from . import api
+
 from .. import msg_specs
-from .api import router
 from .database import create_db_and_tables, seed_database
 from .messaging import process_message_sync_or_async
+from .router import router
 
 fastapi_app = FastAPI(lifespan=router.lifespan_context, logger=logger)
 fastapi_app.add_middleware(
