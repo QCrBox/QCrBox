@@ -1,4 +1,4 @@
-FROM rabbitmq:3.12.5-management-alpine
+FROM rabbitmq:3.12.8-management-alpine
 SHELL ["/bin/bash", "-c"]
 
 RUN apk add --update supervisor tmux yarn
