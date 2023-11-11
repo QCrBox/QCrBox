@@ -58,7 +58,7 @@ async def _invoke_command_impl(msg: msg_specs.InvokeCommand) -> msg_specs.QCrBox
             msg_execute_calculation,
             routing_key=routing_key,
             callback=True,
-            callback_timeout=2.0,
+            callback_timeout=30.0,
             raise_timeout=True,
         )
         logger.debug(f"Response for command invocation: {response=}")
