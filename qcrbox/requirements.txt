@@ -14,6 +14,10 @@ anyio==3.7.1
     #   fastapi
     #   starlette
     #   watchfiles
+certifi==2023.7.22
+    # via requests
+charset-normalizer==3.3.2
+    # via requests
 click==8.1.7
     # via
     #   -r requirements.in
@@ -52,6 +56,7 @@ idna==3.4
     # via
     #   anyio
     #   email-validator
+    #   requests
     #   yarl
 importlib-metadata==6.8.0
     # via doit
@@ -82,6 +87,8 @@ pyyaml==6.0.1
     #   -r requirements.in
     #   propan
     #   uvicorn
+requests==2.31.0
+    # via -r requirements.in
 six==1.16.0
     # via python-dateutil
 smmap==5.0.1
@@ -107,6 +114,8 @@ typing-extensions==4.8.0
     #   pydantic
     #   sqlalchemy2-stubs
     #   typer
+urllib3==2.0.7
+    # via requests
 uvicorn==0.24.0.post1
     # via
     #   -r requirements.in

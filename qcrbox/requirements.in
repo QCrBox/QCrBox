@@ -8,6 +8,7 @@ loguru
 propan[async-rabbit,doc]
 pydantic
 pyyaml
+requests
 sqlmodel
 tenacity
 uvicorn[standard]
