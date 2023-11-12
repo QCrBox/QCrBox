@@ -65,6 +65,11 @@ async def get_single_calculation(calculation_id: int):
             error_response = dict(status="error", msg=f"Calculation not found")
             raise HTTPException(status_code=404, detail=error_response)
 
+        from ...logging import logger
+        logger.debug(f"[DDD] Found {calc=}")
+        logger.debug(f"[DDD] {calc.container=}")
+        logger.debug(f"[DDD] {calc.container.routing_key__registry_to_application=}")
+
         routing_key = calc.container.routing_key__registry_to_application
         msg = msg_specs.GetCalculationStatusDetails(
             action="get_calculation_status_details",
