@@ -17,10 +17,13 @@ anyio==3.7.1
 click==8.1.7
     # via
     #   -r requirements.in
+    #   cloup
     #   typer
     #   uvicorn
 cloudpickle==3.0.0
     # via doit
+cloup==3.0.2
+    # via -r requirements.in
 dnspython==2.4.2
     # via email-validator
 doit==0.36.0

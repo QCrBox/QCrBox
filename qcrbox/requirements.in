@@ -1,5 +1,6 @@
 # requirements.in
 click
+cloup
 doit
 fastapi
 gitpython

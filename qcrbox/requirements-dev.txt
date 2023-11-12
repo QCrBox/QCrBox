@@ -61,6 +61,7 @@ charset-normalizer==3.3.2
 click==8.1.7
     # via
     #   -r requirements.txt
+    #   cloup
     #   hatch
     #   mkdocs
     #   pip-tools
@@ -71,6 +72,8 @@ cloudpickle==3.0.0
     # via
     #   -r requirements.txt
     #   doit
+cloup==3.0.2
+    # via -r requirements.txt
 colorama==0.4.6
     # via mkdocs-material
 comm==0.2.0
