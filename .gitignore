@@ -20,6 +20,9 @@ node_modules
 # Build artifacts
 .build/**
 
+# Folder for files shared with/between containers
+shared_files/**
+
 # doit database
 .doit.db
 
