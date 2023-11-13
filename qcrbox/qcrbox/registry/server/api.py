@@ -86,7 +86,7 @@ async def get_single_calculation(calculation_id: int):
     with Session(engine) as session:
         statement = select(sql_models.QCrBoxCalculationDB).where(sql_models.QCrBoxCalculationDB.id == calculation_id)
         try:
-            calc = session.exec(statement).one()
+            calc = session.exec(statement).scalar_one()
         except sqlalchemy.exc.NoResultFound:
             error_response = dict(status="error", msg=f"Calculation not found")
             raise HTTPException(status_code=404, detail=error_response)
@@ -96,10 +96,17 @@ async def get_single_calculation(calculation_id: int):
             action="get_calculation_status_details",
             payload=msg_specs.GetCalculationStatusDetailsPayload(calculation_id=calculation_id),
         )
-        response = await router.broker.publish(
-            msg, routing_key=routing_key, callback=True, callback_timeout=60.0, raise_timeout=True
-        )
-        calc_with_status_details = sql_models.QCrBoxCalculationRead(**calc.dict(), status_details=response["payload"])
+        try:
+            response = await router.broker.publish(
+                msg, routing_key=routing_key, callback=True, callback_timeout=5.0, raise_timeout=True
+            )
+            status_details = response["payload"]
+        except TimeoutError:
+            status_details = sql_models.QCrBoxCalculationStatusDetails(
+                status="error",
+                details={"message": "Connection to the container which executed the calculation timed out."}
+            )
+        calc_with_status_details = sql_models.QCrBoxCalculationRead(**calc.dict(), status_details=status_details)
         return calc_with_status_details
 
 
