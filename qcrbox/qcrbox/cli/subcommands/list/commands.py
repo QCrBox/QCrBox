@@ -31,29 +31,56 @@ def print_list_of_resources():
 
 
 @print_list_of_resources.command(name="applications")
-def list_applications():
+@click.option(
+    "--name",
+    default=None,
+    help="Filter applications by name (must match exactly)",
+)
+@click.option(
+    "--version",
+    default=None,
+    help="Filter applications by version (must match exactly)",
+)
+def list_applications(name: Optional[str], version: Optional[str]):
     """
     Print a list of registered applications.
     """
     qcrbox_api_base_url = get_qcrbox_api_base_url()
-    r = requests.get(qcrbox_api_base_url + "/applications")
+    r = requests.get(qcrbox_api_base_url + "/applications", params={"name": name, "version": version})
     data = [pretty_print_timestamp("registered_at")(row) for row in r.json()]
     click.echo(tabulate(data, headers="keys", tablefmt="simple"))
 
 
 @print_list_of_resources.command(name="commands")
-def list_commands():
+@click.option(
+    "--name",
+    default=None,
+    help="Filter commands by name (must match exactly)",
+)
+@click.option(
+    "--application-id",
+    default=None,
+    type=int,
+    help="Filter commands by application_id (run 'qcb list applications' to get the id)",
+)
+def list_commands(name: Optional[str], application_id: Optional[int]):
     """
     Print a list of registered commands.
     """
     qcrbox_api_base_url = get_qcrbox_api_base_url()
-    r = requests.get(qcrbox_api_base_url + "/commands")
+    r = requests.get(qcrbox_api_base_url + "/commands", params={"name": name, "application_id": application_id})
     data = [row for row in r.json()]
     click.echo(tabulate(data, headers="keys", tablefmt="simple"))
 
 
 @print_list_of_resources.command(name="containers")
-def list_containers():
+@click.option(
+    "--application-id",
+    default=None,
+    type=int,
+    help="Filter containers by application_id (run 'qcb list applications' to get the id)",
+)
+def list_containers(application_id: Optional[int]):
     """
     Print a list of registered containers.
     """
@@ -61,6 +88,6 @@ def list_containers():
     cols_to_print = ("id", "qcrbox_id", "registered_at", "application_id", "status")
 
     qcrbox_api_base_url = get_qcrbox_api_base_url()
-    r = requests.get(qcrbox_api_base_url + "/containers")
+    r = requests.get(qcrbox_api_base_url + "/containers", params={"application_id": application_id})
     data = [pretty_print_timestamp("registered_at")(extract_columns(cols_to_print)(row)) for row in r.json()]
     click.echo(tabulate(data, headers="keys", tablefmt="simple"))
