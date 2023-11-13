@@ -6,7 +6,7 @@ import requests
 
 from ....logging import logger
 from ....registry import msg_specs
-from ...helpers import get_qcrbox_api_base_url
+from ....registry.helpers import get_qcrbox_registry_api_connection_url
 
 
 @click.command(name="invoke")
@@ -21,7 +21,7 @@ def invoke_command(command_id: int, with_args: Optional[str] = None):
     """
     Invoke a registered command with given arguments.
     """
-    qcrbox_api_base_url = get_qcrbox_api_base_url()
+    qcrbox_api_base_url = get_qcrbox_registry_api_connection_url()
 
     with_args = json.loads(with_args) or dict()
     logger.debug(f"[DDD] {with_args=} ({type(with_args)=})")
