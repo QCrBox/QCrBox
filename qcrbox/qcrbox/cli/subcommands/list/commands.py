@@ -25,7 +25,7 @@ def pretty_print_timestamp(colname):
 @click.group(name="list")
 def print_list_of_resources():
     """
-    Print a list of resources of a given kind, e.g., applications/commands/containers/calculations.
+    List registered resources (applications, commands, etc.)
     """
     pass
 
@@ -43,7 +43,7 @@ def print_list_of_resources():
 )
 def list_applications(name: Optional[str], version: Optional[str]):
     """
-    Print a list of registered applications.
+    List registered applications.
     """
     qcrbox_api_base_url = get_qcrbox_api_base_url()
     r = requests.get(qcrbox_api_base_url + "/applications", params={"name": name, "version": version})
@@ -65,7 +65,7 @@ def list_applications(name: Optional[str], version: Optional[str]):
 )
 def list_commands(name: Optional[str], application_id: Optional[int]):
     """
-    Print a list of registered commands.
+    List registered commands.
     """
     qcrbox_api_base_url = get_qcrbox_api_base_url()
     r = requests.get(qcrbox_api_base_url + "/commands", params={"name": name, "application_id": application_id})
@@ -82,7 +82,7 @@ def list_commands(name: Optional[str], application_id: Optional[int]):
 )
 def list_containers(application_id: Optional[int]):
     """
-    Print a list of registered containers.
+    List registered containers.
     """
     # We're dropping column 'routing_key__registry_to_application'
     cols_to_print = ("id", "qcrbox_id", "registered_at", "application_id", "status")
