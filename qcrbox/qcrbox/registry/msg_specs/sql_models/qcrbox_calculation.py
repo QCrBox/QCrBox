@@ -31,6 +31,7 @@ class QCrBoxCalculationStatusDetails(BaseModel):
     status: str
     details: dict
 
+
 class QCrBoxCalculationRead(BaseModel):
     id: int
     command_id: int
@@ -42,4 +43,4 @@ class QCrBoxCalculationRead(BaseModel):
 class QCrBoxCalculationCreate(BaseModel):
     command_id: int
     arguments: dict
-    container_qcrbox_id: str
+    container_qcrbox_id: Optional[str] = None

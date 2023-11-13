@@ -24,8 +24,7 @@ async def _invoke_command_impl(msg: msg_specs.InvokeCommand) -> msg_specs.QCrBox
     with Session(engine) as session:
         try:
             command = session.exec(
-                select(sql_models.QCrBoxCommandDB).where(
-                    sql_models.QCrBoxCommandDB.id == msg.payload.command_id)
+                select(sql_models.QCrBoxCommandDB).where(sql_models.QCrBoxCommandDB.id == msg.payload.command_id)
             ).one()
         except sqlalchemy.exc.NoResultFound:
             error_msg = f"No command found with command_id={msg.payload.command_id}"
@@ -34,6 +33,14 @@ async def _invoke_command_impl(msg: msg_specs.InvokeCommand) -> msg_specs.QCrBox
 
         logger.debug(f"Found {command=}")
         logger.debug(f"{command.application=}")
+
+        if msg.payload.container_qcrbox_id is None:
+            # If no container is explicitly specified, grab the first available one.
+            # FIXME: this is a hack just to get things working for now; we should handle this in a smarter way in the future.
+            container_to_use = session.exec(
+                select(sql_models.QCrBoxContainerDB).where(sql_models.QCrBoxCommandDB.id == msg.payload.command_id)
+            ).first()
+            msg.payload.container_qcrbox_id = container_to_use.qcrbox_id
 
         new_calculation_db = sql_models.QCrBoxCalculationDB(**msg.payload.dict())
         session.add(new_calculation_db)
