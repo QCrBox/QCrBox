@@ -1,4 +1,5 @@
 import asyncio
+from pathlib import Path
 from signal import SIGINT, SIGTERM
 from typing import Optional
 
@@ -120,7 +121,9 @@ class QCrBoxRegistryClient:
                 else:
                     error_msg = f"Incoming message is not a valid QCrBox message: {msg_dict}"
                     logger.error(error_msg)
-                    return msg_specs.QCrBoxGenericResponse(response_to="incoming_message", status="error", msg=error_msg)
+                    return msg_specs.QCrBoxGenericResponse(
+                        response_to="incoming_message", status="error", msg=error_msg
+                    )
 
                 # logger.debug(f"Incoming message: {msg_obj} (app_id: {self.assigned_app_id})")
                 if application.assigned_app_id is None or application.assigned_container_id is None:
@@ -142,6 +145,12 @@ class QCrBoxRegistryClient:
             register_handler_for_incoming_messages_from_registry_server(),
             name="add_incoming_message_handler",
         )
+
+        async def save_container_qcrbox_id_to_file():
+            with Path("~/set_container_qcrbox_id.sh").expanduser().open("w") as f:
+                f.write(f'export QCRBOX__CONTAINER_QCRBOX_ID="{container_qcrbox_id}"')
+
+        self.schedule_startup_task(save_container_qcrbox_id_to_file(), name="save_container_qcrbox_id_to_file")
 
         # logger.info(f"Result of running the coroutine: {task}")
         return application
