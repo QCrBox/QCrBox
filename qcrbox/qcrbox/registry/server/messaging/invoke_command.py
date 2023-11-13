@@ -40,6 +40,7 @@ async def _invoke_command_impl(msg: msg_specs.InvokeCommand) -> msg_specs.QCrBox
             container_to_use = session.exec(
                 select(sql_models.QCrBoxContainerDB).where(sql_models.QCrBoxCommandDB.id == msg.payload.command_id)
             ).first()
+            logger.debug(f"FIXME: ensure that the selected container is up and running (qcrbox_id={container_to_use.qcrbox_id})")
             msg.payload.container_qcrbox_id = container_to_use.qcrbox_id
 
         new_calculation_db = sql_models.QCrBoxCalculationDB(**msg.payload.dict())
