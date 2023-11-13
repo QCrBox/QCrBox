@@ -60,6 +60,8 @@ services:
     environment:
       QCRBOX_RABBITMQ_QUEUE_NAME: "shelx"
       QCRBOX_APPLICATION_CONFIG_FILE: "configure_shelx.py"
+      QCRBOX__QCRBOX_REGISTRY_HOST: "qcrbox-registry"
+      QCRBOX__QCRBOX_REGISTRY_PORT: "8000"
     volumes:
       - ./shared_files:${QCRBOX_SHARED_FILES_DIR:?Must set env var QCRBOX_SHARED_FILES_DIR}
     depends_on:
