@@ -1,3 +1,5 @@
+from typing import Optional, Iterable
+
 import click
 import requests
 from dateutil.parser import parse as parse_date
@@ -6,8 +8,10 @@ from tabulate import tabulate
 from ...helpers import get_qcrbox_api_base_url
 
 
-def extract_columns(row_dict):
-    return {key: row_dict[key] for key in cols_to_print}
+def extract_columns(cols_to_print: Iterable[str]):
+    def extract_columns_impl(row_dict):
+        return {key: row_dict[key] for key in cols_to_print}
+    return extract_columns_impl
 
 
 def pretty_print_timestamp(colname):
@@ -33,7 +37,6 @@ def list_applications():
     """
     qcrbox_api_base_url = get_qcrbox_api_base_url()
     r = requests.get(qcrbox_api_base_url + "/applications")
-    # data = [use_title_case_for_column_names(pretty_print_timestamps(extract_columns(row))) for row in r.json()]
     data = [pretty_print_timestamp("registered_at")(row) for row in r.json()]
     click.echo(tabulate(data, headers="keys", tablefmt="simple"))
 
@@ -57,10 +60,7 @@ def list_containers():
     # We're dropping column 'routing_key__registry_to_application'
     cols_to_print = ("id", "qcrbox_id", "registered_at", "application_id", "status")
 
-    def extract_columns(row_dict):
-        return {key: row_dict[key] for key in cols_to_print}
-
     qcrbox_api_base_url = get_qcrbox_api_base_url()
     r = requests.get(qcrbox_api_base_url + "/containers")
-    data = [pretty_print_timestamp("registered_at")(extract_columns(row)) for row in r.json()]
+    data = [pretty_print_timestamp("registered_at")(extract_columns(cols_to_print)(row)) for row in r.json()]
     click.echo(tabulate(data, headers="keys", tablefmt="simple"))
