@@ -5,3 +5,4 @@ from .info import show_info
 from .invoke import invoke_command
 from .list import print_list_of_resources
 from .up import start_up_components
+from .purge import purge
