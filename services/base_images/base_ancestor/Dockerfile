@@ -53,4 +53,12 @@ WORKDIR ${APP_HOME}
 ARG QCRBOX_HOST_RABBITMQ
 ENV QCRBOX_HOST_RABBITMQ=${QCRBOX_HOST_RABBITMQ}
 
-CMD ["sh", "-c", "chown -R --dereference -L ${APP_USER}:${APP_USER} ${APP_HOME} /tmp /dev/stdout && exec gosu ${APP_USER} supervisord"]
+# By default, when logging into the container as root this activates the conda base environment.
+# Let's disable this for the time being so that there is no interference with the QCrBox virtualenv.
+RUN sed -i -e "s|. /opt/conda/etc/profile.d/conda.sh|#. /opt/conda/etc/profile.d/conda.sh|" /root/.bashrc
+RUN sed -i -e "s|conda activate base|#conda activate base|" /root/.bashrc
+
+# Add the QCrBox virtual environment to PATH so that the `qcb` command line tool is picked up.
+RUN echo 'export PATH=/opt/qcrbox/venv/bin/:$PATH' >> /etc/bash.bashrc
+
+CMD ["bash", "-c", "chown -R --dereference -L ${APP_USER}:${APP_USER} ${APP_HOME} /tmp /dev/stdout && exec gosu ${APP_USER} supervisord"]
