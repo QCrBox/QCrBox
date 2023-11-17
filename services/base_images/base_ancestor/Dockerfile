@@ -1,5 +1,5 @@
 FROM continuumio/miniconda3:23.3.1-0
-SHELL ["/bin/bash", "-c"]
+SHELL ["/bin/bash", "--login", "-c"]
 
 RUN apt-get update -y && \
     apt-get install -y --no-install-recommends \
@@ -59,6 +59,14 @@ RUN sed -i -e "s|. /opt/conda/etc/profile.d/conda.sh|#. /opt/conda/etc/profile.d
 RUN sed -i -e "s|conda activate base|#conda activate base|" /root/.bashrc
 
 # Add the QCrBox virtual environment to PATH so that the `qcb` command line tool is picked up.
-RUN echo 'export PATH=/opt/qcrbox/venv/bin/:$PATH' >> /etc/bash.bashrc
+#RUN echo 'export PATH=/opt/qcrbox/venv/bin/:$PATH' >> /etc/bash.bashrc
 
-CMD ["bash", "-c", "chown -R --dereference -L ${APP_USER}:${APP_USER} ${APP_HOME} /tmp /dev/stdout && exec gosu ${APP_USER} supervisord"]
+COPY entrypoint.sh ${QCRBOX_ROOT_DIR}
+COPY bashrc_qcrbox.sh ${QCRBOX_ROOT_DIR}
+#ENV BASH_ENV=${QCRBOX_ROOT_DIR}/bashrc_qcrbox.sh
+
+# Add symlink to the `qcb` command line tool in `/usr/local/bin` so that it can get picked up in scripts
+# without specifying the full path. (Unfortunately, amending PATH directly doesn't seem to be reliable.)
+RUN ln -s ${QCRBOX_PYTHON_VENV_DIR}/bin/qcb /usr/local/bin/qcb
+
+ENTRYPOINT ["/opt/qcrbox/entrypoint.sh"]

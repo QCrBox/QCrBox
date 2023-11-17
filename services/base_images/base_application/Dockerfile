@@ -1,6 +1,6 @@
 ARG QCRBOX_DOCKER_TAG
 FROM qcrbox/base-ancestor:${QCRBOX_DOCKER_TAG}
-SHELL ["/bin/bash", "-c"]
+SHELL ["/bin/bash", "--login", "-c"]
 
 HEALTHCHECK \
     --interval=5s \
@@ -8,7 +8,8 @@ HEALTHCHECK \
 
 ARG QCRBOX_SUPERVISORD_CONF_DIR=${QCRBOX_SUPERVISORD_CONF_DIR}
 COPY supervisord.base_application.conf ${QCRBOX_SUPERVISORD_CONF_DIR}/
-RUN ln -s ${APP_HOME}/set_container_qcrbox_id.sh /etc/profile.d/qcrbox_container_id.sh && \
-    #echo "source /etc/profile" >> ${APP_HOME}/.bashrc && \
-    #echo 'export ENV=/etc/profile' >> "${APP_HOME}/.profile" && \
-    true
+#RUN ln -s ${APP_HOME}/set_container_qcrbox_id.sh /etc/profile.d/qcrbox_container_id.sh && \
+#    ln -s ${APP_HOME}/set_container_qcrbox_id.sh ${QCRBOX_ROOT_DIR}/qcrbox_container_id.sh && \
+#    #echo "source /etc/profile" >> ${APP_HOME}/.bashrc && \
+#    #echo 'export ENV=/etc/profile' >> "${APP_HOME}/.profile" && \
+#    true

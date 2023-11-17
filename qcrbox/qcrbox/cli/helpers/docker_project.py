@@ -201,3 +201,6 @@ class DockerProject:
     def get_service_status(self, service_name):
         logger.warning("TODO: finish the implementation of 'get_status_of_docker_service'")
         raise NotImplementedError("TODO: finish the implementation")
+
+    def remove_volume(self, volume_name):
+        raise NotImplementedError()

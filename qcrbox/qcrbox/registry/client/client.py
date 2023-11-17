@@ -147,8 +147,11 @@ class QCrBoxRegistryClient:
         )
 
         async def save_container_qcrbox_id_to_file():
-            with Path("~/set_container_qcrbox_id.sh").expanduser().open("w") as f:
-                f.write(f'export QCRBOX__CONTAINER_QCRBOX_ID="{container_qcrbox_id}"')
+            with Path("/opt/qcrbox/container_qcrbox_id.txt").open("w") as f:
+                #f.write(f'export QCRBOX__CONTAINER_QCRBOX_ID="{container_qcrbox_id}"')
+                f.write(f"{container_qcrbox_id}\n")
+            # with Path("~/set_container_qcrbox_id.sh").expanduser().open("w") as f:
+            #     f.write(f'export QCRBOX__CONTAINER_QCRBOX_ID="{container_qcrbox_id}"')
 
         self.schedule_startup_task(save_container_qcrbox_id_to_file(), name="save_container_qcrbox_id_to_file")
 

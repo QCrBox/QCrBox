@@ -1,6 +1,6 @@
 ARG QCRBOX_DOCKER_TAG
 FROM qcrbox/base-application:${QCRBOX_DOCKER_TAG}
-SHELL ["/bin/bash", "-c"]
+SHELL ["/bin/bash", "--login", "-c"]
 
 COPY ./shelx_executables/* /opt/shelx/bin/
 COPY ./configure_shelx.py ./

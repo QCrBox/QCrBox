@@ -1,6 +1,6 @@
 ARG QCRBOX_DOCKER_TAG
 FROM qcrbox/base-ancestor:${QCRBOX_DOCKER_TAG}
-SHELL ["/bin/bash", "-c"]
+SHELL ["/bin/bash", "--login", "-c"]
 
 HEALTHCHECK \
     --interval=5s \
