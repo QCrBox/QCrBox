@@ -46,7 +46,7 @@ def _make_cmd_constituent(x):
 
 
 class ExternalCommand:
-    def __init__(self, cmd: List[Union[str, Param]]):
+    def __init__(self, *cmd: Union[str, Param]):
         self.cmd = cmd
         self.cmd_constituents = [_make_cmd_constituent(x) for x in self.cmd]
         self.cmd_params = [x for x in cmd if isinstance(x, Param)]
