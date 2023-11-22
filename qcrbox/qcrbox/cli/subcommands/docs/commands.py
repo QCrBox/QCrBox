@@ -8,10 +8,10 @@ from pathlib import Path
 import click
 import doit.task
 
-from qcrbox.cli.helpers import run_tasks
+from ...helpers import run_tasks, NaturalOrderGroup
 
 
-@click.group(name="docs")
+@click.group(name="docs", cls=NaturalOrderGroup)
 def docs_build_and_serve():
     """
     Build/serve the documentation.

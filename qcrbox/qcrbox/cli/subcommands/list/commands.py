@@ -6,6 +6,7 @@ import requests
 from dateutil.parser import parse as parse_date
 from tabulate import tabulate
 
+from ...helpers import DockerProject, NaturalOrderGroup
 from ....registry.helpers import get_qcrbox_registry_api_connection_url
 
 
@@ -25,7 +26,7 @@ def pretty_print_timestamp(colname):
     return pretty_print_timestamp_impl
 
 
-@click.group(name="list")
+@click.group(name="list", cls=NaturalOrderGroup)
 def list_qcrbox_resources():
     """
     List registered resources (applications, commands, etc.)
@@ -41,6 +42,19 @@ def run_request_against_registry_api(endpoint, params):
     except requests.exceptions.ConnectionError:
         click.echo(f"Error: could not connect to QCrBox registry at {qcrbox_api_base_url}")
         sys.exit(1)
+
+
+@list_qcrbox_resources.command(name="components")
+def list_available_componens():
+    """
+    List available QCrBox components.
+
+    These can be used as arguments in the commands `qcb build/up/down`.
+    """
+    docker_project = DockerProject()
+    components = docker_project.services_excluding_base_images
+    for component in components:
+        click.echo(component)
 
 
 @list_qcrbox_resources.command(name="applications")
