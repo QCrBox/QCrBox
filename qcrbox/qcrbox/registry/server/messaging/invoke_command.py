@@ -64,14 +64,24 @@ async def _invoke_command_impl(msg: msg_specs.InvokeCommand) -> msg_specs.QCrBox
             ),
         )
 
-        response = await router.broker.publish(
-            msg_execute_calculation,
-            routing_key=routing_key,
-            callback=True,
-            callback_timeout=30.0,
-            raise_timeout=True,
-        )
-        logger.debug(f"Response for command invocation: {response=}")
+        try:
+            response = await router.broker.publish(
+                msg_execute_calculation,
+                routing_key=routing_key,
+                callback=True,
+                callback_timeout=60.0,
+                raise_timeout=True,
+            )
+            logger.debug(f"Response for command invocation: {response=}")
+        except TimeoutError:
+            return msg_specs.QCrBoxGenericResponse(
+                response_to="invoke_command",
+                status="error",
+                payload={
+                    "msg_execute_calculation": msg_execute_calculation,
+                    "routing_key": routing_key,
+                },
+            )
 
     return msg_specs.QCrBoxGenericResponse(
         response_to="invoke_command", status="success", payload={"calculation_id": assigned_calculation_id}
