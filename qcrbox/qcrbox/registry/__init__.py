@@ -1,1 +1,2 @@
-from .client import QCrBoxRegistryClient, ExternalCommand, PythonCallable
+from .client import QCrBoxRegistryClient, ExternalCommand, PythonCallable, Param
+from .msg_specs import sql_models
