@@ -24,6 +24,14 @@ async def _(msg: msg_specs.ExecuteCalculation, application) -> msg_specs.QCrBoxG
             status="error",
             msg=error_msg,
         )
+    except Exception as exc:
+        error_msg = f"Unexpected error: {exc}"
+        logger.error(error_msg)
+        return msg_specs.QCrBoxGenericResponse(
+            response_to="invoke_command",
+            status="error",
+            msg=error_msg,
+        )
 
     application._calculations[msg.payload.calculation_id] = calculation
     logger.debug(f"Started calculation: {calculation}")
