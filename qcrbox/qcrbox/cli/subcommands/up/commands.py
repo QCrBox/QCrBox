@@ -2,7 +2,7 @@ import click
 import doit.task
 
 from ..build.commands import populate_build_tasks
-from ...helpers import start_up_docker_containers, run_tasks, DockerProject
+from ...helpers import run_tasks, DockerProject
 
 
 @click.command(name="up")
@@ -24,7 +24,7 @@ def start_up_components(rebuild_deps: bool, dry_run: bool, components: list[str]
     """
     Start up QCrBox components.
     """
-    docker_project = DockerProject(name="qcrbox")
+    docker_project = DockerProject()
     components = components or docker_project.services_excluding_base_images
 
     build_tasks = []
@@ -34,7 +34,7 @@ def start_up_components(rebuild_deps: bool, dry_run: bool, components: list[str]
     startup_task = doit.task.dict_to_task(
         {
             "name": f"task_start_up_docker_containers",
-            "actions": [(start_up_docker_containers, (components, docker_project, dry_run))],
+            "actions": [(docker_project.start_up_docker_containers, (components, dry_run))],
         }
     )
 

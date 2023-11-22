@@ -6,7 +6,7 @@ import requests
 
 from ....logging import logger
 from ....registry import msg_specs
-from ....registry.helpers import get_qcrbox_registry_api_connection_url
+from ....registry.helpers import get_qcrbox_registry_api_connection_url, get_container_qcrbox_id
 
 
 @click.command(name="invoke")
@@ -32,12 +32,16 @@ def invoke_command(command_id: int, container_qcrbox_id: Optional[str] = None, w
     """
     qcrbox_api_base_url = get_qcrbox_registry_api_connection_url()
 
-    with_args = json.loads(with_args) or dict()
+    with_args = json.loads(with_args or "{}")
     logger.debug(f"[DDD] {with_args=} ({type(with_args)=})")
     logger.warning(
         f"FIXME: provide feedback on whether the arguments were provided correctly "
-        f"(currently the command just fails to run silently within the container)"
+        f"(currently the command just silently fails to run within the container)"
     )
+
+    logger.debug(f"Argument passed in: {container_qcrbox_id=} ({type(container_qcrbox_id)=})")
+    container_qcrbox_id = container_qcrbox_id or get_container_qcrbox_id()
+    logger.debug(f"Using container_qcrbox_id={container_qcrbox_id!r}")
 
     payload = msg_specs.InvokeCommand(
         action="invoke_command",

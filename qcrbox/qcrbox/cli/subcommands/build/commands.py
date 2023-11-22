@@ -1,7 +1,6 @@
 import click
-from ...helpers import make_task, run_tasks, get_repo_root
-from ...helpers.docker_project import DockerProject
 from ....logging import logger
+from ...helpers import make_task, DockerProject, get_repo_root, run_tasks
 
 
 @click.command(name="build")
@@ -18,7 +17,7 @@ def build_components(no_deps: bool, dry_run: bool, components: list[str]):
     """
     Build QCrBox components.
     """
-    docker_project = DockerProject(name="qcrbox")
+    docker_project = DockerProject()
     components = components or docker_project.services_including_base_images
     click.echo(
         f"Building the following components ({'without' if no_deps else 'including'} dependencies): "
@@ -60,7 +59,7 @@ def task_build_docker_image(service: str, docker_project: DockerProject, with_de
 
 
 def populate_build_tasks(components: list[str], with_deps: bool, dry_run: bool, tasks=None):
-    docker_project = DockerProject(name="qcrbox")
+    docker_project = DockerProject()
 
     tasks = tasks or []
 

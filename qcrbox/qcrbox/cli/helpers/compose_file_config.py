@@ -1,15 +1,10 @@
-import pathlib
-import yaml
+import re
 from pathlib import Path
+
+import yaml
 from pydantic.utils import deep_update
-from typing import TypeVar
 
-from git import InvalidGitRepositoryError
-
-from .qcrbox_helpers import get_repo_root
-
-# Type alias
-PathLike = TypeVar("PathLike", str, pathlib.Path)
+from .qcrbox_helpers import get_repo_root, find_common_repo_root, PathLike
 
 
 def load_docker_compose_data(*compose_files: PathLike):
@@ -24,17 +19,10 @@ class ComposeFileConfig:
         compose_files_build = compose_files_build or ()
         compose_files_runtime = compose_files_runtime or ()
 
-        self.repo_root = self._find_common_repo_root(*compose_files_build, *compose_files_runtime)
-
         if compose_files_build == () and compose_files_runtime == ():
-            # Use default compose files in this repository
-            compose_files_build = [
-                self.repo_root.joinpath("docker-compose.build.yml"),
-            ]
-            compose_files_runtime = [
-                self.repo_root.joinpath("docker-compose.yml"),
-            ]
+            raise ValueError("Arguments `compose_files_build` and `compose_files_runtime` cannot both be empty.")
 
+        self.repo_root = find_common_repo_root(*compose_files_build, *compose_files_runtime)
         self.compose_files_build = [Path(compose_file).resolve() for compose_file in compose_files_build]
         self.compose_files_runtime = [Path(compose_file).resolve() for compose_file in compose_files_runtime]
 
@@ -46,32 +34,88 @@ class ComposeFileConfig:
         for compose_file, data in self._service_metadata_by_compose_file.items():
             self._full_service_metadata = deep_update(self._full_service_metadata, data)
 
-    def _find_common_repo_root(self, *compose_files: PathLike):
-        # If no compose files are given, assume we're being called from
-        # within a cloned qcrbox repo and look for its root folder.
-        compose_files = compose_files or [__file__]
+    @classmethod
+    def get_default_config(cls):
+        repo_root = get_repo_root()
+        compose_files_build = [repo_root.joinpath("docker-compose.build.yml")]
+        compose_files_runtime = [repo_root.joinpath("docker-compose.yml")]
+        return cls(compose_files_build=compose_files_build, compose_files_runtime=compose_files_runtime)
 
-        try:
-            repo_root_candidates = set(get_repo_root(compose_file) for compose_file in compose_files)
-        except InvalidGitRepositoryError:
-            raise ValueError("Unable to determine root repository of the given compose files.")
-
-        if len(repo_root_candidates) > 1:
-            raise ValueError("All specified compose files must live in the same repository.")
-
-        return repo_root_candidates.pop()
+    @classmethod
+    def get_config(cls, config_name):
+        match config_name:
+            case "default":
+                return cls.get_default_config()
+            case _:
+                raise ValueError(f"Invalid config name: {config_name}")
 
     @property
-    def compose_files(self):
-        return self.compose_files_build + self.compose_files_runtime
+    def services_including_base_images(self):
+        return list(self._full_service_metadata["services"].keys())
 
-    def get_compose_files(self, relative_path=False):
-        if relative_path:
-            return [compose_file.relative_to(self.repo_root) for compose_file in self.compose_files]
-        else:
-            return self.compose_files
+    @property
+    def services_excluding_base_images(self):
+        return [
+            service_name
+            for service_name in self._full_service_metadata["services"].keys()
+            if not service_name.startswith("base-")
+        ]
 
     def get_dockerfile_for_service(self, service_name):
         return self.repo_root.joinpath(
             self._full_service_metadata["services"][service_name]["build"]["context"]
         ).joinpath("Dockerfile")
+
+    def get_build_dependencies(self, service_name):
+        dockerfile = self.get_dockerfile_for_service(service_name)
+        contents = dockerfile.open().readlines()
+        dependency_lines = [line for line in contents if line.startswith("FROM qcrbox")]
+        dependency_names = [
+            re.match("^FROM qcrbox/(?P<image_name>.*):", line).group("image_name") for line in dependency_lines
+        ]
+        return dependency_names
+
+    def get_runtime_dependencies(self, service_name):
+        try:
+            runtime_deps = self._full_service_metadata["services"][service_name]["depends_on"]
+        except KeyError:
+            # no runtime dependencies
+            runtime_deps = []
+
+        if not isinstance(runtime_deps, list):
+            assert isinstance(runtime_deps, dict)
+            runtime_deps = list(runtime_deps.keys())
+
+        return runtime_deps
+
+    def get_build_and_runtime_dependencies(self, service_name):
+        return self.get_build_dependencies(service_name) + self.get_runtime_dependencies(service_name)
+
+    def get_dependency_chain(self, service_name, include_build_deps=False):
+        deps_done = []
+        deps_todo = [service_name]
+
+        def tidy_up_deps(deps_done, deps_todo):
+            return list({x: None for x in deps_todo if x not in deps_done}.keys())
+
+        while deps_todo:
+            cur_dep = deps_todo.pop(0)
+            deps_done.append(cur_dep)
+            if include_build_deps:
+                deps_todo += self.get_build_and_runtime_dependencies(cur_dep)
+            else:
+                deps_todo += self.get_runtime_dependencies(cur_dep)
+            deps_todo = tidy_up_deps(deps_done, deps_todo)
+
+        # Remove the parent service name to avoid circular dependencies
+        deps_done.remove(service_name)
+
+        return reversed(deps_done)
+
+    @property
+    def compose_files(self):
+        return self.compose_files_build + self.compose_files_runtime
+
+    @property
+    def command_line_options(self):
+        return [f"--file={compose_file.as_posix()}" for compose_file in self.compose_files]
