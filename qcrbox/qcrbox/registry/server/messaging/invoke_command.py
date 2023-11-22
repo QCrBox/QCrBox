@@ -15,6 +15,8 @@ async def _(msg: msg_specs.InvokeCommand) -> msg_specs.QCrBoxGenericResponse:
     """
     Invoke a registered command with given arguments.
     """
+    # Note: the reason why the implementation is in a separate function is so
+    # that we can re-use it in the API handler for the /invoke_command endpoint.
     return await _invoke_command_impl(msg)
 
 
