@@ -45,14 +45,27 @@ def run_request_against_registry_api(endpoint, params):
 
 
 @list_qcrbox_resources.command(name="components")
-def list_available_componens():
+@click.option(
+    "-a",
+    "--all",
+    "include_all_components",
+    default=False,
+    is_flag=True,
+    help="List all components (including base images that are only used during the build process)",
+)
+def list_available_componens(include_all_components):
     """
     List available QCrBox components.
 
     These can be used as arguments in the commands `qcb build/up/down`.
     """
     docker_project = DockerProject()
-    components = docker_project.services_excluding_base_images
+
+    if include_all_components:
+        components = docker_project.services_including_base_images
+    else:
+        components = docker_project.services_excluding_base_images
+
     for component in components:
         click.echo(component)
 
