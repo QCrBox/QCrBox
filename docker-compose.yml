@@ -1,14 +1,6 @@
 version: "3.8"
 
 services:
-  base-ancestor:
-    image: "qcrbox/base-ancestor:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
-    environment:
-      QCRBOX_RABBITMQ_QUEUE_NAME: "qcrbox-base-ancestor"
-    networks:
-      - qcrbox-net
-    restart: "unless-stopped"
-
   qcrbox-message-bus:
     image: "qcrbox/message-bus:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
     volumes:
@@ -17,9 +9,9 @@ services:
       - qcrbox-net
     hostname: "qcrbox-message-bus"
     ports:
-      - "${QCRBOX_BIND_ADDRESS:?Must set env var QCRBOX_BIND_ADDRESS}:${QCRBOX_PORT_RABBITMQ:?Must set env var QCRBOX_PORT_RABBITMQ}:5672"
-      - "${QCRBOX_BIND_ADDRESS:?Must set env var QCRBOX_BIND_ADDRESS}:${QCRBOX_PORT_RABBITMQ_MANAGEMENT:?Must set env var QCRBOX_PORT_RABBITMQ_MANAGEMENT}:15672"
-      - "${QCRBOX_BIND_ADDRESS:?Must set env var QCRBOX_BIND_ADDRESS}:${QCRBOX_PORT_WEBSOCKET:?Must set env var QCRBOX_PORT_WEBSOCKET}:4000"
+      - "${QCRBOX_BIND_ADDRESS:?Must set env var QCRBOX_BIND_ADDRESS}:${QCRBOX_RABBITMQ_PORT:?Must set env var QCRBOX_RABBITMQ_PORT}:5672"
+      - "${QCRBOX_BIND_ADDRESS:?Must set env var QCRBOX_BIND_ADDRESS}:${QCRBOX_RABBITMQ_MANAGEMENT_PORT:?Must set env var QCRBOX_RABBITMQ_MANAGEMENT_PORT}:15672"
+#      - "${QCRBOX_BIND_ADDRESS:?Must set env var QCRBOX_BIND_ADDRESS}:${QCRBOX_PORT_WEBSOCKET:?Must set env var QCRBOX_PORT_WEBSOCKET}:4000"
     restart: unless-stopped
     healthcheck:
       test: rabbitmq-diagnostics -q is_running
@@ -35,18 +27,17 @@ services:
     image: "qcrbox/registry:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
     volumes:
       - ./shared_files:${QCRBOX_SHARED_FILES_DIR:?Must set env var QCRBOX_SHARED_FILES_DIR}
-      - qcrbox-registry-db:/mnt/qcrbox_registry_data/
-      #- ./services/base_images/base_ancestor/qcrbox_python_module:${QCRBOX_ROOT_DIR:?Must set env var QCRBOX_ROOT_DIR}/qcrbox_python_module
+      - qcrbox-registry-db:${QCRBOX_REGISTRY_DB_DIR:?Must set env var QCRBOX_REGISTRY_DB_DIR}
     ports:
-      - "${QCRBOX_BIND_ADDRESS}:${QCRBOX_PORT_QCRBOX_REGISTRY:?Must set env var QCRBOX_PORT_QCRBOX_REGISTRY}:8000"
+      - "${QCRBOX_BIND_ADDRESS}:${QCRBOX_QCRBOX_REGISTRY_PORT:?Must set env var QCRBOX_QCRBOX_REGISTRY_PORT}:8000"
     depends_on:
       qcrbox-message-bus:
         condition: service_healthy
     environment:
       QCRBOX_RABBITMQ_QUEUE_NAME: "qcrbox_registry"
-      QCRBOX_HOST_RABBITMQ: "qcrbox-message-bus"
-      QCRBOX_PORT_RABBITMQ: "5672"
-      #QCRBOX_REGISTRY_SERVER_DB_DIR: "${QCRBOX_SHARED_FILES_DIR:?Must set env var QCRBOX_SHARED_FILES_DIR}"
+      QCRBOX_RABBITMQ_HOST: "qcrbox-message-bus"
+      QCRBOX_RABBITMQ_PORT: "5672"
+      QCRBOX_REGISTRY_DB_DIR: "${QCRBOX_REGISTRY_DB_DIR:?Must set env var QCRBOX_REGISTRY_DB_DIR}"
     networks:
       - qcrbox-net
     restart: "unless-stopped"
@@ -59,7 +50,6 @@ services:
         QCRBOX_DOCKER_TAG: ${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}
     environment:
       QCRBOX_RABBITMQ_QUEUE_NAME: "shelx"
-      QCRBOX_APPLICATION_CONFIG_FILE: "configure_shelx.py"
       QCRBOX__QCRBOX_REGISTRY_HOST: "qcrbox-registry"
       QCRBOX__QCRBOX_REGISTRY_PORT: "8000"
     volumes:

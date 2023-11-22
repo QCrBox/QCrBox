@@ -7,8 +7,9 @@ services:
       context: services/base_images/base_ancestor/
       args:
         QCRBOX_ROOT_DIR: ${QCRBOX_ROOT_DIR:?Must set env var QCRBOX_ROOT_DIR}
+        QCRBOX_VOLUMES_ROOT_DIR: ${QCRBOX_VOLUMES_ROOT_DIR:?Must set env var QCRBOX_VOLUMES_ROOT_DIR}
         QCRBOX_SUPERVISORD_CONF_DIR: ${QCRBOX_SUPERVISORD_CONF_DIR:?Must set env var QCRBOX_SUPERVISORD_CONF_DIR}
-        QCRBOX_HOST_RABBITMQ: "qcrbox-message-bus"
+        QCRBOX_RABBITMQ_HOST: "qcrbox-message-bus"
         QCRBOX_PYTHON_PACKAGE_VERSION: ${QCRBOX_PYTHON_PACKAGE_VERSION:-${QCRBOX_DOCKER_TAG}}
 
   base-application:
@@ -19,6 +20,8 @@ services:
         QCRBOX_DOCKER_TAG: ${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}
         QCRBOX_ROOT_DIR: ${QCRBOX_ROOT_DIR:?Must set env var QCRBOX_ROOT_DIR}
         QCRBOX_SUPERVISORD_CONF_DIR: ${QCRBOX_SUPERVISORD_CONF_DIR:?Must set env var QCRBOX_SUPERVISORD_CONF_DIR}
+        QCRBOX_QCRBOX_REGISTRY_HOST: "qcrbox-registry"
+        QCRBOX_QCRBOX_REGISTRY_PORT: "8000"
 
   qcrbox-message-bus:
     build:
@@ -31,6 +34,7 @@ services:
         QCRBOX_DOCKER_TAG: ${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}
         QCRBOX_ROOT_DIR: ${QCRBOX_ROOT_DIR:?Must set env var QCRBOX_ROOT_DIR}
         QCRBOX_SUPERVISORD_CONF_DIR: ${QCRBOX_SUPERVISORD_CONF_DIR:?Must set env var QCRBOX_SUPERVISORD_CONF_DIR}
+        QCRBOX_REGISTRY_DB_DIR: ${QCRBOX_REGISTRY_DB_DIR:?Must set env var QCRBOX_REGISTRY_DB_DIR}
 
   shelx:
     build:

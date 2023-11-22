@@ -9,7 +9,7 @@ from sqlmodel import create_engine, Session, select
 from ...msg_specs.sql_models import QCrBoxBaseSQLModel, KeywordDB
 
 connect_args = {"check_same_thread": False}
-registry_db_dir = os.environ.get("QCRBOX_REGISTRY_SERVER_DB_DIR", "/mnt/qcrbox_registry_data/")
+registry_db_dir = os.environ.get("QCRBOX_REGISTRY_DB_DIR", "/mnt/qcrbox/qcrbox_registry_data/")
 
 sqlite_file_name = os.path.join(registry_db_dir, "qcrbox_registry_database.db")
 sqlite_url = f"sqlite:///{sqlite_file_name}"
