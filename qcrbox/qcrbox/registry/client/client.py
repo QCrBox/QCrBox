@@ -137,7 +137,10 @@ class QCrBoxRegistryClient:
                     else:
                         logger.debug(f"Received 'register_application' message: {msg_obj}")
 
-                return await process_message_sync_or_async(msg_obj, application)
+                logger.debug(f"[DDD] Calling 'process_message_sync_or_async()' ...")
+                res = await process_message_sync_or_async(msg_obj, application)
+                logger.debug(f"[DDD] Received result from 'process_message_sync_or_async()': {res}")
+                return res
 
             # Resume broker now that the new hander has been registered.
             await self.propan_app.broker.start()
