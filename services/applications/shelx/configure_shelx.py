@@ -30,7 +30,8 @@ def test_iso_to_aniso(input_cif_file, insert_anis_directive=True):
     msg = f"Running TEST: iso -> aniso ({input_cif_file!r}, insert_anis_directive={insert_anis_directive!r})"
     logger.debug(msg)
 
-    input_cif_path = Path(input_cif_file).resolve()
+    #input_cif_path = Path(input_cif_file).resolve()
+    input_cif_path = Path(input_cif_file)
     workdir = input_cif_path.parent
     cmd = ["shredcif", input_cif_path.name]
     logger.debug(f"Calling command: {cmd}")
