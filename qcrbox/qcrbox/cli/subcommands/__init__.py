@@ -4,3 +4,4 @@ from .down import shut_down_components
 from .list import list_qcrbox_resources
 from .invoke import invoke_command
 from .docs import docs_build_and_serve
+from .version import print_qcrbox_version
