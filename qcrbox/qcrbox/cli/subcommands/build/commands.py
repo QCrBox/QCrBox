@@ -1,6 +1,6 @@
 import click
-from ....logging import logger
 from ...helpers import make_task, DockerProject, get_repo_root, run_tasks
+from loguru import logger
 
 
 @click.command(name="build")
@@ -33,7 +33,7 @@ def task_build_qcrbox_python_package(dry_run: bool):
     qcrbox_module_root = repo_root.joinpath("qcrbox")
     base_ancestor_qcrbox_dist_dir = repo_root.joinpath("services/base_images/base_ancestor/qcrbox_dist/").as_posix()
 
-    actions = [lambda: logger.info("Building Python package: qcrbox")]
+    actions = [lambda: logger.info("Building Python package: qcrbox", dry_run=dry_run)]
     if not dry_run:
         actions.append(
             f"cd {qcrbox_module_root.as_posix()} && "
