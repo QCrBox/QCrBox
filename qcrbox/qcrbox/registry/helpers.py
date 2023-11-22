@@ -1,5 +1,6 @@
 import asyncio
 import os
+from pathlib import Path
 from typing import Optional
 
 from aiormq import AMQPConnectionError
@@ -32,6 +33,18 @@ def get_qcrbox_registry_api_connection_url(
     port = port or int(os.environ.get("QCRBOX_QCRBOX_REGISTRY_PORT", 11000))
     url = f"http://{host}:{port}"
     return url
+
+
+def get_container_qcrbox_id():
+    container_qcrbox_id_file = Path("/opt/qcrbox/container_qcrbox_id.txt")
+    if container_qcrbox_id_file.exists():
+        logger.debug(f"Reading container_qcrbox_id from file: {container_qcrbox_id_file.as_posix()}")
+        with container_qcrbox_id_file.open() as f:
+            container_qcrbox_id = f.read().strip()
+            logger.debug(f"   -> {container_qcrbox_id=}")
+            return container_qcrbox_id
+    else:
+        return None
 
 
 def wrap_with_retry(orig_connect_func, *, wait_interval, max_attempt_number):
