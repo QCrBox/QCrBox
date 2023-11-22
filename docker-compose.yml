@@ -50,8 +50,8 @@ services:
         QCRBOX_DOCKER_TAG: ${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}
     environment:
       QCRBOX_RABBITMQ_QUEUE_NAME: "shelx"
-      QCRBOX__QCRBOX_REGISTRY_HOST: "qcrbox-registry"
-      QCRBOX__QCRBOX_REGISTRY_PORT: "8000"
+      QCRBOX_QCRBOX_REGISTRY_HOST: "qcrbox-registry"
+      QCRBOX_QCRBOX_REGISTRY_PORT: "8000"
     volumes:
       - ./shared_files:${QCRBOX_SHARED_FILES_DIR:?Must set env var QCRBOX_SHARED_FILES_DIR}
     depends_on:
