@@ -10,6 +10,9 @@ from ...msg_specs.sql_models import QCrBoxBaseSQLModel, KeywordDB
 
 connect_args = {"check_same_thread": False}
 registry_db_dir = os.environ.get("QCRBOX_REGISTRY_DB_DIR", "/mnt/qcrbox/qcrbox_registry_data/")
+if not os.path.exists(registry_db_dir):
+    logger.debug(f"Creating directory for qcrbox registry database: {registry_db_dir!r}")
+    os.makedirs(registry_db_dir)
 
 sqlite_file_name = os.path.join(registry_db_dir, "qcrbox_registry_database.db")
 sqlite_url = f"sqlite:///{sqlite_file_name}"
