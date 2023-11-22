@@ -1,1 +1,1 @@
-from .commands import print_list_of_resources
+from .commands import list_qcrbox_resources
