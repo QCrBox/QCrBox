@@ -37,7 +37,7 @@ def prettyprint_called_process_error(exc: subprocess.CalledProcessError):
 
 
 class DockerProject:
-    def __init__(self, *, name: str = "qcrbox2", config_name: str = "default"):
+    def __init__(self, *, name: str = "qcrbox", config_name: str = "default"):
         self.project_name = name
         self.compose_file_config = ComposeFileConfig.get_config(config_name)
         self.repo_root = self.compose_file_config.repo_root
