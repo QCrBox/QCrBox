@@ -1,9 +1,11 @@
 # Set up a development environment
 
-Make sure you have the prerequisites installed.
+## Check prerequisites
+
+Make sure you have the necessary prerequisites installed.
 
 !!! warning inline end "TODO"
-    Listed all prerequisites and their minimum required versions.
+    List all prerequisites and their minimum required versions.
 
 ```
 $ python --version
@@ -16,13 +18,15 @@ $ docker compose version
 Docker Compose version v2.21.0
 ```
 
-Clone the QCrBox repository and change into it.
+## Clone the QCrBox repository
 ```
 $ git clone https://github.com/QCrBox/QCrBox.git
 $ cd QCrBox
 ```
 
-Create a virtual environment and activate it.
+## Create a virtual environment
+
+Create a virtual environment for the `qcrbox` Python package and activate it.
 
 ```
 $ python -m venv ./venv
@@ -33,6 +37,9 @@ $ source ./venv/bin/activate
     because it does not require any additional dependencies.
     If you use a custom package manager such as `poetry` or `conda`
     you can of course adapt the previous step to your specific setup.
+
+
+## Install the `qcrbox` Python package
 
 Let's install/update some core packages before installing the `qcrbox` dependencies (including dev dependencies).
 ```
@@ -52,6 +59,8 @@ Finally, install the `qcrbox` package itself.
     This means that any changes we make to the code during development are automatically picked up in our local installation
     without having to reinstall/upgrade the `qcrbox` package.
 
+
+## Verify the installation
 
 Verify that we can now run the `qcb` command line tool, which is the main CLI interface
 for interacting with QCrBx from the command line.

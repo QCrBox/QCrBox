@@ -1,14 +1,18 @@
-# Contents
+---
+hide:
+  - navigation
+---
 
-_TODO: Add a brief overview of the project here._
+!!! warning "TODO"
+    _Add a brief overview of the project here (or a link to the relevant documentation page)._
 
 
 Documentation:
 
-- [Tutorials](tutorials/README.md) (Start Here)
-- [How-To Guides](how_to_guides/README.md)
-- [Technical Reference](technical_reference/README.md)
-- [Background Information](background_info/README.md)
+- [Tutorials](tutorials/contents.md)
+- [How-To Guides](how_to_guides/contents.md) (Start Here)
+- [Technical Reference](technical_reference/contents.md)
+- [Background Information](background_info/contents.md)
 
 
 Technical reference:
@@ -17,4 +21,6 @@ Technical reference:
 - [Changelog](CHANGELOG.md)
 
 
+<div style="font-size:smaller; margin-top:2em" markdown>
 _This documentation structure is based on the [Divio Documentation System](https://documentation.divio.com/)._
+</div>

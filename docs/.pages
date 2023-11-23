@@ -1,5 +1,5 @@
-arrange:
-  - index.md
+nav:
+  - Contents: index.md
   - tutorials
   - how_to_guides
   - technical_reference
