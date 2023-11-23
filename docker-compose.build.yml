@@ -20,8 +20,8 @@ services:
         QCRBOX_DOCKER_TAG: ${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}
         QCRBOX_ROOT_DIR: ${QCRBOX_ROOT_DIR:?Must set env var QCRBOX_ROOT_DIR}
         QCRBOX_SUPERVISORD_CONF_DIR: ${QCRBOX_SUPERVISORD_CONF_DIR:?Must set env var QCRBOX_SUPERVISORD_CONF_DIR}
-        QCRBOX_QCRBOX_REGISTRY_HOST: "qcrbox-registry"
-        QCRBOX_QCRBOX_REGISTRY_PORT: "8000"
+        QCRBOX_REGISTRY_HOST: "qcrbox-registry"
+        QCRBOX_REGISTRY_PORT: "8000"
 
   qcrbox-message-bus:
     build:

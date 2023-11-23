@@ -29,7 +29,7 @@ services:
       - ./shared_files:${QCRBOX_SHARED_FILES_DIR:?Must set env var QCRBOX_SHARED_FILES_DIR}
       - qcrbox-registry-db:${QCRBOX_REGISTRY_DB_DIR:?Must set env var QCRBOX_REGISTRY_DB_DIR}
     ports:
-      - "${QCRBOX_BIND_ADDRESS}:${QCRBOX_QCRBOX_REGISTRY_PORT:?Must set env var QCRBOX_QCRBOX_REGISTRY_PORT}:8000"
+      - "${QCRBOX_BIND_ADDRESS}:${QCRBOX_REGISTRY_PORT:?Must set env var QCRBOX_REGISTRY_PORT}:8000"
     depends_on:
       qcrbox-message-bus:
         condition: service_healthy
@@ -50,8 +50,8 @@ services:
         QCRBOX_DOCKER_TAG: ${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}
     environment:
       QCRBOX_RABBITMQ_QUEUE_NAME: "shelx"
-      QCRBOX_QCRBOX_REGISTRY_HOST: "qcrbox-registry"
-      QCRBOX_QCRBOX_REGISTRY_PORT: "8000"
+      QCRBOX_REGISTRY_HOST: "qcrbox-registry"
+      QCRBOX_REGISTRY_PORT: "8000"
     volumes:
       - ./shared_files:${QCRBOX_SHARED_FILES_DIR:?Must set env var QCRBOX_SHARED_FILES_DIR}
     depends_on:

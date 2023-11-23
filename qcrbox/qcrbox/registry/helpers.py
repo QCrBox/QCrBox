@@ -29,8 +29,8 @@ def get_qcrbox_registry_api_connection_url(
     host: Optional[str] = None,
     port: Optional[int] = None,
 ):
-    host = host or os.environ.get("QCRBOX_QCRBOX_REGISTRY_HOST", "127.0.0.1")
-    port = port or int(os.environ.get("QCRBOX_QCRBOX_REGISTRY_PORT", 11000))
+    host = host or os.environ.get("QCRBOX_REGISTRY_HOST", "127.0.0.1")
+    port = port or int(os.environ.get("QCRBOX_REGISTRY_PORT", 11000))
     url = f"http://{host}:{port}"
     return url
 
