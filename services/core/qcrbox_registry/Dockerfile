@@ -3,13 +3,14 @@ FROM qcrbox/base-ancestor:${QCRBOX_DOCKER_TAG}
 SHELL ["/bin/bash", "-c"]
 
 HEALTHCHECK \
-    --interval=5s \
+    --interval=10s \
     #--start-period=${STARTUP_TIME}s \
     #--start-interval=${STARTUP_TIME}s \
     CMD curl --fail http://localhost:8000/ping || exit 1
 
 
-ARG QCRBOX_REGISTRY_DB_DIR=/mnt/qcrbox_registry_data/
+ARG QCRBOX_REGISTRY_DB_DIR=${QCRBOX_REGISTRY_DB_DIR}
+ENV QCRBOX_REGISTRY_DB_DIR=${QCRBOX_REGISTRY_DB_DIR}
 RUN mkdir -p ${QCRBOX_REGISTRY_DB_DIR}
 RUN chown ${APP_USER}:${APP_USER} ${QCRBOX_REGISTRY_DB_DIR}
 VOLUME ${QCRBOX_REGISTRY_DB_DIR}
