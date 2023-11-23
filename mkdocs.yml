@@ -1,4 +1,4 @@
-site_name: Quantum Crystallography Toolbox
+site_name: Quantum Crystallography Toolbox (QCrBox)
 site_dir: .build/docs_site
 theme:
   name: "material"
@@ -8,13 +8,15 @@ theme:
   # Default values, taken from mkdocs_theme.yml
   language: en
   features:
+    - navigation.expand
     - navigation.instant
     - navigation.instant.prefetch
-    #- navigation.tabs
-    #- navigation.tabs.sticky
     - navigation.path
     - navigation.sections
-    - navigation.expand
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.top
+    #- navigation.tracking
   font:
     text: Roboto
     code: Roboto Mono
@@ -39,7 +41,7 @@ markdown_extensions:
   - footnotes
   - md_in_html
   - toc:
-      permalink: true
+      permalink: "#"
 
   # Python Markdown Extensions
   - pymdownx.arithmatex:
