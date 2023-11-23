@@ -37,6 +37,7 @@ However, there will be an initial period of stabilisation where this is not adhe
 
 - Created documentation skeleton. ([#2](https://github.com/QCrBox/QCrBox/issues/2))
 - Set up GitHub Actions for continuous deployment of the [docs](https://qcrbox.github.io/QCrBox/) to GitHub pages. ([#11](https://github.com/QCrBox/QCrBox/issues/11))
+- Added how-to guide on how to set up a development environment. ([#24](https://github.com/QCrBox/QCrBox/issues/24))
 
 
 [unreleased]: https://github.com/QCrBox/QCrBox/compare/0.0.1...master
