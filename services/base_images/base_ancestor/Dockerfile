@@ -10,41 +10,60 @@ RUN apt-get update -y && \
         openssh-client ca-certificates && \
     rm -rf /var/lib/apt/lists
 
-# Install system-wide Python virtual environment and set up RabbitMQ RPC server
 ARG QCRBOX_ROOT_DIR
-ENV QCRBOX_ROOT_DIR=${QCRBOX_ROOT_DIR}
-WORKDIR ${QCRBOX_ROOT_DIR}
+ARG QCRBOX_VOLUMES_ROOT_DIR
+ARG QCRBOX_RABBITMQ_HOST
 
-ARG QCRBOX_PYTHON_VENV_DIR=${QCRBOX_ROOT_DIR}/venv
-ARG QCRBOX_PYTHON_PACKAGE_VERSION=${QCRBOX_PYTHON_PACKAGE_VERSION}
+##
+## Create user 'qcrbox'
+##
+ARG QCRBOX_USER=qcrbox
+ARG QCRBOX_GROUP=${QCRBOX_USER}
+ARG QCRBOX_HOME=${QCRBOX_ROOT_DIR}
+ARG QCRBOX_USER_UID=1000
+ARG QCRBOX_USER_GID=1000
+
+RUN groupadd --gid ${QCRBOX_USER_GID} ${QCRBOX_GROUP} && \
+    useradd --home-dir ${QCRBOX_HOME} --shell /bin/bash --uid ${QCRBOX_USER_UID} --gid ${QCRBOX_USER_GID} ${QCRBOX_USER} && \
+    install -d -m 0755 -o ${QCRBOX_USER} -g ${QCRBOX_GROUP} ${QCRBOX_HOME}
+
+ENV QCRBOX_USER=${QCRBOX_USER}
+ENV QCRBOX_HOME=${QCRBOX_HOME}
+ENV QCRBOX_RABBITMQ_HOST=${QCRBOX_RABBITMQ_HOST}
+
+##
+## Create 'global' file /etc/supervisord.conf. Among other things, this includes any config files
+## present in QCRBOX_SUPERVISORD_CONF_DIR (which is where QCrBox services will put them).
+##
+ARG QCRBOX_SUPERVISORD_CONF_DIR=${QCRBOX_SUPERVISORD_CONF_DIR}
+ENV QCRBOX_SUPERVISORD_CONF_DIR=${QCRBOX_SUPERVISORD_CONF_DIR}
+COPY supervisord.conf /etc/supervisord.conf
+RUN rm -f /etc/supervisor/supervisord.conf && \
+    install -d -m 0755 -o ${QCRBOX_USER} -g ${QCRBOX_GROUP} \
+        ${QCRBOX_SUPERVISORD_CONF_DIR} \
+        ${QCRBOX_VOLUMES_ROOT_DIR}
+
+USER ${QCRBOX_USER}
+WORKDIR ${QCRBOX_HOME}
+
+##
+## Create python virtual environment for QCrBox and install the `qcbrox` package into it
+##
+ARG QCRBOX_PYTHON_VENV_DIR=${QCRBOX_HOME}/venv
+ENV QCRBOX_PYTHON_VENV_DIR=${QCRBOX_PYTHON_VENV_DIR}
 RUN mkdir -p ${QCRBOX_PYTHON_VENV_DIR} && \
     python -m venv ${QCRBOX_PYTHON_VENV_DIR} && \
     ${QCRBOX_PYTHON_VENV_DIR}/bin/pip install -U pip wheel build
 
-COPY ./qcrbox_dist/qcrbox-${QCRBOX_PYTHON_PACKAGE_VERSION}-py3-none-any.whl ${QCRBOX_ROOT_DIR}/
+COPY --chown=${QCRBOX_USER}:${QCRBOX_GROUP} ./qcrbox_dist/requirements.txt ${QCRBOX_HOME}
+RUN ${QCRBOX_PYTHON_VENV_DIR}/bin/pip install -r ${QCRBOX_ROOT_DIR}/requirements.txt
+
+ARG QCRBOX_PYTHON_PACKAGE_VERSION=${QCRBOX_PYTHON_PACKAGE_VERSION}
+COPY --chown=${QCRBOX_USER}:${QCRBOX_GROUP} ./qcrbox_dist/qcrbox-${QCRBOX_PYTHON_PACKAGE_VERSION}-py3-none-any.whl ${QCRBOX_HOME}/
 RUN ${QCRBOX_PYTHON_VENV_DIR}/bin/pip install ${QCRBOX_ROOT_DIR}/qcrbox*.whl
 
-ARG QCRBOX_SUPERVISORD_CONF_DIR=${QCRBOX_SUPERVISORD_CONF_DIR}
-RUN mkdir -p ${QCRBOX_SUPERVISORD_CONF_DIR}/
-# Create 'global' file /etc/supervisord.conf. This simply includes any config files
-# present in QCRBOX_SUPERVISORD_CONF_DIR (which is where QCrBox services will put them).
-RUN echo -e "[include]\nfiles = ${QCRBOX_SUPERVISORD_CONF_DIR}/*" > /etc/supervisord.conf
-COPY supervisord.base_ancestor.conf ${QCRBOX_SUPERVISORD_CONF_DIR}/
+RUN echo "source ${QCRBOX_PYTHON_VENV_DIR}/bin/activate" >> ${QCRBOX_HOME}/.bashrc
 
-ARG APP_USER=app
-ARG APP_HOME=/home/app
-ARG APP_USER_UID=1000
-ARG APP_USER_GID=1000
+COPY --chown=${QCRBOX_USER}:${QCRBOX_GROUP} entrypoint.sh execute_startup_cmd.sh ./
 
-RUN groupadd --gid ${APP_USER_GID} app && \
-    useradd --home-dir ${APP_HOME} --shell /bin/bash --uid ${APP_USER_UID} --gid ${APP_USER_GID} ${APP_USER} && \
-    mkdir -p ${APP_HOME}
-
-ENV APP_USER=${APP_USER}
-ENV APP_HOME=${APP_HOME}
-WORKDIR ${APP_HOME}
-
-ARG QCRBOX_HOST_RABBITMQ
-ENV QCRBOX_HOST_RABBITMQ=${QCRBOX_HOST_RABBITMQ}
-
-CMD ["sh", "-c", "chown -R --dereference -L ${APP_USER}:${APP_USER} ${APP_HOME} /tmp /dev/stdout && exec gosu ${APP_USER} supervisord"]
+ENTRYPOINT ["/opt/qcrbox/entrypoint.sh"]

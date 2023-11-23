@@ -1,7 +1,6 @@
 import click
-from ...helpers import make_task, run_tasks, get_repo_root
-from ...helpers.docker_project import DockerProject
-from ....logging import logger
+from ...helpers import make_task, DockerProject, get_repo_root, run_tasks
+from loguru import logger
 
 
 @click.command(name="build")
@@ -18,7 +17,7 @@ def build_components(no_deps: bool, dry_run: bool, components: list[str]):
     """
     Build QCrBox components.
     """
-    docker_project = DockerProject(name="qcrbox")
+    docker_project = DockerProject()
     components = components or docker_project.services_including_base_images
     click.echo(
         f"Building the following components ({'without' if no_deps else 'including'} dependencies): "
@@ -32,14 +31,15 @@ def build_components(no_deps: bool, dry_run: bool, components: list[str]):
 def task_build_qcrbox_python_package(dry_run: bool):
     repo_root = get_repo_root()
     qcrbox_module_root = repo_root.joinpath("qcrbox")
-    base_ancestor_qcrbox_dist_dir = repo_root.joinpath("services/base_images/base_ancestor/qcrbox_dist/")
+    base_ancestor_qcrbox_dist_dir = repo_root.joinpath("services/base_images/base_ancestor/qcrbox_dist/").as_posix()
 
-    actions = [lambda: logger.info("Building Python package: qcrbox")]
+    actions = [lambda: logger.info("Building Python package: qcrbox", dry_run=dry_run)]
     if not dry_run:
         actions.append(
             f"cd {qcrbox_module_root.as_posix()} && "
             f"hatch build -t wheel && "
-            f"cp dist/qcrbox-*.whl {base_ancestor_qcrbox_dist_dir.as_posix()}"
+            f"cp dist/qcrbox-*.whl {base_ancestor_qcrbox_dist_dir} && "
+            f"cp requirements.txt requirements-dev.txt {base_ancestor_qcrbox_dist_dir}"
         )
 
     return {
@@ -59,7 +59,7 @@ def task_build_docker_image(service: str, docker_project: DockerProject, with_de
 
 
 def populate_build_tasks(components: list[str], with_deps: bool, dry_run: bool, tasks=None):
-    docker_project = DockerProject(name="qcrbox")
+    docker_project = DockerProject()
 
     tasks = tasks or []
 

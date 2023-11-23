@@ -7,7 +7,7 @@
 
 # Python
 .venv/
-venv/
+venv*/
 env/
 **/__pycache__
 /playground/
@@ -20,6 +20,9 @@ node_modules
 # Build artifacts
 .build/**
 
+# Folder for files shared with/between containers
+shared_files/**
+
 # doit database
 .doit.db
 
@@ -27,3 +30,18 @@ node_modules
 qcrbox/dist/
 qcrbox/qcrbox/_version.py
 services/base_images/base_ancestor/qcrbox_dist/qcrbox-*.whl
+services/base_images/base_ancestor/qcrbox_dist/requirements*.txt
+
+# ShelX
+services/applications/shelx/shelx_executables/2018_shelxl
+services/applications/shelx/shelx_executables/anode
+services/applications/shelx/shelx_executables/ciftab
+services/applications/shelx/shelx_executables/pdb2ins
+services/applications/shelx/shelx_executables/pdb2insGUI
+services/applications/shelx/shelx_executables/shelxc
+services/applications/shelx/shelx_executables/shelxd
+services/applications/shelx/shelx_executables/shelxe
+services/applications/shelx/shelx_executables/shelxl
+services/applications/shelx/shelx_executables/shelxs
+services/applications/shelx/shelx_executables/shelxt
+services/applications/shelx/shelx_executables/shredcif

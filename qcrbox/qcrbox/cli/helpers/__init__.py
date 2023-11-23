@@ -1,11 +1,11 @@
-from .click_helpers import print_command_help_string_and_exit, exit_with_msg
-from .docker_helpers import (
-    get_dependency_chain,
-    build_single_docker_image,
-    start_up_docker_containers,
-    spin_down_docker_containers,
-    get_toplevel_docker_compose_path,
-)
-from .docker_project import DockerProject
+import click
+
 from .doit_helpers import make_task, run_tasks
-from .qcrbox_helpers import get_current_qcrbox_version, get_repo_root
+from .docker_project import DockerProject
+from .qcrbox_helpers import get_repo_root
+
+class NaturalOrderGroup(click.Group):
+    def list_commands(self, ctx):
+        return self.commands.keys()
+
+del click

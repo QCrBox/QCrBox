@@ -1,15 +1,7 @@
 import click
 import doit.task
 
-from ...helpers.docker_project import DockerProject
-from ...helpers import (
-    spin_down_docker_containers,
-    get_toplevel_docker_compose_path,
-    run_tasks,
-    print_command_help_string_and_exit,
-    exit_with_msg,
-)
-
+from ...helpers import run_tasks, DockerProject
 
 @click.command(name="down")
 @click.option(
@@ -24,7 +16,7 @@ def shut_down_components(dry_run: bool, components: list[str]):
     """
     Shut down QCrBox components.
     """
-    docker_project = DockerProject(name="qcrbox")
+    docker_project = DockerProject()
     components = components or docker_project.services_excluding_base_images
     click.echo(f"Shutting down the following components: {', '.join(components)}\n")
     task = doit.task.dict_to_task(
