@@ -18,5 +18,3 @@ except (ImportError, LookupError):
             "The 'qcrbox' package is not correctly installed. "
             "Please install it with pip."
         )
-
-from . import cli
