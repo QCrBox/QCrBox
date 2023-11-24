@@ -2,7 +2,7 @@ import sqlalchemy.exc
 from sqlmodel import Session, select
 
 from ....logging import logger
-from ...msg_specs import msg_specs, sql_models
+from qcrbox.common import msg_specs, sql_models
 from ..router import router
 from ..database import engine
 from .msg_processing import process_message

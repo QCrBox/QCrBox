@@ -1,8 +1,7 @@
 from loguru import logger
 
 from .msg_processing import process_message
-from ...msg_specs import sql_models
-from ... import msg_specs
+from qcrbox.common import msg_specs, sql_models
 
 __all__ = []
 

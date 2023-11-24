@@ -2,7 +2,7 @@ import asyncio
 from functools import singledispatch
 
 from ....logging import logger
-from ... import msg_specs
+from qcrbox.common import msg_specs
 
 
 async def process_message_sync_or_async(msg, application):

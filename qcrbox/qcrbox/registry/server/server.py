@@ -5,7 +5,7 @@ import uvicorn
 from fastapi import FastAPI
 from loguru import logger
 
-from .. import msg_specs
+from qcrbox.common import msg_specs
 from .database import create_db_and_tables, seed_database
 from .messaging import process_message_sync_or_async
 from .api import fastapi_app, router

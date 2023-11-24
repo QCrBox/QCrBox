@@ -5,7 +5,7 @@ import click
 import requests
 
 from ....logging import logger
-from ....registry import msg_specs
+from ....common import msg_specs
 from ....registry.helpers import get_qcrbox_registry_api_connection_url, get_container_qcrbox_id
 
 
