@@ -9,8 +9,8 @@ from propan import RabbitBroker, PropanApp
 from propan.brokers.rabbit import RabbitQueue
 
 from ...logging import logger
-from qcrbox.common import msg_specs
-from ..helpers import get_rabbitmq_connection_url, get_qcrbox_registry_api_connection_url, schedule_asyncio_task
+from qcrbox.common import msg_specs, get_rabbitmq_connection_url, get_qcrbox_registry_api_connection_url
+from ..helpers import schedule_asyncio_task
 from .messaging import process_message_sync_or_async
 from .helpers import create_new_private_routing_key, create_new_container_qcrbox_id
 from .registered_application_client_side import RegisteredApplicationClientSide

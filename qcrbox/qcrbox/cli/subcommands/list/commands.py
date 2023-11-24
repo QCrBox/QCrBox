@@ -7,7 +7,7 @@ from dateutil.parser import parse as parse_date
 from tabulate import tabulate
 
 from ...helpers import DockerProject, NaturalOrderGroup
-from ....registry.helpers import get_qcrbox_registry_api_connection_url
+from ....common.utils import get_qcrbox_registry_api_connection_url
 
 
 def extract_columns(cols_to_print: Iterable[str]):
