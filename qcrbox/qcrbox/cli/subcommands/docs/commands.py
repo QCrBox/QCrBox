@@ -11,15 +11,6 @@ import doit.task
 
 from ...helpers import run_tasks, NaturalOrderGroup
 
-try:
-    import mkdocs
-except ImportError:
-    click.echo(
-        "MkDocs is not installed. Please run 'pip install qcrbox[docs]' "
-        "to install mkdocs and other documentation-related dependencies."
-    )
-    sys.exit(1)
-
 @click.group(name="docs", cls=NaturalOrderGroup)
 def docs_build_and_serve():
     """
@@ -37,6 +28,7 @@ def build():
     """
     Build the documentation.
     """
+    check_mkdocs_is_installed()
     task = doit.task.dict_to_task(
         {
             "name": "build-docs",
@@ -81,6 +73,7 @@ def serve(host, port):
     def open_url(url):
         webbrowser.open(url, new=2)
 
+    check_mkdocs_is_installed()
     dev_addr = f"{host}:{port}"
     url = f"http://{dev_addr}"
     task1 = doit.task.dict_to_task(
@@ -98,3 +91,16 @@ def serve(host, port):
     run_tasks([task1, task2])
 
     signal.pause()
+
+
+
+def check_mkdocs_is_installed():
+    try:
+        import mkdocs
+    except ImportError:
+        click.echo(
+            "MkDocs is not installed. Please run 'pip install qcrbox[docs]' "
+            "to install mkdocs and other documentation-related dependencies."
+        )
+        sys.exit(1)
+
