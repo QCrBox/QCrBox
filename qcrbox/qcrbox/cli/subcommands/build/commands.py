@@ -39,7 +39,7 @@ def task_build_qcrbox_python_package(dry_run: bool):
             f"cd {qcrbox_module_root.as_posix()} && "
             f"hatch build -t wheel && "
             f"cp dist/qcrbox-*.whl {base_ancestor_qcrbox_dist_dir} && "
-            f"cp requirements.txt requirements-dev.txt {base_ancestor_qcrbox_dist_dir}"
+            f"cp requirements*.txt {base_ancestor_qcrbox_dist_dir}"
         )
 
     return {

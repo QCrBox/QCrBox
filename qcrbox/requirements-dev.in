@@ -2,13 +2,10 @@
 
 -r requirements.txt
 
+black
 hatch
 ipython
+isort
 jupyterlab
 pip-tools
 setuptools_scm
-
-mkdocs
-mkdocs-awesome-pages-plugin
-mkdocs-material
-pymdown-extensions

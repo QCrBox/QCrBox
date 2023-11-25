@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from ... import msg_specs
+from qcrbox.common import msg_specs
 from ....logging import logger
 from .msg_processing import process_message
 

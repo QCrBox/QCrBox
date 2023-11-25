@@ -4,7 +4,7 @@ from typing import Optional
 from loguru import logger
 from propan import PropanApp
 
-from .. import msg_specs
+from qcrbox.common import msg_specs
 from .external_command import ExternalCommand
 from .python_callable import PythonCallable
 

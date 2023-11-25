@@ -1,15 +1,11 @@
 # requirements.in
 click
 doit
-fastapi
 gitpython
 loguru
-propan[async-rabbit,doc]
 pydantic
 python-dateutil
 pyyaml
 requests
 sqlmodel
 tabulate
-tenacity
-uvicorn[standard]

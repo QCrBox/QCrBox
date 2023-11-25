@@ -11,9 +11,23 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dynamic = [
+    "version",
     "dependencies",
     "optional-dependencies",
-    "version",
+]
+[tool.hatch.metadata.hooks.requirements_txt]
+files = ["requirements.txt"]
+
+[tool.hatch.metadata.hooks.requirements_txt.optional-dependencies]
+dev = ["requirements-dev.txt"]
+docs = ["requirements-docs.txt"]
+client = ["requirements-client.txt"]
+server = ["requirements-server.txt"]
+all = [
+    "requirements-dev.txt",
+    "requirements-docs.txt",
+    "requirements-client.txt",
+    "requirements-server.txt",
 ]
 
 [project.urls]
@@ -22,11 +36,10 @@ dynamic = [
 
 [project.scripts]
 qcb = "qcrbox.cli:entry_point"
-qcb_old = "qcrbox.cli.main:cli"
 qcrbox-run-registry-server = "qcrbox.registry.server:main"
 
 [build-system]
-requires = ["hatchling", "hatch-requirements-txt", "hatch-vcs"]
+requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
 
 [tool.hatch.version]
@@ -38,12 +51,6 @@ version_file = "qcrbox/_version.py"
 
 [tool.hatch.build.hooks.vcs]
 version-file = "qcrbox/_version.py"
-
-[tool.hatch.metadata.hooks.requirements_txt]
-files = ["requirements.txt"]
-
-[tool.hatch.metadata.hooks.requirements_txt.optional-dependencies]
-dev = ["requirements-dev.txt"]
 
 [tool.hatch.build.targets.sdist]
 only-include = ["qcrbox"]

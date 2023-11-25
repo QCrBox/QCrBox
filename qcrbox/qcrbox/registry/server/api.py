@@ -10,7 +10,7 @@ from sqlmodel import Session
 from .database import engine
 from .messaging.invoke_command import _invoke_command_impl
 from .router import router
-from ..msg_specs import msg_specs, sql_models
+from qcrbox.common import msg_specs, sql_models
 from ...logging import logger
 
 __all__ = []
@@ -104,7 +104,7 @@ async def get_single_calculation(calculation_id: int):
         except TimeoutError:
             status_details = sql_models.QCrBoxCalculationStatusDetails(
                 status="error",
-                details={"message": "Connection to the container which executed the calculation timed out."}
+                details={"message": "Connection to the container which executed the calculation timed out."},
             )
         calc_with_status_details = sql_models.QCrBoxCalculationRead(**calc.dict(), status_details=status_details)
         return calc_with_status_details

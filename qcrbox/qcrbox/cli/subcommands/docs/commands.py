@@ -2,6 +2,7 @@ import atexit
 import shutil
 import signal
 import subprocess
+import sys
 import webbrowser
 from pathlib import Path
 
@@ -10,6 +11,14 @@ import doit.task
 
 from ...helpers import run_tasks, NaturalOrderGroup
 
+try:
+    import mkdocs
+except ImportError:
+    click.echo(
+        "MkDocs is not installed. Please run 'pip install qcrbox[docs]' "
+        "to install mkdocs and other documentation-related dependencies."
+    )
+    sys.exit(1)
 
 @click.group(name="docs", cls=NaturalOrderGroup)
 def docs_build_and_serve():

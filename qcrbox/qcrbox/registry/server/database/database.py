@@ -6,7 +6,7 @@ from sqlalchemy import event
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import create_engine, Session, select
-from ...msg_specs.sql_models import QCrBoxBaseSQLModel, KeywordDB
+from qcrbox.common.msg_specs.sql_models import QCrBoxBaseSQLModel, KeywordDB
 
 connect_args = {"check_same_thread": False}
 registry_db_dir = os.environ.get("QCRBOX_REGISTRY_DB_DIR", "/mnt/qcrbox/qcrbox_registry_data/")
@@ -58,7 +58,7 @@ def seed_database():
 
 
 def retrieve_application(name, version):
-    from qcrbox.registry.msg_specs.sql_models import QCrBoxApplicationDB as cls
+    from qcrbox.common.msg_specs.sql_models import QCrBoxApplicationDB as cls
 
     with Session(engine) as session:
         result = session.exec(select(cls).where(cls.name == name, cls.version == version)).one()
@@ -66,7 +66,7 @@ def retrieve_application(name, version):
 
 
 def retrieve_command(name, parameters, application_id):
-    from qcrbox.registry.msg_specs.sql_models import QCrBoxCommandDB as cls
+    from qcrbox.common.msg_specs.sql_models import QCrBoxCommandDB as cls
 
     with Session(engine) as session:
         result = session.exec(
