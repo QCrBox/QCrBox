@@ -45,12 +45,8 @@ Let's install/update some core packages before installing the `qcrbox` dependenc
 ```
 (venv) $ pip install -U pip wheel setuptools
 ```
-Next, install the `qcrbox` dependencies.
-```
-(venv) $ pip install -r qcrbox/requirements.txt -r qcrbox/requirements-dev.txt
-```
 
-Finally, install the `qcrbox` package itself.
+Next, install the `qcrbox` package itself. We start with the minimum required dependencies to run the `qcb` command line tool.
 ```
 (venv) $ pip install -e qcrbox
 ```
@@ -58,6 +54,19 @@ Finally, install the `qcrbox` package itself.
     Here we used the `-e` switch to install `qcrbox` in [editable mode](https://setuptools.pypa.io/en/latest/userguide/development_mode.html).
     This means that any changes we make to the code during development are automatically picked up in our local installation
     without having to reinstall/upgrade the `qcrbox` package.
+
+QCrBox comes with several sets of additional dependencies. If you want to build the documentation, for example, you need to run
+```
+(venv) $ pip install -e qcrbox[docs]
+```
+This will install mkdocs and a few other packages needed to build and serve the documentation.
+
+Two other sets of additional dependencies are `qcrbox[client]` and `qcrbox[server]`, but these are mostly relevant for installation inside the Docker containers (unless you want to run the QCrBox registry server or client outside of docker during development).
+
+Finally, you can install *all* additional dependencies by running
+```
+$ pip install qcrbox[all]
+```
 
 
 ## Verify the installation
