@@ -73,3 +73,13 @@ def retrieve_command(name, parameters, application_id):
             select(cls).where(cls.name == name, cls.parameters == parameters, cls.application_id == application_id)
         ).one()
         return result
+
+
+def retrieve_container(qcrbox_id):
+    from qcrbox.common.msg_specs.sql_models import QCrBoxContainerDB as cls
+
+    with Session(engine) as session:
+        result = session.exec(
+            select(cls).where(cls.qcrbox_id == container_qcrbox_id)
+        ).one()
+        return result

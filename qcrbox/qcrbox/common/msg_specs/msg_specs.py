@@ -21,6 +21,15 @@ class RegisterApplication(QCrBoxBaseAction):
     payload: QCrBoxApplicationCreate
 
 
+class QCrBoxContainerDeregisterPayload(BaseModel):
+    container_qcrbox_id: Optional[str] = None
+
+
+class DeregisterContainer(QCrBoxBaseAction):
+    action: Literal["deregister_container"]
+    payload: QCrBoxContainerDeregisterPayload
+
+
 class RegisterCommand(QCrBoxBaseAction):
     action: Literal["register_command"]
     payload: QCrBoxCommandCreate
@@ -64,11 +73,11 @@ class RegisterApplicationPayload(BaseModel):
     container_id: int
 
 
-class RegisterApplicationResponse(QCrBoxGenericResponse):
-    response_to: Literal["register_application"]
+class DeegisterContainerResponse(QCrBoxGenericResponse):
+    response_to: Literal["deregister_container"]
     status: str
     msg: Optional[str] = None
-    payload: Optional[RegisterApplicationPayload] = None
+    payload: Optional[DeregisterContainer] = None
 
 
 def represents_valid_qcrbox_message(cls):
