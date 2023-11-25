@@ -1,0 +1,8 @@
+# requirements-docs.in
+
+-r requirements.txt
+
+mkdocs
+mkdocs-awesome-pages-plugin
+mkdocs-material
+pymdown-extensions

@@ -12,23 +12,22 @@ classifiers = [
 ]
 dynamic = [
     "version",
+    "dependencies",
+    "optional-dependencies",
 ]
-dependencies = [
-    "click",
-    "doit",
-    "gitpython",
-    "loguru",
-    "pydantic",
-    "python-dateutil",
-    "pyyaml",
-    "requests",
-    "sqlmodel",
-    "tabulate",
+[tool.hatch.metadata.hooks.requirements_txt]
+files = ["requirements.txt"]
 
-    # Dependencies for docs build
-    "mkdocs",
-    "mkdocs_pymdownx_material_extras",
-    "mkdocs-awesome-pages-plugin",
+[tool.hatch.metadata.hooks.requirements_txt.optional-dependencies]
+dev = ["requirements-dev.txt"]
+docs = ["requirements-docs.txt"]
+client = ["requirements-client.txt"]
+server = ["requirements-server.txt"]
+all = [
+    "requirements-dev.txt",
+    "requirements-docs.txt",
+    "requirements-client.txt",
+    "requirements-server.txt",
 ]
 
 [project.urls]
