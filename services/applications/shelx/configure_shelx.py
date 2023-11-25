@@ -4,7 +4,7 @@ from pathlib import Path
 
 from loguru import logger
 
-from qcrbox.registry import QCrBoxRegistryClient, PythonCallable
+from qcrbox.registry.client import QCrBoxRegistryClient, PythonCallable
 
 
 def replace_acta_with_acta_anis(contents):
