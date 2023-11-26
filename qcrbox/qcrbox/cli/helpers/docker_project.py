@@ -50,6 +50,9 @@ class DockerProject:
     def services_excluding_base_images(self):
         return self.compose_file_config.services_excluding_base_images
 
+    def get_build_context(self, service_name):
+        return self.compose_file_config.get_build_context(service_name)
+
     def get_dependency_chain(self, service_name, include_build_deps=False):
         return self.compose_file_config.get_dependency_chain(service_name, include_build_deps=include_build_deps)
 

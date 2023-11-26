@@ -61,10 +61,12 @@ class ComposeFileConfig:
             if not service_name.startswith("base-")
         ]
 
+    def get_build_context(self, service_name):
+        return self._full_service_metadata["services"][service_name]["build"]["context"]
+
     def get_dockerfile_for_service(self, service_name):
-        return self.repo_root.joinpath(
-            self._full_service_metadata["services"][service_name]["build"]["context"]
-        ).joinpath("Dockerfile")
+        build_context = self.get_build_context(service_name)
+        return self.repo_root.joinpath(build_context).joinpath("Dockerfile")
 
     def get_build_dependencies(self, service_name):
         dockerfile = self.get_dockerfile_for_service(service_name)
