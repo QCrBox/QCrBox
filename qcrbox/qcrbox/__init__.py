@@ -18,3 +18,7 @@ except (ImportError, LookupError):
             "The 'qcrbox' package is not correctly installed. "
             "Please install it with pip."
         )
+
+# Import logging module here to ensure the loggers
+# are set up correctly before any commands are run.
+from . import logging

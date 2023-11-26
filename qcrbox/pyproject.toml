@@ -12,22 +12,46 @@ classifiers = [
 ]
 dynamic = [
     "version",
-    "dependencies",
-    "optional-dependencies",
 ]
-[tool.hatch.metadata.hooks.requirements_txt]
-files = ["requirements.txt"]
+dependencies = [
+    "anyio~=3.7.1",
+    "click",
+    "doit",
+    "gitpython",
+    "hatch",
+    "loguru",
+    "pydantic",
+    "python-dateutil",
+    "pyyaml",
+    "requests",
+    "setuptools_scm",
+    "sqlmodel",
+    "tabulate",
+]
 
-[tool.hatch.metadata.hooks.requirements_txt.optional-dependencies]
-dev = ["requirements-dev.txt"]
-docs = ["requirements-docs.txt"]
-client = ["requirements-client.txt"]
-server = ["requirements-server.txt"]
-all = [
-    "requirements-dev.txt",
-    "requirements-docs.txt",
-    "requirements-client.txt",
-    "requirements-server.txt",
+[project.optional-dependencies]
+dev = [
+    "black",
+    "ipython",
+    "isort",
+    "pip-tools",
+    "setuptools_scm",
+]
+docs = [
+    "mkdocs",
+    "mkdocs-awesome-pages-plugin",
+    "mkdocs-material",
+    "pymdown-extensions",
+]
+client = [
+    "propan[async-rabbit,doc]",
+    "tenacity",
+]
+server = [
+    "fastapi",
+    "propan[async-rabbit,doc]",
+    "tenacity",
+    "uvicorn[standard]",
 ]
 
 [project.urls]
@@ -39,7 +63,7 @@ qcb = "qcrbox.cli:entry_point"
 qcrbox-run-registry-server = "qcrbox.registry.server:main"
 
 [build-system]
-requires = ["hatchling", "hatch-requirements-txt", "hatch-vcs"]
+requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
 
 [tool.hatch.version]

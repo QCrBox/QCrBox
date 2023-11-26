@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import click
 from ...helpers import make_task, DockerProject, get_repo_root, run_tasks
 from loguru import logger
@@ -50,10 +52,16 @@ def task_build_qcrbox_python_package(dry_run: bool):
 
 @make_task
 def task_build_docker_image(service: str, docker_project: DockerProject, with_deps: bool, dry_run: bool):
+    build_context = docker_project.get_build_context(service)
+    prebuild_scripts = list(Path(build_context).glob("prebuild_*.sh"))
+    logger.debug(f"Found {len(prebuild_scripts)} prebuild scripts.")
+    actions = [f"cd {build_context} && bash {script.absolute()}" for script in prebuild_scripts]
+    actions.append((docker_project.build_single_docker_image, (service, dry_run)))
+
     dependencies = docker_project.get_dependency_chain(service, include_build_deps=True) if with_deps else []
     return {
         "name": f"task_build_service:{service}",
-        "actions": [(docker_project.build_single_docker_image, (service, dry_run))],
+        "actions": actions,
         "task_dep": [f"task_build_service:{dep}" for dep in dependencies],
     }
 

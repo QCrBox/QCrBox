@@ -1,10 +1,11 @@
-This directory is a placeholder. Before building the ShelX Docker image,
-the ShelX executables need to be placed here so that they can be copied
+This directory is a placeholder. Before building the SHELX Docker image,
+the SHELX executables need to be placed here so that they can be copied
 into the Docker image.
 
 These can be downloaded from: https://shelx.uni-goettingen.de/bin/linux64/
 
-As of 18th September 2023, the following files are present:
+As of 18th September 2023, the following files are present (see the contents
+of ../shelx_checksums.txt for the precise SHA-256 checksums of these files).
 
 ```
 Name              Last modified      Size
