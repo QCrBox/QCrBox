@@ -57,6 +57,6 @@ def test_iso_to_aniso(input_cif_file, insert_anis_directive=True):
 cmd_test_iso_to_aniso = PythonCallable(test_iso_to_aniso)
 
 client = QCrBoxRegistryClient()
-application = client.register_application("ShelX", version="git_d0d0f82")
+application = client.register_application("SHELX", version="git_d0d0f82")
 application.register_python_callable("test__iso_to_aniso", cmd_test_iso_to_aniso)
 client.run()
