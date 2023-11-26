@@ -13,6 +13,7 @@ anyio==3.7.1
     #   fast-depends
     #   fastapi
     #   httpx
+    #   qcrbox (pyproject.toml)
     #   starlette
     #   watchfiles
 certifi==2023.11.17
@@ -177,7 +178,6 @@ typing-extensions==4.8.0
     #   fastapi
     #   polyfactory
     #   pydantic
-    #   pydantic-core
     #   setuptools-scm
     #   sqlalchemy
     #   typer

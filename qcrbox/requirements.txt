@@ -4,8 +4,10 @@
 #
 #    pip-compile --output-file=requirements.txt --strip-extras pyproject.toml
 #
-anyio==4.1.0
-    # via httpx
+anyio==3.7.1
+    # via
+    #   httpx
+    #   qcrbox (pyproject.toml)
 certifi==2023.11.17
     # via
     #   httpcore

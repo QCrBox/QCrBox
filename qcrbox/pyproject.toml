@@ -14,6 +14,7 @@ dynamic = [
     "version",
 ]
 dependencies = [
+    "anyio~=3.7.1",
     "click",
     "doit",
     "gitpython",

@@ -4,8 +4,10 @@
 #
 #    pip-compile --extra=docs --output-file=requirements-docs.txt --strip-extras pyproject.toml
 #
-anyio==4.1.0
-    # via httpx
+anyio==3.7.1
+    # via
+    #   httpx
+    #   qcrbox (pyproject.toml)
 babel==2.13.1
     # via mkdocs-material
 bracex==2.4
@@ -189,7 +191,6 @@ trove-classifiers==2023.11.22
 typing-extensions==4.8.0
     # via
     #   pydantic
-    #   pydantic-core
     #   setuptools-scm
     #   sqlalchemy
 urllib3==2.1.0

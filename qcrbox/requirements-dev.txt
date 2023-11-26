@@ -4,8 +4,10 @@
 #
 #    pip-compile --extra=dev --output-file=requirements-dev.txt --strip-extras pyproject.toml
 #
-anyio==4.1.0
-    # via httpx
+anyio==3.7.1
+    # via
+    #   httpx
+    #   qcrbox (pyproject.toml)
 asttokens==2.4.1
     # via stack-data
 black==23.11.0
@@ -177,7 +179,6 @@ trove-classifiers==2023.11.22
 typing-extensions==4.8.0
     # via
     #   pydantic
-    #   pydantic-core
     #   setuptools-scm
     #   sqlalchemy
 urllib3==2.1.0
