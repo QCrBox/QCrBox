@@ -63,7 +63,7 @@ qcb = "qcrbox.cli:entry_point"
 qcrbox-run-registry-server = "qcrbox.registry.server:main"
 
 [build-system]
-requires = ["hatchling", "hatch-requirements-txt", "hatch-vcs"]
+requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
 
 [tool.hatch.version]
