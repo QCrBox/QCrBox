@@ -12,22 +12,45 @@ classifiers = [
 ]
 dynamic = [
     "version",
-    "dependencies",
-    "optional-dependencies",
 ]
-[tool.hatch.metadata.hooks.requirements_txt]
-files = ["requirements.txt"]
+dependencies = [
+    "click",
+    "doit",
+    "gitpython",
+    "hatch",
+    "loguru",
+    "pydantic",
+    "python-dateutil",
+    "pyyaml",
+    "requests",
+    "setuptools_scm",
+    "sqlmodel",
+    "tabulate",
+]
 
-[tool.hatch.metadata.hooks.requirements_txt.optional-dependencies]
-dev = ["requirements-dev.txt"]
-docs = ["requirements-docs.txt"]
-client = ["requirements-client.txt"]
-server = ["requirements-server.txt"]
-all = [
-    "requirements-dev.txt",
-    "requirements-docs.txt",
-    "requirements-client.txt",
-    "requirements-server.txt",
+[project.optional-dependencies]
+dev = [
+    "black",
+    "ipython",
+    "isort",
+    "pip-tools",
+    "setuptools_scm",
+]
+docs = [
+    "mkdocs",
+    "mkdocs-awesome-pages-plugin",
+    "mkdocs-material",
+    "pymdown-extensions",
+]
+client = [
+    "propan[async-rabbit,doc]",
+    "tenacity",
+]
+server = [
+    "fastapi",
+    "propan[async-rabbit,doc]",
+    "tenacity",
+    "uvicorn[standard]",
 ]
 
 [project.urls]

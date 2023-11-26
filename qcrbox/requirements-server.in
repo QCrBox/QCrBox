@@ -1,8 +1,0 @@
-# requirements-docs.in
-
--r requirements.txt
-
-fastapi
-propan[async-rabbit,doc]
-tenacity
-uvicorn[standard]

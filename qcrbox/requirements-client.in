@@ -1,6 +1,0 @@
-# requirements-docs.in
-
--r requirements.txt
-
-propan[async-rabbit,doc]
-tenacity
