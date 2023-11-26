@@ -55,8 +55,8 @@ RUN mkdir -p ${QCRBOX_PYTHON_VENV_DIR} && \
     python -m venv ${QCRBOX_PYTHON_VENV_DIR} && \
     ${QCRBOX_PYTHON_VENV_DIR}/bin/pip install -U pip wheel build
 
-COPY --chown=${QCRBOX_USER}:${QCRBOX_GROUP} ./qcrbox_dist/requirements-server.txt ${QCRBOX_HOME}
-RUN ${QCRBOX_PYTHON_VENV_DIR}/bin/pip install -r ${QCRBOX_ROOT_DIR}/requirements-server.txt
+COPY --chown=${QCRBOX_USER}:${QCRBOX_GROUP} ./qcrbox_dist/requirements.txt ./qcrbox_dist/requirements-server.txt ${QCRBOX_HOME}
+RUN ${QCRBOX_PYTHON_VENV_DIR}/bin/pip install -r ${QCRBOX_ROOT_DIR}/requirements.txt -r ${QCRBOX_ROOT_DIR}/requirements-server.txt
 
 ARG QCRBOX_PYTHON_PACKAGE_VERSION=${QCRBOX_PYTHON_PACKAGE_VERSION}
 COPY --chown=${QCRBOX_USER}:${QCRBOX_GROUP} ./qcrbox_dist/qcrbox-${QCRBOX_PYTHON_PACKAGE_VERSION}-py3-none-any.whl ${QCRBOX_HOME}/
