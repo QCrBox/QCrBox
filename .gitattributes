@@ -1,0 +1,4 @@
+# For details about the settings in this file see: https://git-scm.com/docs/gitattributes
+
+# Set the default behavior, in case people don't have core.autocrlf set.
+* text=auto
