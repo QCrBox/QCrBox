@@ -4,6 +4,7 @@ import os
 import shutil
 import subprocess
 import textwrap
+from sys import platform
 
 from loguru import logger
 
@@ -69,17 +70,30 @@ class DockerProject:
     def _construct_docker_compose_command(self, cmd: str, *cmd_args: str):
         env_dev_file = self.repo_root.joinpath(".env.dev")
 
-        cmd = (
-            [
-                shutil.which("docker"),
-                "compose",
-                f"--project-name={self.project_name}",
-                f"--env-file={env_dev_file.as_posix()}",
-            ]
-            + self.compose_file_config.command_line_options
-            + [cmd]
-            + list(cmd_args)
-        )
+        if platform.startswith('win'):
+            cmd = (
+                [
+                    "docker",
+                    "compose",
+                    f"--project-name={self.project_name}",
+                    f"--env-file={env_dev_file.as_posix()}",
+                ]
+                + self.compose_file_config.command_line_options
+                + [cmd]
+                + list(cmd_args)
+            )
+        else:
+            cmd = (
+                [
+                    shutil.which("docker"),
+                    "compose",
+                    f"--project-name={self.project_name}",
+                    f"--env-file={env_dev_file.as_posix()}",
+                ]
+                + self.compose_file_config.command_line_options
+                + [cmd]
+                + list(cmd_args)
+            )
 
         return cmd
 

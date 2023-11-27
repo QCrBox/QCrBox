@@ -5,6 +5,7 @@ from pathlib import Path
 
 import click
 from loguru import logger
+from sys import platform
 
 from ...helpers import DockerProject, get_repo_root, make_task, run_tasks
 
@@ -58,22 +59,29 @@ def get_build_task_name_for_component(component):
 def task_build_qcrbox_python_package(dry_run: bool):
     repo_root = get_repo_root()
     qcrbox_module_root = repo_root.joinpath("qcrbox")
-    base_ancestor_qcrbox_dist_dir = repo_root.joinpath("services/base_images/base_ancestor/qcrbox_dist/").as_posix()
 
     actions = [lambda: logger.info("Building Python package: qcrbox", dry_run=dry_run)]
     if not dry_run:
-        actions.append(
-            f"cd {qcrbox_module_root.as_posix()} && "
-            f"hatch build -t wheel && "
-            f"cp dist/qcrbox-*.whl {base_ancestor_qcrbox_dist_dir} && "
-            f"cp requirements*.txt {base_ancestor_qcrbox_dist_dir}"
-        )
-
+        if platform.startswith('win'):
+            base_ancestor_qcrbox_dist_dir = repo_root.joinpath("services/base_images/base_ancestor/qcrbox_dist/")
+            actions.append(
+                f"cd {qcrbox_module_root} && "
+                f"hatch build -t wheel && "
+                f"copy /y /v dist\\qcrbox-*.whl {base_ancestor_qcrbox_dist_dir} >NUL&& "
+                f"copy /y /v requirements*.txt {base_ancestor_qcrbox_dist_dir} >NUL"
+            )
+        else:
+            base_ancestor_qcrbox_dist_dir = repo_root.joinpath("services/base_images/base_ancestor/qcrbox_dist/").as_posix()
+            action.append(
+                f"cd {qcrbox_module_root.as_posix()} && "
+                f"hatch build -t wheel && "
+                f"cp dist/qcrbox-*.whl {base_ancestor_qcrbox_dist_dir} && "
+                f"cp requirements*.txt {base_ancestor_qcrbox_dist_dir}"
+            )
     return {
         "name": "task_build_python_package:qcrbox",
         "actions": actions,
     }
-
 
 @make_task
 def task_build_docker_image(service: str, docker_project: DockerProject, with_deps: bool, dry_run: bool):
