@@ -1,7 +1,7 @@
 import asyncio
 from functools import singledispatch
 
-from ....logging import logger
+from loguru import logger
 from qcrbox.common import msg_specs
 
 
