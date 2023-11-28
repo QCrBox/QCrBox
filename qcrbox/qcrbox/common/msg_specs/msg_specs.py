@@ -68,6 +68,18 @@ class QCrBoxGenericResponse(QCrBoxBaseMessage):
     payload: Optional[dict] = None
 
 
+class GetContainerStatusResponsePayload(BaseModel):
+    container_status: str
+    container_id: int
+
+
+class GetContainerStatusResponse(QCrBoxGenericResponse):
+    response_to: Literal["get_container_status"]
+    status: str
+    msg: Optional[str] = None
+    payload: Optional[GetContainerStatusResponsePayload] = None
+
+
 class RegisterApplicationResponsePayload(BaseModel):
     application_id: int
     container_id: int
