@@ -56,7 +56,7 @@ def _(msg: msg_specs.RegisterApplication) -> msg_specs.QCrBoxGenericResponse:
     return msg_specs.RegisterApplicationResponse(
         response_to="register_application",
         status="success",
-        payload=msg_specs.RegisterApplicationPayload(
+        payload=msg_specs.RegisterApplicationResponsePayload(
             application_id=assigned_application_id,
             container_id=container_db.id,
         ),

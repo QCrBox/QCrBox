@@ -68,7 +68,7 @@ class QCrBoxGenericResponse(QCrBoxBaseMessage):
     payload: Optional[dict] = None
 
 
-class RegisterApplicationPayload(BaseModel):
+class RegisterApplicationResponsePayload(BaseModel):
     application_id: int
     container_id: int
 
@@ -77,7 +77,7 @@ class RegisterApplicationResponse(QCrBoxGenericResponse):
     response_to: Literal["register_application"]
     status: str
     msg: Optional[str] = None
-    payload: Optional[RegisterApplicationPayload] = None
+    payload: Optional[RegisterApplicationResponsePayload] = None
 
 
 def represents_valid_qcrbox_message(cls):
