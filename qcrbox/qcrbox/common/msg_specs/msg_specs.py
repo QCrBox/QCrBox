@@ -52,6 +52,15 @@ class GetCalculationStatusDetails(QCrBoxBaseAction):
     payload: GetCalculationStatusDetailsPayload
 
 
+class GetContainerStatusPayload(BaseModel):
+    container_id: int
+
+
+class GetContainerStatus(QCrBoxBaseAction):
+    action: Literal["get_container_status"]
+    payload: GetContainerStatusPayload
+
+
 class QCrBoxGenericResponse(QCrBoxBaseMessage):
     response_to: str
     status: str
