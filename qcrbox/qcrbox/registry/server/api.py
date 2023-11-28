@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlmodel import Session
 
 from .database import engine
-from .messaging.invoke_command import _invoke_command_impl
+from .message_processing.invoke_command import _invoke_command_impl
 from .router import router
 from qcrbox.common import msg_specs, sql_models
 from ...logging import logger
