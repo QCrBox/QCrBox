@@ -64,7 +64,7 @@ def retrieve_application(name, version):
         return result
 
 
-def retrieve_command(name, parameters, application_id):
+def retrieve_command(name: str, parameters, application_id: int):
     from qcrbox.common.msg_specs.sql_models import QCrBoxCommandDB as cls
 
     with Session(engine) as session:
@@ -74,12 +74,23 @@ def retrieve_command(name, parameters, application_id):
         return result
 
 
+def retrieve_container(container_id: int):
+    from qcrbox.common.msg_specs.sql_models import QCrBoxContainerDB as cls
+
+    with Session(engine) as session:
+        result = session.exec(select(cls).where(cls.id == container_id)).one()
+        return result
+
+
 def retrieve_containers(application_id: Optional[int] = None, command_id: Optional[int] = None):
+    if command_id is not None:
+        raise NotImplementedError("Filtering by command_id is not implemented yet.")
+
     with Session(engine) as session:
         stmt = select(sql_models.QCrBoxContainerDB)
         if application_id is not None:
-            stmt = stmt.where(sql_models.QCrBoxApplicationDB.id == application_id)
-        if command_id is not None:
-            stmt = stmt.where(sql_models.QCrBoxCommandDB.id == command_id)
+            stmt = stmt.where(sql_models.QCrBoxContainerDB.application_id == application_id)
+        # if command_id is not None:
+        #     stmt = stmt.where(command_id in sql_models.QCrBoxContainerDB.commands)
         result = session.exec(stmt).all()
         return result

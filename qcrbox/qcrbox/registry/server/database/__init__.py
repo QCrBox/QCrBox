@@ -4,5 +4,6 @@ from .database import (
     engine,
     retrieve_application,
     retrieve_command,
+    retrieve_container,
     retrieve_containers,
 )
