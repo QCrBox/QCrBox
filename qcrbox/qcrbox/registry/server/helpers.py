@@ -1,6 +1,6 @@
 import sqlalchemy.exc
 from propan import RabbitBroker
-from qcrbox.common import get_rabbitmq_connection_url, msg_specs, sql_models
+from qcrbox.common import get_rabbitmq_connection_url, msg_specs
 from .database import retrieve_container
 
 
@@ -26,6 +26,10 @@ async def get_container_status(container_id, callback_timeout=1.0):
         action="get_container_status",
         payload=msg_specs.GetContainerStatusPayload(container_id=container_id),
     )
+
+    queue = container.routing_key__registry_to_application
+    from loguru import logger
+    logger.debug(f"Sending message 'get_container_status' to queue {queue!r}")
 
     try:
         response = await broker.publish(
