@@ -1,8 +1,9 @@
 from datetime import datetime
 
+from loguru import logger
+
 from qcrbox.common import msg_specs
-from ....logging import logger
-from .msg_processing import process_message
+from .base import process_message
 
 __all__ = []
 

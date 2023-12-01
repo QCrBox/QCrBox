@@ -52,6 +52,15 @@ class GetCalculationStatusDetails(QCrBoxBaseAction):
     payload: GetCalculationStatusDetailsPayload
 
 
+class GetContainerStatusPayload(BaseModel):
+    container_id: int
+
+
+class GetContainerStatus(QCrBoxBaseAction):
+    action: Literal["get_container_status"]
+    payload: GetContainerStatusPayload
+
+
 class QCrBoxGenericResponse(QCrBoxBaseMessage):
     response_to: str
     status: str
@@ -59,7 +68,19 @@ class QCrBoxGenericResponse(QCrBoxBaseMessage):
     payload: Optional[dict] = None
 
 
-class RegisterApplicationPayload(BaseModel):
+class GetContainerStatusResponsePayload(BaseModel):
+    container_status: str
+    container_id: int
+
+
+class GetContainerStatusResponse(QCrBoxGenericResponse):
+    response_to: Literal["get_container_status"]
+    status: str
+    msg: Optional[str] = None
+    payload: Optional[GetContainerStatusResponsePayload] = None
+
+
+class RegisterApplicationResponsePayload(BaseModel):
     application_id: int
     container_id: int
 
@@ -68,7 +89,7 @@ class RegisterApplicationResponse(QCrBoxGenericResponse):
     response_to: Literal["register_application"]
     status: str
     msg: Optional[str] = None
-    payload: Optional[RegisterApplicationPayload] = None
+    payload: Optional[RegisterApplicationResponsePayload] = None
 
 
 def represents_valid_qcrbox_message(cls):

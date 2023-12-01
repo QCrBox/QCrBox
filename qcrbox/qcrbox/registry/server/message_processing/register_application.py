@@ -4,7 +4,7 @@ from sqlmodel import Session
 from ....logging import logger
 from qcrbox.common import msg_specs, sql_models
 from ..database import engine, retrieve_application
-from .msg_processing import process_message
+from .base import process_message
 
 __all__ = []
 
@@ -56,7 +56,7 @@ def _(msg: msg_specs.RegisterApplication) -> msg_specs.QCrBoxGenericResponse:
     return msg_specs.RegisterApplicationResponse(
         response_to="register_application",
         status="success",
-        payload=msg_specs.RegisterApplicationPayload(
+        payload=msg_specs.RegisterApplicationResponsePayload(
             application_id=assigned_application_id,
             container_id=container_db.id,
         ),

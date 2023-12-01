@@ -51,4 +51,4 @@ class QCrBoxApplicationCreate(BaseModel):
     url: Optional[str] = None
     routing_key__registry_to_application: str
     container_qcrbox_id: str
-    container_startup_status: Optional[ContainerStatus] = ContainerStatus.READY
+    container_startup_status: Optional[ContainerStatus] = ContainerStatus.IDLE
