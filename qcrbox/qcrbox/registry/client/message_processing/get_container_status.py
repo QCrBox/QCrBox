@@ -16,9 +16,9 @@ async def _(msg: msg_specs.GetContainerStatus, application) -> msg_specs.GetCont
     return msg_specs.GetContainerStatusResponse(
         response_to="get_container_status",
         status="success",
-        msg="TODO: differentiate between 'ready' and 'busy' (or similar)",
+        msg="TODO: differentiate between 'idle' and 'executing_command' (or similar)",
         payload=msg_specs.GetContainerStatusResponsePayload(
-            container_status="running",
+            container_status="idle",
             container_id=msg.payload.container_id,
         ),
     )

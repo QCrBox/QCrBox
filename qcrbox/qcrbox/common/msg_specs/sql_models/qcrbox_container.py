@@ -15,10 +15,11 @@ class CommandContainerLink(QCrBoxBaseSQLModel, table=True):
 
 
 class ContainerStatus(str, enum.Enum):
-    READY = "ready"
-    LOCKED = "locked"
+    IDLE = "idle"
+    # LOCKED = "locked"
     EXECUTING_COMMAND = "executing_command"
-    UNKNOWN = "unknown"
+    UNREACHABLE = "unreachable"
+    # UNKNOWN = "unknown"
 
 
 class QCrBoxContainer(BaseModel):
