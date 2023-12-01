@@ -1,10 +1,15 @@
+from typing import Optional
+
 import sqlalchemy.exc
+from loguru import logger
 from propan import RabbitBroker
-from qcrbox.common import get_rabbitmq_connection_url, msg_specs
-from .database import retrieve_container
+from sqlmodel import Session
+from qcrbox.common import get_rabbitmq_connection_url, msg_specs, sql_models
+from .database import engine, retrieve_container, retrieve_containers
 
 
-async def get_container_status(container_id, callback_timeout=1.0):
+async def get_container_status_response(container_id: int, callback_timeout: float = 1.0):
+    logger.debug(f"Retrieving status of container with id={container_id}")
     try:
         container = retrieve_container(container_id)
     except sqlalchemy.exc.NoResultFound:
@@ -16,7 +21,7 @@ async def get_container_status(container_id, callback_timeout=1.0):
                 container_status="not_found",
                 container_id=container_id,
             )
-        )
+        ).dict()
         return response
 
     broker = RabbitBroker(get_rabbitmq_connection_url())
@@ -28,7 +33,6 @@ async def get_container_status(container_id, callback_timeout=1.0):
     )
 
     queue = container.routing_key__registry_to_application
-    from loguru import logger
     logger.debug(f"Sending message 'get_container_status' to queue {queue!r}")
 
     try:
@@ -48,6 +52,27 @@ async def get_container_status(container_id, callback_timeout=1.0):
                 container_status="unreachable",
                 container_id=container_id,
             )
-        )
+        ).dict()
+    logger.debug(f"Container status: {response}")
 
     return response
+
+
+async def get_container_status(container_id: int, callback_timeout: float = 1.0):
+    response = await get_container_status_response(container_id, callback_timeout=callback_timeout)
+    return response["payload"]["container_status"]
+
+
+async def update_status_of_all_containers(callback_timeout: float = 1.0):
+    for container in retrieve_containers():
+        updated_status = await get_container_status(container.id, callback_timeout=callback_timeout)
+        logger.debug(f"   {updated_status=}")
+
+        with Session(engine) as session:
+            container.status = updated_status
+            session.add(container)
+            session.commit()
+            session.refresh(container)
+            logger.debug(f"Updated container status in registry database (qcrbox_id={container.qcrbox_id!r}).")
+
+    logger.info(f"Status of all containers has been updated")

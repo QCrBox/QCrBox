@@ -10,6 +10,7 @@ from sqlmodel import Session
 from .database import engine
 from .message_processing.invoke_command import _invoke_command_impl
 from .router import router
+from .status_checks import update_status_of_all_containers
 from qcrbox.common import msg_specs, sql_models
 from ...logging import logger
 
@@ -72,6 +73,11 @@ def get_registered_containers(application_id: Optional[int] = None):
     with Session(engine) as session:
         containers = session.scalars(select(model_cls).where(*filter_clauses)).all()
         return containers
+
+
+@router.post("/containers/status_update")
+async def run_containers_status_update(timeout: float = 1.0):
+    await update_status_of_all_containers(callback_timeout=timeout)
 
 
 @router.get("/calculations/", response_model=list[sql_models.QCrBoxCalculationRead])
