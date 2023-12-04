@@ -29,7 +29,7 @@ def start_up_components(rebuild_deps: bool, dry_run: bool, components: list[str]
 
     build_tasks = []
     if rebuild_deps:
-        build_tasks += populate_build_tasks(components, with_deps=True, dry_run=dry_run)
+        build_tasks += populate_build_tasks(components, docker_project, with_deps=True, dry_run=dry_run)
 
     startup_task = doit.task.dict_to_task(
         {
