@@ -29,7 +29,11 @@ However, there will be an initial period of stabilisation where this is not adhe
 
 ### New Features
 
-- Core docker services: `qcrbox-message-bus`, `qcrbox-registry`. ([#9](https://github.com/QCrBox/QCrBox/issues/9), [#13](https://github.com/QCrBox/QCrBox/issues/13))
+- Core docker components:
+   - `qcrbox-message-bus` [#9](https://github.com/QCrBox/QCrBox/issues/9)
+   - `qcrbox-registry` [#13](https://github.com/QCrBox/QCrBox/issues/13)
+   - `base-application`
+   - `base-novnc` [#39](https://github.com/QCrBox/QCrBox/issues/39)
 - CLI tool (`qcb`) for common development and deployment tasks. ([#10](https://github.com/QCrBox/QCrBox/issues/10))
 - Python package (`qcrbox`) to interact with QCrBox from Python code. ([#14](https://github.com/QCrBox/QCrBox/issues/14))
 
