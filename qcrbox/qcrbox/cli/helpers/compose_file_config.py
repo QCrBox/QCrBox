@@ -93,6 +93,12 @@ class ComposeFileConfig:
     def get_build_and_runtime_dependencies(self, service_name):
         return self.get_build_dependencies(service_name) + self.get_runtime_dependencies(service_name)
 
+    def get_direct_dependencies(self, service_name: str, include_build_deps: bool = False):
+        if include_build_deps:
+            return self.get_build_and_runtime_dependencies(service_name)
+        else:
+            return self.get_runtime_dependencies(service_name)
+
     def get_dependency_chain(self, service_name, include_build_deps=False):
         deps_done = []
         deps_todo = [service_name]
