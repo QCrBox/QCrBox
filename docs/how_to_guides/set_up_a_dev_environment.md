@@ -38,30 +38,39 @@ $ source ./venv/bin/activate
     If you use a custom package manager such as `poetry` or `conda`
     you can of course adapt the previous step to your specific setup.
 
-
-## Install the `qcrbox` Python package
-
-Let's install/update some core packages before installing the `qcrbox` dependencies (including dev dependencies).
+Let's also update/install some core packages to ensure they are up-to-date.
 ```
 (venv) $ pip install -U pip wheel setuptools
 ```
 
-Next, install the `qcrbox` package itself. We start with the minimum required dependencies to run the `qcb` command line tool.
+## Install the `qcrbox` Python package
+
+Next, install the `qcrbox` package itself. The following command installs the minimum required dependencies to run
+the `qcb` command line tool, which acts as the command line interface for the Quantum Crystallography Toolbox.
 ```
-(venv) $ pip install -e qcrbox
+(venv) $ pip install -e ./qcrbox
 ```
 !!! note
     Here we used the `-e` switch to install `qcrbox` in [editable mode](https://setuptools.pypa.io/en/latest/userguide/development_mode.html).
     This means that any changes we make to the code during development are automatically picked up in our local installation
     without having to reinstall/upgrade the `qcrbox` package.
 
-QCrBox comes with several sets of additional dependencies. If you want to build the documentation, for example, you need to run
+QCrBox comes with several sets of additional dependencies which can be specified in square brackets after `qcrbox`.
+If you want to build the documentation, for example, you need to run
 ```
-(venv) $ pip install -e qcrbox[docs]
+(venv) $ pip install -e ./qcrbox[docs]
 ```
-This will install mkdocs and a few other packages needed to build and serve the documentation.
+This will install `MkDocs` and a few other packages needed to build and serve the documentation.
 
-Two other sets of additional dependencies are `qcrbox[client]` and `qcrbox[server]`, but these are mostly relevant for installation inside the Docker containers (unless you want to run the QCrBox registry server or client outside of docker during development).
+In addition, if you plan on developing QCrBox, making modifications to the code and/or submitting merge requests,
+you most likely want to install the `dev` dependencies as well.
+```
+(venv) $ pip install -e ./qcrbox[dev]
+```
+
+Two other sets of additional dependencies are `qcrbox[client]` and `qcrbox[server]`, but these are mostly relevant
+for installation inside the Docker containers (unless you want to run the QCrBox registry server or client outside
+of docker during development).
 
 Finally, you can install *all* additional dependencies by running
 ```

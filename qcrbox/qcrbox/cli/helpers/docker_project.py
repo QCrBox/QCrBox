@@ -53,6 +53,9 @@ class DockerProject:
     def get_build_context(self, service_name):
         return self.compose_file_config.get_build_context(service_name)
 
+    def get_direct_dependencies(self, service_name: str, include_build_deps: bool = False):
+        return self.compose_file_config.get_direct_dependencies(service_name, include_build_deps=include_build_deps)
+
     def get_dependency_chain(self, service_name, include_build_deps=False):
         return self.compose_file_config.get_dependency_chain(service_name, include_build_deps=include_build_deps)
 

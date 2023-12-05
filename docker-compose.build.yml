@@ -23,6 +23,15 @@ services:
         QCRBOX_REGISTRY_HOST: "qcrbox-registry"
         QCRBOX_REGISTRY_PORT: "8000"
 
+  base-novnc:
+    image: "qcrbox/base-novnc:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
+    build:
+      context: services/base_images/base_novnc/
+      args:
+        QCRBOX_DOCKER_TAG: ${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}
+        QCRBOX_ROOT_DIR: ${QCRBOX_ROOT_DIR:?Must set env var QCRBOX_ROOT_DIR}
+        QCRBOX_SUPERVISORD_CONF_DIR: ${QCRBOX_SUPERVISORD_CONF_DIR:?Must set env var QCRBOX_SUPERVISORD_CONF_DIR}
+
   qcrbox-message-bus:
     build:
       context: services/core/qcrbox_message_bus/
@@ -39,5 +48,17 @@ services:
   shelx:
     build:
       context: services/shelx
+      args:
+        QCRBOX_DOCKER_TAG: ${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}
+
+  crystal-explorer:
+    build:
+      context: services/applications/crystal_explorer
+      args:
+        QCRBOX_DOCKER_TAG: ${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}
+
+  olex2-linux:
+    build:
+      context: services/applications/olex2_linux
       args:
         QCRBOX_DOCKER_TAG: ${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}

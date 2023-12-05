@@ -48,3 +48,9 @@ services/applications/shelx/shelx_executables/shredcif
 
 # qcrboxtools
 services/applications/qcrboxtools/qcrboxtools_dist/qcrboxtools-0.0.2-py3-none-any.whl
+
+# CrystalExplorer
+services/applications/crystal_explorer/CrystalExplorer-21.5-ubuntu-20.04.deb
+
+# Olex2
+services/applications/olex2_linux/olex2-linux64-hl.zip

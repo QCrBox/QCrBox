@@ -5,7 +5,7 @@ from ....logging import logger
 from qcrbox.common import msg_specs, sql_models
 from ..router import router
 from ..database import engine
-from .msg_processing import process_message
+from .base import process_message
 
 __all__ = []
 
@@ -44,7 +44,7 @@ async def _invoke_command_impl(msg: msg_specs.InvokeCommand) -> msg_specs.QCrBox
         #       return an error if there are any parameters for which neither a default value exists nor an explicit
         #       value was provided.
         #       Currently this check only happens once the "execute_calculation" message has been sent below
-        #       and it is processed in qcrbox/qcrbox/registry/client/messaging/execute_calculation.py, but this
+        #       and it is processed in qcrbox/qcrbox/registry/client/message_processing/execute_calculation.py, but this
         #       should happen here so that we can return an appropriate error message (currently we return "success",
         #       which is highly misleading).
 

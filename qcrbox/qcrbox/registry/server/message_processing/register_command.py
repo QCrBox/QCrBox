@@ -4,7 +4,7 @@ from sqlmodel import Session
 from ....logging import logger
 from qcrbox.common import msg_specs, sql_models
 from ..database import engine, retrieve_command
-from .msg_processing import process_message
+from .base import process_message
 
 __all__ = []
 

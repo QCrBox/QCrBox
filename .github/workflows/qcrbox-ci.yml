@@ -26,8 +26,8 @@ jobs:
           python-version: '3.11'
           cache: 'pip' # caching pip dependencies
 
-      - name: Install dev dependencies
-        run: pip install -r qcrbox/requirements.txt -r qcrbox/requirements-dev.txt
+      - name: Install dependencies
+        run: pip install -r qcrbox/requirements.txt -r qcrbox/requirements-dev.txt -r qcrbox/requirements-docs.txt
 
       - name: Build the documentation
         run: mkdocs build
