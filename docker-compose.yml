@@ -61,6 +61,23 @@ services:
       - qcrbox-net
     restart: unless-stopped
 
+  crystal-explorer:
+    image: "qcrbox/crystal-explorer:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
+    volumes:
+      - ./shared_files:${QCRBOX_SHARED_FILES_DIR:?Must set env var QCRBOX_SHARED_FILES_DIR}
+    networks:
+      - qcrbox-net
+    ports:
+      - "${QCRBOX_BIND_ADDRESS}:${QCRBOX_CRYSTAL_EXPLORER_PORT:?Must set env var QCRBOX_CRYSTAL_EXPLORER_PORT}:8080"
+    depends_on:
+      - qcrbox-registry
+    restart: unless-stopped
+    environment:
+      QCRBOX_APPLICATION_DISPLAY_NAME: "CrystalExplorer"
+      QCRBOX_RABBITMQ_QUEUE_NAME: "crystal-explorer"
+      QCRBOX_REGISTRY_HOST: "qcrbox-registry"
+      QCRBOX_REGISTRY_PORT: "8000"
+
 networks:
   qcrbox-net:
 
