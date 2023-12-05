@@ -1,6 +1,8 @@
 import re
+import sys
 from pathlib import Path
 
+import click
 import yaml
 from pydantic.utils import deep_update
 
@@ -62,7 +64,13 @@ class ComposeFileConfig:
         ]
 
     def get_build_context(self, service_name):
-        return self._full_service_metadata["services"][service_name]["build"]["context"]
+        try:
+            return self._full_service_metadata["services"][service_name]["build"]["context"]
+        except KeyError:
+            click.echo(f"Invalid component name: {service_name!r}")
+            click.echo()
+            click.echo("Run 'qcb list components' to get a list of valid component names.")
+            sys.exit(1)
 
     def get_dockerfile_for_service(self, service_name):
         build_context = self.get_build_context(service_name)
@@ -92,6 +100,12 @@ class ComposeFileConfig:
 
     def get_build_and_runtime_dependencies(self, service_name):
         return self.get_build_dependencies(service_name) + self.get_runtime_dependencies(service_name)
+
+    def get_direct_dependencies(self, service_name: str, include_build_deps: bool = False):
+        if include_build_deps:
+            return self.get_build_and_runtime_dependencies(service_name)
+        else:
+            return self.get_runtime_dependencies(service_name)
 
     def get_dependency_chain(self, service_name, include_build_deps=False):
         deps_done = []
