@@ -1,0 +1,9 @@
+table Icon
+  Caption: Olex2
+  Command: /opt/olex2/start
+  Icon: /opt/qcrbox/.idesktop/olex2_logo.png
+  Width: 48
+  Height: 48
+  X: 70
+  Y: 50
+end

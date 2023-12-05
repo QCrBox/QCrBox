@@ -56,3 +56,9 @@ services:
       context: services/applications/crystal_explorer
       args:
         QCRBOX_DOCKER_TAG: ${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}
+
+  olex2-linux:
+    build:
+      context: services/applications/olex2_linux
+      args:
+        QCRBOX_DOCKER_TAG: ${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}
