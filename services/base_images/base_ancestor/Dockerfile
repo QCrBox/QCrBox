@@ -57,11 +57,9 @@ RUN eval "$(micromamba shell hook --shell bash)" && \
     ${MAMBA_EXE} create -n ${QCRBOX_MAMBA_ENV_NAME} && \
     ${MAMBA_EXE} activate ${QCRBOX_MAMBA_ENV_NAME} && \
     ${MAMBA_EXE} install -y python=3.11 && \
-    ${MAMBA_EXE} install -y pip setuptools wheel build
-
-RUN eval "$(micromamba shell hook --shell bash)" && \
-    ${MAMBA_EXE} activate ${QCRBOX_MAMBA_ENV_NAME} && \
-    ${MAMBA_EXE} install -y cctbx-base
+    ${MAMBA_EXE} install -y pip setuptools wheel build conda-build && \
+    ${MAMBA_EXE} install -y cctbx-base && \
+    ${MAMBA_EXE} clean -y --all --force-pkgs-dirs
 
 ##
 ## Create python virtual environment for QCrBox and install the `qcbrox` package into it
@@ -72,12 +70,24 @@ ENV QCRBOX_PYTHON_VENV_DIR=${QCRBOX_PYTHON_VENV_DIR}
 COPY --chown=${QCRBOX_USER}:${QCRBOX_GROUP} ./qcrbox_dist/requirements.txt ./qcrbox_dist/requirements-server.txt ${QCRBOX_HOME}
 RUN ${QCRBOX_PYTHON_VENV_DIR}/bin/python -m pip install -r ${QCRBOX_ROOT_DIR}/requirements.txt -r ${QCRBOX_ROOT_DIR}/requirements-server.txt
 
+ARG QCRBOXTOOLS_VERSION=0.0.1
+ARG QCRBOXTOOLS_WHEEL=qcrboxtools-${QCRBOXTOOLS_VERSION}-py3-none-any.whl
+COPY --chown=${QCRBOX_USER}:${QCRBOX_GROUP} ./qcrbox_dist/${QCRBOXTOOLS_WHEEL} ${QCRBOX_HOME}/
+RUN eval "$(micromamba shell hook --shell bash)" && \
+    ${MAMBA_EXE} activate ${QCRBOX_MAMBA_ENV_NAME} && \
+    #${MAMBA_EXE} install -y cctbx && \
+    ${QCRBOX_PYTHON_VENV_DIR}/bin/python -m pip install --no-deps ${QCRBOX_HOME}/${QCRBOXTOOLS_WHEEL} && \
+    true
+
+
 ARG QCRBOX_PYTHON_PACKAGE_VERSION=${QCRBOX_PYTHON_PACKAGE_VERSION}
-COPY --chown=${QCRBOX_USER}:${QCRBOX_GROUP} ./qcrbox_dist/qcrbox-${QCRBOX_PYTHON_PACKAGE_VERSION}-py3-none-any.whl ${QCRBOX_HOME}/
-RUN ${QCRBOX_PYTHON_VENV_DIR}/bin/python -m pip install ${QCRBOX_ROOT_DIR}/qcrbox*.whl
+ARG QCRBOX_PYTHON_PACKAGE_WHEEL=qcrbox-${QCRBOX_PYTHON_PACKAGE_VERSION}-py3-none-any.whl
+COPY --chown=${QCRBOX_USER}:${QCRBOX_GROUP} ./qcrbox_dist/${QCRBOX_PYTHON_PACKAGE_WHEEL} ${QCRBOX_HOME}/
+RUN ${QCRBOX_PYTHON_VENV_DIR}/bin/python -m pip install ${QCRBOX_ROOT_DIR}/qcrbox-*.whl
 
 RUN micromamba shell init --shell bash --root-prefix=${MAMBA_ROOT_PREFIX} && \
-    echo "${MAMBA_EXE} activate ${QCRBOX_MAMBA_ENV_NAME}" >> ${QCRBOX_HOME}/.bashrc
+    echo "${MAMBA_EXE} activate ${QCRBOX_MAMBA_ENV_NAME}" >> ${QCRBOX_HOME}/.bashrc && \
+    echo "alias conda=${MAMBA_EXE}" >> ${QCRBOX_HOME}/.bashrc
 
 COPY --chown=${QCRBOX_USER}:${QCRBOX_GROUP} entrypoint.sh execute_startup_cmd.sh ./
 
