@@ -1,18 +1,7 @@
 ARG QCRBOX_DOCKER_TAG
 
-FROM qcrbox/base-ancestor:${QCRBOX_DOCKER_TAG} as qcrboxtools-build
-SHELL ["/bin/bash", "-c"]
-
-USER root
-
-COPY ./qcrboxtools.yml .
-RUN conda env create -f qcrboxtools.yml && \
-    conda clean --all -y
-
-COPY ./qcrboxtools-0.0.1-py3-none-any.whl ./
-RUN conda run -n qcrboxtools pip install --no-dependencies qcrboxtools-0.0.1-py3-none-any.whl
-
 FROM qcrbox/base-novnc:${QCRBOX_DOCKER_TAG}
+SHELL ["/bin/bash", "-c"]
 
 USER root
 
@@ -28,8 +17,6 @@ RUN sed -i 's/^# en_GB/en_GB/' /etc/locale.gen && \
 # Dirty hack to get Olex headless to run
 RUN cd /lib/x86_64-linux-gnu/ && \
     ln -s libreadline.so.8 libreadline.so.6
-
-COPY --from=qcrboxtools-build /opt/conda/envs/qcrboxtools /opt/conda/envs/qcrboxtools
 
 #ADD http://www2.olex2.org/olex2-distro/1.5/olex2-linux64.zip /opt/
 COPY ./olex2-linux64_hl.zip /opt/
