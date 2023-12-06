@@ -1,5 +1,7 @@
-FROM continuumio/miniconda3:23.3.1-0
+FROM mambaorg/micromamba:1.5.3-bullseye
 SHELL ["/bin/bash", "-c"]
+
+USER root
 
 RUN apt-get update -y && \
     apt-get install -y --no-install-recommends \
@@ -46,23 +48,36 @@ RUN rm -f /etc/supervisor/supervisord.conf && \
 USER ${QCRBOX_USER}
 WORKDIR ${QCRBOX_HOME}
 
+ARG MAMBA_EXE=micromamba
+ARG MAMBA_ROOT_PREFIX=/opt/conda
+ARG QCRBOX_MAMBA_ENV_NAME=qcrbox
+ARG QCRBOX_MAMBA_ENV_PATH=${MAMBA_ROOT_PREFIX}/envs/${QCRBOX_MAMBA_ENV_NAME}
+COPY mambarc ${MAMBA_ROOT_PREFIX}/.mambarc
+RUN eval "$(micromamba shell hook --shell bash)" && \
+    ${MAMBA_EXE} create -n ${QCRBOX_MAMBA_ENV_NAME} && \
+    ${MAMBA_EXE} activate ${QCRBOX_MAMBA_ENV_NAME} && \
+    ${MAMBA_EXE} install -y python=3.11 && \
+    ${MAMBA_EXE} install -y pip setuptools wheel build
+
+RUN eval "$(micromamba shell hook --shell bash)" && \
+    ${MAMBA_EXE} activate ${QCRBOX_MAMBA_ENV_NAME} && \
+    ${MAMBA_EXE} install -y cctbx-base
+
 ##
 ## Create python virtual environment for QCrBox and install the `qcbrox` package into it
 ##
-ARG QCRBOX_PYTHON_VENV_DIR=${QCRBOX_HOME}/venv
+ARG QCRBOX_PYTHON_VENV_DIR=${QCRBOX_MAMBA_ENV_PATH}
 ENV QCRBOX_PYTHON_VENV_DIR=${QCRBOX_PYTHON_VENV_DIR}
-RUN mkdir -p ${QCRBOX_PYTHON_VENV_DIR} && \
-    python -m venv ${QCRBOX_PYTHON_VENV_DIR} && \
-    ${QCRBOX_PYTHON_VENV_DIR}/bin/pip install -U pip wheel build
 
 COPY --chown=${QCRBOX_USER}:${QCRBOX_GROUP} ./qcrbox_dist/requirements.txt ./qcrbox_dist/requirements-server.txt ${QCRBOX_HOME}
-RUN ${QCRBOX_PYTHON_VENV_DIR}/bin/pip install -r ${QCRBOX_ROOT_DIR}/requirements.txt -r ${QCRBOX_ROOT_DIR}/requirements-server.txt
+RUN ${QCRBOX_PYTHON_VENV_DIR}/bin/python -m pip install -r ${QCRBOX_ROOT_DIR}/requirements.txt -r ${QCRBOX_ROOT_DIR}/requirements-server.txt
 
 ARG QCRBOX_PYTHON_PACKAGE_VERSION=${QCRBOX_PYTHON_PACKAGE_VERSION}
 COPY --chown=${QCRBOX_USER}:${QCRBOX_GROUP} ./qcrbox_dist/qcrbox-${QCRBOX_PYTHON_PACKAGE_VERSION}-py3-none-any.whl ${QCRBOX_HOME}/
-RUN ${QCRBOX_PYTHON_VENV_DIR}/bin/pip install ${QCRBOX_ROOT_DIR}/qcrbox*.whl
+RUN ${QCRBOX_PYTHON_VENV_DIR}/bin/python -m pip install ${QCRBOX_ROOT_DIR}/qcrbox*.whl
 
-RUN echo "source ${QCRBOX_PYTHON_VENV_DIR}/bin/activate" >> ${QCRBOX_HOME}/.bashrc
+RUN micromamba shell init --shell bash --root-prefix=${MAMBA_ROOT_PREFIX} && \
+    echo "${MAMBA_EXE} activate ${QCRBOX_MAMBA_ENV_NAME}" >> ${QCRBOX_HOME}/.bashrc
 
 COPY --chown=${QCRBOX_USER}:${QCRBOX_GROUP} entrypoint.sh execute_startup_cmd.sh ./
 
