@@ -6,3 +6,4 @@ COPY shelx_executables/* /opt/shelx/bin/
 COPY configure_shelx.py ./
 
 ENV PATH="$PATH:/opt/shelx/bin/"
+ENV QCRBOX_APPLICATION_DISPLAY_NAME="SHELX"
