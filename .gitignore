@@ -32,6 +32,9 @@ qcrbox/qcrbox/_version.py
 services/base_images/base_ancestor/qcrbox_dist/qcrbox-*.whl
 services/base_images/base_ancestor/qcrbox_dist/requirements*.txt
 
+# qcrboxtools Python package
+services/base_images/base_ancestor/qcrbox_dist/qcrboxtools-*.whl
+
 # ShelX
 services/applications/shelx/shelx_executables/2018_shelxl
 services/applications/shelx/shelx_executables/anode
@@ -50,4 +53,4 @@ services/applications/shelx/shelx_executables/shredcif
 services/applications/crystal_explorer/CrystalExplorer-21.5-ubuntu-20.04.deb
 
 # Olex2
-services/applications/olex2_linux/olex2-linux64-hl.zip
+services/applications/olex2_linux/olex2-linux64_hl.zip
