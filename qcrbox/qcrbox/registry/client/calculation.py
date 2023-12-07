@@ -17,7 +17,7 @@ class BaseCalculation(metaclass=ABCMeta):
         pass
 
     @property
-    def status_details(self) -> dict:
+    async def status_details(self) -> dict:
         return {}
 
 
@@ -39,10 +39,16 @@ class ExternalCmdCalculation(BaseCalculation):
         return status
 
     @property
-    def status_details(self):
-        return {
-            "returncode": self.proc.returncode,
+    async def status_details(self):
+        returncode = self.proc.returncode
+        status_details = {
+            "returncode": returncode,
         }
+        if returncode is not None:
+            stdout, stderr = await self.proc.communicate()
+            status_details["stdout"] = stdout
+            status_details["stderr"] = stderr
+        return status_details
 
 
 class PythonCallableCalculation(BaseCalculation):
@@ -63,11 +69,13 @@ class PythonCallableCalculation(BaseCalculation):
             else:
                 status = CalculationStatus.UNKNOWN
         except Exception as exc:
-            self._status_details = {"msg": f"An error occurred when trying to determine the status of the future: {exc}"}
+            self._status_details = {
+                "msg": f"An error occurred when trying to determine the status of the future: {exc}"
+            }
             return CalculationStatus.UNKNOWN
 
         return status
 
     @property
-    def status_details(self) -> dict:
+    async def status_details(self) -> dict:
         return self._status_details
