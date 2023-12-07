@@ -40,7 +40,7 @@ However, there will be an initial period of stabilisation where this is not adhe
    - Olex2 [#46](https://github.com/QCrBox/QCrBox/issues/46)
 - CLI tool (`qcb`) for common development and deployment tasks. ([#10](https://github.com/QCrBox/QCrBox/issues/10))
 - Python package (`qcrbox`) to interact with QCrBox from Python code. ([#14](https://github.com/QCrBox/QCrBox/issues/14))
-- The base image now includes [QCrBoxTools](https://github.com/Niolon/QCrBoxTools.git). ([#53](https://github.com/QCrBox/QCrBox/issues/53))
+- The base image now includes [cctbx](https://cci.lbl.gov/docs/cctbx/) and [QCrBoxTools](https://github.com/Niolon/QCrBoxTools.git). ([#53](https://github.com/QCrBox/QCrBox/issues/53))
 
 ### Documentation
 
@@ -51,7 +51,7 @@ However, there will be an initial period of stabilisation where this is not adhe
 ### Internal improvements
 
 - The base images now use the [mamba](https://mamba.readthedocs.io/) package manager, resulting in much faster build times than using `conda`.
-- The separate Python virtual environment which used to be set up in the base image has been removed; now everything is installed in the core mamba environment.  
+- All QCrBox-specific Python packages are now installed in the base mamba environment. The separate Python virtual environment has been removed. ([#54](https://github.com/QCrBox/QCrBox/issues/54))
 
 
 
