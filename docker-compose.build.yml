@@ -61,7 +61,7 @@ services:
 
   shelx:
     build:
-      context: services/shelx
+      context: services/applications/shelx
       args:
         QCRBOX_DOCKER_TAG: ${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}
 
@@ -76,3 +76,10 @@ services:
       context: services/applications/olex2_linux
       args:
         QCRBOX_DOCKER_TAG: ${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}
+
+  dummy-application:
+    build:
+      context: services/dev/dummy_application
+      args:
+        QCRBOX_DOCKER_TAG: ${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}
+

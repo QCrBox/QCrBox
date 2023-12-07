@@ -63,10 +63,6 @@ services:
 
   shelx:
     image: "qcrbox/shelx:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
-    build:
-      context: services/applications/shelx
-      args:
-        QCRBOX_DOCKER_TAG: ${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}
     environment:
       QCRBOX_RABBITMQ_QUEUE_NAME: "shelx"
       QCRBOX_REGISTRY_HOST: "qcrbox-registry"
@@ -113,6 +109,22 @@ services:
       QCRBOX_RABBITMQ_QUEUE_NAME: "olex2"
       QCRBOX_REGISTRY_HOST: "qcrbox-registry"
       QCRBOX_REGISTRY_PORT: "8000"
+
+  dummy-application:
+    image: "qcrbox/dummy-application:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
+    environment:
+      QCRBOX_RABBITMQ_QUEUE_NAME: "dummy-application"
+      QCRBOX_REGISTRY_HOST: "qcrbox-registry"
+      QCRBOX_REGISTRY_PORT: "8000"
+    volumes:
+      - ./shared_files:${QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH}
+    depends_on:
+      qcrbox-registry:
+        condition: service_healthy
+    networks:
+      - qcrbox-net
+    restart: unless-stopped
+
 
 networks:
   qcrbox-net:
