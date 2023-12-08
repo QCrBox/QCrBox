@@ -20,11 +20,12 @@ RUN cd /lib/x86_64-linux-gnu/ && \
 
 USER ${QCRBOX_USER}
 
-#ADD http://www2.olex2.org/olex2-distro/1.5/olex2-linux64.zip /opt/
-COPY --chown=${QCRBOX_USER}:${QCRBOX_GROUP} ./olex2-linux64_hl.zip ${QCRBOX_APPLICATION_DIR}
-RUN cd ${QCRBOX_APPLICATION_DIR} &&  \
+COPY --chown=${QCRBOX_USER}:${QCRBOX_GROUP} ./olex2-linux64_hl.zip ${QCRBOX_HOME}
+RUN cd ${QCRBOX_HOME} &&  \
     unzip olex2-linux64_hl.zip && \
     rm olex2-linux64_hl.zip
+
+ARG QCRBOX_APPLICATION_DIR=${QCRBOX_HOME}/olex2
 
 RUN sed -i 's|^#! /bin/sh|#! /bin/bash|' ${QCRBOX_APPLICATION_DIR}/start && \
     sed -i 's|^./olex2 "$@" &$|./olex2 "$@"|' ${QCRBOX_APPLICATION_DIR}/start
