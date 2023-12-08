@@ -21,13 +21,13 @@ ARG QCRBOX_RABBITMQ_HOST
 ##
 ARG QCRBOX_USER=qcrbox
 ARG QCRBOX_GROUP=${QCRBOX_USER}
-ARG QCRBOX_HOME=${QCRBOX_ROOT_DIR}/${QCRBOX_USER}
+ARG QCRBOX_HOME=${QCRBOX_ROOT_DIR}/qcrbox_home
 ARG QCRBOX_USER_UID=1000
 ARG QCRBOX_USER_GID=1000
 
 RUN groupadd --gid ${QCRBOX_USER_GID} ${QCRBOX_GROUP} && \
     useradd --home-dir ${QCRBOX_HOME} --shell /bin/bash --uid ${QCRBOX_USER_UID} --gid ${QCRBOX_USER_GID} ${QCRBOX_USER} && \
-    install -d -m 0755 -o ${QCRBOX_USER} -g ${QCRBOX_GROUP} ${QCRBOX_HOME}
+    install -d -m 0755 -o ${QCRBOX_USER} -g ${QCRBOX_GROUP} ${QCRBOX_ROOT_DIR} ${QCRBOX_HOME}
 
 ENV QCRBOX_USER=${QCRBOX_USER}
 ENV QCRBOX_HOME=${QCRBOX_HOME}
@@ -92,6 +92,6 @@ RUN micromamba shell init --shell bash --root-prefix=${MAMBA_ROOT_PREFIX} && \
 RUN echo "alias l='ls -lh'" >> ${QCRBOX_HOME}/.bashrc && \
     echo "alias la='ls -lah'" >> ${QCRBOX_HOME}/.bashrc
 
-COPY --chown=${QCRBOX_USER}:${QCRBOX_GROUP} entrypoint.sh execute_startup_cmd.sh ./
+COPY --chown=${QCRBOX_USER}:${QCRBOX_GROUP} entrypoint.sh execute_startup_cmd.sh ${QCRBOX_HOME}/
 
-ENTRYPOINT ["${QCRBOX_HOME}/entrypoint.sh"]
+ENTRYPOINT ["/opt/qcrbox/qcrbox_home/entrypoint.sh"]

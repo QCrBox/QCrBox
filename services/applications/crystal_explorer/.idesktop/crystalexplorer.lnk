@@ -1,7 +1,7 @@
 table Icon
   Caption: CrystalExplorer
   Command: /usr/bin/CrystalExplorer
-  Icon: /opt/qcrbox/qcrbox/.idesktop/crystalexplorer.png
+  Icon: /opt/qcrbox/qcrbox_home/.idesktop/crystalexplorer.png
   Width: 48
   Height: 48
   X: 70
