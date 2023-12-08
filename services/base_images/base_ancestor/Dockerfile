@@ -89,6 +89,8 @@ RUN micromamba shell init --shell bash --root-prefix=${MAMBA_ROOT_PREFIX} && \
     echo "${MAMBA_EXE} activate ${QCRBOX_MAMBA_ENV_NAME}" >> ${QCRBOX_HOME}/.bashrc && \
     echo "alias conda=${MAMBA_EXE}" >> ${QCRBOX_HOME}/.bashrc
 
+RUN echo "alias l='ls -lh'" >> ${QCRBOX_HOME}/.bashrc
+
 COPY --chown=${QCRBOX_USER}:${QCRBOX_GROUP} entrypoint.sh execute_startup_cmd.sh ./
 
 ENTRYPOINT ["/opt/qcrbox/entrypoint.sh"]
