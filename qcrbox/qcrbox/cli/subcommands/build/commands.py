@@ -2,6 +2,9 @@ import re
 from pathlib import Path
 
 import click
+from git import Repo
+
+from .... import __version__ as qcrbox_version
 from ...helpers import make_task, DockerProject, get_repo_root, run_tasks
 from loguru import logger
 
@@ -55,9 +58,12 @@ def get_build_task_name_for_component(component):
 def task_build_qcrbox_python_package(dry_run: bool):
     repo_root = get_repo_root()
     qcrbox_module_root = repo_root.joinpath("qcrbox")
+
     base_ancestor_qcrbox_dist_dir = repo_root.joinpath("services/base_images/base_ancestor/qcrbox_dist/").as_posix()
+    output_wheel_filename = f"qcrbox-{qcrbox_version}-py3-none-any.whl"
 
     actions = [lambda: logger.info("Building Python package: qcrbox", dry_run=dry_run)]
+    actions.append(lambda: logger.debug(f"Output wheel filename: {output_wheel_filename}", dry_run=dry_run))
     if not dry_run:
         actions.append(
             f"cd {qcrbox_module_root.as_posix()} && "
@@ -66,9 +72,14 @@ def task_build_qcrbox_python_package(dry_run: bool):
             f"cp requirements*.txt {base_ancestor_qcrbox_dist_dir}"
         )
 
+    repo = Repo(repo_root)
+    source_files = repo.git.ls_tree("-r", "HEAD", "--name-only", "qcrbox").splitlines()
+
     return {
         "name": f"task_build_python_package:qcrbox",
+        "file_dep": source_files,
         "actions": actions,
+        "targets": [qcrbox_module_root.joinpath("dist", output_wheel_filename)],
     }
 
 
