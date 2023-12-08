@@ -18,20 +18,18 @@ RUN sed -i 's/^# en_GB/en_GB/' /etc/locale.gen && \
 RUN cd /lib/x86_64-linux-gnu/ && \
     ln -s libreadline.so.8 libreadline.so.6
 
+USER ${QCRBOX_USER}
+
 #ADD http://www2.olex2.org/olex2-distro/1.5/olex2-linux64.zip /opt/
-COPY ./olex2-linux64_hl.zip /opt/
-RUN cd /opt &&  \
+COPY --chown=${QCRBOX_USER}:${QCRBOX_GROUP} ./olex2-linux64_hl.zip ${QCRBOX_APPLICATION_DIR}
+RUN cd ${QCRBOX_APPLICATION_DIR} &&  \
     unzip olex2-linux64_hl.zip && \
     rm olex2-linux64_hl.zip
 
-RUN sed -i 's|^#! /bin/sh|#! /bin/bash|' /opt/olex2/start && \
-    sed -i 's|^./olex2 "$@" &$|./olex2 "$@"|' /opt/olex2/start
+RUN sed -i 's|^#! /bin/sh|#! /bin/bash|' ${QCRBOX_APPLICATION_DIR}/start && \
+    sed -i 's|^./olex2 "$@" &$|./olex2 "$@"|' ${QCRBOX_APPLICATION_DIR}/start
 
 # RUN sed -i 's|^#! /bin/sh|#! /bin/bash|' /opt/olex2/startc
-
-RUN chown -R ${QCRBOX_USER} /opt/olex2
-
-USER ${QCRBOX_USER}
 
 RUN mkdir -p ${QCRBOX_HOME}/.local/share && \
     mkdir -p ${QCRBOX_HOME}/.olex2/data/ && \
