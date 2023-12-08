@@ -12,11 +12,11 @@ RUN cd /tmp &&  \
     dpkg -i CrystalExplorer-21.5-ubuntu-20.04.deb && \
     rm CrystalExplorer-*.deb
 
-USER ${QCRBOX_USER}
-
-COPY supervisord.crystal_explorer.conf ${QCRBOX_SUPERVISORD_CONF_DIR}/
-COPY CrystalExplorer21.conf ${QCRBOX_HOME}/.config/crystalexplorer.net/
+COPY --chown=${QCRBOX_USER}:${QCRBOX_GROUP} supervisord.crystal_explorer.conf ${QCRBOX_SUPERVISORD_CONF_DIR}/
+COPY --chown=${QCRBOX_USER}:${QCRBOX_GROUP} CrystalExplorer21.conf ${QCRBOX_HOME}/.config/crystalexplorer.net/
 COPY --chown=${QCRBOX_USER}:${QCRBOX_USER} ./.idesktop ${QCRBOX_HOME}/.idesktop
-COPY configure_crystal_explorer.py ${QCRBOX_HOME}/
+COPY --chown=${QCRBOX_USER}:${QCRBOX_GROUP} configure_crystal_explorer.py ${QCRBOX_HOME}/
+
+USER ${QCRBOX_USER}
 
 ENV QCRBOX_APPLICATION_DISPLAY_NAME="CrystalExplorer"

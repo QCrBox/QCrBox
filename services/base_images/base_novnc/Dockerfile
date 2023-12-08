@@ -23,6 +23,6 @@ COPY menu.xml /etc/xdg/openbox/
 
 USER ${QCRBOX_USER}
 
-COPY supervisord.base_novnc.conf ${QCRBOX_SUPERVISORD_CONF_DIR}/
+COPY --chown=${QCRBOX_USER}:${QCRBOX_GROUP} supervisord.base_novnc.conf ${QCRBOX_SUPERVISORD_CONF_DIR}/
 ENV DISPLAY=":0"
 EXPOSE 8080

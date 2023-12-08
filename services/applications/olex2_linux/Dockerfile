@@ -37,16 +37,16 @@ RUN mkdir -p ${QCRBOX_HOME}/.local/share && \
     mkdir -p ${QCRBOX_HOME}/.olex2/data/ && \
     echo "QCRBOX" >> ${QCRBOX_HOME}/.olex2/data/app.token
 
-COPY ./.idesktop ${QCRBOX_HOME}/.idesktop
+COPY --chown=${QCRBOX_USER}:${QCRBOX_GROUP} ./.idesktop ${QCRBOX_HOME}/.idesktop
 
-COPY ./configure_olex2.py ${QCRBOX_HOME}/
-COPY ./olex2_glue_cli.py ${QCRBOX_HOME}
+COPY --chown=${QCRBOX_USER}:${QCRBOX_GROUP} ./configure_olex2.py ${QCRBOX_HOME}
+COPY --chown=${QCRBOX_USER}:${QCRBOX_GROUP} ./olex2_glue_cli.py ${QCRBOX_HOME}
 
 ENV QCRBOX_USER=${QCRBOX_USER}
 ENV QCRBOX_HOME=${QCRBOX_HOME}
 
 ARG QCRBOX_SUPERVISORD_CONF_DIR=${QCRBOX_SUPERVISORD_CONF_DIR}
-COPY supervisord.olex2_headless.conf ${QCRBOX_SUPERVISORD_CONF_DIR}/
+COPY --chown=${QCRBOX_USER}:${QCRBOX_GROUP} supervisord.olex2_headless.conf ${QCRBOX_SUPERVISORD_CONF_DIR}/
 
 ENV QCRBOX_APPLICATION_DISPLAY_NAME="Olex2"
 WORKDIR /opt/olex2
