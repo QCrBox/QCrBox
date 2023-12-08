@@ -21,7 +21,7 @@ ARG QCRBOX_RABBITMQ_HOST
 ##
 ARG QCRBOX_USER=qcrbox
 ARG QCRBOX_GROUP=${QCRBOX_USER}
-ARG QCRBOX_HOME=${QCRBOX_ROOT_DIR}
+ARG QCRBOX_HOME=${QCRBOX_ROOT_DIR}/${QCRBOX_USER}
 ARG QCRBOX_USER_UID=1000
 ARG QCRBOX_USER_GID=1000
 
@@ -68,7 +68,7 @@ ARG QCRBOX_PYTHON_VENV_DIR=${QCRBOX_MAMBA_ENV_PATH}
 ENV QCRBOX_PYTHON_VENV_DIR=${QCRBOX_PYTHON_VENV_DIR}
 
 COPY --chown=${QCRBOX_USER}:${QCRBOX_GROUP} ./qcrbox_dist/requirements.txt ./qcrbox_dist/requirements-server.txt ${QCRBOX_HOME}
-RUN ${QCRBOX_PYTHON_VENV_DIR}/bin/python -m pip install -r ${QCRBOX_ROOT_DIR}/requirements.txt -r ${QCRBOX_ROOT_DIR}/requirements-server.txt
+RUN ${QCRBOX_PYTHON_VENV_DIR}/bin/python -m pip install -r ${QCRBOX_HOME}/requirements.txt -r ${QCRBOX_HOME}/requirements-server.txt
 
 ARG QCRBOXTOOLS_VERSION
 ARG QCRBOXTOOLS_WHEEL=qcrboxtools-${QCRBOXTOOLS_VERSION}-py3-none-any.whl
@@ -83,7 +83,7 @@ RUN eval "$(micromamba shell hook --shell bash)" && \
 ARG QCRBOX_PYTHON_PACKAGE_VERSION=${QCRBOX_PYTHON_PACKAGE_VERSION}
 ARG QCRBOX_PYTHON_PACKAGE_WHEEL=qcrbox-${QCRBOX_PYTHON_PACKAGE_VERSION}-py3-none-any.whl
 COPY --chown=${QCRBOX_USER}:${QCRBOX_GROUP} ./qcrbox_dist/${QCRBOX_PYTHON_PACKAGE_WHEEL} ${QCRBOX_HOME}/
-RUN ${QCRBOX_PYTHON_VENV_DIR}/bin/python -m pip install ${QCRBOX_ROOT_DIR}/qcrbox-*.whl
+RUN ${QCRBOX_PYTHON_VENV_DIR}/bin/python -m pip install ${QCRBOX_HOME}/qcrbox-*.whl
 
 RUN micromamba shell init --shell bash --root-prefix=${MAMBA_ROOT_PREFIX} && \
     echo "${MAMBA_EXE} activate ${QCRBOX_MAMBA_ENV_NAME}" >> ${QCRBOX_HOME}/.bashrc && \
@@ -94,4 +94,4 @@ RUN echo "alias l='ls -lh'" >> ${QCRBOX_HOME}/.bashrc && \
 
 COPY --chown=${QCRBOX_USER}:${QCRBOX_GROUP} entrypoint.sh execute_startup_cmd.sh ./
 
-ENTRYPOINT ["/opt/qcrbox/entrypoint.sh"]
+ENTRYPOINT ["${QCRBOX_HOME}/entrypoint.sh"]
