@@ -34,8 +34,8 @@ ENV QCRBOX_HOME=${QCRBOX_HOME}
 ENV QCRBOX_RABBITMQ_HOST=${QCRBOX_RABBITMQ_HOST}
 
 ##
-## Create 'global' file /etc/supervisord.conf. Among other things, this includes any config files
-## present in QCRBOX_SUPERVISORD_CONF_DIR (which is where QCrBox services will put them).
+## Create 'global' file /etc/supervisord.conf. Among other things, this will load any config files
+## present in QCRBOX_SUPERVISORD_CONF_DIR (which is where individual QCrBox services will put theirs).
 ##
 ARG QCRBOX_SUPERVISORD_CONF_DIR=${QCRBOX_SUPERVISORD_CONF_DIR}
 ENV QCRBOX_SUPERVISORD_CONF_DIR=${QCRBOX_SUPERVISORD_CONF_DIR}
