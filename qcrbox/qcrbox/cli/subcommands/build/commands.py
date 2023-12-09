@@ -2,6 +2,7 @@ import re
 from pathlib import Path
 
 import click
+from doit.tools import result_dep
 from git import Repo
 
 from .... import __version__ as qcrbox_version
@@ -26,8 +27,8 @@ def build_components(no_deps: bool, dry_run: bool, components: list[str]):
     docker_project = DockerProject()
     components = components or docker_project.services_including_base_images
     click.echo(
-        f"Building the following components ({'without' if no_deps else 'including'} dependencies): "
-        f"{', '.join(components)}\n"
+        f"Components to build ({'without' if no_deps else 'including'} dependencies): "
+        f"{', '.join([repr(c) for c in components])}\n"
     )
     tasks = populate_build_tasks(components, docker_project, with_deps=not no_deps, dry_run=dry_run)
     run_tasks(tasks)
@@ -55,6 +56,14 @@ def get_build_task_name_for_component(component):
 
 
 @make_task
+def task_get_qcrbox_version(dry_run: bool):
+    return {
+        "name": "version:qcrbox",
+        "actions": [lambda: qcrbox_version],
+    }
+
+
+@make_task
 def task_build_qcrbox_python_package(dry_run: bool):
     repo_root = get_repo_root()
     qcrbox_module_root = repo_root.joinpath("qcrbox")
@@ -66,6 +75,7 @@ def task_build_qcrbox_python_package(dry_run: bool):
     actions.append(lambda: logger.debug(f"Output wheel filename: {output_wheel_filename}", dry_run=dry_run))
     if not dry_run:
         actions.append(
+            f"echo '[DDD]' Building qcrbox package && "
             f"cd {qcrbox_module_root.as_posix()} && "
             f"hatch build -t wheel && "
             f"cp dist/qcrbox-*.whl {base_ancestor_qcrbox_dist_dir} && "
@@ -77,9 +87,10 @@ def task_build_qcrbox_python_package(dry_run: bool):
 
     return {
         "name": f"task_build_python_package:qcrbox",
-        "file_dep": source_files,
+        #"file_dep": source_files,
         "actions": actions,
         "targets": [qcrbox_module_root.joinpath("dist", output_wheel_filename)],
+        "uptodate": [True],
     }
 
 
@@ -119,14 +130,17 @@ def populate_build_tasks(
 def update_build_tasks(
     existing_tasks: dict, component: str, docker_project: DockerProject, with_deps: bool, dry_run: bool
 ):
+    def add_task(new_task):
+        existing_tasks[new_task.name] = new_task
+
     if component == "qcrbox":
-        new_task = task_build_qcrbox_python_package(dry_run)
+        add_task(task_get_qcrbox_version(dry_run))
+        add_task(task_build_qcrbox_python_package(dry_run))
     else:
         new_task = task_build_docker_image(component, docker_project, with_deps=with_deps, dry_run=dry_run)
+        add_task(new_task)
         if with_deps:
             for dep in docker_project.get_direct_dependencies(component, include_build_deps=True):
                 update_build_tasks(existing_tasks, dep, docker_project, with_deps=with_deps, dry_run=dry_run)
             if component == "base-ancestor":
                 update_build_tasks(existing_tasks, "qcrbox", docker_project, with_deps=with_deps, dry_run=dry_run)
-
-    existing_tasks[new_task.name] = new_task
