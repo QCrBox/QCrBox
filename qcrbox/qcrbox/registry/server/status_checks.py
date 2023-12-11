@@ -64,6 +64,7 @@ async def get_container_status(container_id: int, callback_timeout: float = 1.0)
 
 
 async def update_status_of_all_containers(callback_timeout: float = 1.0):
+    logger.info(f"Updating status of all containers in the registry database...")
     for container in retrieve_containers():
         updated_status = await get_container_status(container.id, callback_timeout=callback_timeout)
         logger.debug(f"   {updated_status=}")
