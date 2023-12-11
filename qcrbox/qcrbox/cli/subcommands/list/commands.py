@@ -4,6 +4,7 @@ from typing import Optional, Iterable
 import click
 import requests
 from dateutil.parser import parse as parse_date
+from loguru import logger
 from tabulate import tabulate
 
 from ...helpers import DockerProject, NaturalOrderGroup
@@ -24,6 +25,17 @@ def pretty_print_timestamp(colname):
         return row_dict
 
     return pretty_print_timestamp_impl
+
+
+def update_status_of_containers():
+    logger.debug(f"Requesting status update of containers in the registry database.")
+    qcrbox_api_base_url = get_qcrbox_registry_api_connection_url()
+    try:
+        r = requests.post(qcrbox_api_base_url + "/containers/status_update")
+        return r
+    except requests.exceptions.ConnectionError:
+        click.echo(f"Error: could not connect to QCrBox registry at {qcrbox_api_base_url}")
+        sys.exit(1)
 
 
 @click.group(name="list", cls=NaturalOrderGroup)
@@ -118,12 +130,31 @@ def list_commands(name: Optional[str], application_id: Optional[int]):
     type=int,
     help="Filter containers by application_id (run 'qcb list applications' to get the id)",
 )
-def list_containers(application_id: Optional[int]):
+@click.option(
+    "--update-status",
+    is_flag=True,
+    default=False,
+    type=bool,
+    help=(
+        "Ensure the status of all containers in the registry database is up to date before listing them. "
+        "This is disabled by default because it currently takes about a second per container "
+        "(it will be much faster once proper async support is added)."
+    ),
+)
+def list_containers(application_id: Optional[int], update_status: bool):
     """
     List registered containers.
     """
-    # We're dropping column 'routing_key__registry_to_application'
+    if update_status:
+        update_status_of_containers()
+
     r = run_request_against_registry_api("/containers", params={"application_id": application_id})
-    cols_to_print = ("id", "qcrbox_id", "registered_at", "application_id", "status")
+    cols_to_print = (
+        "id",
+        "qcrbox_id",
+        "registered_at",
+        "application_id",
+        "status",
+    )  # we're dropping column 'routing_key__registry_to_application'
     data = [pretty_print_timestamp("registered_at")(extract_columns(cols_to_print)(row)) for row in r.json()]
     click.echo(tabulate(data, headers="keys", tablefmt="simple"))
