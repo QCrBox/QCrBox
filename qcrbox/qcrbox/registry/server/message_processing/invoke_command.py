@@ -53,7 +53,8 @@ async def _invoke_command_impl(msg: msg_specs.InvokeCommand) -> msg_specs.QCrBox
             # FIXME: this is a hack just to get things working for now; we should handle this in a smarter way in the future.
             container_to_use = session.exec(
                 select(sql_models.QCrBoxContainerDB).where(
-                    sql_models.QCrBoxCommandDB.id == msg_payload.command_id,
+                    sql_models.QCrBoxCommandDB.id == msg_payload.command_id
+                    and sql_models.QCrBoxContainerDB.status == sql_models.qcrbox_container.ContainerStatus.IDLE,
                 )
             ).first()
             logger.debug(f"{container_to_use=}")
