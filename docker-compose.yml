@@ -42,6 +42,26 @@ services:
       - qcrbox-net
     restart: "unless-stopped"
 
+  qcrbox-nextflow:
+    image: "qcrbox/nextflow:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
+    volumes:
+      - ./shared_files:${QCRBOX_SHARED_FILES_DIR:?Must set env var QCRBOX_SHARED_FILES_DIR}
+      - qcrbox-nextflow-home:${QCRBOX_NEXTFLOW_HOME:?Must set env var QQCRBOX_NEXTFLOW_HOME}
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      qcrbox-message-bus:
+        condition: service_healthy
+    environment:
+      QCRBOX_RABBITMQ_QUEUE_NAME: "qcrbox_nextflow"
+      #QCRBOX_RABBITMQ_HOST: "qcrbox-message-bus"
+      #QCRBOX_RABBITMQ_PORT: "5672"
+      QCRBOX_REGISTRY_HOST: "qcrbox-registry"
+      QCRBOX_REGISTRY_PORT: "8000"
+      QCRBOX_NEXTFLOW_HOME: "${QCRBOX_NEXTFLOW_HOME:?Must set env var QCRBOX_NEXTFLOW_HOME}"
+    networks:
+      - qcrbox-net
+    restart: "unless-stopped"
+
   shelx:
     image: "qcrbox/shelx:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
     build:
@@ -101,3 +121,4 @@ networks:
 volumes:
   qcrbox-rabbitmq-data:
   qcrbox-registry-db:
+  qcrbox-nextflow-home:
