@@ -1,6 +1,13 @@
 version: "3.8"
 
 services:
+  base-builder:
+    image: "qcrbox/base-builder:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
+    build:
+      context: services/base_images/base_builder/
+      args:
+        QCRBOX_ROOT_DIR: ${QCRBOX_ROOT_DIR:?Must set env var QCRBOX_ROOT_DIR}
+
   base-ancestor:
     image: "qcrbox/base-ancestor:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
     build:
