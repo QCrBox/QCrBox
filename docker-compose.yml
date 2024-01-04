@@ -47,6 +47,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - qcrbox-nextflow-home:${QCRBOX_NEXTFLOW_HOME:?Must set env var QCRBOX_NEXTFLOW_HOME}
+      - ./shared_files:${QCRBOX_SHARED_FILES_DIR:?Must set env var QCRBOX_SHARED_FILES_DIR}
       # Note: the env var QCRBOX_SHARED_FILES_DIR_HOST_PATH is required byt will be set automatically by
       # the `qcb` command line tool when `qcb up qcrbox-nextflow` is invoked.
       - ./shared_files:${QCRBOX_SHARED_FILES_DIR_HOST_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_HOST_PATH}
