@@ -35,8 +35,6 @@ services:
         condition: service_healthy
     environment:
       QCRBOX_RABBITMQ_QUEUE_NAME: "qcrbox_registry"
-      QCRBOX_RABBITMQ_HOST: "qcrbox-message-bus"
-      QCRBOX_RABBITMQ_PORT: "5672"
       QCRBOX_REGISTRY_DB_DIR: "${QCRBOX_REGISTRY_DB_DIR:?Must set env var QCRBOX_REGISTRY_DB_DIR}"
     networks:
       - qcrbox-net
@@ -56,8 +54,6 @@ services:
         condition: service_healthy
     environment:
       QCRBOX_RABBITMQ_QUEUE_NAME: "qcrbox_nextflow"
-      #QCRBOX_RABBITMQ_HOST: "qcrbox-message-bus"
-      #QCRBOX_RABBITMQ_PORT: "5672"
       QCRBOX_REGISTRY_HOST: "qcrbox-registry"
       QCRBOX_REGISTRY_PORT: "8000"
       QCRBOX_NEXTFLOW_HOME: "${QCRBOX_NEXTFLOW_HOME:?Must set env var QCRBOX_NEXTFLOW_HOME}"
