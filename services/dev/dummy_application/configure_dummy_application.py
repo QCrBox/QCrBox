@@ -1,11 +1,12 @@
 import re
 import textwrap
 from datetime import datetime
+from itertools import islice
 from loguru import logger
 from qcrbox.registry.client import QCrBoxRegistryClient, ExternalCommand
 
 
-def concat_files(input_files: list[str], output_file: str):
+def concat_files(input_files: list[str], output_file: str, head=10):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     logger.debug(f"Concatenating files: {input_files}")
@@ -17,7 +18,8 @@ def concat_files(input_files: list[str], output_file: str):
                 header_line = f"Input file: {input_file}\n"
                 f_out.write(header_line)
                 f_out.write(re.sub(".", "-", header_line))
-                f_out.write(f_in.read())
+                for line in islice(f_in.readlines(), head):
+                    f_out.write(line)
                 f_out.write("\n\n")
         logger.debug(f"Output written to file: {output_file!r}")
 
