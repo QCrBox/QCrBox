@@ -26,7 +26,7 @@ services:
   qcrbox-registry:
     image: "qcrbox/registry:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
     volumes:
-      - ./shared_files:${QCRBOX_SHARED_FILES_DIR:?Must set env var QCRBOX_SHARED_FILES_DIR}
+      - ./shared_files:${QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH}
       - qcrbox-registry-db:${QCRBOX_REGISTRY_DB_DIR:?Must set env var QCRBOX_REGISTRY_DB_DIR}
     ports:
       - "${QCRBOX_BIND_ADDRESS}:${QCRBOX_REGISTRY_PORT:?Must set env var QCRBOX_REGISTRY_PORT}:8000"
@@ -35,9 +35,28 @@ services:
         condition: service_healthy
     environment:
       QCRBOX_RABBITMQ_QUEUE_NAME: "qcrbox_registry"
-      QCRBOX_RABBITMQ_HOST: "qcrbox-message-bus"
-      QCRBOX_RABBITMQ_PORT: "5672"
       QCRBOX_REGISTRY_DB_DIR: "${QCRBOX_REGISTRY_DB_DIR:?Must set env var QCRBOX_REGISTRY_DB_DIR}"
+    networks:
+      - qcrbox-net
+    restart: "unless-stopped"
+
+  qcrbox-nextflow:
+    image: "qcrbox/nextflow:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - qcrbox-nextflow-home:${QCRBOX_NEXTFLOW_HOME:?Must set env var QCRBOX_NEXTFLOW_HOME}
+      - ./shared_files:${QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH}
+      # Note: the env var QCRBOX_SHARED_FILES_DIR_HOST_PATH is required but will be set automatically by
+      # the `qcb` command line tool when `qcb up qcrbox-nextflow` is invoked.
+      - ./shared_files:${QCRBOX_SHARED_FILES_DIR_HOST_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_HOST_PATH}
+    depends_on:
+      qcrbox-message-bus:
+        condition: service_healthy
+    environment:
+      QCRBOX_RABBITMQ_QUEUE_NAME: "qcrbox_nextflow"
+      QCRBOX_REGISTRY_HOST: "qcrbox-registry"
+      QCRBOX_REGISTRY_PORT: "8000"
+      QCRBOX_NEXTFLOW_HOME: "${QCRBOX_NEXTFLOW_HOME:?Must set env var QCRBOX_NEXTFLOW_HOME}"
     networks:
       - qcrbox-net
     restart: "unless-stopped"
@@ -53,7 +72,7 @@ services:
       QCRBOX_REGISTRY_HOST: "qcrbox-registry"
       QCRBOX_REGISTRY_PORT: "8000"
     volumes:
-      - ./shared_files:${QCRBOX_SHARED_FILES_DIR:?Must set env var QCRBOX_SHARED_FILES_DIR}
+      - ./shared_files:${QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH}
     depends_on:
       qcrbox-registry:
         condition: service_healthy
@@ -64,7 +83,7 @@ services:
   crystal-explorer:
     image: "qcrbox/crystal-explorer:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
     volumes:
-      - ./shared_files:${QCRBOX_SHARED_FILES_DIR:?Must set env var QCRBOX_SHARED_FILES_DIR}
+      - ./shared_files:${QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH}
     networks:
       - qcrbox-net
     ports:
@@ -81,7 +100,7 @@ services:
   olex2-linux:
     image: qcrbox/olex2-linux:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}
     volumes:
-      - ./shared_files:${QCRBOX_SHARED_FILES_DIR:?Must set env var QCRBOX_SHARED_FILES_DIR}
+      - ./shared_files:${QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH}
     networks:
       - qcrbox-net
     ports:
@@ -101,3 +120,4 @@ networks:
 volumes:
   qcrbox-rabbitmq-data:
   qcrbox-registry-db:
+  qcrbox-nextflow-home:

@@ -15,6 +15,7 @@ RUN apt-get update -y && \
 ARG QCRBOX_ROOT_DIR
 ARG QCRBOX_VOLUMES_ROOT_DIR
 ARG QCRBOX_RABBITMQ_HOST
+ARG QCRBOX_RABBITMQ_PORT
 
 ##
 ## Create user 'qcrbox'
@@ -32,6 +33,7 @@ RUN groupadd --gid ${QCRBOX_USER_GID} ${QCRBOX_GROUP} && \
 ENV QCRBOX_USER=${QCRBOX_USER}
 ENV QCRBOX_HOME=${QCRBOX_HOME}
 ENV QCRBOX_RABBITMQ_HOST=${QCRBOX_RABBITMQ_HOST}
+ENV QCRBOX_RABBITMQ_PORT=${QCRBOX_RABBITMQ_PORT}
 
 ##
 ## Create 'global' file /etc/supervisord.conf. Among other things, this includes any config files

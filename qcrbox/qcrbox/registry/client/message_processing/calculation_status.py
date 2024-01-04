@@ -23,7 +23,7 @@ async def _(msg: msg_specs.GetCalculationStatusDetails, application) -> msg_spec
 
     status_details = sql_models.QCrBoxCalculationStatusDetails(
         status=calculation.status.value,
-        details=calculation.status_details,
+        details=await calculation.status_details,
     ).dict()
 
     return msg_specs.QCrBoxGenericResponse(

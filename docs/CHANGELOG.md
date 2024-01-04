@@ -35,6 +35,7 @@ However, there will be an initial period of stabilisation where this is not adhe
 - Core components:
    - `qcrbox-message-bus` [#9](https://github.com/QCrBox/QCrBox/issues/9)
    - `qcrbox-registry` [#13](https://github.com/QCrBox/QCrBox/issues/13)
+   - `qcrbox-nextflow` [#60](https://github.com/QCrBox/QCrBox/issues/60)
 - Crystallographic applications:
    - CrystalExplorer [#44](https://github.com/QCrBox/QCrBox/issues/44)
    - Olex2 [#46](https://github.com/QCrBox/QCrBox/issues/46)

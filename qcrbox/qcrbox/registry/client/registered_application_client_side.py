@@ -1,5 +1,5 @@
 import asyncio
-from typing import Optional
+from typing import Optional, Callable
 
 from loguru import logger
 from propan import PropanApp
@@ -102,12 +102,15 @@ class RegisteredApplicationClientSide:
             name=f"register_command__{cmd_name}",
         )
 
-    def register_python_callable(self, cmd_name: str, python_callable: PythonCallable):
-        if not isinstance(python_callable, PythonCallable):
+    def register_python_callable(self, cmd_name: str, func: Callable):
+        #if not isinstance(python_callable, PythonCallable):
+        if not callable(func):
             raise TypeError(
-                f"The argument 'python_callable' must be an instance of PythonCallable. "
-                f"Got: {type(python_callable).__name__}"
+                f"The argument 'func' must be a Python callable. "
+                f"Got: {type(func).__name__}"
             )
+
+        python_callable = PythonCallable(func)
 
         self.client.schedule_startup_task(
             self._send_register_command_message_to_server(
