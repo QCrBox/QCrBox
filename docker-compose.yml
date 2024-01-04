@@ -26,7 +26,7 @@ services:
   qcrbox-registry:
     image: "qcrbox/registry:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
     volumes:
-      - ./shared_files:${QCRBOX_SHARED_FILES_DIR:?Must set env var QCRBOX_SHARED_FILES_DIR}
+      - ./shared_files:${QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH}
       - qcrbox-registry-db:${QCRBOX_REGISTRY_DB_DIR:?Must set env var QCRBOX_REGISTRY_DB_DIR}
     ports:
       - "${QCRBOX_BIND_ADDRESS}:${QCRBOX_REGISTRY_PORT:?Must set env var QCRBOX_REGISTRY_PORT}:8000"
@@ -45,8 +45,8 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - qcrbox-nextflow-home:${QCRBOX_NEXTFLOW_HOME:?Must set env var QCRBOX_NEXTFLOW_HOME}
-      - ./shared_files:${QCRBOX_SHARED_FILES_DIR:?Must set env var QCRBOX_SHARED_FILES_DIR}
-      # Note: the env var QCRBOX_SHARED_FILES_DIR_HOST_PATH is required byt will be set automatically by
+      - ./shared_files:${QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH}
+      # Note: the env var QCRBOX_SHARED_FILES_DIR_HOST_PATH is required but will be set automatically by
       # the `qcb` command line tool when `qcb up qcrbox-nextflow` is invoked.
       - ./shared_files:${QCRBOX_SHARED_FILES_DIR_HOST_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_HOST_PATH}
     depends_on:
@@ -72,7 +72,7 @@ services:
       QCRBOX_REGISTRY_HOST: "qcrbox-registry"
       QCRBOX_REGISTRY_PORT: "8000"
     volumes:
-      - ./shared_files:${QCRBOX_SHARED_FILES_DIR:?Must set env var QCRBOX_SHARED_FILES_DIR}
+      - ./shared_files:${QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH}
     depends_on:
       qcrbox-registry:
         condition: service_healthy
@@ -83,7 +83,7 @@ services:
   crystal-explorer:
     image: "qcrbox/crystal-explorer:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
     volumes:
-      - ./shared_files:${QCRBOX_SHARED_FILES_DIR:?Must set env var QCRBOX_SHARED_FILES_DIR}
+      - ./shared_files:${QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH}
     networks:
       - qcrbox-net
     ports:
@@ -100,7 +100,7 @@ services:
   olex2-linux:
     image: qcrbox/olex2-linux:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}
     volumes:
-      - ./shared_files:${QCRBOX_SHARED_FILES_DIR:?Must set env var QCRBOX_SHARED_FILES_DIR}
+      - ./shared_files:${QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH}
     networks:
       - qcrbox-net
     ports:
