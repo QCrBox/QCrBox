@@ -29,7 +29,7 @@ class QCrBoxCalculationDB(SQLModel, table=True):
 
 class QCrBoxCalculationStatusDetails(BaseModel):
     status: str
-    details: dict
+    details: dict | None
 
 
 class QCrBoxCalculationRead(BaseModel):
