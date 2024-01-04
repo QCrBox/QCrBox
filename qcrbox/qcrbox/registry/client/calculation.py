@@ -72,7 +72,7 @@ class PythonCallableCalculation(BaseCalculation):
             self._status_details = {
                 "msg": f"An error occurred when trying to determine the status of the future: {exc}"
             }
-            return CalculationStatus.UNKNOWN
+            status = CalculationStatus.UNKNOWN
 
         return status
 
