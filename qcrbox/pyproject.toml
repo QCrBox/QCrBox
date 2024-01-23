@@ -107,8 +107,8 @@ select = [
 # Ignore `F401`, `F403` (unused imports and * imports) in all `__init__.py` files
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401", "F403"]
-"qcrbox/common/msg_specs/sql_models/**.py" = ["F821"]
-"qcrbox/registry/client/registered_application_client_side.py" = ["F821"]
+"qcrbox/qcrbox/common/msg_specs/sql_models/**.py" = ["F821"]
+"qcrbox/qcrbox/registry/client/registered_application_client_side.py" = ["F821"]
 
 [tool.ruff.format]
 exclude = ["services/applications/*/configure_*.py"]
