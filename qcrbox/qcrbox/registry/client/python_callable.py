@@ -10,7 +10,7 @@ class PythonCallable:
     def __init__(self, fn: Callable):
         assert inspect.isfunction(fn)
         if inspect.iscoroutinefunction(fn):
-            raise TypeError(f"At present PythonCallable can only handle regular functions, not coroutine functions.")
+            raise TypeError("At present PythonCallable can only handle regular functions, not coroutine functions.")
 
         self.fn = fn
         self.signature = inspect.signature(fn)

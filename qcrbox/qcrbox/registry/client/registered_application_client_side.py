@@ -58,8 +58,8 @@ class RegisteredApplicationClientSide:
 
         if not isinstance(on_command_invoked, (ExternalCommand, PythonCallable)):
             raise NotImplementedError(
-                f"The 'on_command_invoked' argument must be an instance of ExternalCommand."
-                f"Other callback types are not supported yet."
+                "The 'on_command_invoked' argument must be an instance of ExternalCommand."
+                "Other callback types are not supported yet."
             )
 
         msg = msg_specs.RegisterCommand(

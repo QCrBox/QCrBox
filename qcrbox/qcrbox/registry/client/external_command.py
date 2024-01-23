@@ -1,7 +1,7 @@
 import asyncio
 import inspect
 import subprocess
-from typing import List, Union
+from typing import Union
 
 from .calculation import ExternalCmdCalculation
 

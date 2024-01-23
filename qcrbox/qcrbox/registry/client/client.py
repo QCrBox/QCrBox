@@ -117,7 +117,7 @@ class QCrBoxRegistryClient:
                     try:
                         msg_obj = cls(**msg_dict)
                         break
-                    except pydantic.ValidationError as exc:
+                    except pydantic.ValidationError:
                         pass
                 else:
                     error_msg = f"Incoming message is not a valid QCrBox message: {msg_dict}"
@@ -137,7 +137,7 @@ class QCrBoxRegistryClient:
                     else:
                         logger.debug(f"Received 'register_application' message: {msg_obj}")
 
-                logger.debug(f"[DDD] Calling 'process_message_sync_or_async()' ...")
+                logger.debug("[DDD] Calling 'process_message_sync_or_async()' ...")
                 res = await process_message_sync_or_async(msg_obj, application)
                 logger.debug(f"[DDD] Received result from 'process_message_sync_or_async()': {res}")
                 return res
@@ -178,7 +178,7 @@ class QCrBoxRegistryClient:
         with open("/tmp/SENTINEL_QCRBOX_CLIENT_STARTUP_SUCCESSFUL.txt", "w") as f:
             f.write("QCrBox client successfully started up.")
 
-        logger.debug(f"All startup tasks completed successfully.")
+        logger.debug("All startup tasks completed successfully.")
 
     async def run_async(self):
         try:

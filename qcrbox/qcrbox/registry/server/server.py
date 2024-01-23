@@ -13,8 +13,8 @@ from .api import fastapi_app, router
 
 @router.after_startup
 async def init_db(_: FastAPI):
-    logger.debug(f"Established connection to RabbitMQ.")
-    logger.debug(f"Setting up QCrBox registry database.")
+    logger.debug("Established connection to RabbitMQ.")
+    logger.debug("Setting up QCrBox registry database.")
     create_db_and_tables()
     seed_database()
 
@@ -47,7 +47,7 @@ async def handle_incoming_messages(msg_dict) -> msg_specs.QCrBoxGenericResponse:
             return msg_specs.QCrBoxGenericResponse(response_to="incoming_message", status="error", msg=error_msg)
 
     if "action" not in msg_dict:
-        error_msg = f"Invalid message structure: message must have an 'action' field"
+        error_msg = "Invalid message structure: message must have an 'action' field"
         logger.error(error_msg)
         return msg_specs.QCrBoxGenericResponse(response_to="incoming_message", status="error", msg=error_msg)
 

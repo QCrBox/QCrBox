@@ -94,7 +94,7 @@ async def get_single_calculation(calculation_id: int):
         try:
             calc = session.exec(statement).scalar_one()
         except sqlalchemy.exc.NoResultFound:
-            error_response = dict(status="error", msg=f"Calculation not found")
+            error_response = dict(status="error", msg="Calculation not found")
             raise HTTPException(status_code=404, detail=error_response)
 
         routing_key = calc.container.routing_key__registry_to_application

@@ -21,7 +21,7 @@ def shut_down_components(dry_run: bool, components: list[str]):
     click.echo(f"Shutting down the following components: {', '.join(components)}\n")
     task = doit.task.dict_to_task(
         {
-            "name": f"task_start_up_docker_containers",
+            "name": "task_start_up_docker_containers",
             "actions": [(docker_project.spin_down_docker_containers, (components, dry_run))],
         }
     )

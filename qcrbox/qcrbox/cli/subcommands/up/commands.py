@@ -33,7 +33,7 @@ def start_up_components(rebuild_deps: bool, dry_run: bool, components: list[str]
 
     startup_task = doit.task.dict_to_task(
         {
-            "name": f"task_start_up_docker_containers",
+            "name": "task_start_up_docker_containers",
             "actions": [(docker_project.start_up_docker_containers, (components, dry_run))],
         }
     )

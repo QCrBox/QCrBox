@@ -28,7 +28,7 @@ def pretty_print_timestamp(colname):
 
 
 def update_status_of_containers():
-    logger.debug(f"Requesting status update of containers in the registry database.")
+    logger.debug("Requesting status update of containers in the registry database.")
     qcrbox_api_base_url = get_qcrbox_registry_api_connection_url()
     try:
         r = requests.post(qcrbox_api_base_url + "/containers/status_update")

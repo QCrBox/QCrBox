@@ -51,7 +51,7 @@ def seed_database():
         with Session(engine) as session:
             session.add(KeywordDB(text="Atomic Form Factors"))
             session.commit()
-    except IntegrityError as exc:
+    except IntegrityError:
         logger.debug("Keyword already present.")
     logger.debug("Done.")
 

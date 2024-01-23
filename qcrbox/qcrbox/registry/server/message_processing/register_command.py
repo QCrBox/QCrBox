@@ -15,7 +15,7 @@ def _(msg: msg_specs.RegisterCommand) -> msg_specs.QCrBoxGenericResponse:
     Register a new command
     """
     logger.info(f"Registering new command: {msg.payload}")
-    logger.warning(f"FIXME: verify that the application_id refers to a valid, registered application")
+    logger.warning("FIXME: verify that the application_id refers to a valid, registered application")
 
     data = msg.payload.dict()
     try:

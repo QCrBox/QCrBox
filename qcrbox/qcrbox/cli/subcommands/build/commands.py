@@ -67,7 +67,7 @@ def task_build_qcrbox_python_package(dry_run: bool):
         )
 
     return {
-        "name": f"task_build_python_package:qcrbox",
+        "name": "task_build_python_package:qcrbox",
         "actions": actions,
     }
 
