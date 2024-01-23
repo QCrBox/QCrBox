@@ -35,6 +35,8 @@ dev = [
     "ipython",
     "isort",
     "pip-tools",
+    "pre-commit",
+    "ruff",
     "setuptools_scm",
 ]
 docs = [
@@ -81,3 +83,27 @@ only-include = ["qcrbox"]
 
 [tool.hatch.build.targets.wheel]
 only-include = ["qcrbox"]
+
+[tool.ruff]
+line-length = 120
+exclude = ["_version.py"]
+
+[tool.ruff.lint]
+select = [
+    # pycodestyle
+    "E",
+    # Pyflakes
+    "F",
+#    # pyupgrade
+#    "UP",
+#    # flake8-bugbear
+#    "B",
+#    # flake8-simplify
+#    "SIM",
+#    # isort
+#    "I",
+]
+
+# Ignore `F401`, `F403` (unused imports and * imports) in all `__init__.py` files
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401", "F403"]
