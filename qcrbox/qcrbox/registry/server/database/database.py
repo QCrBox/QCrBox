@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MPL-2.0
+
 import os
 import sqlite3
 from typing import Optional

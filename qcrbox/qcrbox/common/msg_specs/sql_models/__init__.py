@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MPL-2.0
+
 from .qcrbox_application import *
 from .qcrbox_base_sql_model import QCrBoxBaseSQLModel
 from .qcrbox_calculation import *

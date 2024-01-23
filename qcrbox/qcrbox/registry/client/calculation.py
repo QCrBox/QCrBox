@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MPL-2.0
+
 import asyncio
 from abc import ABCMeta, abstractmethod
 from enum import Enum

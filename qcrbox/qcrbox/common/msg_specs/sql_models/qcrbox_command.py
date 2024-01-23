@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MPL-2.0
+
 from typing import List, Optional
 
 from pydantic import BaseModel

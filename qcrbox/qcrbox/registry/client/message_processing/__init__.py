@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MPL-2.0
+
 from .base import process_message_sync_or_async
 from .calculation_status import *
 from .execute_calculation import *

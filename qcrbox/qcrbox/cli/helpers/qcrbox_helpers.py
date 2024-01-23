@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MPL-2.0
+
 import functools
 import subprocess
 from pathlib import Path
