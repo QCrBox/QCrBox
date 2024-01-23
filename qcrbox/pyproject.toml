@@ -31,9 +31,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "black",
     "ipython",
-    "isort",
     "pip-tools",
     "pre-commit",
     "ruff",
