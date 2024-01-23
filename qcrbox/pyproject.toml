@@ -109,3 +109,6 @@ select = [
 "__init__.py" = ["F401", "F403"]
 "qcrbox/common/msg_specs/sql_models/**.py" = ["F821"]
 "qcrbox/registry/client/registered_application_client_side.py" = ["F821"]
+
+[tool.ruff.format]
+exclude = ["services/applications/*/configure_*.py"]

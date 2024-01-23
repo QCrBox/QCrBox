@@ -103,12 +103,9 @@ class RegisteredApplicationClientSide:
         )
 
     def register_python_callable(self, cmd_name: str, func: Callable):
-        #if not isinstance(python_callable, PythonCallable):
+        # if not isinstance(python_callable, PythonCallable):
         if not callable(func):
-            raise TypeError(
-                f"The argument 'func' must be a Python callable. "
-                f"Got: {type(func).__name__}"
-            )
+            raise TypeError(f"The argument 'func' must be a Python callable. Got: {type(func).__name__}")
 
         python_callable = PythonCallable(func)
 

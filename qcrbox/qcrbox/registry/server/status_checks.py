@@ -1,4 +1,3 @@
-
 import sqlalchemy.exc
 from loguru import logger
 from propan import RabbitBroker
@@ -19,7 +18,7 @@ async def get_container_status_response(container_id: int, callback_timeout: flo
             payload=msg_specs.GetContainerStatusResponsePayload(
                 container_status="not_found",
                 container_id=container_id,
-            )
+            ),
         ).dict()
         return response
 
@@ -50,7 +49,7 @@ async def get_container_status_response(container_id: int, callback_timeout: flo
             payload=msg_specs.GetContainerStatusResponsePayload(
                 container_status="unreachable",
                 container_id=container_id,
-            )
+            ),
         ).dict()
     logger.debug(f"Container status: {response}")
 

@@ -27,9 +27,10 @@ def main():
 
     # clean up afterwards
     cif_path = pathlib.Path(args.structure_path)
-    os.remove(cif_path.with_suffix('.hkl'))
-    os.remove(cif_path.with_suffix('.ins'))
-    os.remove(cif_path.with_suffix('.res'))
+    os.remove(cif_path.with_suffix(".hkl"))
+    os.remove(cif_path.with_suffix(".ins"))
+    os.remove(cif_path.with_suffix(".res"))
+
 
 if __name__ == "__main__":
     main()

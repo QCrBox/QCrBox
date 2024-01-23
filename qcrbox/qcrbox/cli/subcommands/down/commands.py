@@ -3,6 +3,7 @@ import doit.task
 
 from ...helpers import run_tasks, DockerProject
 
+
 @click.command(name="down")
 @click.option(
     "-n",
