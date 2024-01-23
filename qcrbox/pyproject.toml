@@ -100,8 +100,8 @@ select = [
 #    "B",
 #    # flake8-simplify
 #    "SIM",
-#    # isort
-#    "I",
+    # isort
+    "I",
 ]
 
 # Ignore `F401`, `F403` (unused imports and * imports) in all `__init__.py` files
