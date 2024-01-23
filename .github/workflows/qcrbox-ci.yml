@@ -53,7 +53,7 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
 
-    # Specify runner + deployment step
+    # Specify runner and deployment step
     runs-on: ubuntu-latest
     steps:
       - name: Configure GitHub Pages
