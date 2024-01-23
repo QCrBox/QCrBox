@@ -5,14 +5,15 @@ from signal import SIGINT, SIGTERM
 from typing import Optional
 
 import pydantic
-from propan import RabbitBroker, PropanApp
+from propan import PropanApp, RabbitBroker
 from propan.brokers.rabbit import RabbitQueue
 
+from qcrbox.common import get_qcrbox_registry_api_connection_url, get_rabbitmq_connection_url, msg_specs
+
 from ...logging import logger
-from qcrbox.common import msg_specs, get_rabbitmq_connection_url, get_qcrbox_registry_api_connection_url
 from ..helpers import schedule_asyncio_task
+from .helpers import create_new_container_qcrbox_id, create_new_private_routing_key
 from .message_processing import process_message_sync_or_async
-from .helpers import create_new_private_routing_key, create_new_container_qcrbox_id
 from .registered_application_client_side import RegisteredApplicationClientSide
 
 

@@ -1,10 +1,9 @@
 import enum
-
 from datetime import datetime
+from typing import List, Optional
 
 from pydantic import BaseModel
 from sqlmodel import Field, Relationship
-from typing import List, Optional
 
 from .qcrbox_base_sql_model import QCrBoxBaseSQLModel
 

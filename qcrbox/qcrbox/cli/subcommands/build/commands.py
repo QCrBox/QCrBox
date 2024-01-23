@@ -2,8 +2,9 @@ import re
 from pathlib import Path
 
 import click
-from ...helpers import make_task, DockerProject, get_repo_root, run_tasks
 from loguru import logger
+
+from ...helpers import DockerProject, get_repo_root, make_task, run_tasks
 
 
 @click.command(name="build")

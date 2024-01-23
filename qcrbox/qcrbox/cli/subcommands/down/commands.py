@@ -1,7 +1,7 @@
 import click
 import doit.task
 
-from ...helpers import run_tasks, DockerProject
+from ...helpers import DockerProject, run_tasks
 
 
 @click.command(name="down")

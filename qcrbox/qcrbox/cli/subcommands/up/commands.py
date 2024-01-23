@@ -1,8 +1,8 @@
 import click
 import doit.task
 
+from ...helpers import DockerProject, run_tasks
 from ..build.commands import populate_build_tasks
-from ...helpers import run_tasks, DockerProject
 
 
 @click.command(name="up")

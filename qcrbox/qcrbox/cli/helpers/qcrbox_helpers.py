@@ -3,7 +3,7 @@ import subprocess
 from pathlib import Path
 from typing import Optional, TypeVar
 
-from git import Repo, InvalidGitRepositoryError
+from git import InvalidGitRepositoryError, Repo
 
 # Type alias
 PathLike = TypeVar("PathLike", str, Path)

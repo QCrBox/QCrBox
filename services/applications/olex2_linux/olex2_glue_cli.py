@@ -1,8 +1,8 @@
-from qcrboxtools.robots.olex2 import Olex2Socket
-
 import argparse
-import pathlib
 import os
+import pathlib
+
+from qcrboxtools.robots.olex2 import Olex2Socket
 
 
 def main():

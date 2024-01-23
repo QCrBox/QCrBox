@@ -1,5 +1,5 @@
 import sys
-from typing import Optional, Iterable
+from typing import Iterable, Optional
 
 import click
 import requests
@@ -7,8 +7,8 @@ from dateutil.parser import parse as parse_date
 from loguru import logger
 from tabulate import tabulate
 
-from ...helpers import DockerProject, NaturalOrderGroup
 from ....common.utils import get_qcrbox_registry_api_connection_url
+from ...helpers import DockerProject, NaturalOrderGroup
 
 
 def extract_columns(cols_to_print: Iterable[str]):

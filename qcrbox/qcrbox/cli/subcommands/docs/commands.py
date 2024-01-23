@@ -9,7 +9,7 @@ from pathlib import Path
 import click
 import doit.task
 
-from ...helpers import run_tasks, NaturalOrderGroup
+from ...helpers import NaturalOrderGroup, run_tasks
 
 
 @click.group(name="docs", cls=NaturalOrderGroup)

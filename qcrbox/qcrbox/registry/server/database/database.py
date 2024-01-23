@@ -6,9 +6,10 @@ from loguru import logger
 from sqlalchemy import event
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import IntegrityError
-from sqlmodel import create_engine, Session, select
-from qcrbox.common.msg_specs.sql_models import QCrBoxBaseSQLModel, KeywordDB
+from sqlmodel import Session, create_engine, select
+
 from qcrbox.common import sql_models
+from qcrbox.common.msg_specs.sql_models import KeywordDB, QCrBoxBaseSQLModel
 
 connect_args = {"check_same_thread": False}
 registry_db_dir = os.environ.get("QCRBOX_REGISTRY_DB_DIR", "/mnt/qcrbox/qcrbox_registry_data/")

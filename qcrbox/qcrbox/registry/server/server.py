@@ -6,9 +6,10 @@ from fastapi import FastAPI
 from loguru import logger
 
 from qcrbox.common import msg_specs
+
+from .api import fastapi_app, router
 from .database import create_db_and_tables, seed_database
 from .message_processing import process_message_sync_or_async
-from .api import fastapi_app, router
 
 
 @router.after_startup

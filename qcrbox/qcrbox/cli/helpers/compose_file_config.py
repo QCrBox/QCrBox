@@ -6,7 +6,7 @@ import click
 import yaml
 from pydantic.utils import deep_update
 
-from .qcrbox_helpers import get_repo_root, find_common_repo_root, PathLike
+from .qcrbox_helpers import PathLike, find_common_repo_root, get_repo_root
 
 
 def load_docker_compose_data(*compose_files: PathLike):
