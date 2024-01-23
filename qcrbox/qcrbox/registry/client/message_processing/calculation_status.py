@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MPL-2.0
+
 from loguru import logger
 
 from qcrbox.common import msg_specs, sql_models

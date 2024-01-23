@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MPL-2.0
+
 from typing import Optional
 
 import sqlalchemy.exc

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MPL-2.0
+
 from .build import build_components
 from .docs import docs_build_and_serve
 from .down import shut_down_components

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MPL-2.0
+
 # Define the variable '__version__':
 try:
     # If setuptools_scm is installed (e.g. in a development environment with

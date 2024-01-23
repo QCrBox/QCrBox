@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MPL-2.0
+
 from .database import (
     create_db_and_tables,
     engine,

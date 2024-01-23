@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MPL-2.0
+
 from ...common import get_rabbitmq_connection_url
 from ..helpers import RabbitRouterWithConnectionRetries
 

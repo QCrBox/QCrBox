@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MPL-2.0
+
 import asyncio
 import os
 from pathlib import Path
