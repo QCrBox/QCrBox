@@ -50,7 +50,8 @@ async def _invoke_command_impl(msg: msg_specs.InvokeCommand) -> msg_specs.QCrBox
 
         if msg_payload.container_qcrbox_id is None:
             # If no container is explicitly specified, grab the first available one.
-            # FIXME: this is a hack just to get things working for now; we should handle this in a smarter way in the future.
+            # FIXME: this is a hack just to get things working for now; we should
+            #        handle this in a smarter way in the future.
             container_to_use = session.exec(
                 select(sql_models.QCrBoxContainerDB).where(
                     sql_models.QCrBoxContainerDB.application == command.application,

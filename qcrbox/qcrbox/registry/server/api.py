@@ -110,7 +110,12 @@ async def get_single_calculation(calculation_id: int):
         except TimeoutError:
             status_details = sql_models.QCrBoxCalculationStatusDetails(
                 status="error",
-                details={"message": f"Connection to the container which executed the calculation timed out (routing key: {routing_key!r}."},
+                details={
+                    "message": (
+                        f"Connection to the container which executed the calculation "
+                        f"timed out (routing key: {routing_key!r}."
+                    )
+                },
             )
         calc_with_status_details = sql_models.QCrBoxCalculationRead(**calc.dict(), status_details=status_details)
         return calc_with_status_details

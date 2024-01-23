@@ -21,7 +21,7 @@ def make_task(task_dict_func):
 class Loader(TaskLoader2):
     def __init__(self, tasks):
         super().__init__()
-        if type(tasks) is not list:
+        if not isinstance(tasks, list):
             raise TypeError("tasks must be of type list.")
         self.tasks = tasks
 

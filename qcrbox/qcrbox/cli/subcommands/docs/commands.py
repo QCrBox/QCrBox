@@ -96,7 +96,7 @@ def serve(host, port):
 
 def check_mkdocs_is_installed():
     try:
-        import mkdocs
+        import mkdocs  # noqa: F401
     except ImportError:
         click.echo(
             "MkDocs is not installed. Please run 'pip install qcrbox[docs]' "

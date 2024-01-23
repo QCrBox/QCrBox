@@ -19,7 +19,14 @@ class PythonCallable:
     def __repr__(self):
         return f"<{self.__class__.__name__}: {self.fn.__name__}{self.signature!s}>"
 
-    async def execute_in_background(self, *args, _stdin=None, _stdout=subprocess.PIPE, _stderr=subprocess.PIPE, **kwargs):
+    async def execute_in_background(
+        self,
+        *args,
+        _stdin=None,
+        _stdout=subprocess.PIPE,
+        _stderr=subprocess.PIPE,
+        **kwargs,
+    ):
         with ThreadPoolExecutor(max_workers=1) as executor:
             future = executor.submit(self.fn, *args, **kwargs)
         return PythonCallableCalculation(future)

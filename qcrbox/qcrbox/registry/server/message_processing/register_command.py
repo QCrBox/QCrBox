@@ -19,7 +19,11 @@ def _(msg: msg_specs.RegisterCommand) -> msg_specs.QCrBoxGenericResponse:
 
     data = msg.payload.dict()
     try:
-        cmd_db = retrieve_command(name=data["name"], parameters=data["parameters"], application_id=data["application_id"])
+        cmd_db = retrieve_command(
+            name=data["name"],
+            parameters=data["parameters"],
+            application_id=data["application_id"],
+        )
     except sqlalchemy.exc.NoResultFound:
         cmd_db = sql_models.QCrBoxCommandDB(**data)
         with Session(engine) as session:
@@ -32,5 +36,3 @@ def _(msg: msg_specs.RegisterCommand) -> msg_specs.QCrBoxGenericResponse:
     return msg_specs.QCrBoxGenericResponse(
         response_to="register_command", status="success", payload={"command_id": assigned_command_id}
     )
-
-
