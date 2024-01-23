@@ -1,2 +1,2 @@
 from .msg_specs import sql_models
-from .utils import get_rabbitmq_connection_url, get_qcrbox_registry_api_connection_url
+from .utils import get_qcrbox_registry_api_connection_url, get_rabbitmq_connection_url

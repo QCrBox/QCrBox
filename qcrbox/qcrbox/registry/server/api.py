@@ -1,18 +1,18 @@
 from typing import Optional
 
 import sqlalchemy.exc
-
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select
 from sqlmodel import Session
 
+from qcrbox.common import msg_specs, sql_models
+
+from ...logging import logger
 from .database import engine
 from .message_processing.invoke_command import _invoke_command_impl
 from .router import router
 from .status_checks import update_status_of_all_containers
-from qcrbox.common import msg_specs, sql_models
-from ...logging import logger
 
 __all__ = []
 
@@ -94,7 +94,7 @@ async def get_single_calculation(calculation_id: int):
         try:
             calc = session.exec(statement).scalar_one()
         except sqlalchemy.exc.NoResultFound:
-            error_response = dict(status="error", msg=f"Calculation not found")
+            error_response = dict(status="error", msg="Calculation not found")
             raise HTTPException(status_code=404, detail=error_response)
 
         routing_key = calc.container.routing_key__registry_to_application
@@ -110,7 +110,12 @@ async def get_single_calculation(calculation_id: int):
         except TimeoutError:
             status_details = sql_models.QCrBoxCalculationStatusDetails(
                 status="error",
-                details={"message": f"Connection to the container which executed the calculation timed out (routing key: {routing_key!r}."},
+                details={
+                    "message": (
+                        f"Connection to the container which executed the calculation "
+                        f"timed out (routing key: {routing_key!r}."
+                    )
+                },
             )
         calc_with_status_details = sql_models.QCrBoxCalculationRead(**calc.dict(), status_details=status_details)
         return calc_with_status_details

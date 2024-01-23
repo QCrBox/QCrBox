@@ -55,15 +55,18 @@ the `qcb` command line tool, which acts as the command line interface for the Qu
     This means that any changes we make to the code during development are automatically picked up in our local installation
     without having to reinstall/upgrade the `qcrbox` package.
 
+### Installation with (optional) extra dependencies
+
 QCrBox comes with several sets of additional dependencies which can be specified in square brackets after `qcrbox`.
-If you want to build the documentation, for example, you need to run
+
+If you want to build the documentation, for example, run the following command - this will install `MkDocs`
+and a few other packages needed to build and serve the documentation.
 ```
 (venv) $ pip install -e ./qcrbox[docs]
 ```
-This will install `MkDocs` and a few other packages needed to build and serve the documentation.
 
 In addition, if you plan on developing QCrBox, making modifications to the code and/or submitting merge requests,
-you most likely want to install the `dev` dependencies as well.
+you most likely want to install the `dev` dependencies, too.
 ```
 (venv) $ pip install -e ./qcrbox[dev]
 ```
@@ -76,6 +79,17 @@ Finally, you can install *all* additional dependencies by running
 ```
 $ pip install qcrbox[all]
 ```
+
+
+### Installing pre-commit hooks (for development on `qcrbox`)
+
+For development on `qcrbox`, you need to install the [pre-commit](https://pre-commit.com/) hooks for linting,
+auto-formatting, etc. Make sure you have the dev dependencies installed (as described above), which ensures
+that the `pre-commit` tool is installed. Then run:
+```
+(venv) $ pre-commit install
+```
+Now `pre-commit` will run automatically on `git commit`.
 
 
 ## Verify the installation

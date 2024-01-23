@@ -1,1 +1,1 @@
-from .server import main, fastapi_app
+from .server import fastapi_app, main

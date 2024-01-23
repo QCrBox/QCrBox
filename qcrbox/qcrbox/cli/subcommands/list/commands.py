@@ -1,5 +1,5 @@
 import sys
-from typing import Optional, Iterable
+from typing import Iterable, Optional
 
 import click
 import requests
@@ -7,8 +7,8 @@ from dateutil.parser import parse as parse_date
 from loguru import logger
 from tabulate import tabulate
 
-from ...helpers import DockerProject, NaturalOrderGroup
 from ....common.utils import get_qcrbox_registry_api_connection_url
+from ...helpers import DockerProject, NaturalOrderGroup
 
 
 def extract_columns(cols_to_print: Iterable[str]):
@@ -28,7 +28,7 @@ def pretty_print_timestamp(colname):
 
 
 def update_status_of_containers():
-    logger.debug(f"Requesting status update of containers in the registry database.")
+    logger.debug("Requesting status update of containers in the registry database.")
     qcrbox_api_base_url = get_qcrbox_registry_api_connection_url()
     try:
         r = requests.post(qcrbox_api_base_url + "/containers/status_update")

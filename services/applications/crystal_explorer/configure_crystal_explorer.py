@@ -1,4 +1,4 @@
-from qcrbox.registry.client import QCrBoxRegistryClient, ExternalCommand, Param
+from qcrbox.registry.client import ExternalCommand, Param, QCrBoxRegistryClient
 
 cmd_open_file_in_crystal_explorer = ExternalCommand("/usr/bin/CrystalExplorer", "--open", Param("filename"))
 

@@ -53,7 +53,7 @@ However, there will be an initial period of stabilisation where this is not adhe
 
 - The base images now use the [mamba](https://mamba.readthedocs.io/) package manager, resulting in much faster build times than using `conda`.
 - All QCrBox-specific Python packages are now installed in the base mamba environment. The separate Python virtual environment has been removed. ([#54](https://github.com/QCrBox/QCrBox/issues/54))
-
+- Python code is linted and auto-formatted using [ruff](https://docs.astral.sh/ruff/). [#64](https://github.com/QCrBox/QCrBox/issues/64)
 
 
 [unreleased]: https://github.com/QCrBox/QCrBox/compare/0.0.1...master

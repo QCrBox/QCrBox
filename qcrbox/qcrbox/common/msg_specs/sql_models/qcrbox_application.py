@@ -1,8 +1,9 @@
 from datetime import datetime
+from typing import List, Optional
+
 from pydantic import BaseModel
 from sqlalchemy import UniqueConstraint
 from sqlmodel import Field, Relationship
-from typing import List, Optional
 
 from .qcrbox_base_sql_model import QCrBoxBaseSQLModel
 from .qcrbox_container import ContainerStatus

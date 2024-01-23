@@ -9,7 +9,8 @@ from pathlib import Path
 import click
 import doit.task
 
-from ...helpers import run_tasks, NaturalOrderGroup
+from ...helpers import NaturalOrderGroup, run_tasks
+
 
 @click.group(name="docs", cls=NaturalOrderGroup)
 def docs_build_and_serve():
@@ -93,14 +94,12 @@ def serve(host, port):
     signal.pause()
 
 
-
 def check_mkdocs_is_installed():
     try:
-        import mkdocs
+        import mkdocs  # noqa: F401
     except ImportError:
         click.echo(
             "MkDocs is not installed. Please run 'pip install qcrbox[docs]' "
             "to install mkdocs and other documentation-related dependencies."
         )
         sys.exit(1)
-

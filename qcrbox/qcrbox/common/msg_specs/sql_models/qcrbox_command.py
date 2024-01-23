@@ -1,11 +1,11 @@
 from typing import List, Optional
 
 from pydantic import BaseModel
-from sqlmodel import Field, Relationship, SQLModel
 from sqlalchemy import JSON, Column, UniqueConstraint
+from sqlmodel import Field, Relationship, SQLModel
 
-from .qcrbox_keyword import CommandKeywordLink
 from .qcrbox_container import CommandContainerLink
+from .qcrbox_keyword import CommandKeywordLink
 
 
 class QCrBoxCommand(BaseModel):

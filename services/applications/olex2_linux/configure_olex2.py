@@ -1,4 +1,4 @@
-from qcrbox.registry.client import QCrBoxRegistryClient, ExternalCommand, Param
+from qcrbox.registry.client import ExternalCommand, Param, QCrBoxRegistryClient
 
 client = QCrBoxRegistryClient()
 application = client.register_application("Olex2 (Linux)", version="1.5")

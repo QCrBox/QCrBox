@@ -36,8 +36,8 @@ def invoke_command(command_id: int, container_qcrbox_id: Optional[str] = None, w
     with_args = json.loads(with_args or "{}")
     logger.debug(f"[DDD] {with_args=} ({type(with_args)=})")
     logger.warning(
-        f"FIXME: provide feedback on whether the arguments were provided correctly "
-        f"(currently the command just silently fails to run within the container)"
+        "FIXME: provide feedback on whether the arguments were provided correctly "
+        "(currently the command just silently fails to run within the container)"
     )
 
     logger.debug(f"Argument passed in: {container_qcrbox_id=} ({type(container_qcrbox_id)=})")
