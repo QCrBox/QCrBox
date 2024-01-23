@@ -62,9 +62,6 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v2 # or the latest "vX.X.X" version tag for this action
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          ACTIONS_STEP_DEBUG: true
 
   ruff:
     runs-on: ubuntu-latest
