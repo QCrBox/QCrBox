@@ -1,10 +1,8 @@
 # SPDX-License-Identifier: MPL-2.0
 
 import os
-import shutil
 import subprocess
 import textwrap
-from sys import platform
 
 from loguru import logger
 
@@ -70,14 +68,9 @@ class DockerProject:
     def _construct_docker_compose_command(self, cmd: str, *cmd_args: str):
         env_dev_file = self.repo_root.joinpath(".env.dev")
 
-        if platform.startswith("win"):
-            docker_executable = "docker"
-        else:
-            docker_executable = shutil.which("docker")
-
         cmd = (
             [
-                docker_executable,
+                "docker",
                 "compose",
                 f"--project-name={self.project_name}",
                 f"--env-file={env_dev_file.as_posix()}",
