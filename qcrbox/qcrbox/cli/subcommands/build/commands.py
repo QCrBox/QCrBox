@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: MPL-2.0
 
-import re
 from pathlib import Path
 
 import click
@@ -40,19 +39,6 @@ def make_task_for_component(component_name: str, docker_project: DockerProject, 
     else:
         task = task_build_docker_image(component_name, docker_project, with_deps=with_deps, dry_run=dry_run)
     return task
-
-
-def get_component_name_for_task(task):
-    m = re.match("^task_build.*:(?P<component_name>.+)$")
-    return m.group("component_name")
-
-
-def get_build_task_name_for_component(component):
-    if component == "qcrbox":
-        task_name = "build_qcrbox_python_package:qcrbox"
-    else:
-        task_name = "build_docker_image:component"
-    return task_name
 
 
 @make_task
