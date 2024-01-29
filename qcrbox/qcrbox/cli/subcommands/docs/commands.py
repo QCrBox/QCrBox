@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: MPL-2.0
 
 import atexit
+import os
+import platform
 import shutil
 import signal
 import subprocess
@@ -93,7 +95,11 @@ def serve(host, port):
     )
     run_tasks([task1, task2])
 
-    signal.pause()
+    operating_system = platform.system()
+    if operating_system == "Windows":
+        os.system("pause")
+    else:
+        signal.pause()
 
 
 def check_mkdocs_is_installed():
