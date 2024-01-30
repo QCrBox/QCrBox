@@ -29,7 +29,7 @@ def get_repo_root(path: Optional[PathLike] = None):
     return Path(repo.working_tree_dir).resolve()
 
 
-def find_common_repo_root(self, *files: PathLike):
+def find_common_repo_root(*files: PathLike):
     files = files or [__file__]
 
     try:
