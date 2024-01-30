@@ -1,12 +1,11 @@
 # SPDX-License-Identifier: MPL-2.0
-
+import shutil
 from pathlib import Path
 
 import click
 from loguru import logger
-from sys import platform
 
-from ...helpers import DockerProject, get_repo_root, make_task, run_tasks
+from ...helpers import DockerProject, get_qcrbox_whl_output_path, get_repo_root, make_task, run_tasks
 
 
 @click.command(name="build")
@@ -41,33 +40,42 @@ def make_task_for_component(component_name: str, docker_project: DockerProject, 
     return task
 
 
+def make_action_to_copy_file(src, dest):
+    def action_copy_file():
+        # logger.debug(f"Copying file: {src} -> {dest}")
+        shutil.copy(src, dest)
+
+    return action_copy_file
+
+
 @make_task
 def task_build_qcrbox_python_package(dry_run: bool):
     repo_root = get_repo_root()
     qcrbox_module_root = repo_root.joinpath("qcrbox")
+    whl_output_path = get_qcrbox_whl_output_path()
 
     actions = [lambda: logger.info("Building Python package: qcrbox", dry_run=dry_run)]
     if not dry_run:
-        if platform.startswith('win'):
-            base_ancestor_qcrbox_dist_dir = repo_root.joinpath("services/base_images/base_ancestor/qcrbox_dist/")
-            actions.append(
-                f"cd {qcrbox_module_root} && "
-                f"hatch build -t wheel && "
-                f"copy /y /v dist\\qcrbox-*.whl {base_ancestor_qcrbox_dist_dir} >NUL&& "
-                f"copy /y /v requirements*.txt {base_ancestor_qcrbox_dist_dir} >NUL"
-            )
-        else:
-            base_ancestor_qcrbox_dist_dir = repo_root.joinpath("services/base_images/base_ancestor/qcrbox_dist/").as_posix()
-            action.append(
-                f"cd {qcrbox_module_root.as_posix()} && "
-                f"hatch build -t wheel && "
-                f"cp dist/qcrbox-*.whl {base_ancestor_qcrbox_dist_dir} && "
-                f"cp requirements*.txt {base_ancestor_qcrbox_dist_dir}"
-            )
+        base_ancestor_qcrbox_dist_dir = repo_root.joinpath("services/base_images/base_ancestor/qcrbox_dist/")
+        requirements_files = list(repo_root.glob("qcrbox/requirements*.txt"))
+        logger.debug(f"{requirements_files=}")
+
+        action_build_qcrbox_wheel = f"cd {qcrbox_module_root} && hatch build -t wheel"
+        action_copy_qcrbox_wheel = make_action_to_copy_file(whl_output_path, base_ancestor_qcrbox_dist_dir)
+        actions_copy_requirements_files = [
+            make_action_to_copy_file(filename, base_ancestor_qcrbox_dist_dir) for filename in requirements_files
+        ]
+
+        actions += [action_build_qcrbox_wheel, action_copy_qcrbox_wheel]
+        actions += actions_copy_requirements_files
+
+        logger.debug(f"[DDD] {actions=}")
+
     return {
         "name": "task_build_python_package:qcrbox",
         "actions": actions,
     }
+
 
 @make_task
 def task_build_docker_image(service: str, docker_project: DockerProject, with_deps: bool, dry_run: bool):
