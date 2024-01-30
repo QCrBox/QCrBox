@@ -41,3 +41,8 @@ def find_common_repo_root(*files: PathLike):
         raise ValueError("All specified files must live in the same repository.")
 
     return repo_root_candidates.pop()
+
+
+def get_qcrbox_whl_output_path():
+    version = get_current_qcrbox_version()
+    return get_repo_root().joinpath("qcrbox", "dist", f"qcrbox-{version}-py3-none-any.whl")
