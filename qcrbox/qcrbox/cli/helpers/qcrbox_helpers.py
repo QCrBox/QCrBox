@@ -46,3 +46,7 @@ def find_common_repo_root(*files: PathLike):
 def get_qcrbox_whl_output_path():
     version = get_current_qcrbox_version()
     return get_repo_root().joinpath("qcrbox", "dist", f"qcrbox-{version}-py3-none-any.whl")
+
+
+def get_mkdocs_config_file_path():
+    get_repo_root().joinpath("mkdocs.yml")

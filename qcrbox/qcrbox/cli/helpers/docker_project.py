@@ -73,7 +73,7 @@ class DockerProject:
                 "docker",
                 "compose",
                 f"--project-name={self.project_name}",
-                f"--env-file={env_dev_file.as_posix()}",
+                f"--env-file={env_dev_file}",
             ]
             + self.compose_file_config.command_line_options
             + [cmd]

@@ -137,4 +137,4 @@ class ComposeFileConfig:
 
     @property
     def command_line_options(self):
-        return [f"--file={compose_file.as_posix()}" for compose_file in self.compose_files]
+        return [f"--file={compose_file}" for compose_file in self.compose_files]

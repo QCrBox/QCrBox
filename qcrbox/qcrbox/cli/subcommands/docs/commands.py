@@ -8,12 +8,11 @@ import signal
 import subprocess
 import sys
 import webbrowser
-from pathlib import Path
 
 import click
 import doit.task
 
-from ...helpers import NaturalOrderGroup, run_tasks
+from ...helpers import NaturalOrderGroup, get_mkdocs_config_file_path, run_tasks
 
 
 @click.group(name="docs", cls=NaturalOrderGroup)
@@ -22,10 +21,6 @@ def docs_build_and_serve():
     Build/serve the documentation.
     """
     pass
-
-
-def get_mkdocs_config_file_path():
-    return Path(__file__).parent.parent.parent.parent.parent.parent.joinpath("mkdocs.yml").resolve().as_posix()
 
 
 @docs_build_and_serve.command()
