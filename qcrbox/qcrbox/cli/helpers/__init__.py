@@ -4,7 +4,7 @@ import click
 
 from .docker_project import DockerProject
 from .doit_helpers import make_task, run_tasks
-from .qcrbox_helpers import get_mkdocs_config_file_path, get_qcrbox_whl_output_path, get_repo_root
+from .qcrbox_helpers import get_mkdocs_config_file_path, get_repo_root
 
 
 class NaturalOrderGroup(click.Group):

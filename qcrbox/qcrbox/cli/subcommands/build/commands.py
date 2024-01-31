@@ -5,7 +5,7 @@ from pathlib import Path
 import click
 from loguru import logger
 
-from ...helpers import DockerProject, get_qcrbox_whl_output_path, get_repo_root, make_task, run_tasks
+from ...helpers import DockerProject, get_repo_root, make_task, run_tasks
 
 
 @click.command(name="build")
@@ -49,31 +49,64 @@ def make_action_to_copy_file(src, dest):
 
 
 @make_task
+def task_clone_qcrboxtools_repo(dry_run: bool):
+    qcrboxtools_repo_url = "https://github.com/QCrBox/QCrBoxTools.git"
+    repo_root = get_repo_root()
+    target_dir = repo_root.joinpath(".build", "QCrBoxTools")
+    actions = [lambda: logger.info(f"Cloning QCrBoxTools into {target_dir} ...")]
+    if not dry_run:
+        actions.append(f"git -C {target_dir} pull || git clone {qcrboxtools_repo_url} {target_dir}")
+    return {"name": "task_clone_repo:qcrboxtools", "actions": actions}
+
+
+@make_task
 def task_build_qcrbox_python_package(dry_run: bool):
     repo_root = get_repo_root()
-    qcrbox_module_root = repo_root.joinpath("qcrbox")
-    whl_output_path = get_qcrbox_whl_output_path()
+    qcrbox_package_root = repo_root.joinpath("qcrbox")
 
     actions = [lambda: logger.info("Building Python package: qcrbox", dry_run=dry_run)]
     if not dry_run:
         base_ancestor_qcrbox_dist_dir = repo_root.joinpath("services/base_images/base_ancestor/qcrbox_dist/")
         requirements_files = list(repo_root.glob("qcrbox/requirements*.txt"))
-        logger.debug(f"{requirements_files=}")
 
-        action_build_qcrbox_wheel = f"cd {qcrbox_module_root} && hatch build -t wheel"
-        action_copy_qcrbox_wheel = make_action_to_copy_file(whl_output_path, base_ancestor_qcrbox_dist_dir)
+        action_build_qcrbox_wheel = f"cd {qcrbox_package_root} && hatch build -t wheel {base_ancestor_qcrbox_dist_dir}"
         actions_copy_requirements_files = [
             make_action_to_copy_file(filename, base_ancestor_qcrbox_dist_dir) for filename in requirements_files
         ]
 
-        actions += [action_build_qcrbox_wheel, action_copy_qcrbox_wheel]
+        actions += [action_build_qcrbox_wheel]
         actions += actions_copy_requirements_files
-
-        logger.debug(f"[DDD] {actions=}")
 
     return {
         "name": "task_build_python_package:qcrbox",
         "actions": actions,
+    }
+
+
+@make_task
+def task_build_qcrboxtools_python_package(dry_run: bool):
+    repo_root = get_repo_root()
+    qcrboxtools_package_root = repo_root.joinpath(".build", "QCrBoxTools")
+
+    actions = [lambda: logger.info("Building Python package: qcrboxtools", dry_run=dry_run)]
+    if not dry_run:
+        base_ancestor_qcrbox_dist_dir = repo_root.joinpath("services/base_images/base_ancestor/qcrbox_dist/")
+        # requirements_files = list(qcrboxtools_package_root.glob("requirements*.txt"))
+
+        action_build_qcrbox_wheel = (
+            f"cd {qcrboxtools_package_root} && hatch build -t wheel {base_ancestor_qcrbox_dist_dir}"
+        )
+        # actions_copy_requirements_files = [
+        #     make_action_to_copy_file(filename, base_ancestor_qcrbox_dist_dir) for filename in requirements_files
+        # ]
+
+        actions += [action_build_qcrbox_wheel]
+        # actions += actions_copy_requirements_files
+
+    return {
+        "name": "task_build_python_package:qcrboxtools",
+        "actions": actions,
+        "task_dep": ["task_clone_repo:qcrboxtools"],
     }
 
 
@@ -113,13 +146,22 @@ def update_build_tasks(
     existing_tasks: dict, component: str, docker_project: DockerProject, with_deps: bool, dry_run: bool
 ):
     if component == "qcrbox":
-        new_task = task_build_qcrbox_python_package(dry_run)
+        new_tasks = [
+            task_build_qcrbox_python_package(dry_run),
+        ]
+    elif component == "qcrboxtools":
+        new_tasks = [
+            task_clone_qcrboxtools_repo(dry_run),
+            task_build_qcrboxtools_python_package(dry_run),
+        ]
     else:
-        new_task = task_build_docker_image(component, docker_project, with_deps=with_deps, dry_run=dry_run)
+        new_tasks = [task_build_docker_image(component, docker_project, with_deps=with_deps, dry_run=dry_run)]
         if with_deps:
             for dep in docker_project.get_direct_dependencies(component, include_build_deps=True):
                 update_build_tasks(existing_tasks, dep, docker_project, with_deps=with_deps, dry_run=dry_run)
             if component == "base-ancestor":
                 update_build_tasks(existing_tasks, "qcrbox", docker_project, with_deps=with_deps, dry_run=dry_run)
+                update_build_tasks(existing_tasks, "qcrboxtools", docker_project, with_deps=with_deps, dry_run=dry_run)
 
-    existing_tasks[new_task.name] = new_task
+    for task in new_tasks:
+        existing_tasks[task.name] = task
