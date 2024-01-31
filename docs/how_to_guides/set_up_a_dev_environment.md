@@ -133,6 +133,8 @@ Commands:
 qcrbox-message-bus
 qcrbox-registry
 shelx
+crystal-explorer
+olex2-linux
 ```
 
 ```
@@ -142,8 +144,6 @@ base-application
 qcrbox-message-bus
 qcrbox-registry
 shelx
+crystal-explorer
+olex2-linux
 ```
-
-
-# additional needed dependencies
-hatch
