@@ -49,4 +49,4 @@ def find_common_repo_root(*files: PathLike):
 
 
 def get_mkdocs_config_file_path():
-    get_repo_root().joinpath("mkdocs.yml")
+    return get_repo_root().joinpath("mkdocs.yml")
