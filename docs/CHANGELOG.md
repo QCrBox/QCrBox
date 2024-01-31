@@ -49,6 +49,10 @@ However, there will be an initial period of stabilisation where this is not adhe
 - Set up GitHub Actions for continuous deployment of the [docs](https://qcrbox.github.io/QCrBox/) to GitHub pages. ([#11](https://github.com/QCrBox/QCrBox/issues/11))
 - Added how-to guide on how to set up a development environment. ([#24](https://github.com/QCrBox/QCrBox/issues/24))
 
+### Bugs fixed
+
+- Ensured that the `qcb` tool works cross-platform, including on Windows. ([#76](https://github.com/QCrBox/QCrBox/issues/76))
+
 ### Internal improvements
 
 - The base images now use the [mamba](https://mamba.readthedocs.io/) package manager, resulting in much faster build times than using `conda`.
