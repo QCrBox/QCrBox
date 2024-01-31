@@ -27,14 +27,17 @@ def calculate_hash(path):
 
 
 def verify_checksums():
+    here = Path(__file__).parent
+
     hashes = load_sha256_checksums()
     failed_comparisons = []
     for path, correct_hash in hashes.items():
-        if calculate_hash(path) != correct_hash:
+        computed_hash = calculate_hash(here.joinpath(path))
+        if computed_hash != correct_hash:
             failed_comparisons.append(path)
-            print(correct_hash, calculate_hash(path))
+            print(correct_hash, computed_hash)
     if len(failed_comparisons) > 0:
-        wrong_files_str = ", ".join([str(path) for path in failed_comparisons])
+        wrong_files_str = ", ".join(str(path) for path in failed_comparisons)
         raise WrongHashException(
             "The following files had a hash that was different than the expected "
             f"value from shelx.checksums.txt: {wrong_files_str}"
