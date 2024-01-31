@@ -114,7 +114,8 @@ def task_build_qcrboxtools_python_package(dry_run: bool):
 def task_build_docker_image(service: str, docker_project: DockerProject, with_deps: bool, dry_run: bool):
     build_context = docker_project.get_build_context(service)
     prebuild_scripts = list(Path(build_context).glob("prebuild_*.sh"))
-    logger.debug(f"Found {len(prebuild_scripts)} prebuild scripts.")
+    if prebuild_scripts != []:
+        logger.debug(f"Found {len(prebuild_scripts)} prebuild script(s) for {service!r}")
     actions = [f"cd {build_context} && bash {script.absolute()}" for script in prebuild_scripts]
     actions.append((docker_project.build_single_docker_image, (service, dry_run)))
 
