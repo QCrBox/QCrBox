@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: MPL-2.0
 
 import os
-import shutil
 import subprocess
 import textwrap
 
@@ -71,10 +70,10 @@ class DockerProject:
 
         cmd = (
             [
-                shutil.which("docker"),
+                "docker",
                 "compose",
                 f"--project-name={self.project_name}",
-                f"--env-file={env_dev_file.as_posix()}",
+                f"--env-file={env_dev_file}",
             ]
             + self.compose_file_config.command_line_options
             + [cmd]

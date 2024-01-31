@@ -30,7 +30,15 @@ Create a virtual environment for the `qcrbox` Python package and activate it.
 
 ```
 $ python -m venv ./venv
+
+# For Linux and Mac users:
 $ source ./venv/bin/activate
+
+# For Windows users (command line)
+$ .\venv\Scripts\activate.bat
+
+# For Windows users (Powershell)
+$ .\venv\Scripts\activate.ps1
 ```
 !!! note
     In this guide we use a "vanilla" Python [virtual environment](https://docs.python.org/3/library/venv.html)
@@ -40,7 +48,7 @@ $ source ./venv/bin/activate
 
 Let's also update/install some core packages to ensure they are up-to-date.
 ```
-(venv) $ pip install -U pip wheel setuptools
+(venv) $ python -m pip install -U pip wheel setuptools
 ```
 
 ## Install the `qcrbox` Python package
@@ -125,6 +133,8 @@ Commands:
 qcrbox-message-bus
 qcrbox-registry
 shelx
+crystal-explorer
+olex2-linux
 ```
 
 ```
@@ -134,4 +144,6 @@ base-application
 qcrbox-message-bus
 qcrbox-registry
 shelx
+crystal-explorer
+olex2-linux
 ```

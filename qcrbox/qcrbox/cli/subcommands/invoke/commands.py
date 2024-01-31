@@ -65,7 +65,7 @@ def invoke_command(command_id: int, container_qcrbox_id: Optional[str] = None, w
 def get_container_qcrbox_id():
     container_qcrbox_id_file = Path("/opt/qcrbox/container_qcrbox_id.txt")
     if container_qcrbox_id_file.exists():
-        logger.debug(f"Reading container_qcrbox_id from file: {container_qcrbox_id_file.as_posix()}")
+        logger.debug(f"Reading container_qcrbox_id from file: {container_qcrbox_id_file}")
         with container_qcrbox_id_file.open() as f:
             container_qcrbox_id = f.read().strip()
             logger.debug(f"   -> {container_qcrbox_id=}")

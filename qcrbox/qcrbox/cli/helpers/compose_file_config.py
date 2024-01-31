@@ -6,7 +6,7 @@ from pathlib import Path
 
 import click
 import yaml
-from pydantic.utils import deep_update
+from pydantic.v1.utils import deep_update
 
 from .qcrbox_helpers import PathLike, find_common_repo_root, get_repo_root
 
@@ -137,4 +137,4 @@ class ComposeFileConfig:
 
     @property
     def command_line_options(self):
-        return [f"--file={compose_file.as_posix()}" for compose_file in self.compose_files]
+        return [f"--file={compose_file}" for compose_file in self.compose_files]

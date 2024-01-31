@@ -54,6 +54,9 @@ server = [
     "tenacity",
     "uvicorn[standard]",
 ]
+all = [
+    "qcrbox[dev,docs,client,server]",
+]
 
 [project.urls]
 "Repository" = "https://github.com/QCrBox/QCrBox/"
