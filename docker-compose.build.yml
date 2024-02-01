@@ -1,4 +1,4 @@
-version: "3.8"
+version: "${QCRBOX_COMPOSE_FILE_VERSION:?Must set env var QCRBOX_COMPOSE_FILE_VERSION}"
 
 services:
   base-ancestor:
@@ -58,12 +58,6 @@ services:
         QCRBOXTOOLS_VERSION: ${QCRBOXTOOLS_VERSION:?Must set env var QCRBOXTOOLS_VERSION}
         QCRBOX_NEXTFLOW_HOME: "${QCRBOX_NEXTFLOW_HOME:?Must set env var QCRBOX_NEXTFLOW_HOME}"
         NEXTFLOW_VERSION: "23.10.0"
-
-  shelx:
-    build:
-      context: services/shelx
-      args:
-        QCRBOX_DOCKER_TAG: ${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}
 
   crystal-explorer:
     build:
