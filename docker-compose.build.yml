@@ -59,12 +59,6 @@ services:
         QCRBOX_NEXTFLOW_HOME: "${QCRBOX_NEXTFLOW_HOME:?Must set env var QCRBOX_NEXTFLOW_HOME}"
         NEXTFLOW_VERSION: "23.10.0"
 
-  crystal-explorer:
-    build:
-      context: services/applications/crystal_explorer
-      args:
-        QCRBOX_DOCKER_TAG: ${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}
-
   olex2-linux:
     build:
       context: services/applications/olex2_linux
