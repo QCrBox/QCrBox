@@ -2,7 +2,6 @@
 import bz2
 import os
 import sys
-import time
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -26,6 +25,13 @@ class NoDecompressor:
 
 
 def download_executable(url, target_dir):
+    target_file = target_dir.joinpath(Path(urlparse(url).path).name)
+    if target_file.exists():
+        logger.debug(
+            f"Target file {Path('shelx_executables').joinpath(target_file.name)} already exists. Not downloading again."
+        )
+        return
+
     username = os.environ["QCRBOX_SHELX_DOWNLOAD_USERNAME"]
     password = os.environ["QCRBOX_SHELX_DOWNLOAD_PASSWORD"]
 
@@ -40,23 +46,16 @@ def download_executable(url, target_dir):
         logger.error(msg)
         sys.exit(1)
 
-    target_file = target_dir.joinpath(Path(urlparse(url).path).name)
     if target_file.suffix == ".bz2":
         decompressor = bz2.BZ2Decompressor()
         target_file = target_file.with_suffix("")  # strip the.bz2 extension
     else:
         decompressor = NoDecompressor()
 
-    if not target_file.exists():
-        logger.debug(f"Downloading file: {url} -> {Path('shelx_executables').joinpath(target_file.name)}")
-        with open(target_file, mode="wb") as fp:
-            for chunk in response.iter_content(chunk_size=16 * 1024):
-                fp.write(decompressor.decompress(chunk))
-    else:
-        logger.debug(
-            f"Target file {Path('shelx_executables').joinpath(target_file.name)} already exists. Not downloading again."
-        )
-        time.sleep(0.1)  # avoid hitting the server's rate limit
+    logger.debug(f"Downloading file: {url} -> {Path('shelx_executables').joinpath(target_file.name)}")
+    with open(target_file, mode="wb") as fp:
+        for chunk in response.iter_content(chunk_size=16 * 1024):
+            fp.write(decompressor.decompress(chunk))
 
 
 def find_missing_executables():
