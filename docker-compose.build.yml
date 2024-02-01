@@ -58,9 +58,3 @@ services:
         QCRBOXTOOLS_VERSION: ${QCRBOXTOOLS_VERSION:?Must set env var QCRBOXTOOLS_VERSION}
         QCRBOX_NEXTFLOW_HOME: "${QCRBOX_NEXTFLOW_HOME:?Must set env var QCRBOX_NEXTFLOW_HOME}"
         NEXTFLOW_VERSION: "23.10.0"
-
-  olex2-linux:
-    build:
-      context: services/applications/olex2_linux
-      args:
-        QCRBOX_DOCKER_TAG: ${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}

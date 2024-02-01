@@ -1,0 +1,20 @@
+version: "${QCRBOX_COMPOSE_FILE_VERSION:?Must set env var QCRBOX_COMPOSE_FILE_VERSION}"
+
+services:
+  olex2-linux:
+    image: qcrbox/olex2-linux:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}
+    volumes:
+      - ./shared_files:${QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH}
+    networks:
+      - qcrbox-net
+    ports:
+      - "${QCRBOX_BIND_ADDRESS}:${QCRBOX_OLEX2_LINUX_PORT:?Must set env var QCRBOX_OLEX2_LINUX_PORT}:8080"
+    depends_on:
+      - qcrbox-registry
+    restart: unless-stopped
+    environment:
+      QCRBOX_APPLICATION_DISPLAY_NAME: "Olex2"
+      QCRBOX_RABBITMQ_QUEUE_NAME: "olex2"
+      QCRBOX_REGISTRY_HOST: "qcrbox-registry"
+      QCRBOX_REGISTRY_PORT: "8000"
+
