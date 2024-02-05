@@ -1,8 +1,11 @@
+# SPDX-License-Identifier: MPL-2.0
+
 import sqlalchemy.exc
 from sqlmodel import Session
 
-from ....logging import logger
 from qcrbox.common import msg_specs, sql_models
+
+from ....logging import logger
 from ..database import engine, retrieve_application
 from .base import process_message
 

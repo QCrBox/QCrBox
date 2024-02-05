@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MPL-2.0
+
 from doit.cmd_base import TaskLoader2
 from doit.doit_cmd import DoitMain
 from doit.task import dict_to_task
@@ -21,7 +23,7 @@ def make_task(task_dict_func):
 class Loader(TaskLoader2):
     def __init__(self, tasks):
         super().__init__()
-        if type(tasks) is not list:
+        if not isinstance(tasks, list):
             raise TypeError("tasks must be of type list.")
         self.tasks = tasks
 

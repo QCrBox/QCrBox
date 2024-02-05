@@ -1,10 +1,12 @@
-from typing import Optional
+# SPDX-License-Identifier: MPL-2.0
 
 import sqlalchemy.exc
 from loguru import logger
 from propan import RabbitBroker
 from sqlmodel import Session
-from qcrbox.common import get_rabbitmq_connection_url, msg_specs, sql_models
+
+from qcrbox.common import get_rabbitmq_connection_url, msg_specs
+
 from .database import engine, retrieve_container, retrieve_containers
 
 
@@ -20,7 +22,7 @@ async def get_container_status_response(container_id: int, callback_timeout: flo
             payload=msg_specs.GetContainerStatusResponsePayload(
                 container_status="not_found",
                 container_id=container_id,
-            )
+            ),
         ).dict()
         return response
 
@@ -51,7 +53,7 @@ async def get_container_status_response(container_id: int, callback_timeout: flo
             payload=msg_specs.GetContainerStatusResponsePayload(
                 container_status="unreachable",
                 container_id=container_id,
-            )
+            ),
         ).dict()
     logger.debug(f"Container status: {response}")
 
@@ -64,6 +66,7 @@ async def get_container_status(container_id: int, callback_timeout: float = 1.0)
 
 
 async def update_status_of_all_containers(callback_timeout: float = 1.0):
+    logger.info("Updating status of all containers in the registry database...")
     for container in retrieve_containers():
         updated_status = await get_container_status(container.id, callback_timeout=callback_timeout)
         logger.debug(f"   {updated_status=}")
@@ -75,4 +78,4 @@ async def update_status_of_all_containers(callback_timeout: float = 1.0):
             session.refresh(container)
             logger.debug(f"Updated container status in registry database (qcrbox_id={container.qcrbox_id!r}).")
 
-    logger.info(f"Status of all containers has been updated")
+    logger.info("Status of all containers has been updated")

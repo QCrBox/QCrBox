@@ -18,3 +18,5 @@ COPY supervisord.crystal_explorer.conf ${QCRBOX_SUPERVISORD_CONF_DIR}/
 COPY CrystalExplorer21.conf ${QCRBOX_HOME}/.config/crystalexplorer.net/
 COPY --chown=${QCRBOX_USER}:${QCRBOX_USER} ./.idesktop ${QCRBOX_HOME}/.idesktop
 COPY configure_crystal_explorer.py ${QCRBOX_HOME}/
+
+ENV QCRBOX_APPLICATION_DISPLAY_NAME="CrystalExplorer"

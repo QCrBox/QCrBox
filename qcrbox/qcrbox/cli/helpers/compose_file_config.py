@@ -1,18 +1,32 @@
+# SPDX-License-Identifier: MPL-2.0
+
+import functools
 import re
 import sys
 from pathlib import Path
 
 import click
 import yaml
-from pydantic.utils import deep_update
+from pydantic.v1.utils import deep_update
 
-from .qcrbox_helpers import get_repo_root, find_common_repo_root, PathLike
+from .qcrbox_helpers import PathLike, find_common_repo_root, get_repo_root
+
+
+@functools.lru_cache(maxsize=1)
+def find_docker_compose_build_files(root: Path):
+    return sorted(root.rglob("docker-compose.build*.yml"))
+
+
+@functools.lru_cache(maxsize=1)
+def find_docker_compose_run_files(root: Path):
+    return sorted(root.rglob("docker-compose.run*.yml"))
 
 
 def load_docker_compose_data(*compose_files: PathLike):
     docker_compose_data = {}
     for compose_file in compose_files:
-        docker_compose_data = deep_update(docker_compose_data, yaml.safe_load(Path(compose_file).open()))
+        with Path(compose_file).open() as f:
+            docker_compose_data = deep_update(docker_compose_data, yaml.safe_load(f))
     return docker_compose_data
 
 
@@ -39,8 +53,8 @@ class ComposeFileConfig:
     @classmethod
     def get_default_config(cls):
         repo_root = get_repo_root()
-        compose_files_build = [repo_root.joinpath("docker-compose.build.yml")]
-        compose_files_runtime = [repo_root.joinpath("docker-compose.yml")]
+        compose_files_build = find_docker_compose_build_files(repo_root)
+        compose_files_runtime = find_docker_compose_run_files(repo_root)
         return cls(compose_files_build=compose_files_build, compose_files_runtime=compose_files_runtime)
 
     @classmethod
@@ -59,7 +73,7 @@ class ComposeFileConfig:
     def services_excluding_base_images(self):
         return [
             service_name
-            for service_name in self._full_service_metadata["services"].keys()
+            for service_name in self._full_service_metadata["services"]
             if not service_name.startswith("base-")
         ]
 
@@ -134,4 +148,4 @@ class ComposeFileConfig:
 
     @property
     def command_line_options(self):
-        return [f"--file={compose_file.as_posix()}" for compose_file in self.compose_files]
+        return [f"--file={compose_file}" for compose_file in self.compose_files]

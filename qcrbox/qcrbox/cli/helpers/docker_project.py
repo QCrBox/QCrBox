@@ -1,9 +1,11 @@
+# SPDX-License-Identifier: MPL-2.0
+
 import os
-import shutil
 import subprocess
 import textwrap
 
 from loguru import logger
+
 from .compose_file_config import ComposeFileConfig
 from .qcrbox_helpers import get_current_qcrbox_version
 
@@ -68,10 +70,10 @@ class DockerProject:
 
         cmd = (
             [
-                shutil.which("docker"),
+                "docker",
                 "compose",
                 f"--project-name={self.project_name}",
-                f"--env-file={env_dev_file.as_posix()}",
+                f"--env-file={env_dev_file}",
             ]
             + self.compose_file_config.command_line_options
             + [cmd]
@@ -86,6 +88,7 @@ class DockerProject:
 
         custom_env = os.environ.copy()
         custom_env["QCRBOX_PYTHON_PACKAGE_VERSION"] = get_current_qcrbox_version()
+        custom_env["QCRBOX_SHARED_FILES_DIR_HOST_PATH"] = str(self.repo_root.joinpath("shared_files"))
         logger.debug(f"Current qcrbox version: {custom_env['QCRBOX_PYTHON_PACKAGE_VERSION']}", dry_run=dry_run)
 
         if not dry_run:

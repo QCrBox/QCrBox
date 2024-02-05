@@ -1,6 +1,9 @@
+# SPDX-License-Identifier: MPL-2.0
+
 from loguru import logger
 
 from qcrbox.common import msg_specs
+
 from .base import process_message
 
 __all__ = []

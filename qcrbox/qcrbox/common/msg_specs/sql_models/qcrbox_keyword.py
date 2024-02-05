@@ -1,7 +1,9 @@
-from typing import Optional, List
+# SPDX-License-Identifier: MPL-2.0
+
+from typing import List, Optional
 
 from pydantic import BaseModel
-from sqlmodel import Field, SQLModel, Relationship
+from sqlmodel import Field, Relationship, SQLModel
 
 __all__ = ["Keyword", "KeywordDB", "KeywordRead"]
 

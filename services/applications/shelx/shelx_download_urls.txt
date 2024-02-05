@@ -1,0 +1,12 @@
+https://shelx.uni-goettingen.de/bin/linux64/2018_shelxl.bz2
+https://shelx.uni-goettingen.de/bin/linux64/anode.bz2
+https://shelx.uni-goettingen.de/bin/linux64/ciftab.bz2
+https://shelx.uni-goettingen.de/bin/linux64/pdb2ins
+https://shelx.uni-goettingen.de/bin/linux64/pdb2insGUI
+https://shelx.uni-goettingen.de/bin/linux64/shelxc.bz2
+https://shelx.uni-goettingen.de/bin/linux64/shelxd.bz2
+https://shelx.uni-goettingen.de/bin/linux64/shelxe
+https://shelx.uni-goettingen.de/bin/linux64/shelxl
+https://shelx.uni-goettingen.de/bin/linux64/shelxs.bz2
+https://shelx.uni-goettingen.de/bin/linux64/shelxt.bz2
+https://shelx.uni-goettingen.de/bin/linux64/shredcif.bz2

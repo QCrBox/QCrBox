@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MPL-2.0
+
 import asyncio
 import os
 from pathlib import Path
@@ -5,14 +7,15 @@ from signal import SIGINT, SIGTERM
 from typing import Optional
 
 import pydantic
-from propan import RabbitBroker, PropanApp
+from propan import PropanApp, RabbitBroker
 from propan.brokers.rabbit import RabbitQueue
 
+from qcrbox.common import get_qcrbox_registry_api_connection_url, get_rabbitmq_connection_url, msg_specs
+
 from ...logging import logger
-from qcrbox.common import msg_specs, get_rabbitmq_connection_url, get_qcrbox_registry_api_connection_url
 from ..helpers import schedule_asyncio_task
+from .helpers import create_new_container_qcrbox_id, create_new_private_routing_key
 from .message_processing import process_message_sync_or_async
-from .helpers import create_new_private_routing_key, create_new_container_qcrbox_id
 from .registered_application_client_side import RegisteredApplicationClientSide
 
 
@@ -117,7 +120,7 @@ class QCrBoxRegistryClient:
                     try:
                         msg_obj = cls(**msg_dict)
                         break
-                    except pydantic.ValidationError as exc:
+                    except pydantic.ValidationError:
                         pass
                 else:
                     error_msg = f"Incoming message is not a valid QCrBox message: {msg_dict}"
@@ -137,7 +140,7 @@ class QCrBoxRegistryClient:
                     else:
                         logger.debug(f"Received 'register_application' message: {msg_obj}")
 
-                logger.debug(f"[DDD] Calling 'process_message_sync_or_async()' ...")
+                logger.debug("[DDD] Calling 'process_message_sync_or_async()' ...")
                 res = await process_message_sync_or_async(msg_obj, application)
                 logger.debug(f"[DDD] Received result from 'process_message_sync_or_async()': {res}")
                 return res
@@ -178,7 +181,7 @@ class QCrBoxRegistryClient:
         with open("/tmp/SENTINEL_QCRBOX_CLIENT_STARTUP_SUCCESSFUL.txt", "w") as f:
             f.write("QCrBox client successfully started up.")
 
-        logger.debug(f"All startup tasks completed successfully.")
+        logger.debug("All startup tasks completed successfully.")
 
     async def run_async(self):
         try:

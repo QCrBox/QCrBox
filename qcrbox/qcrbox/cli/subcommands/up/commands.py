@@ -1,8 +1,10 @@
+# SPDX-License-Identifier: MPL-2.0
+
 import click
 import doit.task
 
+from ...helpers import DockerProject, run_tasks
 from ..build.commands import populate_build_tasks
-from ...helpers import run_tasks, DockerProject
 
 
 @click.command(name="up")
@@ -33,7 +35,7 @@ def start_up_components(rebuild_deps: bool, dry_run: bool, components: list[str]
 
     startup_task = doit.task.dict_to_task(
         {
-            "name": f"task_start_up_docker_containers",
+            "name": "task_start_up_docker_containers",
             "actions": [(docker_project.start_up_docker_containers, (components, dry_run))],
         }
     )

@@ -22,7 +22,7 @@ However, there will be an initial period of stabilisation where this is not adhe
 
 ### Development
 
-### Development
+### Documentation
 
 
 ## [0.0.1]
@@ -35,17 +35,30 @@ However, there will be an initial period of stabilisation where this is not adhe
 - Core components:
    - `qcrbox-message-bus` [#9](https://github.com/QCrBox/QCrBox/issues/9)
    - `qcrbox-registry` [#13](https://github.com/QCrBox/QCrBox/issues/13)
+   - `qcrbox-nextflow` [#60](https://github.com/QCrBox/QCrBox/issues/60)
 - Crystallographic applications:
    - CrystalExplorer [#44](https://github.com/QCrBox/QCrBox/issues/44)
    - Olex2 [#46](https://github.com/QCrBox/QCrBox/issues/46)
 - CLI tool (`qcb`) for common development and deployment tasks. ([#10](https://github.com/QCrBox/QCrBox/issues/10))
 - Python package (`qcrbox`) to interact with QCrBox from Python code. ([#14](https://github.com/QCrBox/QCrBox/issues/14))
+- The base image now includes [cctbx](https://cci.lbl.gov/docs/cctbx/) and [QCrBoxTools](https://github.com/Niolon/QCrBoxTools.git). ([#53](https://github.com/QCrBox/QCrBox/issues/53))
 
 ### Documentation
 
 - Created documentation skeleton. ([#2](https://github.com/QCrBox/QCrBox/issues/2))
 - Set up GitHub Actions for continuous deployment of the [docs](https://qcrbox.github.io/QCrBox/) to GitHub pages. ([#11](https://github.com/QCrBox/QCrBox/issues/11))
 - Added how-to guide on how to set up a development environment. ([#24](https://github.com/QCrBox/QCrBox/issues/24))
+
+### Bugs fixed
+
+- Ensured that the `qcb` tool works cross-platform, including on Windows. ([#76](https://github.com/QCrBox/QCrBox/issues/76))
+
+### Internal changes & improvements
+
+- The base images now use the [mamba](https://mamba.readthedocs.io/) package manager, resulting in much faster build times than using `conda`.
+- All QCrBox-specific Python packages are now installed in the base mamba environment. The separate Python virtual environment has been removed. ([#54](https://github.com/QCrBox/QCrBox/issues/54))
+- Python code is linted and auto-formatted using [ruff](https://docs.astral.sh/ruff/). [#64](https://github.com/QCrBox/QCrBox/issues/64)
+- Each application's docker compose configuration now lives in its dedicated subfolder (`services/application/<application_folder>`) instead of in the toplevel `docker-compose.yml` file. ([#78](https://github.com/QCrBox/QCrBox/issues/78))
 
 
 [unreleased]: https://github.com/QCrBox/QCrBox/compare/0.0.1...master

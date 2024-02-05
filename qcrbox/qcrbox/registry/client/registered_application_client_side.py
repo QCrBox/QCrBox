@@ -1,10 +1,13 @@
+# SPDX-License-Identifier: MPL-2.0
+
 import asyncio
-from typing import Optional
+from typing import Callable, Optional
 
 from loguru import logger
 from propan import PropanApp
 
 from qcrbox.common import msg_specs
+
 from .external_command import ExternalCommand
 from .python_callable import PythonCallable
 
@@ -58,8 +61,8 @@ class RegisteredApplicationClientSide:
 
         if not isinstance(on_command_invoked, (ExternalCommand, PythonCallable)):
             raise NotImplementedError(
-                f"The 'on_command_invoked' argument must be an instance of ExternalCommand."
-                f"Other callback types are not supported yet."
+                "The 'on_command_invoked' argument must be an instance of ExternalCommand."
+                "Other callback types are not supported yet."
             )
 
         msg = msg_specs.RegisterCommand(
@@ -102,12 +105,12 @@ class RegisteredApplicationClientSide:
             name=f"register_command__{cmd_name}",
         )
 
-    def register_python_callable(self, cmd_name: str, python_callable: PythonCallable):
-        if not isinstance(python_callable, PythonCallable):
-            raise TypeError(
-                f"The argument 'python_callable' must be an instance of PythonCallable. "
-                f"Got: {type(python_callable).__name__}"
-            )
+    def register_python_callable(self, cmd_name: str, func: Callable):
+        # if not isinstance(python_callable, PythonCallable):
+        if not callable(func):
+            raise TypeError(f"The argument 'func' must be a Python callable. Got: {type(func).__name__}")
+
+        python_callable = PythonCallable(func)
 
         self.client.schedule_startup_task(
             self._send_register_command_message_to_server(

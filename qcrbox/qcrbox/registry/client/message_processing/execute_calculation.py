@@ -1,11 +1,15 @@
+# SPDX-License-Identifier: MPL-2.0
+
 from datetime import datetime
 
 from loguru import logger
 
 from qcrbox.common import msg_specs
+
 from .base import process_message
 
 __all__ = []
+
 
 @process_message.register
 async def _(msg: msg_specs.ExecuteCalculation, application) -> msg_specs.QCrBoxGenericResponse:

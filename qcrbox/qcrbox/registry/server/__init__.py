@@ -1,1 +1,3 @@
-from .server import main, fastapi_app
+# SPDX-License-Identifier: MPL-2.0
+
+from .server import fastapi_app, main

@@ -31,10 +31,11 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "black",
     "ipython",
-    "isort",
     "pip-tools",
+    "pre-commit",
+    "reuse",
+    "ruff",
     "setuptools_scm",
 ]
 docs = [
@@ -52,6 +53,9 @@ server = [
     "propan[async-rabbit,doc]",
     "tenacity",
     "uvicorn[standard]",
+]
+all = [
+    "qcrbox[dev,docs,client,server]",
 ]
 
 [project.urls]
@@ -81,3 +85,32 @@ only-include = ["qcrbox"]
 
 [tool.hatch.build.targets.wheel]
 only-include = ["qcrbox"]
+
+[tool.ruff]
+line-length = 120
+exclude = ["_version.py"]
+
+[tool.ruff.lint]
+select = [
+    # pycodestyle
+    "E",
+    # Pyflakes
+    "F",
+#    # pyupgrade
+#    "UP",
+#    # flake8-bugbear
+#    "B",
+#    # flake8-simplify
+#    "SIM",
+    # isort
+    "I",
+]
+
+# Ignore `F401`, `F403` (unused imports and * imports) in all `__init__.py` files
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401", "F403"]
+"qcrbox/qcrbox/common/msg_specs/sql_models/**.py" = ["F821"]
+"qcrbox/qcrbox/registry/client/registered_application_client_side.py" = ["F821"]
+
+[tool.ruff.format]
+exclude = ["services/applications/*/configure_*.py"]

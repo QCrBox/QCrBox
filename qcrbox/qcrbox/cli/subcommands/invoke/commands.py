@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MPL-2.0
+
 import json
 from pathlib import Path
 from typing import Optional
@@ -36,8 +38,8 @@ def invoke_command(command_id: int, container_qcrbox_id: Optional[str] = None, w
     with_args = json.loads(with_args or "{}")
     logger.debug(f"[DDD] {with_args=} ({type(with_args)=})")
     logger.warning(
-        f"FIXME: provide feedback on whether the arguments were provided correctly "
-        f"(currently the command just silently fails to run within the container)"
+        "FIXME: provide feedback on whether the arguments were provided correctly "
+        "(currently the command just silently fails to run within the container)"
     )
 
     logger.debug(f"Argument passed in: {container_qcrbox_id=} ({type(container_qcrbox_id)=})")
@@ -63,7 +65,7 @@ def invoke_command(command_id: int, container_qcrbox_id: Optional[str] = None, w
 def get_container_qcrbox_id():
     container_qcrbox_id_file = Path("/opt/qcrbox/container_qcrbox_id.txt")
     if container_qcrbox_id_file.exists():
-        logger.debug(f"Reading container_qcrbox_id from file: {container_qcrbox_id_file.as_posix()}")
+        logger.debug(f"Reading container_qcrbox_id from file: {container_qcrbox_id_file}")
         with container_qcrbox_id_file.open() as f:
             container_qcrbox_id = f.read().strip()
             logger.debug(f"   -> {container_qcrbox_id=}")

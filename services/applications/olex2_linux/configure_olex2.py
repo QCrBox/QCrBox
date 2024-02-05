@@ -1,4 +1,4 @@
-from qcrbox.registry.client import QCrBoxRegistryClient, ExternalCommand, Param
+from qcrbox.registry.client import ExternalCommand, Param, QCrBoxRegistryClient
 
 client = QCrBoxRegistryClient()
 application = client.register_application("Olex2 (Linux)", version="1.5")
@@ -8,8 +8,7 @@ application.register_external_command(
 )
 
 external_cmd_refine_iam = ExternalCommand(
-    "conda", "run", "-n", "qcrboxtools",
-    "python", "olex2_glue_cli.py",
+    "python", "/opt/qcrbox/olex2_glue_cli.py",
     "--structure_path", Param("cif_file"),
     "--n_cycles", Param("ls_cycles"),
     "--weight_cycles", Param("weight_cycles")
@@ -18,8 +17,7 @@ external_cmd_refine_iam = ExternalCommand(
 application.register_external_command("refine_iam", external_cmd_refine_iam)
 
 external_cmd_refine_tsc = ExternalCommand(
-    "conda", "run", "-n", "qcrboxtools",
-    "python", "olex2_glue_cli.py",
+    "python", "/opt/qcrbox/olex2_glue_cli.py",
     "--structure_path", Param("cif_file"),
     "--tsc_path", Param("tsc_file"),
     "--n_cycles", Param("ls_cycles"),

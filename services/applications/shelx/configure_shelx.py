@@ -4,7 +4,7 @@ from pathlib import Path
 
 from loguru import logger
 
-from qcrbox.registry.client import QCrBoxRegistryClient, PythonCallable
+from qcrbox.registry.client import QCrBoxRegistryClient
 
 
 def replace_acta_with_acta_anis(contents):
@@ -26,7 +26,7 @@ def get_ins_file_path(input_cif_path: Path):
     return input_cif_path.parent.joinpath(res_filename).with_suffix(".ins")
 
 
-def test_iso_to_aniso(input_cif_file, insert_anis_directive=True):
+def func_test_iso_to_aniso(input_cif_file, insert_anis_directive=True):
     msg = f"Running TEST: iso -> aniso ({input_cif_file!r}, insert_anis_directive={insert_anis_directive!r})"
     logger.debug(msg)
 
@@ -54,9 +54,7 @@ def test_iso_to_aniso(input_cif_file, insert_anis_directive=True):
     return {"output_file": output_file}
 
 
-cmd_test_iso_to_aniso = PythonCallable(test_iso_to_aniso)
-
 client = QCrBoxRegistryClient()
 application = client.register_application("SHELX", version="git_d0d0f82")
-application.register_python_callable("test__iso_to_aniso", cmd_test_iso_to_aniso)
+application.register_python_callable("test__iso_to_aniso", func_test_iso_to_aniso)
 client.run()

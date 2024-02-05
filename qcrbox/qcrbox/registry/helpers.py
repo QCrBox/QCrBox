@@ -1,9 +1,11 @@
+# SPDX-License-Identifier: MPL-2.0
+
 import asyncio
 
 from aiormq import AMQPConnectionError
 from loguru import logger
 from propan.fastapi import RabbitRouter
-from tenacity import retry, wait_fixed, stop_after_attempt, retry_if_exception_type
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 
 
 def wrap_with_retry(orig_connect_func, *, wait_interval, max_attempt_number):

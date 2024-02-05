@@ -1,15 +1,19 @@
+# SPDX-License-Identifier: MPL-2.0
+
 import atexit
+import os
+import platform
 import shutil
 import signal
 import subprocess
 import sys
 import webbrowser
-from pathlib import Path
 
 import click
 import doit.task
 
-from ...helpers import run_tasks, NaturalOrderGroup
+from ...helpers import NaturalOrderGroup, get_mkdocs_config_file_path, run_tasks
+
 
 @click.group(name="docs", cls=NaturalOrderGroup)
 def docs_build_and_serve():
@@ -17,10 +21,6 @@ def docs_build_and_serve():
     Build/serve the documentation.
     """
     pass
-
-
-def get_mkdocs_config_file_path():
-    return Path(__file__).parent.parent.parent.parent.parent.parent.joinpath("mkdocs.yml").resolve().as_posix()
 
 
 @docs_build_and_serve.command()
@@ -90,17 +90,19 @@ def serve(host, port):
     )
     run_tasks([task1, task2])
 
-    signal.pause()
-
+    operating_system = platform.system()
+    if operating_system == "Windows":
+        os.system("pause")
+    else:
+        signal.pause()
 
 
 def check_mkdocs_is_installed():
     try:
-        import mkdocs
+        import mkdocs  # noqa: F401
     except ImportError:
         click.echo(
             "MkDocs is not installed. Please run 'pip install qcrbox[docs]' "
             "to install mkdocs and other documentation-related dependencies."
         )
         sys.exit(1)
-

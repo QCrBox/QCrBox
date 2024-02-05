@@ -1,9 +1,11 @@
+# SPDX-License-Identifier: MPL-2.0
+
 from datetime import datetime
 from typing import Optional
 
 from pydantic import BaseModel
 from sqlalchemy import JSON, Column, UniqueConstraint
-from sqlmodel import SQLModel, Field, Relationship
+from sqlmodel import Field, Relationship, SQLModel
 
 
 class QCrBoxCalculation(BaseModel):
@@ -29,7 +31,7 @@ class QCrBoxCalculationDB(SQLModel, table=True):
 
 class QCrBoxCalculationStatusDetails(BaseModel):
     status: str
-    details: dict
+    details: dict | None
 
 
 class QCrBoxCalculationRead(BaseModel):

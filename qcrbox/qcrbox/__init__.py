@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MPL-2.0
+
 # Define the variable '__version__':
 try:
     # If setuptools_scm is installed (e.g. in a development environment with
@@ -14,10 +16,7 @@ except (ImportError, LookupError):
     except ModuleNotFoundError:
         # The user is probably trying to run this without having installed
         # the package, so complain.
-        raise RuntimeError(
-            "The 'qcrbox' package is not correctly installed. "
-            "Please install it with pip."
-        )
+        raise RuntimeError("The 'qcrbox' package is not correctly installed. Please install it with pip.")
 
 # Import logging module here to ensure the loggers
 # are set up correctly before any commands are run.

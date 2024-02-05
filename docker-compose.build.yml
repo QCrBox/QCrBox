@@ -1,4 +1,4 @@
-version: "3.8"
+version: "${QCRBOX_COMPOSE_FILE_VERSION:?Must set env var QCRBOX_COMPOSE_FILE_VERSION}"
 
 services:
   base-ancestor:
@@ -10,7 +10,9 @@ services:
         QCRBOX_VOLUMES_ROOT_DIR: ${QCRBOX_VOLUMES_ROOT_DIR:?Must set env var QCRBOX_VOLUMES_ROOT_DIR}
         QCRBOX_SUPERVISORD_CONF_DIR: ${QCRBOX_SUPERVISORD_CONF_DIR:?Must set env var QCRBOX_SUPERVISORD_CONF_DIR}
         QCRBOX_RABBITMQ_HOST: "qcrbox-message-bus"
+        QCRBOX_RABBITMQ_PORT: "5672"
         QCRBOX_PYTHON_PACKAGE_VERSION: ${QCRBOX_PYTHON_PACKAGE_VERSION:-${QCRBOX_DOCKER_TAG}}
+        QCRBOXTOOLS_VERSION: ${QCRBOXTOOLS_VERSION:?Must set env var QCRBOXTOOLS_VERSION}
 
   base-application:
     image: "qcrbox/base-application:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
@@ -45,20 +47,14 @@ services:
         QCRBOX_SUPERVISORD_CONF_DIR: ${QCRBOX_SUPERVISORD_CONF_DIR:?Must set env var QCRBOX_SUPERVISORD_CONF_DIR}
         QCRBOX_REGISTRY_DB_DIR: ${QCRBOX_REGISTRY_DB_DIR:?Must set env var QCRBOX_REGISTRY_DB_DIR}
 
-  shelx:
+  qcrbox-nextflow:
     build:
-      context: services/shelx
+      context: services/core/qcrbox_nextflow
       args:
         QCRBOX_DOCKER_TAG: ${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}
-
-  crystal-explorer:
-    build:
-      context: services/applications/crystal_explorer
-      args:
-        QCRBOX_DOCKER_TAG: ${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}
-
-  olex2-linux:
-    build:
-      context: services/applications/olex2_linux
-      args:
-        QCRBOX_DOCKER_TAG: ${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}
+        QCRBOX_ROOT_DIR: ${QCRBOX_ROOT_DIR:?Must set env var QCRBOX_ROOT_DIR}
+        QCRBOX_SUPERVISORD_CONF_DIR: ${QCRBOX_SUPERVISORD_CONF_DIR:?Must set env var QCRBOX_SUPERVISORD_CONF_DIR}
+        QCRBOX_PYTHON_PACKAGE_VERSION: ${QCRBOX_PYTHON_PACKAGE_VERSION:-${QCRBOX_DOCKER_TAG}}
+        QCRBOXTOOLS_VERSION: ${QCRBOXTOOLS_VERSION:?Must set env var QCRBOXTOOLS_VERSION}
+        QCRBOX_NEXTFLOW_HOME: "${QCRBOX_NEXTFLOW_HOME:?Must set env var QCRBOX_NEXTFLOW_HOME}"
+        NEXTFLOW_VERSION: "23.10.0"

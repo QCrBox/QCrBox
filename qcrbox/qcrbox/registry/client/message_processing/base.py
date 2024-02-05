@@ -1,7 +1,10 @@
+# SPDX-License-Identifier: MPL-2.0
+
 import asyncio
 from functools import singledispatch
 
 from loguru import logger
+
 from qcrbox.common import msg_specs
 
 
@@ -9,9 +12,9 @@ async def process_message_sync_or_async(msg, application):
     """
     Wrapper function which allows to define both sync and async implementations of `process_message`.
     """
-    logger.debug(f"[DDD] Processing message ...")
+    logger.debug("[DDD] Processing message ...")
     result = process_message(msg, application)
-    logger.debug(f"[DDD] Done processing message.")
+    logger.debug("[DDD] Done processing message.")
     if asyncio.iscoroutine(result):
         # If the given message type is processed by an async function,
         # calling `process_message` will return a coroutine, so we need

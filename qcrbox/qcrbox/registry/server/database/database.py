@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MPL-2.0
+
 import os
 import sqlite3
 from typing import Optional
@@ -6,9 +8,10 @@ from loguru import logger
 from sqlalchemy import event
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import IntegrityError
-from sqlmodel import create_engine, Session, select
-from qcrbox.common.msg_specs.sql_models import QCrBoxBaseSQLModel, KeywordDB
+from sqlmodel import Session, create_engine, select
+
 from qcrbox.common import sql_models
+from qcrbox.common.msg_specs.sql_models import KeywordDB, QCrBoxBaseSQLModel
 
 connect_args = {"check_same_thread": False}
 registry_db_dir = os.environ.get("QCRBOX_REGISTRY_DB_DIR", "/mnt/qcrbox/qcrbox_registry_data/")
@@ -40,7 +43,7 @@ def create_db_and_tables():
     # whenever the registry server starts up. Down the line, we probably want
     # to do something smarter where we check if any existing registered applications
     # are still active and only purge records that are stale.
-    #QCrBoxBaseSQLModel.metadata.drop_all(engine)
+    # QCrBoxBaseSQLModel.metadata.drop_all(engine)
 
     QCrBoxBaseSQLModel.metadata.create_all(engine)
 
@@ -51,7 +54,7 @@ def seed_database():
         with Session(engine) as session:
             session.add(KeywordDB(text="Atomic Form Factors"))
             session.commit()
-    except IntegrityError as exc:
+    except IntegrityError:
         logger.debug("Keyword already present.")
     logger.debug("Done.")
 

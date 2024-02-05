@@ -12,9 +12,7 @@ USER root
 
 RUN apt-get update -y && \
     apt-get install -y --no-install-recommends \
-        openbox menu tigervnc-standalone-server lxterminal \
-#RUN apt-get install -y --no-install-recommends \
-    xdg-utils \
+        openbox menu tigervnc-standalone-server lxterminal xdg-utils \
         xvfb xdotool x11-utils zenity idesk nautilus gedit && \
     rm -rf /var/lib/apt/lists && \
     mkdir -p /usr/share/desktop-directories

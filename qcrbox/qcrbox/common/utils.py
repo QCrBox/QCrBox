@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MPL-2.0
+
 import os
 from typing import Optional
 
@@ -26,5 +28,3 @@ def get_qcrbox_registry_api_connection_url(
     port = port or int(os.environ.get("QCRBOX_REGISTRY_PORT", 11000))
     url = f"http://{host}:{port}"
     return url
-
-

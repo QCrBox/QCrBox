@@ -3,9 +3,11 @@ the SHELX executables need to be placed here so that they can be copied
 into the Docker image.
 
 These can be downloaded from: https://shelx.uni-goettingen.de/bin/linux64/
+Note that even if you are on a Windows machine, you must download the Linux
+executables because they will be installed inside a docker container.
 
 As of 18th September 2023, the following files are present (see the contents
-of ../shelx_checksums.txt for the precise SHA-256 checksums of these files).
+of `../shelx_checksums.txt` for the precise SHA-256 checksums of these files).
 
 ```
 Name              Last modified      Size

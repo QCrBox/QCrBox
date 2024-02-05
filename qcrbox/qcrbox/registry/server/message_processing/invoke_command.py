@@ -1,10 +1,13 @@
+# SPDX-License-Identifier: MPL-2.0
+
 import sqlalchemy.exc
 from sqlmodel import Session, select
 
-from ....logging import logger
 from qcrbox.common import msg_specs, sql_models
-from ..router import router
+
+from ....logging import logger
 from ..database import engine
+from ..router import router
 from .base import process_message
 
 __all__ = []
@@ -50,10 +53,12 @@ async def _invoke_command_impl(msg: msg_specs.InvokeCommand) -> msg_specs.QCrBox
 
         if msg_payload.container_qcrbox_id is None:
             # If no container is explicitly specified, grab the first available one.
-            # FIXME: this is a hack just to get things working for now; we should handle this in a smarter way in the future.
+            # FIXME: this is a hack just to get things working for now; we should
+            #        handle this in a smarter way in the future.
             container_to_use = session.exec(
                 select(sql_models.QCrBoxContainerDB).where(
-                    sql_models.QCrBoxCommandDB.id == msg_payload.command_id,
+                    sql_models.QCrBoxContainerDB.application == command.application,
+                    sql_models.QCrBoxContainerDB.status == sql_models.qcrbox_container.ContainerStatus.IDLE,
                 )
             ).first()
             logger.debug(f"{container_to_use=}")
