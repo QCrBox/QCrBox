@@ -8,8 +8,8 @@ import click
 import requests
 from loguru import logger
 
-from ....common import msg_specs
-from ....common.utils import get_qcrbox_registry_api_connection_url
+from ...common import msg_specs
+from ...common.utils import get_qcrbox_registry_api_connection_url
 
 
 @click.command(name="invoke")

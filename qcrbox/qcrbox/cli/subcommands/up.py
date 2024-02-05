@@ -3,8 +3,8 @@
 import click
 import doit.task
 
-from ...helpers import DockerProject, run_tasks
-from ..build.commands import populate_build_tasks
+from ..helpers import DockerProject, run_tasks
+from .build import populate_build_tasks
 
 
 @click.command(name="up")

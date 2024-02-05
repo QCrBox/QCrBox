@@ -5,7 +5,7 @@ from pathlib import Path
 import click
 from loguru import logger
 
-from ...helpers import DockerProject, get_repo_root, make_task, run_tasks
+from ..helpers import DockerProject, get_repo_root, make_task, run_tasks
 
 
 @click.command(name="build")

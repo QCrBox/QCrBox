@@ -2,7 +2,7 @@
 
 import click
 
-from .... import __version__
+from ... import __version__
 
 
 @click.command(name="version")
