@@ -4,8 +4,12 @@ import click
 
 from . import subcommands
 
+CONTEXT_SETTINGS = {
+    "help_option_names": ["-h", "--help"],
+}
 
-@click.group()
+
+@click.group(context_settings=CONTEXT_SETTINGS)
 def entry_point():
     """
     Command line interface for the Quantum Crystallography Toolbox.
