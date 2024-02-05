@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: MPL-2.0
 
+import functools
 import re
 import sys
 from pathlib import Path
@@ -9,6 +10,16 @@ import yaml
 from pydantic.v1.utils import deep_update
 
 from .qcrbox_helpers import PathLike, find_common_repo_root, get_repo_root
+
+
+@functools.lru_cache(maxsize=1)
+def find_docker_compose_build_files(root: Path):
+    return sorted(root.rglob("docker-compose.build*.yml"))
+
+
+@functools.lru_cache(maxsize=1)
+def find_docker_compose_run_files(root: Path):
+    return sorted(root.rglob("docker-compose.run*.yml"))
 
 
 def load_docker_compose_data(*compose_files: PathLike):
@@ -42,8 +53,8 @@ class ComposeFileConfig:
     @classmethod
     def get_default_config(cls):
         repo_root = get_repo_root()
-        compose_files_build = [repo_root.joinpath("docker-compose.build.yml")]
-        compose_files_runtime = [repo_root.joinpath("docker-compose.yml")]
+        compose_files_build = find_docker_compose_build_files(repo_root)
+        compose_files_runtime = find_docker_compose_run_files(repo_root)
         return cls(compose_files_build=compose_files_build, compose_files_runtime=compose_files_runtime)
 
     @classmethod

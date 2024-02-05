@@ -1,4 +1,4 @@
-version: "3.8"
+version: "${QCRBOX_COMPOSE_FILE_VERSION:?Must set env var QCRBOX_COMPOSE_FILE_VERSION}"
 
 services:
   qcrbox-message-bus:
@@ -60,59 +60,6 @@ services:
     networks:
       - qcrbox-net
     restart: "unless-stopped"
-
-  shelx:
-    image: "qcrbox/shelx:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
-    build:
-      context: services/applications/shelx
-      args:
-        QCRBOX_DOCKER_TAG: ${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}
-    environment:
-      QCRBOX_RABBITMQ_QUEUE_NAME: "shelx"
-      QCRBOX_REGISTRY_HOST: "qcrbox-registry"
-      QCRBOX_REGISTRY_PORT: "8000"
-    volumes:
-      - ./shared_files:${QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH}
-    depends_on:
-      qcrbox-registry:
-        condition: service_healthy
-    networks:
-      - qcrbox-net
-    restart: unless-stopped
-
-  crystal-explorer:
-    image: "qcrbox/crystal-explorer:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
-    volumes:
-      - ./shared_files:${QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH}
-    networks:
-      - qcrbox-net
-    ports:
-      - "${QCRBOX_BIND_ADDRESS}:${QCRBOX_CRYSTAL_EXPLORER_PORT:?Must set env var QCRBOX_CRYSTAL_EXPLORER_PORT}:8080"
-    depends_on:
-      - qcrbox-registry
-    restart: unless-stopped
-    environment:
-      QCRBOX_APPLICATION_DISPLAY_NAME: "CrystalExplorer"
-      QCRBOX_RABBITMQ_QUEUE_NAME: "crystal-explorer"
-      QCRBOX_REGISTRY_HOST: "qcrbox-registry"
-      QCRBOX_REGISTRY_PORT: "8000"
-
-  olex2-linux:
-    image: qcrbox/olex2-linux:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}
-    volumes:
-      - ./shared_files:${QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH}
-    networks:
-      - qcrbox-net
-    ports:
-      - "${QCRBOX_BIND_ADDRESS}:${QCRBOX_OLEX2_LINUX_PORT:?Must set env var QCRBOX_OLEX2_LINUX_PORT}:8080"
-    depends_on:
-      - qcrbox-registry
-    restart: unless-stopped
-    environment:
-      QCRBOX_APPLICATION_DISPLAY_NAME: "Olex2"
-      QCRBOX_RABBITMQ_QUEUE_NAME: "olex2"
-      QCRBOX_REGISTRY_HOST: "qcrbox-registry"
-      QCRBOX_REGISTRY_PORT: "8000"
 
 networks:
   qcrbox-net:
