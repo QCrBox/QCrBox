@@ -12,7 +12,7 @@ import webbrowser
 import click
 import doit.task
 
-from ...helpers import NaturalOrderGroup, get_mkdocs_config_file_path, run_tasks
+from ..helpers import NaturalOrderGroup, get_mkdocs_config_file_path, run_tasks
 
 
 @click.group(name="docs", cls=NaturalOrderGroup)

@@ -59,6 +59,7 @@ However, there will be an initial period of stabilisation where this is not adhe
 - All QCrBox-specific Python packages are now installed in the base mamba environment. The separate Python virtual environment has been removed. ([#54](https://github.com/QCrBox/QCrBox/issues/54))
 - Python code is linted and auto-formatted using [ruff](https://docs.astral.sh/ruff/). [#64](https://github.com/QCrBox/QCrBox/issues/64)
 - Each application's docker compose configuration now lives in its dedicated subfolder (`services/application/<application_folder>`) instead of in the toplevel `docker-compose.yml` file. ([#78](https://github.com/QCrBox/QCrBox/issues/78))
+- The folder structure in `qcrbox/cli/subcommands` has been simplified by removing an extra level of subfolders. ([#90](https://github.com/QCrBox/QCrBox/issues/90))
 
 
 [unreleased]: https://github.com/QCrBox/QCrBox/compare/0.0.1...master
