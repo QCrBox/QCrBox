@@ -1,5 +1,4 @@
 # SPDX-License-Identifier: MPL-2.0
-import shutil
 import sys
 from pathlib import Path
 
@@ -61,7 +60,6 @@ def create_application_template(application_type, overwrite_if_exists, dry_run, 
                 f"The directory {target_dir} already exists. Discarding existing contents "
                 f"because --overwrite-if-exists is enabled."
             )
-            shutil.rmtree(target_dir)
         elif any(target_dir.iterdir()):
             logger.info(
                 f"The directory {target_dir} exists and is not empty. Please specify "
