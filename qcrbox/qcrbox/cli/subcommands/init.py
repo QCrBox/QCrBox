@@ -66,6 +66,13 @@ def create_application_template(application_type, overwrite_if_exists, dry_run, 
             # the template, otherwise cookiecutter will complain.
             target_dir.rmdir()
 
+    print("The following dialog will guide you through providing the relevant")
+    print("configuration settings for your application.")
+    print()
+    # print("At the end you will be able to confirm your choices or abort the ")
+    # print("process before any files are created.")
+    # print()
+
     result_dir = run_cookiecutter(
         template_dir,
         output_dir=target_dir.parent,
