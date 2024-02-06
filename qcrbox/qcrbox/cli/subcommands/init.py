@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: MPL-2.0
 import shutil
+import sys
 from pathlib import Path
 
 import click
@@ -66,6 +67,7 @@ def create_application_template(application_type, overwrite_if_exists, dry_run, 
                 f"Directory {target_dir} exists and is not empty. Please specify "
                 f"--overwrite-if-exists to discard any existing contents."
             )
+            sys.exit()
         else:
             pass
     result_dir = run_cookiecutter(
@@ -74,4 +76,4 @@ def create_application_template(application_type, overwrite_if_exists, dry_run, 
         overwrite_if_exists=overwrite_if_exists,
         extra_context={"application_slug": application_slug},
     )
-    logger.info(f"Created scaffolding for new application in '{Path(result_dir).relative_to(repo_root)}'.")
+    logger.info(f"Created scaffolding for new application in '{Path(result_dir)}'.")
