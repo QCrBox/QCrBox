@@ -4,7 +4,6 @@ from pathlib import Path
 
 import click
 from cookiecutter.main import cookiecutter as run_cookiecutter
-from loguru import logger
 
 from ..helpers import get_repo_root
 
@@ -56,15 +55,11 @@ def create_application_template(application_type, overwrite_if_exists, dry_run, 
     target_dir = repo_root.joinpath("services", "applications", application_slug)
     if target_dir.exists():
         if overwrite_if_exists:
-            logger.info(
-                f"The directory {target_dir} already exists. Discarding existing contents "
-                f"because --overwrite-if-exists is enabled."
-            )
+            print(f"The directory {target_dir} already exists, but --overwrite-if-exists is enabled.")
+            print("Existing contents will be discarded.")
         elif any(target_dir.iterdir()):
-            logger.info(
-                f"The directory {target_dir} exists and is not empty. Please specify "
-                f"--overwrite-if-exists to discard any existing contents."
-            )
+            print(f"The directory {target_dir} exists and is not empty.")
+            print("Please use --overwrite-if-exists to discard any existing contents.")
             sys.exit()
         else:
             pass
@@ -75,4 +70,4 @@ def create_application_template(application_type, overwrite_if_exists, dry_run, 
         overwrite_if_exists=overwrite_if_exists,
         extra_context={"application_slug": application_slug},
     )
-    logger.info(f"Created scaffolding for new application in '{Path(result_dir)}'.")
+    print(f"Created scaffolding for new application in '{Path(result_dir)}'.")
