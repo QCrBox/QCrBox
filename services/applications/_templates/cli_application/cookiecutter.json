@@ -5,6 +5,5 @@
   "application_version": "x.y.z",
   "description": "Brief description of the application.",
   "url": "https://www.dummy-app.example.com",
-  "author_names": "Jane Doe, Max Mustermann",
   "email": "contact@example.com"
 }
