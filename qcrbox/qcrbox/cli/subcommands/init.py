@@ -53,25 +53,28 @@ def create_application_template(application_type, overwrite_if_exists, dry_run, 
     repo_root = get_repo_root()
     template_dir = str(repo_root.joinpath("services", "applications", "_templates", "cli_application"))
     target_dir = repo_root.joinpath("services", "applications", application_slug)
-    if target_dir.exists():
-        if overwrite_if_exists:
-            print(f"The directory {target_dir} already exists, but --overwrite-if-exists is enabled.")
-            print("Existing contents will be discarded.")
-        elif any(target_dir.iterdir()):
-            print(f"The directory {target_dir} exists and is not empty.")
-            print("Please use --overwrite-if-exists to discard any existing contents.")
-            sys.exit()
-        else:
-            # The directory exists but is empty. Remove it before creating
-            # the template, otherwise cookiecutter will complain.
-            target_dir.rmdir()
+    if target_dir.exists() and any(target_dir.iterdir()) and not overwrite_if_exists:
+        print(f"The directory {target_dir} exists and is not empty.")
+        print("Please use the flag -f/--overwrite-if-exists to discard any existing contents. ")
+        print("Try 'qcb init -h' for further help.")
+        sys.exit()
 
-    print("The following dialog will guide you through providing the relevant")
-    print("configuration settings for your application.")
+    print("Please provide some basic information about your application.")
+    print("The following dialog will guide you through the relevant settings.")
     print()
     # print("At the end you will be able to confirm your choices or abort the ")
     # print("process before any files are created.")
     # print()
+
+    if target_dir.exists():
+        if overwrite_if_exists:
+            print(f"Note: The directory {target_dir}")
+            print("      exists but --overwrite-if-exists is enabled, so existing contents will be discarded.")
+            print()
+        else:
+            # The directory exists but is empty. Remove it before creating
+            # the template, otherwise cookiecutter will complain.
+            target_dir.rmdir()
 
     result_dir = run_cookiecutter(
         template_dir,
@@ -79,4 +82,5 @@ def create_application_template(application_type, overwrite_if_exists, dry_run, 
         overwrite_if_exists=overwrite_if_exists,
         extra_context={"application_slug": application_slug},
     )
+    print()
     print(f"Created scaffolding for new application in '{Path(result_dir)}'.")
