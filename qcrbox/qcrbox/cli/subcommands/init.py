@@ -53,7 +53,7 @@ def create_application_template(application_type, overwrite_if_exists, dry_run, 
     """
     repo_root = get_repo_root()
     template_dir = str(repo_root.joinpath("services", "applications", "_templates", "cli_application"))
-    target_dir = repo_root.joinpath("services", "applications")
+    target_dir = repo_root.joinpath("services", "applications", application_slug)
     if target_dir.exists():
         if overwrite_if_exists:
             logger.info(
