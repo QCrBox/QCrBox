@@ -4,8 +4,8 @@
 name: "{{ cookiecutter.application_name }}"
 slug: "{{ cookiecutter.application_slug }}"
 version: "{{ cookiecutter.application_version }}"
-description: "{{ cookiecutter.application_description }}"
-url: "{{ cookiecutter.application_url }}"
+description: "{{ cookiecutter.description }}"
+url: "{{ cookiecutter.url }}"
 
 commands:
   - name: "sample_cmd"

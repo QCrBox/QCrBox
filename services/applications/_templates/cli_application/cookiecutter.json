@@ -3,6 +3,8 @@
   "application_slug": "{{ cookiecutter.application_name.lower().replace(' ', '_').replace('-', '_') }}",
   "application_name": "Dummy CLI Application",
   "application_version": "x.y.z",
-  "author_name": "Anonymous",
-  "auther_email": "anonymous@example.com"
+  "description": "Brief description of the application.",
+  "url": "https://www.dummy-app.example.com",
+  "author_names": "Jane Doe, Max Mustermann",
+  "email": "contact@example.com"
 }
