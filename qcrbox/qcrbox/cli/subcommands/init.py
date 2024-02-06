@@ -68,9 +68,10 @@ def create_application_template(application_type, overwrite_if_exists, dry_run, 
             sys.exit()
         else:
             pass
+
     result_dir = run_cookiecutter(
         template_dir,
-        output_dir=target_dir,
+        output_dir=target_dir.parent,
         overwrite_if_exists=overwrite_if_exists,
         extra_context={"application_slug": application_slug},
     )
