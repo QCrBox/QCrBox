@@ -62,7 +62,9 @@ def create_application_template(application_type, overwrite_if_exists, dry_run, 
             print("Please use --overwrite-if-exists to discard any existing contents.")
             sys.exit()
         else:
-            pass
+            # The directory exists but is empty. Remove it before creating
+            # the template, otherwise cookiecutter will complain.
+            target_dir.rmdir()
 
     result_dir = run_cookiecutter(
         template_dir,
