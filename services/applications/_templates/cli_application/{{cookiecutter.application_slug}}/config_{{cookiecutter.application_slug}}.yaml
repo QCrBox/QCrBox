@@ -1,0 +1,31 @@
+#
+# Configuration for the application '{{ cookiecutter.application_slug }}'
+#
+name: "{{ cookiecutter.application_name }}"
+slug: "{{ cookiecutter.application_slug }}"
+version: "{{ cookiecutter.application_version }}"
+description: "{{ cookiecutter.application_description }}"
+url: "{{ cookiecutter.application_url }}"
+
+commands:
+  - name: "sample_cmd"
+    implemented_as: "CLI"  # other options: "python_callable"
+    parameters:
+      - name: "msg"
+        type: "str"
+        default_value: None
+      - name: "some_number"
+        type: "int"
+        default_value: 42
+        required: false
+
+  - name: "sample_cmd_v2"
+    implemented_as: "CLI"  # other options: "python_callable"
+    parameters:
+      - name: "msg"
+        type: str
+        default_value: null
+      - name: "some_number"
+        type: int
+        default_value: 42
+        required: False
