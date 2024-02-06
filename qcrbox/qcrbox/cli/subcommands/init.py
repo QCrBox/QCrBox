@@ -58,13 +58,13 @@ def create_application_template(application_type, overwrite_if_exists, dry_run, 
     if target_dir.exists():
         if overwrite_if_exists:
             logger.info(
-                f"Directory {target_dir} already exists. Discarding existing contents "
+                f"The directory {target_dir} already exists. Discarding existing contents "
                 f"because --overwrite-if-exists is enabled."
             )
             shutil.rmtree(target_dir)
         elif any(target_dir.iterdir()):
             logger.info(
-                f"Directory {target_dir} exists and is not empty. Please specify "
+                f"The directory {target_dir} exists and is not empty. Please specify "
                 f"--overwrite-if-exists to discard any existing contents."
             )
             sys.exit()
