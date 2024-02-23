@@ -43,12 +43,19 @@ def create_application_template(application_type, overwrite_if_exists, dry_run, 
     """
     Create boilerplate template for a new application.
 
-    The argument <application_slug> should be a short,
-    human-readable identifier for the application.
+    The argument <application_slug> should be a short, human-readable identifier
+    for the application. It can only contain lowercase letters and underscores.
 
-    Among other things, it will be used as the name of the directory where the
-    template is created (as a subfolder of 'services/applications/') and can only
-    contain lowercase letters and underscores. Example: 'crystal_explorer'
+    The application slug will be used, among other things, as the name of the
+    directory where the application template is created (as a subfolder of
+    'services/applications/').
+
+    Example:
+
+        $ qcb init my_software
+
+    This will create the new directory 'services/applications/my_software/' and
+    populate it with boilerplate files to integrate `my_software` into QCrBox.
     """
     repo_root = get_repo_root()
     template_dir = str(repo_root.joinpath("services", "applications", "_templates", "cli_application"))
