@@ -19,9 +19,6 @@ Namedtuples:
 """
 
 
-from collections import namedtuple
-from itertools import count
-from typing import List, Dict, Tuple
 import json
 import pathlib
 import textwrap
@@ -29,6 +26,9 @@ import time
 import urllib
 import urllib.request
 import webbrowser
+from collections import namedtuple
+from itertools import count
+from typing import Dict, List, Tuple
 
 QCrBoxParameter = namedtuple('QCrBoxParameter', ['name', 'dtype'])
 QCrBoxParameter.__doc__ = """
