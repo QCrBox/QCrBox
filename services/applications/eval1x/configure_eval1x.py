@@ -1,15 +1,23 @@
-import shutil
-import os
 import json
+import os
 import pathlib
-from qcrbox.registry.client import QCrBoxRegistryClient, ExternalCommand, FormattedParam
-
-from qcrboxtools.robots.eval import (
-    SettingsVicFile, TextFile, RmatFile, EvalViewRobot, PicFile, Eval15AllRobot, EvalAnyRobot,
-    EvalPeakrefRobot, EvalBuilddatcolRobot
-)
+import shutil
 
 from qcrboxtools.cif.merge import merge_cif_files
+from qcrboxtools.robots.eval import (
+    Eval15AllRobot,
+    EvalAnyRobot,
+    EvalBuilddatcolRobot,
+    EvalPeakrefRobot,
+    EvalViewRobot,
+    PicFile,
+    RmatFile,
+    SettingsVicFile,
+    TextFile,
+)
+
+from qcrbox.registry.client import ExternalCommand, FormattedParam, QCrBoxRegistryClient
+
 
 def integrate(
     work_folder: str,
