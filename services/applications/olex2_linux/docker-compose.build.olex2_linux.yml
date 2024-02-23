@@ -1,7 +1,7 @@
 version: "${QCRBOX_COMPOSE_FILE_VERSION:?Must set env var QCRBOX_COMPOSE_FILE_VERSION}"
 
 services:
-  olex2-linux:
+  olex2:
     build:
       context: services/applications/olex2_linux
       args:
