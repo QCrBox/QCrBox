@@ -1,10 +1,13 @@
-from qcrbox.registry.client import ExternalCommand, Param, QCrBoxRegistryClient
-from qcrboxtools.cif.merge import replace_structure_from_cif
-from qcrboxtools.robots.olex2 import Olex2Socket
-import shutil
-from pathlib import Path
 import json
 import os
+import shutil
+from pathlib import Path
+
+from qcrboxtools.cif.merge import replace_structure_from_cif
+from qcrboxtools.robots.olex2 import Olex2Socket
+
+from qcrbox.registry.client import ExternalCommand, Param, QCrBoxRegistryClient
+
 
 def finalise__interactive(
     work_folder

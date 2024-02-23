@@ -1,7 +1,8 @@
-import requests
 import io
 import pathlib
 import zipfile
+
+import requests
 
 from qcrbox.logging import logger
 

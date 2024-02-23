@@ -1,5 +1,4 @@
 import argparse
-import os
 import pathlib
 
 from qcrboxtools.robots.olex2 import Olex2Socket
@@ -36,7 +35,8 @@ def main():
     parser_refine.add_argument("--structure_path", help="Path to the structure file")
     parser_refine.add_argument("--tsc_path", help="Path to the tsc(b) file", required=False)
     parser_refine.add_argument("--n_cycles", type=int, default=20, help="Number of cycles for refinement")
-    parser_refine.add_argument("--weight_cycles", type=int, default=3, help="Number of refine cycles for weight convergence")
+    parser_refine.add_argument("--weight_cycles", type=int, default=3,
+                               help="Number of refine cycles for weight convergence")
     parser_refine.set_defaults(func=refine)
 
     parser_cmds = subparsers.add_parser(
