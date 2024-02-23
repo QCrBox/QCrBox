@@ -18,6 +18,7 @@ commands:
     required_cif_entry_sets: [cell_data, diffraction_data]
     optional_cif_entry_sets: [atom_data]
     merge_cif_su: Yes
+    custom_cif_categories: [iucr, shelx]
 
   - name: "refine_iam"
     implemented_as: "CLI"  # other options: "python_callable"
@@ -35,6 +36,7 @@ commands:
         required: False
     required_cif_entry_sets: [cell_data, diffraction_data, atom_data]
     merge_cif_su: Yes
+    custom_cif_categories: [iucr, shelx]
 
   - name: "refine_tsc"
     implemented_as: "CLI"  # other options: "python_callable"
@@ -55,6 +57,7 @@ commands:
         required: False
     required_cif_entry_sets: [cell_data, diffraction_data, atom_data]
     merge_cif_su: Yes
+    custom_cif_categories: [iucr, shelx]
 
 cif_entry_sets:
   - name: cell_data
