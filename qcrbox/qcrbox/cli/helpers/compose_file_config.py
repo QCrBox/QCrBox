@@ -14,14 +14,14 @@ from .qcrbox_helpers import PathLike, find_common_repo_root, get_repo_root
 
 @functools.lru_cache(maxsize=1)
 def find_docker_compose_build_files(root: Path):
-    candidate_paths = sorted(root.rglob("docker-compose.*.build.yml"))
+    candidate_paths = sorted(root.rglob("docker-compose*.build.yml"))
     valid_paths = [p for p in candidate_paths if "_templates" not in p.parts]
     return valid_paths
 
 
 @functools.lru_cache(maxsize=1)
 def find_docker_compose_run_files(root: Path):
-    candidate_paths = sorted(root.rglob("docker-compose.*.run.yml"))
+    candidate_paths = sorted(root.rglob("docker-compose*.run.yml"))
     valid_paths = [p for p in candidate_paths if "_templates" not in p.parts]
     return valid_paths
 
