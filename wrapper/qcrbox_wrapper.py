@@ -19,15 +19,15 @@ Namedtuples:
 """
 
 
+from collections import namedtuple
+from itertools import count
+from typing import List, Dict, Tuple
 import json
+import pathlib
+import textwrap
 import time
 import urllib
 import urllib.request
-from itertools import count
-from collections import namedtuple
-import pathlib
-from typing import List, Dict, Tuple
-import textwrap
 import webbrowser
 
 QCrBoxParameter = namedtuple('QCrBoxParameter', ['name', 'dtype'])
@@ -212,7 +212,9 @@ class QCrBoxApplication:
         for cmd in app_cmds:
             parameter_strings = (f'{par.name}: {par.dtype}' for par in cmd.parameters)
             base_indent = '\n                    '
-            all_par_string = base_indent + (',' + base_indent).join(parameter_strings) + '\n                '
+            all_par_string = (
+                base_indent + (',' + base_indent).join(parameter_strings) + '\n                '
+            )
             method_strings.append(f'{cmd.name}({all_par_string})')
             setattr(self, cmd.name, cmd)
 
@@ -286,7 +288,9 @@ class QCrBoxCommand:
 
         invalid_args = [arg for arg in kwargs if arg not in self.par_name_list]
         if len(invalid_args) > 0:
-            raise NameError(f'This method got one or more invalid keywords: {", ".join(invalid_args)}')
+            raise NameError(
+                f'This method got one or more invalid keywords: {", ".join(invalid_args)}'
+            )
 
         overbooked_args = [arg for arg in kwargs if arg in arguments]
 
@@ -317,7 +321,9 @@ class QCrBoxCommand:
             app_id_to_name = {app.id: app.name for app in self.wrapper_parent.applications}
             app_name = app_id_to_name[app_id]
             if (app_name, cmd_name) in self.wrapper_parent.gui_commands:
-                return f"http://{self.wrapper_parent.server_addr}:{self.wrapper_parent.port_dict[app_name]}/vnc.html?path=vnc&autoconnect=true&resize=remote"
+                address = self.wrapper_parent.server_addr
+                port = self.wrapper_parent.port_dict[app_name]
+                return f"http://{address}:{port}/vnc.html?path=vnc&autoconnect=true&resize=remote"
             return None
         gui_addr = gui_address(self.application_id, self.name)
         if gui_addr is not None:
