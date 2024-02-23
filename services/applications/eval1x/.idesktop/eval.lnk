@@ -1,0 +1,9 @@
+table Icon
+  Caption: Terminal
+  Command: lxterminal
+  Icon: /home/app/.idesktop/terminal_192.png
+  Width: 48
+  Height: 48
+  X: 70
+  Y: 50
+end
