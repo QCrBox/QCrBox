@@ -39,6 +39,7 @@ However, there will be an initial period of stabilisation where this is not adhe
 - Crystallographic applications:
    - CrystalExplorer [#44](https://github.com/QCrBox/QCrBox/issues/44)
    - Olex2 [#46](https://github.com/QCrBox/QCrBox/issues/46)
+   - Eval [#116](https://github.com/QCrBox/QCrBox/issues/116)
 - CLI tool (`qcb`) for common development and deployment tasks. ([#10](https://github.com/QCrBox/QCrBox/issues/10))
 - Python package (`qcrbox`) to interact with QCrBox from Python code. ([#14](https://github.com/QCrBox/QCrBox/issues/14))
 - The base image now includes [cctbx](https://cci.lbl.gov/docs/cctbx/) and [QCrBoxTools](https://github.com/Niolon/QCrBoxTools.git). ([#53](https://github.com/QCrBox/QCrBox/issues/53))

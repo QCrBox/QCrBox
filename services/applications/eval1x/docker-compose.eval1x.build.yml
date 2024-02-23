@@ -1,0 +1,8 @@
+version: "${QCRBOX_COMPOSE_FILE_VERSION:?Must set env var QCRBOX_COMPOSE_FILE_VERSION}"
+
+services:
+  eval1x:
+    build:
+      context: services/applications/eval1x/
+      args:
+        QCRBOX_DOCKER_TAG: ${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}

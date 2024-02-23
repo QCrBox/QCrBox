@@ -24,6 +24,18 @@ class Param:
         return bound_args.arguments[self.name]
 
 
+class FormattedParam(Param):
+    def __init__(self, name, default=None, format_string=None):
+        super().__init__(name=name, default=default)
+        self.format_string = format_string
+
+    def bind(self, bound_args: inspect.BoundArguments):
+        arg_val = super().bind(bound_args)
+        if self.format_string is not None:
+            return self.format_string.format(arg_val)
+        return arg_val
+
+
 class CmdLiteral:
     def __init__(self, text):
         self.text = text
