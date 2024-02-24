@@ -89,9 +89,20 @@ def create_application_template(application_type, overwrite_if_exists, dry_run, 
         overwrite_if_exists=overwrite_if_exists,
         extra_context={"application_slug": application_slug},
     )
+    result_dir_path = Path(result_dir)
+    updated_application_slug = result_dir_path.name
+
     click.echo()
-    click.echo(f"Created scaffolding for new application in '{Path(result_dir)}'.")
+    click.echo(f"Created scaffolding for new application in '{result_dir_path}'.")
     click.echo()
     click.echo("Next steps:")
     click.echo()
-    click.echo("  TODO")
+    click.echo(f"  # Verify that {updated_application_slug!r} is now listed as a new component:")
+    click.echo("  $ qcb list components")
+    click.echo()
+    click.echo(f"  # Build and spin up a Docker container for {updated_application_slug!r}:")
+    click.echo(f"  $ qcb up {updated_application_slug}")
+    click.echo()
+    click.echo(f"  # Check that {updated_application_slug!r} and its exposed command(s) are now available:")
+    click.echo("  $ qcb list applications")
+    click.echo("  $ qcb list commands")

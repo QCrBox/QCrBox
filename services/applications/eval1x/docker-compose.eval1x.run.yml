@@ -1,0 +1,24 @@
+version: "${QCRBOX_COMPOSE_FILE_VERSION:?Must set env var QCRBOX_COMPOSE_FILE_VERSION}"
+
+services:
+  eval1x:
+    image: "qcrbox/eval1x:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
+    build:
+      context: services/applications/eval1x/
+      args:
+        QCRBOX_DOCKER_TAG: ${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}
+    environment:
+      QCRBOX_APPLICATION_DISPLAY_NAME: "Eval14/15"
+      QCRBOX_RABBITMQ_QUEUE_NAME: "eval1x"
+      QCRBOX_REGISTRY_HOST: "qcrbox-registry"
+      QCRBOX_REGISTRY_PORT: "8000"
+    ports:
+      - "${QCRBOX_BIND_ADDRESS}:${QCRBOX_EVAL1X_PORT:?Must set env var QCRBOX_EVAL1X_PORT}:8080"
+    volumes:
+      - ./shared_files:${QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH}
+    depends_on:
+      qcrbox-registry:
+        condition: service_healthy
+    networks:
+      - qcrbox-net
+    restart: unless-stopped
