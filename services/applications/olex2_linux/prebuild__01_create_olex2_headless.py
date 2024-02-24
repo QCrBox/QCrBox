@@ -455,6 +455,7 @@ def main():
     if not output_path.exists():
         if not pathlib.Path('olex2_files/olex2c-linux64'):
             logger.error('Could not find ./olex2_file/olex2c-linux64, this file is necessary')
+            raise FileNotFoundError('Could not find ./olex2_file/olex2c-linux64, this file is necessary.')
         create_new_file()
 
 if __name__ == '__main__':
