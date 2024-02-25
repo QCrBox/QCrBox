@@ -44,6 +44,7 @@ COPY ./.idesktop ${QCRBOX_HOME}/.idesktop
 
 COPY ./configure_olex2.py ${QCRBOX_HOME}/
 COPY ./olex2_glue_cli.py ${QCRBOX_HOME}
+COPY ./config_olex2.yaml ${QCRBOX_HOME}
 
 ENV QCRBOX_USER=${QCRBOX_USER}
 ENV QCRBOX_HOME=${QCRBOX_HOME}

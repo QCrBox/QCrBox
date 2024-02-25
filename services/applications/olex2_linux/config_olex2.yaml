@@ -15,10 +15,10 @@ commands:
       - name: "cif_path"
         type: "str"
         default_value: None
-    required_cif_entry_sets: [cell_data, diffraction_data]
-    optional_cif_entry_sets: [atom_data]
+    required_cif_entry_sets: ["cell_data", "diffraction_data"]
+    optional_cif_entry_sets: ["atom_data"]
     merge_cif_su: Yes
-    custom_cif_categories: [iucr, shelx]
+    custom_cif_categories: ["iucr", "shelx"]
 
   - name: "refine_iam"
     implemented_as: "CLI"  # other options: "python_callable"
@@ -34,9 +34,9 @@ commands:
         type: int
         default_value: 5
         required: False
-    required_cif_entry_sets: [cell_data, diffraction_data, atom_data]
-    merge_cif_su: Yes
-    custom_cif_categories: [iucr, shelx]
+    required_cif_entry_sets: ["cell_data", "diffraction_data", "atom_data"]
+    merge_cif_su: No
+    custom_cif_categories: ["iucr", "shelx"]
 
   - name: "refine_tsc"
     implemented_as: "CLI"  # other options: "python_callable"
@@ -55,35 +55,207 @@ commands:
         type: int
         default_value: 5
         required: False
-    required_cif_entry_sets: [cell_data, diffraction_data, atom_data]
-    merge_cif_su: Yes
-    custom_cif_categories: [iucr, shelx]
+    required_cif_entry_sets: ["cell_data", "diffraction_data", "atom_data"]
+    merge_cif_su: No
+    custom_cif_categories: ["iucr", "shelx"]
+
+  - name: "run_cmds_file"
+    implemented_as: "CLI"
+    parameters:
+      - name: "cif_path"
+        type: str
+        default_value: null
+      - name: "cmd_file_path"
+        type: str
+        default_value: null
+    optional_cif_entry_sets: ["all_olex_optional"]
+    custom_cif_categories: ["iucr", "shelx"]
 
 cif_entry_sets:
-  - name: cell_data
+  - name: "cell_data"
     required : [
-      _space_group_IT_number, _space_group_symop_id, _space_group_symop_operation_xyz, _cell_length_a
-      _cell_length_b, _cell_length_c, _cell_angle_alpha, _cell_angle_beta, _cell_angle_gamma,
-      _cell_measurement_temperature
+      "_space_group_IT_number",
+      "_space_group_symop_id",
+      "_space_group_symop_operation_xyz",
+      "_cell_length_a",
+      "_cell_length_b",
+      "_cell_length_c",
+      "_cell_angle_alpha",
+      "_cell_angle_beta",
+      "_cell_angle_gamma",
+      "_cell_measurement_temperature"
     ]
-  - name: diffraction_data
+  - name: "diffraction_data"
     required : [
-      _diffrn_radiation_type, _diffrn_radiation_wavelength,
-      _diffrn_refln_index_h, _diffrn_refln_index_k, _diffrn_refln_index_l, _diffrn_refln_intensity_net,
-      _diffrn_refln_intensity_u
+      "_diffrn_radiation_type",
+      "_diffrn_radiation_wavelength",
+      "_diffrn_refln_index_h",
+      "_diffrn_refln_index_k",
+      "_diffrn_refln_index_l",
+      "_diffrn_refln_intensity_net",
+      "_diffrn_refln_intensity_u"
     ]
     optional : [
-      _chemical_formula_moiety, _chemical_formula_sum, _shelx_hkl_file
+      "_chemical_formula_moiety",
+      "_chemical_formula_sum",
+      "_shelx_hkl_file"
     ]
-  - name: atom_data
+  - name: "atom_data"
     required : [
-      _atom_site_label, _atom_site_type_symbol, _atom_site_fract_x, _atom_site_fract_y, _atom_site_fract_z,
-      _atom_site_U_iso_or_equiv, _atom_site_adp_type, _atom_site_occupancy
+      "_atom_site_label",
+      "_atom_site_type_symbol",
+      "_atom_site_fract_x",
+      "_atom_site_fract_y",
+      "_atom_site_fract_z",
+      "_atom_site_U_iso_or_equiv",
+      "_atom_site_adp_type",
+      "_atom_site_occupancy"
     ]
     optional : [
-      _atom_type_symbol, _atom_type_scat_dispersion_real,
-      _atom_type_scat_dispersion_imag, _atom_type_scat_dispersion_source, _space_group_crystal_system,
-      _atom_site_refinement_flags_posn, _atom_site_aniso_label, _atom_site_aniso_U_11, _atom_site_aniso_U_22,
-      _atom_site_aniso_U_33, _atom_site_aniso_U_12, _atom_site_aniso_U_13, _atom_site_aniso_U_23,
-      _iucr_refine_instructions_details, _shelx_res_file
+      "_atom_type_symbol",
+      "_atom_type_scat_dispersion_real",
+      "_atom_type_scat_dispersion_imag",
+      "_atom_type_scat_dispersion_source",
+      "_space_group_crystal_system",
+      "_atom_site_refinement_flags_posn",
+      "_atom_site_aniso_label",
+      "_atom_site_aniso_U_11",
+      "_atom_site_aniso_U_22",
+      "_atom_site_aniso_U_33",
+      "_atom_site_aniso_U_12",
+      "_atom_site_aniso_U_13",
+      "_atom_site_aniso_U_23",
+      "_iucr_refine_instructions_details",
+      "_shelx_res_file"
+    ]
+  - name: all_olex_optional
+    optional : [
+      "_audit_creation_date",
+      "_audit_creation_method",
+      "_audit_contact_author_address",
+      "_audit_contact_author_email",
+      "_audit_contact_author_name",
+      "_audit_contact_author_phone",
+      "_publ_contact_author_id_orcid",
+      "_publ_section_references",
+      "_chemical_formula_moiety",
+      "_chemical_formula_sum",
+      "_chemical_formula_weight",
+      "_atom_type_symbol",
+      "_atom_type_scat_dispersion_real",
+      "_atom_type_scat_dispersion_imag",
+      "_atom_type_scat_source",
+      "_atom_type_scat_dispersion_source",
+      "_space_group_crystal_system",
+      "_space_group_IT_number",
+      "_space_group_name_H-M_alt",
+      "_space_group_name_Hall",
+      "_space_group_symop_id",
+      "_space_group_symop_operation_xyz",
+      "_symmetry_Int_Tables_number",
+      "_cell_length_a",
+      "_cell_length_b",
+      "_cell_length_c",
+      "_cell_angle_alpha",
+      "_cell_angle_beta",
+      "_cell_angle_gamma",
+      "_cell_volume",
+      "_cell_formula_units_Z",
+      "_cell_measurement_temperature",
+      "_exptl_absorpt_coefficient_mu",
+      "_exptl_crystal_density_diffrn",
+      "_exptl_crystal_F_000",
+      "_diffrn_reflns_av_R_equivalents",
+      "_diffrn_reflns_av_unetI/netI",
+      "_diffrn_reflns_Laue_measured_fraction_full",
+      "_diffrn_reflns_Laue_measured_fraction_max",
+      "_diffrn_reflns_limit_h_max",
+      "_diffrn_reflns_limit_h_min",
+      "_diffrn_reflns_limit_k_max",
+      "_diffrn_reflns_limit_k_min",
+      "_diffrn_reflns_limit_l_max",
+      "_diffrn_reflns_limit_l_min",
+      "_diffrn_reflns_number",
+      "_diffrn_reflns_point_group_measured_fraction_full",
+      "_diffrn_reflns_point_group_measured_fraction_max",
+      "_diffrn_reflns_theta_full",
+      "_diffrn_reflns_theta_max",
+      "_diffrn_reflns_theta_min",
+      "_diffrn_measured_fraction_theta_full",
+      "_diffrn_measured_fraction_theta_max",
+      "_diffrn_radiation_type",
+      "_diffrn_radiation_wavelength",
+      "_reflns_Friedel_coverage",
+      "_reflns_limit_h_max",
+      "_reflns_limit_h_min",
+      "_reflns_limit_k_max",
+      "_reflns_limit_k_min",
+      "_reflns_limit_l_max",
+      "_reflns_limit_l_min",
+      "_reflns_number_gt",
+      "_reflns_number_total",
+      "_reflns_threshold_expression",
+      "_computing_molecular_graphics",
+      "_computing_publication_material",
+      "_computing_structure_refinement",
+      "_refine_diff_density_max",
+      "_refine_diff_density_min",
+      "_refine_diff_density_rms",
+      "_refine_ls_d_res_high",
+      "_refine_ls_d_res_low",
+      "_refine_ls_goodness_of_fit_ref",
+      "_refine_ls_hydrogen_treatment",
+      "_refine_ls_matrix_type",
+      "_refine_ls_number_constraints",
+      "_refine_ls_number_parameters",
+      "_refine_ls_number_reflns",
+      "_refine_ls_number_restraints",
+      "_refine_ls_R_factor_all",
+      "_refine_ls_R_factor_gt",
+      "_refine_ls_restrained_S_all",
+      "_refine_ls_shift/su_max",
+      "_refine_ls_shift/su_mean",
+      "_refine_ls_structure_factor_coef",
+      "_refine_ls_weighting_details",
+      "_refine_ls_weighting_scheme",
+      "_refine_ls_wR_factor_gt",
+      "_refine_ls_wR_factor_ref",
+      "_olex2_refinement_description",
+      "_olex2_refine_details",
+      "_atom_site_label",
+      "_atom_site_type_symbol",
+      "_atom_site_fract_x",
+      "_atom_site_fract_y",
+      "_atom_site_fract_z",
+      "_atom_site_U_iso_or_equiv",
+      "_atom_site_adp_type",
+      "_atom_site_occupancy",
+      "_atom_site_refinement_flags_posn",
+      "_atom_site_aniso_label",
+      "_atom_site_aniso_U_11",
+      "_atom_site_aniso_U_22",
+      "_atom_site_aniso_U_33",
+      "_atom_site_aniso_U_12",
+      "_atom_site_aniso_U_13",
+      "_atom_site_aniso_U_23",
+      "_geom_bond_atom_site_label_1",
+      "_geom_bond_atom_site_label_2",
+      "_geom_bond_distance",
+      "_geom_bond_site_symmetry_2",
+      "_geom_bond_publ_flag",
+      "_geom_angle_atom_site_label_1",
+      "_geom_angle_atom_site_label_2",
+      "_geom_angle_atom_site_label_3",
+      "_geom_angle",
+      "_geom_angle_site_symmetry_1",
+      "_geom_angle_site_symmetry_3",
+      "_geom_angle_publ_flag",
+      "_diffrn_refln_index_h",
+      "_diffrn_refln_index_k",
+      "_diffrn_refln_index_l",
+      "_diffrn_refln_intensity_net",
+      "_diffrn_refln_intensity_u",
+      "_iucr_refine_fcf_details",
+      "_iucr_refine_instructions_details",
+      "_olex2_submission_special_instructions"
     ]
