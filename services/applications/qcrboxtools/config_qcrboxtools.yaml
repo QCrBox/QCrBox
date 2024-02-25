@@ -1,0 +1,77 @@
+#
+# Configuration for the application 'qcrboxtools'
+#
+name: "QCrBoxTools"
+slug: "qcrboxtools"
+version: "0.0.5"
+description: "Collection of tools that work with cif files"
+url: "https://github.com/QCrBox/QCrBoxTools"
+
+commands:
+  - name: "replace_structure_from_cif"
+    implemented_as: "CLI"  # other options: "python_callable"
+    parameters:
+      - name: "input_cif_path"
+        type: "str"
+        default_value: None
+      - name: "structure_cif_path"
+        type: "str"
+        default_value: None
+
+  - name: "check_structure_convergence"
+    implemented_as: "CLI"  # other options: "python_callable"
+    parameters:
+      - name: "cif1_path"
+        type: "str"
+        default_value: None
+      - name: "cif2_path"
+        type: "str"
+        default_value: None
+      - name: "max_abs_position"
+        type: "float"
+        default_value: None
+      - name: "max_position_su"
+        type: "float"
+        default_value: None
+      - name: "max_abs_uij"
+        type: "float"
+        default_value: None
+      - name: "max_uij_su"
+        type: "float"
+        default_value: None
+      - name: "output_json_path"
+        type: "str"
+        default_value: None
+
+  - name: "iso2aniso"
+    implemented_as: "CLI"  # other options: "python_callable"
+    parameters:
+      - name: "cif_path"
+        type: str
+        default_value: null
+      - name: "cif_dataset"
+        type: int
+        default_value: 0
+      - name: "select_names"
+        type: str
+        default_value: null
+        required: False
+      - name: "select_elements"
+        type: str
+        default_value: null
+        required: False
+      - name: "select_regexes"
+        type: str
+        default_value: null
+        required: False
+
+  - name: "to_unified_cif"
+    implemented_as: "CLI"  # other options: "python_callable"
+    parameters:
+      - name: "input_cif_path"
+        type: "str"
+        default_value: None
+      - name: "custom_category_list"
+        type: "str"
+        default_value: None
+        required: False
