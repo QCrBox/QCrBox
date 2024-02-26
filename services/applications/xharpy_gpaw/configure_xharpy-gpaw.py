@@ -1,11 +1,12 @@
-import subprocess
-import shutil
 import os
+import shutil
+import subprocess
 from pathlib import Path
 
-from qcrbox.registry.client import QCrBoxRegistryClient
-from qcrboxtools.cif.file_converter.hkl import cif2hkl4
 from qcrboxtools.cif.cif2cif import cif_file_unified_yml_instr, cif_file_unify_split
+from qcrboxtools.cif.file_converter.hkl import cif2hkl4
+
+from qcrbox.registry.client import QCrBoxRegistryClient
 
 YAML_PATH = '/opt/qcrbox/config_xharpy-gpaw.yaml'
 
