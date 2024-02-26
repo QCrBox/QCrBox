@@ -150,7 +150,7 @@ def update_build_tasks(
         new_tasks = [
             task_build_qcrbox_python_package(dry_run),
         ]
-    elif component == "qcrboxtools":
+    elif component == "pyqcrboxtools":
         new_tasks = [
             task_clone_qcrboxtools_repo(dry_run),
             task_build_qcrboxtools_python_package(dry_run),
@@ -162,7 +162,9 @@ def update_build_tasks(
                 update_build_tasks(existing_tasks, dep, docker_project, with_deps=with_deps, dry_run=dry_run)
             if component == "base-ancestor":
                 update_build_tasks(existing_tasks, "pyqcrbox", docker_project, with_deps=with_deps, dry_run=dry_run)
-                update_build_tasks(existing_tasks, "qcrboxtools", docker_project, with_deps=with_deps, dry_run=dry_run)
+                update_build_tasks(
+                    existing_tasks, "pyqcrboxtools", docker_project, with_deps=with_deps, dry_run=dry_run
+                )
 
     for task in new_tasks:
         existing_tasks[task.name] = task
