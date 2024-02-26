@@ -45,6 +45,7 @@ commands:
         required: False
     required_cif_entry_sets: ["structure", "full_refinement"]
     merge_cif_su: True
+    custom_cif_categories: ["shelx"]
 
 cif_entry_sets:
   - name: "structure"
@@ -64,6 +65,7 @@ cif_entry_sets:
     required: [
       "_atom_site_aniso_label", "_atom_site_aniso_U_11", "_atom_site_aniso_U_22", "_atom_site_aniso_U_33",
       "_atom_site_aniso_U_12", "_atom_site_aniso_U_13", "_atom_site_aniso_U_23", "_atom_type_symbol",
-      "_atom_type_scat_dispersion_real", "_atom_type_scat_dispersion_imag", "_diffrn_radiation_wavelength" #,
-      #"_refln_index_h", "_refln_index_k", "_refln_index_l"
+      "_atom_type_scat_dispersion_real", "_atom_type_scat_dispersion_imag", "_diffrn_radiation_wavelength",
+      "_atom_site_adp_type", "_atom_site_occupancy"
     ]
+    optional: ["_shelx_hkl_file"]
