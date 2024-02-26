@@ -70,7 +70,7 @@ jobs:
       - name: Print ruff version
         uses: chartboost/ruff-action@v1
         with:
-          args: version
+          args: --version
       - uses: chartboost/ruff-action@v1
         with:
           args: check --config qcrbox/pyproject.toml
