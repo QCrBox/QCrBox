@@ -39,7 +39,8 @@ def download_executable(url, target_dir):
     except KeyError:
         msg = (
             "Please make sure that the environment variables QCRBOX_SHELX_DOWNLOAD_USERNAME "
-            "and QCRBOX_SHELX_DOWNLOAD_PASSWORD are defined and set to the correct values."
+            "and QCRBOX_SHELX_DOWNLOAD_PASSWORD are defined and set to the correct values. "
+            "The login details are the same as for manual downloads at https://shelx.uni-goettingen.de/download.php"
         )
         logger.error(msg)
         sys.exit(1)
@@ -50,7 +51,8 @@ def download_executable(url, target_dir):
         if response.status_code == 401:
             msg += (
                 "Please make sure that the environment variables QCRBOX_SHELX_DOWNLOAD_USERNAME "
-                "and QCRBOX_SHELX_DOWNLOAD_PASSWORD are set to the correct values."
+                "and QCRBOX_SHELX_DOWNLOAD_PASSWORD are set to the correct values. The login details "
+                "are the same as for manual downloads at https://shelx.uni-goettingen.de/download.php"
             )
         logger.error(msg)
         sys.exit(1)
