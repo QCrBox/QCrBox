@@ -1,7 +1,7 @@
 version: "${QCRBOX_COMPOSE_FILE_VERSION:?Must set env var QCRBOX_COMPOSE_FILE_VERSION}"
 
 services:
-  olex2-linux:
+  olex2:
     image: qcrbox/olex2-linux:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}
     volumes:
       - ./shared_files:${QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH}
