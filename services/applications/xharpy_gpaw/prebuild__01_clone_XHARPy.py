@@ -7,4 +7,3 @@ TARGET_DIR = Path(__file__).absolute().parent / "XHARPy"
 subprocess.call(
     f'git -C "{TARGET_DIR}" pull || git clone --depth 1 https://github.com/Niolon/XHARPy.git "{TARGET_DIR}"', shell=True
 )
-
