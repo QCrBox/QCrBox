@@ -17,6 +17,8 @@ commands:
       - name: "structure_cif_path"
         type: "str"
         default_value: None
+    optional_cif_entries: ["all_unified"]
+    merge_cif_su: False # as this is the format qcrbox gives out of the box -> the last two lines mean nothing changes
 
   - name: "check_structure_convergence"
     implemented_as: "CLI"  # other options: "python_callable"
@@ -42,6 +44,15 @@ commands:
       - name: "output_json_path"
         type: "str"
         default_value: None
+    required_cif_entries: [
+      "_cell.length_a", "_cell.length_b", "_cell.length_c", "_cell.angle_alpha",
+      "_cell.angle_beta", "_cell.angle_gamma", "_atom_site.label", "_atom_site.type_symbol",
+      "_atom_site.fract_x", "_atom_site.fract_y", "_atom_site.fract_z", "_atom_site_aniso.label",
+      "_atom_site_aniso.type_symbol", "_atom_site_aniso.u_11", "_atom_site_aniso.u_22",
+      "_atom_site_aniso.u_33", "_atom_site_aniso.u_12", "_atom_site_aniso.u_13",
+      "_atom_site_aniso.u_23"
+      ]
+    merge_cif_su: True
 
   - name: "iso2aniso"
     implemented_as: "CLI"  # other options: "python_callable"
@@ -64,6 +75,12 @@ commands:
         type: str
         default_value: null
         required: False
+    required_cif_entries: [
+      "_cell.length_a", "_cell.length_b", "_cell.length_c", "_cell.angle_alpha",
+      "_cell.angle_beta", "_cell.angle_gamma", "_atom_site.label", "_atom_site.u_iso_or_equiv"
+    ]
+    optional_cif_entries: ["all_unified"]
+    merge_cif_su: False
 
   - name: "to_unified_cif"
     implemented_as: "CLI"  # other options: "python_callable"
@@ -75,3 +92,5 @@ commands:
         type: "str"
         default_value: None
         required: False
+    optional_cif_entries: ["all_unified"]
+    merge_sus: False

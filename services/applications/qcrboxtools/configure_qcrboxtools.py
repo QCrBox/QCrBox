@@ -4,7 +4,7 @@ client = QCrBoxRegistryClient()
 qcrboxtools_obj = client.register_application("QCrBoxTools", version="0.0.5")
 
 external_cmd_replace = ExternalCommand(
-    "python", "qcrbtls_replace_structure_glue.py",
+    "python", "/opt/qcrbox/qcrbtls_replace_structure_glue.py",
     Param("input_cif_path"),
     "0",
     Param("structure_cif_path"),
@@ -14,7 +14,7 @@ external_cmd_replace = ExternalCommand(
 qcrboxtools_obj.register_external_command("replace_structure_from_cif", external_cmd_replace)
 
 external_cmd_check_converged = ExternalCommand(
-    "python", "qcrbtls_check_convergence_glue.py",
+    "python", "/opt/qcrbox/qcrbtls_check_convergence_glue.py",
     Param("cif1_path"),
     "0",
     Param("cif2_path"),
@@ -30,7 +30,7 @@ external_cmd_check_converged = ExternalCommand(
 qcrboxtools_obj.register_external_command("check_structure_convergence", external_cmd_check_converged)
 
 external_cmd_cif_iso2aniso = ExternalCommand(
-    "python", "qcrbtls_iso2aniso_glue.py",
+    "python", "/opt/qcrbox/qcrbtls_iso2aniso_glue.py",
     Param("cif_path"),
     Param("cif_dataset"),
     "--select_names", Param("select_names"),
@@ -41,7 +41,7 @@ external_cmd_cif_iso2aniso = ExternalCommand(
 qcrboxtools_obj.register_external_command("iso2aniso", external_cmd_cif_iso2aniso)
 
 external_cmd_to_unified_cif = ExternalCommand(
-    "python", "qcrbtls_to_unified_cif_glue.py",
+    "python", "/opt/qcrbox/qcrbtls_to_unified_cif_glue.py",
     Param("input_cif_path"), Param("output_cif_path"),
     "--custom_categories", Param("custom_category_list")
 )

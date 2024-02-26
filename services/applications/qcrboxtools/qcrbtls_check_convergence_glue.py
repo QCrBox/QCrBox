@@ -2,6 +2,9 @@ import argparse
 import json
 from pathlib import Path
 from qcrboxtools.analyse.convergence import check_converged
+from qcrboxtools.cif.cif2cif import cif_file_unified_yml_instr
+
+YML_PATH = '/opt/qcrbox/config_qcrboxtools.yaml'
 
 def parse_optional_float(value):
     """
@@ -33,8 +36,23 @@ def main():
 
     args = parser.parse_args()
 
-    cif1_dataset = int(args.cif1_dataset) if args.cif1_dataset.isdigit() else args.cif1_dataset
-    cif2_dataset = int(args.cif2_dataset) if args.cif2_dataset.isdigit() else args.cif2_dataset
+    converted1_path = args.cif1_path.parent / 'converted1.cif'
+
+    converted2_path = args.cif2_path.parent / 'converted2.cif'
+
+    cif_file_unified_yml_instr(
+        args.cif1_path,
+        converted1_path,
+        YML_PATH,
+        'check_structure_convergence'
+    )
+
+    cif_file_unified_yml_instr(
+        args.cif2_path,
+        converted2_path,
+        YML_PATH,
+        'check_structure_convergence'
+    )
 
     criteria = {
         'max abs position': args.max_abs_position,
@@ -51,12 +69,16 @@ def main():
     criteria = {k: v for k, v in criteria.items() if v is not None}
 
     is_converged = check_converged(
-        args.cif1_path,
-        cif1_dataset,
-        args.cif2_path,
-        cif2_dataset,
+        converted1_path,
+        args.cif1_dataset,
+        converted2_path,
+        args.cif2_dataset,
         criteria
     )
+
+    # clean up the converted structure
+    converted1_path.unlink()
+    converted2_path.unlink()
 
     result = {"converged": is_converged}
     with args.output.open('w') as f:

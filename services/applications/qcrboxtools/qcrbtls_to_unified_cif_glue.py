@@ -1,6 +1,6 @@
 import argparse
 from pathlib import Path
-from typing import Optional, List, Union
+from typing import Optional, List
 from qcrboxtools.cif.cif2cif import cif_file_unify_split  # Adjust import path as necessary
 
 def main():
