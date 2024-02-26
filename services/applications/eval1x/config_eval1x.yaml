@@ -1,0 +1,31 @@
+#
+# Configuration for the application 'eval1x'
+#
+name: "Eval14/15"
+slug: "eval1x"
+version: "20231113"
+description: "Eval14 and eval15 are integration methods for single crystal X-ray diffraction on area detectors. Both methods use knowledge about the exact experimental setup."
+url: "http://www.crystal.chem.uu.nl/distr/eval/"
+
+commands:
+  - name: "sample_cmd"
+    implemented_as: "CLI"  # other options: "python_callable"
+    parameters:
+      - name: "msg"
+        type: "str"
+        default_value: None
+      - name: "some_number"
+        type: "int"
+        default_value: 42
+        required: false
+
+  - name: "sample_cmd_v2"
+    implemented_as: "CLI"  # other options: "python_callable"
+    parameters:
+      - name: "msg"
+        type: str
+        default_value: null
+      - name: "some_number"
+        type: int
+        default_value: 42
+        required: False

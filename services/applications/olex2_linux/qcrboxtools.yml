@@ -1,9 +1,0 @@
-name: qcrboxtools
-channels:
-  - conda-forge
-dependencies:
-  - numpy
-  - python=3.10
-  - cctbx
-
-prefix: /home/niklas/anaconda3/envs/qcrboxtools
