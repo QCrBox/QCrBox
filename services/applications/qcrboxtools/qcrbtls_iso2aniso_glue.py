@@ -1,6 +1,6 @@
 import argparse
 from pathlib import Path
-from typing import Optional, List
+from typing import List, Optional
 
 from qcrboxtools.cif.iso2aniso import cif_iso2aniso
 
@@ -61,9 +61,7 @@ def main():
 
     args = parser.parse_args()
 
-    cif_dataset = (
-        int(args.cif_dataset) if args.cif_dataset.isdigit() else args.cif_dataset
-    )
+    cif_dataset = int(args.cif_dataset) if args.cif_dataset.isdigit() else args.cif_dataset
 
     # Call the function with parsed arguments
     cif_iso2aniso(
