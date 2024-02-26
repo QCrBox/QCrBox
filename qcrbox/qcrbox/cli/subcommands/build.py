@@ -32,14 +32,6 @@ def build_components(no_deps: bool, dry_run: bool, components: list[str]):
     run_tasks(tasks)
 
 
-def make_task_for_component(component_name: str, docker_project: DockerProject, with_deps: bool, dry_run: bool):
-    if component_name == "pyqcrbox":
-        task = task_build_qcrbox_python_package(dry_run)
-    else:
-        task = task_build_docker_image(component_name, docker_project, with_deps=with_deps, dry_run=dry_run)
-    return task
-
-
 def make_action_to_copy_file(src, dest):
     def action_copy_file():
         # logger.debug(f"Copying file: {src} -> {dest}")
