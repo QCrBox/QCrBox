@@ -23,35 +23,20 @@ import argparse
 
 from qcrboxtools.cif.merge import replace_structure_from_cif
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(
-        prog='QCrBoxTools cif cli',
-        description='combine cifs via module call'
-    )
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(prog="QCrBoxTools cif cli", description="combine cifs via module call")
+
+    parser.add_argument("cif_path", help="Path to cif file where the structure is copied TO")
+    parser.add_argument("cif_dataset", help="Name of dataset in cif file where the structure is copied TO")
+
+    parser.add_argument("structure_cif_path", help="Path to cif file where the structure is copied FROM")
+
+    parser.add_argument("structure_cif_dataset", help="Name of dataset in cif file where the structure is copied FROM")
 
     parser.add_argument(
-        'cif_path',
-        help="Path to cif file where the structure is copied TO"
-    )
-    parser.add_argument(
-        'cif_dataset',
-        help="Name of dataset in cif file where the structure is copied TO"
-    )
-
-    parser.add_argument(
-        'structure_cif_path',
-        help="Path to cif file where the structure is copied FROM"
-    )
-
-    parser.add_argument(
-        'structure_cif_dataset',
-        help="Name of dataset in cif file where the structure is copied FROM"
-    )
-
-    parser.add_argument(
-        '--output_cif_path',
+        "--output_cif_path",
         help="Path to where the combined output cif will be written (default: cif_path)",
-        default=None
+        default=None,
     )
 
     args = parser.parse_args()
@@ -72,9 +57,5 @@ if __name__ == '__main__':
         structure_cif_dataset = args.structure_cif_dataset
 
     replace_structure_from_cif(
-        args.cif_path,
-        cif_dataset,
-        args.structure_cif_path,
-        structure_cif_dataset,
-        output_cif_path
+        args.cif_path, cif_dataset, args.structure_cif_path, structure_cif_dataset, output_cif_path
     )

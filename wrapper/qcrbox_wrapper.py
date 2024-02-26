@@ -30,7 +30,7 @@ from collections import namedtuple
 from itertools import count
 from typing import Dict, List, Tuple
 
-QCrBoxParameter = namedtuple('QCrBoxParameter', ['name', 'dtype'])
+QCrBoxParameter = namedtuple("QCrBoxParameter", ["name", "dtype"])
 QCrBoxParameter.__doc__ = """
 Represents a parameter for calling a QCrBoxCommand in QCrBox.
 
@@ -40,8 +40,8 @@ Attributes:
 """
 
 QCrBoxCalculationStatus = namedtuple(
-    'QCrBoxCalculationStatus',
-    ['calculation_id', 'command_id', 'started_at', 'status', 'status_details']
+    "QCrBoxCalculationStatus",
+    ["calculation_id", "command_id", "started_at", "status", "status_details"],
 )
 QCrBoxCalculationStatus.__doc__ = """
 Represents the status of a calculation in QCrBox.
@@ -54,6 +54,7 @@ Attributes:
     status_details (dict): Status details of the calculation
 """
 
+
 class QCrBoxWrapper:
     """
     Provides an interface to interact with the QCrBox server.
@@ -64,7 +65,7 @@ class QCrBoxWrapper:
         server_addr: str,
         server_port: int,
         port_dict: Dict[str, str] = None,
-        gui_commands: List[Tuple[str, str]] = None
+        gui_commands: List[Tuple[str, str]] = None,
     ):
         """
         Initializes the QCrBoxWrapper instance.
@@ -87,13 +88,12 @@ class QCrBoxWrapper:
         else:
             self.gui_commands = gui_commands
 
-
         with urllib.request.urlopen(f"{self.server_url}") as r:
-            answers = json.loads(r.read().decode('UTF-8'))
+            answers = json.loads(r.read().decode("UTF-8"))
 
-        if 'QCrBox' not in answers:
+        if "QCrBox" not in answers:
             print(answers)
-            raise ConnectionError(f'Cannot connect to QCrBox Registry Server at {self.server_url}')
+            raise ConnectionError(f"Cannot connect to QCrBox Registry Server at {self.server_url}")
 
     @property
     def server_url(self) -> str:
@@ -103,10 +103,10 @@ class QCrBoxWrapper:
         Returns:
             str: The server URL.
         """
-        return f'http://{self.server_addr}:{self.server_port}'
+        return f"http://{self.server_addr}:{self.server_port}"
 
     @property
-    def applications(self) -> List['QCrBoxApplication']:
+    def applications(self) -> List["QCrBoxApplication"]:
         """
         Retrieves a list of applications from the QCrBox server.
 
@@ -114,16 +114,17 @@ class QCrBoxWrapper:
             List[QCrBoxApplication]: A list of QCrBoxApplication namedtuples.
         """
         with urllib.request.urlopen(f"{self.server_url}/applications/") as r:
-            answers = json.loads(r.read().decode('UTF-8'))
+            answers = json.loads(r.read().decode("UTF-8"))
         return [
             QCrBoxApplication(
-                int(ans['id']),
-                ans['name'],
-                ans['version'],
-                ans['description'],
-                ans['url'],
-                self.commands
-            ) for ans in answers
+                int(ans["id"]),
+                ans["name"],
+                ans["version"],
+                ans["description"],
+                ans["url"],
+                self.commands,
+            )
+            for ans in answers
         ]
 
     @property
@@ -139,7 +140,7 @@ class QCrBoxWrapper:
         return {application.name: application for application in application_list}
 
     @property
-    def commands(self) -> List['QCrBoxCommand']:
+    def commands(self) -> List["QCrBoxCommand"]:
         """
         Retrieves a list of commands from the QCrBox server.
 
@@ -148,19 +149,23 @@ class QCrBoxWrapper:
         """
 
         with urllib.request.urlopen(f"{self.server_url}/commands/") as r:
-            answers = json.loads(r.read().decode('UTF-8'))
+            answers = json.loads(r.read().decode("UTF-8"))
 
         commands = [
             QCrBoxCommand(
-                int(ans['id']), ans['name'], int(ans['application_id']),
-                [QCrBoxParameter(key, dtype) for key, dtype in ans['parameters'].items()],
-                self
-            ) for ans in answers
+                int(ans["id"]),
+                ans["name"],
+                int(ans["application_id"]),
+                [QCrBoxParameter(key, dtype) for key, dtype in ans["parameters"].items()],
+                self,
+            )
+            for ans in answers
         ]
         return commands
 
     def __repr__(self) -> str:
-        return f'<QCrBoxWrapper(server_addr={self.server_addr}, server_port={self.server_port})>'
+        return f"<QCrBoxWrapper(server_addr={self.server_addr}, server_port={self.server_port})>"
+
 
 class QCrBoxApplication:
     """
@@ -181,7 +186,7 @@ class QCrBoxApplication:
         version: str,
         description: str,
         url: str,
-        server_commands: List['QCrBoxCommand']
+        server_commands: List["QCrBoxCommand"],
     ) -> None:
         """
         Initializes the QCrBoxApplication instance.
@@ -210,25 +215,25 @@ class QCrBoxApplication:
         app_cmds = [cmd for cmd in server_commands if cmd.application_id == self.id]
         method_strings = []
         for cmd in app_cmds:
-            parameter_strings = (f'{par.name}: {par.dtype}' for par in cmd.parameters)
-            base_indent = '\n                    '
-            all_par_string = (
-                base_indent + (',' + base_indent).join(parameter_strings) + '\n                '
-            )
-            method_strings.append(f'{cmd.name}({all_par_string})')
+            parameter_strings = (f"{par.name}: {par.dtype}" for par in cmd.parameters)
+            base_indent = "\n                    "
+            all_par_string = base_indent + ("," + base_indent).join(parameter_strings) + "\n                "
+            method_strings.append(f"{cmd.name}({all_par_string})")
             setattr(self, cmd.name, cmd)
 
-        linker = '\n\n                '
+        linker = "\n\n                "
 
-        self.__doc__ = textwrap.dedent(f"""
+        self.__doc__ = textwrap.dedent(
+            f"""
             Represents the {self.name} application (v. {self.version}) in QCrBox
 
             Methods:
                 {linker.join(method_strings)}
-            """)
+            """
+        )
 
     def __repr__(self) -> str:
-        return f'{self.name}()'
+        return f"{self.name}()"
 
 
 class QCrBoxCommand:
@@ -242,7 +247,7 @@ class QCrBoxCommand:
         name: str,
         application_id: int,
         parameters: List[QCrBoxParameter],
-        wrapper_parent: QCrBoxWrapper
+        wrapper_parent: QCrBoxWrapper,
     ) -> None:
         """
         Initializes the QCrBoxCommand instance.
@@ -271,7 +276,7 @@ class QCrBoxCommand:
         """
         return [par.name for par in self.parameters]
 
-    def __call__(self, *args, **kwargs) -> 'QCrBoxCalculation':
+    def __call__(self, *args, **kwargs) -> "QCrBoxCalculation":
         """
         Allows the command object to be called as a function with provided arguments.
 
@@ -282,15 +287,11 @@ class QCrBoxCommand:
         Returns:
             QCrBoxCalculation: The resulting calculation object from executing the command.
         """
-        arguments = {
-            key: str(val) for key, val in zip(self.par_name_list, args)
-        }
+        arguments = {key: str(val) for key, val in zip(self.par_name_list, args)}
 
         invalid_args = [arg for arg in kwargs if arg not in self.par_name_list]
         if len(invalid_args) > 0:
-            raise NameError(
-                f'This method got one or more invalid keywords: {", ".join(invalid_args)}'
-            )
+            raise NameError(f'This method got one or more invalid keywords: {", ".join(invalid_args)}')
 
         overbooked_args = [arg for arg in kwargs if arg in arguments]
 
@@ -300,23 +301,20 @@ class QCrBoxCommand:
         arguments.update({key: str(val) for key, val in kwargs.items()})
 
         data_dict = {
-            'action': 'invoke_command',
-            'payload': {
-                'command_id': self.id,
-                'arguments': arguments
-            }
+            "action": "invoke_command",
+            "payload": {"command_id": self.id, "arguments": arguments},
         }
-        req = urllib.request.Request(f'{self._server_url}/invoke_command/', method="POST")
-        req.add_header('Content-Type', 'application/json')
+        req = urllib.request.Request(f"{self._server_url}/invoke_command/", method="POST")
+        req.add_header("Content-Type", "application/json")
         data = json.dumps(data_dict)
-        data = data.encode('UTF-8')
+        data = data.encode("UTF-8")
         r = urllib.request.urlopen(req, data=data)
         answer = json.loads(r.read())
-        if not answer['status'] == 'success':
+        if not answer["status"] == "success":
             print(answer)
-            raise ConnectionError('Command not successfully send')
+            raise ConnectionError("Command not successfully send")
 
-        #TODO Probably replace all of this with a returned adress from server
+        # TODO Probably replace all of this with a returned adress from server
         def gui_address(app_id, cmd_name):
             app_id_to_name = {app.id: app.name for app in self.wrapper_parent.applications}
             app_name = app_id_to_name[app_id]
@@ -325,25 +323,23 @@ class QCrBoxCommand:
                 port = self.wrapper_parent.port_dict[app_name]
                 return f"http://{address}:{port}/vnc.html?path=vnc&autoconnect=true&resize=remote"
             return None
+
         gui_addr = gui_address(self.application_id, self.name)
         if gui_addr is not None:
             webbrowser.open(gui_addr)
 
-        return QCrBoxCalculation(answer['payload']['calculation_id'], self)
+        return QCrBoxCalculation(answer["payload"]["calculation_id"], self)
 
     def __repr__(self) -> str:
-        return f'QCrBoxCommand({self.name})'
+        return f"QCrBoxCommand({self.name})"
+
 
 class QCrBoxCalculation:
     """
     Represents a calculation performed on the QCrBox server.
     """
 
-    def __init__(
-        self,
-        calc_id: int,
-        calculation_parent: 'QCrBoxCommand'
-    ):
+    def __init__(self, calc_id: int, calculation_parent: "QCrBoxCommand"):
         """
         Initializes the QCrBoxCalculation instance.
 
@@ -364,14 +360,14 @@ class QCrBoxCalculation:
             QCrBoxCalculationStatus: The status of the calculation.
         """
         with urllib.request.urlopen(f"{self._server_url}/calculations/{self.id}") as r:
-            answers = json.loads(r.read().decode('UTF-8'))
+            answers = json.loads(r.read().decode("UTF-8"))
 
         return QCrBoxCalculationStatus(
-            int(answers['id']),
-            int(answers['command_id']),
-            answers['started_at'],
-            answers['status_details']['status'],
-            answers['status_details']
+            int(answers["id"]),
+            int(answers["command_id"]),
+            answers["started_at"],
+            answers["status_details"]["status"],
+            answers["status_details"],
         )
 
     def wait_while_running(self, sleep_time: float) -> None:
@@ -384,11 +380,12 @@ class QCrBoxCalculation:
         sleep_time : float
             Time in seconds to wait between status checks.
         """
-        while self.status.status == 'running':
+        while self.status.status == "running":
             time.sleep(sleep_time)
 
     def __repr__(self) -> str:
-        return f'<QCrBoxCalculation(id={self.id}, parent_command={self.calculation_parent.name})>'
+        return f"<QCrBoxCalculation(id={self.id}, parent_command={self.calculation_parent.name})>"
+
 
 class QCrBoxPathHelper:
     """
@@ -420,8 +417,8 @@ class QCrBoxPathHelper:
     def __init__(
         self,
         local_path: pathlib.Path,
-        qcrbox_path: pathlib.Path = pathlib.PurePosixPath('/mnt/qcrbox/shared_files'),
-        base_dir: pathlib.Path = None
+        qcrbox_path: pathlib.Path = pathlib.PurePosixPath("/mnt/qcrbox/shared_files"),
+        base_dir: pathlib.Path = None,
     ) -> None:
         """
         Initializes the QCrBoxPathHelper instance.
@@ -513,6 +510,6 @@ class QCrBoxPathHelper:
             (as a pathlib.Path object) and its equivalent in the QCrBox file system
             (as a POSIX-style string path).
         """
-        next_folder = f'step_{next(self.step_counter)}'
+        next_folder = f"step_{next(self.step_counter)}"
         self.path_to_local(next_folder).mkdir(exist_ok=True)
         return self.path_to_pair(next_folder)
