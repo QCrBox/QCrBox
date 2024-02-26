@@ -67,11 +67,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - name: Print ruff version
+        uses: chartboost/ruff-action@v1
+        with:
+          args: --version
       - uses: chartboost/ruff-action@v1
         with:
-          options: check
-          args: --config qcrbox/pyproject.toml
+          args: check --config qcrbox/pyproject.toml
       - uses: chartboost/ruff-action@v1
         with:
-          options: format
-          args: --diff --config qcrbox/pyproject.toml
+          args: format --diff --config qcrbox/pyproject.toml

@@ -21,6 +21,6 @@ def list_cif_items(cif_path: Union[str, Path]) -> List[str]:
     """
     cif_content = Path(cif_path).read_text()
     # Remove multiline strings that are denoted between two semicolons
-    cif_content = '\n'.join(cif_content.split('\n;')[::2])
+    cif_content = "\n".join(cif_content.split("\n;")[::2])
 
-    return re.findall(r'\n\s*(\_[A-Za-z0-9/._\-]+)', cif_content)
+    return re.findall(r"\n\s*(\_[A-Za-z0-9/._\-]+)", cif_content)
