@@ -33,8 +33,16 @@ def download_executable(url, target_dir):
         )
         return
 
-    username = os.environ["QCRBOX_SHELX_DOWNLOAD_USERNAME"]
-    password = os.environ["QCRBOX_SHELX_DOWNLOAD_PASSWORD"]
+    try:
+        username = os.environ["QCRBOX_SHELX_DOWNLOAD_USERNAME"]
+        password = os.environ["QCRBOX_SHELX_DOWNLOAD_PASSWORD"]
+    except KeyError:
+        msg = (
+            "Please make sure that the environment variables QCRBOX_SHELX_DOWNLOAD_USERNAME "
+            "and QCRBOX_SHELX_DOWNLOAD_PASSWORD are defined and set to the correct values."
+        )
+        logger.error(msg)
+        sys.exit(1)
 
     response = requests.get(url, stream=True, auth=HTTPBasicAuth(username, password))
     if response.status_code != 200:
