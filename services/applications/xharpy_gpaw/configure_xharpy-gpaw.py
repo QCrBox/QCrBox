@@ -23,7 +23,7 @@ def atom_form_fact_gpaw(
 ):
     work_cif_path = Path(input_cif_path).parent / "work.cif"
     cif_file_unified_yml_instr(input_cif_path, work_cif_path, YAML_PATH, 'atom_form_fact_gpaw')
-    subprocess.call([
+    subprocess.check_call([
         "python", "-m", "xharpy.cli_tsc",
         "--cif_name", str(work_cif_path),
         "--tsc_name", str(output_tsc_path),
@@ -48,16 +48,16 @@ def ha_refine(
         shutil.rmtree(output_dir)
     output_dir.mkdir()
 
-    cif2hkl4(input_cif_path, 0, "shelx.hkl")
+    cif2hkl4(input_cif_path, 0, output_dir / "shelx.hkl")
 
-    work_cif_path = input_cif_path.parent / "work.cif"
+    work_cif_path = output_dir / "work.cif"
     cif_file_unified_yml_instr(input_cif_path, work_cif_path, YAML_PATH, 'ha_refine')
 
-    subprocess.call([
+    subprocess.check_call([
         "python", "-m", "xharpy.cli_refine",
         "--cif_name", work_cif_path,
         "--cif_index", "0",
-        "--hkl_name", "./shelx.hkl",
+        "--hkl_name", output_dir / "shelx.hkl",
         "--lst_name", "./dummy.lst",
         "--extinction", "none",
         "--xc", functional,
