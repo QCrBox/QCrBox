@@ -1,0 +1,8 @@
+version: "${QCRBOX_COMPOSE_FILE_VERSION:?Must set env var QCRBOX_COMPOSE_FILE_VERSION}"
+
+services:
+  qcrboxtools:
+    build:
+      context: services/applications/qcrboxtools/
+      args:
+        QCRBOX_DOCKER_TAG: ${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}

@@ -1,0 +1,96 @@
+#
+# Configuration for the application 'qcrboxtools'
+#
+name: "QCrBoxTools"
+slug: "qcrboxtools"
+version: "0.0.5"
+description: "Collection of tools that work with cif files"
+url: "https://github.com/QCrBox/QCrBoxTools"
+
+commands:
+  - name: "replace_structure_from_cif"
+    implemented_as: "CLI"  # other options: "python_callable"
+    parameters:
+      - name: "input_cif_path"
+        type: "str"
+        default_value: None
+      - name: "structure_cif_path"
+        type: "str"
+        default_value: None
+    optional_cif_entries: ["all_unified"]
+    merge_cif_su: False # as this is the format qcrbox gives out of the box -> the last two lines mean nothing changes
+
+  - name: "check_structure_convergence"
+    implemented_as: "CLI"  # other options: "python_callable"
+    parameters:
+      - name: "cif1_path"
+        type: "str"
+        default_value: None
+      - name: "cif2_path"
+        type: "str"
+        default_value: None
+      - name: "max_abs_position"
+        type: "float"
+        default_value: None
+      - name: "max_position_su"
+        type: "float"
+        default_value: None
+      - name: "max_abs_uij"
+        type: "float"
+        default_value: None
+      - name: "max_uij_su"
+        type: "float"
+        default_value: None
+      - name: "output_json_path"
+        type: "str"
+        default_value: None
+    required_cif_entries: [
+      "_cell.length_a", "_cell.length_b", "_cell.length_c", "_cell.angle_alpha",
+      "_cell.angle_beta", "_cell.angle_gamma", "_atom_site.label", "_atom_site.type_symbol",
+      "_atom_site.fract_x", "_atom_site.fract_y", "_atom_site.fract_z", "_atom_site_aniso.label",
+      "_atom_site_aniso.type_symbol", "_atom_site_aniso.u_11", "_atom_site_aniso.u_22",
+      "_atom_site_aniso.u_33", "_atom_site_aniso.u_12", "_atom_site_aniso.u_13",
+      "_atom_site_aniso.u_23"
+      ]
+    merge_cif_su: True
+
+  - name: "iso2aniso"
+    implemented_as: "CLI"  # other options: "python_callable"
+    parameters:
+      - name: "cif_path"
+        type: str
+        default_value: null
+      - name: "cif_dataset"
+        type: int
+        default_value: 0
+      - name: "select_names"
+        type: str
+        default_value: null
+        required: False
+      - name: "select_elements"
+        type: str
+        default_value: null
+        required: False
+      - name: "select_regexes"
+        type: str
+        default_value: null
+        required: False
+    required_cif_entries: [
+      "_cell.length_a", "_cell.length_b", "_cell.length_c", "_cell.angle_alpha",
+      "_cell.angle_beta", "_cell.angle_gamma", "_atom_site.label", "_atom_site.u_iso_or_equiv"
+    ]
+    optional_cif_entries: ["all_unified"]
+    merge_cif_su: False
+
+  - name: "to_unified_cif"
+    implemented_as: "CLI"  # other options: "python_callable"
+    parameters:
+      - name: "input_cif_path"
+        type: "str"
+        default_value: None
+      - name: "custom_category_list"
+        type: "str"
+        default_value: None
+        required: False
+    optional_cif_entries: ["all_unified"]
+    merge_sus: False
