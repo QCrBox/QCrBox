@@ -3,6 +3,7 @@ import bz2
 import os
 import sys
 from pathlib import Path
+from time import sleep
 from urllib.parse import urlparse
 
 import requests
@@ -67,6 +68,7 @@ def download_shelx_executables():
     target_dir = here.joinpath("shelx_executables")
     for url in load_shelx_executable_urls():
         download_executable(url, target_dir)
+        sleep(1.0)  # apply rate limiting to avoid 'max retries exceeded' error
 
 
 if __name__ == "__main__":
