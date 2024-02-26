@@ -3,134 +3,118 @@ import os
 import shutil
 from pathlib import Path
 
+from qcrboxtools.cif.cif2cif import cif_file_unified_yml_instr, cif_file_unify_split
 from qcrboxtools.cif.merge import replace_structure_from_cif
 from qcrboxtools.robots.olex2 import Olex2Socket
-from qcrboxtools.cif.cif2cif import cif_file_unified_yml_instr, cif_file_unify_split
 
 from qcrbox.registry.client import ExternalCommand, Param, QCrBoxRegistryClient
 
-YAML_PATH = './config_olex2.yaml'
+YAML_PATH = "./config_olex2.yaml"
 
-def prepare__interactive(
-    input_cif,
-    work_folder
-):
+
+def prepare__interactive(input_cif, work_folder):
     work_folder = Path(work_folder)
-    work_cif = work_folder / 'work.cif'
+    work_cif = work_folder / "work.cif"
 
     # create a cif file using the requested cif entries in olex2 format
     # will most likely be handled internally by QCrBox in the future
-    cif_file_unified_yml_instr(
-        input_cif,
-        work_cif,
-        YAML_PATH,
-        'interactive'
-    )
+    cif_file_unified_yml_instr(input_cif, work_cif, YAML_PATH, "interactive")
 
-def finalise__interactive(
-    work_folder
-):
+
+def finalise__interactive(work_folder):
     work_folder = Path(work_folder)
 
-    newest_cif_path = next(reversed(sorted(
-        (file_path for file_path in work_folder.glob('*.cif') if file_path.name != 'output.cif'),
-        key=os.path.getmtime
-    )))
+    newest_cif_path = next(
+        reversed(
+            sorted(
+                (
+                    file_path
+                    for file_path in work_folder.glob("*.cif")
+                    if file_path.name != "output.cif"
+                ),
+                key=os.path.getmtime,
+            )
+        )
+    )
 
     # TODO if not existing, rerun newest res with ACTA
 
     # Go to unified keywords and split SUs into separate entries
     cif_file_unify_split(
-        newest_cif_path,
-        work_folder / 'output.cif',
-        custom_categories=['iucr', 'olex2']
+        newest_cif_path, work_folder / "output.cif", custom_categories=["iucr", "olex2"]
     )
 
-def toparams__interactive(
-    work_folder,
-    par_json,
-    par_folder
-):
+
+def toparams__interactive(work_folder, par_json, par_folder):
     work_folder = Path(work_folder)
     par_folder = Path(par_folder)
 
-    newest_cif_path = next(reversed(sorted(
-        (file_path for file_path in work_folder.glob('*.cif') if file_path.name != 'output.cif'),
-        key=os.path.getmtime
-    )))
-
-    cif_file_unify_split(
-        newest_cif_path,
-        par_folder / 'combine.cif',
-        custom_categories=['iucr', 'olex2']
+    newest_cif_path = next(
+        reversed(
+            sorted(
+                (
+                    file_path
+                    for file_path in work_folder.glob("*.cif")
+                    if file_path.name != "output.cif"
+                ),
+                key=os.path.getmtime,
+            )
+        )
     )
 
-    tojson = {'structure_cif': '$par_folder/combine.cif'}
-    cif_text = (par_folder / 'combine.cif').read_text().lower()
-    if 'hirshfeld' in cif_text or 'aspheric' in cif_text:
+    cif_file_unify_split(
+        newest_cif_path, par_folder / "combine.cif", custom_categories=["iucr", "olex2"]
+    )
+
+    tojson = {"structure_cif": "$par_folder/combine.cif"}
+    cif_text = (par_folder / "combine.cif").read_text().lower()
+    if "hirshfeld" in cif_text or "aspheric" in cif_text:
         try:
-            newest_tsc_path = next(reversed(sorted(
-                work_folder.glob('*.ts*'), key=os.path.getmtime
-            )))
-            shutil.copy(newest_tsc_path, (par_folder / 'work').with_suffix(newest_tsc_path.suffix))
-            tojson['tsc'] = '$par_folder/work' + newest_tsc_path.suffix
+            newest_tsc_path = next(
+                reversed(sorted(work_folder.glob("*.ts*"), key=os.path.getmtime))
+            )
+            shutil.copy(
+                newest_tsc_path,
+                (par_folder / "work").with_suffix(newest_tsc_path.suffix),
+            )
+            tojson["tsc"] = "$par_folder/work" + newest_tsc_path.suffix
         except StopIteration:
             pass
 
     json_path = Path(par_json)
-    with json_path.open('w', encoding='UTF-8') as fobj:
+    with json_path.open("w", encoding="UTF-8") as fobj:
         json.dump(tojson, fobj, indent=4)
 
 
-def redo__interactive(
-    input_cif,
-    work_folder,
-    par_json,
-    par_folder
-):
+def redo__interactive(input_cif, work_folder, par_json, par_folder):
     work_folder = Path(work_folder)
     par_folder = Path(par_folder)
-    with open(par_json, 'r', encoding='UTF-8') as fobj:
+    with open(par_json, "r", encoding="UTF-8") as fobj:
         par_dict = json.load(fobj)
     for key in par_dict:
         if isinstance(par_dict[key], str):
-            par_dict[key] = par_dict[key].replace('$par_folder', str(par_folder))
+            par_dict[key] = par_dict[key].replace("$par_folder", str(par_folder))
 
-    merge_cif = work_folder / 'merge.cif'
+    merge_cif = work_folder / "merge.cif"
 
-    replace_structure_from_cif(
-        input_cif,
-        0,
-        par_dict['structure_cif'],
-        0,
-        merge_cif
-    )
+    replace_structure_from_cif(input_cif, 0, par_dict["structure_cif"], 0, merge_cif)
 
-    work_cif = work_folder / 'work.cif'
+    work_cif = work_folder / "work.cif"
 
-    cif_file_unified_yml_instr(
-        merge_cif,
-        work_cif,
-        YAML_PATH,
-        'interactive'
-    )
+    cif_file_unified_yml_instr(merge_cif, work_cif, YAML_PATH, "interactive")
 
     olex2_socket = Olex2Socket(structure_path=work_cif)
-    if 'tsc' in par_dict:
-        tsc_path = Path(par_dict['tsc'])
-        new_tsc_path = (work_folder / 'work').with_suffix(tsc_path.suffix)
+    if "tsc" in par_dict:
+        tsc_path = Path(par_dict["tsc"])
+        new_tsc_path = (work_folder / "work").with_suffix(tsc_path.suffix)
         shutil.copy(tsc_path, new_tsc_path)
         olex2_socket.tsc_path = new_tsc_path
 
     _ = olex2_socket.refine(n_cycles=10, refine_starts=5)
 
     cif_file_unify_split(
-        work_cif,
-        work_folder / 'output.cif',
-        custom_categories=['iucr', 'olex2']
+        work_cif, work_folder / "output.cif", custom_categories=["iucr", "olex2"]
     )
-
-
 
 
 client = QCrBoxRegistryClient()
@@ -141,34 +125,49 @@ application.register_external_command(
 )
 
 external_cmd_refine_iam = ExternalCommand(
-    "python", "/opt/qcrbox/olex2_glue_cli.py", "refine",
-    "--structure_path", Param("cif_path"),
-    "--n_cycles", Param("ls_cycles"),
-    "--weight_cycles", Param("weight_cycles")
+    "python",
+    "/opt/qcrbox/olex2_glue_cli.py",
+    "refine",
+    "--structure_path",
+    Param("cif_path"),
+    "--n_cycles",
+    Param("ls_cycles"),
+    "--weight_cycles",
+    Param("weight_cycles"),
 )
 
 application.register_external_command("refine_iam", external_cmd_refine_iam)
 
 external_cmd_refine_tsc = ExternalCommand(
-    "python", "/opt/qcrbox/olex2_glue_cli.py", "refine",
-    "--structure_path", Param("cif_path"),
-    "--tsc_path", Param("tsc_path"),
-    "--n_cycles", Param("ls_cycles"),
-    "--weight_cycles", Param("weight_cycles")
+    "python",
+    "/opt/qcrbox/olex2_glue_cli.py",
+    "refine",
+    "--structure_path",
+    Param("cif_path"),
+    "--tsc_path",
+    Param("tsc_path"),
+    "--n_cycles",
+    Param("ls_cycles"),
+    "--weight_cycles",
+    Param("weight_cycles"),
 )
 
 application.register_external_command("refine_tsc", external_cmd_refine_tsc)
 
 external_cmd_arbitry_cmds = ExternalCommand(
-    "python", "/opt/qcrbox/olex2_glue_cli.py", "cmds",
-    "--structure_path", Param("cif_path"),
-    "--cmd_file_path", Param("cmd_file_path")
+    "python",
+    "/opt/qcrbox/olex2_glue_cli.py",
+    "cmds",
+    "--structure_path",
+    Param("cif_path"),
+    "--cmd_file_path",
+    Param("cmd_file_path"),
 )
 
 application.register_external_command("run_cmds_file", external_cmd_arbitry_cmds)
 
-application.register_python_callable('prepare__interactive', prepare__interactive)
-application.register_python_callable('finalise__interactive', finalise__interactive)
-application.register_python_callable('toparams__interactive', toparams__interactive)
-application.register_python_callable('redo__interactive', redo__interactive)
+application.register_python_callable("prepare__interactive", prepare__interactive)
+application.register_python_callable("finalise__interactive", finalise__interactive)
+application.register_python_callable("toparams__interactive", toparams__interactive)
+application.register_python_callable("redo__interactive", redo__interactive)
 client.run()
