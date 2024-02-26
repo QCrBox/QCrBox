@@ -32,14 +32,6 @@ def build_components(no_deps: bool, dry_run: bool, components: list[str]):
     run_tasks(tasks)
 
 
-def make_task_for_component(component_name: str, docker_project: DockerProject, with_deps: bool, dry_run: bool):
-    if component_name == "qcrbox":
-        task = task_build_qcrbox_python_package(dry_run)
-    else:
-        task = task_build_docker_image(component_name, docker_project, with_deps=with_deps, dry_run=dry_run)
-    return task
-
-
 def make_action_to_copy_file(src, dest):
     def action_copy_file():
         # logger.debug(f"Copying file: {src} -> {dest}")
@@ -146,11 +138,11 @@ def populate_build_tasks(
 def update_build_tasks(
     existing_tasks: dict, component: str, docker_project: DockerProject, with_deps: bool, dry_run: bool
 ):
-    if component == "qcrbox":
+    if component == "pyqcrbox":
         new_tasks = [
             task_build_qcrbox_python_package(dry_run),
         ]
-    elif component == "qcrboxtools":
+    elif component == "pyqcrboxtools":
         new_tasks = [
             task_clone_qcrboxtools_repo(dry_run),
             task_build_qcrboxtools_python_package(dry_run),
@@ -161,8 +153,10 @@ def update_build_tasks(
             for dep in docker_project.get_direct_dependencies(component, include_build_deps=True):
                 update_build_tasks(existing_tasks, dep, docker_project, with_deps=with_deps, dry_run=dry_run)
             if component == "base-ancestor":
-                update_build_tasks(existing_tasks, "qcrbox", docker_project, with_deps=with_deps, dry_run=dry_run)
-                update_build_tasks(existing_tasks, "qcrboxtools", docker_project, with_deps=with_deps, dry_run=dry_run)
+                update_build_tasks(existing_tasks, "pyqcrbox", docker_project, with_deps=with_deps, dry_run=dry_run)
+                update_build_tasks(
+                    existing_tasks, "pyqcrboxtools", docker_project, with_deps=with_deps, dry_run=dry_run
+                )
 
     for task in new_tasks:
         existing_tasks[task.name] = task
