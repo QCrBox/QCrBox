@@ -1,7 +1,9 @@
 import argparse
 from pathlib import Path
-from typing import Optional, List
-from qcrboxtools.cif.cif2cif import cif_file_unify_split  # Adjust import path as necessary
+from typing import List, Optional
+
+from qcrboxtools.cif.cif2cif import cif_file_unify_split
+
 
 def main():
     parser = argparse.ArgumentParser(description="Process CIF files with optional modifications.")

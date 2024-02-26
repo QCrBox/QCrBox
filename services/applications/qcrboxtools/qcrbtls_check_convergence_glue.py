@@ -1,6 +1,7 @@
 import argparse
 import json
 from pathlib import Path
+
 from qcrboxtools.analyse.convergence import check_converged
 from qcrboxtools.cif.cif2cif import cif_file_unified_yml_instr
 
