@@ -442,7 +442,7 @@ macrox_string = """<xl_macro
 """
 
 
-def create_new_file():
+def create_new_olex2_zip_file():
     logger.debug(f"Downloading Olex2 archive from: {url}")
     r = requests.get(url, timeout=600)
     zip_io = io.BytesIO(r.content)
@@ -460,7 +460,7 @@ def main():
         if not pathlib.Path("olex2_files/olex2c-linux64"):
             logger.error("Could not find ./olex2_file/olex2c-linux64, this file is necessary")
             sys.exit(1)
-        create_new_file()
+        create_new_olex2_zip_file()
 
 
 if __name__ == "__main__":
