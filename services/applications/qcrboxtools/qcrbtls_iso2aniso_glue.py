@@ -1,6 +1,6 @@
 import argparse
-from typing import Optional, List
 from pathlib import Path
+from typing import Optional, List
 
 from qcrboxtools.cif.iso2aniso import cif_iso2aniso
 
