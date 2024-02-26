@@ -1,0 +1,13 @@
+name: xharpy_gpaw
+channels:
+  - conda-forge
+dependencies:
+  - gpaw-data
+  - numpy
+  - ase
+  - gpaw
+  - jax
+  - pandas
+  - scipy
+  - cctbx
+prefix: /home/niklas/anaconda3/envs/xharpy_gpaw

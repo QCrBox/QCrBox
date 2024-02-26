@@ -1,0 +1,69 @@
+#
+# Configuration for the application 'xharpy-gpaw'
+#
+name: "XHARPy-GPAW"
+slug: "xharpy-gpaw"
+version: "0.2.0"
+description: "A pure Python library that enables the calculation of and the refinement with custom atomic form factors from periodic calculations with GPAW."
+url: "https://github.com/Niolon/XHARPy"
+
+commands:
+  - name: "atom_form_fact_gpaw"
+    implemented_as: "python_callable"  # other options: "python_callable"
+    parameters:
+      - name: "input_cif_path"
+        type: "str"
+        default_value: None
+      - name: "output_tsc_path"
+        type: "str"
+        default_value: None
+      - name: "functional"
+        type: "str"
+        default_value: None
+      - name: "gridspacing"
+        type: "float"
+        default_value: 0.16
+        required: False
+    required_cif_entry_sets: ["structure"]
+    merge_cif_su: True
+
+  - name: "ha_refine"
+    implemented_as: "python_callable"  # other options: "python_callable"
+    parameters:
+      - name: "input_cif_path"
+        type: "str"
+        default_value: None
+      - name: "output_tsc_path"
+        type: "str"
+        default_value: None
+      - name: "functional"
+        type: "str"
+        default_value: None
+      - name: "gridspacing"
+        type: "float"
+        default_value: 0.16
+        required: False
+    required_cif_entry_sets: ["structure", "full_refinement"]
+    merge_cif_su: True
+
+cif_entry_sets:
+  - name: "structure"
+    required: [
+      "_cell_length_a", "_cell_length_b", "_cell_length_c", "_cell_angle_alpha",
+      "_cell_angle_beta", "_cell_angle_gamma", "_space_group_symop_operation_xyz",
+      "_atom_site_label", "_atom_site_type_symbol", "_atom_site_fract_x",
+      "_atom_site_fract_y", "_atom_site_fract_z"
+    ]
+    optional: [ # There is currently no mechanism for either/or. A possibility for resolution is required
+      "_refln_index_h", "_refln_index_k", "_refln_index_l", "_diffrn_refln_index_h",
+      "_diffrn_refln_index_k", "_diffrn_refln_index_l", '_reflns_d_resolution_high',
+      "_diffrn_reflns_theta_max", "_diffrn_radiation_wavelength",
+      "_atom_site_fract_x_su", "_atom_site_fract_y_su", "_atom_site_fract_z_su" # prevent su merging to prevent loss of precision
+    ]
+  - name: "full_refinement"
+    required: [
+      "_atom_site_aniso_label", "_atom_site_aniso_U_11", "_atom_site_aniso_U_22", "_atom_site_aniso_U_33",
+      "_atom_site_aniso_U_12", "_atom_site_aniso_U_13", "_atom_site_aniso_U_23", "_atom_type_symbol",
+      "_atom_type_scat_dispersion_real", "_atom_type_scat_dispersion_imag", "_diffrn_radiation_wavelength" #,
+      #"_refln_index_h", "_refln_index_k", "_refln_index_l"
+    ]
