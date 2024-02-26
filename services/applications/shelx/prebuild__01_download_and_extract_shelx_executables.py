@@ -3,6 +3,7 @@ import bz2
 import os
 import sys
 from pathlib import Path
+from time import sleep
 from urllib.parse import urlparse
 
 import requests
@@ -32,8 +33,17 @@ def download_executable(url, target_dir):
         )
         return
 
-    username = os.environ["QCRBOX_SHELX_DOWNLOAD_USERNAME"]
-    password = os.environ["QCRBOX_SHELX_DOWNLOAD_PASSWORD"]
+    try:
+        username = os.environ["QCRBOX_SHELX_DOWNLOAD_USERNAME"]
+        password = os.environ["QCRBOX_SHELX_DOWNLOAD_PASSWORD"]
+    except KeyError:
+        msg = (
+            "Please make sure that the environment variables QCRBOX_SHELX_DOWNLOAD_USERNAME "
+            "and QCRBOX_SHELX_DOWNLOAD_PASSWORD are defined and set to the correct values. "
+            "The login details are the same as for manual downloads at https://shelx.uni-goettingen.de/download.php"
+        )
+        logger.error(msg)
+        sys.exit(1)
 
     response = requests.get(url, stream=True, auth=HTTPBasicAuth(username, password))
     if response.status_code != 200:
@@ -41,7 +51,8 @@ def download_executable(url, target_dir):
         if response.status_code == 401:
             msg += (
                 "Please make sure that the environment variables QCRBOX_SHELX_DOWNLOAD_USERNAME "
-                "and QCRBOX_SHELX_DOWNLOAD_PASSWORD are set to the correct values."
+                "and QCRBOX_SHELX_DOWNLOAD_PASSWORD are set to the correct values. The login details "
+                "are the same as for manual downloads at https://shelx.uni-goettingen.de/download.php"
             )
         logger.error(msg)
         sys.exit(1)
@@ -67,6 +78,7 @@ def download_shelx_executables():
     target_dir = here.joinpath("shelx_executables")
     for url in load_shelx_executable_urls():
         download_executable(url, target_dir)
+        sleep(1.0)  # apply rate limiting to avoid 'max retries exceeded' error
 
 
 if __name__ == "__main__":

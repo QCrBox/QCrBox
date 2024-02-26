@@ -88,7 +88,6 @@ class DockerProject:
 
         custom_env = os.environ.copy()
         custom_env["QCRBOX_PYTHON_PACKAGE_VERSION"] = get_current_qcrbox_version()
-        custom_env["QCRBOX_SHARED_FILES_DIR_HOST_PATH"] = str(self.repo_root.joinpath("shared_files"))
         logger.debug(f"Current qcrbox version: {custom_env['QCRBOX_PYTHON_PACKAGE_VERSION']}", dry_run=dry_run)
 
         if not dry_run:
