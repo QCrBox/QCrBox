@@ -99,6 +99,6 @@ jobs:
           pytest \
             --cov=pyqcrbox \
             --cov-report=term-missing \
-            --cov-config=.coveragerc
+            --cov-config=.coveragerc \
             -svx \
             pyqcrbox/tests/
