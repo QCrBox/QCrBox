@@ -16,7 +16,9 @@ dynamic = [
 dependencies = [
     "faststream[rabbit, docs]>=0.4.4",
     "hatch",
+    "pydantic",
     "pydantic-settings",
+    "sqlmodel",
 ]
 
 [project.optional-dependencies]
