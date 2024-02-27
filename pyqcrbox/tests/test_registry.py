@@ -4,31 +4,32 @@ import pytest
 from anyio import create_task_group
 from faststream.rabbit import RabbitBroker, TestRabbitBroker
 
+from pyqcrbox import msg_specs, sql_models
 from pyqcrbox.registry import create_client_faststream_app, create_server_faststream_app
 
 
 @pytest.fixture
 def sample_application_cfg():
-    return {
-        "name": "Olex2",
-        "slug": "olex2-linux",
-        "version": "x.y.z",
-        "description": None,
-        "url": "https://www.olexsys.org/olex2/",
-        "email": "helpdesk@olexsys.org",
-    }
+    return sql_models.ApplicationSpec(
+        name="Olex2",
+        slug="olex2_linux",
+        version="x.y.z",
+        description=None,
+        url="https://www.olexsys.org/olex2/",
+        email="helpdesk@olexsys.org",
+    )
 
 
 @pytest.mark.asyncio
 async def test_client_registration_during_startup(sample_application_cfg):
     private_queue_name = "qcrbox_rk_test_client_xyz"
-    expected_registration_message = {
-        "action": "register_application",
-        "payload": {
-            "application_config": sample_application_cfg,
-            "routing_key__registry_to_application": private_queue_name,
-        },
-    }
+    expected_registration_message = msg_specs.RegisterApplication(
+        action="register_application",
+        payload=msg_specs.RegisterApplication.Payload(
+            application_config=sample_application_cfg,
+            routing_key__registry_to_application=private_queue_name,
+        ),
+    ).dict()
 
     broker = RabbitBroker(graceful_timeout=10)
     async with TestRabbitBroker(broker, with_real=False):

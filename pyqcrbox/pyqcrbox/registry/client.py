@@ -5,12 +5,14 @@ import anyio
 from faststream import Logger
 from faststream.rabbit import RabbitBroker
 
+from pyqcrbox import msg_specs, sql_models
+
 from .base import QCrBoxFastStream
 
 
 def create_client_faststream_app(
     broker: RabbitBroker,
-    application_spec: dict,
+    application_spec: sql_models.ApplicationSpec,
     private_queue_name: Optional[str] = None,
     log_level: Optional[int | str] = logging.INFO,
 ) -> QCrBoxFastStream:
@@ -22,9 +24,9 @@ def create_client_faststream_app(
     async def register_application(logger: Logger) -> None:
         logger.info(f"Sending registration request: {application_spec}")
 
-        msg_register_application = dict(
+        msg_register_application = msg_specs.RegisterApplication(
             action="register_application",
-            payload=dict(
+            payload=msg_specs.RegisterApplication.Payload(
                 application_config=application_spec,
                 routing_key__registry_to_application=private_queue,
             ),
@@ -45,6 +47,6 @@ def create_client_faststream_app(
 
 if __name__ == "__main__":  # pragma: no cover
     broker = RabbitBroker(graceful_timeout=10)
-    application_spec = dict(name="Foo", slug="foo", version="0.0.1")
+    application_spec = sql_models.ApplicationSpec(name="Foo", slug="foo", version="0.0.1")
     client_app = create_client_faststream_app(broker, application_spec=application_spec, log_level=logging.DEBUG)
     anyio.run(client_app.run, None, None)
