@@ -19,7 +19,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev-tools = [
+dev = [
+    #
+    # dev tools
     "ipdb",
     "ipython",
     "pre-commit",
@@ -27,26 +29,21 @@ dev-tools = [
     "ruff",
     "setuptools_scm",
     "uv",
-]
-
-lint = [
+    #
+    # linting
     "ruff>=0.2.2",
     "pyupgrade-directories",
-]
-
-static-analysis = [
+    #
+    # static analysis
     "types-PyYAML",
     "types-setuptools",
     "types-ujson",
     "mypy",
-]
-
-testing = [
+    #
+    # testing
     "pytest",
     "pytest-asyncio",
 ]
-
-dev = ["pyqcrbox[dev-tools,lint,static-analysis,testing]"]
 
 docs = [
     "mkdocs",
