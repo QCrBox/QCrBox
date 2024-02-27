@@ -43,7 +43,7 @@ def create_client_faststream_app(
     return client_app
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     broker = RabbitBroker(graceful_timeout=10)
     application_spec = dict(name="Foo", slug="foo", version="0.0.1")
     client_app = create_client_faststream_app(broker, application_spec=application_spec, log_level=logging.DEBUG)
