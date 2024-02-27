@@ -96,9 +96,4 @@ jobs:
       - name: Run the tests
         run: |
           cd pyqcrbox
-          pytest \
-            --cov=pyqcrbox \
-            --cov-report=term-missing \
-            --cov-config=.coveragerc \
-            -svx \
-            tests/
+          pytest -svx --cov-config=.coveragerc ./tests
