@@ -39,6 +39,8 @@ def create_server_faststream_app(
         server_app.increment_processed_message_counter(public_queue)
         return response
 
+    server_app.on_qcrbox_registry = on_qcrbox_registry
+
     return server_app
 
 
