@@ -101,4 +101,4 @@ jobs:
             --cov-report=term-missing \
             --cov-config=.coveragerc \
             -svx \
-            pyqcrbox/tests/
+            tests/
