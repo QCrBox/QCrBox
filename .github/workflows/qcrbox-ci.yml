@@ -94,4 +94,5 @@ jobs:
           pip install ./pyqcrbox[all]
 
       - name: Run the tests
-        run: pytest -svx pyqcrbox/tests/
+        run: |
+          pytest --cov=pyqcrbox --cov-report=term-missing -svx pyqcrbox/tests/
