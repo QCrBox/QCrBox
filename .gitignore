@@ -32,6 +32,9 @@ qcrbox/qcrbox/_version.py
 services/base_images/base_ancestor/qcrbox_dist/qcrbox-*.whl
 services/base_images/base_ancestor/qcrbox_dist/requirements*.txt
 
+# pyqcrbox Python package
+pyqcrbox/pyqcrbox/_version.py
+
 # qcrboxtools Python package
 services/base_images/base_ancestor/qcrbox_dist/qcrboxtools-*.whl
 

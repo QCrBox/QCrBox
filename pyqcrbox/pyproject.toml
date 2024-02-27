@@ -1,0 +1,155 @@
+[project]
+name = "pyqcrbox"
+authors = [
+  { name="Maximilian Albert", email="maximilian.albert@gmail.com" },
+]
+description = "Quantum Crystallography Toolbox"
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+dynamic = [
+    "version",
+]
+dependencies = [
+    "faststream[rabbit, docs]>=0.4.4",
+    "hatch",
+]
+
+[project.optional-dependencies]
+dev-tools = [
+    "ipdb",
+    "ipython",
+    "pre-commit",
+    "reuse",
+    "ruff",
+    "setuptools_scm",
+    "uv",
+]
+
+lint = [
+    "ruff>=0.2.2",
+    "pyupgrade-directories",
+]
+
+static-analysis = [
+    "types-PyYAML",
+    "types-setuptools",
+    "types-ujson",
+    "mypy",
+]
+
+testing = [
+    "pytest",
+    "pytest-asyncio",
+]
+
+dev = ["pyqcrbox[dev-tools,lint,static-analysis,testing]"]
+
+docs = [
+    "mkdocs",
+    "mkdocs-awesome-pages-plugin",
+    "mkdocs-material",
+    "pymdown-extensions",
+]
+
+client = [
+    "faststream[rabbit, docs]>=0.4.4",
+    "tenacity",
+]
+server = [
+    "faststream[rabbit, docs]>=0.4.4",
+    "fastapi",
+    "tenacity",
+    "uvicorn[standard]",
+]
+all = [
+    "pyqcrbox[dev,docs,client,server]",
+]
+
+[project.urls]
+"Repository" = "https://github.com/QCrBox/QCrBox/"
+"Issue Tracker" = "https://github.com/QCrBox/QCrBox/issues"
+
+[project.scripts]
+qcb = "pyqcrbox.cli:entry_point"
+qcrbox-run-registry-server = "pyqcrbox.registry.server:main"
+
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "vcs"
+raw-options = { root = ".." }
+
+[tool.setuptools_scm]
+version_file = "pyqcrbox/_version.py"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "pyqcrbox/_version.py"
+
+[tool.hatch.build.targets.sdist]
+only-include = ["pyqcrbox"]
+
+[tool.hatch.build.targets.wheel]
+only-include = ["pyqcrbox"]
+
+
+[tool.pytest.ini_options]
+filterwarnings =["ignore::DeprecationWarning"]
+
+[tool.mypy]
+strict = true
+python_version = "3.8"
+ignore_missing_imports = true
+install_types = true
+non_interactive = true
+
+# from https://blog.wolt.com/engineering/2021/09/30/professional-grade-mypy-configuration/
+disallow_untyped_defs = true
+no_implicit_optional = true
+check_untyped_defs = true
+warn_return_any = true
+show_error_codes = true
+warn_unused_ignores = true
+
+disallow_incomplete_defs = true
+disallow_untyped_decorators = true
+disallow_any_unimported = false
+
+[tool.ruff]
+line-length = 120
+exclude = ["_version.py"]
+
+[tool.ruff.lint]
+select = [
+    # pycodestyle
+    "E",
+    # Pyflakes
+    "F",
+#    # pyupgrade
+#    "UP",
+#    # flake8-bugbear
+#    "B",
+#    # flake8-simplify
+#    "SIM",
+    # isort
+    "I",
+]
+
+# Ignore `F401`, `F403` (unused imports and * imports) in all `__init__.py` files
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401", "F403"]
+"qcrbox/qcrbox/common/msg_specs/sql_models/**.py" = ["F821"]
+"qcrbox/qcrbox/registry/client/registered_application_client_side.py" = ["F821"]
+"services/applications/olex2_linux/prebuild__01_create_olex2_headless.py" = ["E501"]
+"services/applications/qcrboxtools/qcrbtls_check_convergence_glue.py" = ["E501"]
+
+[tool.ruff.format]
+exclude = ["services/applications/*/configure_*.py"]
+
+[tool.ruff.pydocstyle]
+convention = "google"
