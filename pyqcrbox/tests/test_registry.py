@@ -20,7 +20,7 @@ def sample_application_cfg():
 
 
 @pytest.mark.asyncio
-async def test_server_and_client_v2(sample_application_cfg):
+async def test_client_registration_during_startup(sample_application_cfg):
     private_queue_name = "qcrbox_rk_test_client_xyz"
     expected_registration_message = {
         "action": "register_application",
