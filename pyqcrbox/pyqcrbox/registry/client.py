@@ -9,14 +9,17 @@ from .base import QCrBoxFastStream
 
 
 def create_client_faststream_app(
-    broker: RabbitBroker, log_level: Optional[int | str] = logging.INFO
+    broker: RabbitBroker,
+    application_spec: dict,
+    private_queue_name: Optional[str] = None,
+    log_level: Optional[int | str] = logging.INFO,
 ) -> QCrBoxFastStream:
     client_app = QCrBoxFastStream(broker, title="QCrBox Client", log_level=log_level)
-    private_queue = "super-secret-private-client-queue"
+    client_app.application_spec = application_spec
+    private_queue = private_queue_name or "super-secret-private-client-queue"
 
     @client_app.after_startup
     async def register_application(logger: Logger) -> None:
-        application_spec = dict(name="Foo", slug="foo", version="0.0.1")
         logger.info(f"Sending registration request: {application_spec}")
 
         msg_register_application = dict(
@@ -42,5 +45,6 @@ def create_client_faststream_app(
 
 if __name__ == "__main__":
     broker = RabbitBroker(graceful_timeout=10)
-    client_app = create_client_faststream_app(broker, log_level=logging.DEBUG)
+    application_spec = dict(name="Foo", slug="foo", version="0.0.1")
+    client_app = create_client_faststream_app(broker, application_spec=application_spec, log_level=logging.DEBUG)
     anyio.run(client_app.run, None, None)
