@@ -91,7 +91,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install pyqcrbox[all]
+          pip install ./pyqcrbox[all]
 
       - name: Run the tests
         run: pytest -svx pyqcrbox/tests/
