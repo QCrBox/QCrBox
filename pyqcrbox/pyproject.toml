@@ -43,6 +43,7 @@ dev = [
     # testing
     "pytest",
     "pytest-asyncio",
+    "pytest-cov",
 ]
 
 docs = [
