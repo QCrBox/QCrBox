@@ -1,8 +1,8 @@
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 
 from sqlalchemy import UniqueConstraint
-from sqlmodel import Field
+from sqlmodel import Field, Relationship
 
 from .qcrbox_base_sql_model import QCrBoxBaseSQLModel
 
@@ -23,3 +23,5 @@ class ApplicationSpecDB(ApplicationSpec, table=True):
     # Additional fields stored in the database that are not provided in the incoming message
     id: Optional[int] = Field(default=None, primary_key=True)
     registered_at: datetime = Field(default_factory=datetime.now)
+
+    commands: List["CommandSpecDB"] = Relationship(back_populates="application")
