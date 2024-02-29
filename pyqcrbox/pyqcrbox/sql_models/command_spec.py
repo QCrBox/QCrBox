@@ -8,7 +8,8 @@ from .qcrbox_base_sql_model import QCrBoxBaseSQLModel
 
 class CommandSpec(QCrBoxBaseSQLModel):
     name: str
-    description: str
+    implemented_as: str  # TODO: use enum to limit the allowed values to 'CLI', 'python_callable', 'interactive', ...
+    description: str = ""
 
 
 class CommandSpecDB(CommandSpec, table=True):
