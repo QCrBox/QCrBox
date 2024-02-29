@@ -36,18 +36,20 @@ def create_db_tables(engine):
 class DatabaseSettings(BaseModel):
     url: SQLiteDsn = "sqlite:///:memory:"
     connect_args: dict = {"check_same_thread": False}
-    echo: bool = True
+    echo: bool = False
 
-    @property
-    def engine(self) -> sqlalchemy.Engine:
-        engine = create_sqlmodel_engine(url=self.url, echo=self.echo, connect_args=tuple(self.connect_args.items()))
+    def get_engine(self, url: Optional[SQLiteDsn] = None, echo: Optional[bool] = None) -> sqlalchemy.Engine:
+        url = url if url is not None else self.url
+        echo = echo if echo is not None else self.echo
+        return create_sqlmodel_engine(url=url, echo=echo, connect_args=tuple(self.connect_args.items()))
 
-        return engine
-
-    def get_session(self, init_db: bool = False) -> sqlmodel.Session:
+    def get_session(
+        self, url: Optional[SQLiteDsn] = None, echo: Optional[bool] = None, init_db: bool = False
+    ) -> sqlmodel.Session:
+        engine = self.get_engine(url=url, echo=echo)
         if init_db:
-            create_db_tables(self.engine)
-        return Session(self.engine)
+            create_db_tables(engine)
+        return Session(engine)
 
 
 class RabbitMQSettings(BaseModel):
