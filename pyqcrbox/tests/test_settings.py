@@ -1,7 +1,7 @@
 from sqlmodel import select
 
 from pyqcrbox import settings
-from pyqcrbox.sql_models import ParameterSpecDB
+from pyqcrbox.sql_models import CommandSpecDB, ParameterSpecDB
 
 
 def test_default_database_url():
@@ -37,3 +37,30 @@ def test_save_parameters_to_db(tmp_db_url):
         assert rec_2.dtype == "str"
         assert rec_2.required is False
         assert rec_2.description == "The second parameter"
+
+
+def test_save_command_to_db(tmp_db_url):
+    """
+    Create a command spec and save it to the database.
+    """
+    with settings.db.get_session(url=tmp_db_url, init_db=True) as session:
+        param1 = ParameterSpecDB(name="cif_path", dtype="str")
+        param2 = ParameterSpecDB(name="ls_cycles", dtype="int", required=False)  # default_value=5
+        param3 = ParameterSpecDB(name="weight_cycles", dtype="int", required=False)  # default_value=5
+        cmd = CommandSpecDB(name="refine_iam", implemented_as="CLI", parameters=[param1, param2, param3])
+        session.add(cmd)
+        session.commit()
+
+    with settings.db.get_session(url=tmp_db_url) as session:
+        result = session.exec(select(CommandSpecDB)).all()
+        assert len(result) == 1
+
+        rec_1 = result[0]
+
+        assert rec_1.name == "refine_iam"
+        assert rec_1.implemented_as == "CLI"
+
+        assert len(rec_1.parameters) == 3
+        assert rec_1.parameters[0].name == "cif_path"
+        assert rec_1.parameters[1].name == "ls_cycles"
+        assert rec_1.parameters[2].name == "weight_cycles"
