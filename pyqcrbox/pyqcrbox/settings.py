@@ -1,9 +1,22 @@
-from typing import Optional
+from typing import Annotated, Optional
 
-from pydantic import BaseModel, computed_field
+from pydantic import BaseModel, UrlConstraints, computed_field
+from pydantic_core import MultiHostUrl
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 __all__ = ["settings"]
+
+SQLiteDsn = Annotated[
+    MultiHostUrl,
+    UrlConstraints(
+        host_required=True,
+        allowed_schemes=["sqlite", "sqlite+aiosqlite"],
+    ),
+]
+
+
+class DatabaseSettings(BaseModel):
+    url: SQLiteDsn = "sqlite:///:memory:"
 
 
 class RabbitMQSettings(BaseModel):
@@ -28,6 +41,7 @@ class QCrBoxSettings(BaseSettings):
     )
 
     rabbitmq: RabbitMQSettings = RabbitMQSettings()
+    db: DatabaseSettings = DatabaseSettings()
 
 
 settings = QCrBoxSettings()
