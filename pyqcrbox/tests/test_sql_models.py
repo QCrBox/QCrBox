@@ -13,7 +13,7 @@ def test_default_database_url():
 
 def test_save_parameter_spec_to_db(tmp_db_url):
     """
-    Create a couple of parameter specs, save them to the database, retrieve them again and verify the result.
+    Create parameter specs, save them to the database, retrieve them and check the result.
     """
     with settings.db.get_session(url=tmp_db_url, init_db=True) as session:
         param1 = ParameterSpecDB(name="first_param", dtype="int")
@@ -41,7 +41,7 @@ def test_save_parameter_spec_to_db(tmp_db_url):
 
 def test_save_command_spec_to_db(tmp_db_url):
     """
-    Create a command spec and save it to the database.
+    Create a command spec, save it to the database, retrieve it and check the result.
     """
     with settings.db.get_session(url=tmp_db_url, init_db=True) as session:
         param1 = ParameterSpecDB(name="cif_path", dtype="str")
@@ -68,7 +68,7 @@ def test_save_command_spec_to_db(tmp_db_url):
 
 def test_save_application_spec_to_db(tmp_db_url):
     """
-    Create an application spec and save it to the database.
+    Create an application spec, save it to the database, retrieve it and check the result.
     """
     with settings.db.get_session(url=tmp_db_url, init_db=True) as session:
         param1 = ParameterSpecDB(name="cif_path", dtype="str")
