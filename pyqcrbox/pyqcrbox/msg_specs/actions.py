@@ -11,7 +11,7 @@ __all__ = ["VALID_QCRBOX_ACTIONS", "RegisterApplication"]
 
 class RegisterApplication(QCrBoxBaseAction):
     class Payload(BaseModel):
-        application_config: sql_models.ApplicationSpec
+        application_config: sql_models.ApplicationSpecCreate
         routing_key__registry_to_application: str
 
     action: Literal["register_application"]

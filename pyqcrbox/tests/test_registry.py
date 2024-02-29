@@ -10,7 +10,7 @@ from pyqcrbox.registry import create_client_faststream_app, create_server_fastst
 
 @pytest.fixture
 def sample_application_cfg():
-    return sql_models.ApplicationSpec(
+    return sql_models.ApplicationSpecCreate(
         name="Olex2",
         slug="olex2_linux",
         version="x.y.z",

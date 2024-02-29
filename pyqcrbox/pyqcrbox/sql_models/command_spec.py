@@ -1,29 +1,37 @@
+from enum import Enum
 from typing import List, Optional
 
+from pydantic import BaseModel
 from sqlmodel import Field, Relationship, UniqueConstraint
 
-from .application_spec import ApplicationSpecDB
+from .parameter_spec import ParameterSpecCreate, ParameterSpecDB
 from .qcrbox_base_sql_model import QCrBoxBaseSQLModel
 
 
-class CommandSpec(QCrBoxBaseSQLModel):
+class ImplementedAs(str, Enum):
+    cli = "CLI"
+    python_callable = "python_callable"
+    gui = "GUI"
+
+
+class CommandSpecBase(BaseModel):
     name: str
-    implemented_as: str  # TODO: use enum to limit the allowed values to 'CLI', 'python_callable', 'interactive', ...
+    implemented_as: ImplementedAs
+    interactive: bool = False
     description: str = ""
+    # TODO: verify that implemented_as == "GUI" when interactive == True
 
 
-class CommandSpecDB(CommandSpec, table=True):
+class CommandSpecCreate(CommandSpecBase):
+    parameters: List[ParameterSpecCreate] = []
+
+
+class CommandSpecDB(CommandSpecBase, QCrBoxBaseSQLModel, table=True):
     __tablename__ = "command"
-    __table_args__ = (
-        UniqueConstraint(
-            "name",
-            "application_id",
-        ),
-    )
+    __table_args__ = (UniqueConstraint("name", "application_id"),)
 
-    # Additional fields stored in the database that are not provided in the incoming message
     id: Optional[int] = Field(default=None, primary_key=True)
 
     application_id: Optional[int] = Field(default=None, foreign_key="application.id")
-    application: ApplicationSpecDB = Relationship(back_populates="commands")
-    parameters: List["ParameterSpecDB"] = Relationship(back_populates="command")
+    application: "ApplicationSpecDB" = Relationship(back_populates="commands")
+    parameters: List[ParameterSpecDB] = Relationship(back_populates="command")
