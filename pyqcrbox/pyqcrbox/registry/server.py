@@ -7,7 +7,7 @@ from faststream.rabbit import RabbitBroker
 from sqlmodel import create_engine
 
 from pyqcrbox import settings
-from pyqcrbox.msg_specs.sql_models import QCrBoxBaseSQLModel
+from pyqcrbox.sql_models import QCrBoxBaseSQLModel
 
 from .base import QCrBoxFastStream
 

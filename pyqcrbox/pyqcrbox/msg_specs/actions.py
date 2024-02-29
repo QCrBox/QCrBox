@@ -3,7 +3,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel
 
-from . import sql_models
+from .. import sql_models
 from .base import QCrBoxBaseAction
 
 __all__ = ["VALID_QCRBOX_ACTIONS", "RegisterApplication"]

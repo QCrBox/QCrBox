@@ -1,4 +1,4 @@
-from pyqcrbox.msg_specs.sql_models import CommandSpecDB, ParameterSpecDB
+from pyqcrbox.sql_models import CommandSpecDB, ParameterSpecDB
 
 
 def test_initialise_parameters():

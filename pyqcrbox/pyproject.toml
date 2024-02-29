@@ -145,8 +145,8 @@ select = [
 # Ignore `F401`, `F403` (unused imports and * imports) in all `__init__.py` files
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401", "F403"]
-"**/pyqcrbox/msg_specs/sql_models/application_spec.py" = ["F821"]
-"**/pyqcrbox/msg_specs/sql_models/command_spec.py" = ["F821"]
+"**/pyqcrbox/sql_models/application_spec.py" = ["F821"]
+"**/pyqcrbox/sql_models/command_spec.py" = ["F821"]
 "qcrbox/qcrbox/common/msg_specs/sql_models/**.py" = ["F821"]
 "qcrbox/qcrbox/registry/client/registered_application_client_side.py" = ["F821"]
 "services/applications/olex2_linux/prebuild__01_create_olex2_headless.py" = ["E501"]
