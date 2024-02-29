@@ -17,6 +17,7 @@ SQLiteDsn = Annotated[
 
 class DatabaseSettings(BaseModel):
     url: SQLiteDsn = "sqlite:///:memory:"
+    connect_args: dict = {"check_same_thread": False}
 
 
 class RabbitMQSettings(BaseModel):
