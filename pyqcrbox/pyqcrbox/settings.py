@@ -1,13 +1,17 @@
 import functools
-from contextlib import contextmanager
 from typing import Annotated, Any, Optional
 
+import sqlalchemy
+import sqlmodel
+from loguru import logger
 from pydantic import BaseModel, UrlConstraints, computed_field
 from pydantic_core import MultiHostUrl
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlmodel import Session, create_engine
 
 __all__ = ["settings"]
+
+from pyqcrbox.sql_models import QCrBoxBaseSQLModel
 
 SQLiteDsn = Annotated[
     MultiHostUrl,
@@ -23,19 +27,27 @@ def create_sqlmodel_engine(url: str, echo: bool, connect_args: tuple[(str, Any)]
     return create_engine(url, echo=echo, connect_args=connect_args)
 
 
+@functools.lru_cache
+def create_db_tables(engine):
+    logger.debug(f"Initialising the database for engine: {engine}")
+    QCrBoxBaseSQLModel.metadata.create_all(engine)
+
+
 class DatabaseSettings(BaseModel):
     url: SQLiteDsn = "sqlite:///:memory:"
     connect_args: dict = {"check_same_thread": False}
     echo: bool = True
 
     @property
-    def engine(self):
-        return create_sqlmodel_engine(url=self.url, echo=self.echo, connect_args=tuple(self.connect_args.items()))
+    def engine(self) -> sqlalchemy.Engine:
+        engine = create_sqlmodel_engine(url=self.url, echo=self.echo, connect_args=tuple(self.connect_args.items()))
 
-    @contextmanager
-    def session(self):
-        with Session(self.engine) as session:
-            yield session
+        return engine
+
+    def get_session(self, init_db: bool = False) -> sqlmodel.Session:
+        if init_db:
+            create_db_tables(self.engine)
+        return Session(self.engine)
 
 
 class RabbitMQSettings(BaseModel):
