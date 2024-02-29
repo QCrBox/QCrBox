@@ -8,9 +8,9 @@ from .qcrbox_base_sql_model import QCrBoxBaseSQLModel
 
 class ParameterSpec(QCrBoxBaseSQLModel):
     name: str
-    description: str = ""
     dtype: str
-    required: bool
+    description: str = ""
+    required: bool = True
     # default_value: Optional[Any] = None
 
 
