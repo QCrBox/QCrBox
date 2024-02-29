@@ -16,6 +16,14 @@ from pyqcrbox import settings
 
 
 @pytest.fixture(scope="function", autouse=True)
-def adjust_settings_for_tests(tmp_path):
-    logger.debug(f"{tmp_path=}")
+def adjust_settings_for_tests(request, tmp_path):
+    """
+    Modify the pyqcrbox settings so that they are more suitable for tests.
+
+    This fixture is applied automatically when the tests are run but can be skipped
+    for specific tests by using the decorator `@pytest.mark.no_adjust_settings`.
+    """
+    if "no_adjust_settings" in request.keywords:
+        logger.debug(f"Skipping automatic adjustment of pyqcrbox settings for test: {request.node.name!r}")
+        return
     settings.db.url = f"sqlite:///{tmp_path}/test_registry_db.sqlite"
