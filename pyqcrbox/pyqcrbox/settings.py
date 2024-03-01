@@ -1,22 +1,25 @@
 import functools
-from typing import Annotated, Any, Optional
+from typing import Annotated, Any, Literal, Optional, Union
 
 import sqlalchemy
 import sqlmodel
 from loguru import logger
-from pydantic import BaseModel, UrlConstraints, computed_field
-from pydantic_core import MultiHostUrl
+from pydantic import BaseModel, FileUrl, Tag, UrlConstraints, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlmodel import Session, create_engine
 
 __all__ = ["settings"]
 
-SQLiteDsn = Annotated[
-    MultiHostUrl,
-    UrlConstraints(
-        host_required=True,
-        allowed_schemes=["sqlite", "sqlite+aiosqlite"],
-    ),
+
+SQLiteDsn = Union[
+    Annotated[Literal["sqlite:///:memory:"], Tag("in-memory")],
+    Annotated[
+        FileUrl,
+        UrlConstraints(
+            allowed_schemes=["sqlite", "sqlite+aiosqlite"],
+        ),
+        Tag("file-based"),
+    ],
 ]
 
 
