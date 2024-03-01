@@ -30,7 +30,7 @@ import urllib.request
 import webbrowser
 from collections import namedtuple
 from itertools import count
-from typing import Dict, List, Tuple, Union, Optional
+from typing import Dict, List, Optional, Tuple, Union
 
 QCrBoxParameter = namedtuple("QCrBoxParameter", ["name", "dtype"])
 QCrBoxParameter.__doc__ = """
