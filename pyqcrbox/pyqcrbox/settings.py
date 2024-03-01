@@ -28,7 +28,7 @@ def create_sqlmodel_engine(url: str, echo: bool, connect_args: tuple[(str, Any)]
 
 
 @functools.lru_cache
-def create_db_tables(engine):
+def _create_db_tables(engine):
     logger.debug(f"Initialising the database for engine: {engine}")
     QCrBoxBaseSQLModel.metadata.create_all(engine)
 
@@ -37,6 +37,10 @@ class DatabaseSettings(BaseModel):
     url: SQLiteDsn = "sqlite:///:memory:"
     connect_args: dict = {"check_same_thread": False}
     echo: bool = False
+
+    def create_db_and_tables(self, url: Optional[SQLiteDsn] = None, echo: Optional[bool] = None) -> None:
+        engine = self.get_engine(url=url, echo=echo)
+        _create_db_tables(engine)
 
     def get_engine(self, url: Optional[SQLiteDsn] = None, echo: Optional[bool] = None) -> sqlalchemy.Engine:
         url = url if url is not None else self.url
@@ -48,7 +52,7 @@ class DatabaseSettings(BaseModel):
     ) -> sqlmodel.Session:
         engine = self.get_engine(url=url, echo=echo)
         if init_db:
-            create_db_tables(engine)
+            _create_db_tables(engine)
         return Session(engine)
 
 
