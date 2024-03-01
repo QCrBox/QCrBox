@@ -5,7 +5,7 @@ import anyio
 from faststream import Logger
 from faststream.rabbit import RabbitBroker
 
-from pyqcrbox import settings
+from pyqcrbox import msg_specs, settings, sql_models
 
 from .base import QCrBoxFastStream
 
@@ -25,12 +25,16 @@ def create_server_faststream_app(
 
     @broker.subscriber(public_queue)
     async def on_qcrbox_registry(msg: dict, logger: Logger) -> dict:
+        msg_specs.QCrBoxBaseAction.model_validate(msg)
+
         logger.info(f"Incoming message: {msg}")
         if msg["action"] == "register_application":
+            app_spec = sql_models.ApplicationSpecCreate(**msg["payload"]["application_config"])
+            app_db = app_spec.save_to_db()
             response = {
                 "response_to": "register_application",
                 "status": "success",
-                "msg": f"Successfully registered application {msg['payload']['application_config']['name']!r}",
+                "msg": f"Successfully registered application {app_db.name!r} (id: {app_db.id})",
             }
         else:
             response = {
