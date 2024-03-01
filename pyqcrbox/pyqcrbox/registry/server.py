@@ -4,10 +4,8 @@ from typing import Optional
 import anyio
 from faststream import Logger
 from faststream.rabbit import RabbitBroker
-from sqlmodel import create_engine
 
 from pyqcrbox import settings
-from pyqcrbox.sql_models import QCrBoxBaseSQLModel
 
 from .base import QCrBoxFastStream
 
@@ -22,8 +20,7 @@ def create_server_faststream_app(
     async def init_database(logger: Logger) -> None:
         logger.info("Initialising database...")
         logger.debug(f"Database url: {settings.db.url}")
-        engine = create_engine(settings.db.url, echo=True, connect_args=settings.db.connect_args)
-        QCrBoxBaseSQLModel.metadata.create_all(engine)
+        settings.db.create_db_and_tables()
         logger.info("Finished initialising database...")
 
     @broker.subscriber(public_queue)
