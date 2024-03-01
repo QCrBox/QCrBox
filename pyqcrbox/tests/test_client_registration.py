@@ -17,6 +17,17 @@ def sample_application_cfg():
         description=None,
         url="https://www.olexsys.org/olex2/",
         email="helpdesk@olexsys.org",
+        commands=[
+            sql_models.CommandSpecCreate(
+                name="refine_iam",
+                implemented_as=sql_models.command_spec.ImplementedAs("CLI"),
+                parameters=[
+                    sql_models.ParameterSpecCreate(name="cif_file", type="str"),
+                    sql_models.ParameterSpecCreate(name="ls_cycles", type="int", required=False, default_value=5),
+                    sql_models.ParameterSpecCreate(name="weight_cycles", type="int", required=False, default_value=5),
+                ],
+            )
+        ],
     )
 
 
