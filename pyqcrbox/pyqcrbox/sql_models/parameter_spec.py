@@ -2,6 +2,7 @@ from typing import Any, Optional
 
 from sqlmodel import Field, Relationship, SQLModel, UniqueConstraint
 
+from ..settings import settings
 from .qcrbox_base_sql_model import QCrBoxBaseSQLModel
 
 
@@ -14,6 +15,14 @@ class ParameterSpecBase(SQLModel):
 
 class ParameterSpecCreate(ParameterSpecBase):
     default_value: Optional[Any] = None
+
+    def save_to_db(self):
+        with settings.db.get_session() as session:
+            param_db = ParameterSpecDB(**self.model_dump())
+            session.add(param_db)
+            session.commit()
+            session.refresh(param_db)
+            return param_db
 
 
 class ParameterSpecDB(ParameterSpecBase, QCrBoxBaseSQLModel, table=True):

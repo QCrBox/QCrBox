@@ -4,6 +4,7 @@ from typing import Optional
 from pydantic import BaseModel
 from sqlmodel import Field, Relationship, UniqueConstraint
 
+from ..settings import settings
 from .parameter_spec import ParameterSpecCreate, ParameterSpecDB
 from .qcrbox_base_sql_model import QCrBoxBaseSQLModel
 
@@ -24,6 +25,18 @@ class CommandSpecBase(BaseModel):
 
 class CommandSpecCreate(CommandSpecBase):
     parameters: list[ParameterSpecCreate] = []
+
+    def save_to_db(self):
+        with settings.db.get_session() as session:
+            command_db = CommandSpecDB(**self.model_dump(exclude={"parameters"}))
+            session.add(command_db)
+            session.commit()
+            session.refresh(command_db)
+
+            for param in self.parameters:
+                param.save_to_db()
+
+        return command_db
 
 
 class CommandSpecDB(CommandSpecBase, QCrBoxBaseSQLModel, table=True):
