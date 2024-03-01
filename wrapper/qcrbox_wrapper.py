@@ -552,7 +552,7 @@ class QCrBoxCalculation:
             time.sleep(sleep_time)
         if self.status.status != "completed":
             raise RuntimeError(
-                f"Reported status is not completed but: {self.status.status}"
+                f"Reported status is not completed but: {self.status.status}. "
                 + "Check status infos or Docker logs for error messages"
             )
 

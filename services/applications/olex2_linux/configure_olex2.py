@@ -12,17 +12,19 @@ from qcrbox.registry.client import ExternalCommand, Param, QCrBoxRegistryClient
 YAML_PATH = "./config_olex2.yaml"
 
 
-def prepare__interactive(input_cif, work_folder):
-    work_folder = Path(work_folder)
+def prepare__interactive(input_cif_path):
+    input_cif_path = Path(input_cif_path)
+    work_folder = input_cif_path.parent
     work_cif = work_folder / "work.cif"
 
     # create a cif file using the requested cif entries in olex2 format
     # will most likely be handled internally by QCrBox in the future
-    cif_file_unified_yml_instr(input_cif, work_cif, YAML_PATH, "interactive")
+    cif_file_unified_yml_instr(input_cif_path, work_cif, YAML_PATH, "interactive")
 
 
-def finalise__interactive(work_folder):
-    work_folder = Path(work_folder)
+def finalise__interactive(input_cif_path):
+    input_cif_path = Path(input_cif_path)
+    work_folder = input_cif_path.parent
 
     newest_cif_path = next(
         reversed(
@@ -45,8 +47,9 @@ def finalise__interactive(work_folder):
     )
 
 
-def toparams__interactive(work_folder, par_json, par_folder):
-    work_folder = Path(work_folder)
+def toparams__interactive(input_cif_path, par_json, par_folder):
+    input_cif_path = Path(input_cif_path)
+    work_folder = input_cif_path.parent
     par_folder = Path(par_folder)
 
     newest_cif_path = next(
@@ -86,8 +89,9 @@ def toparams__interactive(work_folder, par_json, par_folder):
         json.dump(tojson, fobj, indent=4)
 
 
-def redo__interactive(input_cif, work_folder, par_json, par_folder):
-    work_folder = Path(work_folder)
+def redo__interactive(input_cif_path, par_json, par_folder):
+    input_cif_path = Path(input_cif_path)
+    work_folder = input_cif_path.parent
     par_folder = Path(par_folder)
     with open(par_json, "r", encoding="UTF-8") as fobj:
         par_dict = json.load(fobj)
@@ -97,7 +101,7 @@ def redo__interactive(input_cif, work_folder, par_json, par_folder):
 
     merge_cif = work_folder / "merge.cif"
 
-    replace_structure_from_cif(input_cif, 0, par_dict["structure_cif"], 0, merge_cif)
+    replace_structure_from_cif(input_cif_path, 0, par_dict["structure_cif"], 0, merge_cif)
 
     work_cif = work_folder / "work.cif"
 
@@ -121,7 +125,7 @@ client = QCrBoxRegistryClient()
 application = client.register_application("Olex2 (Linux)", version="1.5")
 application.register_external_command(
     "interactive",
-    ExternalCommand("/bin/bash", "/opt/olex2/start", Param("cif_path")),
+    ExternalCommand("/bin/bash", "/opt/olex2/start", Param("input_cif_path")),
 )
 
 external_cmd_refine_iam = ExternalCommand(
@@ -129,7 +133,7 @@ external_cmd_refine_iam = ExternalCommand(
     "/opt/qcrbox/olex2_glue_cli.py",
     "refine",
     "--structure_path",
-    Param("cif_path"),
+    Param("input_cif_path"),
     "--n_cycles",
     Param("ls_cycles"),
     "--weight_cycles",
@@ -143,7 +147,7 @@ external_cmd_refine_tsc = ExternalCommand(
     "/opt/qcrbox/olex2_glue_cli.py",
     "refine",
     "--structure_path",
-    Param("cif_path"),
+    Param("input_cif_path"),
     "--tsc_path",
     Param("tsc_path"),
     "--n_cycles",
@@ -159,7 +163,7 @@ external_cmd_arbitry_cmds = ExternalCommand(
     "/opt/qcrbox/olex2_glue_cli.py",
     "cmds",
     "--structure_path",
-    Param("cif_path"),
+    Param("input_cif_path"),
     "--cmd_file_path",
     Param("cmd_file_path"),
 )
