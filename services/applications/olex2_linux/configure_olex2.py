@@ -3,11 +3,11 @@ import os
 import shutil
 from pathlib import Path
 
+from qcrbox.registry.client import ExternalCommand, Param, QCrBoxRegistryClient
+
 from qcrboxtools.cif.cif2cif import cif_file_unified_yml_instr, cif_file_unify_split
 from qcrboxtools.cif.merge import replace_structure_from_cif
 from qcrboxtools.robots.olex2 import Olex2Socket
-
-from qcrbox.registry.client import ExternalCommand, Param, QCrBoxRegistryClient
 
 YAML_PATH = "./config_olex2.yaml"
 
