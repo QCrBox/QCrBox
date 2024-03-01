@@ -8,7 +8,7 @@ from .qcrbox_base_sql_model import QCrBoxBaseSQLModel
 
 class ParameterSpecBase(BaseModel):
     name: str
-    dtype: str
+    type: str
     description: str = ""
     required: bool = True
 
