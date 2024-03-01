@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List, Optional
+from typing import Optional
 
 from pydantic import BaseModel
 from sqlmodel import Field, Relationship, UniqueConstraint
@@ -23,7 +23,7 @@ class CommandSpecBase(BaseModel):
 
 
 class CommandSpecCreate(CommandSpecBase):
-    parameters: List[ParameterSpecCreate] = []
+    parameters: list[ParameterSpecCreate] = []
 
 
 class CommandSpecDB(CommandSpecBase, QCrBoxBaseSQLModel, table=True):
@@ -34,4 +34,4 @@ class CommandSpecDB(CommandSpecBase, QCrBoxBaseSQLModel, table=True):
 
     application_id: Optional[int] = Field(default=None, foreign_key="application.id")
     application: "ApplicationSpecDB" = Relationship(back_populates="commands")
-    parameters: List[ParameterSpecDB] = Relationship(back_populates="command")
+    parameters: list[ParameterSpecDB] = Relationship(back_populates="command")

@@ -1,12 +1,11 @@
 from typing import Any, Optional
 
-from pydantic import BaseModel
-from sqlmodel import Field, Relationship, UniqueConstraint
+from sqlmodel import Field, Relationship, SQLModel, UniqueConstraint
 
 from .qcrbox_base_sql_model import QCrBoxBaseSQLModel
 
 
-class ParameterSpecBase(BaseModel):
+class ParameterSpecBase(SQLModel):
     name: str
     type: str
     description: str = ""

@@ -1,15 +1,14 @@
 from datetime import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel
 from sqlalchemy import UniqueConstraint
-from sqlmodel import Field, Relationship
+from sqlmodel import Field, Relationship, SQLModel
 
 from .command_spec import CommandSpecCreate, CommandSpecDB
 from .qcrbox_base_sql_model import QCrBoxBaseSQLModel
 
 
-class ApplicationSpecBase(BaseModel):
+class ApplicationSpecBase(SQLModel):
     name: str
     slug: str
     version: str
