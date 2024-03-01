@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import Optional
 
 from sqlalchemy import UniqueConstraint
 from sqlmodel import Field, Relationship, SQLModel
@@ -18,7 +18,7 @@ class ApplicationSpecBase(SQLModel):
 
 
 class ApplicationSpecCreate(ApplicationSpecBase):
-    commands: List[CommandSpecCreate] = []
+    commands: list[CommandSpecCreate] = []
 
 
 class ApplicationSpecDB(ApplicationSpecBase, QCrBoxBaseSQLModel, table=True):
@@ -28,4 +28,4 @@ class ApplicationSpecDB(ApplicationSpecBase, QCrBoxBaseSQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     registered_at: datetime = Field(default_factory=datetime.now)
 
-    commands: List[CommandSpecDB] = Relationship(back_populates="application")
+    commands: list[CommandSpecDB] = Relationship(back_populates="application")
