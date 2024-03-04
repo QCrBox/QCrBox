@@ -5,7 +5,7 @@ import anyio
 from faststream import Logger
 from faststream.rabbit import RabbitBroker
 
-from pyqcrbox import msg_specs, settings, sql_models
+from pyqcrbox import msg_specs, settings, sql_models_BAK
 
 from .base import QCrBoxFastStream
 
@@ -29,7 +29,7 @@ def create_server_faststream_app(
 
         logger.info(f"Incoming message: {msg}")
         if msg["action"] == "register_application":
-            app_spec = sql_models.ApplicationSpecCreate(**msg["payload"]["application_config"])
+            app_spec = sql_models_BAK.ApplicationSpecCreate(**msg["payload"]["application_config"])
             app_db = app_spec.save_to_db()
             response = {
                 "response_to": "register_application",

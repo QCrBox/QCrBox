@@ -1,7 +1,7 @@
 from sqlmodel import select
 
 from pyqcrbox import settings
-from pyqcrbox.sql_models import ApplicationSpecDB, CommandSpecDB, ParameterSpecDB
+from pyqcrbox.sql_models_BAK import ApplicationSpecDB, CommandSpecDB, ParameterSpecDB
 
 
 def test_default_database_url():
