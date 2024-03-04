@@ -30,11 +30,12 @@ class CifEntrySetCreateImpl(CifEntrySetBase):
 class CifEntrySetCreate(CifEntrySetBase):
     __qcrbox_sql_model__ = CifEntrySetDB
 
+    cif_entries: list[CifEntryCreate] = []
     required: list[CifEntrySimple] = []
     optional: list[CifEntrySimple] = []
 
     def to_sql_model(self):
         required_cif_entries = [c.to_cif_entry_create(required=True) for c in self.required]
         optional_cif_entries = [c.to_cif_entry_create(required=False) for c in self.optional]
-        all_cif_entries = required_cif_entries + optional_cif_entries
-        return CifEntrySetCreateImpl(name=self.name, cif_entries=all_cif_entries).to_sql_model()
+        self.cif_entries = required_cif_entries + optional_cif_entries
+        return super().to_sql_model()
