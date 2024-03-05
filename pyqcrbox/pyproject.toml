@@ -148,6 +148,7 @@ select = [
 "**/pyqcrbox/sql_models*/application_spec.py" = ["F821"]
 "**/pyqcrbox/sql_models*/command_spec.py" = ["F821"]
 "**/pyqcrbox/sql_models*/parameter_spec.py" = ["F821"]
+"**/pyqcrbox/sql_models*/parameter.py" = ["F821"]
 "**/pyqcrbox/sql_models*/cif_entry.py" = ["F821"]
 "**/pyqcrbox/sql_models*/cif_entry_set.py" = ["F821"]
 "qcrbox/qcrbox/common/msg_specs/sql_models/**.py" = ["F821"]
