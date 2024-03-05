@@ -34,7 +34,7 @@ from itertools import count
 from typing import Dict, List, Optional, Tuple, Union
 
 
-@lru_cache
+@lru_cache(maxsize=5)
 def get_time_cached_app_anwer(server_url: str, ttl_hash: Optional[int] = None) -> Dict[str, str]:
     """
     Retrieves cached application answers from the QCrBox server.
