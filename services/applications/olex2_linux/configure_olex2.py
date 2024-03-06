@@ -3,11 +3,11 @@ import os
 import shutil
 from pathlib import Path
 
-from qcrbox.registry.client import ExternalCommand, Param, QCrBoxRegistryClient
-
 from qcrboxtools.cif.cif2cif import cif_file_unified_yml_instr, cif_file_unify_split
 from qcrboxtools.cif.merge import replace_structure_from_cif
 from qcrboxtools.robots.olex2 import Olex2Socket
+
+from qcrbox.registry.client import ExternalCommand, Param, QCrBoxRegistryClient
 
 YAML_PATH = "./config_olex2.yaml"
 
@@ -29,11 +29,7 @@ def finalise__interactive(input_cif_path):
     newest_cif_path = next(
         reversed(
             sorted(
-                (
-                    file_path
-                    for file_path in work_folder.glob("*.cif")
-                    if file_path.name != "output.cif"
-                ),
+                (file_path for file_path in work_folder.glob("*.cif") if file_path.name != "output.cif"),
                 key=os.path.getmtime,
             )
         )
@@ -42,9 +38,7 @@ def finalise__interactive(input_cif_path):
     # TODO if not existing, rerun newest res with ACTA
 
     # Go to unified keywords and split SUs into separate entries
-    cif_file_unify_split(
-        newest_cif_path, work_folder / "output.cif", custom_categories=["iucr", "olex2"]
-    )
+    cif_file_unify_split(newest_cif_path, work_folder / "output.cif", custom_categories=["iucr", "olex2"])
 
 
 def toparams__interactive(input_cif_path, par_json, par_folder):
@@ -55,27 +49,19 @@ def toparams__interactive(input_cif_path, par_json, par_folder):
     newest_cif_path = next(
         reversed(
             sorted(
-                (
-                    file_path
-                    for file_path in work_folder.glob("*.cif")
-                    if file_path.name != "output.cif"
-                ),
+                (file_path for file_path in work_folder.glob("*.cif") if file_path.name != "output.cif"),
                 key=os.path.getmtime,
             )
         )
     )
 
-    cif_file_unify_split(
-        newest_cif_path, par_folder / "combine.cif", custom_categories=["iucr", "olex2"]
-    )
+    cif_file_unify_split(newest_cif_path, par_folder / "combine.cif", custom_categories=["iucr", "olex2"])
 
     tojson = {"structure_cif": "$par_folder/combine.cif"}
     cif_text = (par_folder / "combine.cif").read_text().lower()
     if "hirshfeld" in cif_text or "aspheric" in cif_text:
         try:
-            newest_tsc_path = next(
-                reversed(sorted(work_folder.glob("*.ts*"), key=os.path.getmtime))
-            )
+            newest_tsc_path = next(reversed(sorted(work_folder.glob("*.ts*"), key=os.path.getmtime)))
             shutil.copy(
                 newest_tsc_path,
                 (par_folder / "work").with_suffix(newest_tsc_path.suffix),
@@ -116,9 +102,7 @@ def redo__interactive(input_cif_path, par_json, par_folder):
 
     _ = olex2_socket.refine(n_cycles=10, refine_starts=5)
 
-    cif_file_unify_split(
-        work_cif, work_folder / "output.cif", custom_categories=["iucr", "olex2"]
-    )
+    cif_file_unify_split(work_cif, work_folder / "output.cif", custom_categories=["iucr", "olex2"])
 
 
 client = QCrBoxRegistryClient()
