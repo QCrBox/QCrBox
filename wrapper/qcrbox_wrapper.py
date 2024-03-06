@@ -20,7 +20,6 @@ QCrBoxParameter : Represents a parameter for QCrBoxCommand.
 QCrBoxCalculationStatus : Represents the status of a calculation in QCrBox.
 """
 
-
 import json
 import pathlib
 import textwrap

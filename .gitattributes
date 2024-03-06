@@ -1,4 +1,4 @@
 # For details about the settings in this file see: https://git-scm.com/docs/gitattributes
 
-# Set the default behavior, in case people don't have core.autocrlf set.
-* text=auto
+# Normalise line endings - always use Unix-style line endings for text files when the file is checked out.
+* text=auto eol=lf
