@@ -16,6 +16,7 @@ application = client.register_application(
     version="0.2.0",
 )
 
+
 def atom_form_fact_gpaw(
     input_cif_path,
     output_tsc_path,
@@ -36,6 +37,7 @@ def atom_form_fact_gpaw(
 
 
 application.register_python_callable("atom_form_fact_gpaw", atom_form_fact_gpaw)
+
 
 def ha_refine(
     input_cif_path: str,
@@ -71,6 +73,7 @@ def ha_refine(
     cif_file_unify_split(output_dir / 'xharpy.cif', output_cif_path, custom_categories=['iucr, shelx'])
     shutil.rmtree(output_dir)
     os.remove('shelx.hkl')
+
 
 application.register_python_callable("ha_refine", ha_refine)
 
