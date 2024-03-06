@@ -8,7 +8,7 @@ from qcrboxtools.cif.file_converter.hkl import cif2hkl4
 
 from qcrbox.registry.client import QCrBoxRegistryClient
 
-YAML_PATH = '/opt/qcrbox/config_xharpy-gpaw.yaml'
+YAML_PATH = "/opt/qcrbox/config_xharpy-gpaw.yaml"
 
 client = QCrBoxRegistryClient()
 application = client.register_application(
@@ -24,7 +24,7 @@ def atom_form_fact_gpaw(
     gridspacing
 ):
     work_cif_path = Path(input_cif_path).parent / "work.cif"
-    cif_file_unified_yml_instr(input_cif_path, work_cif_path, YAML_PATH, 'atom_form_fact_gpaw')
+    cif_file_unified_yml_instr(input_cif_path, work_cif_path, YAML_PATH, "atom_form_fact_gpaw")
     subprocess.check_call([
         "python", "-m", "xharpy.cli_tsc",
         "--cif_name", str(work_cif_path),
@@ -54,7 +54,7 @@ def ha_refine(
     cif2hkl4(input_cif_path, 0, output_dir / "shelx.hkl")
 
     work_cif_path = output_dir / "work.cif"
-    cif_file_unified_yml_instr(input_cif_path, work_cif_path, YAML_PATH, 'ha_refine')
+    cif_file_unified_yml_instr(input_cif_path, work_cif_path, YAML_PATH, "ha_refine")
 
     subprocess.check_call([
         "python", "-m", "xharpy.cli_refine",
@@ -70,9 +70,9 @@ def ha_refine(
         "--output_folder", output_dir
     ])
 
-    cif_file_unify_split(output_dir / 'xharpy.cif', output_cif_path, custom_categories=['iucr, shelx'])
+    cif_file_unify_split(output_dir / "xharpy.cif", output_cif_path, custom_categories=["iucr, shelx"])
     shutil.rmtree(output_dir)
-    os.remove('shelx.hkl')
+    os.remove("shelx.hkl")
 
 
 application.register_python_callable("ha_refine", ha_refine)
