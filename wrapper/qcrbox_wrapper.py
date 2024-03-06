@@ -191,19 +191,14 @@ class QCrBoxWrapper:
         """
         with urllib.request.urlopen(f"{self.server_url}/applications/") as r:
             answers = json.loads(r.read().decode("UTF-8"))
-        app_id2name = {
-            ans["id"]: ans["name"] for ans in answers
-        }
+        app_id2name = {ans["id"]: ans["name"] for ans in answers}
 
         def to_gui_url(app_id, cmd_name):
-            #TODO replace this with information provided from QCrBox itself.
+            # TODO replace this with information provided from QCrBox itself.
             app_name = app_id2name[app_id]
-            if app_name in self.gui_infos and cmd_name in self.gui_infos[app_name]['commands']:
+            if app_name in self.gui_infos and cmd_name in self.gui_infos[app_name]["commands"]:
                 port = self.gui_infos[app_name]["port"]
-                web_url = (
-                    f"http://{self.server_addr}:{port}"
-                    + "/vnc.html?path=vnc&autoconnect=true&resize=remote"
-                )
+                web_url = f"http://{self.server_addr}:{port}" + "/vnc.html?path=vnc&autoconnect=true&resize=remote"
                 return web_url
             return None
 
@@ -219,9 +214,10 @@ class QCrBoxWrapper:
                 to_gui_url(ans["application_id"], ans["name"]),
                 self,
                 None,
-                None
+                None,
             )
-            for ans in answers if ans["name"].startswith("prepare__")
+            for ans in answers
+            if ans["name"].startswith("prepare__")
         }
 
         finalise_commands = {
@@ -233,9 +229,10 @@ class QCrBoxWrapper:
                 to_gui_url(ans["application_id"], ans["name"]),
                 self,
                 None,
-                None
+                None,
             )
-            for ans in answers if ans["name"].startswith("finalise__")
+            for ans in answers
+            if ans["name"].startswith("finalise__")
         }
 
         commands = [
@@ -247,12 +244,10 @@ class QCrBoxWrapper:
                 to_gui_url(ans["application_id"], ans["name"]),
                 self,
                 prepare_commands.get(ans["name"], None),
-                finalise_commands.get(ans["name"], None)
+                finalise_commands.get(ans["name"], None),
             )
-            for ans in answers if not any([
-                ans["name"].startswith("prepare__"),
-                ans["name"].startswith("finalise__")
-            ])
+            for ans in answers
+            if not any([ans["name"].startswith("prepare__"), ans["name"].startswith("finalise__")])
         ]
         return commands
 
@@ -366,7 +361,7 @@ class QCrBoxCommand:
         gui_url: str,
         wrapper_parent: QCrBoxWrapper,
         prepare_cmd=None,
-        finalise_cmd=None
+        finalise_cmd=None,
     ) -> None:
         """
         Initializes the QCrBoxCommand instance.
@@ -444,15 +439,13 @@ class QCrBoxCommand:
 
         arguments.update({key: str(val) for key, val in kwargs.items()})
         if self.prepare_cmd is not None:
-            prepare_arguments = {
-                key: val for key, val in arguments.items() if key in self.prepare_cmd.par_name_list
-            }
+            prepare_arguments = {key: val for key, val in arguments.items() if key in self.prepare_cmd.par_name_list}
 
             self.prepare_cmd(**prepare_arguments)
 
             if "input_cif_path" in prepare_arguments:
                 input_cif_path = pathlib.PurePosixPath(arguments["input_cif_path"])
-                arguments["input_cif_path"] = str(input_cif_path.parent / 'work.cif')
+                arguments["input_cif_path"] = str(input_cif_path.parent / "work.cif")
 
         data_dict = {
             "action": "invoke_command",
@@ -477,7 +470,6 @@ class QCrBoxCommand:
                     key: val for key, val in arguments.items() if key in self.finalise_cmd.par_name_list
                 }
                 self.finalise_cmd(**finalise_arguments)
-
 
         return QCrBoxCalculation(answer["payload"]["calculation_id"], self)
 
@@ -605,8 +597,8 @@ class QCrBoxPathHelper:
             A subdirectory within both the local and QCrBox base paths for scoped path
             management. Defaults to None, in which case the base paths are used directly.
         """
-        if local_path.startswith('\\wsl$\\'):
-            local_path = '\\' + local_path
+        if local_path.startswith("\\wsl$\\"):
+            local_path = "\\" + local_path
         if base_dir is None:
             self.local_path = pathlib.Path(local_path)
             self.qcrbox_path = pathlib.PurePosixPath(qcrbox_path)
