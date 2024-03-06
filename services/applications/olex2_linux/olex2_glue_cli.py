@@ -1,6 +1,6 @@
 import argparse
-from pathlib import Path
 import hashlib
+from pathlib import Path
 
 from qcrboxtools.cif.cif2cif import cif_file_unified_yml_instr, cif_file_unify_split
 from qcrboxtools.robots.olex2 import Olex2Socket
