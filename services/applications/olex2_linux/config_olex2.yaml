@@ -23,7 +23,7 @@ commands:
   - name: "refine_iam"
     implemented_as: "CLI"  # other options: "python_callable"
     parameters:
-      - name: "cif_path"
+      - name: "input_cif_path"
         type: str
         default_value: null
       - name: "ls_cycles"
@@ -41,7 +41,7 @@ commands:
   - name: "refine_tsc"
     implemented_as: "CLI"  # other options: "python_callable"
     parameters:
-      - name: "cif_path"
+      - name: "input_cif_path"
         type: str
         default_value: null
       - name: "tsc_path"
@@ -62,7 +62,7 @@ commands:
   - name: "run_cmds_file"
     implemented_as: "CLI"
     parameters:
-      - name: "cif_path"
+      - name: "input_cif_path"
         type: str
         default_value: null
       - name: "cmd_file_path"
