@@ -12,6 +12,9 @@ class ParameterCreate(QCrBoxPydanticBaseModel):
     required: bool = True
     default_value: Optional[Any] = None
 
+    def to_sql_model(self):
+        return ParameterDB.from_pydantic_model(self)
+
 
 class ParameterDB(QCrBoxBaseSQLModel, table=True):
     __tablename__ = "parameter"

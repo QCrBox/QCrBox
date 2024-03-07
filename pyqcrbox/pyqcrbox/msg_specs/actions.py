@@ -3,7 +3,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel
 
-from .. import sql_models_BAK
+from .. import sql_models
 from .base import QCrBoxBaseAction
 
 __all__ = ["VALID_QCRBOX_ACTIONS", "RegisterApplication"]
@@ -11,7 +11,7 @@ __all__ = ["VALID_QCRBOX_ACTIONS", "RegisterApplication"]
 
 class RegisterApplication(QCrBoxBaseAction):
     class Payload(BaseModel):
-        application_config: sql_models_BAK.ApplicationSpecCreate
+        application_config: sql_models.ApplicationCreate
         routing_key__registry_to_application: str
 
     action: Literal["register_application"]

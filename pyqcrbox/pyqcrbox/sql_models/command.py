@@ -26,11 +26,13 @@ class CommandCreate(QCrBoxPydanticBaseModel):
     optional_cif_entry_sets: list[str] = []
     custom_cif_categories: list[str] = []
 
+    def to_sql_model(self):
+        return CommandDB.from_pydantic_model(self)
+
 
 class CommandDB(QCrBoxBaseSQLModel, table=True):
     __tablename__ = "command"
-    # __table_args__ = (UniqueConstraint("name", "application_id"), {"extend_existing": True})
-    __table_args__ = (UniqueConstraint("name"), {"extend_existing": True})
+    __table_args__ = (UniqueConstraint("name", "application_id"),)
     __pydantic_model_cls__ = CommandCreate
 
     name: str
@@ -41,7 +43,10 @@ class CommandDB(QCrBoxBaseSQLModel, table=True):
 
     id: Optional[int] = Field(default=None, primary_key=True)
 
+    application_id: Optional[int] = Field(default=None, foreign_key="application.id")
+    application: "ApplicationDB" = Relationship(back_populates="commands")
     parameters: list["ParameterDB"] = Relationship(back_populates="command")
+
     required_cif_entry_sets: list[str] = Field(sa_column=Column(JSON()))
     optional_cif_entry_sets: list[str] = Field(sa_column=Column(JSON()))
     custom_cif_categories: list[str] = Field(sa_column=Column(JSON()))

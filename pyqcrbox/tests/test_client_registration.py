@@ -4,13 +4,13 @@ import pytest
 from anyio import create_task_group
 from faststream.rabbit import RabbitBroker, TestRabbitBroker
 
-from pyqcrbox import msg_specs, sql_models_BAK
+from pyqcrbox import msg_specs, sql_models
 from pyqcrbox.registry import create_client_faststream_app, create_server_faststream_app
 
 
 @pytest.fixture
 def sample_application_cfg():
-    return sql_models_BAK.ApplicationSpecCreate(
+    return sql_models.ApplicationCreate(
         name="Olex2",
         slug="olex2_linux",
         version="x.y.z",
@@ -18,15 +18,13 @@ def sample_application_cfg():
         url="https://www.olexsys.org/olex2/",
         email="helpdesk@olexsys.org",
         commands=[
-            sql_models_BAK.CommandSpecCreate(
+            sql_models.CommandCreate(
                 name="refine_iam",
-                implemented_as=sql_models_BAK.command_spec.ImplementedAs("CLI"),
+                implemented_as=sql_models.command.ImplementedAs("CLI"),
                 parameters=[
-                    sql_models_BAK.ParameterSpecCreate(name="cif_file", type="str"),
-                    sql_models_BAK.ParameterSpecCreate(name="ls_cycles", type="int", required=False, default_value=5),
-                    sql_models_BAK.ParameterSpecCreate(
-                        name="weight_cycles", type="int", required=False, default_value=5
-                    ),
+                    sql_models.ParameterCreate(name="cif_file", type="str"),
+                    sql_models.ParameterCreate(name="ls_cycles", type="int", required=False, default_value=5),
+                    sql_models.ParameterCreate(name="weight_cycles", type="int", required=False, default_value=5),
                 ],
             )
         ],

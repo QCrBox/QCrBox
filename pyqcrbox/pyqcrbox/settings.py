@@ -30,7 +30,7 @@ def create_sqlmodel_engine(url: str, echo: bool, connect_args: tuple[(str, Any)]
 
 @functools.lru_cache
 def _create_db_tables(engine):
-    from pyqcrbox.sql_models_BAK import QCrBoxBaseSQLModel  # import here to avoid a circular import
+    from pyqcrbox.sql_models import QCrBoxBaseSQLModel  # import here to avoid a circular import
 
     logger.debug(f"Initialising the database for engine: {engine}")
     QCrBoxBaseSQLModel.metadata.create_all(engine)

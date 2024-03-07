@@ -3,6 +3,8 @@ from typing import Optional
 
 from sqlmodel import JSON, Column, Field, Relationship, UniqueConstraint
 
+from pyqcrbox.settings import settings
+
 from .cif_entry_set import CifEntrySetCreate
 from .command import CommandCreate, CommandDB
 from .qcrbox_base_models import QCrBoxBaseSQLModel, QCrBoxPydanticBaseModel
@@ -18,6 +20,17 @@ class ApplicationCreate(QCrBoxPydanticBaseModel):
 
     commands: list[CommandCreate] = []
     cif_entry_sets: list[CifEntrySetCreate] = []
+
+    def to_sql_model(self):
+        return ApplicationDB.from_pydantic_model(self)
+
+    def save_to_db(self):
+        with settings.db.get_session() as session:
+            application_db = self.to_sql_model()
+            session.add(application_db)
+            session.commit()
+            session.refresh(application_db)
+            return application_db
 
 
 class ApplicationDB(QCrBoxBaseSQLModel, table=True):
