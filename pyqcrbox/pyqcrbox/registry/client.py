@@ -1,3 +1,4 @@
+import json
 import logging
 from typing import Optional
 
@@ -23,7 +24,9 @@ def create_client_faststream_app(
 
     @client_app.after_startup
     async def register_application(logger: Logger) -> None:
-        logger.info(f"Sending registration request: {application_spec}")
+        msg_debug = json.dumps(application_spec.model_dump())
+        msg_debug_abbrev = msg_debug[:800] + " ..."
+        logger.info(f"Sending registration request: {msg_debug_abbrev}")
 
         msg_register_application = msg_specs.RegisterApplication(
             action="register_application",

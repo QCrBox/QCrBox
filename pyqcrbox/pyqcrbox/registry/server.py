@@ -1,3 +1,4 @@
+import json
 import logging
 from typing import Optional
 
@@ -29,7 +30,9 @@ def create_server_faststream_app(
     async def on_qcrbox_registry(msg: dict, logger: Logger) -> dict:
         msg_specs.QCrBoxBaseAction.model_validate(msg)
 
-        logger.info(f"Incoming message: {msg}")
+        msg_debug = json.dumps(msg)
+        msg_debug_abbrev = msg_debug[:800] + " ..."
+        logger.debug(f"Incoming message: {msg_debug_abbrev}")
         if msg["action"] == "register_application":
             app_spec = sql_models.ApplicationCreate(**msg["payload"]["application_config"])
             app_db = app_spec.save_to_db()
