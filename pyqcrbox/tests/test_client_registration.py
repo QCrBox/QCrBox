@@ -57,6 +57,7 @@ async def test_client_registers_itself_with_server_during_startup(sample_applica
             tg.start_soon(client_app.run, client_max_messages)
 
         server_app.on_qcrbox_registry.mock.assert_called_once_with(expected_registration_message)
+        # TODO: verify that the client app receives a 'success' response.
 
 
 @pytest.mark.asyncio
@@ -96,3 +97,5 @@ async def test_client_registration_succeeds_even_if_same_application_was_registe
         #       [1] https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.assert_has_calls
         server_app.on_qcrbox_registry.mock.assert_called_with(expected_registration_message)
         assert server_app.on_qcrbox_registry.mock.call_count == 2
+
+        # TODO: verify that the client apps receive a 'success' response.
