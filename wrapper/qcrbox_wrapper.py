@@ -198,7 +198,7 @@ class QCrBoxWrapper:
             app_name = app_id2name[app_id]
             if app_name in self.gui_infos and cmd_name in self.gui_infos[app_name]["commands"]:
                 port = self.gui_infos[app_name]["port"]
-                web_url = f"http://{self.server_addr}:{port}" + "/vnc.html?path=vnc&autoconnect=true&resize=remote"
+                web_url = f"http://{self.server_addr}:{port}/vnc.html?path=vnc&autoconnect=true&resize=remote"
                 return web_url
             return None
 
