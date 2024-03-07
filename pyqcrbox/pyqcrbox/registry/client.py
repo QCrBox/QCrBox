@@ -8,6 +8,7 @@ from faststream.rabbit import RabbitBroker
 from pyqcrbox import msg_specs, sql_models
 
 from .base import QCrBoxFastStream
+from .helpers import get_log_level_int
 
 
 def create_client_faststream_app(
@@ -16,7 +17,7 @@ def create_client_faststream_app(
     private_queue_name: Optional[str] = None,
     log_level: Optional[int | str] = logging.INFO,
 ) -> QCrBoxFastStream:
-    client_app = QCrBoxFastStream(broker, title="QCrBox Client", log_level=log_level)
+    client_app = QCrBoxFastStream(broker, title="QCrBox Client", log_level=get_log_level_int(log_level))
     client_app.application_spec = application_spec
     private_queue = private_queue_name or "super-secret-private-client-queue"
 

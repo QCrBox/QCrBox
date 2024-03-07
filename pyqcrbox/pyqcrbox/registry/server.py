@@ -8,12 +8,14 @@ from faststream.rabbit import RabbitBroker
 from pyqcrbox import msg_specs, settings, sql_models
 
 from .base import QCrBoxFastStream
+from .helpers import get_log_level_int
 
 
 def create_server_faststream_app(
-    broker: RabbitBroker, log_level: Optional[int | str] = logging.INFO
+    broker: RabbitBroker,
+    log_level: Optional[int | str] = logging.INFO,
 ) -> QCrBoxFastStream:
-    server_app = QCrBoxFastStream(broker, title="QCrBox Server", log_level=log_level)
+    server_app = QCrBoxFastStream(broker, title="QCrBox Server", log_level=get_log_level_int(log_level))
     public_queue = "qcrbox-registry-v5b"
 
     @server_app.on_startup
