@@ -30,6 +30,7 @@ class QCrBoxFastStream(FastStream):
         self._max_messages = math.inf
         self.msg_counter = 0
         self.clsname = self.__class__.__name__
+        self._was_run_before = False
 
     def __str__(self):
         return f"{self.clsname} {self.title!r}"
@@ -80,6 +81,12 @@ class QCrBoxFastStream(FastStream):
             Block an event loop until stopped
         """
         assert self.broker, "You should setup a broker"  # nosec B101
+
+        if self._was_run_before:
+            raise NotImplementedError(
+                "Cannot currently re-run a QCrBoxFastStream app that was run before. Please create a new one instead."
+            )
+        self._was_run_before = True
 
         if max_messages is not None:
             self._max_messages = max_messages
