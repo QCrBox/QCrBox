@@ -1,7 +1,9 @@
 from datetime import datetime
 from typing import Optional
 
-from sqlmodel import JSON, Column, Field, Relationship, UniqueConstraint
+import sqlalchemy
+from faststream import Logger, apply_types
+from sqlmodel import JSON, Column, Field, Relationship, UniqueConstraint, select
 
 from pyqcrbox.settings import settings
 
@@ -25,12 +27,7 @@ class ApplicationCreate(QCrBoxPydanticBaseModel):
         return ApplicationDB.from_pydantic_model(self)
 
     def save_to_db(self):
-        with settings.db.get_session() as session:
-            application_db = self.to_sql_model()
-            session.add(application_db)
-            session.commit()
-            session.refresh(application_db)
-            return application_db
+        return self.to_sql_model().save_to_db()
 
 
 class ApplicationDB(QCrBoxBaseSQLModel, table=True):
@@ -59,3 +56,21 @@ class ApplicationDB(QCrBoxBaseSQLModel, table=True):
         data["commands"] = [CommandDB.from_pydantic_model(cmd) for cmd in application.commands]
         # logger.debug(f"{command.name=}: {data=}")
         return cls(**data)
+
+    @apply_types
+    def save_to_db(self, logger: Logger):
+        cls = self.__class__
+
+        with settings.db.get_session() as session:
+            try:
+                result = session.exec(select(cls).where(cls.name == self.name and cls.version == self.version)).one()
+                logger.warning(
+                    f"An application was registered before with name={self.name!r}, version={self.version!r}. "
+                    "Loading details from the previously stored data."
+                )
+                return result
+            except sqlalchemy.exc.NoResultFound:
+                session.add(self)
+                session.commit()
+                session.refresh(self)
+                return self
