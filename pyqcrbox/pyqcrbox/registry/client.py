@@ -44,7 +44,40 @@ def create_client_faststream_app(
         )
         logger.info(f"Received response: {response!r}")
 
-        client_app.request_shutdown()
+    @client_app.after_startup
+    async def set_up_listener_on_private_queue(logger: Logger) -> None:
+        # Temporarily suspend the broker in case it is running (otherwise
+        # registering a new handler won't take effect until a restart).
+        await broker.close()
+
+        @broker.subscriber(private_queue)
+        def on_incoming_private_mesage(msg: dict, logger: Logger):
+            logger.debug(f"Received message on private queue: {msg=}")
+            response = {
+                "response_to": "incoming_private_message",
+                "status": "success",
+                "msg": "",
+            }
+            return response
+
+        logger.debug(f"Set up listener on private queue: {private_queue!r}")
+
+        @broker.subscriber(application_spec.routing_key_command_invocation)
+        def on_command_invocation(msg: dict, logger: Logger):
+            logger.debug(f"Received command invocation request: {msg=}")
+            response = {
+                "response_to": "command_invocation_request",
+                "status": "success",
+                "msg": "",
+            }
+            return response
+
+        logger.debug(
+            f"Set up listener for command invocation requests: {application_spec.routing_key_command_invocation!r}"
+        )
+
+        # Resume broker now that the new handler has been registered.
+        await broker.start()
 
     return client_app
 

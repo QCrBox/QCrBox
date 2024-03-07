@@ -23,6 +23,10 @@ class ApplicationCreate(QCrBoxPydanticBaseModel):
     commands: list[CommandCreate] = []
     cif_entry_sets: list[CifEntrySetCreate] = []
 
+    @property
+    def routing_key_command_invocation(self):
+        return f"rk__{self.slug}__{self.version}"
+
     def to_sql_model(self):
         return ApplicationDB.from_pydantic_model(self)
 
