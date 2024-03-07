@@ -58,6 +58,7 @@ def create_client_faststream_app(
                 "status": "success",
                 "msg": "",
             }
+            client_app.increment_processed_message_counter(private_queue)
             return response
 
         logger.debug(f"Set up listener on private queue: {private_queue!r}")
@@ -70,6 +71,7 @@ def create_client_faststream_app(
                 "status": "success",
                 "msg": "",
             }
+            client_app.increment_processed_message_counter(application_spec.routing_key_command_invocation)
             return response
 
         logger.debug(

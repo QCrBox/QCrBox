@@ -89,6 +89,7 @@ class QCrBoxFastStream(FastStream):
         self._was_run_before = True
 
         if max_messages is not None:
+            assert isinstance(max_messages, (int, float))
             self._max_messages = max_messages
             self.logger.info(f"{self} will shut down after {self._max_messages} processed messages.")
         else:  # pragma: no cover
