@@ -1,11 +1,11 @@
 #
-# Configuration for the application 'olex2'
+# Configuration for the application 'crystal-explorer'
 #
-name: "Olex2 (Linux)"
-slug: "olex2"
-version: "1.5-alpha"
-description: "Olex2 is an easy-to-use program containing everything you need to solve, refine and finish small-molecule crystal structures."
-url: "https://www.olexsys.org/olex2/"
+name: "Crystal Explorer"
+slug: "crystal-explorer"
+version: "21.5"
+description: "Hirshfeld surfaces, intermolecular interaction energies and more..."
+url: "https://crystalexplorer.net/"
 
 commands:
   - name: "interactive"
@@ -15,120 +15,12 @@ commands:
       - name: "cif_path"
         type: "str"
         default_value: None
-    required_cif_entry_sets: ["cell_data", "diffraction_data"]
-    optional_cif_entry_sets: ["atom_data"]
+    optional_cif_entry_sets: ["cif_structure_ddl1"]
     merge_cif_su: Yes
     custom_cif_categories: ["iucr", "shelx"]
 
-  - name: "refine_iam"
-    implemented_as: "CLI"  # other options: "python_callable"
-    parameters:
-      - name: "input_cif_path"
-        type: str
-        default_value: null
-      - name: "ls_cycles"
-        type: int
-        default_value: 5
-        required: False
-      - name: "weight_cycles"
-        type: int
-        default_value: 5
-        required: False
-    required_cif_entry_sets: ["cell_data", "diffraction_data", "atom_data"]
-    merge_cif_su: No
-    custom_cif_categories: ["iucr", "shelx"]
-
-  - name: "refine_tsc"
-    implemented_as: "CLI"  # other options: "python_callable"
-    parameters:
-      - name: "input_cif_path"
-        type: str
-        default_value: null
-      - name: "tsc_path"
-        type: str
-        default_value: null
-      - name: "ls_cycles"
-        type: int
-        default_value: 5
-        required: False
-      - name: "weight_cycles"
-        type: int
-        default_value: 5
-        required: False
-    required_cif_entry_sets: ["cell_data", "diffraction_data", "atom_data"]
-    merge_cif_su: No
-    custom_cif_categories: ["iucr", "shelx"]
-
-  - name: "run_cmds_file"
-    implemented_as: "CLI"
-    parameters:
-      - name: "input_cif_path"
-        type: str
-        default_value: null
-      - name: "cmd_file_path"
-        type: str
-        default_value: null
-    optional_cif_entry_sets: ["all_olex_optional"]
-    custom_cif_categories: ["iucr", "shelx"]
-
 cif_entry_sets:
-  - name: "cell_data"
-    required : [
-      "_space_group_IT_number",
-      "_space_group_symop_id",
-      "_space_group_symop_operation_xyz",
-      "_cell_length_a",
-      "_cell_length_b",
-      "_cell_length_c",
-      "_cell_angle_alpha",
-      "_cell_angle_beta",
-      "_cell_angle_gamma",
-      "_cell_measurement_temperature"
-    ]
-  - name: "diffraction_data"
-    required : [
-      "_diffrn_radiation_type",
-      "_diffrn_radiation_wavelength",
-      "_diffrn_refln_index_h",
-      "_diffrn_refln_index_k",
-      "_diffrn_refln_index_l",
-      "_diffrn_refln_intensity_net",
-      "_diffrn_refln_intensity_u"
-    ]
-    optional : [
-      "_chemical_formula_moiety",
-      "_chemical_formula_sum",
-      "_shelx_hkl_file"
-    ]
-  - name: "atom_data"
-    required : [
-      "_atom_site_label",
-      "_atom_site_type_symbol",
-      "_atom_site_fract_x",
-      "_atom_site_fract_y",
-      "_atom_site_fract_z",
-      "_atom_site_U_iso_or_equiv",
-      "_atom_site_adp_type",
-      "_atom_site_occupancy"
-    ]
-    optional : [
-      "_atom_type_symbol",
-      "_atom_type_scat_dispersion_real",
-      "_atom_type_scat_dispersion_imag",
-      "_atom_type_scat_dispersion_source",
-      "_space_group_crystal_system",
-      "_atom_site_refinement_flags_posn",
-      "_atom_site_aniso_label",
-      "_atom_site_aniso_U_11",
-      "_atom_site_aniso_U_22",
-      "_atom_site_aniso_U_33",
-      "_atom_site_aniso_U_12",
-      "_atom_site_aniso_U_13",
-      "_atom_site_aniso_U_23",
-      "_iucr_refine_instructions_details",
-      "_shelx_res_file"
-    ]
-  - name: all_olex_optional
+  - name: cif_structure_ddl1
     optional : [
       "_audit_creation_date",
       "_audit_creation_method",
