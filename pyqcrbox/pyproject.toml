@@ -74,9 +74,9 @@ all = [
 "Repository" = "https://github.com/QCrBox/QCrBox/"
 "Issue Tracker" = "https://github.com/QCrBox/QCrBox/issues"
 
-[project.scripts]
-qcb = "pyqcrbox.cli:entry_point"
-qcrbox-run-registry-server = "pyqcrbox.registry.server:main"
+#[project.scripts]
+#qcb = "pyqcrbox.cli:entry_point"
+#qcrbox-run-registry-server = "pyqcrbox.registry.server:main"
 
 [build-system]
 requires = ["hatchling", "hatch-vcs"]
