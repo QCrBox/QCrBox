@@ -99,9 +99,15 @@ def builddatcol(
     if rmat_file_path == 'work_folder':
         rmat_file_path = next(reversed(sorted(work_folder.glob('*.rmat'), key=os.path.getmtime)))
     if beamstop_file_path != 'work_folder':
-        shutil.copy(beamstop_file_path, work_folder)
+        try:
+            shutil.copy(beamstop_file_path, work_folder)
+        except shutil.SameFileError:
+            pass
     if detalign_file_path != 'work_folder':
-        shutil.copy(detalign_file_path, work_folder)
+        try:
+            shutil.copy(detalign_file_path, work_folder)
+        except shutil.SameFileError:
+            pass
     builddatcolrob = EvalBuilddatcolRobot(work_folder=work_folder)
     builddatcolrob.create_datcol_files(
         rmat_file=RmatFile.from_file(rmat_file_path),
@@ -241,6 +247,7 @@ def final_cell_refinement(
 def finalise__interactive(
     work_folder
 ):
+    work_folder = pathlib.Path(work_folder)
     create_reflection_cif(work_folder)
     final_cell_refinement(work_folder, 'work_folder')
 
