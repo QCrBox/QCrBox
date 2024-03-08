@@ -7,5 +7,6 @@
 from .application import ApplicationCreate, ApplicationDB
 from .cif_entry_set import CifEntrySetCreate
 from .command import CommandCreate, CommandDB
+from .command_invocation import CommandInvocationCreate
 from .parameter import ParameterCreate, ParameterDB
 from .qcrbox_base_models import QCrBoxBaseSQLModel

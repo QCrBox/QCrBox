@@ -50,6 +50,7 @@ class ApplicationDB(QCrBoxBaseSQLModel, table=True):
     registered_at: datetime = Field(default_factory=datetime.now)
 
     commands: list[CommandDB] = Relationship(back_populates="application")
+    command_invocations: list["CommandInvocationDB"] = Relationship(back_populates="application")
     cif_entry_sets: list[str] = Field(sa_column=Column(JSON()))
 
     @classmethod

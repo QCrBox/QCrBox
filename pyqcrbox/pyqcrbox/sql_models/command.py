@@ -46,6 +46,7 @@ class CommandDB(QCrBoxBaseSQLModel, table=True):
     application_id: Optional[int] = Field(default=None, foreign_key="application.id")
     application: "ApplicationDB" = Relationship(back_populates="commands")
     parameters: list["ParameterDB"] = Relationship(back_populates="command")
+    command_invocations: list["CommandInvocationDB"] = Relationship(back_populates="command")
 
     required_cif_entry_sets: list[str] = Field(sa_column=Column(JSON()))
     optional_cif_entry_sets: list[str] = Field(sa_column=Column(JSON()))
