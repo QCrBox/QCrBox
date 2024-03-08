@@ -35,6 +35,10 @@ class QCrBoxFastStream(FastStream):
     def __str__(self):
         return f"{self.clsname} {self.title!r}"
 
+    @property
+    def max_messages(self):
+        return self._max_messages
+
     async def _wait_for_and_handle_shutdown_request(self, cancel_scope: CancelScope):
         # Wait for shutdown event to be set. This can happen, for example, when the
         # user terminates the process presses (e.g. via Ctrl+C) or when the maximum

@@ -51,7 +51,7 @@ def create_client_faststream_app(
         await broker.close()
 
         @broker.subscriber(private_queue)
-        def on_incoming_private_mesage(msg: dict, logger: Logger):
+        def on_incoming_private_message(msg: dict, logger: Logger):
             logger.debug(f"Received message on private queue: {msg=}")
             response = {
                 "response_to": "incoming_private_message",
@@ -80,6 +80,12 @@ def create_client_faststream_app(
 
         # Resume broker now that the new handler has been registered.
         await broker.start()
+
+    @client_app.after_startup
+    async def shut_down_client_if_max_messages_is_zero(logger: Logger) -> None:
+        if client_app.max_messages == 0:
+            logger.debug("Shutting down client app because max_messages was set to zero.")
+            client_app.request_shutdown()
 
     return client_app
 
