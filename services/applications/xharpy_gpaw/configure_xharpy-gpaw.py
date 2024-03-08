@@ -54,6 +54,13 @@ def ha_refine(
     cif2hkl4(input_cif_path, 0, output_dir / "shelx.hkl")
 
     work_cif_path = output_dir / "work.cif"
+
+    cif_text = input_cif_path.read_text(encoding="UTF-8")
+    extinction_method = "none"
+    if "refine_ls.extinction_coef" in cif_text:
+        entry = cif_text.split("refine_ls.extinction_coef")[1].strip()[:2]
+        if entry.strip() != ".":
+            extinction_method = "shelxl"
     cif_file_unified_yml_instr(input_cif_path, work_cif_path, YAML_PATH, "ha_refine")
 
     subprocess.check_call([
@@ -62,7 +69,7 @@ def ha_refine(
         "--cif_index", "0",
         "--hkl_name", output_dir / "shelx.hkl",
         "--lst_name", "./dummy.lst",
-        "--extinction", "none",
+        "--extinction", extinction_method,
         "--xc", functional,
         "--gridspacing", gridspacing,
         "--kpoints", "1", "1", "1",

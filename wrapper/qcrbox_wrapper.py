@@ -28,8 +28,69 @@ import urllib
 import urllib.request
 import webbrowser
 from collections import namedtuple
+from functools import lru_cache
 from itertools import count
 from typing import Dict, List, Optional, Tuple, Union
+
+
+@lru_cache(maxsize=5)
+def get_time_cached_app_anwer(server_url: str, ttl_hash: Optional[int] = None) -> Dict[str, str]:
+    """
+    Retrieves cached application answers from the QCrBox server.
+
+    This function is memoized to cache responses based on the server URL and a
+    time-to-live (TTL) hash. It is designed to reduce the number of requests
+    made to the server for the same information within a short period.
+
+    Parameters
+    ----------
+    server_url : str
+        The URL of the QCrBox server.
+    ttl_hash : Optional[int]
+        A hash value representing the time-to-live for the cache. This value
+        controls the cache's validity period to prevent outdated information.
+
+    Returns
+    -------
+    Dict[str, str]
+        The response from the QCrBox server, typically a list of application details.
+
+    Note
+    ----
+    The way this function is implemented the cached value is cached within fixed
+    intervals, instead of for a fixed time.
+    """
+    del ttl_hash
+    with urllib.request.urlopen(f"{server_url}/applications/") as r:
+        answers = json.loads(r.read().decode("UTF-8"))
+    return answers
+
+
+def get_ttl_hash(seconds: int = 20) -> int:
+    """
+    Generates a hash based on the current time and a specified number of seconds.
+
+    This function divides the current UNIX timestamp by the specified number of
+    seconds and rounds the result to produce a hash. This hash can be used to
+    implement caching mechanisms where cached values expire after a certain duration.
+
+    Parameters
+    ----------
+    seconds : int, optional
+        The number of seconds to divide the current UNIX timestamp by, by default 20.
+
+    Returns
+    -------
+    int
+        The generated hash value.
+    Note
+    ----
+    The way this function is implemented the cached value is cached within fixed
+    intervals, where the rounded seconds value is the sameinstead of for a fixed
+    time.
+    """
+    return round(time.time() / seconds)
+
 
 QCrBoxParameter = namedtuple("QCrBoxParameter", ["name", "dtype"])
 QCrBoxParameter.__doc__ = """
@@ -93,7 +154,7 @@ class QCrBoxWrapper:
         server_addr: str,
         server_port: int,
         gui_infos: Optional[Dict[str, Dict[str, Union[int, str]]]] = None,
-    ):
+    ) -> None:
         """
         Initializes the QCrBoxWrapper instance.
 
@@ -104,11 +165,12 @@ class QCrBoxWrapper:
         server_port : int
             The port on which the QCrBox server is running.
         gui_infos : Optional[Dict[str, Dict[str, Union[int, str]]]] = None
-            GUI information for applications, including ports and commands that have a GUI.
-            For each application containing a GUI command, the Application name should be
-            the key, with another dict as the item. This dictionary needs the the entries
-            "port" with the port the access the GUI, as well as an entry "commands" that
-            containts a list of all the interactive commands.
+            Dictionary containing the GUI information for applications, including ports
+            and commands that have a GUI. For each application containing a GUI command,
+            the application name should be the key, with another dict as the item. This
+            dictionary needs the the entries "port" with the port the access the GUI,
+            as well as an entry "commands" that containts a list of all the interactive
+            commands.
 
         Raises
         ------
@@ -151,8 +213,9 @@ class QCrBoxWrapper:
         List[QCrBoxApplication]
             A list of QCrBoxApplication namedtuples.
         """
-        with urllib.request.urlopen(f"{self.server_url}/applications/") as r:
-            answers = json.loads(r.read().decode("UTF-8"))
+        answers = get_time_cached_app_anwer(self.server_url, get_ttl_hash())
+        # with urllib.request.urlopen(f"{self.server_url}/applications/") as r:
+        #    answers = json.loads(r.read().decode("UTF-8"))
         return [
             QCrBoxApplication(
                 int(ans["id"]),
@@ -189,8 +252,10 @@ class QCrBoxWrapper:
         List[QCrBoxCommand]
             A list of QCrBoxCommand objects.
         """
-        with urllib.request.urlopen(f"{self.server_url}/applications/") as r:
-            answers = json.loads(r.read().decode("UTF-8"))
+        answers = get_time_cached_app_anwer(self.server_url, get_ttl_hash())
+
+        # with urllib.request.urlopen(f"{self.server_url}/applications/") as r:
+        #    answers = json.loads(r.read().decode("UTF-8"))
         app_id2name = {ans["id"]: ans["name"] for ans in answers}
 
         def to_gui_url(app_id, cmd_name):
@@ -360,8 +425,8 @@ class QCrBoxCommand:
         parameters: List[QCrBoxParameter],
         gui_url: str,
         wrapper_parent: QCrBoxWrapper,
-        prepare_cmd=None,
-        finalise_cmd=None,
+        prepare_cmd: Optional["QCrBoxCommand"] = None,
+        finalise_cmd: Optional["QCrBoxCommand"] = None,
     ) -> None:
         """
         Initializes the QCrBoxCommand instance.
@@ -380,6 +445,14 @@ class QCrBoxCommand:
             URL for the GUI, if applicable.
         wrapper_parent : QCrBoxWrapper
             Parent wrapper object that instantiated the command.
+        prepare_cmd : Optional[QCrBoxCommand]
+            Passes an optional command that is executed before
+            the actual command is run.
+        finalise_cmd : Optional[QCrBoxCommand]
+            Passes an optional command that is run after the
+            command itself. Is meant for GUI commands where
+            the execution of this command is done after user
+            input.
         """
         self.id = cmd_id
         self.name = name
@@ -489,7 +562,7 @@ class QCrBoxCalculation:
         Parent command object that instantiated the calculation.
     """
 
-    def __init__(self, calc_id: int, calculation_parent: "QCrBoxCommand"):
+    def __init__(self, calc_id: int, calculation_parent: "QCrBoxCommand") -> None:
         """
         Initializes the QCrBoxCalculation instance.
 
@@ -581,8 +654,8 @@ class QCrBoxPathHelper:
     def __init__(
         self,
         local_path: pathlib.Path,
-        qcrbox_path: pathlib.Path = pathlib.PurePosixPath("/mnt/qcrbox/shared_files"),
-        base_dir: pathlib.Path = None,
+        qcrbox_path: pathlib.PurePosixPath = pathlib.PurePosixPath("/mnt/qcrbox/shared_files"),
+        base_dir: Optional[pathlib.Path] = None,
     ) -> None:
         """
         Initializes the QCrBoxPathHelper instance.
@@ -591,7 +664,7 @@ class QCrBoxPathHelper:
         ----------
         local_path : pathlib.Path
             The base path in the local file system.
-        qcrbox_path : pathlib.Path, optional
+        qcrbox_path : pathlib.PurePosixPath, optional
             The base path in the QCrBox file system (default is '/mnt/qcrbox/shared_files').
         base_dir : pathlib.Path, optional
             A subdirectory within both the local and QCrBox base paths for scoped path
