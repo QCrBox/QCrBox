@@ -41,6 +41,21 @@ def create_server_faststream_app(
                 "status": "success",
                 "msg": f"Successfully registered application {app_db.name!r} (id: {app_db.id})",
             }
+        elif msg["action"] == "invoke_command":
+            cmd_invocation = sql_models.CommandInvocationCreate(**msg["payload"])
+            cmd_invocation_db = cmd_invocation.save_to_db()
+            if cmd_invocation_db.application_id and cmd_invocation_db.command_id:
+                response = {
+                    "response_to": "invoke_command",
+                    "status": "ok",
+                    "msg": "Received command invocation request.",
+                }
+            else:
+                response = {
+                    "response_to": "invoke_command",
+                    "status": "error",
+                    "msg": "Could not proceed with command invocation request (TODO: add reason).",
+                }
         else:
             response = {
                 "response_to": "register_application",
