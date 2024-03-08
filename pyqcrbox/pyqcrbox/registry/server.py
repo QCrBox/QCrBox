@@ -5,6 +5,7 @@ from typing import Optional
 import anyio
 from faststream import Logger
 from faststream.rabbit import RabbitBroker
+from sqlmodel import select
 
 from pyqcrbox import msg_specs, settings, sql_models
 
@@ -50,6 +51,17 @@ def create_server_faststream_app(
                     "status": "ok",
                     "msg": "Received command invocation request.",
                 }
+                with settings.db.get_session() as session:
+                    application = session.exec(
+                        select(sql_models.ApplicationDB).where(
+                            sql_models.ApplicationDB.id == cmd_invocation_db.application_id
+                        )
+                    ).one()
+                    logger.debug(
+                        f"Sending command invocation request to queue for {application.slug!r}, "
+                        f"version {application.version!r}"
+                    )
+                    await broker.publish(cmd_invocation.model_dump(), routing_key=application.private_routing_key)
             else:
                 response = {
                     "response_to": "invoke_command",
