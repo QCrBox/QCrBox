@@ -8,46 +8,24 @@ description: "Eval14 and eval15 are integration methods for single crystal X-ray
 url: "http://www.crystal.chem.uu.nl/distr/eval/"
 
 commands:
-  - name: "interactive"
-    implemented_as: "GUI"  # other options: "python_callable"
+  - name: "sample_cmd"
+    implemented_as: "CLI"  # other options: "python_callable"
     parameters:
-      - name: "work_folder"
+      - name: "msg"
         type: "str"
         default_value: None
+      - name: "some_number"
+        type: "int"
+        default_value: 42
+        required: false
 
-  - name: "interactive"
-    implemented_as: "python_callable"  # other options: "python_callable"
+  - name: "sample_cmd_v2"
+    implemented_as: "CLI"  # other options: "python_callable"
     parameters:
-      - name: "work_folder"
-        type: "str"
-        default_value: None
-      - name: "rmat_file_path"
-        type: "str"
-        default_value: None
-      - name: "beamstop_file_path"
-        type: "str"
-        default_value: None
-      - name: "detalign_file_path"
-        type: "str"
-        default_value: None
-      - name: "maximum_res"
-        type: "float"
-        default_value: None
-      - name: "minimum_res"
-        type: "float"
-        default_value: None
-      - name: "box_size"
-        type: "float"
-        default_value: None
-      - name: "box_depth"
-        type: "int"
-        default_value: None
-      - name: "maximum_duration"
-        type: "float"
-        default_value: None
-      - name: "min_refln_in_box"
-        type: "int"
-        default_value: None
-      - name: "pic_dir"
-        type: "str"
-        default_value: None
+      - name: "msg"
+        type: str
+        default_value: null
+      - name: "some_number"
+        type: int
+        default_value: 42
+        required: False

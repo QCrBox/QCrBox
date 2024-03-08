@@ -53,14 +53,13 @@ cif_entry_sets:
       "_cell_length_a", "_cell_length_b", "_cell_length_c", "_cell_angle_alpha",
       "_cell_angle_beta", "_cell_angle_gamma", "_space_group_symop_operation_xyz",
       "_atom_site_label", "_atom_site_type_symbol", "_atom_site_fract_x",
-      "_atom_site_fract_y", "_atom_site_fract_z", "_atom_site_U_iso_or_equiv"
+      "_atom_site_fract_y", "_atom_site_fract_z"
     ]
     optional: [ # There is currently no mechanism for either/or. A possibility for resolution is required
       "_refln_index_h", "_refln_index_k", "_refln_index_l", "_diffrn_refln_index_h",
       "_diffrn_refln_index_k", "_diffrn_refln_index_l", '_reflns_d_resolution_high',
       "_diffrn_reflns_theta_max", "_diffrn_radiation_wavelength",
-      "_atom_site_fract_x_su", "_atom_site_fract_y_su", "_atom_site_fract_z_su", # prevent su merging to prevent loss of precision
-      "_atom_site_U_iso_or_equiv_su"
+      "_atom_site_fract_x_su", "_atom_site_fract_y_su", "_atom_site_fract_z_su" # prevent su merging to prevent loss of precision
     ]
   - name: "full_refinement"
     required: [
