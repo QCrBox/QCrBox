@@ -35,7 +35,7 @@ def create_server_faststream_app(
         logger.debug(f"Incoming message: {msg_debug_abbrev}")
         if msg["action"] == "register_application":
             app_cfg = sql_models.ApplicationCreate(**msg["payload"]["application_config"])
-            app_db = app_cfg.save_to_db()
+            app_db = app_cfg.save_to_db(private_routing_key=msg["payload"]["private_routing_key"])
             response = {
                 "response_to": "register_application",
                 "status": "success",

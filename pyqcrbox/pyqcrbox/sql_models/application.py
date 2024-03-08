@@ -27,11 +27,11 @@ class ApplicationCreate(QCrBoxPydanticBaseModel):
     def routing_key_command_invocation(self):
         return f"rk__{self.slug}__{self.version}"
 
-    def to_sql_model(self):
-        return ApplicationDB.from_pydantic_model(self)
+    def to_sql_model(self, private_routing_key: str = None):
+        return ApplicationDB.from_pydantic_model(self, private_routing_key=private_routing_key)
 
-    def save_to_db(self):
-        return self.to_sql_model().save_to_db()
+    def save_to_db(self, private_routing_key: str = None):
+        return self.to_sql_model(private_routing_key=private_routing_key).save_to_db()
 
 
 class ApplicationDB(QCrBoxBaseSQLModel, table=True):
@@ -48,17 +48,19 @@ class ApplicationDB(QCrBoxBaseSQLModel, table=True):
 
     id: Optional[int] = Field(default=None, primary_key=True)
     registered_at: datetime = Field(default_factory=datetime.now)
+    private_routing_key: str
 
     commands: list[CommandDB] = Relationship(back_populates="application")
     command_invocations: list["CommandInvocationDB"] = Relationship(back_populates="application")
     cif_entry_sets: list[str] = Field(sa_column=Column(JSON()))
 
     @classmethod
-    def from_pydantic_model(cls, application):
+    def from_pydantic_model(cls, application, private_routing_key: str = None):
         pydantic_model_cls = getattr(cls, "__pydantic_model_cls__")
         assert isinstance(application, pydantic_model_cls)
         data = application.model_dump(exclude={"commands"})
         data["commands"] = [CommandDB.from_pydantic_model(cmd) for cmd in application.commands]
+        data["private_routing_key"] = private_routing_key or "super-secret-private-routing-key-001"
         # logger.debug(f"{command.name=}: {data=}")
         return cls(**data)
 

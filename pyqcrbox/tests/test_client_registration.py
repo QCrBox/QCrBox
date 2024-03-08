@@ -22,7 +22,7 @@ async def test_client_registers_itself_with_server_during_startup(sample_applica
         server_app = create_server_faststream_app(broker, log_level="DEBUG")
         client_app = create_client_faststream_app(
             broker,
-            private_queue_name=private_queue_name,
+            private_routing_key=private_queue_name,
             application_spec=sample_application_cfg,
             log_level="DEBUG",
         )
@@ -52,10 +52,10 @@ async def test_client_registration_succeeds_even_if_same_application_was_registe
     async with TestRabbitBroker(broker, with_real=False):
         server_app = create_server_faststream_app(broker, log_level="DEBUG")
         client_app_1 = create_client_faststream_app(
-            broker, private_queue_name=private_queue_name, application_spec=sample_application_cfg, log_level="DEBUG"
+            broker, private_routing_key=private_queue_name, application_spec=sample_application_cfg, log_level="DEBUG"
         )
         client_app_2 = create_client_faststream_app(
-            broker, private_queue_name=private_queue_name, application_spec=sample_application_cfg, log_level="DEBUG"
+            broker, private_routing_key=private_queue_name, application_spec=sample_application_cfg, log_level="DEBUG"
         )
 
         async with create_task_group() as tg:
