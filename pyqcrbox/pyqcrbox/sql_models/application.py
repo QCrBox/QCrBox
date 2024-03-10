@@ -25,7 +25,7 @@ class ApplicationCreate(QCrBoxPydanticBaseModel):
 
     @property
     def routing_key_command_invocation(self):
-        return f"rk__{self.slug}__{self.version}"
+        return f"qcrbox_rk_{self.slug}_{self.version}"
 
     def to_sql_model(self, private_routing_key: str = None):
         return ApplicationDB.from_pydantic_model(self, private_routing_key=private_routing_key)
