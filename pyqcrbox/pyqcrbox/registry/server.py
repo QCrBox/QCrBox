@@ -18,7 +18,7 @@ def create_server_faststream_app(
     log_level: Optional[int | str] = logging.INFO,
 ) -> QCrBoxFastStream:
     server_app = QCrBoxFastStream(broker, title="QCrBox Server", log_level=get_log_level_int(log_level))
-    public_queue = "qcrbox-registry-v5b"
+    public_queue = "qcrbox-registry"
 
     @server_app.on_startup
     async def init_database(logger: Logger) -> None:

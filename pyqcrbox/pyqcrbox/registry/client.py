@@ -38,7 +38,7 @@ def create_client_faststream_app(
 
         response = await broker.publish(
             msg_register_application,
-            queue="qcrbox-registry-v5b",
+            queue="qcrbox-registry",
             rpc=True,
             raise_timeout=True,
         )
