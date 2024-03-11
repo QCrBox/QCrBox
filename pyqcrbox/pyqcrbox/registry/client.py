@@ -45,7 +45,7 @@ def create_client_faststream_app(
         logger.info(f"Received response: {response!r}")
 
     @client_app.after_startup
-    async def set_up_listener_on_private_queue(logger: Logger) -> None:
+    async def set_up_listeners(logger: Logger) -> None:
         # Temporarily suspend the broker in case it is running (otherwise
         # registering a new handler won't take effect until a restart).
         await broker.close()
