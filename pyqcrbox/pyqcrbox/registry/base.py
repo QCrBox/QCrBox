@@ -21,7 +21,7 @@ class QCrBoxFastStream(FastStream):
         description: str = "",
         **kwargs,
     ) -> None:
-        self.log_level = log_level
+        self.log_level = get_log_level_as_int(log_level)
         logger.setLevel(self.log_level)
         super().__init__(broker=broker, logger=logger, title=title, version=version, description=description, **kwargs)
         self.context.set_global("logger", logger)
@@ -110,3 +110,16 @@ class QCrBoxFastStream(FastStream):
             except ExceptionGroup as e:  # pragma: no cover
                 for ex in e.exceptions:
                     raise ex from None
+
+
+def get_log_level_as_int(log_level: int | str):
+    if isinstance(log_level, int):
+        log_level_int = log_level
+    elif isinstance(log_level, str):
+        log_level_int = logging.getLevelName(log_level)
+        if not isinstance(log_level_int, int):
+            raise ValueError(f"Unknown log level: {log_level}")
+    else:
+        raise TypeError(f"Invalid log level (must be a valid string or integer): {log_level}")
+
+    return log_level_int

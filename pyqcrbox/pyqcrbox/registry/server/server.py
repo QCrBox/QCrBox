@@ -3,14 +3,16 @@ import logging
 from typing import Optional
 
 import anyio
+import pydantic
 from faststream import Logger
 from faststream.rabbit import RabbitBroker
 from sqlmodel import select
 
 from pyqcrbox import msg_specs, settings, sql_models
 
-from .base import QCrBoxFastStream
-from .helpers import get_log_level_int
+from ..base import QCrBoxFastStream
+from .helpers import action_does_not_match
+from .message_processing import process_message_sync_or_async
 
 
 def create_server_faststream_app(
@@ -18,7 +20,7 @@ def create_server_faststream_app(
     log_level: Optional[int | str] = logging.INFO,
     purge_existing_db_tables: bool = False,
 ) -> QCrBoxFastStream:
-    server_app = QCrBoxFastStream(broker, title="QCrBox Server", log_level=get_log_level_int(log_level))
+    server_app = QCrBoxFastStream(broker, title="QCrBox Server", log_level=log_level)
     public_queue = settings.rabbitmq.routing_key_qcrbox_registry
 
     @server_app.on_startup
@@ -27,6 +29,53 @@ def create_server_faststream_app(
         logger.debug(f"Database url: {settings.db.url}")
         settings.db.create_db_and_tables(purge_existing_tables=purge_existing_db_tables)
         logger.info("Finished initialising database...")
+
+    @broker.subscriber(public_queue)
+    async def on_qcrbox_registry(msg: dict, logger: Logger) -> msg_specs.QCrBoxGenericResponse:
+        msg_debug = json.dumps(msg)
+        msg_debug_abbrev = msg_debug[:800] + " ..."
+        logger.info(f"Received message: {msg_debug_abbrev} (type: {type(msg).__name__})")
+
+        if isinstance(msg, (str, bytes)):
+            try:
+                msg = json.loads(msg)
+            except Exception as exc:
+                error_msg = (
+                    f"Incoming message does not represent a valid JSON structure: {msg}.\n"
+                    f"The original error was: {exc}"
+                )
+                logger.error(error_msg)
+                return msg_specs.QCrBoxGenericResponse(
+                    response_to="incoming_message", status="error", msg=error_msg, payload=None
+                )
+
+        if "action" not in msg:
+            error_msg = "Invalid message structure: message must have an 'action' field"
+            logger.error(error_msg)
+            return msg_specs.QCrBoxGenericResponse(response_to="incoming_message", status="error", msg=error_msg)
+
+        # Try matching the given message against all valid action classes.
+        # If a match is found, dispatch the message for processing; otherwise
+        # return a response with an informative error message.
+        for cls in msg_specs.VALID_QCRBOX_ACTIONS:
+            try:
+                msg_obj = cls(**msg)
+                break
+            except pydantic.ValidationError as exc:
+                if action_does_not_match(exc):
+                    # this action does not match; try the next one instead
+                    continue
+                else:
+                    logger.error(f"Invalid message structure for action {msg['action']!r}. Errors: {exc.errors()}")
+                    raise
+        else:
+            error_msg = f"Invalid action: {msg['action']!r}"
+            logger.error(error_msg)
+            return msg_specs.QCrBoxGenericResponse(response_to="incoming_message", status="error", msg=error_msg)
+
+        # Process the message - it will be passed to the correct processing function based on
+        # its type/structure (the heavy lifting is done by `functools.singledispatch`).
+        return await process_message_sync_or_async(msg_obj)
 
     @broker.subscriber(public_queue)
     async def on_qcrbox_registry(msg: dict, logger: Logger) -> dict:

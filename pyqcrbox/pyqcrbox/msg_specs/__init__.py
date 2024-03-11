@@ -1,2 +1,2 @@
 from .actions import *
-from .base import QCrBoxBaseAction
+from .base import QCrBoxBaseAction, QCrBoxGenericResponse
