@@ -322,7 +322,7 @@ application = client.register_application("Eval1X", version="20230913")
 
 application.register_external_command(
     "interactive",
-    ExternalCommand("lxterminal", FormattedParam("folder", format_string="--working-directory={}")),
+    ExternalCommand("lxterminal", FormattedParam("work_folder", format_string="--working-directory={}")),
 )
 
 application.register_python_callable('integrate', integrate)
