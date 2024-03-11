@@ -6,7 +6,7 @@ import anyio
 from faststream import Logger
 from faststream.rabbit import RabbitBroker
 
-from pyqcrbox import msg_specs, sql_models
+from pyqcrbox import msg_specs, settings, sql_models
 
 from .base import QCrBoxFastStream
 from .helpers import get_log_level_int
@@ -38,7 +38,7 @@ def create_client_faststream_app(
 
         response = await broker.publish(
             msg_register_application,
-            queue="qcrbox-registry",
+            queue=settings.rabbitmq.routing_key_qcrbox_registry,
             rpc=True,
             raise_timeout=True,
         )

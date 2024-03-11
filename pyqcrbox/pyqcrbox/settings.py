@@ -66,6 +66,8 @@ class RabbitMQSettings(BaseModel):
     password: str = "guest"
     graceful_timeout: Optional[int] = 10
 
+    routing_key_qcrbox_registry: str = "qcrbox-registry"
+
     @computed_field  # type: ignore
     @property
     def url(self) -> str:
