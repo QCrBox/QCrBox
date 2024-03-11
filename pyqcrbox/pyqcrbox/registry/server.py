@@ -62,7 +62,10 @@ def create_server_faststream_app(
                         f"Sending command invocation request to queue for {application.slug!r}, "
                         f"version {application.version!r}"
                     )
-                    await broker.publish(cmd_invocation.model_dump(), routing_key=application.private_routing_key)
+                    await broker.publish(
+                        cmd_invocation.model_dump(),
+                        routing_key=application.routing_key_command_invocation,
+                    )
             else:
                 response = {
                     "response_to": "invoke_command",
