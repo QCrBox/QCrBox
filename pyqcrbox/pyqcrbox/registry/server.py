@@ -16,6 +16,7 @@ from .helpers import get_log_level_int
 def create_server_faststream_app(
     broker: RabbitBroker,
     log_level: Optional[int | str] = logging.INFO,
+    purge_existing_db_tables: bool = False,
 ) -> QCrBoxFastStream:
     server_app = QCrBoxFastStream(broker, title="QCrBox Server", log_level=get_log_level_int(log_level))
     public_queue = settings.rabbitmq.routing_key_qcrbox_registry
@@ -24,7 +25,7 @@ def create_server_faststream_app(
     async def init_database(logger: Logger) -> None:
         logger.info("Initialising database...")
         logger.debug(f"Database url: {settings.db.url}")
-        settings.db.create_db_and_tables()
+        settings.db.create_db_and_tables(purge_existing_tables=purge_existing_db_tables)
         logger.info("Finished initialising database...")
 
     @broker.subscriber(public_queue)

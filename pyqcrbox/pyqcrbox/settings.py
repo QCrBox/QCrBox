@@ -29,10 +29,13 @@ def create_sqlmodel_engine(url: str, echo: bool, connect_args: tuple[(str, Any)]
 
 
 @functools.lru_cache
-def _create_db_tables(engine):
+def _create_db_tables(engine, purge_existing: bool):
     from pyqcrbox.sql_models import QCrBoxBaseSQLModel  # import here to avoid a circular import
 
     logger.debug(f"Initialising the database for engine: {engine}")
+    if purge_existing:
+        logger.debug("Purging existing tables.")
+        QCrBoxBaseSQLModel.metadata.drop_all(engine)
     QCrBoxBaseSQLModel.metadata.create_all(engine)
 
 
@@ -41,9 +44,14 @@ class DatabaseSettings(BaseModel):
     connect_args: dict = {"check_same_thread": False}
     echo: bool = False
 
-    def create_db_and_tables(self, url: Optional[SQLiteDsn] = None, echo: Optional[bool] = None) -> None:
+    def create_db_and_tables(
+        self,
+        url: Optional[SQLiteDsn] = None,
+        echo: Optional[bool] = None,
+        purge_existing_tables: bool = False,
+    ) -> None:
         engine = self.get_engine(url=url, echo=echo)
-        _create_db_tables(engine)
+        _create_db_tables(engine, purge_existing_tables)
 
     def get_engine(self, url: Optional[SQLiteDsn] = None, echo: Optional[bool] = None) -> sqlalchemy.Engine:
         url = url if url is not None else self.url
@@ -51,11 +59,15 @@ class DatabaseSettings(BaseModel):
         return create_sqlmodel_engine(url=url, echo=echo, connect_args=tuple(self.connect_args.items()))
 
     def get_session(
-        self, url: Optional[SQLiteDsn] = None, echo: Optional[bool] = None, init_db: bool = False
+        self,
+        url: Optional[SQLiteDsn] = None,
+        echo: Optional[bool] = None,
+        init_db: bool = False,
+        purge_existing_tables: bool = False,
     ) -> sqlmodel.Session:
         engine = self.get_engine(url=url, echo=echo)
         if init_db:
-            _create_db_tables(engine)
+            _create_db_tables(engine, purge_existing_tables)
         return Session(engine)
 
 

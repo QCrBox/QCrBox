@@ -17,6 +17,7 @@ class CommandInvocationCreate(QCrBoxPydanticBaseModel):
     application_version: str
     command_name: str
     arguments: dict[str, Any]
+    correlation_id: str
 
     def to_sql_model(self):
         return CommandInvocationDB.from_pydantic_model(self)
@@ -33,6 +34,7 @@ class CommandInvocationDB(QCrBoxBaseSQLModel, table=True):
     application_version: str
     command_name: str
     arguments: dict[str, Any] = Field(sa_column=Column(JSON))
+    correlation_id: str
     timestamp: datetime = Field(default_factory=datetime.now)
 
     id: Optional[int] = Field(default=None, primary_key=True)
