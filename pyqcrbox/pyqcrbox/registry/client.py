@@ -64,15 +64,26 @@ def create_client_faststream_app(
         logger.debug(f"Set up listener on private queue: {private_routing_key!r}")
 
         @broker.subscriber(application_spec.routing_key_command_invocation)
-        def on_command_invocation(msg: dict, logger: Logger):
+        async def on_command_invocation(msg: dict, logger: Logger):
             logger.debug(f"Received command invocation request: {msg=}")
-            response = {
-                "response_to": "command_invocation_request",
-                "status": "success",
-                "msg": "",
+            cmd_invocation = sql_models.CommandInvocationCreate(**msg)
+            msg_response = {
+                "action": "accept_command_invocation",
+                "payload": {
+                    "application_slug": cmd_invocation.application_slug,
+                    "application_version": cmd_invocation.application_version,
+                    "correlation_id": cmd_invocation.correlation_id,
+                    "private_routing_key": private_routing_key,
+                },
             }
+            logger.debug(
+                f"Accepting command invocation request (correlation_id: {msg_response['payload']['correlation_id']})"
+            )
+            await broker.publish(
+                msg_response,
+                routing_key=settings.rabbitmq.routing_key_qcrbox_registry,
+            )
             client_app.increment_processed_message_counter(application_spec.routing_key_command_invocation)
-            return response
 
         logger.debug(
             f"Set up listener for command invocation requests: {application_spec.routing_key_command_invocation!r}"

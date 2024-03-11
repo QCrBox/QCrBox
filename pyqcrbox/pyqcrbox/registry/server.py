@@ -72,6 +72,22 @@ def create_server_faststream_app(
                     "status": "error",
                     "msg": "Could not proceed with command invocation request (TODO: add reason).",
                 }
+        elif msg["action"] == "accept_command_invocation":
+            logger.debug(
+                f"Application accepted command invocation with correlation_id={msg['payload']['correlation_id']}"
+            )
+            msg_execute_cmd = {
+                "action": "execute_command",
+                "payload": {
+                    "arguments": "TODO",
+                },
+            }
+            await broker.publish(msg_execute_cmd, routing_key=msg["payload"]["private_routing_key"])
+            response = {
+                "response_to": "accept_command_invocation",
+                "status": "successful",
+                "msg": "Submitted command execution request to client application.",
+            }
         else:
             response = {
                 "response_to": "register_application",
