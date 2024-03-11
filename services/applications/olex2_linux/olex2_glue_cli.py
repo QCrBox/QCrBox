@@ -1,4 +1,5 @@
 import argparse
+import hashlib
 from pathlib import Path
 
 from qcrboxtools.cif.cif2cif import cif_file_unified_yml_instr, cif_file_unify_split
@@ -30,7 +31,14 @@ def refine(args):
 
 
 def run_commands(args):
-    olex2_socket = Olex2Socket(structure_path=args.structure_path)
+    structure_path = Path(args.structure_path)
+    work_cif_path = structure_path.parent / "work.cif"
+
+    cif_file_unified_yml_instr(structure_path, work_cif_path, YAML_PATH, "run_cmds_file")
+
+    olex2_socket = Olex2Socket(structure_path=work_cif_path)
+
+    hash0 = hashlib.md5(work_cif_path.read_bytes()).hexdigest()
 
     if args.tsc_path:
         olex2_socket.tsc_path = args.tsc_path
@@ -38,6 +46,15 @@ def run_commands(args):
     cmd_string = Path(args.cmd_file_path).read_text(encoding="UTF-8")
 
     olex2_socket.send_command(cmd_string)
+
+    hash1 = hashlib.md5(work_cif_path.read_bytes()).hexdigest()
+
+    if hash0 != hash1:
+        cif_file_unify_split(
+            work_cif_path,
+            structure_path.parent / "output.cif",
+            custom_categories=["shelx", "olex2", "iucr"],
+        )
 
 
 def main():
