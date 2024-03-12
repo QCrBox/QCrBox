@@ -6,12 +6,11 @@ import anyio
 import pydantic
 from faststream import Logger
 from faststream.rabbit import RabbitBroker
-from sqlmodel import select
 
-from pyqcrbox import msg_specs, settings, sql_models
+from pyqcrbox import msg_specs, settings
+from pyqcrbox.msg_specs import InvalidQCrBoxAction, look_up_action_class
 
 from ..base import QCrBoxFastStream
-from .helpers import action_does_not_match
 from .message_processing import process_message_sync_or_async
 
 
@@ -54,22 +53,17 @@ def create_server_faststream_app(
             logger.error(error_msg)
             return msg_specs.QCrBoxGenericResponse(response_to="incoming_message", status="error", msg=error_msg)
 
-        # Try matching the given message against all valid action classes.
-        # If a match is found, dispatch the message for processing; otherwise
-        # return a response with an informative error message.
-        for cls in msg_specs.VALID_QCRBOX_ACTIONS:
-            try:
-                msg_obj = cls(**msg)
-                break
-            except pydantic.ValidationError as exc:
-                if action_does_not_match(exc):
-                    # this action does not match; try the next one instead
-                    continue
-                else:
-                    logger.error(f"Invalid message structure for action {msg['action']!r}. Errors: {exc.errors()}")
-                    raise
-        else:
+        try:
+            action_cls = look_up_action_class(msg["action"])
+        except InvalidQCrBoxAction:
             error_msg = f"Invalid action: {msg['action']!r}"
+            logger.error(error_msg)
+            return msg_specs.QCrBoxGenericResponse(response_to="incoming_message", status="error", msg=error_msg)
+
+        try:
+            msg_obj = action_cls(**msg)
+        except pydantic.ValidationError as exc:
+            error_msg = f"Invalid message structure for action {msg['action']!r}. Errors: {exc.errors()}"
             logger.error(error_msg)
             return msg_specs.QCrBoxGenericResponse(response_to="incoming_message", status="error", msg=error_msg)
 
@@ -77,75 +71,75 @@ def create_server_faststream_app(
         # its type/structure (the heavy lifting is done by `functools.singledispatch`).
         return await process_message_sync_or_async(msg_obj)
 
-    @broker.subscriber(public_queue)
-    async def on_qcrbox_registry(msg: dict, logger: Logger) -> dict:
-        msg_specs.QCrBoxBaseAction.model_validate(msg)
-
-        msg_debug = json.dumps(msg)
-        msg_debug_abbrev = msg_debug[:800] + " ..."
-        logger.debug(f"Incoming message: {msg_debug_abbrev}")
-        if msg["action"] == "register_application":
-            app_cfg = sql_models.ApplicationCreate(**msg["payload"]["application_config"])
-            app_db = app_cfg.save_to_db(private_routing_key=msg["payload"]["private_routing_key"])
-            response = {
-                "response_to": "register_application",
-                "status": "success",
-                "msg": f"Successfully registered application {app_db.name!r} (id: {app_db.id})",
-            }
-        elif msg["action"] == "invoke_command":
-            cmd_invocation = sql_models.CommandInvocationCreate(**msg["payload"])
-            cmd_invocation_db = cmd_invocation.save_to_db()
-            if cmd_invocation_db.application_id and cmd_invocation_db.command_id:
-                response = {
-                    "response_to": "invoke_command",
-                    "status": "ok",
-                    "msg": "Received command invocation request.",
-                }
-                with settings.db.get_session() as session:
-                    application = session.exec(
-                        select(sql_models.ApplicationDB).where(
-                            sql_models.ApplicationDB.id == cmd_invocation_db.application_id
-                        )
-                    ).one()
-                    logger.debug(
-                        f"Sending command invocation request to queue for {application.slug!r}, "
-                        f"version {application.version!r}"
-                    )
-                    await broker.publish(
-                        cmd_invocation.model_dump(),
-                        routing_key=application.routing_key_command_invocation,
-                    )
-            else:
-                response = {
-                    "response_to": "invoke_command",
-                    "status": "error",
-                    "msg": "Could not proceed with command invocation request (TODO: add reason).",
-                }
-        elif msg["action"] == "accept_command_invocation":
-            logger.debug(
-                f"Application accepted command invocation with correlation_id={msg['payload']['correlation_id']}"
-            )
-            msg_execute_cmd = {
-                "action": "execute_command",
-                "payload": {
-                    "arguments": "TODO",
-                },
-            }
-            await broker.publish(msg_execute_cmd, routing_key=msg["payload"]["private_routing_key"])
-            response = {
-                "response_to": "accept_command_invocation",
-                "status": "successful",
-                "msg": "Submitted command execution request to client application.",
-            }
-        else:
-            response = {
-                "response_to": "register_application",
-                "status": "failed",
-                "msg": f"Invalid action: {msg['action']!r}",
-            }
-
-        server_app.increment_processed_message_counter(public_queue)
-        return response
+    # @broker.subscriber(public_queue)
+    # async def on_qcrbox_registry(msg: dict, logger: Logger) -> dict:
+    #     msg_specs.QCrBoxBaseAction.model_validate(msg)
+    #
+    #     msg_debug = json.dumps(msg)
+    #     msg_debug_abbrev = msg_debug[:800] + " ..."
+    #     logger.debug(f"Incoming message: {msg_debug_abbrev}")
+    #     if msg["action"] == "register_application":
+    #         app_cfg = sql_models.ApplicationCreate(**msg["payload"]["application_config"])
+    #         app_db = app_cfg.save_to_db(private_routing_key=msg["payload"]["private_routing_key"])
+    #         response = {
+    #             "response_to": "register_application",
+    #             "status": "success",
+    #             "msg": f"Successfully registered application {app_db.name!r} (id: {app_db.id})",
+    #         }
+    #     elif msg["action"] == "invoke_command":
+    #         cmd_invocation = sql_models.CommandInvocationCreate(**msg["payload"])
+    #         cmd_invocation_db = cmd_invocation.save_to_db()
+    #         if cmd_invocation_db.application_id and cmd_invocation_db.command_id:
+    #             response = {
+    #                 "response_to": "invoke_command",
+    #                 "status": "ok",
+    #                 "msg": "Received command invocation request.",
+    #             }
+    #             with settings.db.get_session() as session:
+    #                 application = session.exec(
+    #                     select(sql_models.ApplicationDB).where(
+    #                         sql_models.ApplicationDB.id == cmd_invocation_db.application_id
+    #                     )
+    #                 ).one()
+    #                 logger.debug(
+    #                     f"Sending command invocation request to queue for {application.slug!r}, "
+    #                     f"version {application.version!r}"
+    #                 )
+    #                 await broker.publish(
+    #                     cmd_invocation.model_dump(),
+    #                     routing_key=application.routing_key_command_invocation,
+    #                 )
+    #         else:
+    #             response = {
+    #                 "response_to": "invoke_command",
+    #                 "status": "error",
+    #                 "msg": "Could not proceed with command invocation request (TODO: add reason).",
+    #             }
+    #     elif msg["action"] == "accept_command_invocation":
+    #         logger.debug(
+    #             f"Application accepted command invocation with correlation_id={msg['payload']['correlation_id']}"
+    #         )
+    #         msg_execute_cmd = {
+    #             "action": "execute_command",
+    #             "payload": {
+    #                 "arguments": "TODO",
+    #             },
+    #         }
+    #         await broker.publish(msg_execute_cmd, routing_key=msg["payload"]["private_routing_key"])
+    #         response = {
+    #             "response_to": "accept_command_invocation",
+    #             "status": "successful",
+    #             "msg": "Submitted command execution request to client application.",
+    #         }
+    #     else:
+    #         response = {
+    #             "response_to": "register_application",
+    #             "status": "failed",
+    #             "msg": f"Invalid action: {msg['action']!r}",
+    #         }
+    #
+    #     server_app.increment_processed_message_counter(public_queue)
+    #     return response
 
     server_app.on_qcrbox_registry = on_qcrbox_registry
 

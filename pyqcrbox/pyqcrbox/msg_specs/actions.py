@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from .. import sql_models
 from .base import QCrBoxBaseAction, QCrBoxBaseMessage, QCrBoxGenericResponse
 
-__all__ = ["VALID_QCRBOX_ACTIONS", "RegisterApplication", "RegisterApplicationResponse"]
+__all__ = ["InvalidQCrBoxAction", "RegisterApplication", "RegisterApplicationResponse", "look_up_action_class"]
 
 
 class RegisterApplication(QCrBoxBaseAction):
@@ -38,18 +38,29 @@ def represents_valid_qcrbox_action(cls: Any) -> bool:
     return inspect.isclass(cls) and issubclass(cls, QCrBoxBaseAction) and cls is not QCrBoxBaseAction
 
 
-def represents_valid_qcrbox_response(cls):
+def represents_valid_qcrbox_response(cls, include_generic_base_class: bool = False):
     return inspect.isclass(cls) and issubclass(cls, QCrBoxGenericResponse)
 
 
-# Generate a list of all classes representing valid QCrBox action messages
-VALID_QCRBOX_MESSAGES = [cls for cls in locals().values() if represents_valid_qcrbox_message(cls)]
-VALID_QCRBOX_ACTIONS = [cls for cls in locals().values() if represents_valid_qcrbox_action(cls)]
-VALID_QCRBOX_RESPONSES = [cls for cls in locals().values() if represents_valid_qcrbox_response(cls)]
+VALID_QCRBOX_ACTIONS_BY_NAME = {
+    cls.action_name: cls for cls in locals().values() if represents_valid_qcrbox_action(cls)
+}
+# VALID_QCRBOX_RESPONSES_BY_NAME = {
+#     cls.response_to_str: cls
+#     for cls in locals().values()
+#     if represents_valid_qcrbox_response(cls, include_generic_base_class=False)
+# }
+# VALID_QCRBOX_RESPONSES_BY_NAME["incoming_message"] = QCrBoxGenericResponse
 
-# Ensure that QCrBoxGenericResponse comes last because it is the last fallback
-# after trying the more specific message types.
-VALID_QCRBOX_MESSAGES.remove(QCrBoxGenericResponse)
-VALID_QCRBOX_MESSAGES += [QCrBoxGenericResponse]
-VALID_QCRBOX_RESPONSES.remove(QCrBoxGenericResponse)
-VALID_QCRBOX_RESPONSES += [QCrBoxGenericResponse]
+
+class InvalidQCrBoxAction(Exception):
+    """
+    Custom exception to indicate that an action is not supported by QCrbox.
+    """
+
+
+def look_up_action_class(action_name: str):
+    try:
+        return VALID_QCRBOX_ACTIONS_BY_NAME[action_name]
+    except KeyError:
+        raise InvalidQCrBoxAction(f"Invalid action: {action_name!r}")
