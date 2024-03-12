@@ -2,7 +2,10 @@
 
 import asyncio
 from functools import singledispatch
+
 from loguru import logger  # TODO: switch to FastStream logger
+
+from pyqcrbox.msg_specs import QCrBoxGenericResponse
 
 
 async def process_message_sync_or_async(msg):
@@ -21,7 +24,8 @@ async def process_message_sync_or_async(msg):
 @singledispatch
 def process_message(msg):
     """
-    Fallback processing definition, in case none of the others match.
+    Fallback processing definition (this is executed only if none of the others match).
     """
-    logger.warning("TODO: add a more informative error message here (and return a proper QCrBoxGenericResponse)!")
-    raise NotImplementedError(f"Cannot process incoming message: {msg}")
+    error_msg = f"Cannot process incoming message: {msg}"
+    logger.warning(error_msg)
+    return QCrBoxGenericResponse(response_to="incoming_message", status="error", msg=error_msg)
