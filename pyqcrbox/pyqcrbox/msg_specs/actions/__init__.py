@@ -1,3 +1,4 @@
+from .invoke_command import *
 from .register_application import *
 
 # Store the local variables so that we can later construct
