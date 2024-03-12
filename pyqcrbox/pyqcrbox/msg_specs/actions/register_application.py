@@ -2,8 +2,9 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel
 
-from .. import sql_models
-from .base import QCrBoxBaseAction, QCrBoxGenericResponse
+from pyqcrbox import sql_models
+
+from ..base import QCrBoxBaseAction, QCrBoxGenericResponse
 
 __all__ = ["RegisterApplication", "RegisterApplicationResponse"]
 
