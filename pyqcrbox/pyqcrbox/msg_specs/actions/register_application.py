@@ -22,7 +22,7 @@ class RegisterApplicationResponse(QCrBoxGenericResponse):
     class Payload(BaseModel):
         application_id: int
 
-    response_to: Literal["register_application"]
+    response_to: Literal[RegisterApplication.action_name]
     status: str
     msg: Optional[str] = None
     payload: Optional[Payload] = None
