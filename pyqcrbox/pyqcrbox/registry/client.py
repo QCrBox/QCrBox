@@ -68,18 +68,14 @@ def create_client_faststream_app(
         async def on_command_invocation(msg: dict, logger: Logger):
             logger.debug(f"Received command invocation request: {msg=}")
             cmd_invocation = sql_models.CommandInvocationCreate(**msg)
-            msg_response = {
-                "action": "accept_command_invocation",
-                "payload": {
-                    "application_slug": cmd_invocation.application_slug,
-                    "application_version": cmd_invocation.application_version,
-                    "correlation_id": cmd_invocation.correlation_id,
-                    "private_routing_key": private_routing_key,
-                },
-            }
-            logger.debug(
-                f"Accepting command invocation request (correlation_id: {msg_response['payload']['correlation_id']})"
+            msg_response = msg_specs.AcceptCommandInvocation(
+                action="accept_command_invocation",
+                payload=msg_specs.AcceptCommandInvocation.Payload(
+                    correlation_id=cmd_invocation.correlation_id,
+                    private_routing_key=private_routing_key,
+                ),
             )
+            logger.debug(f"Accepting command invocation request (correlation_id: {cmd_invocation.correlation_id})")
             await broker.publish(
                 msg_response,
                 routing_key=settings.rabbitmq.routing_key_qcrbox_registry,
