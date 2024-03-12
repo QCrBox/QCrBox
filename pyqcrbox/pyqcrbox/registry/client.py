@@ -42,6 +42,8 @@ def create_client_faststream_app(
             raise_timeout=True,
         )
         logger.info(f"Received response: {response!r}")
+        if response["status"] != "success":
+            raise RuntimeError(f"Something went wrong, bailing out.\nResponse from server: {response!r}")
 
     @client_app.after_startup
     async def set_up_listeners(logger: Logger) -> None:
