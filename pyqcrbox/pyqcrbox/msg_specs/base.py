@@ -19,7 +19,7 @@ class QCrBoxBaseAction(QCrBoxBaseMessage):
 
     @classmethod
     @property
-    def action_name(cls):
+    def action_name(cls) -> str:
         """
         Allows accessing the action name directly from the class (without needing a concrete instance).
         """
@@ -34,7 +34,7 @@ class QCrBoxGenericResponse(QCrBoxBaseMessage):
 
     @classmethod
     @property
-    def response_to_str(cls):
+    def response_to_str(cls) -> str:
         """
         Allows accessing the value of 'response_to' directly from the class (without needing a concrete instance).
         """
