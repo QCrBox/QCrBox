@@ -69,7 +69,10 @@ def create_server_faststream_app(
 
         # Process the message - it will be passed to the correct processing function based on
         # its type/structure (the heavy lifting is done by `functools.singledispatch`).
-        return await process_message_sync_or_async(msg_obj)
+        response = await process_message_sync_or_async(msg_obj)
+
+        server_app.increment_processed_message_counter(public_queue)
+        return response
 
     # @broker.subscriber(public_queue)
     # async def on_qcrbox_registry(msg: dict, logger: Logger) -> dict:

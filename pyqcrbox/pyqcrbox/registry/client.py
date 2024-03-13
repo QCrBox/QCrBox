@@ -42,6 +42,7 @@ def create_client_faststream_app(
             raise_timeout=True,
         )
         logger.info(f"Received response: {response!r}")
+        client_app.increment_processed_message_counter(private_routing_key)
         if isinstance(response, dict):
             # TODO: ensure that all handlers return an instance of QCrBoxGenericResponse rather than a plain dict
             response = msg_specs.QCrBoxGenericResponse(**response)
@@ -99,12 +100,6 @@ def create_client_faststream_app(
 
         # Resume broker now that the new handler has been registered.
         await broker.start()
-
-    @client_app.after_startup
-    async def shut_down_client_if_max_messages_is_zero(logger: Logger) -> None:
-        if client_app.max_messages == 0:
-            logger.debug("Shutting down client app because max_messages was set to zero.")
-            client_app.request_shutdown()
 
     return client_app
 

@@ -61,6 +61,7 @@ class QCrBoxFastStream(FastStream):
 
     def increment_processed_message_counter(self, routing_key: Optional[str] = None):
         self.msg_counter += 1
+        self.logger.debug(f"Current message count: {self.msg_counter}")
         if self.msg_counter >= self._max_messages:
             self.logger.info(f"Reached maximum number of messages ({self._max_messages}), shutting down.")
             self.request_shutdown()
@@ -105,6 +106,9 @@ class QCrBoxFastStream(FastStream):
                     tg.start_soon(self._start, self.log_level, run_extra_options)
                     tg.start_soon(self._wait_for_and_handle_shutdown_request, tg.cancel_scope)
                     tg.start_soon(self._optional_shutdown_after_delay, tg.cancel_scope, shutdown_delay)
+                    if max_messages == 0:
+                        logger.debug("Shutting down app because max_messages was set to zero.")
+                        self.request_shutdown()
                     await self._stop(self.log_level)
                     tg.cancel_scope.cancel()  # pragma: no cover
             except ExceptionGroup as e:  # pragma: no cover
