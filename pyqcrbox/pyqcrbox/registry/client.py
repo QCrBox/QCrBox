@@ -42,7 +42,12 @@ def create_client_faststream_app(
             raise_timeout=True,
         )
         logger.info(f"Received response: {response!r}")
-        if response["status"] != "success":
+        if isinstance(response, dict):
+            # TODO: ensure that all handlers return an instance of QCrBoxGenericResponse rather than a plain dict
+            response = msg_specs.QCrBoxGenericResponse(**response)
+        assert isinstance(response, msg_specs.QCrBoxGenericResponse)
+
+        if response.status != "success":
             raise RuntimeError(f"Something went wrong, bailing out.\nResponse from server: {response!r}")
 
     @client_app.after_startup
