@@ -6,19 +6,19 @@ from pyqcrbox import sql_models
 
 from ..base import QCrBoxBaseAction, QCrBoxGenericResponse
 
-__all__ = ["InvokeCommand", "InvokeCommandResponse"]
+__all__ = ["ExecuteCommand", "ExecuteCommandResponse"]
 
 
-class InvokeCommand(QCrBoxBaseAction):
-    action: Literal["invoke_command"]
+class ExecuteCommand(QCrBoxBaseAction):
+    action: Literal["execute_command"]
     payload: sql_models.CommandInvocationCreate
 
 
-class InvokeCommandResponse(QCrBoxGenericResponse):
+class ExecuteCommandResponse(QCrBoxGenericResponse):
     class Payload(BaseModel):
         pass
 
-    response_to: Literal[InvokeCommand.action_name]
+    response_to: Literal[ExecuteCommand.action_name]
     status: str
     msg: Optional[str] = None
     payload: Optional[Payload] = None

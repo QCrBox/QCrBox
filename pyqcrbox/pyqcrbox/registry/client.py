@@ -54,28 +54,34 @@ def create_client_faststream_app(
         @broker.subscriber(private_routing_key)
         def on_incoming_private_message(msg: dict, logger: Logger):
             logger.debug(f"Received message on private queue: {msg=}")
-            response = {
-                "response_to": "incoming_private_message",
-                "status": "success",
-                "msg": "",
-            }
+            if msg["action"] == "execute_command":
+                response = {
+                    "response_to": "execute_command",
+                    "status": "ok",
+                    "msg": "TODO: implement this!",
+                }
+            else:
+                response = {
+                    "response_to": "incoming_private_message",
+                    "status": "success",
+                    "msg": "",
+                }
             client_app.increment_processed_message_counter(private_routing_key)
             return response
 
         logger.debug(f"Set up listener on private queue: {private_routing_key!r}")
 
         @broker.subscriber(application_spec.routing_key_command_invocation)
-        async def on_command_invocation(msg: dict, logger: Logger):
+        async def on_command_invocation(msg: sql_models.CommandInvocationCreate, logger: Logger):
             logger.debug(f"Received command invocation request: {msg=}")
-            cmd_invocation = sql_models.CommandInvocationCreate(**msg)
             msg_response = msg_specs.AcceptCommandInvocation(
                 action="accept_command_invocation",
                 payload=msg_specs.AcceptCommandInvocation.Payload(
-                    correlation_id=cmd_invocation.correlation_id,
                     private_routing_key=private_routing_key,
+                    **msg.model_dump(),
                 ),
             )
-            logger.debug(f"Accepting command invocation request (correlation_id: {cmd_invocation.correlation_id})")
+            logger.debug(f"Accepting command invocation request (correlation_id: {msg.correlation_id})")
             await broker.publish(
                 msg_response,
                 routing_key=settings.rabbitmq.routing_key_qcrbox_registry,

@@ -2,7 +2,7 @@
 from faststream import Context, Logger, apply_types
 from faststream.rabbit import RabbitBroker
 
-from pyqcrbox import msg_specs
+from pyqcrbox import msg_specs, sql_models
 
 from .base import process_message
 
@@ -20,20 +20,18 @@ async def _(
     Send command execution command to the application who accepted the command invocation request.
     """
     logger.debug(f"Application accepted command invocation with correlation_id={msg.payload.correlation_id}")
-    logger.debug("Sending command executon request to this application.")
-    msg_execute_cmd = {
-        "action": "execute_command",
-        "payload": {
-            "arguments": "TODO",
-        },
-    }
+    logger.debug("Sending command execution request to this application.")
+    msg_execute_cmd = msg_specs.ExecuteCommand(
+        action="execute_command",
+        payload=sql_models.CommandInvocationCreate(**msg.payload.model_dump(exclude={"private_routing_key"})),
+    )
     await broker.publish(msg_execute_cmd, routing_key=msg.payload.private_routing_key)
 
     response = msg_specs.AcceptCommandInvocationResponse(
         response_to=msg.action,
         status="success",
         msg="Submitted command execution request to client application.",
-        payload=msg_specs.AcceptCommandInvocationResponse.Payload(correlation_id=msg.payload.correlation_id),
+        payload=msg_specs.AcceptCommandInvocation.Payload(**msg.payload.model_dump()),
     )
 
     return response
