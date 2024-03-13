@@ -29,7 +29,7 @@ async def test_client_registers_itself_with_server_during_startup(sample_applica
 
         async with create_task_group() as tg:
             server_max_messages = 1
-            client_max_messages = 0
+            client_max_messages = 1
             tg.start_soon(server_app.run, server_max_messages)
             tg.start_soon(client_app.run, client_max_messages)
 
@@ -39,12 +39,12 @@ async def test_client_registers_itself_with_server_during_startup(sample_applica
 
 @pytest.mark.asyncio
 async def test_client_registration_succeeds_even_if_same_application_was_registered_before(sample_application_cfg):
-    private_queue_name = "qcrbox_rk_test_client_xyz"
+    private_routing_key = "qcrbox_rk_test_client_xyz"
     expected_registration_message = msg_specs.RegisterApplication(
         action="register_application",
         payload=msg_specs.RegisterApplication.Payload(
             application_config=sample_application_cfg,
-            routing_key__registry_to_application=private_queue_name,
+            private_routing_key=private_routing_key,
         ),
     ).dict()
 
@@ -52,16 +52,16 @@ async def test_client_registration_succeeds_even_if_same_application_was_registe
     async with TestRabbitBroker(broker, with_real=False):
         server_app = create_server_faststream_app(broker, log_level="DEBUG")
         client_app_1 = create_client_faststream_app(
-            broker, private_routing_key=private_queue_name, application_spec=sample_application_cfg, log_level="DEBUG"
+            broker, private_routing_key=private_routing_key, application_spec=sample_application_cfg, log_level="DEBUG"
         )
         client_app_2 = create_client_faststream_app(
-            broker, private_routing_key=private_queue_name, application_spec=sample_application_cfg, log_level="DEBUG"
+            broker, private_routing_key=private_routing_key, application_spec=sample_application_cfg, log_level="DEBUG"
         )
 
         async with create_task_group() as tg:
             server_max_messages = 2
-            client_1_max_messages = 0
-            client_2_max_messages = 0
+            client_1_max_messages = 1
+            client_2_max_messages = 1
             tg.start_soon(server_app.run, server_max_messages)
             tg.start_soon(client_app_1.run, client_1_max_messages)
             tg.start_soon(client_app_2.run, client_2_max_messages)
