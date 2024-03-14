@@ -13,9 +13,13 @@ class QCrBoxBaseMessage(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
+class QCrBoxActionBasePayload(BaseModel):
+    pass
+
+
 class QCrBoxBaseAction(QCrBoxBaseMessage):
     action: str
-    payload: BaseModel
+    payload: QCrBoxActionBasePayload
 
     @classmethod
     @property

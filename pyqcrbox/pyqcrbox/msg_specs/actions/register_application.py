@@ -4,18 +4,21 @@ from pydantic import BaseModel
 
 from pyqcrbox import sql_models
 
-from ..base import QCrBoxBaseAction, QCrBoxGenericResponse
+from ..base import QCrBoxActionBasePayload, QCrBoxBaseAction, QCrBoxGenericResponse
 
 __all__ = ["RegisterApplication", "RegisterApplicationResponse"]
 
 
-class RegisterApplication(QCrBoxBaseAction):
-    class Payload(BaseModel):
-        application_config: sql_models.ApplicationCreate
-        private_routing_key: str
+class RegisterApplicationPayload(QCrBoxActionBasePayload):
+    application_spec: sql_models.ApplicationCreate
+    private_routing_key: str
 
+
+class RegisterApplication(QCrBoxBaseAction):
     action: Literal["register_application"]
-    payload: Payload
+    payload: RegisterApplicationPayload
+
+    Payload = RegisterApplicationPayload  # convenience alias
 
 
 class RegisterApplicationResponse(QCrBoxGenericResponse):

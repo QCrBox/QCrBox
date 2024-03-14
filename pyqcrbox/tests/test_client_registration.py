@@ -7,12 +7,12 @@ from pyqcrbox.registry import create_client_faststream_app, create_server_fastst
 
 
 @pytest.mark.asyncio
-async def test_client_registers_itself_with_server_during_startup(sample_application_cfg):
+async def test_client_registers_itself_with_server_during_startup(sample_application_spec):
     private_routing_key = "qcrbox_rk_test_client_xyz"
     expected_registration_message = msg_specs.RegisterApplication(
         action="register_application",
         payload=msg_specs.RegisterApplication.Payload(
-            application_config=sample_application_cfg,
+            application_spec=sample_application_spec,
             private_routing_key=private_routing_key,
         ),
     ).dict()
@@ -23,7 +23,7 @@ async def test_client_registers_itself_with_server_during_startup(sample_applica
         client_app = create_client_faststream_app(
             broker,
             private_routing_key=private_routing_key,
-            application_spec=sample_application_cfg,
+            application_spec=sample_application_spec,
             log_level="DEBUG",
         )
 
@@ -38,12 +38,12 @@ async def test_client_registers_itself_with_server_during_startup(sample_applica
 
 
 @pytest.mark.asyncio
-async def test_client_registration_succeeds_even_if_same_application_was_registered_before(sample_application_cfg):
+async def test_client_registration_succeeds_even_if_same_application_was_registered_before(sample_application_spec):
     private_routing_key = "qcrbox_rk_test_client_xyz"
     expected_registration_message = msg_specs.RegisterApplication(
         action="register_application",
         payload=msg_specs.RegisterApplication.Payload(
-            application_config=sample_application_cfg,
+            application_spec=sample_application_spec,
             private_routing_key=private_routing_key,
         ),
     ).dict()
@@ -52,10 +52,10 @@ async def test_client_registration_succeeds_even_if_same_application_was_registe
     async with TestRabbitBroker(broker, with_real=False):
         server_app = create_server_faststream_app(broker, log_level="DEBUG")
         client_app_1 = create_client_faststream_app(
-            broker, private_routing_key=private_routing_key, application_spec=sample_application_cfg, log_level="DEBUG"
+            broker, private_routing_key=private_routing_key, application_spec=sample_application_spec, log_level="DEBUG"
         )
         client_app_2 = create_client_faststream_app(
-            broker, private_routing_key=private_routing_key, application_spec=sample_application_cfg, log_level="DEBUG"
+            broker, private_routing_key=private_routing_key, application_spec=sample_application_spec, log_level="DEBUG"
         )
 
         async with create_task_group() as tg:
