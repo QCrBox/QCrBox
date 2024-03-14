@@ -3,8 +3,10 @@ from typing import Any, Optional
 
 import sqlalchemy
 from faststream import Logger, apply_types
+from pydantic import field_validator
 from sqlmodel import JSON, Column, Field, Relationship, select
 
+from pyqcrbox.helpers import generate_correlation_id
 from pyqcrbox.settings import settings
 
 from .application import ApplicationSpecDB
@@ -17,7 +19,15 @@ class CommandInvocationCreate(QCrBoxPydanticBaseModel):
     application_version: str
     command_name: str
     arguments: dict[str, Any]
-    correlation_id: str
+    correlation_id: Optional[str] = None
+
+    @field_validator("correlation_id")
+    @classmethod
+    def create_random_correlation_id_if_not_explicitly_provided(cls, value: Optional[str]) -> str:
+        if value is not None:
+            return value
+        else:
+            return generate_correlation_id()
 
     def to_sql_model(self):
         return CommandInvocationDB.from_pydantic_model(self)
