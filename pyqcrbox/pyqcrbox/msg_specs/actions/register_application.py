@@ -7,16 +7,16 @@ from ..base import QCrBoxActionBasePayload, QCrBoxBaseAction, QCrBoxGenericRespo
 __all__ = ["RegisterApplication", "RegisterApplicationResponse"]
 
 
-class RegisterApplicationPayload(QCrBoxActionBasePayload):
+class PayloadForRegisterApplication(QCrBoxActionBasePayload):
     application_spec: sql_models.ApplicationSpecCreate
     private_routing_key: str
 
 
 class RegisterApplication(QCrBoxBaseAction):
     action: Literal["register_application"]
-    payload: RegisterApplicationPayload
+    payload: PayloadForRegisterApplication
 
-    Payload = RegisterApplicationPayload  # convenience alias
+    Payload = PayloadForRegisterApplication  # convenience alias
 
 
 class RegisterApplicationResponse(QCrBoxGenericResponse):
