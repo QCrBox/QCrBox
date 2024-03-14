@@ -82,7 +82,7 @@ def create_client_faststream_app(
             logger.debug(f"Received command invocation request: {msg=}")
             msg_response = msg_specs.AcceptCommandInvocation(
                 action="accept_command_invocation",
-                payload=msg_specs.AcceptCommandInvocation.Payload(
+                payload=msg_specs.PayloadForAcceptCommandInvocation(
                     private_routing_key=private_routing_key,
                     **msg.model_dump(),
                 ),
