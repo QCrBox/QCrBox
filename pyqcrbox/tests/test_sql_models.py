@@ -1,7 +1,7 @@
 from sqlmodel import select
 
 from pyqcrbox import settings
-from pyqcrbox.sql_models import ApplicationDB, CommandDB, ParameterDB
+from pyqcrbox.sql_models import ApplicationSpecDB, CommandDB, ParameterDB
 
 
 def test_default_database_url():
@@ -75,7 +75,7 @@ def test_save_application_spec_to_db(tmp_db_url):
         param2 = ParameterDB(name="ls_cycles", type="int", required=False)  # default_value=5
         param3 = ParameterDB(name="weight_cycles", type="int", required=False)  # default_value=5
         cmd_refine_iam = CommandDB(name="refine_iam", implemented_as="CLI", parameters=[param1, param2, param3])
-        application = ApplicationDB(
+        application = ApplicationSpecDB(
             name="Olex2",
             slug="olex2_linux",
             version="x.y.z",
@@ -87,7 +87,7 @@ def test_save_application_spec_to_db(tmp_db_url):
         session.commit()
 
     with settings.db.get_session(url=tmp_db_url) as session:
-        result = session.exec(select(ApplicationDB)).all()
+        result = session.exec(select(ApplicationSpecDB)).all()
         assert len(result) == 1
         db_application = result[0]
 

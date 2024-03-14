@@ -28,13 +28,13 @@ class ApplicationSpecCreate(QCrBoxPydanticBaseModel):
         return f"qcrbox_rk_{self.slug}_{self.version}"
 
     def to_sql_model(self, private_routing_key: str = None):
-        return ApplicationDB.from_pydantic_model(self, private_routing_key=private_routing_key)
+        return ApplicationSpecDB.from_pydantic_model(self, private_routing_key=private_routing_key)
 
     def save_to_db(self, private_routing_key: str = None):
         return self.to_sql_model(private_routing_key=private_routing_key).save_to_db()
 
 
-class ApplicationDB(QCrBoxBaseSQLModel, table=True):
+class ApplicationSpecDB(QCrBoxBaseSQLModel, table=True):
     __tablename__ = "application"
     __table_args__ = (UniqueConstraint("name", "version"),)
     __pydantic_model_cls__ = ApplicationSpecCreate

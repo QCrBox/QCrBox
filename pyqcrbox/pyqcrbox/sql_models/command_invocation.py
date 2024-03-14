@@ -7,7 +7,7 @@ from sqlmodel import JSON, Column, Field, Relationship, select
 
 from pyqcrbox.settings import settings
 
-from .application import ApplicationDB
+from .application import ApplicationSpecDB
 from .command import CommandDB
 from .qcrbox_base_models import QCrBoxBaseSQLModel, QCrBoxPydanticBaseModel
 
@@ -40,7 +40,7 @@ class CommandInvocationDB(QCrBoxBaseSQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
 
     application_id: Optional[int] = Field(default=None, foreign_key="application.id")
-    application: Optional["ApplicationDB"] = Relationship(back_populates="command_invocations")
+    application: Optional["ApplicationSpecDB"] = Relationship(back_populates="command_invocations")
     command_id: Optional[int] = Field(default=None, foreign_key="command.id")
     command: Optional["CommandDB"] = Relationship(back_populates="command_invocations")
 
@@ -60,9 +60,9 @@ class CommandInvocationDB(QCrBoxBaseSQLModel, table=True):
 
             try:
                 application = session.exec(
-                    select(ApplicationDB).where(
-                        ApplicationDB.slug == self.application_slug,
-                        ApplicationDB.version == self.application_version,
+                    select(ApplicationSpecDB).where(
+                        ApplicationSpecDB.slug == self.application_slug,
+                        ApplicationSpecDB.version == self.application_version,
                     )
                 ).one()
                 self.application = application

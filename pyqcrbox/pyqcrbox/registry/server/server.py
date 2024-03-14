@@ -100,8 +100,8 @@ def create_server_faststream_app(
     #             }
     #             with settings.db.get_session() as session:
     #                 application = session.exec(
-    #                     select(sql_models.ApplicationDB).where(
-    #                         sql_models.ApplicationDB.id == cmd_invocation_db.application_id
+    #                     select(sql_models.ApplicationSpecDB).where(
+    #                         sql_models.ApplicationSpecDB.id == cmd_invocation_db.application_id
     #                     )
     #                 ).one()
     #                 logger.debug(

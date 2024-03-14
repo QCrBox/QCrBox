@@ -31,7 +31,9 @@ async def _(
         )
         with settings.db.get_session() as session:
             application = session.exec(
-                select(sql_models.ApplicationDB).where(sql_models.ApplicationDB.id == cmd_invocation_db.application_id)
+                select(sql_models.ApplicationSpecDB).where(
+                    sql_models.ApplicationSpecDB.id == cmd_invocation_db.application_id
+                )
             ).one()
             logger.debug(
                 f"Sending command invocation request to queue for {application.slug!r}, "
