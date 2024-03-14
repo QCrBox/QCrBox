@@ -82,6 +82,9 @@ def test_save_application_spec_to_db(tmp_db_url):
             description="Crystallography at your fingertip",
             email="helpdesk@olexsys.org",
             commands=[cmd_refine_iam],
+            private_routing_key="my-private_routing-key",
+            routing_key_command_invocation="my-app-routing-key",
+            cif_entry_sets=[],
         )
         session.add(application)
         session.commit()
