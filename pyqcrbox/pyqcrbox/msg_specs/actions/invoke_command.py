@@ -9,9 +9,12 @@ from ..base import QCrBoxBaseAction, QCrBoxGenericResponse
 __all__ = ["InvokeCommand", "InvokeCommandResponse"]
 
 
+PayloadForInvokeCommand = sql_models.CommandInvocationCreate
+
+
 class InvokeCommand(QCrBoxBaseAction):
     action: Literal["invoke_command"]
-    payload: sql_models.CommandInvocationCreate
+    payload: PayloadForInvokeCommand
 
 
 class InvokeCommandResponse(QCrBoxGenericResponse):
