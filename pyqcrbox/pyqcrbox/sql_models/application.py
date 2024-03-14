@@ -31,7 +31,8 @@ class ApplicationSpecCreate(QCrBoxPydanticBaseModel):
         return ApplicationSpecDB.from_pydantic_model(self, private_routing_key=private_routing_key)
 
     def save_to_db(self, private_routing_key: str = None):
-        return self.to_sql_model(private_routing_key=private_routing_key).save_to_db()
+        sql_model = self.to_sql_model(private_routing_key=private_routing_key)
+        return sql_model.save_to_db()
 
 
 class ApplicationSpecDB(QCrBoxBaseSQLModel, table=True):
@@ -73,9 +74,13 @@ class ApplicationSpecDB(QCrBoxBaseSQLModel, table=True):
         with settings.db.get_session() as session:
             try:
                 result = session.exec(select(cls).where(cls.name == self.name and cls.version == self.version)).one()
-                logger.warning(
+                logger.debug(
                     f"An application was registered before with name={self.name!r}, version={self.version!r}. "
                     "Loading details from the previously stored data."
+                )
+                logger.debug(
+                    "TODO: check that the commands specified in this application spec "
+                    "are consistent with the previously stored ones!"
                 )
                 return result
             except sqlalchemy.exc.NoResultFound:
