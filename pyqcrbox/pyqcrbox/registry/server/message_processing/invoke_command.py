@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: MPL-2.0
+import sqlalchemy
 from faststream import Context, Logger, apply_types
 from faststream.rabbit import RabbitBroker
 from sqlmodel import select
@@ -21,7 +22,21 @@ async def _(
     Invoke a command that is implemented by a previously registered application.
     """
     cmd_invocation = msg.payload
-    cmd_invocation_db = cmd_invocation.save_to_db()
+    try:
+        cmd_invocation_db = cmd_invocation.save_to_db()
+    except sqlalchemy.exc.IntegrityError as exc:
+        exception_msg = exc._message()
+        if "UNIQUE constraint failed: command_invocation.correlation_id" in exception_msg:
+            error_msg = (
+                f"correlation_id must be unique for each command invocation, "
+                f"but found existing value: {cmd_invocation.correlation_id!r}"
+            )
+        else:
+            error_msg = f"Internal server error (original error message: {exception_msg})"
+
+        response = msg_specs.InvokeCommandResponse(response_to=msg.action, status="error", msg=error_msg)
+        return response
+
     if cmd_invocation_db.application_id is None:
         error_msg = (
             f"The requested application is not available: {cmd_invocation.application_slug!r} "

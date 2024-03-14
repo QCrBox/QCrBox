@@ -29,7 +29,7 @@ def create_client_faststream_app(
 
         msg_register_application = msg_specs.RegisterApplication(
             action="register_application",
-            payload=msg_specs.RegisterApplication.Payload(
+            payload=msg_specs.PayloadForRegisterApplication(
                 application_spec=application_spec,
                 private_routing_key=private_routing_key,
             ),

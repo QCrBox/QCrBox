@@ -3,8 +3,7 @@ from typing import Any, Optional
 
 import sqlalchemy
 from faststream import Logger, apply_types
-from pydantic import field_validator
-from sqlmodel import JSON, Column, Field, Relationship, select
+from sqlmodel import JSON, Column, Field, Relationship, UniqueConstraint, select
 
 from pyqcrbox.helpers import generate_correlation_id
 from pyqcrbox.settings import settings
@@ -18,16 +17,8 @@ class CommandInvocationCreate(QCrBoxPydanticBaseModel):
     application_slug: str
     application_version: str
     command_name: str
+    correlation_id: str = Field(default_factory=generate_correlation_id)
     arguments: dict[str, Any]
-    correlation_id: Optional[str] = None
-
-    @field_validator("correlation_id")
-    @classmethod
-    def create_random_correlation_id_if_not_explicitly_provided(cls, value: Optional[str]) -> str:
-        if value is not None:
-            return value
-        else:
-            return generate_correlation_id()
 
     def to_sql_model(self):
         return CommandInvocationDB.from_pydantic_model(self)
@@ -38,6 +29,7 @@ class CommandInvocationCreate(QCrBoxPydanticBaseModel):
 
 class CommandInvocationDB(QCrBoxBaseSQLModel, table=True):
     __tablename__ = "command_invocation"
+    __table_args__ = (UniqueConstraint("correlation_id"),)
     __pydantic_model_cls__ = CommandInvocationCreate
 
     application_slug: str
@@ -53,6 +45,11 @@ class CommandInvocationDB(QCrBoxBaseSQLModel, table=True):
     application: Optional["ApplicationSpecDB"] = Relationship(back_populates="command_invocations")
     command_id: Optional[int] = Field(default=None, foreign_key="command.id")
     command: Optional["CommandDB"] = Relationship(back_populates="command_invocations")
+    command_execution_id: Optional[int] = Field(default=None, foreign_key="command_execution.id")
+    command_execution: Optional["CommandExecutionDB"] = Relationship(
+        sa_relationship_kwargs={"uselist": False},
+        back_populates="command_invocation",
+    )
 
     @classmethod
     def from_pydantic_model(cls, model):

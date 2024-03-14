@@ -6,7 +6,7 @@ from pyqcrbox import sql_models
 
 from ..base import QCrBoxBaseAction, QCrBoxGenericResponse
 
-__all__ = ["InvokeCommand", "InvokeCommandResponse"]
+__all__ = ["InvokeCommand", "InvokeCommandResponse", "PayloadForInvokeCommand"]
 
 
 PayloadForInvokeCommand = sql_models.CommandInvocationCreate

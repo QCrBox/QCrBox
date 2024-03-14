@@ -1,8 +1,8 @@
-from typing import Literal, Optional
+from typing import Literal
 
-from ..base import QCrBoxBaseAction, QCrBoxGenericResponse
+from ..base import QCrBoxBaseAction
 
-__all__ = ["AcceptCommandInvocation", "AcceptCommandInvocationResponse", "PayloadForAcceptCommandInvocation"]
+__all__ = ["AcceptCommandInvocation", "PayloadForAcceptCommandInvocation"]
 
 from ... import sql_models
 
@@ -14,10 +14,3 @@ class PayloadForAcceptCommandInvocation(sql_models.CommandInvocationCreate):
 class AcceptCommandInvocation(QCrBoxBaseAction):
     action: Literal["accept_command_invocation"]
     payload: PayloadForAcceptCommandInvocation
-
-
-class AcceptCommandInvocationResponse(QCrBoxGenericResponse):
-    response_to: Literal[AcceptCommandInvocation.action_name]
-    status: str
-    msg: Optional[str] = None
-    payload: AcceptCommandInvocation.Payload

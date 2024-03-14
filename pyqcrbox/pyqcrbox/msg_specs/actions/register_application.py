@@ -4,7 +4,7 @@ from pyqcrbox import sql_models
 
 from ..base import QCrBoxActionBasePayload, QCrBoxBaseAction, QCrBoxGenericResponse
 
-__all__ = ["RegisterApplication", "RegisterApplicationResponse"]
+__all__ = ["PayloadForRegisterApplication", "RegisterApplication", "RegisterApplicationResponse"]
 
 
 class PayloadForRegisterApplication(QCrBoxActionBasePayload):

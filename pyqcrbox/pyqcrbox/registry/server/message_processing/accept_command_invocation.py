@@ -1,8 +1,9 @@
 # SPDX-License-Identifier: MPL-2.0
 from faststream import Context, Logger, apply_types
 from faststream.rabbit import RabbitBroker
+from sqlmodel import select
 
-from pyqcrbox import msg_specs, sql_models
+from pyqcrbox import msg_specs, settings, sql_models
 
 from .base import process_message
 
@@ -15,33 +16,24 @@ async def _(
     msg: msg_specs.AcceptCommandInvocation,
     logger: Logger,
     broker: RabbitBroker = Context("broker"),
-) -> msg_specs.AcceptCommandInvocationResponse:
+) -> None:
     """
     Send command execution command to the application who accepted the command invocation request.
     """
     logger.debug(f"Application accepted command invocation with correlation_id={msg.payload.correlation_id}")
+
+    with settings.db.get_session() as session:
+        cmd_invocation_db = session.exec(
+            select(sql_models.CommandInvocationDB).where(
+                sql_models.CommandInvocationDB.correlation_id == msg.payload.correlation_id
+            )
+        ).one()
+
     logger.debug("Sending command execution request to this application.")
-    msg_execute_cmd = msg_specs.ExecuteCommand(
-        action="execute_command",
-        payload=sql_models.CommandInvocationCreate(**msg.payload.model_dump(exclude={"private_routing_key"})),
+    msg_execute_cmd = msg_specs.InitiateCommandExecution(
+        action="initiate_command_execution",
+        payload=msg_specs.PayloadForInitiateCommandExecution(
+            command_invocation_db=cmd_invocation_db,
+        ),
     )
     await broker.publish(msg_execute_cmd, routing_key=msg.payload.private_routing_key)
-
-    response = msg_specs.AcceptCommandInvocationResponse(
-        response_to=msg.action,
-        status="success",
-        msg="Submitted command execution request to client application.",
-        payload=msg_specs.AcceptCommandInvocation.Payload(**msg.payload.model_dump()),
-    )
-
-    return response
-
-    #
-    # return msg_specs.InvokeCommandResponse(
-    #     response_to=msg.action,
-    #     status="ok",
-    #     msg=f"Successfully registered application {app_db.name!r} (id: {app_db.id})",
-    #     payload=msg_specs.RegisterApplicationResponse.Payload(
-    #         application_id=assigned_application_id,
-    #     ),
-    # )

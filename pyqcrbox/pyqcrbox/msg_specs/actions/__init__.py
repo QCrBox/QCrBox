@@ -1,5 +1,5 @@
 from .accept_command_invocation import *
-from .execute_command import *
+from .initiate_command_execution import *
 from .invoke_command import *
 from .register_application import *
 
