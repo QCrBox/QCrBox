@@ -12,7 +12,7 @@ from .command import CommandCreate, CommandDB
 from .qcrbox_base_models import QCrBoxBaseSQLModel, QCrBoxPydanticBaseModel
 
 
-class ApplicationCreate(QCrBoxPydanticBaseModel):
+class ApplicationSpecCreate(QCrBoxPydanticBaseModel):
     name: str
     slug: str
     version: str
@@ -37,7 +37,7 @@ class ApplicationCreate(QCrBoxPydanticBaseModel):
 class ApplicationDB(QCrBoxBaseSQLModel, table=True):
     __tablename__ = "application"
     __table_args__ = (UniqueConstraint("name", "version"),)
-    __pydantic_model_cls__ = ApplicationCreate
+    __pydantic_model_cls__ = ApplicationSpecCreate
 
     name: str
     slug: str

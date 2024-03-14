@@ -12,7 +12,7 @@ def _(msg: msg_specs.RegisterApplication) -> msg_specs.QCrBoxGenericResponse:
     """
     Register a new application and store it in the database
     """
-    app_spec = sql_models.ApplicationCreate(**msg.payload.application_spec.model_dump())
+    app_spec = sql_models.ApplicationSpecCreate(**msg.payload.application_spec.model_dump())
     app_spec_db = app_spec.save_to_db(private_routing_key=msg.payload.private_routing_key)
     assigned_application_id = app_spec_db.id
 

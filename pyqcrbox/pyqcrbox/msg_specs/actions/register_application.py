@@ -10,7 +10,7 @@ __all__ = ["RegisterApplication", "RegisterApplicationResponse"]
 
 
 class RegisterApplicationPayload(QCrBoxActionBasePayload):
-    application_spec: sql_models.ApplicationCreate
+    application_spec: sql_models.ApplicationSpecCreate
     private_routing_key: str
 
 

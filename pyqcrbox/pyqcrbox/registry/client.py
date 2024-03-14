@@ -13,7 +13,7 @@ from .base import QCrBoxFastStream
 
 def create_client_faststream_app(
     broker: RabbitBroker,
-    application_spec: sql_models.ApplicationCreate,
+    application_spec: sql_models.ApplicationSpecCreate,
     private_routing_key: Optional[str] = None,
     log_level: Optional[int | str] = logging.INFO,
 ) -> QCrBoxFastStream:
@@ -106,6 +106,6 @@ def create_client_faststream_app(
 
 if __name__ == "__main__":  # pragma: no cover
     broker = RabbitBroker(graceful_timeout=10)
-    application_spec = sql_models.ApplicationCreate(name="Foo", slug="foo", version="0.0.1")
+    application_spec = sql_models.ApplicationSpecCreate(name="Foo", slug="foo", version="0.0.1")
     client_app = create_client_faststream_app(broker, application_spec=application_spec, log_level=logging.DEBUG)
     anyio.run(client_app.run, None, None)

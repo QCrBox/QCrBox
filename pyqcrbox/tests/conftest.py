@@ -22,7 +22,7 @@ def tmp_db_url(tmp_path):
 
 @pytest.fixture
 def sample_application_spec():
-    return sql_models.ApplicationCreate(
+    return sql_models.ApplicationSpecCreate(
         name="Olex2",
         slug="olex2_linux",
         version="x.y.z",
