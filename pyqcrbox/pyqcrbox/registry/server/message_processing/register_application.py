@@ -14,13 +14,9 @@ def _(msg: msg_specs.RegisterApplication) -> msg_specs.QCrBoxGenericResponse:
     """
     app_spec = sql_models.ApplicationSpecCreate(**msg.payload.application_spec.model_dump())
     app_spec_db = app_spec.save_to_db(private_routing_key=msg.payload.private_routing_key)
-    assigned_application_id = app_spec_db.id
 
     return msg_specs.RegisterApplicationResponse(
         response_to=msg.action,
         status="success",
         msg=f"Successfully registered application {app_spec_db.name!r} (id: {app_spec_db.id})",
-        payload=msg_specs.RegisterApplicationResponse.Payload(
-            application_id=assigned_application_id,
-        ),
     )

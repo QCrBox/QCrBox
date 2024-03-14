@@ -1,6 +1,4 @@
-from typing import Literal, Optional
-
-from pydantic import BaseModel
+from typing import Literal
 
 from pyqcrbox import sql_models
 
@@ -22,10 +20,6 @@ class RegisterApplication(QCrBoxBaseAction):
 
 
 class RegisterApplicationResponse(QCrBoxGenericResponse):
-    class Payload(BaseModel):
-        application_id: int
-
     response_to: Literal[RegisterApplication.action_name]
     status: str
-    msg: Optional[str] = None
-    payload: Optional[Payload] = None
+    msg: str

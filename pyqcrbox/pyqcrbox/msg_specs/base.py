@@ -34,7 +34,7 @@ class QCrBoxGenericResponse(QCrBoxBaseMessage):
     response_to: str = Literal["incoming_message"]
     status: str
     msg: Optional[str] = None
-    payload: Optional[dict[Any, Any]] = None
+    payload: Optional[BaseModel] = None
 
     @classmethod
     @property
