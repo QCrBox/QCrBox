@@ -20,10 +20,23 @@ async def _(
     """
     Invoke a command that is implemented by a previously registered application.
     """
-    #    cmd = sql_models.CommandInvocationCreate(**msg.payload.model_dump())
-    cmd_invocation = sql_models.CommandInvocationCreate(**msg.payload.model_dump())
+    cmd_invocation = msg.payload
     cmd_invocation_db = cmd_invocation.save_to_db()
-    if cmd_invocation_db.application_id and cmd_invocation_db.command_id:
+    if cmd_invocation_db.application_id is None:
+        error_msg = (
+            f"The requested application is not available: {cmd_invocation.application_slug!r} "
+            f"(version: {cmd_invocation.application_version!r}"
+        )
+        logger.error(error_msg)
+        response = msg_specs.InvokeCommandResponse(response_to=msg.action, status="error", msg=error_msg)
+    elif cmd_invocation_db.command_id is None:
+        error_msg = (
+            f"Application {cmd_invocation.application_slug!r} (version: {cmd_invocation.application_version!r} "
+            f"does not implement the requested command: {cmd_invocation.command_name!r}"
+        )
+        logger.error(error_msg)
+        response = msg_specs.InvokeCommandResponse(response_to=msg.action, status="error", msg=error_msg)
+    else:
         response = msg_specs.InvokeCommandResponse(
             response_to=msg.action,
             status="ok",
@@ -43,17 +56,6 @@ async def _(
                 cmd_invocation.model_dump(),
                 routing_key=application.routing_key_command_invocation,
             )
-    else:
-        error_msg = (
-            f"Error when processing command invocation: could not find an application implementing "
-            f"the requested command (correlation_id={cmd_invocation.correlation_id})"
-        )
-        logger.error(error_msg)
-        response = msg_specs.InvokeCommandResponse(
-            response_to=msg.action,
-            status="error",
-            msg=error_msg,
-        )
 
     return response
 
