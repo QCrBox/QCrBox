@@ -30,7 +30,7 @@ def create_server_faststream_app(
         logger.info("Finished initialising database...")
 
     @broker.subscriber(public_queue)
-    async def on_qcrbox_registry(msg: dict, logger: Logger) -> msg_specs.QCrBoxGenericResponse:
+    async def on_qcrbox_registry(msg: dict, logger: Logger) -> Optional[msg_specs.QCrBoxGenericResponse]:
         msg_debug = json.dumps(msg)
         msg_debug_abbrev = msg_debug[:800] + " ..."
         logger.info(f"Received message: {msg_debug_abbrev} (type: {type(msg).__name__})")
