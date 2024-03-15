@@ -55,10 +55,12 @@ The next line would copy the example executable to `/opt/cod_check/bin`. Delete 
 COPY sample_cmd.sh /opt/cod_check/bin/
 ```
 
-The following line will copy the `/configure_*.py` to our container. We will modify this python file to implement our logic.
+The following lines will copy the `/configure_*.py` and the `/config_*.yaml` to our container. We will modify these files to implement our logic.
 
 ``` Docker
 COPY configure_cod_check.py ./
+COPY config_cod_check.yaml ./
+
 ```
 
 The next line adds the path to the executable to the PATH variable to make it available. We can also delete that line.
@@ -143,7 +145,7 @@ If we have only one command, we can add the required entries as a list. Make sur
     ]
 ```
 
-That is all we need to do within the yaml file for the time being.
+If you have entries, that would be used, but are not required, you can add them as optional_cif_entries in their own list. However, this is not he case here, so this is all we need to do within the yaml file for the time being.
 
 ## Writing the python glue code.
 
@@ -163,11 +165,11 @@ We can now write the python function we need and add it to the `configure_cod_ch
 ```python
 YAML_PATH = "./config_cod_check.yaml"
 
-def qcb_get_number_fitting_cod_entries(input_cif_path, cellpar_deviation_perc, listed_elements_only):
+def parse_input(input_cif_path, cellpar_deviation_perc, listed_elements_only):
     # have a pathlib.Path instead of a string, makes handling much easier
     input_cif_path = Path(input_cif_path)
 
-    # All input variables will be strings so call. Afterwards convert from percent
+    # All input variables will probably be strings and convert to percent
     cellpar_deviation = float(cellpar_deviation_perc) / 100.0
 
     # make sure this is actually a valid boolean value
@@ -180,7 +182,7 @@ def qcb_get_number_fitting_cod_entries(input_cif_path, cellpar_deviation_perc, l
     # get the folder the cif file is in and use it as work folder
     work_folder = input_cif_path.parent
 
-    # create a path for the converted cif in that folder
+    # create a path for the converted cif
     work_cif_path = work_folder / "work.cif"
 
     # write a new cif with the entries in the format simple_cod_module needs
@@ -190,17 +192,29 @@ def qcb_get_number_fitting_cod_entries(input_cif_path, cellpar_deviation_perc, l
         yml_path=YAML_PATH,  # Path to the yaml file we edited in the last step
         command="get_number_fitting_cod_entries",  # name of the command in the yaml file
     )
+    return work_cif_path, cellpar_deviation, listed_elements_only
 
-    # get the number of entries using our converted cif
+def qcb_get_number_fitting_cod_entries(
+    input_cif_path, cellpar_deviation_perc, listed_elements_only
+):
+    # cast the input parameters from strings to python objects
+    work_cif_path, cellpar_deviation, listed_elements_only = parse_input(
+        input_cif_path, cellpar_deviation_perc, listed_elements_only
+    )
+
+    # get the number of entries
     elements, cell_dict = cif_to_search_pars(work_cif_path)
-    n_entries = get_number_fitting_cod_entries(elements, cell_dict, cellpar_deviation, listed_elements_only)
+    n_entries = get_number_fitting_cod_entries(
+        elements, cell_dict, cellpar_deviation, listed_elements_only
+    )
 
     # output the retrieved number into a json file.
-    with open(work_folder / "nentries.json", "w", encoding="UTF-8") as fobj:
+    with open(work_cif_path.parent / "nentries.json", "w", encoding="UTF-8") as fobj:
         json.dump({"n_entries": n_entries}, fobj)
+
 ```
 
-In future we hope that the last four lines of code (excluding comments), as well as the function definition line is all that will be necessary to implement.
+In future we aim to make the local implementation of `parse_input` obsolete as QCrBox will handle these transformations for you. However, for the time being, it is needed.
 
 ## Registering the python function as a QCrBox command
 At the moment we need to register our command at QCrBox. so we need to modify the lines at the end of the file to
@@ -220,7 +234,7 @@ client.run()
 
 QCrbox will automatically read the parameters from the passed python function and will use it for its own parameter names.
 
-## Building the container
+## Building the container with the first command exposed
 
 To build a docker image, we need to run the following command, where the argument is the application slug we have defined at the beginning:
 ```bash
@@ -235,3 +249,134 @@ qcb build cod_check --no-rebuild-deps
 ```
 
 Again, we do not need to rebuild the image or any of its dependencies, if we have just build it. To build the dependencies, the image and then start the container from it leave the flag.
+
+## Build a function to load in a structure from the best matching unit cell
+
+We now want to insert the atomic parameters from the best fitting structure in the COD into our cif. If the information already is available, we can skip structure solution. So let us add another command to the `config_cod_check.yaml` file. We add these lines at the end of the file
+
+```YAML
+  - name: "merge_closest_cod_entry"
+    implemented_as: "python_callable"  # other options: "python_callable"
+    parameters:
+      - name: "input_cif_path"
+        type: "str"
+        default_value: None
+      - name: "cellpar_deviation_perc"
+        type: "float"
+        default_value: 2.0
+        required: false
+      - name: "listed_elements_only"
+        type: "bool"
+        default_value: false
+        required: false
+    required_cif_entries: [
+      "_cell_length_a", "_cell_length_b", "_cell_length_c", "_cell_angle_alpha",
+      "_cell_angle_beta", "_cell_angle_gamma", "_chemical_formula_sum"
+    ]
+```
+
+You might notice that our required cif entries are exactly the same, as they are used by the same function within the `simple_cod_module.py` file. This might be fine in this case, as the number of entries is rather low, but ideally we would like to only define the set of entries once. In QCrBox we can do that using cif_entry_sets. At the end of the file we create a new entry set for our commands:
+
+```YAML
+cif_entry_sets:
+  - name: "cell_elements"
+    required: [
+      "_cell_length_a", "_cell_length_b", "_cell_length_c", "_cell_angle_alpha",
+      "_cell_angle_beta", "_cell_angle_gamma", "_chemical_formula_sum"
+    ]
+```
+
+Instead of writing the entries into the individual functions we now replace the `required_cif_entry` sections to have our command definition look like this:
+
+```YAML
+  - name: "merge_closest_cod_entry"
+    implemented_as: "python_callable"  # other options: "python_callable"
+    parameters:
+      - name: "input_cif_path"
+        type: "str"
+        default_value: None
+      - name: "cellpar_deviation_perc"
+        type: "float"
+        default_value: 2.0
+        required: false
+      - name: "listed_elements_only"
+        type: "bool"
+        default_value: false
+        required: false
+    required_cif_entry_sets: ["cell_elements"]
+```
+
+Try to update the definition of the `get_number_fitting_cod_entries` as well. Note that you can have multiple cif entry sets to mix and match whatever your commands need.
+
+## Writing the python glue code for our merge command.
+
+We will now modify the `configure_cod_check.py` file to add the new functionality. We will use more functionality from both QCrBoxtools and our COD module. Our input section should now look like this:
+
+```python
+from qcrbox.registry.client import QCrBoxRegistryClient
+from qcrboxtools.cif.cif2cif import (
+    cif_file_unified_yml_instr,
+    cif_file_unify_split,
+)
+from qcrboxtools.cif.merge import replace_structure_from_cif
+
+from simple_cod_module import (
+    cif_to_search_pars,
+    get_number_fitting_cod_entries,
+    get_fitting_cod_entries,
+    download_cod_cif,
+)
+```
+
+The `cif_file_unify_split` is the counterpart of the first function from cif2cif. We can use it to convert a non-unified cif to the unified set of entries. The `replace_structure_from_cif` function will do the actual replacement. The function `get_fitting_cod_entries` returns a list of dictionaries of cod entries, sorted by the sum of squared differences in the unit cell parameters. Finally, `download_cod_cif` can be used to download an entry from the cod.
+
+We can now implement our function
+
+```python
+def merge_closest_cod_entry(input_cif_path, cellpar_deviation_perc, listed_elements_only):
+    # cast the input parameters from strings to python objects
+    work_cif_path, cellpar_deviation, listed_elements_only = parse_input(
+        input_cif_path, cellpar_deviation_perc, listed_elements_only
+    )
+
+    # get the list of fitting entries
+    elements, cell_dict = cif_to_search_pars(work_cif_path)
+    entry_lst = get_fitting_cod_entries(elements, cell_dict, cellpar_deviation, listed_elements_only)
+
+    # if no fitting entries found, raise an error
+    if len(entry_lst) == 0:
+        raise ValueError("No fitting entries found")
+
+    # download the cif file of the most fitting entry
+    cod_cif_path = work_cif_path.parent / "cod.cif"
+    download_cod_cif(entry_lst[0]["file"], cod_cif_path)
+
+    # convert to unified format
+    unified_cod_path = work_cif_path.parent / "cod_unified.cif"
+    cif_file_unify_split(
+        cod_cif_path,
+        unified_cod_path,
+        custom_categories=["cod", "iucr", "olex2", "shelx"],
+    )
+
+    # replace structure from input cif with the one from cod cif
+    replace_structure_from_cif(input_cif_path, 0, unified_cod_path, 0, work_cif_path.parent / "output.cif")
+```
+
+And finally we register that function with QCrBox by adding
+
+```python
+application.register_python_callable("merge_closest_cod_entry", merge_closest_cod_entry)
+```
+
+right before `client.run()`
+
+## Starting the container again
+If you have not done so you can shut down QCrBox by typing `qcb down`. You can now restart and rebuild the container by typing. Rebuilding without dependencies might be faster if you have just rebuid everything.
+
+```bash
+qcb up cod_check
+```
+
+## Conclusion and final remarks
+We have now exposed two commands in QCrbox from a python module. One that only analyses a cif file to produce some output, and another one that works from an input cif file to an output cif. For more examples you might consider looking into the already implemented programs in `services/applications`. If this tutorial is unclear at any point please raise an issue on Github with the specific problem that you ran into.
