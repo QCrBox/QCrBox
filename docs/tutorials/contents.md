@@ -10,3 +10,5 @@
     _See [here](https://documentation.divio.com/tutorials.html) for context and details._
 
 ## Contents
+
+ - [How to integrate python functionality into QCrBox](wrap_python_command.md)
