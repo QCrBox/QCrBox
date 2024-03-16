@@ -1,7 +1,9 @@
 from datetime import datetime
+from pathlib import Path
 from typing import Optional
 
 import sqlalchemy
+import yaml
 from faststream import Logger, apply_types
 from sqlmodel import JSON, Column, Field, Relationship, UniqueConstraint, select
 
@@ -22,6 +24,10 @@ class ApplicationSpecCreate(QCrBoxPydanticBaseModel):
 
     commands: list[CommandCreate] = []
     cif_entry_sets: list[CifEntrySetCreate] = []
+
+    @classmethod
+    def from_yaml_file(cls, path: str | Path):
+        return cls(**yaml.safe_load(Path(path).open()))
 
     @property
     def routing_key_command_invocation(self):
