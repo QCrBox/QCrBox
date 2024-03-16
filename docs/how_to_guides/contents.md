@@ -13,3 +13,4 @@
 ## Contents
 
 - [Set up a development environment](set_up_a_dev_environment.md)
+- [Working with cif files in QCrBox](handle_cifs.md)
