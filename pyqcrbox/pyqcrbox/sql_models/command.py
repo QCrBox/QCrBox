@@ -1,6 +1,7 @@
 from enum import Enum
 from typing import Optional
 
+from loguru import logger
 from pydantic import model_validator
 from sqlmodel import JSON, Column, Field, Relationship, UniqueConstraint
 
@@ -38,6 +39,22 @@ class CommandCreate(QCrBoxPydanticBaseModel):
 
         if self.implemented_as == ImplementedAs.cli and self.call_pattern is None:
             raise ValueError(f"CLI command is missing a call_pattern: {self.name!r}")
+
+        if self.call_pattern is not None:
+            call_pattern_params = set(self.call_pattern.param_names)
+            cmd_params = set([x.name for x in self.parameters])
+            if not call_pattern_params.issubset(cmd_params):
+                missing_params = sorted(call_pattern_params.difference(cmd_params))
+                raise ValueError(
+                    f"Command {self.name!r} does not declare all parameters referenced in the call pattern. "
+                    f"Missing parameters: {missing_params}"
+                )
+            if not call_pattern_params.issuperset(cmd_params):
+                missing_params = sorted(cmd_params.difference(call_pattern_params))
+                logger.warning(
+                    f"Command {self.name!r} declares the following parameters "
+                    f"that are missing in the call pattern: {missing_params}"
+                )
 
         return self
 
