@@ -22,6 +22,11 @@ commands:
 
   - name: "refine_iam"
     implemented_as: "CLI"  # other options: "python_callable"
+    call_pattern: |
+      python /opt/qcrbox/olex2_glue_cli.py refine \
+         --structure_path {cif_path} \
+         --n_cycles {ls_cycles} \
+         --weight_cycles {weight_cycles}
     parameters:
       - name: "cif_path"
         type: str
@@ -40,6 +45,12 @@ commands:
 
   - name: "refine_tsc"
     implemented_as: "CLI"  # other options: "python_callable"
+    call_pattern: |
+      python /opt/qcrbox/olex2_glue_cli.py refine
+        --structure_path {cif_path}
+        --tsc_path {tsc_path}
+        --n_cycles {ls_cycles}
+        --weight_cycles {weight_cycles}
     parameters:
       - name: "cif_path"
         type: str
@@ -61,6 +72,10 @@ commands:
 
   - name: "run_cmds_file"
     implemented_as: "CLI"
+    call_pattern: |
+      python /opt/qcrbox/olex2_glue_cli.py cmds
+        --structure_path {cif_path}
+        --cmd_file_path {cmd_file_path}
     parameters:
       - name: "cif_path"
         type: str
