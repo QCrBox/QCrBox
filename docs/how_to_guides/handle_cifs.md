@@ -30,7 +30,7 @@ QCrBox does offer tools to convert between formats to make integration of softwa
 ## Nomenclature in this HowTo:
 **Unified CIF**: See above
 
-<a name="abcde">**Specific CIF**</a> CIF file create using specific keywords in a specific format, this can be the DDL1 style of keywords but it does not have to be.
+**Specific CIF** CIF file create using specific keywords in a specific format, this can be the DDL1 style of keywords but it does not have to be.
 
 **Specific CIF entry**: A name of a cif entry **in any convention** that is contained within the CIF dictionaries. `_atom_site_fract_x` and `_atom_site.fract_x` are both valid specific cif entries.
 
@@ -92,7 +92,7 @@ Let us go through the options line by line:
   - **`optional_cif_entry_sets`**: List of CIF entry sets to include. All required entries and optional entries will be included as optional. (For definition of entry sets see next section).
 
    - **`merge_cif_su`**: If set to `Yes`, the standard uncertainty entries will be merged with the base entry using bracket notation, **unless the standard uncertainty is requested separately as its own entry**. So in the example above `_some_entry` would not be merged with a present standard uncertainty entry, both `_some_entry` and `_some_entry_su` are included separately. `_some_other_entry` would be merged if an SU was present.
-   
+
    - **`custom_cif_categories`**: List of custom CIF categories to include in the output cif file (see [Nomenclature](#nomenclature-in-this-howto)).
 
 ### CIF entry sets in a YAML file
