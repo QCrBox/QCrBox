@@ -71,7 +71,7 @@ commands:
     implemented_as: "CLI/python_callable/GUI"
     parameters:
       # Definition covered in tutorial
-    required_cif_entries: ["_some_entry", "_some_other_entry]
+    required_cif_entries: ["_some_entry", "_some_other_entry"]
     optional_cif_entries: ["_some_entry_su"]
     required_cif_entry_sets: ["cell_data", "diffraction_data"]
     optional_cif_entry_sets: ["atom_data"]
@@ -80,12 +80,19 @@ commands:
 ```
 
 Let us go through the options line by line:
+
   - **`name`**: The QCrBoxTools function working with CIF require a command name or command. This is that name
+
   - **`required_cif_entries`**: List of specific CIF entries to include (see [Nomenclature](#nomenclature-in-this-howto))
+
   - **`optional_cif_entries`**: List of specific CIF entries to include when present (see [Nomenclature](#nomenclature-in-this-howto))
+
   - **`required_cif_entry_sets`**: List of CIF entry sets to include. All required entries will be treated as required and optional entries will be included as optional. (For definition of entry sets see next section).
+
   - **`optional_cif_entry_sets`**: List of CIF entry sets to include. All required entries and optional entries will be included as optional. (For definition of entry sets see next section).
+
    - **`merge_cif_su`**: If set to `Yes`, the standard uncertainty entries will be merged with the base entry using bracket notation, **unless the standard uncertainty is requested separately as its own entry**. So in the example above `_some_entry` would not be merged with a present standard uncertainty entry, both `_some_entry` and `_some_entry_su` are included separately. `_some_other_entry` would be merged if an SU was present.
+   
    - **`custom_cif_categories`**: List of custom CIF categories to include in the output cif file (see [Nomenclature](#nomenclature-in-this-howto)).
 
 ### CIF entry sets in a YAML file
