@@ -8,7 +8,9 @@ from faststream.rabbit import RabbitBroker
 
 from pyqcrbox import msg_specs, settings, sql_models
 
-from .base import QCrBoxFastStream
+from ..base import QCrBoxFastStream
+
+__all__ = ["create_client_faststream_app"]
 
 
 def create_client_faststream_app(
@@ -61,6 +63,7 @@ def create_client_faststream_app(
         def on_incoming_private_message(msg: dict, logger: Logger):
             logger.debug(f"Received message on private queue: {msg=}")
             if msg["action"] == "execute_command":
+                logger.warning("TODO: start a subprocess to execute the given command!")
                 response = {
                     "response_to": "execute_command",
                     "status": "ok",
