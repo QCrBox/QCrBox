@@ -6,7 +6,7 @@ SHELL ["/bin/bash", "-c"]
 USER root
 
 RUN apt-get update -y && \
-    apt-get install -y --no-install-recommends libgfortran5 tk8.6 blt ncompress imagemagick libc6 && \
+    apt-get install -y --fix-missing --no-install-recommends libgfortran5 tk8.6 blt ncompress imagemagick libc6 && \
     apt-get remove vim -y && \
     rm -rf /var/lib/apt/lists
 
