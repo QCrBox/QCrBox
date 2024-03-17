@@ -12,3 +12,4 @@
 ## Contents
 
  - [How to integrate python functionality into QCrBox](wrap_python_command.md)
+ - [How to integrate a command line program in QCrBox](wrap_external_command.md)
