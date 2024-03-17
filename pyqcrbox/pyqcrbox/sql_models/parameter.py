@@ -28,7 +28,7 @@ class ParameterDB(QCrBoxBaseSQLModel, table=True):
 
     id: Optional[int] = Field(default=None, primary_key=True)
     command_id: Optional[int] = Field(default=None, foreign_key="command.id")
-    command: "CommandDB" = Relationship(back_populates="parameters")
+    command: "CommandSpecDB" = Relationship(back_populates="parameters")
 
     @classmethod
     def from_pydantic_model(cls, param):

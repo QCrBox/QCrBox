@@ -9,7 +9,7 @@ from pyqcrbox.helpers import generate_correlation_id
 from pyqcrbox.settings import settings
 
 from .application import ApplicationSpecDB
-from .command import CommandDB
+from .command import CommandSpecDB
 from .qcrbox_base_models import QCrBoxBaseSQLModel, QCrBoxPydanticBaseModel
 
 
@@ -44,7 +44,7 @@ class CommandInvocationDB(QCrBoxBaseSQLModel, table=True):
     application_id: Optional[int] = Field(default=None, foreign_key="application.id")
     application: Optional["ApplicationSpecDB"] = Relationship(back_populates="command_invocations")
     command_id: Optional[int] = Field(default=None, foreign_key="command.id")
-    command: Optional["CommandDB"] = Relationship(back_populates="command_invocations")
+    command: Optional["CommandSpecDB"] = Relationship(back_populates="command_invocations")
     command_execution_id: Optional[int] = Field(default=None, foreign_key="command_execution.id")
     command_execution: Optional["CommandExecutionDB"] = Relationship(
         sa_relationship_kwargs={"uselist": False},
@@ -84,9 +84,9 @@ class CommandInvocationDB(QCrBoxBaseSQLModel, table=True):
             if self.application is not None:
                 try:
                     command = session.exec(
-                        select(CommandDB).where(
-                            CommandDB.application == self.application,
-                            CommandDB.name == self.command_name,
+                        select(CommandSpecDB).where(
+                            CommandSpecDB.application == self.application,
+                            CommandSpecDB.name == self.command_name,
                         )
                     ).one()
                     self.command = command

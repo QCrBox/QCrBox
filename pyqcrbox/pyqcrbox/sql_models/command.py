@@ -16,7 +16,7 @@ class ImplementedAs(str, Enum):
     gui = "GUI"
 
 
-class CommandCreate(QCrBoxPydanticBaseModel):
+class CommandSpecCreate(QCrBoxPydanticBaseModel):
     name: str
     implemented_as: ImplementedAs
     interactive: bool = False
@@ -31,7 +31,7 @@ class CommandCreate(QCrBoxPydanticBaseModel):
     custom_cif_categories: list[str] = []
 
     @model_validator(mode="after")
-    def validate_call_pattern(self) -> "CommandCreate":
+    def validate_call_pattern(self) -> "CommandSpecCreate":
         if self.interactive and not self.implemented_as == ImplementedAs.gui:
             raise ValueError(
                 f"Interactive command {self.name!r} must be implemented as 'GUI', got: {self.implemented_as.value!r}"
@@ -59,13 +59,13 @@ class CommandCreate(QCrBoxPydanticBaseModel):
         return self
 
     def to_sql_model(self):
-        return CommandDB.from_pydantic_model(self)
+        return CommandSpecDB.from_pydantic_model(self)
 
 
-class CommandDB(QCrBoxBaseSQLModel, table=True):
+class CommandSpecDB(QCrBoxBaseSQLModel, table=True):
     __tablename__ = "command"
     __table_args__ = (UniqueConstraint("name", "application_id"),)
-    __pydantic_model_cls__ = CommandCreate
+    __pydantic_model_cls__ = CommandSpecCreate
 
     name: str
     implemented_as: ImplementedAs

@@ -1,7 +1,7 @@
 from sqlmodel import select
 
 from pyqcrbox import settings
-from pyqcrbox.sql_models import ApplicationSpecDB, CommandDB, ParameterDB
+from pyqcrbox.sql_models import ApplicationSpecDB, CommandSpecDB, ParameterDB
 
 
 def test_default_database_url():
@@ -47,12 +47,12 @@ def test_save_command_spec_to_db(tmp_db_url):
         param1 = ParameterDB(name="cif_path", type="str")
         param2 = ParameterDB(name="ls_cycles", type="int", required=False)  # default_value=5
         param3 = ParameterDB(name="weight_cycles", type="int", required=False)  # default_value=5
-        cmd = CommandDB(name="refine_iam", implemented_as="CLI", parameters=[param1, param2, param3])
+        cmd = CommandSpecDB(name="refine_iam", implemented_as="CLI", parameters=[param1, param2, param3])
         session.add(cmd)
         session.commit()
 
     with settings.db.get_session(url=tmp_db_url) as session:
-        result = session.exec(select(CommandDB)).all()
+        result = session.exec(select(CommandSpecDB)).all()
         assert len(result) == 1
 
         db_cmd = result[0]
@@ -74,7 +74,7 @@ def test_save_application_spec_to_db(tmp_db_url):
         param1 = ParameterDB(name="cif_path", type="str")
         param2 = ParameterDB(name="ls_cycles", type="int", required=False)  # default_value=5
         param3 = ParameterDB(name="weight_cycles", type="int", required=False)  # default_value=5
-        cmd_refine_iam = CommandDB(name="refine_iam", implemented_as="CLI", parameters=[param1, param2, param3])
+        cmd_refine_iam = CommandSpecDB(name="refine_iam", implemented_as="CLI", parameters=[param1, param2, param3])
         application = ApplicationSpecDB(
             name="Olex2",
             slug="olex2_linux",

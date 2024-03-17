@@ -6,7 +6,7 @@
 
 from .application import ApplicationSpecCreate, ApplicationSpecDB
 from .cif_entry_set import CifEntrySetCreate
-from .command import CommandCreate, CommandDB
+from .command import CommandSpecCreate, CommandSpecDB
 from .command_execution import CommandExecutionCreate, CommandExecutionDB
 from .command_invocation import CommandInvocationCreate, CommandInvocationDB
 from .parameter import ParameterCreate, ParameterDB

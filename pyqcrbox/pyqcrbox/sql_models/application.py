@@ -10,7 +10,7 @@ from sqlmodel import JSON, Column, Field, Relationship, UniqueConstraint, select
 from pyqcrbox.settings import settings
 
 from .cif_entry_set import CifEntrySetCreate
-from .command import CommandCreate, CommandDB
+from .command import CommandSpecCreate, CommandSpecDB
 from .qcrbox_base_models import QCrBoxBaseSQLModel, QCrBoxPydanticBaseModel
 
 
@@ -22,7 +22,7 @@ class ApplicationSpecCreate(QCrBoxPydanticBaseModel):
     url: Optional[str] = None
     email: Optional[str] = None
 
-    commands: list[CommandCreate] = []
+    commands: list[CommandSpecCreate] = []
     cif_entry_sets: list[CifEntrySetCreate] = []
 
     @classmethod
@@ -58,7 +58,7 @@ class ApplicationSpecDB(QCrBoxBaseSQLModel, table=True):
     private_routing_key: str
     routing_key_command_invocation: str
 
-    commands: list[CommandDB] = Relationship(back_populates="application")
+    commands: list[CommandSpecDB] = Relationship(back_populates="application")
     command_invocations: list["CommandInvocationDB"] = Relationship(back_populates="application")
     cif_entry_sets: list[str] = Field(sa_column=Column(JSON()))
 
@@ -67,7 +67,7 @@ class ApplicationSpecDB(QCrBoxBaseSQLModel, table=True):
         pydantic_model_cls = getattr(cls, "__pydantic_model_cls__")
         assert isinstance(application, pydantic_model_cls)
         data = application.model_dump(exclude={"commands"})
-        data["commands"] = [CommandDB.from_pydantic_model(cmd) for cmd in application.commands]
+        data["commands"] = [CommandSpecDB.from_pydantic_model(cmd) for cmd in application.commands]
         data["private_routing_key"] = private_routing_key or "super-secret-private-routing-key-001"
         data["routing_key_command_invocation"] = application.routing_key_command_invocation
         # logger.debug(f"{command.name=}: {data=}")

@@ -30,7 +30,7 @@ def sample_application_spec():
         url="https://www.olexsys.org/olex2/",
         email="helpdesk@olexsys.org",
         commands=[
-            sql_models.CommandCreate(
+            sql_models.CommandSpecCreate(
                 name="refine_iam",
                 implemented_as=sql_models.command.ImplementedAs("CLI"),
                 call_pattern=sql_models.command.CallPattern(
