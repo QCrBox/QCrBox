@@ -171,6 +171,8 @@ We will now define the container's environment and ensuring all necessary compon
    ENV PATH="$PATH:/opt/cellcheckcsd/bin/:/opt/CCDC/CellCheckCSD/bin"
    ```
 
+> **Note**: If your application is compiled within the container you can reduce the size of the resulting containers by using [multi-stage builds](https://www.docker.com/blog/advanced-dockerfiles-faster-builds-and-smaller-images-using-buildkit-and-multistage-builds/).
+
 ## Building the container with the first command exposed
 
 To create a QCrBox image for our application, we'll execute a specific build command using the application slug defined earlier. Open your terminal and input the following command to start the build process:
