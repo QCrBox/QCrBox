@@ -62,5 +62,10 @@ services/applications/olex2_linux/olex2_files/olex2-linux64_hl.zip
 #Eval14/15
 services/applications/eval1x/EVPY-Linux-x86_64-20231113-bullseye.tar.gz
 
+#Eval Examples
+wrapper/input_files/Ylid_OD_Images.zip
+wrapper/input_files/eval_input.zip
+
 #XHARPy
 services/applications/xharpy_gpaw/XHARPy
+
