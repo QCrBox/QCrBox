@@ -70,6 +70,7 @@ class CommandSpecDB(QCrBoxBaseSQLModel, table=True):
     name: str
     implemented_as: ImplementedAs
     interactive: bool = False
+    call_pattern: Optional[str] = None
     description: str = ""
     merge_cif_su: bool = False
 
