@@ -33,8 +33,16 @@ def sample_application_spec():
             sql_models.CommandCreate(
                 name="refine_iam",
                 implemented_as=sql_models.command.ImplementedAs("CLI"),
+                call_pattern=sql_models.command.CallPattern(
+                    """
+                    python /opt/qcrbox/olex2_glue_cli.py refine \
+                        --structure_path {cif_path} \
+                        --n_cycles {ls_cycles} \
+                        --weight_cycles {weight_cycles}
+                    """
+                ),
                 parameters=[
-                    sql_models.ParameterCreate(name="cif_file", type="str"),
+                    sql_models.ParameterCreate(name="cif_path", type="str"),
                     sql_models.ParameterCreate(name="ls_cycles", type="int", required=False, default_value=5),
                     sql_models.ParameterCreate(name="weight_cycles", type="int", required=False, default_value=5),
                 ],
