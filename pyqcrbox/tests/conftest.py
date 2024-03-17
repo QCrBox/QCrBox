@@ -42,9 +42,9 @@ def sample_application_spec():
                     """
                 ),
                 parameters=[
-                    sql_models.ParameterCreate(name="cif_path", type="str"),
-                    sql_models.ParameterCreate(name="ls_cycles", type="int", required=False, default_value=5),
-                    sql_models.ParameterCreate(name="weight_cycles", type="int", required=False, default_value=5),
+                    sql_models.ParameterSpecCreate(name="cif_path", type="str"),
+                    sql_models.ParameterSpecCreate(name="ls_cycles", type="int", required=False, default_value=5),
+                    sql_models.ParameterSpecCreate(name="weight_cycles", type="int", required=False, default_value=5),
                 ],
             )
         ],

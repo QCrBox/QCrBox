@@ -1,7 +1,7 @@
 from sqlmodel import select
 
 from pyqcrbox import settings
-from pyqcrbox.sql_models import ApplicationSpecDB, CommandSpecDB, ParameterDB
+from pyqcrbox.sql_models import ApplicationSpecDB, CommandSpecDB, ParameterSpecDB
 
 
 def test_default_database_url():
@@ -16,14 +16,14 @@ def test_save_parameter_spec_to_db(tmp_db_url):
     Create parameter specs, save them to the database, retrieve them and check the result.
     """
     with settings.db.get_session(url=tmp_db_url, init_db=True) as session:
-        param1 = ParameterDB(name="first_param", type="int")
-        param2 = ParameterDB(name="second_param", type="str", description="The second parameter", required=False)
+        param1 = ParameterSpecDB(name="first_param", type="int")
+        param2 = ParameterSpecDB(name="second_param", type="str", description="The second parameter", required=False)
         session.add(param1)
         session.add(param2)
         session.commit()
 
     with settings.db.get_session(url=tmp_db_url, init_db=False) as session:
-        result = session.exec(select(ParameterDB)).all()
+        result = session.exec(select(ParameterSpecDB)).all()
         assert 2 == len(result)
 
         rec_1, rec_2 = result
@@ -44,9 +44,9 @@ def test_save_command_spec_to_db(tmp_db_url):
     Create a command spec, save it to the database, retrieve it and check the result.
     """
     with settings.db.get_session(url=tmp_db_url, init_db=True) as session:
-        param1 = ParameterDB(name="cif_path", type="str")
-        param2 = ParameterDB(name="ls_cycles", type="int", required=False)  # default_value=5
-        param3 = ParameterDB(name="weight_cycles", type="int", required=False)  # default_value=5
+        param1 = ParameterSpecDB(name="cif_path", type="str")
+        param2 = ParameterSpecDB(name="ls_cycles", type="int", required=False)  # default_value=5
+        param3 = ParameterSpecDB(name="weight_cycles", type="int", required=False)  # default_value=5
         cmd = CommandSpecDB(name="refine_iam", implemented_as="CLI", parameters=[param1, param2, param3])
         session.add(cmd)
         session.commit()
@@ -71,9 +71,9 @@ def test_save_application_spec_to_db(tmp_db_url):
     Create an application spec, save it to the database, retrieve it and check the result.
     """
     with settings.db.get_session(url=tmp_db_url, init_db=True) as session:
-        param1 = ParameterDB(name="cif_path", type="str")
-        param2 = ParameterDB(name="ls_cycles", type="int", required=False)  # default_value=5
-        param3 = ParameterDB(name="weight_cycles", type="int", required=False)  # default_value=5
+        param1 = ParameterSpecDB(name="cif_path", type="str")
+        param2 = ParameterSpecDB(name="ls_cycles", type="int", required=False)  # default_value=5
+        param3 = ParameterSpecDB(name="weight_cycles", type="int", required=False)  # default_value=5
         cmd_refine_iam = CommandSpecDB(name="refine_iam", implemented_as="CLI", parameters=[param1, param2, param3])
         application = ApplicationSpecDB(
             name="Olex2",

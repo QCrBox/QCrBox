@@ -5,7 +5,7 @@ from sqlmodel import Field, Relationship, UniqueConstraint
 from .qcrbox_base_models import QCrBoxBaseSQLModel, QCrBoxPydanticBaseModel
 
 
-class ParameterCreate(QCrBoxPydanticBaseModel):
+class ParameterSpecCreate(QCrBoxPydanticBaseModel):
     name: str
     type: str
     description: str = ""
@@ -13,13 +13,13 @@ class ParameterCreate(QCrBoxPydanticBaseModel):
     default_value: Optional[Any] = None
 
     def to_sql_model(self):
-        return ParameterDB.from_pydantic_model(self)
+        return ParameterSpecDB.from_pydantic_model(self)
 
 
-class ParameterDB(QCrBoxBaseSQLModel, table=True):
+class ParameterSpecDB(QCrBoxBaseSQLModel, table=True):
     __tablename__ = "parameter"
     __table_args__ = (UniqueConstraint("name", "command_id"), {"extend_existing": True})
-    __pydantic_model_cls__ = ParameterCreate
+    __pydantic_model_cls__ = ParameterSpecCreate
 
     name: str
     type: str
