@@ -40,7 +40,7 @@ async def _(
     if cmd_invocation_db.application_id is None:
         error_msg = (
             f"The requested application is not available: {cmd_invocation.application_slug!r} "
-            f"(version: {cmd_invocation.application_version!r}"
+            f"(version: {cmd_invocation.application_version!r})"
         )
         logger.error(error_msg)
         response = msg_specs.InvokeCommandResponse(response_to=msg.action, status="error", msg=error_msg)

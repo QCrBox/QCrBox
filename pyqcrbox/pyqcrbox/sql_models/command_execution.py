@@ -5,12 +5,13 @@ from sqlmodel import Field, Relationship
 
 from pyqcrbox.settings import settings
 
-from .command_invocation import CommandInvocationDB
+from .command_invocation import CommandInvocationDB, CommandSpecDB
 from .qcrbox_base_models import QCrBoxBaseSQLModel, QCrBoxPydanticBaseModel
 
 
 class CommandExecutionCreate(QCrBoxPydanticBaseModel):
     command_invocation_db: CommandInvocationDB
+    command_spec_db: CommandSpecDB
 
     def to_sql_model(self):
         return CommandExecutionDB.from_pydantic_model(self)
@@ -36,7 +37,7 @@ class CommandExecutionDB(QCrBoxBaseSQLModel, table=True):
     def from_pydantic_model(cls, model):
         pydantic_model_cls = getattr(cls, "__pydantic_model_cls__")
         assert isinstance(model, pydantic_model_cls)
-        data = model.model_dump()
+        data = model.model_dump(exclude={"command_spec_db"})
         return cls(**data)
 
     def save_to_db(self):

@@ -7,6 +7,7 @@ from faststream import Logger
 from faststream.rabbit import RabbitBroker
 
 from pyqcrbox import msg_specs, settings, sql_models
+from pyqcrbox.registry.client.command_execution import instantiate_command
 
 from ..base import QCrBoxFastStream
 
@@ -60,10 +61,14 @@ def create_client_faststream_app(
         await broker.close()
 
         @broker.subscriber(private_routing_key)
-        def on_incoming_private_message(msg: dict, logger: Logger):
+        async def on_incoming_private_message(msg: dict, logger: Logger):
             logger.debug(f"Received message on private queue: {msg=}")
-            if msg["action"] == "execute_command":
-                logger.warning("TODO: start a subprocess to execute the given command!")
+            if msg["action"] == "initiate_command_execution":
+                cmd_spec_db = sql_models.CommandSpecDB(**msg["payload"]["command_spec_db"])
+                cmd = instantiate_command(cmd_spec_db)
+                _ = await cmd.execute_in_background_using_asyncio()
+                logger.debug("Started a subprocess to execute the given command in the background.")
+                breakpoint()
                 response = {
                     "response_to": "execute_command",
                     "status": "ok",

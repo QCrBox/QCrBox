@@ -28,12 +28,14 @@ async def _(
                 sql_models.CommandInvocationDB.correlation_id == msg.payload.correlation_id
             )
         ).one()
+        cmd_spec_db = cmd_invocation_db.command
 
     logger.debug("Sending command execution request to this application.")
     msg_execute_cmd = msg_specs.InitiateCommandExecution(
         action="initiate_command_execution",
         payload=msg_specs.PayloadForInitiateCommandExecution(
             command_invocation_db=cmd_invocation_db,
+            command_spec_db=cmd_spec_db,
         ),
     )
     await broker.publish(msg_execute_cmd, routing_key=msg.payload.private_routing_key)
