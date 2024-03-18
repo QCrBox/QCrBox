@@ -4,7 +4,7 @@ from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict
 
-from . import actions
+from . import msg_types
 
 __all__ = ["QCrBoxBaseAction", "QCrBoxGenericResponse"]
 
@@ -85,7 +85,7 @@ def populate_valid_qcrbox_actions_lookup():
     """
     VALID_QCRBOX_ACTIONS_BY_NAME = {
         cls.action_name: cls
-        for cls in actions._qcrbox_actions_and_other_local_vars
+        for cls in msg_types._qcrbox_actions_and_other_local_vars
         if represents_valid_qcrbox_action(cls)
     }
     return VALID_QCRBOX_ACTIONS_BY_NAME
