@@ -87,6 +87,9 @@ def create_client_faststream_app(
 
         @broker.subscriber(application_spec.routing_key_command_invocation)
         async def on_command_invocation(msg: sql_models.CommandInvocationCreate, logger: Logger):
+            # 1) check that the application implements the given command
+            # 2) check that all mandatory command arguments are provided in the call
+            # 3) check that all arguments provided are supported by the command
             logger.debug(f"Received command invocation request: {msg=}")
             msg_response = msg_specs.AcceptCommandInvocation(
                 action="accept_command_invocation",
