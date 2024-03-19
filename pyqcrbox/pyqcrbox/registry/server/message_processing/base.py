@@ -66,9 +66,9 @@ def process_message(msg):
         "(1) there exists a submodule of `pyqcrbox.msg_specs.actions` which defines a "
         "subclass of QCrBoxBaseAction associated with this action (and this submodule "
         "is imported in `pyqcrbox/msg_specs/actions/__init__.py`), (2) there exists a "
-        "submodule of `pyqcrbox.registry.server.message_processing` which defines a "
-        "handler for this action (and this submodule is imported in "
-        "`pyqcrbox/registry/server/message_processing/__init__.py"
+        "submodule of `pyqcrbox.registry.{server|client}.message_processing` which "
+        "defines a handler for this action (and this submodule is imported in "
+        "`pyqcrbox/registry/{server|client}/message_processing/__init__.py"
     )
     logger.warning(error_msg)
     return QCrBoxGenericResponse(response_to="incoming_message", status="error", msg=error_msg)
