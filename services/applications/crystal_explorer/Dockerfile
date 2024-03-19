@@ -4,7 +4,7 @@ FROM qcrbox/base-novnc:${QCRBOX_DOCKER_TAG}
 USER root
 
 RUN apt-get update -y && \
-    apt-get install -y --no-install-recommends libglu1-mesa libqt5core5a libqt5gui5 libqt5opengl5 libqt5widgets5 && \
+    apt-get install -y --fix-missing --no-install-recommends libglu1-mesa libqt5core5a libqt5gui5 libqt5opengl5 libqt5widgets5 && \
     rm -rf /var/lib/apt/lists
 
 COPY ./CrystalExplorer-21.5-ubuntu-20.04.deb /tmp/

@@ -239,7 +239,6 @@ qcb up cod_check --no-rebuild-deps
 
 This command starts the container without recompiling the image or its dependencies, assuming they were recently built. If you aim to update both dependencies and the image before launching, simply omit the `--no-rebuild-deps` flag. This ensures that your QCrBox image and all related components are fully up-to-date.
 
-Following these instructions will streamline the process of building and deploying your QCrBox image, making efficient use of time by avoiding unnecessary rebuilds.
 
 ## Build a function to load in a structure from the best matching unit cell
 
