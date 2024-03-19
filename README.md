@@ -41,8 +41,14 @@ from the output can be found within the [wrapper folder](./wrapper/).
 ## Contributions
 
 Contributions are always welcome, be it code or testing our software and raising issues. If you want to contribute
-code, please create your own branch and submit a pull request. If you have any questions feel very welcome to contact us.
+code, please for the repository, create your own branch and submit a pull request. If you have any questions feel
+very welcome to contact us.
 
+
+## Release Notes
+
+Please refer to the [Changelog](https://qcrbox.github.io/QCrBox/CHANGELOG/) for a list of notable changes for the
+current and past releases.
 
 ## Licence
 The software is distributed under the MPL2.0 licence. See [LICENSE](./LICENSE) for more information.
