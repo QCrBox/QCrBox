@@ -1,4 +1,4 @@
-from typing import ClassVar, Literal
+from typing import Literal
 
 from pyqcrbox import sql_models
 
@@ -15,8 +15,6 @@ class PayloadForRegisterApplication(QCrBoxActionBasePayload):
 class RegisterApplication(QCrBoxBaseAction):
     action: Literal["register_application"]
     payload: PayloadForRegisterApplication
-
-    Payload: ClassVar[QCrBoxActionBasePayload] = PayloadForRegisterApplication  # convenience alias for payload class
 
 
 class RegisterApplicationResponse(QCrBoxGenericResponse):

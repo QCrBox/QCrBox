@@ -11,7 +11,7 @@ async def test_client_registers_itself_with_server_during_startup(sample_applica
     private_routing_key = "qcrbox_rk_test_client_xyz"
     expected_registration_message = msg_specs.RegisterApplication(
         action="register_application",
-        payload=msg_specs.RegisterApplication.Payload(
+        payload=msg_specs.PayloadForRegisterApplication(
             application_spec=sample_application_spec,
             private_routing_key=private_routing_key,
         ),
@@ -42,7 +42,7 @@ async def test_client_registration_succeeds_even_if_same_application_was_registe
     private_routing_key = "qcrbox_rk_test_client_xyz"
     expected_registration_message = msg_specs.RegisterApplication(
         action="register_application",
-        payload=msg_specs.RegisterApplication.Payload(
+        payload=msg_specs.PayloadForRegisterApplication(
             application_spec=sample_application_spec,
             private_routing_key=private_routing_key,
         ),
