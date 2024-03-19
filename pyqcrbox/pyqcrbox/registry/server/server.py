@@ -3,12 +3,10 @@ import logging
 from typing import Optional
 
 import anyio
-import pydantic
 from faststream import Logger
 from faststream.rabbit import RabbitBroker
 
 from pyqcrbox import msg_specs, settings
-from pyqcrbox.msg_specs import InvalidQCrBoxAction, look_up_action_class
 
 from ..base import QCrBoxFastStream
 from .message_processing import process_message_sync_or_async
@@ -35,41 +33,9 @@ def create_server_faststream_app(
         msg_debug_abbrev = msg_debug[:800] + " ..."
         logger.info(f"Received message: {msg_debug_abbrev} (type: {type(msg).__name__})")
 
-        if isinstance(msg, (str, bytes)):
-            try:
-                msg = json.loads(msg)
-            except Exception as exc:
-                error_msg = (
-                    f"Incoming message does not represent a valid JSON structure: {msg}.\n"
-                    f"The original error was: {exc}"
-                )
-                logger.error(error_msg)
-                return msg_specs.QCrBoxGenericResponse(
-                    response_to="incoming_message", status="error", msg=error_msg, payload=None
-                )
-
-        if "action" not in msg:
-            error_msg = "Invalid message structure: message must have an 'action' field"
-            logger.error(error_msg)
-            return msg_specs.QCrBoxGenericResponse(response_to="incoming_message", status="error", msg=error_msg)
-
-        try:
-            action_cls = look_up_action_class(msg["action"])
-        except InvalidQCrBoxAction:
-            error_msg = f"Invalid action: {msg['action']!r}"
-            logger.error(error_msg)
-            return msg_specs.QCrBoxGenericResponse(response_to="incoming_message", status="error", msg=error_msg)
-
-        try:
-            msg_obj = action_cls(**msg)
-        except pydantic.ValidationError as exc:
-            error_msg = f"Invalid message structure for action {msg['action']!r}. Errors: {exc.errors()}"
-            logger.error(error_msg)
-            return msg_specs.QCrBoxGenericResponse(response_to="incoming_message", status="error", msg=error_msg)
-
         # Process the message - it will be passed to the correct processing function based on
         # its type/structure (the heavy lifting is done by `functools.singledispatch`).
-        response = await process_message_sync_or_async(msg_obj)
+        response = await process_message_sync_or_async(msg)
 
         server_app.increment_processed_message_counter(public_queue)
         return response
