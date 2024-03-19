@@ -4,8 +4,7 @@ from faststream.rabbit import RabbitBroker
 from sqlmodel import select
 
 from pyqcrbox import msg_specs, settings, sql_models
-
-from .base import process_message
+from pyqcrbox.msg_specs import process_message
 
 __all__ = []
 

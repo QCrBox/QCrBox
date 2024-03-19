@@ -1,8 +1,7 @@
 # SPDX-License-Identifier: MPL-2.0
 
 from pyqcrbox import msg_specs, sql_models
-
-from .base import process_message
+from pyqcrbox.msg_specs import process_message
 
 __all__ = []
 

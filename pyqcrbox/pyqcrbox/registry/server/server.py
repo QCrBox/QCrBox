@@ -7,9 +7,9 @@ from faststream import Logger
 from faststream.rabbit import RabbitBroker
 
 from pyqcrbox import msg_specs, settings
+from pyqcrbox.msg_specs import process_message_sync_or_async
 
 from ..base import QCrBoxFastStream
-from .message_processing import process_message_sync_or_async
 
 
 def create_server_faststream_app(

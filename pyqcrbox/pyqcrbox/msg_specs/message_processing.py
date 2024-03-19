@@ -8,10 +8,11 @@ import pydantic
 from loguru import logger  # TODO: switch to FastStream logger
 
 from pyqcrbox import msg_specs
-from pyqcrbox.msg_specs import InvalidQCrBoxAction, QCrBoxGenericResponse, look_up_action_class
+
+from .base import InvalidQCrBoxAction, QCrBoxGenericResponse, look_up_action_class
 
 
-async def process_message_sync_or_async(msg: dict, msg_processing_func: callable):
+async def process_message_sync_or_async(msg: dict):
     """
     Wrapper function which allows to define both sync and async implementations of `process_message`.
     """
@@ -21,7 +22,7 @@ async def process_message_sync_or_async(msg: dict, msg_processing_func: callable
             msg = json.loads(msg)
         except Exception as exc:
             error_msg = (
-                f"Incoming message does not represent a valid JSON structure: {msg}.\n" f"The original error was: {exc}"
+                f"Incoming message does not represent a valid JSON structure: {msg}.\nThe original error was: {exc}"
             )
             logger.error(error_msg)
             return msg_specs.QCrBoxGenericResponse(
@@ -47,7 +48,7 @@ async def process_message_sync_or_async(msg: dict, msg_processing_func: callable
         logger.error(error_msg)
         return msg_specs.QCrBoxGenericResponse(response_to="incoming_message", status="error", msg=error_msg)
 
-    result = msg_processing_func(msg_obj)
+    result = process_message(msg_obj)
     if asyncio.iscoroutine(result):
         # If the given message type is processed by an async function,
         # calling `process_message` will return a coroutine, so we need
@@ -57,12 +58,12 @@ async def process_message_sync_or_async(msg: dict, msg_processing_func: callable
 
 
 @singledispatch
-def process_message(msg):
+def process_message(msg: dict):
     """
     Fallback processing definition (this is executed only if none of the others match).
     """
     error_msg = (
-        "Cannot process incoming message. If it represents an action, make sure that: "
+        f"Cannot process incoming message: {msg}.\n\nIf it represents an action, make sure that: "
         "(1) there exists a submodule of `pyqcrbox.msg_specs.actions` which defines a "
         "subclass of QCrBoxBaseAction associated with this action (and this submodule "
         "is imported in `pyqcrbox/msg_specs/actions/__init__.py`), (2) there exists a "
