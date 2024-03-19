@@ -1,8 +1,7 @@
 from typing import Literal
 
 from pyqcrbox import sql_models
-
-from ..base import QCrBoxActionBasePayload, QCrBoxBaseAction, QCrBoxGenericResponse
+from pyqcrbox.msg_specs.base import QCrBoxActionBasePayload, QCrBoxBaseAction, QCrBoxGenericResponse
 
 __all__ = ["PayloadForRegisterApplication", "RegisterApplication", "RegisterApplicationResponse"]
 

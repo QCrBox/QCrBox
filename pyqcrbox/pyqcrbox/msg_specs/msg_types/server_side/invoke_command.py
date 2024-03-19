@@ -3,8 +3,7 @@ from typing import Literal, Optional
 from pydantic import BaseModel
 
 from pyqcrbox import sql_models
-
-from ..base import QCrBoxBaseAction, QCrBoxGenericResponse
+from pyqcrbox.msg_specs.base import QCrBoxBaseAction, QCrBoxGenericResponse
 
 __all__ = ["InvokeCommand", "InvokeCommandResponse", "PayloadForInvokeCommand"]
 
