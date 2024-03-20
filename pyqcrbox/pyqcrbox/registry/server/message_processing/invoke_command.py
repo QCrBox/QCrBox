@@ -38,7 +38,7 @@ async def _(
 
     if cmd_invocation_db.application_id is None:
         error_msg = (
-            f"The requested application is not available: {cmd_invocation.application_slug!r} "
+            f"The requested application has not been registered: {cmd_invocation.application_slug!r} "
             f"(version: {cmd_invocation.application_version!r})"
         )
         logger.error(error_msg)
@@ -50,6 +50,11 @@ async def _(
         )
         logger.error(error_msg)
         response = msg_specs.InvokeCommandResponse(response_to=msg.action, status="error", msg=error_msg)
+    #
+    # TODO:
+    #   - check that all mandatory command arguments are provided in the call
+    #   - check that all arguments provided are supported by the command
+    #
     else:
         response = msg_specs.InvokeCommandResponse(
             response_to=msg.action,

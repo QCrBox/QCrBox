@@ -17,7 +17,10 @@ async def _(
     broker: RabbitBroker = Context("broker"),
 ) -> None:
     """
-    Send command execution command to the application who accepted the command invocation request.
+    command_invocation_request_accepted
+      - from: client
+      - to: server
+      - rpc: no
     """
     logger.debug(f"Application accepted command invocation with correlation_id={msg.payload.correlation_id}")
 
