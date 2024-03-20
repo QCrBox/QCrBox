@@ -12,7 +12,7 @@ __all__ = []
 @process_message.register
 @apply_types
 async def _(
-    msg: msg_specs.AcceptCommandInvocation,
+    msg: msg_specs.CommandInvocationRequestAccepted,
     logger: Logger,
     broker: RabbitBroker = Context("broker"),
 ) -> None:
