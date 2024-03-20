@@ -1,17 +1,20 @@
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional
 
-from sqlmodel import Field, Relationship
+from sqlmodel import JSON, Column, Field, Relationship
 
 from pyqcrbox.settings import settings
 
-from .command_invocation import CommandInvocationDB, CommandSpecDB
+from .command_invocation import CommandInvocationDB
 from .qcrbox_base_models import QCrBoxBaseSQLModel, QCrBoxPydanticBaseModel
 
 
 class CommandExecutionCreate(QCrBoxPydanticBaseModel):
-    command_invocation_db: CommandInvocationDB
-    command_spec_db: CommandSpecDB
+    application_slug: str
+    application_version: str
+    command_name: str
+    correlation_id: str
+    arguments: dict[str, Any]
 
     def to_sql_model(self):
         return CommandExecutionDB.from_pydantic_model(self)
@@ -24,9 +27,14 @@ class CommandExecutionDB(QCrBoxBaseSQLModel, table=True):
     __tablename__ = "command_execution"
     __pydantic_model_cls__ = CommandExecutionCreate
 
-    timestamp: datetime = Field(default_factory=datetime.now)
+    application_slug: str
+    application_version: str
+    command_name: str
+    correlation_id: str
+    arguments: dict[str, Any] = Field(sa_column=Column(JSON))
 
     id: Optional[int] = Field(default=None, primary_key=True)
+    timestamp: datetime = Field(default_factory=datetime.now)
 
     command_invocation: Optional["CommandInvocationDB"] = Relationship(
         sa_relationship_kwargs={"uselist": False},
