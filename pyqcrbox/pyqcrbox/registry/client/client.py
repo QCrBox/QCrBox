@@ -70,36 +70,7 @@ def create_client_faststream_app(
             # TODO: deal with the execution request!
 
             client_app.calculations[msg.payload.correlation_id] = calculation
-
-            response = {
-                "response_to": "execute_command",
-                "status": "ok",
-                "msg": "",
-            }
-
-            # # Process the message - it will be passed to the correct processing function based on
-            # # its type/structure (the heavy lifting is done by `functools.singledispatch`).
-            # response = await process_message_sync_or_async(msg)
-            #
-            # if msg["action"] == "initiate_command_execution":
-            #     cmd_spec_db = sql_models.CommandSpecDB(**msg["payload"]["command_spec_db"])
-            #     cmd = instantiate_command(cmd_spec_db)
-            #     _ = await cmd.execute_in_background_using_asyncio()
-            #     logger.debug("Started a subprocess to execute the given command in the background.")
-            #     breakpoint()
-            #     response = {
-            #         "response_to": "execute_command",
-            #         "status": "ok",
-            #         "msg": "TODO: implement this!",
-            #     }
-            # else:
-            #     response = {
-            #         "response_to": "incoming_private_message",
-            #         "status": "success",
-            #         "msg": "",
-            #     }
             client_app.increment_processed_message_counter(private_routing_key)
-            return response
 
         logger.debug(f"Set up listener on private queue: {private_routing_key!r}")
 
