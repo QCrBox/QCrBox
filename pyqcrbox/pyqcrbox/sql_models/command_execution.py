@@ -13,8 +13,9 @@ class CommandExecutionCreate(QCrBoxPydanticBaseModel):
     application_slug: str
     application_version: str
     command_name: str
-    correlation_id: str
     arguments: dict[str, Any]
+    correlation_id: str
+    private_routing_key: str
 
     def to_sql_model(self):
         return CommandExecutionDB.from_pydantic_model(self)
@@ -30,8 +31,9 @@ class CommandExecutionDB(QCrBoxBaseSQLModel, table=True):
     application_slug: str
     application_version: str
     command_name: str
-    correlation_id: str
     arguments: dict[str, Any] = Field(sa_column=Column(JSON))
+    correlation_id: str
+    private_routing_key: str
 
     id: Optional[int] = Field(default=None, primary_key=True)
     timestamp: datetime = Field(default_factory=datetime.now)

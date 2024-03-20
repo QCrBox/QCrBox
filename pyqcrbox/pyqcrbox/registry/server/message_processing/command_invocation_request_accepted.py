@@ -30,15 +30,20 @@ async def _(
                 sql_models.CommandInvocationDB.correlation_id == msg.payload.correlation_id
             )
         ).one()
-        # cmd_spec_db = cmd_invocation_db.command
 
-    logger.debug("Sending command execution request to this application.")
-    msg_execute_cmd = msg_specs.ExecuteCommand(
-        action="execute_command",
-        payload=msg_specs.PayloadForExecuteCommand(
+        cmd_execution = sql_models.CommandExecutionCreate(
+            private_routing_key=msg.payload.private_routing_key,
             **cmd_invocation_db.model_dump(
                 exclude={"id", "timestamp", "application_id", "command_id", "command_execution_id"}
             ),
-        ),
-    )
+        )
+        cmd_execution_db = cmd_execution.save_to_db()
+
+        # Link up existing command invocation record with the new command execution record
+        cmd_invocation_db.command_execution_id = cmd_execution_db.id
+        session.commit()
+
+    logger.debug("Sending command execution request to this application.")
+    msg_execute_cmd = msg_specs.ExecuteCommand(action="execute_command", payload=cmd_execution)
+
     await broker.publish(msg_execute_cmd, routing_key=msg.payload.private_routing_key)
