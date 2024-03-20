@@ -62,15 +62,38 @@ def create_client_faststream_app(
         await broker.close()
 
         @broker.subscriber(private_routing_key)
-        async def on_incoming_private_message(msg: msg_specs.ExecuteCommand, logger: Logger):
+        async def on_incoming_private_message(msg: dict, logger: Logger):
             logger.debug(f"Received message on private queue: {msg=}")
 
-            cmd = instantiate_command_from_spec(application_spec, msg.payload.command_name)
-            calculation = await cmd.execute_in_background(**msg.payload.arguments)
-            # TODO: deal with the execution request!
+            if msg["action"] == "execute_command":
+                msg = msg_specs.ExecuteCommand(**msg)
+                cmd = instantiate_command_from_spec(application_spec, msg.payload.command_name)
+                calculation = await cmd.execute_in_background(**msg.payload.arguments)
+                client_app.calculations[msg.payload.correlation_id] = calculation
+                response = msg_specs.QCrBoxGenericResponse(
+                    response_to=msg.action,
+                    status="ok",
+                )
+            elif msg["action"] == "poll_calculation_status":
+                msg = msg_specs.PollCalculationStatus(**msg)
+                breakpoint()
+                calculation = client_app.calculations[msg.payload.correlation_id]
+                status_details = await calculation.get_status_details()
+                response = msg_specs.QCrBoxGenericResponse(
+                    response_to=msg.action,
+                    status="ok",
+                    payload=dict(
+                        correlation_id=msg.payload.correlation_id,
+                        calculation_status=status_details,
+                    ),
+                )
+            else:
+                raise ValueError(f"Invalid action: {msg['action']!r}")
 
-            client_app.calculations[msg.payload.correlation_id] = calculation
+            # TODO: add support for different kinds of messages (e.g., `execute_command` and `poll_calculation_status`)
+
             client_app.increment_processed_message_counter(private_routing_key)
+            return response
 
         logger.debug(f"Set up listener on private queue: {private_routing_key!r}")
 
