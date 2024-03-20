@@ -1,12 +1,10 @@
 # SPDX-License-Identifier: MPL-2.0
-import asyncio
 import inspect
 import re
 import subprocess
 
-# from anyio import open_process
-# from anyio.streams.text import TextReceiveStream
-# from loguru import logger
+import anyio
+
 from pyqcrbox.sql_models import ParameterSpecCreate
 
 from ...sql_models.call_pattern import CallPattern
@@ -87,25 +85,16 @@ class ExternalCommand:
         bound_args = self.signature.bind(*args, **kwargs)
         return [str(x.bind(bound_args)) for x in self.cmd_constituents]
 
-    async def execute_in_background_using_asyncio(
+    async def execute_in_background(
         self, *args, _stdin=None, _stdout=subprocess.PIPE, _stderr=subprocess.PIPE, **kwargs
     ) -> ExternalCmdCalculation:
-        bound_args = self.bind(*args, **kwargs)
+        cmd = self.bind(*args, **kwargs)
         # current_workdir = os.getcwd()
         # logger.debug(f"{current_workdir=}")
-        proc = await asyncio.create_subprocess_exec(
-            *bound_args,
+        proc = await anyio.open_process(
+            cmd,
             stdin=_stdin,
             stdout=_stdout,
             stderr=_stderr,
         )
         return ExternalCmdCalculation(proc)
-
-    # async def execute_in_background_using_anyio(
-    #     self, *args, _stdin=None, _stdout=subprocess.PIPE, _stderr=subprocess.PIPE, **kwargs
-    # ) -> ExternalCmdCalculation:
-    #     bound_args = self.bind(*args, **kwargs)
-    #
-    #     async with await open_process(bound_args, stdin=_stdin, stdout=_stdout, stderr=_stderr) as proc:
-    #         return ExternalCmdCalculation(proc)
-    #

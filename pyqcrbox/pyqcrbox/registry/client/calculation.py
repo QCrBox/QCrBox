@@ -4,6 +4,10 @@ import asyncio
 from abc import ABCMeta, abstractmethod
 from enum import Enum
 
+import anyio.abc
+from anyio import EndOfStream
+from anyio.streams.text import TextReceiveStream
+
 
 class CalculationStatus(str, Enum):
     RUNNING = "running"
@@ -24,7 +28,7 @@ class BaseCalculation(metaclass=ABCMeta):
 
 
 class ExternalCmdCalculation(BaseCalculation):
-    def __init__(self, proc: asyncio.subprocess.Process):
+    def __init__(self, proc: anyio.abc.Process):
         super().__init__()
         self.proc = proc
 
@@ -40,16 +44,22 @@ class ExternalCmdCalculation(BaseCalculation):
 
         return status
 
-    @property
-    async def status_details(self):
+    async def get_status_details(self):
         returncode = self.proc.returncode
         status_details = {
             "returncode": returncode,
         }
         if returncode is not None:
-            stdout, stderr = await self.proc.communicate()
-            status_details["stdout"] = stdout
-            status_details["stderr"] = stderr
+            async with self.proc as process:
+                try:
+                    status_details["stdout"] = await TextReceiveStream(process.stdout).receive()
+                except EndOfStream:
+                    status_details["stdout"] = ""
+
+                try:
+                    status_details["stderr"] = await TextReceiveStream(process.stderr).receive()
+                except EndOfStream:
+                    status_details["stderr"] = ""
         return status_details
 
 
