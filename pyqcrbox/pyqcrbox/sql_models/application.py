@@ -33,6 +33,15 @@ class ApplicationSpecCreate(QCrBoxPydanticBaseModel):
     def routing_key_command_invocation(self):
         return f"qcrbox_rk_{self.slug}_{self.version}"
 
+    def get_command_spec(self, command_name: str) -> CommandSpecCreate:
+        cmds = [c for c in self.commands if c.name == command_name]
+        if len(cmds) == 0:
+            raise ValueError(f"Invalid command name: {command_name}")
+        elif len(cmds) == 1:
+            return cmds[0]
+        else:
+            raise RuntimeError(f"Invalid application spec: found multiple definitions for command {command_name!r}")
+
     def to_sql_model(self, private_routing_key: str = None):
         return ApplicationSpecDB.from_pydantic_model(self, private_routing_key=private_routing_key)
 

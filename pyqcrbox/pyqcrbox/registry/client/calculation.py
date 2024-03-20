@@ -46,9 +46,8 @@ class ExternalCmdCalculation(BaseCalculation):
 
     async def get_status_details(self):
         returncode = self.proc.returncode
-        status_details = {
-            "returncode": returncode,
-        }
+        status_details = {"returncode": returncode}
+
         if returncode is not None:
             async with self.proc as process:
                 try:

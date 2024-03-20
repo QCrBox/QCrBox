@@ -9,6 +9,7 @@ from faststream.rabbit import RabbitBroker
 from pyqcrbox import msg_specs, settings, sql_models
 
 from ..base import QCrBoxFastStream
+from .command_execution import instantiate_command_from_spec
 
 __all__ = ["create_client_faststream_app"]
 
@@ -21,6 +22,7 @@ def create_client_faststream_app(
 ) -> QCrBoxFastStream:
     client_app = QCrBoxFastStream(broker, title="QCrBox Client", log_level=log_level)
     client_app.application_spec = application_spec
+    client_app.calculations = {}
     private_routing_key = private_routing_key or "super-secret-private-client-queue"
 
     @client_app.after_startup
@@ -63,11 +65,15 @@ def create_client_faststream_app(
         async def on_incoming_private_message(msg: msg_specs.ExecuteCommand, logger: Logger):
             logger.debug(f"Received message on private queue: {msg=}")
 
+            cmd = instantiate_command_from_spec(application_spec, msg.payload.command_name)
+            calculation = await cmd.execute_in_background(**msg.payload.arguments)
             # TODO: deal with the execution request!
 
+            client_app.calculations[msg.payload.correlation_id] = calculation
+
             response = {
-                "response_to": "incoming_private_message",
-                "status": "success",
+                "response_to": "execute_command",
+                "status": "ok",
                 "msg": "",
             }
 
