@@ -7,7 +7,6 @@ from faststream import Logger
 from faststream.rabbit import RabbitBroker
 
 from pyqcrbox import msg_specs, settings, sql_models
-from pyqcrbox.registry.client.command_execution import instantiate_command
 
 from ..base import QCrBoxFastStream
 
@@ -61,43 +60,58 @@ def create_client_faststream_app(
         await broker.close()
 
         @broker.subscriber(private_routing_key)
-        async def on_incoming_private_message(msg: dict, logger: Logger):
+        async def on_incoming_private_message(msg: msg_specs.ExecuteCommand, logger: Logger):
             logger.debug(f"Received message on private queue: {msg=}")
-            if msg["action"] == "initiate_command_execution":
-                cmd_spec_db = sql_models.CommandSpecDB(**msg["payload"]["command_spec_db"])
-                cmd = instantiate_command(cmd_spec_db)
-                _ = await cmd.execute_in_background_using_asyncio()
-                logger.debug("Started a subprocess to execute the given command in the background.")
-                breakpoint()
-                response = {
-                    "response_to": "execute_command",
-                    "status": "ok",
-                    "msg": "TODO: implement this!",
-                }
-            else:
-                response = {
-                    "response_to": "incoming_private_message",
-                    "status": "success",
-                    "msg": "",
-                }
+
+            # TODO: deal with the execution request!
+
+            response = {
+                "response_to": "incoming_private_message",
+                "status": "success",
+                "msg": "",
+            }
+
+            # # Process the message - it will be passed to the correct processing function based on
+            # # its type/structure (the heavy lifting is done by `functools.singledispatch`).
+            # response = await process_message_sync_or_async(msg)
+            #
+            # if msg["action"] == "initiate_command_execution":
+            #     cmd_spec_db = sql_models.CommandSpecDB(**msg["payload"]["command_spec_db"])
+            #     cmd = instantiate_command(cmd_spec_db)
+            #     _ = await cmd.execute_in_background_using_asyncio()
+            #     logger.debug("Started a subprocess to execute the given command in the background.")
+            #     breakpoint()
+            #     response = {
+            #         "response_to": "execute_command",
+            #         "status": "ok",
+            #         "msg": "TODO: implement this!",
+            #     }
+            # else:
+            #     response = {
+            #         "response_to": "incoming_private_message",
+            #         "status": "success",
+            #         "msg": "",
+            #     }
             client_app.increment_processed_message_counter(private_routing_key)
             return response
 
         logger.debug(f"Set up listener on private queue: {private_routing_key!r}")
 
         @broker.subscriber(application_spec.routing_key_command_invocation)
-        async def on_command_invocation(msg: sql_models.CommandInvocationCreate, logger: Logger):
-            # 1) check that the application implements the given command
-            # 2) check that all mandatory command arguments are provided in the call
-            # 3) check that all arguments provided are supported by the command
+        async def on_command_invocation_request(msg: sql_models.CommandInvocationCreate, logger: Logger):
             logger.debug(f"Received command invocation request: {msg=}")
-            msg_response = msg_specs.AcceptCommandInvocation(
-                action="accept_command_invocation",
-                payload=msg_specs.PayloadForAcceptCommandInvocation(
+
+            # TODO: if the client is currently busy or otherwise unable to execute the command,
+            # send a response to reject the invocation request
+
+            msg_response = msg_specs.CommandInvocationRequestAccepted(
+                action="command_invocation_request_accepted",
+                payload=msg_specs.PayloadForCommandInvocationRequestAccepted(
                     private_routing_key=private_routing_key,
                     **msg.model_dump(),
                 ),
             )
+
             logger.debug(f"Accepting command invocation request (correlation_id: {msg.correlation_id})")
             await broker.publish(
                 msg_response,
