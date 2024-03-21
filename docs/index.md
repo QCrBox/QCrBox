@@ -5,7 +5,7 @@ hide:
 
 !!! welcome "Welcome to QCrBox!"
 
-    This project provides an open-source platform aimed at revolutionizing general &
+    QCrBox is an open-source platform aimed at revolutionizing general &
     quantum crystallography by addressing the field's core challenges: complex workflows, software
     interoperability, and reproducibility barriers.
 
