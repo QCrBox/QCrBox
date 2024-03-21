@@ -28,8 +28,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install uv
-          uv pip install -r qcrbox/requirements-docs.txt
+          pip install --upgrade uv
+          uv pip install --system -r qcrbox/requirements-docs.txt
 
       - name: Build the documentation
         run: mkdocs build
