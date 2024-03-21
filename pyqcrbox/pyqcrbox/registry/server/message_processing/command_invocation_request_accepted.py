@@ -22,7 +22,7 @@ async def _(
       - to: server
       - rpc: no
     """
-    logger.debug(f"Application accepted command invocation with correlation_id={msg.payload.correlation_id}")
+    logger.debug(f"Application accepted command invocation with correlation_id={msg.payload.correlation_id!r}")
 
     with settings.db.get_session() as session:
         cmd_invocation_db = session.exec(

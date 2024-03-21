@@ -78,10 +78,10 @@ def create_client_faststream_app(
                 msg = msg_specs.PollCalculationStatus(**msg)
                 calculation = client_app.calculations[msg.payload.correlation_id]
                 status_details = await calculation.get_status_details()
-                response = msg_specs.QCrBoxGenericResponse(
+                response = msg_specs.ReportCalculationStatusDetails(
                     response_to=msg.action,
                     status="ok",
-                    payload=msg_specs.PayloadForReportCalculationStatus(
+                    payload=msg_specs.PayloadForReportCalculationStatusDetails(
                         correlation_id=msg.payload.correlation_id,
                         calculation_status=status_details,
                     ),

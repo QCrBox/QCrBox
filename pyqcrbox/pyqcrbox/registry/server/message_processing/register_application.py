@@ -7,7 +7,7 @@ __all__ = []
 
 
 @process_message.register
-def _(msg: msg_specs.RegisterApplication) -> msg_specs.QCrBoxGenericResponse:
+async def _(msg: msg_specs.RegisterApplication) -> msg_specs.QCrBoxGenericResponse:
     """
     Register a new application and store it in the database
     """

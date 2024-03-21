@@ -28,7 +28,10 @@ class Param:
         return f"<{self.name}>"
 
     def bind(self, bound_args: inspect.BoundArguments):
-        return bound_args.arguments[self.name]
+        try:
+            return bound_args.arguments[self.name]
+        except KeyError:
+            return self.default
 
 
 class FormattedParam(Param):
