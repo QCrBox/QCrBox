@@ -1,0 +1,19 @@
+:root {
+  --md-admonition-icon--welcome: url('images/logo_black.png')
+}
+.md-typeset .admonition.welcome,
+.md-typeset details.welcome {
+  border-color: rgb(43, 155, 70);
+  margin-top: 0px;
+  font-size: 11pt;
+}
+.md-typeset .welcome > .admonition-title,
+.md-typeset .welcome > summary {
+  background-color: rgba(43, 155, 70, 0.1);
+}
+.md-typeset .welcome > .admonition-title::before,
+.md-typeset .welcome > summary::before {
+  background-color: rgb(43, 155, 70);
+  -webkit-mask-image: var(--md-admonition-icon--welcome);
+          mask-image: var(--md-admonition-icon--welcome);
+}

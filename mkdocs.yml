@@ -25,6 +25,8 @@ theme:
     accent: "purple"
   logo: "images/logo_white.png"
   favicon: "images/logo_black.png"
+extra_css:
+  - qcrbox_custom_styling.css
 
 plugins:
   - search

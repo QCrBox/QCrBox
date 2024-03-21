@@ -3,8 +3,18 @@ hide:
   - navigation
 ---
 
-!!! warning "TODO"
-    _Add a brief overview of the project here (or a link to the relevant documentation page)._
+!!! welcome "Welcome to QCrBox!"
+
+    QCrBox is an open-source platform aimed at revolutionizing general &
+    quantum crystallography by addressing the field's core challenges: complex workflows, software
+    interoperability, and reproducibility barriers.
+
+    By integrating existing software into a unified, containerized environment, QCrBox aims to facilitate
+    the adoption of advanced crystallographic methods and spur the development of new tools. Our goal is
+    to streamline research processes, simplify software installation, enhance reproducibility, and improve
+    reporting standards.
+
+    We are currently working on completing the core framework. Feedback and collaboration is always welcome.
 
 
 Documentation:
