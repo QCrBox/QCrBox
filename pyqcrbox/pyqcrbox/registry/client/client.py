@@ -76,13 +76,12 @@ def create_client_faststream_app(
                 )
             elif msg["action"] == "poll_calculation_status":
                 msg = msg_specs.PollCalculationStatus(**msg)
-                breakpoint()
                 calculation = client_app.calculations[msg.payload.correlation_id]
                 status_details = await calculation.get_status_details()
                 response = msg_specs.QCrBoxGenericResponse(
                     response_to=msg.action,
                     status="ok",
-                    payload=dict(
+                    payload=msg_specs.PayloadForReportCalculationStatus(
                         correlation_id=msg.payload.correlation_id,
                         calculation_status=status_details,
                     ),

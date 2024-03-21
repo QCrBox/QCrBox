@@ -8,6 +8,8 @@ import anyio.abc
 from anyio import EndOfStream
 from anyio.streams.text import TextReceiveStream
 
+from pyqcrbox import msg_specs
+
 
 class CalculationStatus(str, Enum):
     RUNNING = "running"
@@ -44,21 +46,26 @@ class ExternalCmdCalculation(BaseCalculation):
 
         return status
 
-    async def get_status_details(self):
+    async def get_status_details(self) -> msg_specs.CalculationStatusDetails:
         returncode = self.proc.returncode
-        status_details = {"returncode": returncode}
+        status_details = msg_specs.CalculationStatusDetails(
+            returncode=returncode,
+            stdout="",
+            stderr="",
+        )
 
         if returncode is not None:
             async with self.proc as process:
                 try:
-                    status_details["stdout"] = await TextReceiveStream(process.stdout).receive()
+                    status_details.stdout = await TextReceiveStream(process.stdout).receive()
                 except EndOfStream:
-                    status_details["stdout"] = ""
+                    status_details.stdout = ""
 
                 try:
-                    status_details["stderr"] = await TextReceiveStream(process.stderr).receive()
+                    status_details.stderr = await TextReceiveStream(process.stderr).receive()
                 except EndOfStream:
-                    status_details["stderr"] = ""
+                    status_details.stderr = ""
+
         return status_details
 
 
