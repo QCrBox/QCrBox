@@ -121,6 +121,7 @@ markdown==3.5.1
     #   mkdocs
     #   mkdocs-material
     #   pymdown-extensions
+markdown-exec==1.8.0
 markdown-it-py==3.0.0
     # via
     #   jupytext
@@ -218,7 +219,9 @@ pygments==2.17.2
     #   nbconvert
     #   rich
 pymdown-extensions==10.5
-    # via mkdocs-material
+    # via
+    #   markdown-exec
+    #   mkdocs-material
 pyperclip==1.8.2
     # via hatch
 python-dateutil==2.8.2
