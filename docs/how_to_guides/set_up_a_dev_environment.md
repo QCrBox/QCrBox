@@ -134,7 +134,7 @@ qcrbox-message-bus
 qcrbox-registry
 shelx
 crystal-explorer
-olex2-linux
+olex2
 ```
 
 ```
@@ -145,5 +145,5 @@ qcrbox-message-bus
 qcrbox-registry
 shelx
 crystal-explorer
-olex2-linux
+olex2
 ```
