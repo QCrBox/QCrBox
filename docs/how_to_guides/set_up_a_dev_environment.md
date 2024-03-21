@@ -1,4 +1,4 @@
-# Set up a development environment
+# Setting up a development environment
 
 ## Check prerequisites
 
