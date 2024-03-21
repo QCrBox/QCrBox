@@ -4,8 +4,11 @@
 
 Make sure you have the necessary prerequisites installed.
 
-!!! warning inline end "TODO"
-    List all prerequisites and their minimum required versions.
+!!! info inline end
+    QCrBox has been tested with the versions of Python and Docker
+    listed here, but other recent versions should also work. Please
+    [raise an issue](https://github.com/QCrBox/QCrBox/issues/new){:target="_blank"}
+    on GitHub if you experience any problems.
 
 ```
 $ python --version
