@@ -43,6 +43,7 @@ dev = [
 docs = [
     "mkdocs",
     "mkdocs-awesome-pages-plugin",
+    "mkdocs-jupyter",
     "mkdocs-material",
     "pymdown-extensions",
 ]
