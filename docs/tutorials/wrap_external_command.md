@@ -1,4 +1,4 @@
-# Wrap an executable functionality to run within QCrBox
+# Wrapping a command line executable to run within QCrBox
 
 This guide walks you through the process of encapsulating an external command within a QCrBox container.
 Specifically, we'll create a bash script that will allow as to run [CellCheckCSD](https://www.ccdc.cam.ac.uk/solutions/software/cellcheckcsd/) to produce an xml file with similar cells as output.

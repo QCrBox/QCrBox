@@ -1,6 +1,4 @@
-
-
-# Wrap a Python module and expose functionality to run within QCrBox
+# Wrapping a Python module and exposing functionality to run within QCrBox
 
 This guide walks you through the process of encapsulating a Python module within a QCrBox container. Specifically, we'll focus on a module that queries the [Crystallographic Open Database (COD)](https://www.crystallography.net/cod/) for structures with similar elements and unit cell parameters. Our goal is to make this module's functionality accessible within a QCrBox container.
 

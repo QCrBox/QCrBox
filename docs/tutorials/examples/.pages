@@ -1,0 +1,6 @@
+nav:
+  - Interacting with Olex2: example_olex2.ipynb
+  - Interacting with XHARPy: example_xharpy.ipynb
+  - Interacting with Eval14/15: example_eval.ipynb
+  - Interacting with CrystalExplorer: example_crystal_explorer.ipynb
+  - Interacting with QCrBoxTools: example_qcrboxtools.ipynb

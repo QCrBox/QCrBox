@@ -11,5 +11,9 @@
 
 ## Contents
 
- - [How to integrate python functionality into QCrBox](wrap_python_command.md)
- - [How to integrate a command line program in QCrBox](wrap_external_command.md)
+ - [Integrating a command line (CLI) program into QCrBox](wrap_external_command.md)
+ - [Integrating Python functionality into QCrBox](wrap_python_command.md)
+ - Examples for interacting with crystallographic software within QCrBox:
+     - [Example: interacting with Olex2](examples/example_olex2.ipynb)
+     - [Example: interacting with XHARPy](examples/example_xharpy.ipynb)
+     - [Example: interacting with Eval 14/15](examples/example_eval.ipynb)
