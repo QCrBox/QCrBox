@@ -32,6 +32,7 @@ plugins:
   - search
   - awesome-pages:
       collapse_single_pages: false
+  - mkdocs-jupyter
 
 markdown_extensions:
 
