@@ -19,8 +19,8 @@ hide:
 
 Documentation:
 
-- [Tutorials](tutorials/contents.md)
 - [How-To Guides](how_to_guides/contents.md) (Start Here)
+- [Tutorials](tutorials/contents.md)
 - [Technical Reference](technical_reference/contents.md)
 - [Background Information](background_info/contents.md)
 
