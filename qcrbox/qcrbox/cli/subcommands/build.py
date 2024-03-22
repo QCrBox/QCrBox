@@ -7,10 +7,7 @@ import click
 from doit.task import Task
 from loguru import logger
 
-from ..helpers import DockerProject, get_repo_root, make_task, run_tasks
-
-DEFAULT_EXPLICITLY_ENABLED_COMPONENTS = ()
-DEFAULT_EXPLICITLY_DISABLED_COMPONENTS = ("shelx", "qcrbox-nextflow")
+from ..helpers import DockerProject, add_cli_option_enable_disable_component, get_repo_root, make_task, run_tasks
 
 @click.command(name="build")
 @click.option(
@@ -24,27 +21,7 @@ DEFAULT_EXPLICITLY_DISABLED_COMPONENTS = ("shelx", "qcrbox-nextflow")
         "disabled (via --disable=COMPONENT) will remain excluded."
     ),
 )
-@click.option(
-    "--enable",
-    "enabled_components",
-    default=DEFAULT_EXPLICITLY_ENABLED_COMPONENTS,
-    show_default=True,
-    metavar="COMPONENT",
-    help=(
-        "Explicitly include the given component in the build. This only "
-        "has an effect for components that are disabled by default."
-    ),
-    multiple=True,
-)
-@click.option(
-    "--disable",
-    "disabled_components",
-    default=DEFAULT_EXPLICITLY_DISABLED_COMPONENTS,
-    show_default=True,
-    metavar="COMPONENT",
-    help="Explicitly exclude the given component from the build.",
-    multiple=True,
-)
+@add_cli_option_enable_disable_component
 @click.option("--no-deps/--with-deps", default=False, help="Build given components without/with dependencies.")
 @click.option(
     "-n",

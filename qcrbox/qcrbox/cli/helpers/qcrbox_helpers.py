@@ -73,3 +73,33 @@ def add_verbose_option(f):
     )(f)
     f = click.pass_context(f)
     return f
+
+
+def add_cli_option_enable_disable_component(f):
+    DEFAULT_EXPLICITLY_ENABLED_COMPONENTS = ()
+    DEFAULT_EXPLICITLY_DISABLED_COMPONENTS = ("shelx", "qcrbox-nextflow")
+
+    f = click.option(
+        "--enable",
+        "enabled_components",
+        default=DEFAULT_EXPLICITLY_ENABLED_COMPONENTS,
+        show_default=True,
+        metavar="COMPONENT",
+        help=(
+            "Explicitly include the given component in the build. This only "
+            "has an effect for components that are disabled by default."
+        ),
+        multiple=True,
+    )(f)
+
+    f = click.option(
+        "--disable",
+        "disabled_components",
+        default=DEFAULT_EXPLICITLY_DISABLED_COMPONENTS,
+        show_default=True,
+        metavar="COMPONENT",
+        help="Explicitly exclude the given component from the build.",
+        multiple=True,
+    )(f)
+
+    return f
