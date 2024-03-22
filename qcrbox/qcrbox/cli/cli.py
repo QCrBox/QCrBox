@@ -3,6 +3,7 @@
 import click
 
 from . import subcommands
+from .helpers import add_verbose_option
 
 CONTEXT_SETTINGS = {
     "help_option_names": ["-h", "--help"],
@@ -10,14 +11,7 @@ CONTEXT_SETTINGS = {
 
 
 @click.group(context_settings=CONTEXT_SETTINGS)
-@click.option(
-    "-v",
-    "--verbose",
-    is_flag=True,
-    default=False,
-    help="Enables verbose mode (will print debugging messages about actions performed).",
-)
-@click.pass_context
+@add_verbose_option
 def entry_point(ctx: click.core.Context, verbose: bool = False):
     """
     Command line interface for the Quantum Crystallography Toolbox.

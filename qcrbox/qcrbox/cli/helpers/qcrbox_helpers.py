@@ -5,6 +5,7 @@ import subprocess
 from pathlib import Path
 from typing import Optional, TypeVar
 
+import click
 from git import InvalidGitRepositoryError, Repo
 
 # Type alias
@@ -60,3 +61,15 @@ def find_common_repo_root(*files: PathLike):
 
 def get_mkdocs_config_file_path():
     return get_repo_root().joinpath("mkdocs.yml")
+
+
+def add_verbose_option(f):
+    f = click.option(
+        "-v",
+        "--verbose",
+        is_flag=True,
+        default=False,
+        help="Enables verbose mode (will print debugging messages about actions performed).",
+    )(f)
+    f = click.pass_context(f)
+    return f
