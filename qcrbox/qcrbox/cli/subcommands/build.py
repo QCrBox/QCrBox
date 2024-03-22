@@ -16,6 +16,7 @@ from ..helpers import (
     run_tasks,
 )
 
+
 @click.command(name="build")
 @add_cli_option_enable_disable_components
 @click.option("--no-deps/--with-deps", default=False, help="Build given components without/with dependencies.")
