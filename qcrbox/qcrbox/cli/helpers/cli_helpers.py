@@ -4,8 +4,9 @@ import sys
 import click
 from loguru import logger
 
-from qcrbox.cli.helpers import DockerProject
 from qcrbox.logging import set_cli_log_level
+
+from .docker_project import DockerProject
 
 
 def add_verbose_option(f):
