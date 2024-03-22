@@ -29,8 +29,18 @@ def get_current_qcrbox_version() -> str:
 
 
 def get_repo_root(path: Optional[PathLike] = None):
-    path = path or Path(__file__)
-    repo = Repo(Path(path).resolve(), search_parent_directories=True)
+    candidate_path = path or Path.cwd()
+
+    try:
+        repo = Repo(Path(candidate_path).resolve(), search_parent_directories=True)
+    except InvalidGitRepositoryError:
+        if path is not None:
+            raise ValueError(f"Unable to determine parent git repository of the given compose file: {path}")
+        else:
+            raise RuntimeError(
+                "This command must be run from within a QCrBox git repository. "
+                f"Current working directory: {candidate_path}"
+            )
     return Path(repo.working_tree_dir).resolve()
 
 
