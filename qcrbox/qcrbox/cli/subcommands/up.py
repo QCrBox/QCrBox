@@ -1,4 +1,6 @@
 # SPDX-License-Identifier: MPL-2.0
+import sys
+from typing import Optional
 
 import click
 import doit.task
@@ -11,16 +13,14 @@ from .build import populate_build_tasks
 @click.option(
     "--build/--no-build",
     is_flag=True,
-    default=True,
-    show_default=True,
-    help="(Re-)build components before starting them up.",
+    default=None,
+    help="(Re-)build components before starting them up. [default: True]",
 )
 @click.option(
     "--build-deps/--no-build-deps",
     is_flag=True,
-    default=True,
-    show_default=True,
-    help="Also build any dependencies of the given components. This option implies --build.",
+    default=None,
+    help="Also build any dependencies of the given components. This option implies --build. [default: --build-deps]",
 )
 @click.option(
     "-n",
@@ -30,15 +30,28 @@ from .build import populate_build_tasks
     help="Display actions that would be performed without actually doing anything.",
 )
 @click.argument("components", nargs=-1)
-def start_up_components(build: bool, build_deps: bool, dry_run: bool, components: list[str]):
+def start_up_components(build: Optional[bool], build_deps: Optional[bool], dry_run: bool, components: list[str]):
     """
     Start up QCrBox components.
     """
     docker_project = DockerProject()
     components = components or docker_project.services_excluding_base_images
 
-    if not build:
-        build_deps = False
+    if build is None:
+        build = True
+    elif build is False:
+        if build_deps is None:
+            build_deps = False
+        elif build_deps is True:
+            click.echo("Error: options --no-build and --build-deps are incompatible.")
+            sys.exit(1)
+        else:
+            pass
+    elif build is True:
+        if build_deps is None:
+            build_deps = True
+    else:
+        raise ValueError(f"Invalid value for --build flag: {build}")
 
     build_tasks = []
     if build or build_deps:
