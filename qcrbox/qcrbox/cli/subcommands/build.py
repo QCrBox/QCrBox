@@ -7,21 +7,17 @@ import click
 from doit.task import Task
 from loguru import logger
 
-from ..helpers import DockerProject, add_cli_option_enable_disable_component, get_repo_root, make_task, run_tasks
+from ..helpers import (
+    DockerProject,
+    add_cli_option_enable_disable_components,
+    add_verbose_option,
+    get_repo_root,
+    make_task,
+    run_tasks,
+)
 
 @click.command(name="build")
-@click.option(
-    "--all",
-    "include_all_components",
-    default=False,
-    show_default=True,
-    is_flag=True,
-    help=(
-        "Include all components. Note that any components that are explicitly "
-        "disabled (via --disable=COMPONENT) will remain excluded."
-    ),
-)
-@add_cli_option_enable_disable_component
+@add_cli_option_enable_disable_components
 @click.option("--no-deps/--with-deps", default=False, help="Build given components without/with dependencies.")
 @click.option(
     "-n",
@@ -30,6 +26,7 @@ from ..helpers import DockerProject, add_cli_option_enable_disable_component, ge
     default=False,
     help="Display actions that would be performed without actually doing anything.",
 )
+@add_verbose_option
 @click.argument("components", nargs=-1)
 def build_components(
     include_all_components: bool,

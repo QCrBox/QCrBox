@@ -5,17 +5,17 @@ from typing import Optional
 import click
 import doit.task
 
-from ...logging import set_cli_log_level
-from ..helpers import DockerProject, add_verbose_option, run_tasks
+from ..helpers import DockerProject, add_cli_option_enable_disable_components, add_verbose_option, run_tasks
 from .build import populate_build_tasks
 
 
 @click.command(name="up")
+@add_cli_option_enable_disable_components
 @click.option(
     "--build/--no-build",
     is_flag=True,
     default=None,
-    help="(Re-)build components before starting them up. [default: True]",
+    help="Build each given component before starting it up. [default: True]",
 )
 @click.option(
     "--build-deps/--no-build-deps",
@@ -33,19 +33,17 @@ from .build import populate_build_tasks
 @add_verbose_option
 @click.argument("components", nargs=-1)
 def start_up_components(
-    ctx: click.core.Context,
+    include_all_components: bool,
+    enabled_components: list[str],
+    disabled_components: list[str],
     build: Optional[bool],
     build_deps: Optional[bool],
     dry_run: bool,
     components: list[str],
-    verbose: bool,
 ):
     """
     Start up QCrBox components.
     """
-    if ctx.obj["VERBOSE"] or verbose:
-        set_cli_log_level("DEBUG")
-
     docker_project = DockerProject()
     components = components or docker_project.services_excluding_base_images
 

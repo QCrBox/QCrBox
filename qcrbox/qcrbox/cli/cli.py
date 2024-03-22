@@ -12,12 +12,11 @@ CONTEXT_SETTINGS = {
 
 @click.group(context_settings=CONTEXT_SETTINGS)
 @add_verbose_option
-def entry_point(ctx: click.core.Context, verbose: bool = False):
+def entry_point():
     """
     Command line interface for the Quantum Crystallography Toolbox.
     """
-    ctx.ensure_object(dict)  # ensure that ctx.obj exists and is a dict
-    ctx.obj["VERBOSE"] = verbose
+    pass
 
 
 entry_point.add_command(subcommands.init.create_application_template)
