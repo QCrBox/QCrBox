@@ -16,6 +16,7 @@ dynamic = [
 dependencies = [
     "anyio~=3.7.1",
     "click",
+    "cookiecutter",
     "doit",
     "gitpython",
     "hatch",
@@ -31,7 +32,6 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "cookiecutter",
     "ipdb",
     "ipython",
     "pip-tools",
