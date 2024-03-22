@@ -21,6 +21,7 @@ QCrBoxCalculationStatus : Represents the status of a calculation in QCrBox.
 """
 
 import json
+import os
 import pathlib
 import textwrap
 import time
@@ -179,10 +180,17 @@ class QCrBoxWrapper:
         """
         self.server_addr = server_addr
         self.server_port = server_port
+
+        # TODO Replace with commands reporting the port
+        default_gui_infos = {
+            "Eval1X": {"port": 12005, "commands": ["interactive"]},
+            "Olex2 (Linux)": {"port": 12004, "commands": ["interactive"]},
+            "CrystalExplorer": {"port": 12003, "commands": ["interactive"]},
+        }
         if gui_infos is None:
-            self.gui_infos = {}
+            self.gui_infos = default_gui_infos
         else:
-            self.gui_infos = gui_infos
+            self.gui_infos = gui_infos.update(default_gui_infos)
 
         with urllib.request.urlopen(f"{self.server_url}") as r:
             answers = json.loads(r.read().decode("UTF-8"))
@@ -214,8 +222,6 @@ class QCrBoxWrapper:
             A list of QCrBoxApplication namedtuples.
         """
         answers = get_time_cached_app_anwer(self.server_url, get_ttl_hash())
-        # with urllib.request.urlopen(f"{self.server_url}/applications/") as r:
-        #    answers = json.loads(r.read().decode("UTF-8"))
         return [
             QCrBoxApplication(
                 int(ans["id"]),
@@ -670,8 +676,8 @@ class QCrBoxPathHelper:
             A subdirectory within both the local and QCrBox base paths for scoped path
             management. Defaults to None, in which case the base paths are used directly.
         """
-        if local_path.startswith("\\wsl$\\"):
-            local_path = "\\" + local_path
+        if str(local_path).startswith("\\wsl$\\"):
+            local_path = "\\" + str(local_path)
         if base_dir is None:
             self.local_path = pathlib.Path(local_path)
             self.qcrbox_path = pathlib.PurePosixPath(qcrbox_path)
@@ -679,6 +685,54 @@ class QCrBoxPathHelper:
             self.local_path = pathlib.Path(local_path) / base_dir
             self.qcrbox_path = pathlib.PurePosixPath(qcrbox_path) / base_dir
         self.local_path.mkdir(exist_ok=True)
+
+    @classmethod
+    def from_dotenv(cls, dotenv_name: str, base_dir: Optional[pathlib.Path] = None) -> "QCrBoxPathHelper":
+        """
+        Creates an instance of QCrBoxPathHelper from environment variables defined in a .env file.
+
+        This class method reads the specified .env file to extract the base paths for the local and
+        QCrBox file systems. It then initializes and returns a new instance of QCrBoxPathHelper using
+        these paths.
+        Parameters
+        ----------
+        dotenv_name : str
+            The name of the .env file to be loaded.
+        base_dir : pathlib.Path, optional
+            A subdirectory within both the local and QCrBox base paths for scoped path management.
+            Defaults to None, in which case the base paths provided in the .env file are used directly.
+
+        Returns
+        -------
+        QCrBoxPathHelper
+            An instance of QCrBoxPathHelper initialized with the paths read from the .env file.
+
+        Raises
+        ------
+        FileNotFoundError
+            If the .env file specified by `dotenv_name` cannot be found or the required environment
+            variables are not set.
+        """
+        import dotenv
+
+        dotenv_path = pathlib.Path(dotenv.find_dotenv(dotenv_name))
+
+        if not dotenv.load_dotenv(dotenv_path):
+            raise FileNotFoundError(
+                ".dot.env file could not be loaded. Create the pathhelper from the"
+                + "__init__ method by using \n"
+                + "pathhelper = QCrBoxPathhelper(\n"
+                + "    local_path=<local_path_on_disc>\n"
+                + f"    base_dir={base_dir}\n"
+                + ")"
+            )
+
+        shared_files_path = pathlib.Path(os.environ["QCRBOX_SHARED_FILES_DIR_HOST_PATH"])
+
+        if not shared_files_path.is_absolute():
+            shared_files_path = dotenv_path.parent / shared_files_path
+
+        return cls(shared_files_path, os.environ["QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH"], base_dir)
 
     def path_to_local(self, path: pathlib.Path) -> pathlib.Path:
         """
