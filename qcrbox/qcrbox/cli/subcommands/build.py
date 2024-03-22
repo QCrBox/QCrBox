@@ -15,6 +15,7 @@ from ..helpers import (
     make_task,
     run_tasks,
 )
+from ..helpers.cli_helpers import determine_components_to_include
 
 @click.command(name="build")
 @add_cli_option_enable_disable_components
@@ -41,30 +42,9 @@ def build_components(
     """
     docker_project = DockerProject()
 
-    if include_all_components:
-        if not components:
-            components = docker_project.services_including_base_images
-        else:
-            click.echo("The flag --all cannot be combined with explicit component names.")
-            sys.exit(1)
-
-    simultaneously_enabled_and_disabled = set(enabled_components).intersection(disabled_components)
-    if simultaneously_enabled_and_disabled:
-        click.echo(
-            "The following components are simultaneously enabled and disabled, which is not allowed: "
-            f"{', '.join(simultaneously_enabled_and_disabled)}"
-        )
-        sys.exit(1)
-
-    components_to_include = set(components).union(enabled_components).difference(disabled_components)
-    if not components_to_include:
-        click.echo("Nothing to build. Consider using the --all flag or specify explicit component names.")
-        sys.exit()
-
-    if enabled_components:
-        logger.debug(f"Explicitly enabled components: {', '.join(enabled_components)}")
-    if disabled_components:
-        logger.debug(f"Explicitly disabled components: {', '.join(disabled_components)}")
+    components_to_include = determine_components_to_include(
+        docker_project, include_all_components, enabled_components, disabled_components, components
+    )
 
     click.echo(
         f"Building the following components ({'without' if no_deps else 'including'} dependencies): "
