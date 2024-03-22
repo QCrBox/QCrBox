@@ -113,7 +113,7 @@ def task_clone_qcrboxtools_repo(dry_run: bool):
     qcrboxtools_repo_url = "https://github.com/QCrBox/QCrBoxTools.git"
     repo_root = get_repo_root()
     target_dir = repo_root.joinpath(".build", "QCrBoxTools")
-    actions = [lambda: logger.info(f"Cloning QCrBoxTools into {target_dir} ...")]
+    actions = [lambda: logger.info(f"Pulling/cloning QCrBoxTools repo in {target_dir} ...", dry_run=True)]
     if not dry_run:
         actions.append(f"git -C {target_dir} pull || git clone {qcrboxtools_repo_url} {target_dir}")
     return {"name": "task_clone_repo:qcrboxtools", "actions": actions}
