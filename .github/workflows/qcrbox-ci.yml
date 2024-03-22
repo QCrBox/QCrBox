@@ -28,6 +28,9 @@ jobs:
 
       - name: Install dependencies
         run: |
+          echo "Current working directory: $(pwd)"
+          echo "GITHUB_WORKSPACE=$GITHUB_WORKSPACE"
+          echo
           pip install --upgrade uv
           uv pip install --system -r ./qcrbox/requirements-docs.txt
           uv pip install --system qcrbox@./qcrbox
