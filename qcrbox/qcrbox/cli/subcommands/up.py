@@ -5,7 +5,8 @@ from typing import Optional
 import click
 import doit.task
 
-from ..helpers import DockerProject, run_tasks
+from ...logging import set_cli_log_level
+from ..helpers import DockerProject, add_verbose_option, run_tasks
 from .build import populate_build_tasks
 
 
@@ -29,11 +30,22 @@ from .build import populate_build_tasks
     default=False,
     help="Display actions that would be performed without actually doing anything.",
 )
+@add_verbose_option
 @click.argument("components", nargs=-1)
-def start_up_components(build: Optional[bool], build_deps: Optional[bool], dry_run: bool, components: list[str]):
+def start_up_components(
+    ctx: click.core.Context,
+    build: Optional[bool],
+    build_deps: Optional[bool],
+    dry_run: bool,
+    components: list[str],
+    verbose: bool,
+):
     """
     Start up QCrBox components.
     """
+    if ctx.obj["VERBOSE"] or verbose:
+        set_cli_log_level("DEBUG")
+
     docker_project = DockerProject()
     components = components or docker_project.services_excluding_base_images
 
