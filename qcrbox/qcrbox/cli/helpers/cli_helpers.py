@@ -1,12 +1,11 @@
 import functools
 import sys
+from typing import Optional
 
 import click
 from loguru import logger
 
 from qcrbox.logging import set_cli_log_level
-
-from .docker_project import DockerProject
 
 
 def add_verbose_option(f):
@@ -31,23 +30,52 @@ def add_verbose_option(f):
 
 
 def add_cli_option_enable_disable_components(f):
+    DEFAULT_ALL_COMPONENTS = ("olex2", "crystal-explorer", "xharpy-gpaw", "qcrboxtools")
     DEFAULT_EXPLICITLY_ENABLED_COMPONENTS = ()
-    DEFAULT_EXPLICITLY_DISABLED_COMPONENTS = ("shelx", "qcrbox-nextflow")
+    DEFAULT_EXPLICITLY_DISABLED_COMPONENTS = ("shelx", "qcrbox-nextflow", "eval1x")
 
-    f = click.option(
+    @functools.wraps(f)
+    def wrapper(
+        ctx,
+        include_all_default_components: bool,
+        enabled_components: Optional[list[str]],
+        disabled_components: Optional[list[str]],
+        *args,
+        **kwargs,
+    ):
+        ctx.ensure_object(dict)  # ensure that ctx.obj exists and is a dict
+        ctx.obj["DEFAULT_ALL_COMPONENTS"] = DEFAULT_ALL_COMPONENTS
+        ctx.obj["DEFAULT_EXPLICITLY_ENABLED_COMPONENTS"] = DEFAULT_EXPLICITLY_ENABLED_COMPONENTS
+        ctx.obj["DEFAULT_EXPLICITLY_DISABLED_COMPONENTS"] = DEFAULT_EXPLICITLY_DISABLED_COMPONENTS
+
+        default_components = ctx.obj["DEFAULT_ALL_COMPONENTS"]
+        if enabled_components is None:
+            enabled_components = DEFAULT_EXPLICITLY_ENABLED_COMPONENTS
+        if disabled_components is None:
+            disabled_components = set(DEFAULT_EXPLICITLY_DISABLED_COMPONENTS).difference(enabled_components)
+
+        components = kwargs.pop("components")
+        components_to_include = determine_components_to_include(
+            include_all_default_components, default_components, enabled_components, disabled_components, components
+        )
+        kwargs["components"] = components_to_include
+
+        return f(*args, **kwargs)
+
+    wrapper = click.option(
         "--disable",
         "disabled_components",
-        default=DEFAULT_EXPLICITLY_DISABLED_COMPONENTS,
+        default=None,
         show_default=True,
         metavar="COMPONENT",
         help="Explicitly exclude the given component from the build.",
         multiple=True,
-    )(f)
+    )(wrapper)
 
-    f = click.option(
+    wrapper = click.option(
         "--enable",
         "enabled_components",
-        default=DEFAULT_EXPLICITLY_ENABLED_COMPONENTS,
+        default=None,
         show_default=True,
         metavar="COMPONENT",
         help=(
@@ -55,33 +83,34 @@ def add_cli_option_enable_disable_components(f):
             "has an effect for components that are disabled by default."
         ),
         multiple=True,
-    )(f)
+    )(wrapper)
 
-    f = click.option(
+    wrapper = click.option(
         "--all",
-        "include_all_components",
+        "include_all_default_components",
         default=False,
         show_default=True,
         is_flag=True,
         help=(
-            "Include all components. Note that any components that are disabled by default"
+            "Include all default components. Note that any components that are disabled by default"
             "or explicitly disabled (via --disable=COMPONENT) will remain excluded."
         ),
-    )(f)
+    )(wrapper)
+    wrapper = click.pass_context(wrapper)
 
-    return f
+    return wrapper
 
 
 def determine_components_to_include(
-    docker_project: DockerProject,
-    include_all_components: bool,
+    include_all_default_components: bool,
+    default_components: list[str],
     enabled_components: list[str],
     disabled_components: list[str],
     components: list[str],
-):
-    if include_all_components:
+) -> set[str]:
+    if include_all_default_components:
         if not components:
-            components = docker_project.services_including_base_images
+            components = default_components
         else:
             click.echo("The flag --all cannot be combined with explicit component names.")
             sys.exit(1)
@@ -103,3 +132,5 @@ def determine_components_to_include(
         logger.debug(f"Explicitly enabled components: {', '.join(enabled_components)}")
     if disabled_components:
         logger.debug(f"Explicitly disabled components: {', '.join(disabled_components)}")
+
+    return components_to_include

@@ -15,7 +15,6 @@ from ..helpers import (
     make_task,
     run_tasks,
 )
-from ..helpers.cli_helpers import determine_components_to_include
 
 @click.command(name="build")
 @add_cli_option_enable_disable_components
@@ -30,9 +29,6 @@ from ..helpers.cli_helpers import determine_components_to_include
 @add_verbose_option
 @click.argument("components", nargs=-1)
 def build_components(
-    include_all_components: bool,
-    enabled_components: list[str],
-    disabled_components: list[str],
     no_deps: bool,
     dry_run: bool,
     components: list[str],
@@ -42,15 +38,11 @@ def build_components(
     """
     docker_project = DockerProject()
 
-    components_to_include = determine_components_to_include(
-        docker_project, include_all_components, enabled_components, disabled_components, components
-    )
-
     click.echo(
         f"Building the following components ({'without' if no_deps else 'including'} dependencies): "
-        f"{', '.join(components_to_include)}\n"
+        f"{', '.join(components)}\n"
     )
-    tasks = populate_build_tasks(components_to_include, docker_project, with_deps=not no_deps, dry_run=dry_run)
+    tasks = populate_build_tasks(components, docker_project, with_deps=not no_deps, dry_run=dry_run)
     run_tasks(tasks)
 
 

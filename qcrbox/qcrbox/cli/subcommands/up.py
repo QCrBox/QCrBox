@@ -6,7 +6,6 @@ import click
 import doit.task
 
 from ..helpers import DockerProject, add_cli_option_enable_disable_components, add_verbose_option, run_tasks
-from ..helpers.cli_helpers import determine_components_to_include
 from .build import populate_build_tasks
 
 
@@ -34,9 +33,6 @@ from .build import populate_build_tasks
 @add_verbose_option
 @click.argument("components", nargs=-1)
 def start_up_components(
-    include_all_components: bool,
-    enabled_components: list[str],
-    disabled_components: list[str],
     build: Optional[bool],
     build_deps: Optional[bool],
     dry_run: bool,
@@ -46,11 +42,6 @@ def start_up_components(
     Start up QCrBox components.
     """
     docker_project = DockerProject()
-    components = components or docker_project.services_excluding_base_images
-
-    components_to_include = determine_components_to_include(
-        docker_project, include_all_components, enabled_components, disabled_components, components
-    )
 
     if build is None:
         build = True
@@ -70,14 +61,12 @@ def start_up_components(
 
     build_tasks = []
     if build or build_deps:
-        build_tasks += populate_build_tasks(
-            components_to_include, docker_project, with_deps=build_deps, dry_run=dry_run
-        )
+        build_tasks += populate_build_tasks(components, docker_project, with_deps=build_deps, dry_run=dry_run)
 
     startup_task = doit.task.dict_to_task(
         {
             "name": "task_start_up_docker_containers",
-            "actions": [(docker_project.start_up_docker_containers, (components_to_include, dry_run))],
+            "actions": [(docker_project.start_up_docker_containers, (components, dry_run))],
         }
     )
 
