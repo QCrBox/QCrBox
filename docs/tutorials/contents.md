@@ -17,3 +17,5 @@
      - [Example: interacting with Olex2](examples/example_olex2.ipynb)
      - [Example: interacting with XHARPy](examples/example_xharpy.ipynb)
      - [Example: interacting with Eval 14/15](examples/example_eval.ipynb)
+     - [Example: interacting with CrystalExplorer](examples/example_crystal_explorer.ipynb)
+     - [Example: interacting with QCrBoxTools](examples/example_qcrboxtools.ipynb)
