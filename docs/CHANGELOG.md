@@ -42,7 +42,7 @@ However, there will be an initial period of stabilisation where this is not adhe
     - Olex2 [#46](https://github.com/QCrBox/QCrBox/issues/46)
     - Eval [#116](https://github.com/QCrBox/QCrBox/issues/116)
     - XHARPy ([#124](https://github.com/QCrBox/QCrBox/issues/124))
-- CLI tool (`qcb`) for common development and deployment tasks. ([#10](https://github.com/QCrBox/QCrBox/issues/10))
+- CLI tool (`qcb`) for common development and deployment tasks. ([#10](https://github.com/QCrBox/QCrBox/issues/10), [#164](https://github.com/QCrBox/QCrBox/issues/164))
 - Python package (`qcrbox`) to interact with QCrBox from Python code. ([#14](https://github.com/QCrBox/QCrBox/issues/14))
 - The base image now includes [cctbx](https://cci.lbl.gov/docs/cctbx/) and [QCrBoxTools](https://github.com/Niolon/QCrBoxTools.git). ([#53](https://github.com/QCrBox/QCrBox/issues/53))
 - Support for creating boilerplate scaffolding for new applications to be integrated with a QCrBox instance. ([#75](https://github.com/QCrBox/QCrBox/issues/75))
