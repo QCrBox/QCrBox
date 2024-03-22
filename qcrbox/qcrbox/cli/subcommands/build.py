@@ -1,14 +1,50 @@
 # SPDX-License-Identifier: MPL-2.0
 import shutil
 from pathlib import Path
+from typing import Iterable
 
 import click
+from doit.task import Task
 from loguru import logger
 
 from ..helpers import DockerProject, get_repo_root, make_task, run_tasks
 
+DEFAULT_EXPLICITLY_ENABLED_COMPONENTS = ()
+DEFAULT_EXPLICITLY_DISABLED_COMPONENTS = ("shelx", "qcrbox-nextflow")
 
 @click.command(name="build")
+@click.option(
+    "--all",
+    "include_all_components",
+    default=False,
+    show_default=True,
+    is_flag=True,
+    help=(
+        "Include all components. Note that any components that are explicitly "
+        "disabled (via --disable=COMPONENT) will remain excluded."
+    ),
+)
+@click.option(
+    "--enable",
+    "enabled_components",
+    default=DEFAULT_EXPLICITLY_ENABLED_COMPONENTS,
+    show_default=True,
+    metavar="COMPONENT",
+    help=(
+        "Explicitly include the given component in the build. This only "
+        "has an effect for components that are disabled by default."
+    ),
+    multiple=True,
+)
+@click.option(
+    "--disable",
+    "disabled_components",
+    default=DEFAULT_EXPLICITLY_DISABLED_COMPONENTS,
+    show_default=True,
+    metavar="COMPONENT",
+    help="Explicitly exclude the given component from the build.",
+    multiple=True,
+)
 @click.option("--no-deps/--with-deps", default=False, help="Build given components without/with dependencies.")
 @click.option(
     "-n",
@@ -18,17 +54,49 @@ from ..helpers import DockerProject, get_repo_root, make_task, run_tasks
     help="Display actions that would be performed without actually doing anything.",
 )
 @click.argument("components", nargs=-1)
-def build_components(no_deps: bool, dry_run: bool, components: list[str]):
+def build_components(
+    include_all_components: bool,
+    enabled_components: list[str],
+    disabled_components: list[str],
+    no_deps: bool,
+    dry_run: bool,
+    components: list[str],
+):
     """
     Build QCrBox components.
     """
     docker_project = DockerProject()
-    components = components or docker_project.services_including_base_images
+
+    if include_all_components:
+        if not components:
+            components = docker_project.services_including_base_images
+        else:
+            click.echo("The flag --all cannot be combined with explicit component names.")
+            sys.exit(1)
+
+    simultaneously_enabled_and_disabled = set(enabled_components).intersection(disabled_components)
+    if simultaneously_enabled_and_disabled:
+        click.echo(
+            "The following components are simultaneously enabled and disabled, which is not allowed: "
+            f"{', '.join(simultaneously_enabled_and_disabled)}"
+        )
+        sys.exit(1)
+
+    components_to_include = set(components).union(enabled_components).difference(disabled_components)
+    if not components_to_include:
+        click.echo("Nothing to build. Consider using the --all flag or specify explicit component names.")
+        sys.exit()
+
+    if enabled_components:
+        logger.debug(f"Explicitly enabled components: {', '.join(enabled_components)}")
+    if disabled_components:
+        logger.debug(f"Explicitly disabled components: {', '.join(disabled_components)}")
+
     click.echo(
         f"Building the following components ({'without' if no_deps else 'including'} dependencies): "
-        f"{', '.join(components)}\n"
+        f"{', '.join(components_to_include)}\n"
     )
-    tasks = populate_build_tasks(components, docker_project, with_deps=not no_deps, dry_run=dry_run)
+    tasks = populate_build_tasks(components_to_include, docker_project, with_deps=not no_deps, dry_run=dry_run)
     run_tasks(tasks)
 
 
@@ -105,10 +173,14 @@ def task_build_qcrboxtools_python_package(dry_run: bool):
 @make_task
 def task_build_docker_image(service: str, docker_project: DockerProject, with_deps: bool, dry_run: bool):
     build_context = docker_project.get_build_context(service)
+    actions = []
+
     prebuild_scripts = sorted(Path(build_context).glob("prebuild_*.py"))
     if prebuild_scripts != []:
         logger.debug(f"Found {len(prebuild_scripts)} prebuild script(s) for {service!r}")
-    actions = [f"cd {build_context} && python {script.absolute()}" for script in prebuild_scripts]
+        if not dry_run:
+            actions += [f"cd {build_context} && python {script.absolute()}" for script in prebuild_scripts]
+
     actions.append((docker_project.build_single_docker_image, (service, dry_run)))
 
     if with_deps:
@@ -127,8 +199,8 @@ def task_build_docker_image(service: str, docker_project: DockerProject, with_de
 
 
 def populate_build_tasks(
-    components: list[str], docker_project: DockerProject, with_deps: bool, dry_run: bool, tasks=None
-):
+    components: Iterable[str], docker_project: DockerProject, with_deps: bool, dry_run: bool, tasks=None
+) -> list[Task]:
     tasks = {}
     for component in components:
         update_build_tasks(tasks, component, docker_project, with_deps=with_deps, dry_run=dry_run)
@@ -137,7 +209,7 @@ def populate_build_tasks(
 
 def update_build_tasks(
     existing_tasks: dict, component: str, docker_project: DockerProject, with_deps: bool, dry_run: bool
-):
+) -> None:
     if component == "pyqcrbox":
         new_tasks = [
             task_build_qcrbox_python_package(dry_run),
