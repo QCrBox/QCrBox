@@ -1,6 +1,4 @@
-
-
-# Wrap a python module and expose functionality to run within QCrBox
+# Wrapping a Python module and exposing functionality to run within QCrBox
 
 This guide walks you through the process of encapsulating a Python module within a QCrBox container. Specifically, we'll focus on a module that queries the [Crystallographic Open Database (COD)](https://www.crystallography.net/cod/) for structures with similar elements and unit cell parameters. Our goal is to make this module's functionality accessible within a QCrBox container.
 
@@ -96,7 +94,7 @@ For scenarios where certain CIF entries are beneficial but not mandatory, you co
 > **Important Note:**
 > Currently, some functionality that will eventually be automated—specifically, the registration of our application and commands in Python, as well as CIF file handling and conversion—requires manual implementation. This step is temporary and is planned to be automated in future updates, following the developer alpha release. We're releasing this functionality now to provide a foundation for exploration and development.
 
-To begin, open the `configure_cod_check.py` file. Start by importing necessary functions from the python base libraries as well as two different modules:
+To begin, open the `configure_cod_check.py` file. Start by importing necessary functions from the Python base libraries as well as two different modules:
 
 ```python
 from pathlib import Path
@@ -212,7 +210,7 @@ The Dockerfile is preconfigured with some entries that we won't need. Here's a s
         RUN pip install requests
         ```
 
-6. **Delete unnecessary lines**: The following two lines are not necessary for a python application and should be deleted
+6. **Delete unnecessary lines**: The following two lines are not necessary for a Python application and should be deleted
     ```Dockerfile
     COPY sample_cmd.sh /opt/cod_check/bin/
     ````
@@ -369,6 +367,6 @@ qcb up cod_check
 ```
 
 ## Conclusion and final remarks
-We have now exposed two commands in QCrbox from a python module. One that only analyses a cif file to produce some output, and another one that works from an input cif file to an output cif. If you want to interact with what you have build, a ipython notebook you can put into the examples folder can be found [here.](./example_support/cod_wrapper.ipynb)
+We have now exposed two commands in QCrbox from a Python module. One that only analyses a cif file to produce some output, and another one that works from an input cif file to an output cif. If you want to interact with what you have build, a ipython notebook you can put into the examples folder can be found [here.](./example_support/cod_wrapper.ipynb)
 
 For more examples you might consider looking into the already implemented programs in `services/applications`. If this tutorial is unclear at any point please raise an issue on Github with the specific problem that you ran into.

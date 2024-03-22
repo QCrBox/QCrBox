@@ -56,7 +56,7 @@ However, there will be an initial period of stabilisation where this is not adhe
 - How-to guide for using the cif building blocks provided by QCrBoxTools. ([#71](https://github.com/QCrBox/QCrBox/issues/71))
 - Tutorial on how to integrate a command line program into QCrBox. ([#79](https://github.com/QCrBox/QCrBox/issues/79))
 - Tutorial on how to integrate Python functionality into QCrBox. ([#80](https://github.com/QCrBox/QCrBox/issues/80)
-- Jupyter notebooks with examples on how to interact with commands exposed by QCrBox (for Olex2, Eval, XHARPy). ([#126](https://github.com/QCrBox/QCrBox/issues/126))
+- Jupyter notebooks with examples on how to interact with commands exposed by QCrBox (for Olex2, Eval14/15, XHARPy, CrystalExplorer, QCrBoxTools). ([#126](https://github.com/QCrBox/QCrBox/issues/126))
 
 
 ### Bugs fixed

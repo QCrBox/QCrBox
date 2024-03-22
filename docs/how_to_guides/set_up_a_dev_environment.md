@@ -1,11 +1,14 @@
-# Set up a development environment
+# Setting up a development environment
 
 ## Check prerequisites
 
 Make sure you have the necessary prerequisites installed.
 
-!!! warning inline end "TODO"
-    List all prerequisites and their minimum required versions.
+!!! info inline end
+    QCrBox has been tested with the versions of Python and Docker
+    listed here, but other recent versions should also work. Please
+    [raise an issue](https://github.com/QCrBox/QCrBox/issues/new){:target="_blank"}
+    on GitHub if you experience any problems.
 
 ```
 $ python --version
@@ -104,46 +107,19 @@ Now `pre-commit` will run automatically on `git commit`.
 
 Verify that we can now run the `qcb` command line tool, which is the main CLI interface
 for interacting with QCrBx from the command line.
-```
+
+```console exec="1" source="console"
 $ qcb
-Usage: qcb [OPTIONS] COMMAND [ARGS]...
-
-  Command line interface for the Quantum Crystallography Toolbox.
-
-Options:
-  --help  Show this message and exit.
-
-Commands:
-  build    Build QCrBox components.
-  docs     Build/serve the documentation.
-  down     Shut down QCrBox components.
-  invoke   Invoke a registered command with given arguments.
-  list     List registered resources (applications, commands, etc.)
-  up       Start up QCrBox components.
-  version  Print the qcrbox version.
 ```
 
-```
-(venv) $ qcb version
-0.1.dev223+gf1e848b
-```
-
-```
-(venv) $ qcb list components
-qcrbox-message-bus
-qcrbox-registry
-shelx
-crystal-explorer
-olex2-linux
+```console exec="1" source="console"
+$ qcb version
 ```
 
+```console exec="1" source="console"
+$ qcb list components
 ```
-(venv) $ qcb list components --all
-base-ancestor
-base-application
-qcrbox-message-bus
-qcrbox-registry
-shelx
-crystal-explorer
-olex2-linux
+
+```console exec="1" source="console"
+$ qcb list components --all
 ```

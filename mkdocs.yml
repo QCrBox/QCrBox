@@ -32,6 +32,11 @@ plugins:
   - search
   - awesome-pages:
       collapse_single_pages: false
+  - mkdocs-jupyter:
+      ignore: ["tutorials/example_support/*"]
+      ignore_h1_titles: True
+  - markdown-exec:
+      ansi: required
 
 markdown_extensions:
 
