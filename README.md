@@ -34,8 +34,10 @@ distribute the underlying Docker containers fully built.
 
 
 ## Documentation
-The documentation can be accessed [here](https://qcrbox.github.io/QCrBox/). Examples on how to interact with QCrBox
-from the outside can be found within the [wrapper folder](./wrapper/).
+The documentation can be accessed [here](https://qcrbox.github.io/QCrBox/). This includes
+[examples](https://qcrbox.github.io/QCrBox/tutorials/contents/) on how to interact with QCrBox
+from the outside. These examples are converted from Jupyter notebooks. If you'd like to run
+them interactively, you can find them in the directory `docs/tutorials/examples/`.
 
 
 ## Contributions
