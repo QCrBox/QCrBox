@@ -62,7 +62,8 @@ class DockerProject:
         return self.compose_file_config.get_dependency_chain(service_name, include_build_deps=include_build_deps)
 
     def build_single_docker_image(self, target_image: str, dry_run: bool = False, capture_output: bool = False):
-        logger.info(f"Building docker image: {target_image}", dry_run=dry_run)
+        action_descr = "Building" if not dry_run else "Would build"
+        logger.info(f"{action_descr} docker image: {target_image}", dry_run=dry_run)
         self.run_docker_compose_command("build", target_image, dry_run=dry_run, capture_output=capture_output)
 
     def _construct_docker_compose_command(self, cmd: str, *cmd_args: str):
@@ -84,7 +85,8 @@ class DockerProject:
 
     def run_docker_compose_command(self, cmd: str, *cmd_args: str, dry_run: bool = False, capture_output: bool = False):
         full_cmd = self._construct_docker_compose_command(cmd, *cmd_args)
-        logger.debug(f"Running docker compose command: {' '.join(full_cmd)!r}", dry_run=dry_run)
+        action_descr = "Running" if not dry_run else "Would run"
+        logger.debug(f"{action_descr} docker compose command: {' '.join(full_cmd)!r}", dry_run=dry_run)
 
         custom_env = os.environ.copy()
         custom_env["QCRBOX_PYTHON_PACKAGE_VERSION"] = get_current_qcrbox_version()
@@ -100,7 +102,8 @@ class DockerProject:
             return proc
 
     def start_up_docker_containers(self, target_containers: list[str], dry_run):
-        logger.info(f"Starting up docker container(s): {', '.join(target_containers)}", dry_run=dry_run)
+        action_descr = "Starting" if not dry_run else "Would start"
+        logger.info(f"{action_descr} up docker container(s): {', '.join(target_containers)}", dry_run=dry_run)
         if not dry_run:
             self.run_docker_compose_command("up", "-d", *target_containers, dry_run=dry_run)
 

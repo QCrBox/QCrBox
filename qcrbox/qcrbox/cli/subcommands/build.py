@@ -39,8 +39,9 @@ def build_components(
     """
     docker_project = DockerProject()
 
+    action_descr = "Building" if not dry_run else "Would build"
     click.echo(
-        f"Building the following components ({'without' if no_deps else 'including'} dependencies): "
+        f"{action_descr} the following components ({'without' if no_deps else 'including'} dependencies): "
         f"{', '.join(components)}\n"
     )
     tasks = populate_build_tasks(components, docker_project, with_deps=not no_deps, dry_run=dry_run)
@@ -60,7 +61,8 @@ def task_clone_qcrboxtools_repo(dry_run: bool):
     qcrboxtools_repo_url = "https://github.com/QCrBox/QCrBoxTools.git"
     repo_root = get_repo_root()
     target_dir = repo_root.joinpath(".build", "QCrBoxTools")
-    actions = [lambda: logger.info(f"Pulling/cloning QCrBoxTools repo in {target_dir} ...", dry_run=True)]
+    action_descr = "Pulling/cloning" if not dry_run else "Would pull/clone"
+    actions = [lambda: logger.info(f"{action_descr} QCrBoxTools repo in {target_dir} ...", dry_run=dry_run)]
     if not dry_run:
         actions.append(f"git -C {target_dir} pull || git clone {qcrboxtools_repo_url} {target_dir}")
     return {"name": "task_clone_repo:qcrboxtools", "actions": actions}
@@ -71,7 +73,8 @@ def task_build_qcrbox_python_package(dry_run: bool):
     repo_root = get_repo_root()
     qcrbox_package_root = repo_root.joinpath("qcrbox")
 
-    actions = [lambda: logger.info("Building Python package: qcrbox", dry_run=dry_run)]
+    action_descr = "Building" if not dry_run else "Would build"
+    actions = [lambda: logger.info(f"{action_descr} Python package: qcrbox", dry_run=dry_run)]
     if not dry_run:
         base_ancestor_qcrbox_dist_dir = repo_root.joinpath("services/base_images/base_ancestor/qcrbox_dist/")
         requirements_files = list(repo_root.glob("qcrbox/requirements*.txt"))
@@ -95,7 +98,8 @@ def task_build_qcrboxtools_python_package(dry_run: bool):
     repo_root = get_repo_root()
     qcrboxtools_package_root = repo_root.joinpath(".build", "QCrBoxTools")
 
-    actions = [lambda: logger.info("Building Python package: qcrboxtools", dry_run=dry_run)]
+    action_descr = "Building" if not dry_run else "Would build"
+    actions = [lambda: logger.info(f"{action_descr} Python package: qcrboxtools", dry_run=dry_run)]
     if not dry_run:
         base_ancestor_qcrbox_dist_dir = repo_root.joinpath("services/base_images/base_ancestor/qcrbox_dist/")
         # requirements_files = list(qcrboxtools_package_root.glob("requirements*.txt"))

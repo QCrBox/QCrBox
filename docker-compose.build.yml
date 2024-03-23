@@ -1,5 +1,3 @@
-version: "${QCRBOX_COMPOSE_FILE_VERSION:?Must set env var QCRBOX_COMPOSE_FILE_VERSION}"
-
 services:
   base-ancestor:
     image: "qcrbox/base-ancestor:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"

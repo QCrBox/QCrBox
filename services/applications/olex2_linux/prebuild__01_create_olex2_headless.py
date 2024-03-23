@@ -458,7 +458,7 @@ def create_new_olex2_zip_file():
 def main():
     if not output_path.exists():
         if not pathlib.Path("olex2_files/olex2c-linux64").exists():
-            logger.error("Could not find ./olex2_file/olex2c-linux64, this file is necessary")
+            logger.error("Could not find ./olex2_files/olex2c-linux64, this file is necessary")
             sys.exit(1)
         create_new_olex2_zip_file()
 
