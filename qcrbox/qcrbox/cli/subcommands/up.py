@@ -43,21 +43,29 @@ def start_up_components(
     """
     docker_project = DockerProject()
 
-    if build is None:
-        build = True
-    elif build is False:
-        if build_deps is None:
-            build_deps = False
-        elif build_deps is True:
-            click.echo("Error: options --no-build and --build-deps are incompatible.")
-            sys.exit(1)
-        else:
-            pass
-    elif build is True:
-        if build_deps is None:
-            build_deps = True
-    else:
-        raise ValueError(f"Invalid value for --build flag: {build}")
+    def fill_default_values(build, build_deps):
+        match (build, build_deps):
+            case True, None:
+                return True, True
+            case True, True:
+                return True, True
+            case True, False:
+                return True, False
+            case False, None:
+                return False, False
+            case False, True:
+                click.echo("Error: options --no-build and --build-deps are incompatible.")
+                sys.exit(1)
+            case False, False:
+                return False, False
+            case None, True:
+                return True, True
+            case None, False:
+                return True, False
+            case None, None:
+                return True, True
+
+    build, build_deps = fill_default_values(build, build_deps)
 
     build_tasks = []
     if build or build_deps:
