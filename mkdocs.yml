@@ -9,6 +9,7 @@ theme:
   # Default values, taken from mkdocs_theme.yml
   language: en
   features:
+    - content.tabs.link
     - navigation.expand
     - navigation.instant
     - navigation.instant.prefetch
@@ -18,7 +19,9 @@ theme:
     - navigation.tabs
     - navigation.tabs.sticky
     - navigation.top
-    #- navigation.tracking
+    - navigation.tracking
+    - search.suggest
+    - toc.integrate
   font:
     text: Roboto
     code: Roboto Mono
@@ -74,6 +77,9 @@ markdown_extensions:
           format: !!python/name:pymdownx.superfences.fence_div_format
   - pymdownx.tabbed:
       alternate_style: true
+      slugify: !!python/object/apply:pymdownx.slugs.slugify
+        kwds:
+          case: lower
   - pymdownx.tasklist:
       custom_checkbox: true
   - pymdownx.tilde
