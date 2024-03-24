@@ -1,4 +1,5 @@
 site_name: Quantum Crystallography Toolbox (QCrBox)
+site_url: https://qcrbox.github.io/QCrBox/
 site_dir: .build/docs_site
 theme:
   name: "material"
@@ -11,6 +12,7 @@ theme:
     - navigation.expand
     - navigation.instant
     - navigation.instant.prefetch
+    - navigation.instant.progress
     - navigation.path
     - navigation.sections
     - navigation.tabs
