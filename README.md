@@ -1,4 +1,7 @@
-![Badge MPL 2-2](https://img.shields.io/badge/License-MPL_2.0-FF7139.svg?style=for-the-badge)
+[![License: MPL 2.0](https://img.shields.io/badge/License-MPL_2.0-blue.svg)](https://opensource.org/licenses/MPL-2.0)
+<a href="https://discord.gg/CWnQJvVv" target="_blank">
+      <img alt="Discord" src="https://img.shields.io/discord/1219613211209240637?logo=discord">
+</a>
 
 # Quantum Crystallography Toolbox
 
