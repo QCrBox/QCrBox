@@ -31,18 +31,24 @@ $ cd QCrBox
 
 Create a virtual environment for the `qcrbox` Python package and activate it.
 
-```
-$ python -m venv ./venv
+=== "Linux/Mac OS"
+    ```
+    $ python -m venv ./venv
+    $ source ./venv/bin/activate
+    ```
 
-# For Linux and Mac users:
-$ source ./venv/bin/activate
+=== "Windows (Powershell)"
+    ```
+    $ python -m venv .\venv
+    $ .\venv\Scripts\activate.ps1
+    ```
 
-# For Windows users (command line)
-$ .\venv\Scripts\activate.bat
+=== "Windows (command line)"
+    ```
+    $ python -m venv .\venv
+    $ .\venv\Scripts\activate.bat
+    ```
 
-# For Windows users (Powershell)
-$ .\venv\Scripts\activate.ps1
-```
 !!! note
     In this guide we use a "vanilla" Python [virtual environment](https://docs.python.org/3/library/venv.html)
     because it does not require any additional dependencies.
