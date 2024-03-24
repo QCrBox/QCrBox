@@ -1,10 +1,14 @@
+h1#documentation, h1#technical-reference {
+  margin-bottom: 0px;
+}
+
 :root {
   --md-admonition-icon--welcome: url('images/logo_black.png')
 }
 .md-typeset .admonition.welcome {
   width: 50%;
   margin-inline: auto;
-  margin-right: 40px
+  margin-right: 40px;
 }
 .md-typeset .admonition.welcome,
 .md-typeset details.welcome {
@@ -29,7 +33,7 @@
 .md-typeset .admonition.get-in-touch {
   width: 50%;
   margin-inline: auto;
-  margin-right: 40px
+  margin-right: 40px;
 }
 .md-typeset .admonition.get-in-touch,
 .md-typeset details.get-in-touch {

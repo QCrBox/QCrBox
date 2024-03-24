@@ -32,6 +32,8 @@ hide:
 - [Background Information](background_info/contents.md)
 
 
+<div style="height:2em;">&nbsp;</div>
+
 # Technical reference:
 
 - [Architectural Decision Records](ADRs/README.md)
