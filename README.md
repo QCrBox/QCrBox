@@ -4,16 +4,17 @@
 
 *The future of small-molecule crystallography*
 
-Welcome to QCrBox, a project to provide an open-source platform aimed at revolutionizing general and
+Welcome to QCrBox. This project provides an open-source platform aimed at revolutionizing general &
 quantum crystallography by addressing the field's core challenges: complex workflows, software
 interoperability, and reproducibility barriers.
 
-By integrating existing software into a unified, containerized environment, QCrBox aims to facilitate
-the adoption of advanced crystallographic methods and spur the development of new tools. Our goal is
+QCrBox aims to facilitate the adoption of advanced crystallographic methods and spur the development
+of new tools by integrating existing software into a unified, containerized environment. Our goal is
 to streamline research processes, simplify software installation, enhance reproducibility, and improve
 reporting standards.
 
-We are currently working on completing the core framework. Feedback and collaboration is always welcome.
+We are currently working on completing the core framework. [Feedback and collaboration](#get-in-touch)
+is always welcome.
 
 
 ## QCrBox Project Team
@@ -43,8 +44,16 @@ them interactively, you can find them in the directory `docs/tutorials/examples/
 ## Contributions
 
 Contributions are always welcome, be it code or testing our software and raising issues. If you want to contribute
-code, please for the repository, create your own branch and submit a pull request. If you have any questions feel
-very welcome to contact us.
+code, please fork the repository, create your own branch and submit a pull request. If you have any questions feel
+very welcome to [contact us](#get-in-touch).
+
+
+## Get in touch
+
+Do you have any questions, suggestions, want to get involved, or are simply curious to learn more?
+
+- Join our [Discord server](https://discord.gg/CWnQJvVv) to come and chat with us!
+- You can also show your support by giving our [GitHub repository](https://github.com/QCrBox/QCrBox) a star
 
 
 ## Release Notes
