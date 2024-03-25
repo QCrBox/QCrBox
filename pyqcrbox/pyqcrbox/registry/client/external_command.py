@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MPL-2.0
 import inspect
 import re
+import shlex
 import subprocess
 
 import anyio
@@ -72,7 +73,7 @@ class ExternalCommand:
     def __init__(self, call_pattern: "CallPattern"):
         # assert isinstance(call_pattern, CallPattern)
         self.call_pattern = call_pattern
-        self.cmd_constituents = [_make_cmd_constituent(x) for x in self.call_pattern.split()]
+        self.cmd_constituents = [_make_cmd_constituent(x) for x in shlex.split(self.call_pattern)]
         self.cmd_params = [x for x in self.cmd_constituents if isinstance(x, Param)]
         self.parameter_names = [x.name for x in self.cmd_params]
         self.signature = inspect.Signature(parameters=[x._python_param for x in self.cmd_params])
