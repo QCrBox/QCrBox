@@ -65,7 +65,7 @@ def make_action_to_build_qcrbox_wheel(base_ancestor_qcrbox_dist_dir):
         qcrbox_package_root = repo_root.joinpath("qcrbox")
 
         try:
-            cmd = [shutil.which("hatch"), "build", "-t", "wheel", base_ancestor_qcrbox_dist_dir]
+            cmd = [shutil.which("hatch"), "build", "-t", "wheel", str(base_ancestor_qcrbox_dist_dir)]
             proc = subprocess.run(cmd, cwd=qcrbox_package_root, shell=False, check=False, capture_output=False)
         except Exception as exc:
             raise QCrBoxSubprocessError(f"Error when trying to run docker compose command: {exc}")
