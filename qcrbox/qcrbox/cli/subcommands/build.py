@@ -60,22 +60,23 @@ def make_action_to_copy_file(src, dest):
 
 
 def make_action_to_build_qcrbox_wheel(base_ancestor_qcrbox_dist_dir):
-    repo_root = get_repo_root()
-    qcrbox_package_root = repo_root.joinpath("qcrbox")
+    def action_build_qcrbox_wheel():
+        repo_root = get_repo_root()
+        qcrbox_package_root = repo_root.joinpath("qcrbox")
 
-    try:
-        cmd = [shutil.which("hatch"), "build", "-t", "wheel", base_ancestor_qcrbox_dist_dir]
-        proc = subprocess.run(cmd, cwd=qcrbox_package_root, shell=False, check=False, capture_output=False)
-    except Exception as exc:
-        raise QCrBoxSubprocessError(f"Error when trying to run docker compose command: {exc}")
+        try:
+            cmd = [shutil.which("hatch"), "build", "-t", "wheel", base_ancestor_qcrbox_dist_dir]
+            proc = subprocess.run(cmd, cwd=qcrbox_package_root, shell=False, check=False, capture_output=False)
+        except Exception as exc:
+            raise QCrBoxSubprocessError(f"Error when trying to run docker compose command: {exc}")
 
-    try:
-        proc.check_returncode()
-    except subprocess.CalledProcessError as exc:
-        error_msg = prettyprint_called_process_error(exc)
-        raise QCrBoxSubprocessError(error_msg)
+        try:
+            proc.check_returncode()
+        except subprocess.CalledProcessError as exc:
+            error_msg = prettyprint_called_process_error(exc)
+            raise QCrBoxSubprocessError(error_msg)
 
-    return proc
+    return action_build_qcrbox_wheel
 
 
 @make_task
