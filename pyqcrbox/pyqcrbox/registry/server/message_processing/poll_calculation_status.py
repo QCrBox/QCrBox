@@ -27,5 +27,4 @@ async def _(
         rpc=True,
     )
 
-    breakpoint()
     return calculation_status_details
