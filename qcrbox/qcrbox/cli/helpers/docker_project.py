@@ -93,7 +93,11 @@ class DockerProject:
         logger.debug(f"Current qcrbox version: {custom_env['QCRBOX_PYTHON_PACKAGE_VERSION']}", dry_run=dry_run)
 
         if not dry_run:
-            proc = subprocess.run(full_cmd, env=custom_env, shell=False, check=False, capture_output=capture_output)
+            try:
+                proc = subprocess.run(full_cmd, env=custom_env, shell=False, check=False, capture_output=capture_output)
+            except Exception as exc:
+                raise QCrBoxSubprocessError(f"Error when trying to run docker compose command: {exc}")
+
             try:
                 proc.check_returncode()
             except subprocess.CalledProcessError as exc:
