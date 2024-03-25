@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MPL-2.0
 
 import functools
+import shutil
 import subprocess
 from pathlib import Path
 from typing import Optional, TypeVar
@@ -19,8 +20,14 @@ def get_current_qcrbox_version() -> str:
     Return the current version of the 'qcrbox' module.
     """
     repo_root = get_repo_root()
+
+    hatch_executable_name = "hatch"
+    hatch_executable = shutil.which(hatch_executable_name)
+    if hatch_executable is None:
+        raise FileNotFoundError(f"Could not find executable: '{hatch_executable_name}'")
+
     proc = subprocess.run(
-        ["hatch", "--no-color", "version"],
+        [hatch_executable, "--no-color", "version"],
         cwd=repo_root.joinpath("qcrbox"),
         capture_output=True,
     )
