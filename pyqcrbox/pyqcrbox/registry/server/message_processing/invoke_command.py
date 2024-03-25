@@ -60,6 +60,7 @@ async def _(
             response_to=msg.action,
             status="ok",
             msg="Received command invocation request.",
+            payload=msg_specs.PayloadForInvokeCommandResponse(correlation_id=cmd_invocation_db.correlation_id),
         )
         with settings.db.get_session() as session:
             application = session.exec(
