@@ -63,6 +63,8 @@ However, there will be an initial period of stabilisation where this is not adhe
 
 - Ensured that the `qcb` tool works cross-platform, including on Windows. ([#76](https://github.com/QCrBox/QCrBox/issues/76))
 - Line endings of text files checked out in the git working tree are always normalised to `LF` to avoid runtime errors on Windows. ([#132](https://github.com/QCrBox/QCrBox/issues/132))
+- Command registration and internal error handling by the server. ([#172](https://github.com/QCrBox/QCrBox/issues/172))
+
 
 ### Internal changes & improvements
 

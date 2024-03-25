@@ -69,6 +69,7 @@ all = [
 [project.scripts]
 qcb = "qcrbox.cli:entry_point"
 qcrbox-run-registry-server = "qcrbox.registry.server:main"
+qcrbox-run-dummy-client = "qcrbox.registry.client.client:main"
 
 [build-system]
 requires = ["hatchling", "hatch-vcs"]
