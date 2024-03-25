@@ -66,8 +66,9 @@ async def handle_incoming_messages(msg_dict) -> msg_specs.QCrBoxGenericResponse:
                 # this action does not match; try the next one instead
                 continue
             else:
-                logger.error(f"Invalid message structure for action {msg_dict['action']!r}. Errors: {exc.errors()}")
-                raise
+                error_msg = f"Invalid message structure for action {msg_dict['action']!r}. Errors: {exc.errors()}"
+                logger.error(error_msg)
+                return msg_specs.QCrBoxGenericResponse(response_to="incoming_message", status="error", msg=error_msg)
     else:
         error_msg = f"Invalid action: {msg_dict['action']!r}"
         logger.error(error_msg)
