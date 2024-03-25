@@ -1,13 +1,13 @@
 import io
 import pathlib
-import sys
 import zipfile
 
 import requests
 
 from qcrbox.logging import logger
 
-url = "https://secure.olex2.org/olex2-distro/1.5-alpha/olex2-linux64.zip"
+url_zip = "https://secure.olex2.org/olex2-distro/1.5-alpha/olex2-linux64.zip"
+url_exe = "https://github.com/QCrBox/QCrBoxExamples/raw/main/container/olex2c-linux64"
 output_path = pathlib.Path("olex2_files/olex2-linux64_hl.zip")
 
 startc_str = """#! /bin/bash
@@ -443,25 +443,19 @@ macrox_string = """<xl_macro
 
 
 def create_new_olex2_zip_file():
-    logger.debug(f"Downloading Olex2 archive from: {url}")
-    r = requests.get(url, timeout=600)
+    logger.debug(f"Downloading Olex2 archive from: {url_zip}")
+    r = requests.get(url_zip, timeout=600)
     zip_io = io.BytesIO(r.content)
     zip_file = zipfile.ZipFile(zip_io, "a")
     zip_file.writestr("olex2/startc", startc_str)
     zip_file.writestr("olex2/macrox.xld", macrox_string)
-    zip_file.write("olex2_files/olex2c-linux64", "olex2/olex2c-linux64")
+    r2 = requests.get(url_exe, timeout=600)
+    zip_file.writestr("olex2/olex2c-linux64", r2.content)
     zip_file.close()
     with open(output_path, "wb") as fobj:
         fobj.write(zip_io.getbuffer())
 
 
-def main():
-    if not output_path.exists():
-        if not pathlib.Path("olex2_files/olex2c-linux64").exists():
-            logger.error("Could not find ./olex2_files/olex2c-linux64, this file is necessary")
-            sys.exit(1)
-        create_new_olex2_zip_file()
-
-
 if __name__ == "__main__":
-    main()
+    if not output_path.exists():
+        create_new_olex2_zip_file()
