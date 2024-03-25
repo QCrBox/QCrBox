@@ -27,4 +27,5 @@ async def _(
         rpc=True,
     )
 
+    logger.debug(f"Received response: {calculation_status_details}")
     return calculation_status_details

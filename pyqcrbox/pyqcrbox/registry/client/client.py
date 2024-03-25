@@ -93,6 +93,7 @@ def create_client_faststream_app(
             # TODO: add support for different kinds of messages (e.g., `execute_command` and `poll_calculation_status`)
 
             client_app.increment_processed_message_counter(private_routing_key)
+            logger.debug(f"Sending response: {response!r}")
             return response
 
         logger.debug(f"Set up listener on private queue: {private_routing_key!r}")
