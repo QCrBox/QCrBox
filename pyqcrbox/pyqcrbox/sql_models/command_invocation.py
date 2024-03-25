@@ -23,7 +23,7 @@ class CommandInvocationCreate(QCrBoxPydanticBaseModel):
     def to_sql_model(self):
         return CommandInvocationDB.from_pydantic_model(self)
 
-    def save_to_db(self):
+    def save_to_db(self) -> "CommandInvocationDB":
         return self.to_sql_model().save_to_db()
 
 
