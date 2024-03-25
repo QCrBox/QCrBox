@@ -70,9 +70,10 @@ def create_client_faststream_app(
                 cmd = instantiate_command_from_spec(application_spec, msg.payload.command_name)
                 calculation = await cmd.execute_in_background(**msg.payload.arguments)
                 client_app.calculations[msg.payload.correlation_id] = calculation
-                response = msg_specs.QCrBoxGenericResponse(
+                response = msg_specs.ExecuteCommandResponse(
                     response_to=msg.action,
                     status="ok",
+                    payload=msg_specs.PayloadForExecuteCommandResponse(correlation_id=msg.payload.correlation_id),
                 )
             elif msg["action"] == "poll_calculation_status":
                 msg = msg_specs.PollCalculationStatus(**msg)
