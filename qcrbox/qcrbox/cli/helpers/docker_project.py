@@ -3,40 +3,13 @@
 import os
 import shutil
 import subprocess
-import textwrap
 
 from loguru import logger
 
 from .compose_file_config import ComposeFileConfig
-from .qcrbox_helpers import get_current_qcrbox_version
+from .qcrbox_helpers import QCrBoxSubprocessError, get_current_qcrbox_version, prettyprint_called_process_error
 
 __all__ = ["DockerProject"]
-
-
-class QCrBoxSubprocessError(Exception):
-    """
-    Custom exception to indicate errors during the build process of QCrBox components.
-    """
-
-
-def prettyprint_called_process_error(exc: subprocess.CalledProcessError):
-    cmd = " ".join(exc.cmd)
-    prefix = " " * 24
-    captured_stdout = textwrap.indent(f"\n\n{exc.stdout.decode()}\n" if exc.stdout else "(not captured)", prefix=prefix)
-    captured_stderr = textwrap.indent(f"\n\n{exc.stderr.decode()}\n" if exc.stderr else "(not captured)", prefix=prefix)
-    msg = textwrap.dedent(
-        f"""\
-        An error occurred when executing the following command:
-
-            {cmd}
-
-        Return code: {exc.returncode}
-
-        Captured stdout: {captured_stdout}
-        Captured stderr: {captured_stderr}
-        """
-    )
-    return msg
 
 
 class DockerProject:
