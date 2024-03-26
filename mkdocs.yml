@@ -32,8 +32,14 @@ theme:
   favicon: "images/logo_black.png"
 extra_css:
   - qcrbox_custom_styling.css
+extra:
+  version:
+    provider: mike
 
 plugins:
+  - mike:
+      alias_type: symlink
+      canonical_version: latest
   - search
   - awesome-pages:
       collapse_single_pages: false
