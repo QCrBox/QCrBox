@@ -29,7 +29,7 @@ async def report_successful_startup(_: FastAPI):
 
 def action_does_not_match(exc: pydantic.ValidationError):
     def is_action_mismatch_error(err_dict):
-        return err_dict["loc"] == ("action",) and err_dict["type"] == "value_error.const"
+        return err_dict["loc"] == ("action",) and err_dict["type"] in ("literal_error", "value_error.const")
 
     assert isinstance(exc, pydantic.ValidationError)
     return [] != [err_dict for err_dict in exc.errors() if is_action_mismatch_error(err_dict)]
@@ -66,8 +66,9 @@ async def handle_incoming_messages(msg_dict) -> msg_specs.QCrBoxGenericResponse:
                 # this action does not match; try the next one instead
                 continue
             else:
-                logger.error(f"Invalid message structure for action {msg_dict['action']!r}. Errors: {exc.errors()}")
-                raise
+                error_msg = f"Invalid message structure for action {msg_dict['action']!r}. Errors: {exc.errors()}"
+                logger.error(error_msg)
+                return msg_specs.QCrBoxGenericResponse(response_to="incoming_message", status="error", msg=error_msg)
     else:
         error_msg = f"Invalid action: {msg_dict['action']!r}"
         logger.error(error_msg)

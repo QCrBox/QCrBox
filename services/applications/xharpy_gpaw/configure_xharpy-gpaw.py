@@ -8,13 +8,14 @@ from qcrboxtools.cif.file_converter.hkl import cif2hkl4
 
 from qcrbox.registry.client import QCrBoxRegistryClient
 
-YAML_PATH = '/opt/qcrbox/config_xharpy-gpaw.yaml'
+YAML_PATH = "/opt/qcrbox/config_xharpy-gpaw.yaml"
 
 client = QCrBoxRegistryClient()
 application = client.register_application(
     "XHARPy-GPAW",
     version="0.2.0",
 )
+
 
 def atom_form_fact_gpaw(
     input_cif_path,
@@ -23,7 +24,7 @@ def atom_form_fact_gpaw(
     gridspacing
 ):
     work_cif_path = Path(input_cif_path).parent / "work.cif"
-    cif_file_unified_yml_instr(input_cif_path, work_cif_path, YAML_PATH, 'atom_form_fact_gpaw')
+    cif_file_unified_yml_instr(input_cif_path, work_cif_path, YAML_PATH, "atom_form_fact_gpaw")
     subprocess.check_call([
         "python", "-m", "xharpy.cli_tsc",
         "--cif_name", str(work_cif_path),
@@ -36,6 +37,7 @@ def atom_form_fact_gpaw(
 
 
 application.register_python_callable("atom_form_fact_gpaw", atom_form_fact_gpaw)
+
 
 def ha_refine(
     input_cif_path: str,
@@ -52,7 +54,14 @@ def ha_refine(
     cif2hkl4(input_cif_path, 0, output_dir / "shelx.hkl")
 
     work_cif_path = output_dir / "work.cif"
-    cif_file_unified_yml_instr(input_cif_path, work_cif_path, YAML_PATH, 'ha_refine')
+
+    cif_text = input_cif_path.read_text(encoding="UTF-8")
+    extinction_method = "none"
+    if "refine_ls.extinction_coef" in cif_text:
+        entry = cif_text.split("refine_ls.extinction_coef")[1].strip()[:2]
+        if entry.strip() != ".":
+            extinction_method = "shelxl"
+    cif_file_unified_yml_instr(input_cif_path, work_cif_path, YAML_PATH, "ha_refine")
 
     subprocess.check_call([
         "python", "-m", "xharpy.cli_refine",
@@ -60,7 +69,7 @@ def ha_refine(
         "--cif_index", "0",
         "--hkl_name", output_dir / "shelx.hkl",
         "--lst_name", "./dummy.lst",
-        "--extinction", "none",
+        "--extinction", extinction_method,
         "--xc", functional,
         "--gridspacing", gridspacing,
         "--kpoints", "1", "1", "1",
@@ -68,9 +77,10 @@ def ha_refine(
         "--output_folder", output_dir
     ])
 
-    cif_file_unify_split(output_dir / 'xharpy.cif', output_cif_path, custom_categories=['iucr, shelx'])
+    cif_file_unify_split(output_dir / "xharpy.cif", output_cif_path, custom_categories=["iucr, shelx"])
     shutil.rmtree(output_dir)
-    os.remove('shelx.hkl')
+    os.remove("shelx.hkl")
+
 
 application.register_python_callable("ha_refine", ha_refine)
 

@@ -27,7 +27,10 @@ jobs:
           cache: 'pip' # caching pip dependencies
 
       - name: Install dependencies
-        run: pip install -r qcrbox/requirements-docs.txt
+        run: |
+          pip install --upgrade uv
+          uv pip install --system -r ./qcrbox/requirements-docs.txt
+          uv pip install --system qcrbox@./qcrbox
 
       - name: Build the documentation
         run: mkdocs build

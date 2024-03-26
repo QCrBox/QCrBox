@@ -24,5 +24,10 @@ class Formatter:
 
 formatter = Formatter()
 
-logger.remove()
-logger.add(sys.stderr, level="DEBUG", format=formatter.format)
+
+def set_cli_log_level(level: str | int):
+    logger.remove()
+    logger.add(sys.stderr, level=level, format=formatter.format)
+
+
+set_cli_log_level("INFO")

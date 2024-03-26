@@ -1,5 +1,3 @@
-version: "${QCRBOX_COMPOSE_FILE_VERSION:?Must set env var QCRBOX_COMPOSE_FILE_VERSION}"
-
 services:
   {{ cookiecutter.application_slug }}:
     image: "qcrbox/{{ cookiecutter.application_slug }}:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"

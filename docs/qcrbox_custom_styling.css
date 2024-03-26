@@ -1,0 +1,53 @@
+h1#documentation, h1#technical-reference {
+  margin-bottom: 0px;
+}
+
+:root {
+  --md-admonition-icon--welcome: url('images/logo_black.png')
+}
+.md-typeset .admonition.welcome {
+  width: 50%;
+  margin-inline: auto;
+  margin-right: 40px;
+}
+.md-typeset .admonition.welcome,
+.md-typeset details.welcome {
+  border-color: rgb(43, 155, 70);
+  margin-top: 0px;
+  font-size: 11pt;
+}
+.md-typeset .welcome > .admonition-title,
+.md-typeset .welcome > summary {
+  background-color: rgba(43, 155, 70, 0.1);
+}
+.md-typeset .welcome > .admonition-title::before,
+.md-typeset .welcome > summary::before {
+  background-color: rgb(43, 155, 70);
+  -webkit-mask-image: var(--md-admonition-icon--welcome);
+          mask-image: var(--md-admonition-icon--welcome);
+}
+
+:root {
+  --md-admonition-icon--get-in-touch: url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24"><path d="M280-240q-17 0-28.5-11.5T240-280v-80h520v-360h80q17 0 28.5 11.5T880-680v600L720-240H280ZM80-280v-560q0-17 11.5-28.5T120-880h520q17 0 28.5 11.5T680-840v360q0 17-11.5 28.5T640-440H240L80-280Zm520-240v-280H160v280h440Zm-440 0v-280 280Z"/></svg>')
+}
+.md-typeset .admonition.get-in-touch {
+  width: 50%;
+  margin-inline: auto;
+  margin-right: 40px;
+}
+.md-typeset .admonition.get-in-touch,
+.md-typeset details.get-in-touch {
+  border-color: rgb(0, 176, 255);
+  margin-top: 0px;
+  font-size: 11pt;
+}
+.md-typeset .get-in-touch > .admonition-title,
+.md-typeset .get-in-touch > summary {
+  background-color: rgba(0, 176, 255, 0.1);
+}
+.md-typeset .get-in-touch > .admonition-title::before,
+.md-typeset .get-in-touch > summary::before {
+  background-color: rgb(0, 176, 255);
+  -webkit-mask-image: var(--md-admonition-icon--get-in-touch);
+          mask-image: var(--md-admonition-icon--get-in-touch);
+}
