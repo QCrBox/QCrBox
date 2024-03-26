@@ -91,6 +91,9 @@ importlib-metadata==7.1.0
     # via
     #   doit
     #   keyring
+    #   mike
+importlib-resources==6.4.0
+    # via mike
 ipykernel==6.29.3
     # via mkdocs-jupyter
 ipython==8.22.2
@@ -106,6 +109,7 @@ jedi==0.19.1
 jinja2==3.1.3
     # via
     #   cookiecutter
+    #   mike
     #   mkdocs
     #   mkdocs-material
     #   nbconvert
@@ -157,10 +161,12 @@ mdurl==0.1.2
     # via markdown-it-py
 mergedeep==1.3.4
     # via mkdocs
+mike==2.0.0
 mistune==3.0.2
     # via nbconvert
 mkdocs==1.5.3
     # via
+    #   mike
     #   mkdocs-awesome-pages-plugin
     #   mkdocs-jupyter
     #   mkdocs-material
@@ -244,6 +250,8 @@ pymdown-extensions==10.7.1
     # via
     #   markdown-exec
     #   mkdocs-material
+pyparsing==3.1.2
+    # via mike
 python-dateutil==2.9.0.post0
     # via
     #   arrow
@@ -255,6 +263,7 @@ pyyaml==6.0.1
     # via
     #   cookiecutter
     #   jupytext
+    #   mike
     #   mkdocs
     #   pymdown-extensions
     #   pyyaml-env-tag
@@ -345,6 +354,8 @@ urllib3==2.2.1
     # via requests
 userpath==1.9.2
     # via hatch
+verspec==0.1.0
+    # via mike
 virtualenv==20.25.1
     # via hatch
 watchdog==4.0.0

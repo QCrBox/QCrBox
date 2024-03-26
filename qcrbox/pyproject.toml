@@ -42,6 +42,7 @@ dev = [
 ]
 docs = [
     "markdown-exec[ansi]",
+    "mike",
     "mkdocs",
     "mkdocs-awesome-pages-plugin",
     "mkdocs-jupyter",
