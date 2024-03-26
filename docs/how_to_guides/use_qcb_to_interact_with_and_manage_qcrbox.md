@@ -75,10 +75,31 @@ You can start the Docker container for Olex2 by running:
 ```
 $ qcb up olex2
 ```
-As above, if you want to start all (enabled) components, us the `--all` flag:
+As above, if you want to start all (enabled) components, use the `--all` flag:
 ```
 $ qcb up --all
 ```
+
+!!! warning
+    If you want start up containers after previously shutting them down (using `qcb down` as described below),
+    you must currently manually delete the Docker volume where the QCrBox server stores information about available
+    components:
+
+    ```
+    # Step 1: Shut down all running containers
+    $ qcb down
+
+    # Step 2: Delete the Docker volume containing the QCrBox server database
+    $ docker volume rm qcrbox_qcrbox-registry-db
+
+    # Step 3: Now you can start up the components again and things should work as expected.
+    $ qcb up --all
+    ```
+
+    This is of course less than ideal. The underlying issue is being addressed in a [refactoring branch](https://github.com/QCrBox/QCrBox/pull/128)
+    that will be merged very soon, at which point you will be able to shut down and spin up components ad libitum
+    without manual intervention.
+
 
 ## Shutting down containers
 
