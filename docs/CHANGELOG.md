@@ -24,6 +24,8 @@ However, there will be an initial period of stabilisation where this is not adhe
 
 ### Documentation
 
+- How-to guide on building and running components using the `qcb` command line tool. ([#167](https://github.com/QCrBox/QCrBox/issues/167))
+
 
 ## [v0.0.1]
 
