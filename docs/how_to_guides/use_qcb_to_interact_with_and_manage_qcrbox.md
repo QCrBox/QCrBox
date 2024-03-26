@@ -67,3 +67,33 @@ $ qcb build --all
     or download password-protected files manually and placing them in the correct location. We will provide
     much better support for this in the future as part of the `qcb` toolchain. For the time being, please
     [get in touch](https://discord.gg/CWnQJvVv) if you would like to build these and need support.
+
+
+## Starting up containers
+
+You can start the Docker container for Olex2 by running:
+```
+$ qcb up olex2
+```
+As above, if you want to start all (enabled) components, us the `--all` flag:
+```
+$ qcb up --all
+```
+
+## Shutting down containers
+
+Run the following command to shut down all running QCrBox containers:
+```
+$ qcb down
+```
+
+
+## Next steps
+
+- Navigate to the following URL to get a fully functioning Olex2 GUI running inside your browser:
+
+    http://localhost:12004/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true
+
+- Read the [Tutorials](../tutorials)
+
+  There provide several examples showing how to interact programmatically with crystallographic software within QCrBox.
