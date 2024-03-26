@@ -1,4 +1,4 @@
-# Using the `qcb` command line tool to manage and interact with QCrBox
+# Building and running QCrBox components using the `qcb` command line tool
 
 !!! note
     Make sure you have followed the steps in [Setting up a development environment](set_up_a_dev_environment.md)
