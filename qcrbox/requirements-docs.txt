@@ -61,7 +61,7 @@ executing==2.0.1
     # via stack-data
 fastjsonschema==2.19.1
     # via nbformat
-filelock==3.13.1
+filelock==3.13.3
     # via virtualenv
 ghp-import==2.1.0
     # via mkdocs
@@ -91,17 +91,25 @@ importlib-metadata==7.1.0
     # via
     #   doit
     #   keyring
+    #   mike
+importlib-resources==6.4.0
+    # via mike
 ipykernel==6.29.3
     # via mkdocs-jupyter
 ipython==8.22.2
     # via ipykernel
 jaraco-classes==3.3.1
     # via keyring
+jaraco-context==4.3.0
+    # via keyring
+jaraco-functools==4.0.0
+    # via keyring
 jedi==0.19.1
     # via ipython
 jinja2==3.1.3
     # via
     #   cookiecutter
+    #   mike
     #   mkdocs
     #   mkdocs-material
     #   nbconvert
@@ -124,7 +132,7 @@ jupyterlab-pygments==0.3.0
     # via nbconvert
 jupytext==1.16.1
     # via mkdocs-jupyter
-keyring==24.3.1
+keyring==25.0.0
     # via hatch
 loguru==0.7.2
 markdown==3.6
@@ -153,21 +161,25 @@ mdurl==0.1.2
     # via markdown-it-py
 mergedeep==1.3.4
     # via mkdocs
+mike==2.0.0
 mistune==3.0.2
     # via nbconvert
 mkdocs==1.5.3
     # via
+    #   mike
     #   mkdocs-awesome-pages-plugin
     #   mkdocs-jupyter
     #   mkdocs-material
 mkdocs-awesome-pages-plugin==2.9.2
 mkdocs-jupyter==0.24.6
-mkdocs-material==9.5.14
+mkdocs-material==9.5.15
     # via mkdocs-jupyter
 mkdocs-material-extensions==1.3.1
     # via mkdocs-material
 more-itertools==10.2.0
-    # via jaraco-classes
+    # via
+    #   jaraco-classes
+    #   jaraco-functools
 natsort==8.4.0
     # via mkdocs-awesome-pages-plugin
 nbclient==0.10.0
@@ -230,11 +242,16 @@ pygments==2.17.2
     #   mkdocs-jupyter
     #   mkdocs-material
     #   nbconvert
+    #   pygments-ansi-color
     #   rich
+pygments-ansi-color==0.3.0
+    # via markdown-exec
 pymdown-extensions==10.7.1
     # via
     #   markdown-exec
     #   mkdocs-material
+pyparsing==3.1.2
+    # via mike
 python-dateutil==2.9.0.post0
     # via
     #   arrow
@@ -246,6 +263,7 @@ pyyaml==6.0.1
     # via
     #   cookiecutter
     #   jupytext
+    #   mike
     #   mkdocs
     #   pymdown-extensions
     #   pyyaml-env-tag
@@ -291,7 +309,7 @@ sniffio==1.3.1
     #   httpx
 soupsieve==2.5
     # via beautifulsoup4
-sqlalchemy==2.0.28
+sqlalchemy==2.0.29
     # via sqlmodel
 sqlmodel==0.0.16
 stack-data==0.6.3
@@ -322,7 +340,7 @@ traitlets==5.14.2
     #   nbclient
     #   nbconvert
     #   nbformat
-trove-classifiers==2024.3.3
+trove-classifiers==2024.3.25
     # via hatchling
 types-python-dateutil==2.9.0.20240316
     # via arrow
@@ -336,6 +354,8 @@ urllib3==2.2.1
     # via requests
 userpath==1.9.2
     # via hatch
+verspec==0.1.0
+    # via mike
 virtualenv==20.25.1
     # via hatch
 watchdog==4.0.0
