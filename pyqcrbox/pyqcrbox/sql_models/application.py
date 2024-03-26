@@ -5,6 +5,7 @@ from typing import Optional
 import sqlalchemy
 import yaml
 from faststream import Logger, apply_types
+from pydantic import field_validator
 from sqlmodel import JSON, Column, Field, Relationship, UniqueConstraint, select
 
 from pyqcrbox.settings import settings
@@ -25,6 +26,14 @@ class ApplicationSpecCreate(QCrBoxPydanticBaseModel):
     commands: list[CommandSpecCreate] = []
     cif_entry_sets: list[CifEntrySetCreate] = []
 
+    @field_validator("commands")
+    @classmethod
+    def validate_command_names_are_unique(cls, value: list[CommandSpecCreate]) -> list[CommandSpecCreate]:
+        command_names = [c.name for c in value]
+        if len(command_names) != len(set(command_names)):
+            raise ValueError("Command names must be unique")
+        return value
+
     @classmethod
     def from_yaml_file(cls, path: str | Path):
         return cls(**yaml.safe_load(Path(path).open()))
@@ -40,7 +49,9 @@ class ApplicationSpecCreate(QCrBoxPydanticBaseModel):
         elif len(cmds) == 1:
             return cmds[0]
         else:
-            raise RuntimeError(f"Invalid application spec: found multiple definitions for command {command_name!r}")
+            raise RuntimeError(
+                f"This branch should never be reached (found multiple definitions for command {command_name!r})"
+            )
 
     def to_sql_model(self, private_routing_key: str = None):
         return ApplicationSpecDB.from_pydantic_model(self, private_routing_key=private_routing_key)
