@@ -728,8 +728,9 @@ class QCrBoxPathHelper:
             )
 
         shared_files_path = pathlib.Path(os.environ["QCRBOX_SHARED_FILES_DIR_HOST_PATH"])
-
-        if not shared_files_path.is_absolute():
+        if str(shared_files_path).startswith("\\wsl"):
+            shared_files_path = pathlib.Path("\\" + str(shared_files_path))
+        elif not shared_files_path.is_absolute():
             shared_files_path = dotenv_path.parent / shared_files_path
 
         return cls(shared_files_path, os.environ["QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH"], base_dir)
