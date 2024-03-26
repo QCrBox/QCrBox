@@ -13,5 +13,5 @@
 ## Contents
 
 - [Setting up a development environment](set_up_a_dev_environment.md)
-- [Building and running components using `qcb`](use_qcb_to_interact_with_and_manage_qcrbox.md)
+- [Building and running components using the `qcb` command line tool](use_qcb_to_interact_with_and_manage_qcrbox.md)
 - [Working with cif files in QCrBox](handle_cifs.md)
