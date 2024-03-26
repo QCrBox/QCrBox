@@ -146,9 +146,9 @@ $ qcb build qcrboxtools
 ```
 
 !!! warning
-    There were issues with running hatchling under Windows 11, especially when using a python version from the Windows Store. If ``qcb build`` fails during ``Building Python package: qcrbox`` with a code 106 error (or silent without ``-v``), try the following remedy:
+    There were issues with running hatchling under Windows 11, especially when using a Python version from the Windows Store. If ``qcb build`` fails during ``Building Python package: qcrbox`` with a code 106 error (or silently when running without ``-v``), try the following remedy:
 
-      1. Uninstall the Windows Store python version using the app uninstall of windows
+      1. Uninstall the Windows Store Python version using the app uninstall of Windows
       2. Get a new installer from [python.org](https://www.python.org/)
-      3. Install. Activate support for long paths and add python to path
-      4. Delete the venv folder and create a new one with the new python version
+      3. Install. Activate support for long paths and add Python to path
+      4. Delete the venv folder and create a new one with the new Python version
