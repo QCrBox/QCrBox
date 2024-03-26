@@ -35,13 +35,26 @@ jobs:
       - name: Build the documentation
         run: mkdocs build
 
+      - name: Configure Git user
+        run: |
+          git config --global user.name "${{ github.actor }}"
+          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+
+      - name: Extract branch name
+        shell: bash
+        run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
+        id: extract_branch
+
+      - name: Deploy with mike 🚀
+        run: mike deploy --push ${{ steps.extract_branch.outputs.branch }}
+
 #      - name: Create .tar.gz archive containing the docs build
 #        run: cd .build/docs_site/ && tar -czvf ../qcrbox_docs.tar.gz .
 #
-      - name: Upload docs build output as GitHub pages artifact
-        uses: actions/upload-pages-artifact@v2
-        with:
-          path: .build/docs_site/
+#      - name: Upload docs build output as GitHub pages artifact
+#        uses: actions/upload-pages-artifact@v2
+#        with:
+#          path: .build/docs_site/
 
   deploy_docs:
     needs: build_docs
