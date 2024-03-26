@@ -5,7 +5,7 @@ from loguru import logger
 from pydantic import model_validator
 from sqlmodel import JSON, Column, Field, Relationship, UniqueConstraint
 
-from .call_pattern import CallPattern
+from .call_pattern import CallPattern, ImportPath
 from .parameter import ParameterSpecCreate, ParameterSpecDB
 from .qcrbox_base_models import QCrBoxBaseSQLModel, QCrBoxPydanticBaseModel
 
@@ -21,6 +21,7 @@ class CommandSpecCreate(QCrBoxPydanticBaseModel):
     implemented_as: ImplementedAs
     interactive: bool = False
     call_pattern: Optional[CallPattern] = None
+    import_path: Optional[ImportPath] = None
     description: str = ""
     merge_cif_su: bool = False
     # TODO: verify that implemented_as == "GUI" when interactive == True
@@ -57,6 +58,16 @@ class CommandSpecCreate(QCrBoxPydanticBaseModel):
                 )
 
         return self
+
+    @model_validator(mode="after")
+    def validate_import_path(self) -> "CommandSpecCreate":
+        if self.interactive and not self.implemented_as == ImplementedAs.gui:
+            raise ValueError(
+                f"Interactive command {self.name!r} must be implemented as 'GUI', got: {self.implemented_as.value!r}"
+            )
+
+        if self.implemented_as == ImplementedAs.python_callable and self.import_path is None:
+            raise ValueError(f"Python callable is missing an import_path: {self.name!r}")
 
     def to_sql_model(self):
         return CommandSpecDB.from_pydantic_model(self)
