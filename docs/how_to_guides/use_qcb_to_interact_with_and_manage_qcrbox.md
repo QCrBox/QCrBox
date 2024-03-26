@@ -115,4 +115,4 @@ $ qcb down
 
     [http://localhost:12004/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true](http://localhost:12004/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true){:target="_blank"}
 
-- Read the [Tutorials](../tutorials) to see several examples showing how to interact programmatically with crystallographic software within QCrBox.
+- Read the [Tutorials](../../tutorials) to see several examples showing how to interact programmatically with crystallographic software within QCrBox.
