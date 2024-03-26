@@ -21,11 +21,13 @@ jobs:
     # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
     permissions:
       pages: write      # to deploy to Pages
-      #id-token: write   # to verify the deployment originates from an appropriate source
+      id-token: write   # to verify the deployment originates from an appropriate source
 
     steps:
       # Checks out the  repository under $GITHUB_WORKSPACE, so the job can access it
       - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GH_TOKEN }}
 
       - uses: actions/setup-python@v4
         with:
@@ -38,9 +40,6 @@ jobs:
           uv pip install --system -r ./qcrbox/requirements-docs.txt
           uv pip install --system qcrbox@./qcrbox
 
-      - name: Build the documentation
-        run: mkdocs build
-
       - name: Configure Git user
         run: |
           git config --global user.name "${{ github.actor }}"
@@ -51,7 +50,7 @@ jobs:
         run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
         id: extract_branch
 
-      - name: Deploy with mike 🚀
+      - name: Build and deploy with mike 🚀
         run: mike deploy --push ${{ steps.extract_branch.outputs.branch }}
 
 #      - name: Create .tar.gz archive containing the docs build
