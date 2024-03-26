@@ -1,0 +1,1371 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://qcrbox.github.io/QCrBox/latest/tutorials/wrap_external_command/">
+      
+      
+        <link rel="prev" href="../contents/">
+      
+      
+        <link rel="next" href="../wrap_python_command/">
+      
+      
+      <link rel="icon" href="../../images/logo_black.png">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.15">
+    
+    
+      
+        <title>Integrating a CLI program into QCrBox - Quantum Crystallography Toolbox (QCrBox)</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.7e359304.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_markdown_exec_pyodide.css">
+    
+      <link rel="stylesheet" href="../../assets/_markdown_exec_ansi.css">
+    
+      <link rel="stylesheet" href="../../qcrbox_custom_styling.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="deep-purple" data-md-color-accent="purple">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#wrapping-a-command-line-executable-to-run-within-qcrbox" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Quantum Crystallography Toolbox (QCrBox)" class="md-header__button md-logo" aria-label="Quantum Crystallography Toolbox (QCrBox)" data-md-component="logo">
+      
+  <img src="../../images/logo_white.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Quantum Crystallography Toolbox (QCrBox)
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Integrating a CLI program into QCrBox
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+    
+  
+  
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../how_to_guides/contents/" class="md-tabs__link">
+          
+  
+  How to guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../contents/" class="md-tabs__link">
+          
+  
+  Tutorials
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../technical_reference/contents/" class="md-tabs__link">
+          
+  
+  Technical reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../background_info/contents/" class="md-tabs__link">
+          
+  
+  Background info
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../ADRs/" class="md-tabs__link">
+          
+  
+  Architectural Decision Records
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../CHANGELOG/" class="md-tabs__link">
+        
+  
+    
+  
+  Changelog
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Quantum Crystallography Toolbox (QCrBox)" class="md-nav__button md-logo" aria-label="Quantum Crystallography Toolbox (QCrBox)" data-md-component="logo">
+      
+  <img src="../../images/logo_white.png" alt="logo">
+
+    </a>
+    Quantum Crystallography Toolbox (QCrBox)
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    How to guides
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            How to guides
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how_to_guides/contents/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Contents
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how_to_guides/set_up_a_dev_environment/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Setting up a development environment
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how_to_guides/use_qcb_to_interact_with_and_manage_qcrbox/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Using the `qcb` command line tool
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how_to_guides/handle_cifs/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Working with cif files in QCrBox
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    Tutorials
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Tutorials
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contents/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Contents
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Integrating a CLI program into QCrBox
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Integrating a CLI program into QCrBox
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      Prerequisites
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#initial-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      Initial Setup
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#understanding-the-generated-scaffolding" class="md-nav__link">
+    <span class="md-ellipsis">
+      Understanding the Generated Scaffolding
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adding-the-command-to-config_cellcheckcsdyaml" class="md-nav__link">
+    <span class="md-ellipsis">
+      Adding the Command to config_cellcheckcsd.yaml
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Adding the Command to config_cellcheckcsd.yaml">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#specifying-cif-entries" class="md-nav__link">
+    <span class="md-ellipsis">
+      Specifying CIF Entries
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adding-the-command-to-configure_cellcheckcsdpy" class="md-nav__link">
+    <span class="md-ellipsis">
+      Adding the Command to configure_cellcheckcsd.py
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adapting-the-dockerfile-for-cellcheckcsd-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Adapting the Dockerfile for CellCheckCSD Integration
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#building-the-container-with-the-first-command-exposed" class="md-nav__link">
+    <span class="md-ellipsis">
+      Building the container with the first command exposed
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../wrap_python_command/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Integrating Python functionality into QCrBox
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_4" id="__nav_3_4_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    Examples
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_4">
+            <span class="md-nav__icon md-icon"></span>
+            Examples
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/example_olex2/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Interacting with Olex2
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/example_xharpy/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Interacting with XHARPy
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/example_eval/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Interacting with Eval14/15
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/example_crystal_explorer/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Interacting with CrystalExplorer
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/example_qcrboxtools/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Interacting with QCrBoxTools
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Technical reference
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            Technical reference
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../technical_reference/contents/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Contents
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Background info
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Background info
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../background_info/contents/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Background Information
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Architectural Decision Records
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            Architectural Decision Records
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ADRs/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    What are ADRs?
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CHANGELOG/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Changelog
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+<h1 id="wrapping-a-command-line-executable-to-run-within-qcrbox">Wrapping a command line executable to run within QCrBox<a class="headerlink" href="#wrapping-a-command-line-executable-to-run-within-qcrbox" title="Permanent link">#</a></h1>
+<p>This guide walks you through the process of encapsulating an external command within a QCrBox container.
+Specifically, we'll create a bash script that will allow as to run <a href="https://www.ccdc.cam.ac.uk/solutions/software/cellcheckcsd/">CellCheckCSD</a> to produce an xml file with similar cells as output.</p>
+<h2 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">#</a></h2>
+<p>Before starting, ensure your development environment is set up following the guide located <a href="../../how_to_guides/set_up_a_dev_environment/">here</a>. During this tutorial you will work with Docker, Bash, and an understanding of YAML configurations. If you're new to these concepts you can just accept the additions as they are or consult additional resources on <a href="https://docs.docker.com/get-started/overview/">Docker</a>, <a href="https://tldp.org/LDP/Bash-Beginners-Guide/html/">Bash</a>, and <a href="https://yaml.org/spec/1.2/spec.html">YAML</a> for foundational knowledge.</p>
+<p>We will also need the linux version of CellCheckCSD from the <a href="https://www.ccdc.cam.ac.uk/solutions/software/cellcheckcsd/">CSD Website</a>. Download it and check that the filename / version number if it has changed you will have to adapt some steps accordingly.</p>
+<h2 id="initial-setup">Initial Setup<a class="headerlink" href="#initial-setup" title="Permanent link">#</a></h2>
+<p>To begin, initialize a new QCrBox container for our module:</p>
+<ol>
+<li>Open your terminal.</li>
+<li>Type <code>qcb init cellcheckcsd</code> and press Enter.</li>
+<li>You will be prompted to provide basic information about your application through a guided dialogue. Follow the prompts to complete the setup. It does not change any functionality, but try to enter the correct version number of CellCheckCSD.</li>
+</ol>
+<div class="highlight"><pre><span></span><code>Please provide some basic information about your application.
+The following dialog will guide you through the relevant settings.
+
+  [1/7] Select application_type
+    1 - CLI
+    Choose from [1] (1):
+  [2/7] application_slug (cellcheckcsd):
+  [3/7] application_name (cellcheckcsd): CellCheckCSD
+  [4/7] application_version (x.y.z): 1.2.14
+  [6/7] url (): https://www.ccdc.cam.ac.uk/solutions/software/cellcheckcsd/
+  [7/7] email ():
+
+Created scaffolding for new application in &#39;T:\QCrBox_location\services\applications\cellcheckcsd&#39;.
+</code></pre></div>
+<h2 id="understanding-the-generated-scaffolding">Understanding the Generated Scaffolding<a class="headerlink" href="#understanding-the-generated-scaffolding" title="Permanent link">#</a></h2>
+<p>Navigate to the application's folder to see the files generated by the boilerplace CLI. You'll find:</p>
+<ul>
+<li><code>docker-compose.cellcheckcsd.*.yml</code>: Docker Compose files, typically unchanged for non-GUI applications.</li>
+<li><code>sample_cmd.sh</code>: An example bash file for CLI applications. This can be deleted.</li>
+<li><code>Dockerfile</code>: Contains instructions to build the container.</li>
+<li><code>config_cellcheckcsd.yaml</code>: Future versions will use this to define exposed functions. Currently, it requests CIF keywords.</li>
+<li><code>configure_cellcheckcsd.py</code>: Here, we'll register our function. In future this will no longer be necessary.</li>
+</ul>
+<p>Next, download the bash script we will use as an executable <a href="../example_support/cif2cellcheckcsd.sh">here</a> and copy <code>cif2cellcheckcsd.sh</code> into the <code>cellcheckcsd</code> folder. Copy the downloaded version of CellCheckCSD into the folder, as well. If you are planning to develop and contribute to the QCrBox repository it is also a good idea to add the CellCheckCSD file to <code>.gitignore</code> to prevent the accidential commit of copyrighted material.</p>
+<h2 id="adding-the-command-to-config_cellcheckcsdyaml">Adding the Command to <code>config_cellcheckcsd.yaml</code><a class="headerlink" href="#adding-the-command-to-config_cellcheckcsdyaml" title="Permanent link">#</a></h2>
+<p>We want a command that produces the xml output of CellCheckCSD for a given cif file. In a first step we will now adapt the configuration in <code>config_cellcheckcsd.yaml</code> to allow this functionality. First change the name of the first command to <code>cell_check_csd</code> and delete the second entry. We can take a look into the bash file to see which command line arguments are needed:</p>
+<ol>
+<li>input_cif_path (string): Identifies the CIF file employed for locating similar structures.</li>
+<li>dimension_tolerance (float): Specifies the maximum permissible deviation for unit cell length dimensions between the CSD structures and our target structure.</li>
+<li>angle_tolerance (float): Determines the maximum allowable deviation for angles.</li>
+<li>maximum_hits (int): Caps the number of search results.</li>
+</ol>
+<p>Here is how you should structure the command in the YAML file:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">commands</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;cell_check_csd&quot;</span>
+<span class="w">    </span><span class="nt">implemented_as</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;CLI&quot;</span><span class="w">  </span><span class="c1"># other options: &quot;python_callable&quot;</span>
+<span class="w">    </span><span class="nt">parameters</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;input_cif_path&quot;</span>
+<span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;str&quot;</span>
+<span class="w">        </span><span class="nt">default_value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">None</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;dimension_tolerace&quot;</span>
+<span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;float&quot;</span>
+<span class="w">        </span><span class="nt">default_value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.5</span>
+<span class="w">        </span><span class="nt">required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;angle_tolerance&quot;</span>
+<span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;float&quot;</span>
+<span class="w">        </span><span class="nt">default_value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.5</span>
+<span class="w">        </span><span class="nt">required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;maximum_hits&quot;</span>
+<span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;int&quot;</span>
+<span class="w">        </span><span class="nt">default_value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">200</span>
+<span class="w">        </span><span class="nt">required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</code></pre></div>
+<h3 id="specifying-cif-entries">Specifying CIF Entries<a class="headerlink" href="#specifying-cif-entries" title="Permanent link">#</a></h3>
+<p>Next, we must identify which CIF entries are essential for our command to function. You can take another look into the .sh file. As you can see, we need the CIF entries for the cell parameters. We can also use two possibilities to derive the lattice centring. If we have provided neither of them, we will default to "P". As such the cif entries for lattice centring are optional. For further information about cif entry handling consult the yaml section from the <a href="../../how_to_guides/handle_cifs/">CIF HowTo</a>. We add the required unit cell entries and the optional lattice centring entries to our yaml file. Take care that <code>required_cif_entries</code> and <code>optional_cif_entries</code> are aligned with <code>name</code>/<code>implemented_as</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="nt">required_cif_entries</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span>
+<span class="w">      </span><span class="s">&quot;_cell.length_a&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;_cell.length_b&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;_cell.length_c&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;_cell.angle_alpha&quot;</span><span class="p p-Indicator">,</span>
+<span class="w">      </span><span class="s">&quot;_cell.angle_beta&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;_cell.angle_gamma&quot;</span>
+<span class="w">    </span><span class="p p-Indicator">]</span>
+<span class="w">    </span><span class="nt">optional_cif_entries</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;_space_group.centring_type&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;_space_group.name_h-m_alt&quot;</span><span class="p p-Indicator">]</span>
+<span class="w">    </span><span class="nt">merge_cif_su</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+</code></pre></div>
+<h2 id="adding-the-command-to-configure_cellcheckcsdpy">Adding the Command to <code>configure_cellcheckcsd.py</code><a class="headerlink" href="#adding-the-command-to-configure_cellcheckcsdpy" title="Permanent link">#</a></h2>
+<blockquote>
+<p><strong>Important Note:</strong>
+Some functionality that will eventually be automated—specifically, the registration of our application and commands in Python. At the moment this step is still necessary.</p>
+</blockquote>
+<p>Next, we want to add a new command to our application's configuration file by replacing the dummy commands in  <code>configure_cellcheckcsd.py</code> with:</p>
+<div class="highlight"><pre><span></span><code><span class="n">cmd_cell_check_csd</span> <span class="o">=</span> <span class="n">ExternalCommand</span><span class="p">(</span>
+    <span class="s2">&quot;cif2cellcheckcsd.sh&quot;</span><span class="p">,</span>
+    <span class="n">Param</span><span class="p">(</span><span class="s2">&quot;input_cif_path&quot;</span><span class="p">),</span>
+    <span class="n">Param</span><span class="p">(</span><span class="s2">&quot;dimension_tolerace&quot;</span><span class="p">),</span>
+    <span class="n">Param</span><span class="p">(</span><span class="s2">&quot;angle_tolerance&quot;</span><span class="p">),</span>
+    <span class="n">Param</span><span class="p">(</span><span class="s2">&quot;maximum_hits&quot;</span><span class="p">)</span>
+<span class="p">)</span>
+
+<span class="n">application</span><span class="o">.</span><span class="n">register_external_command</span><span class="p">(</span>
+    <span class="s2">&quot;cell_check_csd&quot;</span><span class="p">,</span>
+    <span class="n">cmd_cell_check_csd</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+<h2 id="adapting-the-dockerfile-for-cellcheckcsd-integration">Adapting the Dockerfile for CellCheckCSD Integration<a class="headerlink" href="#adapting-the-dockerfile-for-cellcheckcsd-integration" title="Permanent link">#</a></h2>
+<p>We will now define the container's environment and ensuring all necessary components are included for our application by editing the Dockerfile. Let us go through the file line by line. You need to add missing lines.</p>
+<ol>
+<li>
+<p><strong>Establishing the Base Image</strong>: The Dockerfile begins by specifying the base image. For our purposes, we use <code>qcrbox/base-application</code> as the foundation, selecting the latest version available for consistency and access to the most recent features.
+   <div class="highlight"><pre><span></span><code><span class="k">ARG</span><span class="w"> </span>QCRBOX_DOCKER_TAG
+<span class="k">FROM</span><span class="w"> </span><span class="s">qcrbox/base-application:${QCRBOX_DOCKER_TAG}</span>
+</code></pre></div></p>
+</li>
+<li>
+<p><strong>Changing the user to <code>root</code></strong>: Some of the following installation steps needs administrator priviledges. Therefore we execute them using the root user.
+   <div class="highlight"><pre><span></span><code><span class="k">USER</span><span class="w"> </span><span class="s">root</span>
+</code></pre></div></p>
+</li>
+<li>
+<p><strong>Configuring the Shell Environment</strong>: It's essential to define the shell environment for executing future commands. Here, we specify using <code>/bin/bash</code>.
+   <div class="highlight"><pre><span></span><code><span class="k">SHELL</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;/bin/bash&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;-c&quot;</span><span class="p">]</span>
+</code></pre></div></p>
+</li>
+<li>
+<p><strong>Copying Configuration Files</strong>: We copy both the Python configuration script and the YAML settings file into the container. These are the two files we have edited previously.
+   <div class="highlight"><pre><span></span><code><span class="k">COPY</span><span class="w"> </span>configure_cellcheckcsd.py<span class="w"> </span>./
+<span class="k">COPY</span><span class="w"> </span>config_cellcheckcsd.yaml<span class="w"> </span>./
+</code></pre></div></p>
+</li>
+<li>
+<p><strong>Dependency Installation</strong>: The library <code>libglib2.0</code> is necessary for the proper functioning of CellCheckCSD. We can install the library using the package manager <code>apt-get</code>.
+   <div class="highlight"><pre><span></span><code><span class="k">RUN</span><span class="w"> </span>apt-get<span class="w"> </span>update<span class="w"> </span>-y<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>apt-get<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>--fix-missing<span class="w"> </span>--no-install-recommends<span class="w"> </span>libglib2.0-0
+</code></pre></div></p>
+<blockquote>
+<p><strong>Note</strong>: For reference, the QCrBox base image is build from the debian bookworm image.</p>
+</blockquote>
+</li>
+<li>
+<p><strong>Script and Module Integration</strong>: We now copy the custom bash script to run CellCheckCSD on CIF files. Additionally, we run the CellCheckCSD installer.</p>
+</li>
+<li>First, copy the bash script responsible for interfacing with CellCheckCSD:
+     <div class="highlight"><pre><span></span><code><span class="k">COPY</span><span class="w"> </span>cif2cellcheckcsd.sh<span class="w"> </span>/opt/cellcheckcsd/bin/
+</code></pre></div></li>
+<li>
+<p>Then, execute the CellCheckCSD installer, followed by clean-up procedures to maintain a lean container. Make sure that the filename of the CellCheckCSD installer you download matches the filename here and adapt it if it does not match:
+     <div class="highlight"><pre><span></span><code><span class="k">COPY</span><span class="w"> </span>CellCheckCSD-1.2.14-linux-x64-installer.run<span class="w"> </span>./
+<span class="k">RUN</span><span class="w"> </span>chmod<span class="w"> </span>+x<span class="w"> </span>./CellCheckCSD-1.2.14-linux-x64-installer.run<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>./CellCheckCSD-1.2.14-linux-x64-installer.run<span class="w"> </span>--mode<span class="w"> </span>unattended<span class="w"> </span>--prefix<span class="w"> </span>/opt/CCDC/CellCheckCSD<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>rm<span class="w"> </span>CellCheckCSD-1.2.14-linux-x64-installer.run<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>chmod<span class="w"> </span>+x<span class="w"> </span>/opt/cellcheckcsd/bin/cif2cellcheckcsd.sh
+</code></pre></div>
+    Ideally execution and clean-up should be executed within the same RUN command to limit the size of the resulting container. Be especially wary of chmod commands on (filled) directories.</p>
+<p>The last command makes our script an executable.</p>
+</li>
+<li>
+<p><strong>Changing the user to the QCrBox user</strong>: Runtime should not be executed in root. Not only are the elevated priviledges not necessary, some programs will get problems if we run them as the root user. So we change the user at the end to the QCrBox base user defined in our environment variables.
+   <div class="highlight"><pre><span></span><code><span class="k">USER</span><span class="w"> </span><span class="s">${QCRBOX_USER}</span>
+</code></pre></div></p>
+</li>
+<li>
+<p><strong>Environment Path Adjustment</strong>: Finally, we adjust the <code>PATH</code> environment variable to include the directories containing the CellCheckCSD executable and our custom script. This modification ensures that these components are readily accessible for execution within the container.
+   <div class="highlight"><pre><span></span><code><span class="k">USER</span><span class="w"> </span><span class="s">${QCRBOX_USER}</span>
+<span class="k">ENV</span><span class="w"> </span><span class="nv">PATH</span><span class="o">=</span><span class="s2">&quot;</span><span class="nv">$PATH</span><span class="s2">:/opt/cellcheckcsd/bin/:/opt/CCDC/CellCheckCSD/bin&quot;</span>
+</code></pre></div></p>
+</li>
+</ol>
+<blockquote>
+<p><strong>Note</strong>: If your application is compiled within the container you can reduce the size of the resulting containers by using <a href="https://www.docker.com/blog/advanced-dockerfiles-faster-builds-and-smaller-images-using-buildkit-and-multistage-builds/">multi-stage builds</a>.</p>
+</blockquote>
+<h2 id="building-the-container-with-the-first-command-exposed">Building the container with the first command exposed<a class="headerlink" href="#building-the-container-with-the-first-command-exposed" title="Permanent link">#</a></h2>
+<p>To create a QCrBox image for our application, we'll execute a specific build command using the application slug defined earlier. Open your terminal and input the following command to start the build process:</p>
+<div class="highlight"><pre><span></span><code>qcb<span class="w"> </span>build<span class="w"> </span>cellcheckcsd
+</code></pre></div>
+<blockquote>
+<p><strong>Important Note:</strong> By default, <code>qcb build</code> without additional arguments performs a full rebuild of all dependencies to ensure everything is up-to-date. If you have recently completed a build and wish to save time, you can opt for the <code>--no-deps</code> argument. This option focuses solely on building the QCrBox image without updating the dependencies.</p>
+</blockquote>
+<p>After completing the build process, you can launch your newly created QCrBox image with the following command:</p>
+<div class="highlight"><pre><span></span><code>qcb<span class="w"> </span>up<span class="w"> </span>cellcheckcsd<span class="w"> </span>--no-rebuild-deps
+</code></pre></div>
+<p>This command starts the container without recompiling the image or its dependencies, assuming they were recently built. If you aim to update both dependencies and the image before launching, simply omit the <code>--no-rebuild-deps</code> flag. This ensures that your QCrBox image and all related components are fully up-to-date.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var tab,labels=set.querySelector(".tabbed-labels");for(tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12Z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+      <div class="md-progress" data-md-component="progress" role="progressbar"></div>
+    
+    
+    <script id="__config" type="application/json">{"base": "../..", "features": ["content.tabs.link", "navigation.expand", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.path", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "search.suggest", "toc.integrate"], "search": "../../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.bd41221c.min.js"></script>
+      
+        <script src="../../assets/_markdown_exec_pyodide.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,1548 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://qcrbox.github.io/QCrBox/latest/tutorials/wrap_python_command/">
+      
+      
+        <link rel="prev" href="../wrap_external_command/">
+      
+      
+        <link rel="next" href="../examples/example_olex2/">
+      
+      
+      <link rel="icon" href="../../images/logo_black.png">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.15">
+    
+    
+      
+        <title>Integrating Python functionality into QCrBox - Quantum Crystallography Toolbox (QCrBox)</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.7e359304.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_markdown_exec_pyodide.css">
+    
+      <link rel="stylesheet" href="../../assets/_markdown_exec_ansi.css">
+    
+      <link rel="stylesheet" href="../../qcrbox_custom_styling.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="deep-purple" data-md-color-accent="purple">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#wrapping-a-python-module-and-exposing-functionality-to-run-within-qcrbox" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Quantum Crystallography Toolbox (QCrBox)" class="md-header__button md-logo" aria-label="Quantum Crystallography Toolbox (QCrBox)" data-md-component="logo">
+      
+  <img src="../../images/logo_white.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Quantum Crystallography Toolbox (QCrBox)
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Integrating Python functionality into QCrBox
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+    
+  
+  
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../how_to_guides/contents/" class="md-tabs__link">
+          
+  
+  How to guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../contents/" class="md-tabs__link">
+          
+  
+  Tutorials
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../technical_reference/contents/" class="md-tabs__link">
+          
+  
+  Technical reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../background_info/contents/" class="md-tabs__link">
+          
+  
+  Background info
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../ADRs/" class="md-tabs__link">
+          
+  
+  Architectural Decision Records
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../CHANGELOG/" class="md-tabs__link">
+        
+  
+    
+  
+  Changelog
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Quantum Crystallography Toolbox (QCrBox)" class="md-nav__button md-logo" aria-label="Quantum Crystallography Toolbox (QCrBox)" data-md-component="logo">
+      
+  <img src="../../images/logo_white.png" alt="logo">
+
+    </a>
+    Quantum Crystallography Toolbox (QCrBox)
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    How to guides
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            How to guides
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how_to_guides/contents/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Contents
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how_to_guides/set_up_a_dev_environment/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Setting up a development environment
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how_to_guides/use_qcb_to_interact_with_and_manage_qcrbox/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Using the `qcb` command line tool
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how_to_guides/handle_cifs/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Working with cif files in QCrBox
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    Tutorials
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Tutorials
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contents/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Contents
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../wrap_external_command/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Integrating a CLI program into QCrBox
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Integrating Python functionality into QCrBox
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Integrating Python functionality into QCrBox
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      Prerequisites
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#initial-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      Initial Setup
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#understanding-the-generated-scaffolding" class="md-nav__link">
+    <span class="md-ellipsis">
+      Understanding the Generated Scaffolding
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adding-the-first-command-to-config_cod_checkyaml" class="md-nav__link">
+    <span class="md-ellipsis">
+      Adding the First Command to config_cod_check.yaml
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Adding the First Command to config_cod_check.yaml">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#specifying-required-cif-entries" class="md-nav__link">
+    <span class="md-ellipsis">
+      Specifying Required CIF Entries
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#implementing-the-python-glue-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      Implementing the Python Glue Code
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#registering-the-python-function-as-a-qcrbox-command" class="md-nav__link">
+    <span class="md-ellipsis">
+      Registering the Python Function as a QCrBox Command
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuring-the-dockerfile" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configuring the Dockerfile
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#building-the-container-with-the-first-command-exposed" class="md-nav__link">
+    <span class="md-ellipsis">
+      Building the container with the first command exposed
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#build-a-function-to-load-in-a-structure-from-the-best-matching-unit-cell" class="md-nav__link">
+    <span class="md-ellipsis">
+      Build a function to load in a structure from the best matching unit cell
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#developing-the-python-glue-code-for-our-merge-command" class="md-nav__link">
+    <span class="md-ellipsis">
+      Developing the Python Glue Code for Our Merge Command.
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rebuilding-and-restarting-the-container" class="md-nav__link">
+    <span class="md-ellipsis">
+      Rebuilding and Restarting the Container
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conclusion-and-final-remarks" class="md-nav__link">
+    <span class="md-ellipsis">
+      Conclusion and final remarks
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_4" id="__nav_3_4_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    Examples
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_4">
+            <span class="md-nav__icon md-icon"></span>
+            Examples
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/example_olex2/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Interacting with Olex2
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/example_xharpy/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Interacting with XHARPy
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/example_eval/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Interacting with Eval14/15
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/example_crystal_explorer/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Interacting with CrystalExplorer
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/example_qcrboxtools/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Interacting with QCrBoxTools
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Technical reference
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            Technical reference
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../technical_reference/contents/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Contents
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Background info
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Background info
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../background_info/contents/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Background Information
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Architectural Decision Records
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            Architectural Decision Records
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ADRs/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    What are ADRs?
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CHANGELOG/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Changelog
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+<h1 id="wrapping-a-python-module-and-exposing-functionality-to-run-within-qcrbox">Wrapping a Python module and exposing functionality to run within QCrBox<a class="headerlink" href="#wrapping-a-python-module-and-exposing-functionality-to-run-within-qcrbox" title="Permanent link">#</a></h1>
+<p>This guide walks you through the process of encapsulating a Python module within a QCrBox container. Specifically, we'll focus on a module that queries the <a href="https://www.crystallography.net/cod/">Crystallographic Open Database (COD)</a> for structures with similar elements and unit cell parameters. Our goal is to make this module's functionality accessible within a QCrBox container.</p>
+<h2 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">#</a></h2>
+<p>Before starting, ensure your development environment is set up following the guide located <a href="../../how_to_guides/set_up_a_dev_environment/">here</a>. During this tutorial you will work with Docker, Python, and an understanding of YAML configurations. If you're new to these concepts you can just accept the additions as they are or consusult additional resources on <a href="https://docs.docker.com/get-started/overview/">Docker</a>, <a href="https://docs.python.org/3/tutorial/modules.html">Python modules</a>, and <a href="https://yaml.org/spec/1.2/spec.html">YAML</a> for foundational knowledge.</p>
+<h2 id="initial-setup">Initial Setup<a class="headerlink" href="#initial-setup" title="Permanent link">#</a></h2>
+<p>To begin, initialize a new QCrBox container for our module:</p>
+<ol>
+<li>Open your terminal.</li>
+<li>Type <code>qcb init cod_check</code> and press Enter.</li>
+<li>You will be prompted to provide basic information about your application through a guided dialogue. Follow the prompts to complete the setup.</li>
+</ol>
+<div class="highlight"><pre><span></span><code>Please provide some basic information about your application.
+The following dialog will guide you through the relevant settings.
+
+  [1/7] Select application_type
+    1 - CLI
+    Choose from [1] (1): 1
+  [2/7] application_slug (cod_check):
+  [3/7] application_name (Cod Check): COD Check
+  [4/7] application_version (x.y.z): 0.0.1
+  [5/7] description (Brief description of the application.): Can be used to check whether there is a similar structure in the crystallographic open database and output similar structures.
+  [6/7] url (): https://my.official.module.url
+  [7/7] email (): module_contact@university.somewhere
+
+Created scaffolding for new application in &#39;T:\QCrBox_location\services\applications\cod_check&#39;.
+</code></pre></div>
+<h2 id="understanding-the-generated-scaffolding">Understanding the Generated Scaffolding<a class="headerlink" href="#understanding-the-generated-scaffolding" title="Permanent link">#</a></h2>
+<p>Navigate to the application's folder to see the files generated by the boilerplace CLI. You'll find:</p>
+<ul>
+<li><code>docker-compose.cod_check.*.yml</code>: Docker Compose files, typically unchanged for non-GUI applications.</li>
+<li><code>sample_cmd.sh</code>: An example bash file for CLI applications. This can be deleted.</li>
+<li><code>Dockerfile</code>: Contains instructions to build the container.</li>
+<li><code>config_cod_check.yaml</code>: Future versions will use this to define exposed functions. Currently, it requests CIF keywords.</li>
+<li><code>configure_cod_check.py</code>: Here, we'll implement our module's functionality and register it with QCrBox.</li>
+</ul>
+<p>Next, download the Python file <a href="../example_support/simple_cod_module.py">here</a> and copy <code>simple_cod_module.py</code> into the <code>cod_check</code> folder.</p>
+<h2 id="adding-the-first-command-to-config_cod_checkyaml">Adding the First Command to <code>config_cod_check.yaml</code><a class="headerlink" href="#adding-the-first-command-to-config_cod_checkyaml" title="Permanent link">#</a></h2>
+<p>In the first step of this tutorial, we aim to introduce a command that outputs the number of structures with matching unit cell parameters and elements, as specified in a CIF file, to a JSON file within the work folder. Refer to the <code>simple_cod_module.py</code> script to understand the functionalities we're integrating. We will use the <code>cif_to_search_pars</code> function to generate search parameters and then employ <code>get_number_fitting_cod_entries</code> to find the count of matching structures.</p>
+<p>The initial setup, generated by <code>qcb init</code>, has already populated the top section of the YAML file. Your task now is to customize this section with our specific command details. Start by renaming <code>name</code> from the placeholder to <code>"get_number_fitting_cod_entries"</code> and change <code>implemented_as</code> from <code>"cli"</code> to <code>"python_callable"</code>.</p>
+<p>The command will require three parameters:</p>
+<ol>
+<li><code>input_cif_path</code> (string): Specifies which CIF file to use for checking similar structures.</li>
+<li><code>cellpar_deviation_perc</code> (float): Defines the maximum allowable deviation, in percentage, for unit cell parameters between COD structures and our target structure. The default value is set at 2.0%.</li>
+<li><code>listed_elements_only</code> (boolean): When set to True, the search will only include entries containing the exact elements listed in the <code>input_cif</code> file. If False, the search will accept entries with additional elements beyond those listed. By default, this is set to False.</li>
+</ol>
+<p>Here is how you should structure the command in the YAML file:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">commands</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;get_number_fitting_cod_entries&quot;</span>
+<span class="w">    </span><span class="nt">implemented_as</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;python_callable&quot;</span>
+<span class="w">    </span><span class="nt">parameters</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;input_cif_path&quot;</span>
+<span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;str&quot;</span>
+<span class="w">        </span><span class="nt">default_value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">None</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;cellpar_deviation_perc&quot;</span>
+<span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;float&quot;</span>
+<span class="w">        </span><span class="nt">default_value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2.0</span>
+<span class="w">        </span><span class="nt">required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;listed_elements_only&quot;</span>
+<span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;bool&quot;</span>
+<span class="w">        </span><span class="nt">default_value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">        </span><span class="nt">required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+</code></pre></div>
+<h3 id="specifying-required-cif-entries">Specifying Required CIF Entries<a class="headerlink" href="#specifying-required-cif-entries" title="Permanent link">#</a></h3>
+<p>Next, we must identify which CIF entries are essential for our command to function. Inspect the <code>cif_to_search_pars</code> function to determine these entries. If you're adding only one command, list these required entries directly. Ensure that <code>required_cif_entries:</code> aligns with the <code>parameters:</code> section for proper structure.</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="nt">required_cif_entries</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span>
+<span class="w">      </span><span class="s">&quot;_cell_length_a&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;_cell_length_b&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;_cell_length_c&quot;</span><span class="p p-Indicator">,</span>
+<span class="w">      </span><span class="s">&quot;_cell_angle_alpha&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;_cell_angle_beta&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;_cell_angle_gamma&quot;</span><span class="p p-Indicator">,</span>
+<span class="w">      </span><span class="s">&quot;_chemical_formula_sum&quot;</span>
+<span class="w">    </span><span class="p p-Indicator">]</span>
+</code></pre></div>
+<p>For scenarios where certain CIF entries are beneficial but not mandatory, you could list them under <code>optional_cif_entries</code>. However, in this context, all listed entries are necessary, completing our current modifications to the YAML file.</p>
+<h2 id="implementing-the-python-glue-code">Implementing the Python Glue Code<a class="headerlink" href="#implementing-the-python-glue-code" title="Permanent link">#</a></h2>
+<blockquote>
+<p><strong>Important Note:</strong>
+Currently, some functionality that will eventually be automated—specifically, the registration of our application and commands in Python, as well as CIF file handling and conversion—requires manual implementation. This step is temporary and is planned to be automated in future updates, following the developer alpha release. We're releasing this functionality now to provide a foundation for exploration and development.</p>
+</blockquote>
+<p>To begin, open the <code>configure_cod_check.py</code> file. Start by importing necessary functions from the Python base libraries as well as two different modules:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">import</span> <span class="nn">json</span>
+
+<span class="kn">from</span> <span class="nn">qcrboxtools.cif.cif2cif</span> <span class="kn">import</span> <span class="n">cif_file_unified_yml_instr</span>
+<span class="kn">from</span> <span class="nn">simple_cod_module</span> <span class="kn">import</span> <span class="n">cif_to_search_pars</span><span class="p">,</span> <span class="n">get_number_fitting_cod_entries</span>
+</code></pre></div>
+<p>The function <code>cif_file_unified_yml_instr</code> is designed to manage the CIF files' input and output, converting the CIF keywords used by QCrBox into those required by <code>simple_cod_module</code>. Additionally, we'll utilize two specific functions from <code>simple_cod_module</code> to execute our desired logic.</p>
+<p>Let's proceed to define the necessary Python functions within <code>configure_cod_check.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="n">YAML_PATH</span> <span class="o">=</span> <span class="s2">&quot;./config_cod_check.yaml&quot;</span>
+
+<span class="k">def</span> <span class="nf">parse_input</span><span class="p">(</span><span class="n">input_cif_path</span><span class="p">,</span> <span class="n">cellpar_deviation_perc</span><span class="p">,</span> <span class="n">listed_elements_only</span><span class="p">):</span>
+    <span class="c1"># Convert string paths to Path objects for easier file handling</span>
+    <span class="n">input_cif_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">input_cif_path</span><span class="p">)</span>
+
+    <span class="c1"># Convert cellpar_deviation to the correct type and convert the given percentage to a decimal</span>
+    <span class="n">cellpar_deviation</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">cellpar_deviation_perc</span><span class="p">)</span> <span class="o">/</span> <span class="mf">100.0</span>
+
+    <span class="c1"># Validate &#39;listed_elements_only&#39; as a boolean value</span>
+    <span class="k">if</span> <span class="n">listed_elements_only</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;true&quot;</span><span class="p">,</span> <span class="s2">&quot;false&quot;</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;&#39;listed_elements_only&#39; must be a boolean (true or false).&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Convert &#39;listed_elements_only&#39; to a boolean</span>
+    <span class="n">listed_elements_only</span> <span class="o">=</span> <span class="n">listed_elements_only</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;true&quot;</span>
+
+    <span class="c1"># Use the parent directory of the input CIF file as the working directory</span>
+    <span class="n">work_folder</span> <span class="o">=</span> <span class="n">input_cif_path</span><span class="o">.</span><span class="n">parent</span>
+
+    <span class="c1"># Specify the path for the modified CIF file</span>
+    <span class="n">work_cif_path</span> <span class="o">=</span> <span class="n">work_folder</span> <span class="o">/</span> <span class="s2">&quot;work.cif&quot;</span>
+
+    <span class="c1"># Adjust the CIF file according to the requirements of &#39;simple_cod_module&#39;</span>
+    <span class="n">cif_file_unified_yml_instr</span><span class="p">(</span>
+        <span class="n">input_cif_path</span><span class="o">=</span><span class="n">input_cif_path</span><span class="p">,</span>
+        <span class="n">output_cif_path</span><span class="o">=</span><span class="n">work_cif_path</span><span class="p">,</span>
+        <span class="n">yml_path</span><span class="o">=</span><span class="n">YAML_PATH</span><span class="p">,</span>  <span class="c1"># Referencing the edited YAML configuration</span>
+        <span class="n">command</span><span class="o">=</span><span class="s2">&quot;get_number_fitting_cod_entries&quot;</span><span class="p">,</span>  <span class="c1"># Command name as specified in the YAML</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">work_cif_path</span><span class="p">,</span> <span class="n">cellpar_deviation</span><span class="p">,</span> <span class="n">listed_elements_only</span>
+
+<span class="k">def</span> <span class="nf">qcb_get_number_fitting_cod_entries</span><span class="p">(</span><span class="n">input_cif_path</span><span class="p">,</span> <span class="n">cellpar_deviation_perc</span><span class="p">,</span> <span class="n">listed_elements_only</span><span class="p">):</span>
+    <span class="c1"># Transform input parameters from string to appropriate Python objects</span>
+    <span class="n">work_cif_path</span><span class="p">,</span> <span class="n">cellpar_deviation</span><span class="p">,</span> <span class="n">listed_elements_only</span> <span class="o">=</span> <span class="n">parse_input</span><span class="p">(</span><span class="n">input_cif_path</span><span class="p">,</span> <span class="n">cellpar_deviation_perc</span><span class="p">,</span> <span class="n">listed_elements_only</span><span class="p">)</span>
+
+    <span class="c1"># Retrieve the number of matching entries</span>
+    <span class="n">elements</span><span class="p">,</span> <span class="n">cell_dict</span> <span class="o">=</span> <span class="n">cif_to_search_pars</span><span class="p">(</span><span class="n">work_cif_path</span><span class="p">)</span>
+    <span class="n">n_entries</span> <span class="o">=</span> <span class="n">get_number_fitting_cod_entries</span><span class="p">(</span><span class="n">elements</span><span class="p">,</span> <span class="n">cell_dict</span><span class="p">,</span> <span class="n">cellpar_deviation</span><span class="p">,</span> <span class="n">listed_elements_only</span><span class="p">)</span>
+
+    <span class="c1"># Save the output as a JSON file</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">work_cif_path</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;nentries.json&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;UTF-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fobj</span><span class="p">:</span>
+        <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">({</span><span class="s2">&quot;n_entries&quot;</span><span class="p">:</span> <span class="n">n_entries</span><span class="p">},</span> <span class="n">fobj</span><span class="p">)</span>
+</code></pre></div>
+<p>The <code>parse_input</code> function will eventually be phased out as QCrBox plans will take over the input parameter handling and CIF file conversion making the explicit implementation obsolete.</p>
+<h2 id="registering-the-python-function-as-a-qcrbox-command">Registering the Python Function as a QCrBox Command<a class="headerlink" href="#registering-the-python-function-as-a-qcrbox-command" title="Permanent link">#</a></h2>
+<p>To integrate our command with QCrBox, it's necessary to register it within the system. Update the script's concluding section as follows:</p>
+<div class="highlight"><pre><span></span><code><span class="n">client</span> <span class="o">=</span> <span class="n">QCrBoxRegistryClient</span><span class="p">()</span>
+<span class="n">application</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">register_application</span><span class="p">(</span><span class="s2">&quot;COD Check&quot;</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="s2">&quot;0.0.1&quot;</span><span class="p">)</span>
+
+<span class="c1"># Register the command with QCrBox, linking it to our Python function</span>
+<span class="n">application</span><span class="o">.</span><span class="n">register_python_callable</span><span class="p">(</span><span class="s2">&quot;get_number_fitting_cod_entries&quot;</span><span class="p">,</span> <span class="n">qcb_get_number_fitting_cod_entries</span><span class="p">)</span>
+
+<span class="n">client</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</code></pre></div>
+<p>QCrBox recognizes the parameter names from our Python function, using them directly as command parameters within the for the commands exposed by the QCrBox container.</p>
+<h2 id="configuring-the-dockerfile">Configuring the Dockerfile<a class="headerlink" href="#configuring-the-dockerfile" title="Permanent link">#</a></h2>
+<p>The Dockerfile is preconfigured with some entries that we won't need. Here's a simplified explanation and modifications required:</p>
+<ol>
+<li>
+<p><strong>Base Image Setup</strong>: The file begins with specifying the base image for the application. We use the <code>qcrbox/base-application</code> as our starting point, utilizing the latest version available.
+    <div class="highlight"><pre><span></span><code><span class="k">ARG</span><span class="w"> </span>QCRBOX_DOCKER_TAG
+<span class="k">FROM</span><span class="w"> </span><span class="s">qcrbox/base-application:${QCRBOX_DOCKER_TAG}</span>
+</code></pre></div></p>
+</li>
+<li>
+<p><strong>Environment Setup</strong>: Specifies using <code>/bin/bash</code> for running future commands.
+    <div class="highlight"><pre><span></span><code><span class="k">SHELL</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;/bin/bash&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;-c&quot;</span><span class="p">]</span>
+</code></pre></div></p>
+</li>
+<li>
+<p><strong>Inclusion of QCrBox settings files</strong>: The following lines will copy the <code>/configure_*.py</code> and the <code>/config_*.yaml</code> to our container, that we have modified to integrate our program with QCrBox.</p>
+<div class="highlight"><pre><span></span><code><span class="k">COPY</span><span class="w"> </span>configure_cod_check.py<span class="w"> </span>./
+<span class="k">COPY</span><span class="w"> </span>config_cod_check.yaml<span class="w"> </span>./
+</code></pre></div>
+</li>
+<li>
+<p><strong>Module Inclusion</strong>: Ensure our module and its dependencies are included and properly set up in the container. For instance, add the Python module with:
+    <div class="highlight"><pre><span></span><code><span class="k">COPY</span><span class="w"> </span>./simple_cod_module.py<span class="w"> </span>./
+</code></pre></div></p>
+</li>
+<li>
+<p><strong>Dependency Management</strong>: Install necessary dependencies, like the <code>requests</code> module. Choose between using <code>micromamba</code> for Conda environments or <code>pip</code> for Python environments.</p>
+<ul>
+<li>For <code>micromamba</code>:
+    <div class="highlight"><pre><span></span><code><span class="k">RUN</span><span class="w"> </span>micromamba<span class="w"> </span>install<span class="w"> </span>-n<span class="w"> </span>qcrbox<span class="w"> </span>requests<span class="w"> </span>--yes
+</code></pre></div>
+  If you have a large number of dependencies, working with a <a href="https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#creating-an-environment-from-an-environment-yml-file">conda .yml</a> file is more sensible.</li>
+<li>For <code>pip</code>:
+    <div class="highlight"><pre><span></span><code><span class="k">RUN</span><span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>requests
+</code></pre></div></li>
+</ul>
+</li>
+<li>
+<p><strong>Delete unnecessary lines</strong>: The following two lines are not necessary for a Python application and should be deleted
+    ```Dockerfile
+    COPY sample_cmd.sh /opt/cod_check/bin/
+    ````</p>
+<p>```Dockerfile
+ENV PATH="$PATH:/opt/cod_check/bin/"
+````</p>
+</li>
+</ol>
+<h2 id="building-the-container-with-the-first-command-exposed">Building the container with the first command exposed<a class="headerlink" href="#building-the-container-with-the-first-command-exposed" title="Permanent link">#</a></h2>
+<p>To create a QCrBox image for our application, we'll execute a specific build command using the application slug defined earlier. Open your terminal and input the following command to start the build process:</p>
+<div class="highlight"><pre><span></span><code>qcb<span class="w"> </span>build<span class="w"> </span>cod_check
+</code></pre></div>
+<blockquote>
+<p><strong>Important Note:</strong> By default, <code>qcb build</code> without additional arguments performs a full rebuild of all dependencies to ensure everything is up-to-date. If you have recently completed a build and wish to save time, you can opt for the <code>--no-deps</code> argument. This option focuses solely on building the QCrBox image without updating the dependencies.</p>
+</blockquote>
+<p>After completing the build process, you can launch your newly created QCrBox image with the following command:</p>
+<div class="highlight"><pre><span></span><code>qcb<span class="w"> </span>up<span class="w"> </span>cod_check<span class="w"> </span>--no-rebuild-deps
+</code></pre></div>
+<p>This command starts the container without recompiling the image or its dependencies, assuming they were recently built. If you aim to update both dependencies and the image before launching, simply omit the <code>--no-rebuild-deps</code> flag. This ensures that your QCrBox image and all related components are fully up-to-date.</p>
+<h2 id="build-a-function-to-load-in-a-structure-from-the-best-matching-unit-cell">Build a function to load in a structure from the best matching unit cell<a class="headerlink" href="#build-a-function-to-load-in-a-structure-from-the-best-matching-unit-cell" title="Permanent link">#</a></h2>
+<p>Our goal is to incorporate atomic parameters from the most compatible structure within the COD into our CIF file. This allows us to bypass the structure solution phase if matching information is readily available. To achieve this, we introduce a new command into the <code>config_cod_check.yaml</code> file. Append the following new command definition at the end of the file:</p>
+<div class="highlight"><pre><span></span><code><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;merge_closest_cod_entry&quot;</span>
+<span class="w">    </span><span class="nt">implemented_as</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;python_callable&quot;</span><span class="w">  </span><span class="c1"># other options: &quot;python_callable&quot;</span>
+<span class="w">    </span><span class="nt">parameters</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;input_cif_path&quot;</span>
+<span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;str&quot;</span>
+<span class="w">        </span><span class="nt">default_value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">None</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;cellpar_deviation_perc&quot;</span>
+<span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;float&quot;</span>
+<span class="w">        </span><span class="nt">default_value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2.0</span>
+<span class="w">        </span><span class="nt">required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;listed_elements_only&quot;</span>
+<span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;bool&quot;</span>
+<span class="w">        </span><span class="nt">default_value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">        </span><span class="nt">required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">    </span><span class="nt">required_cif_entries</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span>
+<span class="w">      </span><span class="s">&quot;_cell_length_a&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;_cell_length_b&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;_cell_length_c&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;_cell_angle_alpha&quot;</span><span class="p p-Indicator">,</span>
+<span class="w">      </span><span class="s">&quot;_cell_angle_beta&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;_cell_angle_gamma&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;_chemical_formula_sum&quot;</span>
+<span class="w">    </span><span class="p p-Indicator">]</span>
+</code></pre></div>
+<p>You might notice that our required cif entries are exactly the same, as they are used by the same function within the <code>simple_cod_module.py</code> file. This might be fine in this case, as the number of entries is rather low, However, we would like to only define the set of entries once. In QCrBox we can do that using cif_entry_sets. At the end of the file we create a new entry set for our commands:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">cif_entry_sets</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;cell_elements&quot;</span>
+<span class="w">    </span><span class="nt">required</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span>
+<span class="w">      </span><span class="s">&quot;_cell_length_a&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;_cell_length_b&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;_cell_length_c&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;_cell_angle_alpha&quot;</span><span class="p p-Indicator">,</span>
+<span class="w">      </span><span class="s">&quot;_cell_angle_beta&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;_cell_angle_gamma&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;_chemical_formula_sum&quot;</span>
+<span class="w">    </span><span class="p p-Indicator">]</span>
+</code></pre></div>
+<p>Instead of writing the entries into the individual functions we now replace the <code>required_cif_entry</code> sections to have our command definition look like this:</p>
+<div class="highlight"><pre><span></span><code><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;merge_closest_cod_entry&quot;</span>
+<span class="w">    </span><span class="nt">implemented_as</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;python_callable&quot;</span><span class="w">  </span><span class="c1"># other options: &quot;python_callable&quot;</span>
+<span class="w">    </span><span class="nt">parameters</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;input_cif_path&quot;</span>
+<span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;str&quot;</span>
+<span class="w">        </span><span class="nt">default_value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">None</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;cellpar_deviation_perc&quot;</span>
+<span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;float&quot;</span>
+<span class="w">        </span><span class="nt">default_value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2.0</span>
+<span class="w">        </span><span class="nt">required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;listed_elements_only&quot;</span>
+<span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;bool&quot;</span>
+<span class="w">        </span><span class="nt">default_value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">        </span><span class="nt">required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">    </span><span class="nt">required_cif_entry_sets</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;cell_elements&quot;</span><span class="p p-Indicator">]</span>
+</code></pre></div>
+<p>Try to update the definition of the <code>get_number_fitting_cod_entries</code> on your own. Note that you can have multiple cif entry sets. You can also combine entry sets with individual keywords to mix and match whatever your commands need.</p>
+<h2 id="developing-the-python-glue-code-for-our-merge-command">Developing the Python Glue Code for Our Merge Command.<a class="headerlink" href="#developing-the-python-glue-code-for-our-merge-command" title="Permanent link">#</a></h2>
+<p>We will now modify the <code>configure_cod_check.py</code> file to add the new functionality. We will use more functionality from both QCrBoxtools and our COD module. Our input section should now look like this:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">qcrbox.registry.client</span> <span class="kn">import</span> <span class="n">QCrBoxRegistryClient</span>
+<span class="kn">from</span> <span class="nn">qcrboxtools.cif.cif2cif</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">cif_file_unified_yml_instr</span><span class="p">,</span>
+    <span class="n">cif_file_unify_split</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">qcrboxtools.cif.merge</span> <span class="kn">import</span> <span class="n">replace_structure_from_cif</span>
+
+<span class="kn">from</span> <span class="nn">simple_cod_module</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">cif_to_search_pars</span><span class="p">,</span>
+    <span class="n">get_number_fitting_cod_entries</span><span class="p">,</span>
+    <span class="n">get_fitting_cod_entries</span><span class="p">,</span>
+    <span class="n">download_cod_cif</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+<p>The <code>cif_file_unify_split</code> is the counterpart of the first function from cif2cif. We can use it to convert a non-unified cif to the unified set of entries. The <code>replace_structure_from_cif</code> function will do the actual replacement. The function <code>get_fitting_cod_entries</code> returns a list of dictionaries of cod entries, sorted by the sum of squared differences in the unit cell parameters. Finally, <code>download_cod_cif</code> can be used to download an entry from the cod.</p>
+<p>We can now implement our function</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">merge_closest_cod_entry</span><span class="p">(</span><span class="n">input_cif_path</span><span class="p">,</span> <span class="n">cellpar_deviation_perc</span><span class="p">,</span> <span class="n">listed_elements_only</span><span class="p">):</span>
+    <span class="c1"># cast the input parameters from strings to python objects</span>
+    <span class="n">work_cif_path</span><span class="p">,</span> <span class="n">cellpar_deviation</span><span class="p">,</span> <span class="n">listed_elements_only</span> <span class="o">=</span> <span class="n">parse_input</span><span class="p">(</span>
+        <span class="n">input_cif_path</span><span class="p">,</span> <span class="n">cellpar_deviation_perc</span><span class="p">,</span> <span class="n">listed_elements_only</span>
+    <span class="p">)</span>
+
+    <span class="c1"># get the list of fitting entries</span>
+    <span class="n">elements</span><span class="p">,</span> <span class="n">cell_dict</span> <span class="o">=</span> <span class="n">cif_to_search_pars</span><span class="p">(</span><span class="n">work_cif_path</span><span class="p">)</span>
+    <span class="n">entry_lst</span> <span class="o">=</span> <span class="n">get_fitting_cod_entries</span><span class="p">(</span><span class="n">elements</span><span class="p">,</span> <span class="n">cell_dict</span><span class="p">,</span> <span class="n">cellpar_deviation</span><span class="p">,</span> <span class="n">listed_elements_only</span><span class="p">)</span>
+
+    <span class="c1"># if no fitting entries found, raise an error</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">entry_lst</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No fitting entries found&quot;</span><span class="p">)</span>
+
+    <span class="c1"># download the cif file of the most fitting entry</span>
+    <span class="n">cod_cif_path</span> <span class="o">=</span> <span class="n">work_cif_path</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;cod.cif&quot;</span>
+    <span class="n">download_cod_cif</span><span class="p">(</span><span class="n">entry_lst</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;file&quot;</span><span class="p">],</span> <span class="n">cod_cif_path</span><span class="p">)</span>
+
+    <span class="c1"># convert to unified format</span>
+    <span class="n">unified_cod_path</span> <span class="o">=</span> <span class="n">work_cif_path</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;cod_unified.cif&quot;</span>
+    <span class="n">cif_file_unify_split</span><span class="p">(</span>
+        <span class="n">cod_cif_path</span><span class="p">,</span>
+        <span class="n">unified_cod_path</span><span class="p">,</span>
+        <span class="n">custom_categories</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;cod&quot;</span><span class="p">,</span> <span class="s2">&quot;iucr&quot;</span><span class="p">,</span> <span class="s2">&quot;olex2&quot;</span><span class="p">,</span> <span class="s2">&quot;shelx&quot;</span><span class="p">],</span>
+    <span class="p">)</span>
+
+    <span class="c1"># replace structure from input cif with the one from cod cif</span>
+    <span class="n">replace_structure_from_cif</span><span class="p">(</span><span class="n">input_cif_path</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">unified_cod_path</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">work_cif_path</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;output.cif&quot;</span><span class="p">)</span>
+</code></pre></div>
+<p>And finally we register that function with QCrBox by adding</p>
+<div class="highlight"><pre><span></span><code><span class="n">application</span><span class="o">.</span><span class="n">register_python_callable</span><span class="p">(</span><span class="s2">&quot;merge_closest_cod_entry&quot;</span><span class="p">,</span> <span class="n">merge_closest_cod_entry</span><span class="p">)</span>
+</code></pre></div>
+<p>right before <code>client.run()</code></p>
+<h2 id="rebuilding-and-restarting-the-container">Rebuilding and Restarting the Container<a class="headerlink" href="#rebuilding-and-restarting-the-container" title="Permanent link">#</a></h2>
+<p>If you have not done so you can shut down QCrBox by typing <code>qcb down</code>. You can now restart and rebuild the container by typing. Rebuilding without dependencies might be faster if you have just rebuid everything.</p>
+<div class="highlight"><pre><span></span><code>qcb<span class="w"> </span>up<span class="w"> </span>cod_check
+</code></pre></div>
+<h2 id="conclusion-and-final-remarks">Conclusion and final remarks<a class="headerlink" href="#conclusion-and-final-remarks" title="Permanent link">#</a></h2>
+<p>We have now exposed two commands in QCrbox from a Python module. One that only analyses a cif file to produce some output, and another one that works from an input cif file to an output cif. If you want to interact with what you have build, a ipython notebook you can put into the examples folder can be found <a href="../example_support/cod_wrapper.ipynb">here.</a></p>
+<p>For more examples you might consider looking into the already implemented programs in <code>services/applications</code>. If this tutorial is unclear at any point please raise an issue on Github with the specific problem that you ran into.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var tab,labels=set.querySelector(".tabbed-labels");for(tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12Z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+      <div class="md-progress" data-md-component="progress" role="progressbar"></div>
+    
+    
+    <script id="__config" type="application/json">{"base": "../..", "features": ["content.tabs.link", "navigation.expand", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.path", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "search.suggest", "toc.integrate"], "search": "../../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.bd41221c.min.js"></script>
+      
+        <script src="../../assets/_markdown_exec_pyodide.js"></script>
+      
+    
+  </body>
+</html>

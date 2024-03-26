@@ -1,0 +1,1364 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://qcrbox.github.io/QCrBox/latest/how_to_guides/set_up_a_dev_environment/">
+      
+      
+        <link rel="prev" href="../contents/">
+      
+      
+        <link rel="next" href="../use_qcb_to_interact_with_and_manage_qcrbox/">
+      
+      
+      <link rel="icon" href="../../images/logo_black.png">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.15">
+    
+    
+      
+        <title>Setting up a development environment - Quantum Crystallography Toolbox (QCrBox)</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.7e359304.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_markdown_exec_pyodide.css">
+    
+      <link rel="stylesheet" href="../../assets/_markdown_exec_ansi.css">
+    
+      <link rel="stylesheet" href="../../qcrbox_custom_styling.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="deep-purple" data-md-color-accent="purple">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#setting-up-a-development-environment" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Quantum Crystallography Toolbox (QCrBox)" class="md-header__button md-logo" aria-label="Quantum Crystallography Toolbox (QCrBox)" data-md-component="logo">
+      
+  <img src="../../images/logo_white.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Quantum Crystallography Toolbox (QCrBox)
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Setting up a development environment
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+    
+  
+  
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../contents/" class="md-tabs__link">
+          
+  
+  How to guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../tutorials/contents/" class="md-tabs__link">
+          
+  
+  Tutorials
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../technical_reference/contents/" class="md-tabs__link">
+          
+  
+  Technical reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../background_info/contents/" class="md-tabs__link">
+          
+  
+  Background info
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../ADRs/" class="md-tabs__link">
+          
+  
+  Architectural Decision Records
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../CHANGELOG/" class="md-tabs__link">
+        
+  
+    
+  
+  Changelog
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Quantum Crystallography Toolbox (QCrBox)" class="md-nav__button md-logo" aria-label="Quantum Crystallography Toolbox (QCrBox)" data-md-component="logo">
+      
+  <img src="../../images/logo_white.png" alt="logo">
+
+    </a>
+    Quantum Crystallography Toolbox (QCrBox)
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    How to guides
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            How to guides
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contents/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Contents
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Setting up a development environment
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Setting up a development environment
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#check-prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      Check prerequisites
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#clone-the-qcrbox-repository" class="md-nav__link">
+    <span class="md-ellipsis">
+      Clone the QCrBox repository
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#create-a-virtual-environment" class="md-nav__link">
+    <span class="md-ellipsis">
+      Create a virtual environment
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#install-the-qcrbox-python-package" class="md-nav__link">
+    <span class="md-ellipsis">
+      Install the qcrbox Python package
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Install the qcrbox Python package">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#alternative-installation-with-minimal-dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      Alternative: installation with minimal dependencies
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#alternative-installation-with-targeted-sets-of-extra-dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      Alternative: installation with targeted sets of extra dependencies
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#installing-pre-commit-hooks-for-development-on-qcrbox" class="md-nav__link">
+    <span class="md-ellipsis">
+      Installing pre-commit hooks (for development on qcrbox)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#verify-the-installation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Verify the installation
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#build-a-container-to-test-the-installation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Build a container to test the installation
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../use_qcb_to_interact_with_and_manage_qcrbox/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Using the `qcb` command line tool
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../handle_cifs/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Working with cif files in QCrBox
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Tutorials
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Tutorials
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/contents/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Contents
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/wrap_external_command/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Integrating a CLI program into QCrBox
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/wrap_python_command/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Integrating Python functionality into QCrBox
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_4" id="__nav_3_4_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Examples
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_4">
+            <span class="md-nav__icon md-icon"></span>
+            Examples
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/examples/example_olex2/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Interacting with Olex2
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/examples/example_xharpy/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Interacting with XHARPy
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/examples/example_eval/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Interacting with Eval14/15
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/examples/example_crystal_explorer/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Interacting with CrystalExplorer
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/examples/example_qcrboxtools/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Interacting with QCrBoxTools
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Technical reference
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            Technical reference
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../technical_reference/contents/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Contents
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Background info
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Background info
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../background_info/contents/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Background Information
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Architectural Decision Records
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            Architectural Decision Records
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ADRs/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    What are ADRs?
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CHANGELOG/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Changelog
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+<h1 id="setting-up-a-development-environment">Setting up a development environment<a class="headerlink" href="#setting-up-a-development-environment" title="Permanent link">#</a></h1>
+<h2 id="check-prerequisites">Check prerequisites<a class="headerlink" href="#check-prerequisites" title="Permanent link">#</a></h2>
+<p>Make sure you have the necessary prerequisites installed.</p>
+<div class="admonition info inline end">
+<p class="admonition-title">Info</p>
+<p>QCrBox has been tested with the versions of Python and Docker
+listed here, but other recent versions should also work. Please
+<a href="https://github.com/QCrBox/QCrBox/issues/new" target="_blank">raise an issue</a>
+on GitHub if you experience any problems.</p>
+</div>
+<div class="highlight"><pre><span></span><code>$ python --version
+Python 3.11.5
+
+$ docker --version
+Docker version 24.0.6, build ed223bc
+
+$ docker compose version
+Docker Compose version v2.21.0
+</code></pre></div>
+<h2 id="clone-the-qcrbox-repository">Clone the QCrBox repository<a class="headerlink" href="#clone-the-qcrbox-repository" title="Permanent link">#</a></h2>
+<div class="highlight"><pre><span></span><code>$ git clone https://github.com/QCrBox/QCrBox.git
+$ cd QCrBox
+</code></pre></div>
+<h2 id="create-a-virtual-environment">Create a virtual environment<a class="headerlink" href="#create-a-virtual-environment" title="Permanent link">#</a></h2>
+<p>Create a virtual environment for the <code>qcrbox</code> Python package and activate it.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:3"><input checked="checked" id="linuxmac-os" name="__tabbed_1" type="radio" /><input id="windows-powershell" name="__tabbed_1" type="radio" /><input id="windows-command-line" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="linuxmac-os">Linux/Mac OS</label><label for="windows-powershell">Windows (Powershell)</label><label for="windows-command-line">Windows (command line)</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code>$ python -m venv ./venv
+$ source ./venv/bin/activate
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code>$ python -m venv .\venv
+$ .\venv\Scripts\activate.ps1
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code>$ python -m venv .\venv
+$ .\venv\Scripts\activate.bat
+</code></pre></div>
+</div>
+</div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>In this guide we use a "vanilla" Python <a href="https://docs.python.org/3/library/venv.html">virtual environment</a>
+because it does not require any additional dependencies.
+If you use a custom package manager such as <code>poetry</code> or <code>conda</code>
+you can of course adapt the previous step to your specific setup.</p>
+</div>
+<p>Let's also update <code>pip</code> to its latest version and install the <code>uv</code> package installer (which is <em>much</em> faster than the
+standard <code>pip</code> installer).
+<div class="highlight"><pre><span></span><code>(venv) $ python -m pip install --upgrade pip uv
+</code></pre></div></p>
+<h2 id="install-the-qcrbox-python-package">Install the <code>qcrbox</code> Python package<a class="headerlink" href="#install-the-qcrbox-python-package" title="Permanent link">#</a></h2>
+<p>Next, install the <code>qcrbox</code> package itself.
+<div class="highlight"><pre><span></span><code>$ uv pip install -e ./qcrbox[all]
+</code></pre></div>
+This command installs the <code>qcb</code> command line tool, which acts as the command line interface for the
+Quantum Crystallography Toolbox, together with all extra dependencies needed for  development. These
+extra dependencies include developer tools for testing, code formatting and linting; packages needed
+to run the QCrBox server &amp; client locally, and packages needed to build and serve the documentation.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The above command uses the <code>-e</code> switch to install <code>qcrbox</code> in <a href="https://setuptools.pypa.io/en/latest/userguide/development_mode.html">editable mode</a>.
+This means that any changes we make to the code during development are automatically picked up in our local installation
+without having to reinstall/upgrade the <code>qcrbox</code> package.</p>
+</div>
+<h3 id="alternative-installation-with-minimal-dependencies">Alternative: installation with minimal dependencies<a class="headerlink" href="#alternative-installation-with-minimal-dependencies" title="Permanent link">#</a></h3>
+<p>If you only care about being able to run the <code>qcb</code> command line tool (which is needed in order to build and run the
+QCrBox docker containers) but not about any other development capabilities, you can choose to install <code>qcrbox</code> with
+only a minimal set of dependencies as follows.
+<div class="highlight"><pre><span></span><code>(venv) $ uv pip install -e ./qcrbox
+</code></pre></div></p>
+<h3 id="alternative-installation-with-targeted-sets-of-extra-dependencies">Alternative: installation with targeted sets of extra dependencies<a class="headerlink" href="#alternative-installation-with-targeted-sets-of-extra-dependencies" title="Permanent link">#</a></h3>
+<p>QCrBox comes with several other sets of additional dependencies which can be specified in square brackets after <code>qcrbox</code>.</p>
+<p>If you only want to be able to build the documentation, for example, run the following command.
+<div class="highlight"><pre><span></span><code>(venv) $ uv pip install -e ./qcrbox[docs]
+</code></pre></div></p>
+<p>If you plan on developing QCrBox, making modifications to the code and/or submitting merge requests,
+you most likely want to install the <code>dev</code> dependencies, too.
+<div class="highlight"><pre><span></span><code>(venv) $ uv pip install -e ./qcrbox[dev]
+</code></pre></div></p>
+<p>Two other sets of additional dependencies are <code>qcrbox[client]</code> and <code>qcrbox[server]</code>, but these are mostly relevant
+for targeted installation inside the Docker containers.</p>
+<h2 id="installing-pre-commit-hooks-for-development-on-qcrbox">Installing pre-commit hooks (for development on <code>qcrbox</code>)<a class="headerlink" href="#installing-pre-commit-hooks-for-development-on-qcrbox" title="Permanent link">#</a></h2>
+<p>For development on <code>qcrbox</code>, you need to install the <a href="https://pre-commit.com/">pre-commit</a> hooks for linting,
+auto-formatting, etc. Make sure you have the dev dependencies installed (as described above), which ensures
+that the <code>pre-commit</code> tool is installed. Then run:
+<div class="highlight"><pre><span></span><code>(venv) $ pre-commit install
+</code></pre></div>
+Now <code>pre-commit</code> will run automatically on <code>git commit</code>.</p>
+<h2 id="verify-the-installation">Verify the installation<a class="headerlink" href="#verify-the-installation" title="Permanent link">#</a></h2>
+<p>Verify that we can now run the <code>qcb</code> command line tool, which is the main CLI interface
+for interacting with QCrBx from the command line.</p>
+<div class="highlight"><pre><span></span><code><span class="gp">$ </span>qcb
+<span class="go">Usage: qcb [OPTIONS] COMMAND [ARGS]...</span>
+
+<span class="go">  Command line interface for the Quantum Crystallography Toolbox.</span>
+
+<span class="go">Options:</span>
+<span class="go">  -v, --verbose  Enables verbose mode (will print debugging messages about</span>
+<span class="go">                 actions performed). [default: False]</span>
+<span class="go">  -h, --help     Show this message and exit.</span>
+
+<span class="go">Commands:</span>
+<span class="go">  build    Build QCrBox components.</span>
+<span class="go">  docs     Build/serve the documentation.</span>
+<span class="go">  down     Shut down QCrBox components.</span>
+<span class="go">  init     Create boilerplate template for a new application.</span>
+<span class="go">  invoke   Invoke a registered command with given arguments.</span>
+<span class="go">  list     List registered resources (applications, commands, etc.)</span>
+<span class="go">  up       Start up QCrBox components.</span>
+<span class="go">  version  Print the qcrbox version.</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><span class="gp">$ </span>qcb<span class="w"> </span>version
+<span class="go">0.0.2.dev0+g6fd2b03.d20240326</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><span class="gp">$ </span>qcb<span class="w"> </span>list<span class="w"> </span>components
+<span class="go">qcrbox-message-bus</span>
+<span class="go">qcrbox-registry</span>
+<span class="go">qcrbox-nextflow</span>
+<span class="go">crystal-explorer</span>
+<span class="go">eval1x</span>
+<span class="go">olex2</span>
+<span class="go">qcrboxtools</span>
+<span class="go">shelx</span>
+<span class="go">xharpy-gpaw</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><span class="gp">$ </span>qcb<span class="w"> </span>list<span class="w"> </span>components<span class="w"> </span>--all
+<span class="go">base-ancestor</span>
+<span class="go">base-application</span>
+<span class="go">base-novnc</span>
+<span class="go">qcrbox-message-bus</span>
+<span class="go">qcrbox-registry</span>
+<span class="go">qcrbox-nextflow</span>
+<span class="go">crystal-explorer</span>
+<span class="go">eval1x</span>
+<span class="go">olex2</span>
+<span class="go">qcrboxtools</span>
+<span class="go">shelx</span>
+<span class="go">xharpy-gpaw</span>
+</code></pre></div>
+<h2 id="build-a-container-to-test-the-installation">Build a container to test the installation<a class="headerlink" href="#build-a-container-to-test-the-installation" title="Permanent link">#</a></h2>
+<p>Try building a component by typing:
+<div class="highlight"><pre><span></span><code>$ qcb build qcrboxtools
+</code></pre></div></p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>There were issues with running hatchling under Windows 11, especially when using a Python version from the Windows Store. If <code>qcb build</code> fails during <code>Building Python package: qcrbox</code> with a code 106 error (or silently when running without <code>-v</code>), try the following remedy:</p>
+<ol>
+<li>Uninstall the Windows Store Python version using the app uninstall of Windows</li>
+<li>Get a new installer from <a href="https://www.python.org/">python.org</a></li>
+<li>Install. Activate support for long paths and add Python to path</li>
+<li>Delete the venv folder and create a new one with the new Python version</li>
+</ol>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var tab,labels=set.querySelector(".tabbed-labels");for(tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12Z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+      <div class="md-progress" data-md-component="progress" role="progressbar"></div>
+    
+    
+    <script id="__config" type="application/json">{"base": "../..", "features": ["content.tabs.link", "navigation.expand", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.path", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "search.suggest", "toc.integrate"], "search": "../../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.bd41221c.min.js"></script>
+      
+        <script src="../../assets/_markdown_exec_pyodide.js"></script>
+      
+    
+  </body>
+</html>
