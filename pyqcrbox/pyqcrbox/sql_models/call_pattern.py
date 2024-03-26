@@ -3,7 +3,7 @@ from typing import Annotated
 
 from pydantic import AfterValidator
 
-__all__ = ["CallPattern", "ImportPath"]
+__all__ = ["CallPattern"]
 
 
 def remove_linebreaks(value: str) -> str:
@@ -33,14 +33,4 @@ class CallPatternString(str):
 CallPattern = Annotated[
     str,
     AfterValidator(CallPatternString),
-]
-
-
-class ImportPathString(str):
-    pass
-
-
-ImportPath = Annotated[
-    str,
-    AfterValidator(ImportPathString),
 ]

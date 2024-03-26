@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MPL-2.0
 
-import asyncio
+import multiprocessing.pool
 from abc import ABCMeta, abstractmethod
 from enum import Enum
 
@@ -70,30 +70,23 @@ class ExternalCmdCalculation(BaseCalculation):
 
 
 class PythonCallableCalculation(BaseCalculation):
-    def __init__(self, future: asyncio.Future):
+    def __init__(self, result: multiprocessing.pool.ApplyResult):
         super().__init__()
-        self.future = future
-        self._status_details = None
+        self._apply_result = result
+        # self._status_details = None
+        self.return_value = None
 
     @property
     def status(self) -> CalculationStatus:
-        try:
-            if self.future.running():
-                status = CalculationStatus.RUNNING
-            elif self.future.done():
-                # TODO: this branch will also be executed if the future has been cancelled! We should handle this.
-                self._status_details = self.future.result()
-                status = CalculationStatus.COMPLETED
+        if self._apply_result.ready():
+            if self._apply_result.successful():
+                self.return_value = self._apply_result.get()
+                return CalculationStatus.COMPLETED
             else:
-                status = CalculationStatus.UNKNOWN
-        except Exception as exc:
-            self._status_details = {
-                "msg": f"An error occurred when trying to determine the status of the future: {exc}"
-            }
-            status = CalculationStatus.UNKNOWN
+                return CalculationStatus.FAILED
+        else:
+            return CalculationStatus.RUNNING
 
-        return status
-
-    @property
-    async def status_details(self) -> dict:
-        return self._status_details
+    # @property
+    # async def status_details(self) -> dict:
+    #     return self._status_details

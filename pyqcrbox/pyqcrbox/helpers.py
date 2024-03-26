@@ -1,3 +1,4 @@
+import time
 from uuid import uuid4
 
 from faststream import Logger, apply_types
@@ -21,3 +22,10 @@ def generate_correlation_id(logger: Logger):
 
 def create_unique_id(*, prefix=""):
     return f"{prefix}0x{uuid4().hex}"
+
+
+def print_and_sleep(duration: float = 1.0):
+    print("Hello world!")
+    time.sleep(duration)
+    print("Goodbye.")
+    return f"Successfully slept for {duration:.1f} seconds"
