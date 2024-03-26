@@ -28,7 +28,7 @@ commands:
          --n_cycles {ls_cycles} \
          --weight_cycles {weight_cycles}
     parameters:
-      - name: "cif_path"
+      - name: "input_cif_path"
         type: str
         default_value: null
       - name: "ls_cycles"
@@ -52,7 +52,7 @@ commands:
         --n_cycles {ls_cycles}
         --weight_cycles {weight_cycles}
     parameters:
-      - name: "cif_path"
+      - name: "input_cif_path"
         type: str
         default_value: null
       - name: "tsc_path"
@@ -77,7 +77,7 @@ commands:
         --structure_path {cif_path}
         --cmd_file_path {cmd_file_path}
     parameters:
-      - name: "cif_path"
+      - name: "input_cif_path"
         type: str
         default_value: null
       - name: "cmd_file_path"

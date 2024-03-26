@@ -1,7 +1,7 @@
 nav:
-  - Contents: index.md
-  - tutorials
+  - "": index.md
   - how_to_guides
+  - tutorials
   - technical_reference
   - background_info
   - ADRs

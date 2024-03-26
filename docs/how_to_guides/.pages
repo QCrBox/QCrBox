@@ -1,3 +1,5 @@
 nav:
   - Contents: contents.md
   - set_up_a_dev_environment.md
+  - handle_cifs.md
+  - ...

@@ -1,41 +1,15 @@
 # SPDX-License-Identifier: MPL-2.0
 
 import os
+import shutil
 import subprocess
-import textwrap
 
 from loguru import logger
 
 from .compose_file_config import ComposeFileConfig
-from .qcrbox_helpers import get_current_qcrbox_version
+from .qcrbox_helpers import QCrBoxSubprocessError, get_current_qcrbox_version, prettyprint_called_process_error
 
 __all__ = ["DockerProject"]
-
-
-class QCrBoxSubprocessError(Exception):
-    """
-    Custom exception to indicate errors during the build process of QCrBox components.
-    """
-
-
-def prettyprint_called_process_error(exc: subprocess.CalledProcessError):
-    cmd = " ".join(exc.cmd)
-    prefix = " " * 24
-    captured_stdout = textwrap.indent(f"\n\n{exc.stdout.decode()}\n" if exc.stdout else "(not captured)", prefix=prefix)
-    captured_stderr = textwrap.indent(f"\n\n{exc.stderr.decode()}\n" if exc.stderr else "(not captured)", prefix=prefix)
-    msg = textwrap.dedent(
-        f"""\
-        An error occurred when executing the following command:
-
-            {cmd}
-
-        Return code: {exc.returncode}
-
-        Captured stdout: {captured_stdout}
-        Captured stderr: {captured_stderr}
-        """
-    )
-    return msg
 
 
 class DockerProject:
@@ -62,15 +36,17 @@ class DockerProject:
         return self.compose_file_config.get_dependency_chain(service_name, include_build_deps=include_build_deps)
 
     def build_single_docker_image(self, target_image: str, dry_run: bool = False, capture_output: bool = False):
-        logger.info(f"Building docker image: {target_image}", dry_run=dry_run)
+        action_descr = "Building" if not dry_run else "Would build"
+        logger.info(f"{action_descr} docker image: {target_image}", dry_run=dry_run)
         self.run_docker_compose_command("build", target_image, dry_run=dry_run, capture_output=capture_output)
 
     def _construct_docker_compose_command(self, cmd: str, *cmd_args: str):
         env_dev_file = self.repo_root.joinpath(".env.dev")
 
+        docker_executable = shutil.which("docker")
         cmd = (
             [
-                "docker",
+                docker_executable,
                 "compose",
                 f"--project-name={self.project_name}",
                 f"--env-file={env_dev_file}",
@@ -84,14 +60,19 @@ class DockerProject:
 
     def run_docker_compose_command(self, cmd: str, *cmd_args: str, dry_run: bool = False, capture_output: bool = False):
         full_cmd = self._construct_docker_compose_command(cmd, *cmd_args)
-        logger.debug(f"Running docker compose command: {' '.join(full_cmd)!r}", dry_run=dry_run)
+        action_descr = "Running" if not dry_run else "Would run"
+        logger.debug(f"{action_descr} docker compose command: {' '.join(full_cmd)!r}", dry_run=dry_run)
 
         custom_env = os.environ.copy()
         custom_env["QCRBOX_PYTHON_PACKAGE_VERSION"] = get_current_qcrbox_version()
         logger.debug(f"Current qcrbox version: {custom_env['QCRBOX_PYTHON_PACKAGE_VERSION']}", dry_run=dry_run)
 
         if not dry_run:
-            proc = subprocess.run(full_cmd, env=custom_env, shell=False, check=False, capture_output=capture_output)
+            try:
+                proc = subprocess.run(full_cmd, env=custom_env, shell=False, check=False, capture_output=capture_output)
+            except Exception as exc:
+                raise QCrBoxSubprocessError(f"Error when trying to run docker compose command: {exc}")
+
             try:
                 proc.check_returncode()
             except subprocess.CalledProcessError as exc:
@@ -100,7 +81,8 @@ class DockerProject:
             return proc
 
     def start_up_docker_containers(self, target_containers: list[str], dry_run):
-        logger.info(f"Starting up docker container(s): {', '.join(target_containers)}", dry_run=dry_run)
+        action_descr = "Starting" if not dry_run else "Would start"
+        logger.info(f"{action_descr} up docker container(s): {', '.join(target_containers)}", dry_run=dry_run)
         if not dry_run:
             self.run_docker_compose_command("up", "-d", *target_containers, dry_run=dry_run)
 

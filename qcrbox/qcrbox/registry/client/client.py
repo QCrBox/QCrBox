@@ -14,6 +14,7 @@ from qcrbox.common import get_qcrbox_registry_api_connection_url, get_rabbitmq_c
 
 from ...logging import logger
 from ..helpers import schedule_asyncio_task
+from .external_command import ExternalCommand
 from .helpers import create_new_container_qcrbox_id, create_new_private_routing_key
 from .message_processing import process_message_sync_or_async
 from .registered_application_client_side import RegisteredApplicationClientSide
@@ -206,3 +207,17 @@ class QCrBoxRegistryClient:
 
         self.event_loop.run_until_complete(main_task)
         self.event_loop.close()
+
+
+def main():
+    client = QCrBoxRegistryClient()
+    application = client.register_application("Dummy Application", version="x.y.z")
+    application.register_external_command(
+        "print_and_sleep",
+        ExternalCommand("python", "-c", "import time; print('Hello world!'); time.sleep(1); print('KTHXBYE')"),
+    )
+    client.run()
+
+
+if __name__ == "__main__":
+    main()
