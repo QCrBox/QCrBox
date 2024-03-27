@@ -7,7 +7,12 @@ import subprocess
 from loguru import logger
 
 from .compose_file_config import ComposeFileConfig
-from .qcrbox_helpers import QCrBoxSubprocessError, get_current_qcrbox_version, prettyprint_called_process_error
+from .qcrbox_helpers import (
+    QCrBoxSubprocessError,
+    get_current_pyqcrbox_version,
+    get_current_qcrbox_version,
+    prettyprint_called_process_error,
+)
 
 __all__ = ["DockerProject"]
 
@@ -64,7 +69,9 @@ class DockerProject:
         logger.debug(f"{action_descr} docker compose command: {' '.join(full_cmd)!r}", dry_run=dry_run)
 
         custom_env = os.environ.copy()
+        custom_env["PYQCRBOX_PYTHON_PACKAGE_VERSION"] = get_current_pyqcrbox_version()
         custom_env["QCRBOX_PYTHON_PACKAGE_VERSION"] = get_current_qcrbox_version()
+        logger.debug(f"Current pyqcrbox version: {custom_env['PYQCRBOX_PYTHON_PACKAGE_VERSION']}", dry_run=dry_run)
         logger.debug(f"Current qcrbox version: {custom_env['QCRBOX_PYTHON_PACKAGE_VERSION']}", dry_run=dry_run)
 
         if not dry_run:

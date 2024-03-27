@@ -1,0 +1,11 @@
+[run]
+branch = True
+
+[report]
+omit =
+    pyqcrbox/_version.py
+exclude_also =
+    def __repr__
+    raise NotImplementedError
+    if __name__ == .__main__.:
+    @(abc\.)?abstractmethod

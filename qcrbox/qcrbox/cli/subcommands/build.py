@@ -59,6 +59,26 @@ def make_action_to_copy_file(src, dest):
     return action_copy_file
 
 
+def make_action_to_build_pyqcrbox_wheel(base_ancestor_pyqcrbox_dist_dir):
+    def action_build_pyqcrbox_wheel():
+        repo_root = get_repo_root()
+        pyqcrbox_package_root = repo_root.joinpath("pyqcrbox")
+
+        try:
+            cmd = [shutil.which("hatch"), "build", "-t", "wheel", str(base_ancestor_pyqcrbox_dist_dir)]
+            proc = subprocess.run(cmd, cwd=pyqcrbox_package_root, shell=False, check=False, capture_output=True)
+        except Exception as exc:
+            raise QCrBoxSubprocessError(f"Error when trying to run docker compose command: {exc}")
+
+        try:
+            proc.check_returncode()
+        except subprocess.CalledProcessError as exc:
+            error_msg = prettyprint_called_process_error(exc)
+            raise QCrBoxSubprocessError(error_msg)
+
+    return action_build_pyqcrbox_wheel
+
+
 def make_action_to_build_qcrbox_wheel(base_ancestor_qcrbox_dist_dir):
     def action_build_qcrbox_wheel():
         repo_root = get_repo_root()
@@ -89,6 +109,30 @@ def task_clone_qcrboxtools_repo(dry_run: bool):
     if not dry_run:
         actions.append(f"git -C {target_dir} pull || git clone {qcrboxtools_repo_url} {target_dir}")
     return {"name": "task_clone_repo:qcrboxtools", "actions": actions}
+
+
+@make_task
+def task_build_pyqcrbox_python_package(dry_run: bool):
+    repo_root = get_repo_root()
+
+    action_descr = "Building" if not dry_run else "Would build"
+    actions = [lambda: logger.info(f"{action_descr} Python package: pyqcrbox", dry_run=dry_run)]
+    if not dry_run:
+        base_ancestor_pyqcrbox_dist_dir = repo_root.joinpath("services/base_images/base_ancestor/pyqcrbox_dist/")
+        requirements_files = list(repo_root.glob("pyqcrbox/requirements*.txt"))
+
+        action_build_pyqcrbox_wheel = make_action_to_build_pyqcrbox_wheel(base_ancestor_pyqcrbox_dist_dir)
+        actions_copy_requirements_files = [
+            make_action_to_copy_file(filename, base_ancestor_pyqcrbox_dist_dir) for filename in requirements_files
+        ]
+
+        actions += [action_build_pyqcrbox_wheel]
+        actions += actions_copy_requirements_files
+
+    return {
+        "name": "task_build_python_package:pyqcrbox",
+        "actions": actions,
+    }
 
 
 @make_task
@@ -123,7 +167,7 @@ def task_build_qcrboxtools_python_package(dry_run: bool):
     action_descr = "Building" if not dry_run else "Would build"
     actions = [lambda: logger.info(f"{action_descr} Python package: qcrboxtools", dry_run=dry_run)]
     if not dry_run:
-        base_ancestor_qcrbox_dist_dir = repo_root.joinpath("services/base_images/base_ancestor/qcrbox_dist/")
+        base_ancestor_qcrbox_dist_dir = repo_root.joinpath("services/base_images/base_ancestor/pyqcrbox_dist/")
         # requirements_files = list(qcrboxtools_package_root.glob("requirements*.txt"))
 
         action_build_qcrbox_wheel = (
@@ -160,7 +204,7 @@ def task_build_docker_image(service: str, docker_project: DockerProject, with_de
         dependent_services = docker_project.get_direct_dependencies(service, include_build_deps=True)
         task_deps = [f"task_build_service:{dep}" for dep in dependent_services]
         if service == "base-ancestor":
-            task_deps.append("task_build_python_package:qcrbox")
+            task_deps.append("task_build_python_package:pyqcrbox")
     else:
         task_deps = []
 
@@ -183,9 +227,13 @@ def populate_build_tasks(
 def update_build_tasks(
     existing_tasks: dict, component: str, docker_project: DockerProject, with_deps: bool, dry_run: bool
 ) -> None:
-    if component == "pyqcrbox":
+    if component == "qcrbox":
         new_tasks = [
             task_build_qcrbox_python_package(dry_run),
+        ]
+    elif component == "pyqcrbox":
+        new_tasks = [
+            task_build_pyqcrbox_python_package(dry_run),
         ]
     elif component == "pyqcrboxtools":
         new_tasks = [

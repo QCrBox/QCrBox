@@ -1,0 +1,38 @@
+#
+# Configuration for a dummy application used in tests
+#
+name: "Dummy Application"
+slug: "dummy_application"
+version: "x.y.z"
+description: "This is the greatest program ever"
+url: "https://www.example.com/"
+
+commands:
+  - name: "print_and_sleep"
+    implemented_as: "python_callable"
+    import_path: "pyqcrbox.helpers"
+    #callable_name: "print_and_sleep"
+
+
+  - name: "refine_iam"
+    implemented_as: "CLI"  # other options: "python_callable"
+    call_pattern: |
+      python /opt/qcrbox/olex2_glue_cli.py refine \
+         --structure_path {cif_path} \
+         --n_cycles {ls_cycles} \
+         --weight_cycles {weight_cycles}
+    parameters:
+      - name: "cif_path"
+        type: str
+        default_value: null
+      - name: "ls_cycles"
+        type: int
+        default_value: 5
+        required: False
+      - name: "weight_cycles"
+        type: int
+        default_value: 5
+        required: False
+    required_cif_entry_sets: ["cell_data", "diffraction_data", "atom_data"]
+    merge_cif_su: No
+    custom_cif_categories: ["iucr", "shelx"]

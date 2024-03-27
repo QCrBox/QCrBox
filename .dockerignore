@@ -9,5 +9,6 @@ playground
 venv
 **/node_modules
 
+services/base_images/base_ancestor/pyqcrbox_dist
 services/base_images/base_ancestor/qcrbox_dist
 shared_files
