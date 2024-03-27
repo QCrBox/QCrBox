@@ -29,6 +29,8 @@ shared_files/**
 # qcrbox Python package
 qcrbox/dist/
 qcrbox/qcrbox/_version.py
+#services/base_images/base_ancestor/pyqcrbox_dist/pyqcrbox-*.whl
+#services/base_images/base_ancestor/pyqcrbox_dist/requirements*.txt
 services/base_images/base_ancestor/qcrbox_dist/qcrbox-*.whl
 services/base_images/base_ancestor/qcrbox_dist/requirements*.txt
 
