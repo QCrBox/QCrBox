@@ -116,7 +116,7 @@ def create_server_faststream_app(
 
 
 async def main_async(max_messages=None, shutdown_delay: Optional[float] = None) -> None:
-    broker = RabbitBroker(graceful_timeout=10)
+    broker = RabbitBroker(url=settings.rabbitmq.url)
     server_app = create_server_faststream_app(broker, log_level="DEBUG")
     await server_app.run(max_messages=max_messages, shutdown_delay=shutdown_delay)
 
