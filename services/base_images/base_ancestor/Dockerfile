@@ -64,7 +64,7 @@ RUN eval "$(micromamba shell hook --shell bash)" && \
     ${MAMBA_EXE} clean -y --all --force-pkgs-dirs
 
 ##
-## Create python virtual environment for QCrBox and install the `qcbrox` package into it
+## Create python virtual environment for QCrBox and install the `qcrbox` package into it
 ##
 ARG QCRBOX_PYTHON_VENV_DIR=${QCRBOX_MAMBA_ENV_PATH}
 ENV QCRBOX_PYTHON_VENV_DIR=${QCRBOX_PYTHON_VENV_DIR}
