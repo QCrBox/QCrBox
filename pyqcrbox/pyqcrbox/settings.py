@@ -24,8 +24,8 @@ SQLiteDsn = Union[
 
 
 @functools.lru_cache
-def create_sqlmodel_engine(url: str, echo: bool, connect_args: tuple[(str, Any)]):
-    return create_engine(url, echo=echo, connect_args=connect_args)
+def create_sqlmodel_engine(url: Optional[SQLiteDsn], echo: bool, connect_args: tuple[(str, Any)]):
+    return create_engine(str(url), echo=echo, connect_args=connect_args)
 
 
 @functools.lru_cache
