@@ -1,9 +1,8 @@
-import math
 from typing import Optional
 
 import anyio
 from fastapi import FastAPI
-from faststream.rabbit.fastapi import Logger, RabbitRouter
+from faststream.rabbit.fastapi import Logger
 from faststream.types import SettingField
 from loguru import logger
 from pydantic import BaseModel
@@ -11,41 +10,7 @@ from uvicorn.config import Config
 from uvicorn.server import Server
 
 from pyqcrbox import settings
-
-
-class MsgCounter:
-    def __init__(self):
-        self._shutdown_event = anyio.Event()
-        self._max_messages = math.inf
-        self.msg_counter = 0
-        self.logger = logger
-
-    @property
-    def max_messages(self):
-        return self._max_messages
-
-    def increment_processed_message_counter(self):
-        self.msg_counter += 1
-        self.logger.debug(f"Current message count: {self.msg_counter}")
-        if self.msg_counter >= self._max_messages:
-            self.logger.info(f"Reached maximum number of messages ({self._max_messages}), shutting down.")
-            self.request_shutdown()
-
-    def request_shutdown(self):
-        self._shutdown_event.set()
-
-
-class QCrBoxRabbitRouter(RabbitRouter):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._msg_counter = MsgCounter()
-
-    def increment_processed_message_counter(self):
-        self._msg_counter.increment_processed_message_counter()
-
-
-# router = RabbitRouter("amqp://guest:guest@localhost:5672/")
-router = QCrBoxRabbitRouter(settings.rabbitmq.url)
+from pyqcrbox.registry.router import QCrBoxRabbitRouter, router
 
 
 class Incoming(BaseModel):
@@ -77,7 +42,8 @@ class QCrBoxFastAPI(FastAPI):
         shutdown_delay: Optional[float] = None,
         run_extra_options: Optional[dict[str, SettingField]] = None,
     ) -> None:
-        """Run QCrBoxFastStream Application.
+        """
+        Run QCrBoxFastStream Application.
 
         Args:
             max_messages: maximum number of messages to process before shutting down
