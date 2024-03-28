@@ -100,7 +100,7 @@ class QCrBoxFastAPI(FastAPI):
         try:
             # uvicorn.run("pyqcrbox.registry.base_fastapi_v2:app", host="0.0.0.0", port=8007, reload=True)
             # uvicorn.run(self, host="0.0.0.0", port=8007, reload=False)
-            config = Config(self, host="0.0.0.0", port=8009)
+            config = Config(self, host=settings.registry.host, port=settings.registry.port)
             server = Server(config=config)
             anyio.run(server.serve)
         except Exception as exc:
