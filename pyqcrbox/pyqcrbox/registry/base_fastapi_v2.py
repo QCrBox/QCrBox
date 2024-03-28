@@ -4,7 +4,10 @@ from faststream.rabbit.fastapi import Logger, RabbitRouter
 from loguru import logger
 from pydantic import BaseModel
 
-router = RabbitRouter("amqp://guest:guest@localhost:5672/")
+from pyqcrbox import settings
+
+# router = RabbitRouter("amqp://guest:guest@localhost:5672/")
+router = RabbitRouter(settings.rabbitmq.url)
 
 
 class Incoming(BaseModel):
