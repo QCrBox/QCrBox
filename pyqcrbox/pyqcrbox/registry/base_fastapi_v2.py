@@ -27,12 +27,17 @@ async def hello_http():
     return "Hello, HTTP!"
 
 
-app = FastAPI(lifespan=router.lifespan_context)
-app.include_router(router)
+class QCrBoxFastAPI(FastAPI):
+    def __init__(self, router: RabbitRouter):
+        super().__init__(lifespan=router.lifespan_context)
+        self.include_router(router)
+
+
+app = QCrBoxFastAPI(router)
 
 
 def main():
-    logger.info("Starting QCrBox registry server")
+    logger.info("Starting QCrBox server")
     try:
         uvicorn.run("pyqcrbox.registry.base_fastapi_v2:app", host="0.0.0.0", port=8007, reload=True)
     except Exception as exc:
