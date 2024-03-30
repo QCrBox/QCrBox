@@ -1,9 +1,9 @@
 [project]
-name = "qcrbox"
+name = "qcrbox_wrapper"
 authors = [
   { name="Paul Niklas Ruth", email="paul.n.ruth@durham.ac.uk" },
 ]
-description = "Quantum Crystallography Toolbox"
+description = "Quantum Crystallography Toolbox Wrapper"
 readme = "README.md"
 requires-python = ">=3.7"
 classifiers = [
@@ -17,8 +17,8 @@ dynamic = [
 #]
 
 [project.optional-dependencies]
-env_file = [
-    "dotenv"
+env-file = [
+    "python-dotenv"
 ]
 
 [project.urls]
@@ -34,10 +34,10 @@ source = "vcs"
 raw-options = { root = ".." }
 
 [tool.setuptools_scm]
-version_file = "qcrbox/_version.py"
+version_file = "qcrbox_wrapper/_version.py"
 
 [tool.hatch.build.hooks.vcs]
-version-file = "qcrbox/_version.py"
+version-file = "qcrbox_wrapper/_version.py"
 
 [tool.hatch.build.targets.sdist]
 only-include = ["qcrbox_wrapper"]
