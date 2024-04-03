@@ -1,3 +1,17 @@
-from .qcrbox_wrapper import QcrBoxWrapper, QCrBoxApplication, QCrBoxCalculation, QCrBoxCalculationStatus, QCrBoxParameter, QCrBoxPathHelper
+from .qcrbox_wrapper import (
+    QCrBoxApplication,
+    QCrBoxCalculation,
+    QCrBoxCalculationStatus,
+    QCrBoxParameter,
+    QCrBoxPathHelper,
+    QCrBoxWrapper,
+)
 
-__name__ = ["QcrBoxWrapper", "QCrBoxApplication", "QCrBoxCalculation", "QCrBoxCalculationStatus", "QCrBoxParameter", "QCrBoxPathHelper"]
+__name__ = [
+    "QCrBoxWrapper",
+    "QCrBoxApplication",
+    "QCrBoxCalculation",
+    "QCrBoxCalculationStatus",
+    "QCrBoxParameter",
+    "QCrBoxPathHelper",
+]
