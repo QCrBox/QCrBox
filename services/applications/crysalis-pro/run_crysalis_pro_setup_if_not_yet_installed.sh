@@ -19,7 +19,14 @@ if [[ -n "${EXISTING_CRYSALIS_PRO_EXECUTABLE}" ]]; then
     exit 0
 fi
 
+# we still need a display for vcrun2015 to install properly
+Xvfb :99 &
+export DISPLAY=:99
+
 # Run CrysAlis Pro installer in silent mode
 wine ${QCRBOX_ROOT_DIR}/CrysAlisPro171.43.48a.exe /S /v/qn
 
+unset DISPLAY
+echo "CrysAlis Pro setup script finished. Killing Xvfb..."
+killall Xvfb
 echo "Done."
