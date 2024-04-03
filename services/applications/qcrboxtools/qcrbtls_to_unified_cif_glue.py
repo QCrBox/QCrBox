@@ -2,7 +2,7 @@ import argparse
 from pathlib import Path
 from typing import List, Optional
 
-from qcrboxtools.cif.cif2cif import cif_file_unify_split
+from qcrboxtools.cif.cif2cif import cif_file_to_unified
 
 
 def main():
@@ -46,8 +46,8 @@ def main():
     # Convert custom_categories from space-separated list to a Python list (if not None)
     custom_categories: Optional[List[str]] = args.custom_categories if args.custom_categories is not None else None
 
-    # Call the cif_file_unify_split function with the parsed arguments
-    cif_file_unify_split(
+    # Call the cif_file_to_unified function with the parsed arguments
+    cif_file_to_unified(
         input_cif_path=Path(args.input_cif_path),
         output_cif_path=Path(args.output_cif_path),
         convert_keywords=args.convert_keywords,

@@ -3,7 +3,7 @@ import os
 import shutil
 from pathlib import Path
 
-from qcrboxtools.cif.cif2cif import cif_file_unified_yml_instr, cif_file_unify_split
+from qcrboxtools.cif.cif2cif import cif_file_to_specific_by_yml, cif_file_to_unified
 from qcrboxtools.cif.merge import replace_structure_from_cif
 from qcrboxtools.robots.olex2 import Olex2Socket
 
@@ -19,7 +19,7 @@ def prepare__interactive(input_cif_path):
 
     # create a cif file using the requested cif entries in olex2 format
     # will most likely be handled internally by QCrBox in the future
-    cif_file_unified_yml_instr(input_cif_path, work_cif, YAML_PATH, "interactive")
+    cif_file_to_specific_by_yml(input_cif_path, work_cif, YAML_PATH, "interactive")
 
 
 def finalise__interactive(input_cif_path):
@@ -38,7 +38,7 @@ def finalise__interactive(input_cif_path):
     # TODO if not existing, rerun newest res with ACTA
 
     # Go to unified keywords and split SUs into separate entries
-    cif_file_unify_split(newest_cif_path, work_folder / "output.cif", custom_categories=["iucr", "olex2"])
+    cif_file_to_unified(newest_cif_path, work_folder / "output.cif", custom_categories=["iucr", "olex2"])
 
 
 def toparams__interactive(input_cif_path, par_json, par_folder):
@@ -55,7 +55,7 @@ def toparams__interactive(input_cif_path, par_json, par_folder):
         )
     )
 
-    cif_file_unify_split(newest_cif_path, par_folder / "combine.cif", custom_categories=["iucr", "olex2"])
+    cif_file_to_unified(newest_cif_path, par_folder / "combine.cif", custom_categories=["iucr", "olex2"])
 
     tojson = {"structure_cif": "$par_folder/combine.cif"}
     cif_text = (par_folder / "combine.cif").read_text().lower()
@@ -91,7 +91,7 @@ def redo__interactive(input_cif_path, par_json, par_folder):
 
     work_cif = work_folder / "work.cif"
 
-    cif_file_unified_yml_instr(merge_cif, work_cif, YAML_PATH, "interactive")
+    cif_file_to_specific_by_yml(merge_cif, work_cif, YAML_PATH, "interactive")
 
     olex2_socket = Olex2Socket(structure_path=work_cif)
     if "tsc" in par_dict:
@@ -102,7 +102,7 @@ def redo__interactive(input_cif_path, par_json, par_folder):
 
     _ = olex2_socket.refine(n_cycles=10, refine_starts=5)
 
-    cif_file_unify_split(work_cif, work_folder / "output.cif", custom_categories=["iucr", "olex2"])
+    cif_file_to_unified(work_cif, work_folder / "output.cif", custom_categories=["iucr", "olex2"])
 
 
 client = QCrBoxRegistryClient()
