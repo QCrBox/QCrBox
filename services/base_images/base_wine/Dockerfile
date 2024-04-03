@@ -6,7 +6,7 @@ USER root
 SHELL ["/bin/bash", "-c"]
 
 ARG WINE_BRANCH=staging
-ARG MONO_VERSION=7.4.0
+ARG MONO_VERSION=9.0.0
 ARG GECKO_VERSION=2.47.4
 
 # Install wine (https://www.winehq.org/)
