@@ -100,11 +100,11 @@ To begin, open the `configure_cod_check.py` file. Start by importing necessary f
 from pathlib import Path
 import json
 
-from qcrboxtools.cif.cif2cif import cif_file_unified_yml_instr
+from qcrboxtools.cif.cif2cif import cif_file_to_specific_by_yml
 from simple_cod_module import cif_to_search_pars, get_number_fitting_cod_entries
 ```
 
-The function `cif_file_unified_yml_instr` is designed to manage the CIF files' input and output, converting the CIF keywords used by QCrBox into those required by `simple_cod_module`. Additionally, we'll utilize two specific functions from `simple_cod_module` to execute our desired logic.
+The function `cif_file_to_specific_by_yml` is designed to manage the CIF files' input and output, converting the CIF keywords used by QCrBox into those required by `simple_cod_module`. Additionally, we'll utilize two specific functions from `simple_cod_module` to execute our desired logic.
 
 Let's proceed to define the necessary Python functions within `configure_cod_check.py`:
 
@@ -132,7 +132,7 @@ def parse_input(input_cif_path, cellpar_deviation_perc, listed_elements_only):
     work_cif_path = work_folder / "work.cif"
 
     # Adjust the CIF file according to the requirements of 'simple_cod_module'
-    cif_file_unified_yml_instr(
+    cif_file_to_specific_by_yml(
         input_cif_path=input_cif_path,
         output_cif_path=work_cif_path,
         yml_path=YAML_PATH,  # Referencing the edited YAML configuration
@@ -303,8 +303,8 @@ We will now modify the `configure_cod_check.py` file to add the new functionalit
 ```python
 from qcrbox.registry.client import QCrBoxRegistryClient
 from qcrboxtools.cif.cif2cif import (
-    cif_file_unified_yml_instr,
-    cif_file_unify_split,
+    cif_file_to_specific_by_yml,
+    cif_file_to_unified,
 )
 from qcrboxtools.cif.merge import replace_structure_from_cif
 
@@ -316,7 +316,7 @@ from simple_cod_module import (
 )
 ```
 
-The `cif_file_unify_split` is the counterpart of the first function from cif2cif. We can use it to convert a non-unified cif to the unified set of entries. The `replace_structure_from_cif` function will do the actual replacement. The function `get_fitting_cod_entries` returns a list of dictionaries of cod entries, sorted by the sum of squared differences in the unit cell parameters. Finally, `download_cod_cif` can be used to download an entry from the cod.
+The `cif_file_to_unified` is the counterpart of the first function from cif2cif. We can use it to convert a non-unified cif to the unified set of entries. The `replace_structure_from_cif` function will do the actual replacement. The function `get_fitting_cod_entries` returns a list of dictionaries of cod entries, sorted by the sum of squared differences in the unit cell parameters. Finally, `download_cod_cif` can be used to download an entry from the cod.
 
 We can now implement our function
 
@@ -341,7 +341,7 @@ def merge_closest_cod_entry(input_cif_path, cellpar_deviation_perc, listed_eleme
 
     # convert to unified format
     unified_cod_path = work_cif_path.parent / "cod_unified.cif"
-    cif_file_unify_split(
+    cif_file_to_unified(
         cod_cif_path,
         unified_cod_path,
         custom_categories=["cod", "iucr", "olex2", "shelx"],
