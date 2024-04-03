@@ -4,15 +4,18 @@
 
 ## Description
 
-qcrbox_wrapper is a Python package that provides a wrapper for the QCrBox libraries WebAPI, allowing easy integration of QCrBox functionality into your Python projects. It is meant to use a minimal amount of external dependencies. At the moment the only dependency is the `python-dotenv` package if you want to load from a `.env.dev` file. The package can also be used without that functionality.
+`qcrbox_wrapper` is a Python package that provides a wrapper for the QCrBox libraries WebAPI, allowing easy integration of QCrBox functionality into your Python projects. It is meant to use a minimal amount of external dependencies. At the moment the only dependency is the `python-dotenv` package if you want to load from a `.env.dev` file. Howeever, the `qcrbox_wrapper` package can also be used without that functionality.
 
 ## Installation
 
 To install qcrbox_wrapper, you can use pip:
 
+```bash
 pip install -e ./qcrbox_wrapper
+```
 
 However, all the functionality is contained within a single file (qcrbox_wrapper.py). So you can also just copy that file to your project, if that makes working with QCrBox more convenient.
+
 ## Use
 
 There are two main classes two start the interaction with the `qcrbox_wrapper`: Use `QCrBoxWrapper` for the interaction with your QCrBox Registry and `QCrBoxPathHelper` to more easily work with the two paths QCrBox uses. The one that that your local operating system sees and the one that the QCrBox containers see.
@@ -36,7 +39,7 @@ application = qcrbox.application_dict["application_name"]
 # print the available commands in that application:
 print(help(application))
 
-# Call a command and get the calculation object. 
+# Call a command and get the calculation object.
 calc = application.command_name(*args, **kwargs)
 
 # commands are executed asynchonously, if you want to wait until the calculation is done:
