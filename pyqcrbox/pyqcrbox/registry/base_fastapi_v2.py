@@ -27,7 +27,7 @@ async def hello(m: Incoming, logger: Logger):
 
 @router.get("/")
 async def hello_http():
-    return "Hello, HTTP!"
+    return "Hello from QCrBox!"
 
 
 class QCrBoxFastAPI(FastAPI):
