@@ -2,7 +2,6 @@ import os
 import shutil
 from pathlib import Path
 
-import pytest
 from dotenv import load_dotenv
 
 from qcrbox_wrapper import QCrBoxWrapper
@@ -13,7 +12,7 @@ load_dotenv(".env.dev")
 FILEPATH = Path(__file__).parent / "test_files_olex"
 
 
-@pytest.mark.serial
+# @pytest.mark.serial
 @with_temp_path_helper
 def test_refine_iam(tmp_path_helper):
     shutil.copy(FILEPATH / "refine_nonconv_nonHaniso.cif", tmp_path_helper.path_to_local("input.cif"))
@@ -30,7 +29,7 @@ def test_refine_iam(tmp_path_helper):
     assert calc.status.status == "completed"
 
 
-@pytest.mark.serial
+# @pytest.mark.serial
 @with_temp_path_helper
 def test_refine_tsc(tmp_path_helper):
     shutil.copy(FILEPATH / "refine_nonconv_nonHaniso.cif", tmp_path_helper.path_to_local("input.cif"))
