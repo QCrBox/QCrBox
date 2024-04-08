@@ -15,6 +15,10 @@ FILEPATH = Path(__file__).parent / "test_files_qcrboxtools"
 
 @with_temp_path_helper
 def test_check_convergence(tmp_path_helper):
+    """
+    Test whether the check_structure_convergence command of the QCrBoxTools container executes correctly
+    As the overhead is low, the correct output is checked as well.
+    """
     shutil.copy(FILEPATH / "difference_test1.cif", tmp_path_helper.path_to_local("input1.cif"))
     shutil.copy(FILEPATH / "difference_test2.cif", tmp_path_helper.path_to_local("input2.cif"))
 

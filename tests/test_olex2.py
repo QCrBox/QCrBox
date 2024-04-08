@@ -15,6 +15,10 @@ FILEPATH = Path(__file__).parent / "test_files_olex"
 # @pytest.mark.serial
 @with_temp_path_helper
 def test_refine_iam(tmp_path_helper):
+    """
+    Test whether the refinement command of the Olex2 container executes successfully (testing of
+    the functionality of the underlying implementation is done in QCrBoxTools' tests)
+    """
     shutil.copy(FILEPATH / "refine_nonconv_nonHaniso.cif", tmp_path_helper.path_to_local("input.cif"))
 
     qcrbox = QCrBoxWrapper(os.environ["QCRBOX_REGISTRY_HOST"], os.environ["QCRBOX_REGISTRY_PORT"])
