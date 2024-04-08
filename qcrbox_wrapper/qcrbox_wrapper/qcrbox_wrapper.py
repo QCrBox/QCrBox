@@ -689,7 +689,7 @@ class QCrBoxPathHelper:
         else:
             self.local_path = pathlib.Path(local_path) / base_dir
             self.qcrbox_path = pathlib.PurePosixPath(qcrbox_path) / base_dir
-        self.local_path.mkdir(exist_ok=True)
+        self.local_path.mkdir(exist_ok=True, parents=True)
 
     @classmethod
     def from_dotenv(cls, dotenv_name: str, base_dir: Optional[pathlib.Path] = None) -> "QCrBoxPathHelper":
