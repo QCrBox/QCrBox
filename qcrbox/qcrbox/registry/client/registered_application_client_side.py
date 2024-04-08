@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MPL-2.0
 
 import asyncio
+import sys
 from typing import Callable, Optional
 
 from loguru import logger
@@ -85,7 +86,9 @@ class RegisteredApplicationClientSide:
             self._command_callbacks[response.payload["command_id"]] = on_command_invoked
             logger.info(f"Successfully registered command {cmd_name!r}")
         elif response.status == "error":
-            raise Exception(response.msg)
+            logger.error("Received error response from server.")
+            logger.error(f"Error message: {response.msg}")
+            sys.exit(1)
         else:
             raise RuntimeError(f"Unexpected response status: {response.status}")
 

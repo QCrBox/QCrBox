@@ -1,4 +1,5 @@
 site_name: Quantum Crystallography Toolbox (QCrBox)
+site_url: https://qcrbox.github.io/QCrBox/
 site_dir: .build/docs_site
 theme:
   name: "material"
@@ -8,15 +9,19 @@ theme:
   # Default values, taken from mkdocs_theme.yml
   language: en
   features:
+    - content.tabs.link
     - navigation.expand
     - navigation.instant
     - navigation.instant.prefetch
+    - navigation.instant.progress
     - navigation.path
     - navigation.sections
     - navigation.tabs
     - navigation.tabs.sticky
     - navigation.top
-    #- navigation.tracking
+    - navigation.tracking
+    - search.suggest
+    - toc.integrate
   font:
     text: Roboto
     code: Roboto Mono
@@ -25,11 +30,18 @@ theme:
     accent: "purple"
   logo: "images/logo_white.png"
   favicon: "images/logo_black.png"
+extra_css:
+  - qcrbox_custom_styling.css
 
 plugins:
   - search
   - awesome-pages:
       collapse_single_pages: false
+  - mkdocs-jupyter:
+      ignore: ["tutorials/example_support/*"]
+      ignore_h1_titles: True
+  - markdown-exec:
+      ansi: required
 
 markdown_extensions:
 
@@ -65,6 +77,9 @@ markdown_extensions:
           format: !!python/name:pymdownx.superfences.fence_div_format
   - pymdownx.tabbed:
       alternate_style: true
+      slugify: !!python/object/apply:pymdownx.slugs.slugify
+        kwds:
+          case: lower
   - pymdownx.tasklist:
       custom_checkbox: true
   - pymdownx.tilde

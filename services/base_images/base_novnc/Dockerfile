@@ -11,7 +11,7 @@ SHELL ["/bin/bash", "-c"]
 USER root
 
 RUN apt-get update -y && \
-    apt-get install -y --no-install-recommends \
+    apt-get install -y --fix-missing --no-install-recommends \
         openbox menu tigervnc-standalone-server lxterminal xdg-utils \
         xvfb xdotool x11-utils zenity idesk nautilus gedit && \
     rm -rf /var/lib/apt/lists && \

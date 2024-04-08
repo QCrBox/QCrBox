@@ -1,7 +1,8 @@
 import argparse
+import hashlib
 from pathlib import Path
 
-from qcrboxtools.cif.cif2cif import cif_file_unified_yml_instr, cif_file_unify_split
+from qcrboxtools.cif.cif2cif import cif_file_to_specific_by_yml, cif_file_to_unified
 from qcrboxtools.robots.olex2 import Olex2Socket
 
 YAML_PATH = "./config_olex2.yaml"
@@ -11,9 +12,9 @@ def refine(args):
     structure_path = Path(args.structure_path)
     work_cif_path = structure_path.parent / "work.cif"
     if args.tsc_path:
-        cif_file_unified_yml_instr(structure_path, work_cif_path, YAML_PATH, "refine_tsc")
+        cif_file_to_specific_by_yml(structure_path, work_cif_path, YAML_PATH, "refine_tsc")
     else:
-        cif_file_unified_yml_instr(structure_path, work_cif_path, YAML_PATH, "refine_iam")
+        cif_file_to_specific_by_yml(structure_path, work_cif_path, YAML_PATH, "refine_iam")
 
     olex2_socket = Olex2Socket(structure_path=work_cif_path)
 
@@ -22,7 +23,7 @@ def refine(args):
 
     _ = olex2_socket.refine(n_cycles=args.n_cycles, refine_starts=args.weight_cycles)
 
-    cif_file_unify_split(
+    cif_file_to_unified(
         work_cif_path,
         structure_path.parent / "output.cif",
         custom_categories=["shelx", "olex2", "iucr"],
@@ -30,7 +31,14 @@ def refine(args):
 
 
 def run_commands(args):
-    olex2_socket = Olex2Socket(structure_path=args.structure_path)
+    structure_path = Path(args.structure_path)
+    work_cif_path = structure_path.parent / "work.cif"
+
+    cif_file_to_specific_by_yml(structure_path, work_cif_path, YAML_PATH, "run_cmds_file")
+
+    olex2_socket = Olex2Socket(structure_path=work_cif_path)
+
+    hash0 = hashlib.md5(work_cif_path.read_bytes()).hexdigest()
 
     if args.tsc_path:
         olex2_socket.tsc_path = args.tsc_path
@@ -38,6 +46,15 @@ def run_commands(args):
     cmd_string = Path(args.cmd_file_path).read_text(encoding="UTF-8")
 
     olex2_socket.send_command(cmd_string)
+
+    hash1 = hashlib.md5(work_cif_path.read_bytes()).hexdigest()
+
+    if hash0 != hash1:
+        cif_file_to_unified(
+            work_cif_path,
+            structure_path.parent / "output.cif",
+            custom_categories=["shelx", "olex2", "iucr"],
+        )
 
 
 def main():

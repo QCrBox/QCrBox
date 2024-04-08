@@ -16,6 +16,7 @@ dynamic = [
 dependencies = [
     "anyio~=3.7.1",
     "click",
+    "cookiecutter",
     "doit",
     "gitpython",
     "hatch",
@@ -31,7 +32,6 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "cookiecutter",
     "ipdb",
     "ipython",
     "pip-tools",
@@ -41,8 +41,10 @@ dev = [
     "setuptools_scm",
 ]
 docs = [
+    "markdown-exec",
     "mkdocs",
     "mkdocs-awesome-pages-plugin",
+    "mkdocs-jupyter",
     "mkdocs-material",
     "pymdown-extensions",
 ]
@@ -67,6 +69,7 @@ all = [
 [project.scripts]
 qcb = "qcrbox.cli:entry_point"
 qcrbox-run-registry-server = "qcrbox.registry.server:main"
+qcrbox-run-dummy-client = "qcrbox.registry.client.client:main"
 
 [build-system]
 requires = ["hatchling", "hatch-vcs"]

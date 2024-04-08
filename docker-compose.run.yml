@@ -1,5 +1,3 @@
-version: "${QCRBOX_COMPOSE_FILE_VERSION:?Must set env var QCRBOX_COMPOSE_FILE_VERSION}"
-
 services:
   qcrbox-message-bus:
     image: "qcrbox/message-bus:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
