@@ -41,7 +41,7 @@ dev = [
     "setuptools_scm",
 ]
 docs = [
-    "markdown-exec",
+    "markdown-exec[ansi]",
     "mkdocs",
     "mkdocs-awesome-pages-plugin",
     "mkdocs-jupyter",
