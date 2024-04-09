@@ -3,8 +3,8 @@
 import click
 
 from .cli_helpers import add_cli_option_to_enable_or_disable_components, add_verbose_option
+from .docker_project import DockerProject
 
-# from .docker_project import DockerProject
 # from .doit_helpers import make_task, run_tasks
 # from .qcrbox_helpers import (
 #     QCrBoxSubprocessError,

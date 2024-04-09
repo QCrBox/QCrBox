@@ -15,11 +15,13 @@ dynamic = [
 ]
 dependencies = [
     "faststream[rabbit, docs]>=0.4.4",
+    "gitpython",
     "hatch",
     "loguru",
     "pydantic",
     "pydantic-settings",
     "sqlmodel",
+    "tabulate",
 ]
 
 [project.optional-dependencies]
