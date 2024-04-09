@@ -3,7 +3,7 @@ import logging
 from typing import Optional
 
 import anyio
-from faststream import Logger
+from faststream import Logger, apply_types
 from faststream.rabbit import RabbitBroker
 
 from pyqcrbox import msg_specs, settings
@@ -28,6 +28,7 @@ def create_server_faststream_app(
         logger.info("Finished initialising database...")
 
     @broker.subscriber(public_queue)
+    @apply_types
     async def on_qcrbox_registry(msg: dict, logger: Logger) -> Optional[msg_specs.QCrBoxGenericResponse]:
         msg_debug = json.dumps(msg)
         msg_debug_abbrev = msg_debug[:800] + " ..."
