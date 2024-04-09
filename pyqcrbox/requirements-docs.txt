@@ -11,7 +11,6 @@ anyio==4.3.0
     #   fast-depends
     #   faststream
     #   httpx
-    #   starlette
 appnope==0.1.4
     # via ipykernel
 asttokens==2.4.1
@@ -43,7 +42,6 @@ click==8.1.7
     #   mkdocs
     #   typer
     #   userpath
-    #   uvicorn
 cloudpickle==3.0.0
     # via doit
 colorama==0.4.6
@@ -65,11 +63,9 @@ executing==2.0.1
     # via stack-data
 fast-depends==2.4.2
     # via faststream
-fastapi==0.110.1
-    # via faststream
 fastjsonschema==2.19.1
     # via nbformat
-faststream==0.4.7
+faststream==0.5.0rc2
 filelock==3.13.4
     # via virtualenv
 ghp-import==2.1.0
@@ -80,9 +76,7 @@ gitpython==3.1.43
 greenlet==3.0.3
     # via sqlalchemy
 h11==0.14.0
-    # via
-    #   httpcore
-    #   uvicorn
+    # via httpcore
 hatch==1.9.4
 hatchling==1.21.1
     # via hatch
@@ -243,7 +237,6 @@ pure-eval==0.2.2
 pydantic==2.6.4
     # via
     #   fast-depends
-    #   fastapi
     #   pydantic-settings
     #   sqlmodel
 pydantic-core==2.16.3
@@ -316,8 +309,6 @@ sqlalchemy==2.0.29
 sqlmodel==0.0.16
 stack-data==0.6.3
     # via ipython
-starlette==0.37.2
-    # via fastapi
 tabulate==0.9.0
 tinycss2==1.2.1
     # via nbconvert
@@ -348,7 +339,6 @@ typer==0.12.3
     # via faststream
 typing-extensions==4.11.0
     # via
-    #   fastapi
     #   faststream
     #   ipython
     #   pydantic
@@ -359,8 +349,6 @@ urllib3==2.2.1
     # via requests
 userpath==1.9.2
     # via hatch
-uvicorn==0.29.0
-    # via faststream
 virtualenv==20.25.1
     # via hatch
 watchdog==4.0.0

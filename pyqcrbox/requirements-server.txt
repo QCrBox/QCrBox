@@ -35,8 +35,7 @@ editables==0.5
 fast-depends==2.4.2
     # via faststream
 fastapi==0.110.1
-    # via faststream
-faststream==0.4.7
+faststream==0.5.0rc2
 filelock==3.13.4
     # via virtualenv
 gitdb==4.0.11
@@ -163,7 +162,6 @@ typing-extensions==4.11.0
 userpath==1.9.2
     # via hatch
 uvicorn==0.29.0
-    # via faststream
 uvloop==0.19.0
     # via uvicorn
 virtualenv==20.25.1
