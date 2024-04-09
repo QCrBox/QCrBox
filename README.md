@@ -55,7 +55,7 @@ very welcome to [contact us](#get-in-touch).
 
 Do you have any questions, suggestions, want to get involved, or are simply curious to learn more?
 
-- Join our [Discord server](https://discord.gg/CWnQJvVv) to come and chat with us!
+- Join our [Discord server](https://discord.com/invite/eU2ya5psxH) to come and chat with us!
 - You can also show your support by giving our [GitHub repository](https://github.com/QCrBox/QCrBox) a star
 
 
