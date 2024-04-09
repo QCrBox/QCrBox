@@ -66,7 +66,7 @@ $ qcb build --all
     Building components that are disabled by default may require you to set certain environment variables
     or download password-protected files manually and placing them in the correct location. We will provide
     much better support for this in the future as part of the `qcb` toolchain. For the time being, please
-    [get in touch](https://discord.gg/CWnQJvVv) if you would like to build these and need support.
+    [get in touch](https://discord.com/invite/eU2ya5psxH) if you would like to build these and need support.
 
 
 ## Starting up containers
