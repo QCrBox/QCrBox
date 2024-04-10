@@ -14,7 +14,7 @@ commands:
     implemented_as: "GUI"  # other options: "python_callable"
     description: "Start Olex2 in interactive mode, this can be used to solve, refine and finish small-molecule crystal structures."
     parameters:
-      - name: "cif_path"
+      - name: "input_cif_path"
         type: "str"
         default_value: None
         description: "Path to the CIF file to open in Olex2."
@@ -26,7 +26,48 @@ commands:
     cif_output:
       required_cif_entry_sets: ["olex_structure_output", "olex2_only_interactive_output"]
       custom_cif_categories: ["iucr", "shelx"]
-
+    interactive_lifecycle:
+      prepare:
+        implemented_as: "python_callable"
+        module: "configure_olex2"
+        function: "prepare__interactive"
+        used_basecommand_parameters: ["input_cif_path"]
+      finalise:
+        implemented_as: "python_callable"
+        module: "configure_olex2"
+        function: "finalise__interactive"
+        used_basecommand_parameters: ["input_cif_path"]
+      toparams:
+        implemented_as: "python_callable"
+        module: "configure_olex2"
+        function: "toparams__interactive"
+        used_basecommand_parameters: ["input_cif_path"]
+        new_parameters:
+          - name: "parameter_json_path"
+            type: "str"
+            default_value: None
+            description: "Path to the JSON file to save the parameters for recreating the interactive result."
+          - name: "parameter_folder"
+            type: "str"
+            default_value: None
+            description: "Folder to save files needed as parameters for recreating the interactive result."
+      redo:
+        implemented_as: "python_callable"
+        module: "configure_olex2"
+        function: "redo__interactive"
+        new_parameters:
+          - name: "input_cif_path"
+            type: "str"
+            default_value: None
+            description: "Path to the CIF file to recreate the interactive result for."
+          - name: "parameter_json_path"
+            type: "str"
+            default_value: None
+            description: "Path to the JSON file to load the parameters from for recreating the interactive result."
+          - name: "parameter_folder"
+            type: "str"
+            default_value: None
+            description: "Folder to load files needed as parameters for recreating the interactive result."
   - name: "refine_iam"
     implemented_as: "CLI"  # other options: "python_callable"
     description: "Refine a CIF file using the IAM method."
