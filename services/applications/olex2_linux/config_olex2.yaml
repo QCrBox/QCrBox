@@ -15,9 +15,13 @@ commands:
     description: "Start Olex2 in interactive mode, this can be used to solve, refine and finish small-molecule crystal structures."
     parameters:
       - name: "input_cif_path"
-        type: "str"
+        type: "QCrBox.input_cif"
         default_value: None
         description: "Path to the CIF file to open in Olex2."
+      - name: "output_cif_path"
+        type: "QCrBox.output_cif"
+        default_value: None
+        description: "Path to save the CIF file to after finishing the interactive session."
     cif_input:
       required_cif_entry_sets: ["cell_data", "diffraction_data"]
       optional_cif_entry_sets: ["atom_data"]
@@ -32,17 +36,17 @@ commands:
         implemented_as: "python_callable"
         module: "configure_olex2"
         function: "prepare__interactive"
-        used_basecommand_parameters: ["input_cif_path"]
+        used_basecommand_parameters: ["input_cif_path", "output_cif_path"]
       finalise:
         implemented_as: "python_callable"
         module: "configure_olex2"
         function: "finalise__interactive"
-        used_basecommand_parameters: ["input_cif_path"]
+        used_basecommand_parameters: ["input_cif_path", "output_cif_path"]
       toparams:
         implemented_as: "python_callable"
         module: "configure_olex2"
         function: "toparams__interactive"
-        used_basecommand_parameters: ["input_cif_path"]
+        used_basecommand_parameters: ["input_cif_path", "output_cif_path"]
         new_parameters:
           - name: "parameter_json_path"
             type: "str"
@@ -58,9 +62,13 @@ commands:
         function: "redo__interactive"
         new_parameters:
           - name: "input_cif_path"
-            type: "str"
+            type: "QCrBox.input_cif"
             default_value: None
             description: "Path to the CIF file to recreate the interactive result for."
+          - name: "output_cif_path"
+            type: "QCrBox.output_cif"
+            default_value: None
+            description: "Path to save the CIF file to after finishing the interactive session."
           - name: "parameter_json_path"
             type: "str"
             default_value: None
@@ -74,9 +82,13 @@ commands:
     description: "Refine a CIF file using the IAM method."
     parameters:
       - name: "input_cif_path"
-        type: str
+        type: QCrBox.input_cif
         default_value: null
         description: "Path to the CIF file to refine."
+      - name: "output_cif_path"
+        type: QCrBox.output_cif
+        default_value: null
+        description: "Path to save the refined CIF file to."
       - name: "ls_cycles"
         type: int
         default_value: 5
@@ -102,11 +114,15 @@ commands:
     doi: 10.1039/D0SC05526C
     parameters:
       - name: "input_cif_path"
-        type: str
+        type: "QCrBox.input_cif"
         default_value: null
         description: "Path to the CIF file to refine."
+      - name: "output_cif_path"
+        type: "QCrBox.output_cif"
+        default_value: null
+        description: "Path to save the refined CIF file to."
       - name: "tsc_path"
-        type: str
+        type: "QCrBox.input_file"
         default_value: null
         description: "Path to the TSC file to use."
       - name: "ls_cycles"
@@ -133,11 +149,16 @@ commands:
     description: "Run a olex console commands read from a text file."
     parameters:
       - name: "input_cif_path"
-        type: str
+        type: QCrBox.input_cif
         default_value: null
         description: "Path to the CIF file to run the commands with."
+      - name: "output_cif_path"
+        type: QCrBox.output_cif
+        default_value: null
+        description: "Path to save the CIF file to after running the commands. If not given, no output will be read back."
+        optional: True
       - name: "cmd_file_path"
-        type: str
+        type: "QCrBox.input_file"
         default_value: null
         description: "Path to the file containing the commands to run."
     cif_input:
