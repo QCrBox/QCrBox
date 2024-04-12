@@ -25,6 +25,7 @@ commands:
       custom_cif_categories: ["iucr", "shelx"]
     cif_output:
       required_cif_entry_sets: ["olex_structure_output", "olex2_only_interactive_output"]
+      invalidated_cif_entries: ["_shelx_*"]
       custom_cif_categories: ["iucr", "shelx"]
     interactive_lifecycle:
       prepare:
@@ -93,6 +94,7 @@ commands:
     cif_output:
       required_cif_entry_sets: ["olex_structure_output"]
       custom_cif_categories: ["iucr", "shelx"]
+      invalidated_cif_entries: ["_shelx_*"]
 
   - name: "refine_tsc"
     implemented_as: "CLI"  # other options: "python_callable"
@@ -124,6 +126,7 @@ commands:
     cif_output:
       required_cif_entry_sets: ["olex_structure_output"]
       custom_cif_categories: ["iucr", "shelx"]
+      invalidated_cif_entries: ["_shelx_*"]
 
   - name: "run_cmds_file"
     implemented_as: "CLI"
@@ -143,6 +146,7 @@ commands:
     cif_output:
       optional_cif_entry_sets: ["all_olex_optional"]
       custom_cif_categories: ["iucr", "shelx"]
+      invalidated_cif_entries: ["_shelx_*"]
 
 cif_entry_sets:
   - name: "cell_data"
