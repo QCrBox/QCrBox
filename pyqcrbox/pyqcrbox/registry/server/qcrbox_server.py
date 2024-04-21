@@ -93,3 +93,12 @@ async def init_database(purge_existing_db_tables: bool) -> None:
     logger.debug(f"Database url: {settings.db.url}")
     settings.db.create_db_and_tables(purge_existing_tables=purge_existing_db_tables)
     logger.info("Finished initialising database...")
+
+
+def main():
+    qcrbox_server = QCrBoxServer()
+    qcrbox_server.run()
+
+
+if __name__ == "__main__":
+    main()

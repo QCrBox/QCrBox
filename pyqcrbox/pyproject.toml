@@ -87,7 +87,7 @@ all = [
 
 [project.scripts]
 qcb = "pyqcrbox.cli:entry_point"
-pyqcrbox-run-registry-server = "pyqcrbox.registry.server:main"
+pyqcrbox-run-registry-server = "pyqcrbox.registry.server.qcrbox_server:main"
 
 [build-system]
 requires = ["hatchling", "hatch-vcs"]
