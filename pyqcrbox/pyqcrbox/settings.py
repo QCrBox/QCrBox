@@ -91,6 +91,10 @@ class FastAPISettings(BaseModel):
     port: int = 11000
 
 
+class TestingSettings(BaseModel):
+    report_coverage: bool = False
+
+
 class QCrBoxSettings(BaseSettings):
     model_config = SettingsConfigDict(
         case_sensitive=False,
@@ -102,6 +106,7 @@ class QCrBoxSettings(BaseSettings):
     rabbitmq: RabbitMQSettings = RabbitMQSettings()
     registry: FastAPISettings = FastAPISettings()
     db: DatabaseSettings = DatabaseSettings()
+    testing: TestingSettings = TestingSettings()
 
 
 settings = QCrBoxSettings()
