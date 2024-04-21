@@ -15,7 +15,7 @@ dynamic = [
 ]
 dependencies = [
     "doit",
-    "faststream[rabbit, docs]>=0.5.0rc2",
+    "faststream[rabbit]>=0.5.2",
     "gitpython",
     "hatch",
     "loguru",
@@ -63,11 +63,11 @@ docs = [
 ]
 
 client = [
-    "faststream[rabbit, docs]>=0.5.0rc2",
+    "faststream[rabbit]>=0.5.2",
     "tenacity",
 ]
 server = [
-    "faststream[rabbit, docs]>=0.5.0rc2",
+    "faststream[rabbit]>=0.5.2",
     "fastapi",
     "tenacity",
     "uvicorn[standard]",
