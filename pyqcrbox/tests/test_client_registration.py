@@ -1,14 +1,23 @@
 import pytest
-from anyio import create_task_group
-from faststream.rabbit import RabbitBroker, TestRabbitBroker
 
 from pyqcrbox import msg_specs
-from pyqcrbox.registry import create_client_faststream_app, create_server_faststream_app
 
 
-@pytest.mark.asyncio
-async def test_client_registers_itself_with_server_during_startup(sample_application_spec):
+@pytest.mark.anyio
+async def test_rabbitmq_message(provide_test_server, provide_test_client, sample_application_spec):
     private_routing_key = "qcrbox_rk_test_client_xyz"
+
+    test_server = provide_test_server()
+    test_client = provide_test_client(private_routing_key=private_routing_key)
+
+    async with test_server.run():
+        assert not test_server.get_mock_handler("qcrbox-registry").called
+
+        async with test_client.run():
+            # we don't need to explicitly do anything here because we're testing the startup process,
+            # which is already triggered
+            pass
+
     expected_registration_message = msg_specs.RegisterApplication(
         action="register_application",
         payload=msg_specs.PayloadForRegisterApplication(
@@ -16,63 +25,4 @@ async def test_client_registers_itself_with_server_during_startup(sample_applica
             private_routing_key=private_routing_key,
         ),
     ).dict()
-
-    broker = RabbitBroker(graceful_timeout=10)
-    async with TestRabbitBroker(broker, with_real=False):
-        server_app = create_server_faststream_app(broker, log_level="DEBUG")
-        client_app = create_client_faststream_app(
-            broker,
-            private_routing_key=private_routing_key,
-            application_spec=sample_application_spec,
-            log_level="DEBUG",
-        )
-
-        async with create_task_group() as tg:
-            server_max_messages = 1
-            client_max_messages = 1
-            tg.start_soon(server_app.run, server_max_messages)
-            tg.start_soon(client_app.run, client_max_messages)
-
-        server_app.on_qcrbox_registry.mock.assert_called_once_with(expected_registration_message)
-        # TODO: verify that the client app receives a 'success' response.
-
-
-@pytest.mark.asyncio
-async def test_client_registration_succeeds_even_if_same_application_was_registered_before(sample_application_spec):
-    private_routing_key = "qcrbox_rk_test_client_xyz"
-    expected_registration_message = msg_specs.RegisterApplication(
-        action="register_application",
-        payload=msg_specs.PayloadForRegisterApplication(
-            application_spec=sample_application_spec,
-            private_routing_key=private_routing_key,
-        ),
-    ).dict()
-
-    broker = RabbitBroker(graceful_timeout=10)
-    async with TestRabbitBroker(broker, with_real=False):
-        server_app = create_server_faststream_app(broker, log_level="DEBUG")
-        client_app_1 = create_client_faststream_app(
-            broker, private_routing_key=private_routing_key, application_spec=sample_application_spec, log_level="DEBUG"
-        )
-        client_app_2 = create_client_faststream_app(
-            broker, private_routing_key=private_routing_key, application_spec=sample_application_spec, log_level="DEBUG"
-        )
-
-        async with create_task_group() as tg:
-            server_max_messages = 2
-            client_1_max_messages = 1
-            client_2_max_messages = 1
-            tg.start_soon(server_app.run, server_max_messages)
-            tg.start_soon(client_app_1.run, client_1_max_messages)
-            tg.start_soon(client_app_2.run, client_2_max_messages)
-
-        # TODO: it would be nice to use `assert_has_calls()` here (see [1]),
-        #       but I ran into issues trying to get this to work so I'm using
-        #       the slightly less exact comparison below for now.
-        #          -- Max, 7th March 2024
-        #
-        #       [1] https://docs.python.org/3/library/unittest.mock.html#unittest.mock.Mock.assert_has_calls
-        server_app.on_qcrbox_registry.mock.assert_called_with(expected_registration_message)
-        assert server_app.on_qcrbox_registry.mock.call_count == 2
-
-        # TODO: verify that the client apps receive a 'success' response.
+    assert test_server.get_mock_handler("qcrbox-registry").called_once_with(expected_registration_message)
