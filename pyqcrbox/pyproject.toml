@@ -107,7 +107,7 @@ only-include = ["pyqcrbox"]
 
 [tool.pytest.ini_options]
 filterwarnings =["ignore::DeprecationWarning"]
-addopts = "--cov=pyqcrbox --cov-report=term-missing"
+#addopts = "--cov=pyqcrbox --cov-report=term-missing"
 
 [tool.mypy]
 strict = true
