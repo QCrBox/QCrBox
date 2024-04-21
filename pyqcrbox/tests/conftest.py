@@ -2,8 +2,9 @@ import sys
 from pathlib import Path
 
 import pytest
+from faststream.rabbit import TestRabbitBroker
 
-from pyqcrbox import sql_models
+from pyqcrbox.registry.server import TestQCrBoxServer, create_rabbitmq_broker
 
 #
 # Insert the QCrBox repository root at the beginning of `sys.path`.
@@ -16,36 +17,27 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 
 @pytest.fixture
-def tmp_db_url(tmp_path):
-    return f"sqlite:///{tmp_path}/test_registry_db.sqlite"
+def anyio_backend():
+    return "asyncio"
 
 
 @pytest.fixture
 def sample_application_spec():
-    return sql_models.ApplicationSpecCreate(
-        name="Olex2",
-        slug="olex2_linux",
-        version="x.y.z",
-        description=None,
-        url="https://www.olexsys.org/olex2/",
-        email="helpdesk@olexsys.org",
-        commands=[
-            sql_models.CommandSpecCreate(
-                name="refine_iam",
-                implemented_as=sql_models.command.ImplementedAs("CLI"),
-                call_pattern=sql_models.command.CallPattern(
-                    """
-                    python /opt/qcrbox/olex2_glue_cli.py refine \
-                        --structure_path {cif_path} \
-                        --n_cycles {ls_cycles} \
-                        --weight_cycles {weight_cycles}
-                    """
-                ),
-                parameters=[
-                    sql_models.ParameterSpecCreate(name="cif_path", type="str"),
-                    sql_models.ParameterSpecCreate(name="ls_cycles", type="int", required=False, default_value=5),
-                    sql_models.ParameterSpecCreate(name="weight_cycles", type="int", required=False, default_value=5),
-                ],
-            )
-        ],
-    )
+    return {
+        "name": "Olex2",
+        "slug": "olex2",
+        "version": "x.y.z",
+    }
+
+
+@pytest.fixture
+async def create_qcrbox_test_server():
+    broker = create_rabbitmq_broker()
+    async with TestRabbitBroker(broker, with_real=False):
+        # Note: we need to define this helper function *inside* the `async with` block
+        #       that patches the broker
+        def _create_qcrbox_test_server():
+            test_server = TestQCrBoxServer(broker=broker)
+            return test_server
+
+        yield _create_qcrbox_test_server
