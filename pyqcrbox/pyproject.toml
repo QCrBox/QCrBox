@@ -64,14 +64,18 @@ docs = [
 
 client = [
     "faststream[rabbit]>=0.5.2",
-    "tenacity",
-]
-server = [
-    "faststream[rabbit]>=0.5.2",
-    "fastapi",
+    "litestar",
     "tenacity",
     "uvicorn[standard]",
 ]
+
+server = [
+    "faststream[rabbit]>=0.5.2",
+    "litestar",
+    "tenacity",
+    "uvicorn[standard]",
+]
+
 all = [
     "pyqcrbox[dev,docs,client,server]",
 ]
