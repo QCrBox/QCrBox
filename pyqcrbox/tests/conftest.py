@@ -41,3 +41,8 @@ async def create_qcrbox_test_server():
             return test_server
 
         yield _create_qcrbox_test_server
+
+
+@pytest.fixture
+def test_server(create_qcrbox_test_server):
+    return create_qcrbox_test_server()
