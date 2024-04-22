@@ -9,6 +9,7 @@ from faststream.rabbit import RabbitBroker
 from litestar import Litestar
 from loguru import logger
 
+from pyqcrbox.helpers import generate_private_routing_key
 from pyqcrbox.settings import settings
 
 from .asgi_server import create_client_asgi_server
@@ -23,12 +24,25 @@ class QCrBoxClient:
         broker: Optional[RabbitBroker] = None,
         asgi_server: Optional[Litestar] = None,
     ):
-        self.broker = broker or create_client_rabbitmq_broker(private_routing_key)
-        self.asgi_server = asgi_server or create_client_asgi_server(self.lifespan_context)
-        uvicorn_config = uvicorn.Config(self.asgi_server)
-        self.uvicorn_server = uvicorn.Server(uvicorn_config)
+        self.private_routing_key = private_routing_key or generate_private_routing_key()
+
+        # If not passed explicitly, the RabbitMQ broker, ASGI server
+        # and uvicorn server will be set up when `.serve()` is called.
+        self.broker = broker
+        self.asgi_server = asgi_server
+        self.uvicorn_server = None
 
         self._shutdown_event = anyio.Event()
+
+    def _set_up_uvicorn_server(self):
+        if self.broker is None:
+            self.broker = create_client_rabbitmq_broker(self.private_routing_key)
+
+        if self.asgi_server is None:
+            self.asgi_server = create_client_asgi_server(self.lifespan_context)
+
+        uvicorn_config = uvicorn.Config(self.asgi_server)
+        self.uvicorn_server = uvicorn.Server(uvicorn_config)
 
     @asynccontextmanager
     async def lifespan_context(self, _: Litestar) -> AsyncContextManager:
@@ -54,6 +68,8 @@ class QCrBoxClient:
             logger.info("Received KeyboardInterrupt. Shutting down.")
 
     async def serve(self, purge_existing_db_tables: bool = False, task_status: TaskStatus[None] = TASK_STATUS_IGNORED):
+        self._set_up_uvicorn_server()
+
         await init_database(purge_existing_db_tables)
 
         logger.trace("Entering QCrBoxServer.serve()...")
