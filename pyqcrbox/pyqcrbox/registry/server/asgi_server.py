@@ -18,6 +18,6 @@ def create_asgi_server(custom_lifespan) -> Litestar:
     app = Litestar(
         route_handlers=[hello, health_check],
         lifespan=[custom_lifespan],
-        openapi_config=OpenAPIConfig(title="QCrBox API", version="0.0.1"),
+        openapi_config=OpenAPIConfig(title="QCrBox Server API", version="0.0.1"),
     )
     return app
