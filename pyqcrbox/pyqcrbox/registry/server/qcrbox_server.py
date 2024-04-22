@@ -12,7 +12,7 @@ from loguru import logger
 from pyqcrbox.settings import settings
 
 from .asgi_server import create_asgi_server
-from .rabbit_broker import create_rabbitmq_broker
+from .rabbit_broker import create_server_rabbitmq_broker
 
 
 class QCrBoxServer:
@@ -22,7 +22,7 @@ class QCrBoxServer:
         broker: Optional[RabbitBroker] = None,
         asgi_server: Optional[Litestar] = None,
     ):
-        self.broker = broker or create_rabbitmq_broker()
+        self.broker = broker or create_server_rabbitmq_broker()
         self.asgi_server = asgi_server or create_asgi_server(self.lifespan_context)
         uvicorn_config = uvicorn.Config(self.asgi_server)
         self.uvicorn_server = uvicorn.Server(uvicorn_config)

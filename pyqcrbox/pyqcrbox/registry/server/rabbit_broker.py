@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 from pyqcrbox.settings import settings
 
-__all__ = ["create_rabbitmq_broker"]
+__all__ = ["create_server_rabbitmq_broker"]
 
 
 class PingMessage(BaseModel):
@@ -14,7 +14,7 @@ class PingMessage(BaseModel):
     payload: dict = dict()
 
 
-def create_rabbitmq_broker() -> RabbitBroker:
+def create_server_rabbitmq_broker() -> RabbitBroker:
     broker = RabbitBroker(settings.rabbitmq.url, graceful_timeout=10)
 
     @broker.subscriber("qcrbox-registry")

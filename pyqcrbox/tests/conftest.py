@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 from faststream.rabbit import TestRabbitBroker
 
-from pyqcrbox.registry.server import TestQCrBoxServer, create_rabbitmq_broker
+from pyqcrbox.registry.server import TestQCrBoxServer, create_server_rabbitmq_broker
 
 #
 # Insert the QCrBox repository root at the beginning of `sys.path`.
@@ -32,7 +32,7 @@ def sample_application_spec():
 
 @pytest.fixture
 async def create_qcrbox_test_server():
-    broker = create_rabbitmq_broker()
+    broker = create_server_rabbitmq_broker()
     async with TestRabbitBroker(broker, with_real=False):
         # Note: we need to define this helper function *inside* the `async with` block
         #       that patches the broker
