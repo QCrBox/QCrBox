@@ -4,9 +4,7 @@ from faststream.rabbit import RabbitBroker
 from loguru import logger
 from pydantic import BaseModel
 
-from pyqcrbox.settings import settings
-
-__all__ = ["create_client_rabbitmq_broker"]
+__all__ = ["set_up_client_rabbitmq_broker"]
 
 
 class HealthcheckMessage(BaseModel):
@@ -14,9 +12,7 @@ class HealthcheckMessage(BaseModel):
     payload: dict = dict()
 
 
-def create_client_rabbitmq_broker(private_routing_key: str) -> RabbitBroker:
-    broker = RabbitBroker(settings.rabbitmq.url, graceful_timeout=10)
-
+def set_up_client_rabbitmq_broker(broker: RabbitBroker, private_routing_key: str) -> RabbitBroker:
     @broker.subscriber(private_routing_key)
     async def ping_handler(msg: HealthcheckMessage):
         logger.info("[DDD] Handling 'healthcheck' message")

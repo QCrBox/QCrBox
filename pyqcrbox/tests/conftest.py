@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 from faststream.rabbit import TestRabbitBroker
 
-from pyqcrbox.registry.client import TestQCrBoxClient, create_client_rabbitmq_broker
+from pyqcrbox.registry.client import TestQCrBoxClient, set_up_client_rabbitmq_broker
 from pyqcrbox.registry.server import TestQCrBoxServer, create_server_rabbitmq_broker
 
 #
@@ -47,12 +47,12 @@ async def create_qcrbox_test_server():
 @pytest.fixture
 async def create_qcrbox_test_client():
     private_routing_key = "rk_qcrbox_test_private_routing_key"
-    broker = create_client_rabbitmq_broker(private_routing_key=private_routing_key)
-    async with TestRabbitBroker(broker, with_real=False):
+    test_client = TestQCrBoxClient()
+    set_up_client_rabbitmq_broker(test_client.broker, private_routing_key=private_routing_key)
+    async with TestRabbitBroker(test_client.broker, with_real=False):
         # Note: we need to define this helper function *inside* the `async with` block
         #       that patches the broker
         def _create_qcrbox_test_client():
-            test_client = TestQCrBoxClient(broker=broker)
             return test_client
 
         yield _create_qcrbox_test_client
