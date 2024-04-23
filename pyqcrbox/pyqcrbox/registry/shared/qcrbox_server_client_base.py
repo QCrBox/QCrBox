@@ -13,6 +13,8 @@ from loguru import logger
 from pyqcrbox import settings
 from pyqcrbox.registry.client.asgi_server import create_client_asgi_server
 
+__all__ = ["QCrBoxServerClientBase", "TestQCrBoxServerClientBase"]
+
 
 class QCrBoxServerClientBase:
     def __init__(
@@ -36,7 +38,7 @@ class QCrBoxServerClientBase:
 
     @abstractmethod
     def _set_up_rabbitmq_broker(self):
-        assert_never()
+        assert_never(self)
 
     def _set_up_uvicorn_server(self):
         assert self.broker is not None
@@ -101,3 +103,30 @@ class QCrBoxServerClientBase:
         logger.info("Received shutdown request, shutting down QCrBox client.")
         await self.uvicorn_server.shutdown()
         cancel_scope.cancel()
+
+
+class TestQCrBoxServerClientBase(QCrBoxServerClientBase):
+    @asynccontextmanager
+    async def run(self):
+        yield self
+        self.shutdown()
+
+    def get_mock_handler(self, queue_name):
+        subscr = self._get_subscriber(queue_name)
+        assert len(subscr.calls) == 1
+        handler = subscr.calls[0].handler
+        return handler.mock
+
+    def _get_subscriber(self, queue_name):
+        cands = []
+        for s in self.broker._subscribers.values():
+            if s.queue.name == queue_name:
+                cands.append(s)
+
+        match len(cands):
+            case 1:
+                return cands[0]
+            case 0:
+                raise ValueError(f"No subscriber found for queue {queue_name!r}")
+            case _:
+                raise ValueError(f"More than one subscriber found for queue {queue_name!r}")

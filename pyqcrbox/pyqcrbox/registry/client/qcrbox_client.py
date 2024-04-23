@@ -5,8 +5,10 @@ from litestar import Litestar
 
 from pyqcrbox.helpers import generate_private_routing_key
 
-from ..shared.qcrbox_server_client_base import QCrBoxServerClientBase
+from ..shared import QCrBoxServerClientBase, TestQCrBoxServerClientBase
 from .rabbit_broker import set_up_client_rabbitmq_broker
+
+__all__ = ["QCrBoxClient", "TestQCrBoxClient"]
 
 
 class QCrBoxClient(QCrBoxServerClientBase):
@@ -27,10 +29,14 @@ class QCrBoxClient(QCrBoxServerClientBase):
         await self.broker.publish(msg, queue)
 
 
+class TestQCrBoxClient(TestQCrBoxServerClientBase, QCrBoxClient):
+    pass
+
+
 def main():
     qcrbox_client = QCrBoxClient()
     qcrbox_client.run()
 
 
 if __name__ == "__main__":
-    main()
+    QCrBoxClient()
