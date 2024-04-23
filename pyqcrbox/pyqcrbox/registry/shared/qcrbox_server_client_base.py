@@ -59,6 +59,7 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
     async def lifespan_context(self, _: Litestar) -> AsyncContextManager:
         logger.trace(f"==> Entering {self.clsname} lifespan function...")
 
+        self._set_up_rabbitmq_broker()
         await self.broker.start()
         try:
             logger.trace("Yielding control to ASGI server ...")

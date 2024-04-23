@@ -6,6 +6,7 @@ from litestar import Litestar
 from pyqcrbox.helpers import generate_private_routing_key
 
 from ..shared import QCrBoxServerClientBase, TestQCrBoxServerClientBase
+from .asgi_server import create_client_asgi_server
 from .rabbit_broker import set_up_client_rabbitmq_broker
 
 __all__ = ["QCrBoxClient", "TestQCrBoxClient"]
@@ -26,8 +27,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         set_up_client_rabbitmq_broker(self.broker, private_routing_key=self.private_routing_key)
 
     def _set_up_asgi_server(self) -> None:
-        # Nothing to do here as we don't currently expose a web API from QCrBox clients
-        pass
+        self.asgi_server = create_client_asgi_server(self.lifespan_context)
 
     async def publish(self, queue, msg):
         await self.broker.publish(msg, queue)

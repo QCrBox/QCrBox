@@ -6,7 +6,7 @@ from loguru import logger
 from pyqcrbox.settings import settings
 
 from ..shared import QCrBoxServerClientBase, TestQCrBoxServerClientBase
-from .asgi_server import create_asgi_server
+from .asgi_server import create_server_asgi_server
 from .rabbit_broker import set_up_server_rabbitmq_broker
 
 
@@ -15,7 +15,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
         set_up_server_rabbitmq_broker(self.broker)
 
     def _set_up_asgi_server(self) -> None:
-        self.asgi_server = create_asgi_server(self.lifespan_context)
+        self.asgi_server = create_server_asgi_server(self.lifespan_context)
 
     async def init_database(self, purge_existing_db_tables: bool) -> None:
         logger.info("Initialising database...")
