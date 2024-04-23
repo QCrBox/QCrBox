@@ -1,4 +1,5 @@
 import sys
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 import pytest
@@ -32,37 +33,36 @@ def sample_application_spec():
 
 
 @pytest.fixture
-async def create_qcrbox_test_server():
-    test_server = TestQCrBoxServer()
-    set_up_server_rabbitmq_broker(test_server.broker)
-    async with TestRabbitBroker(test_server.broker, with_real=False):
-        # Note: we need to define this helper function *inside* the `async with` block
-        #       that patches the broker
-        def _create_qcrbox_test_server():
-            return test_server
+def create_qcrbox_test_server():
+    @asynccontextmanager
+    async def _create_qcrbox_test_server():
+        test_server = TestQCrBoxServer()
+        set_up_server_rabbitmq_broker(test_server.broker)
+        async with TestRabbitBroker(test_server.broker, with_real=False):
+            yield test_server
 
-        yield _create_qcrbox_test_server
-
-
-@pytest.fixture
-async def create_qcrbox_test_client():
-    private_routing_key = "rk_qcrbox_test_private_routing_key"
-    test_client = TestQCrBoxClient()
-    set_up_client_rabbitmq_broker(test_client.broker, private_routing_key=private_routing_key)
-    async with TestRabbitBroker(test_client.broker, with_real=False):
-        # Note: we need to define this helper function *inside* the `async with` block
-        #       that patches the broker
-        def _create_qcrbox_test_client():
-            return test_client
-
-        yield _create_qcrbox_test_client
+    return _create_qcrbox_test_server
 
 
 @pytest.fixture
-def test_server(create_qcrbox_test_server):
-    return create_qcrbox_test_server()
+def create_qcrbox_test_client():
+    @asynccontextmanager
+    async def _create_qcrbox_test_client(private_routing_key: str = "rk_qcrbox_test_private_routing_key"):
+        test_client = TestQCrBoxClient()
+        set_up_client_rabbitmq_broker(test_client.broker, private_routing_key=private_routing_key)
+        async with TestRabbitBroker(test_client.broker, with_real=False):
+            yield test_client
+
+    return _create_qcrbox_test_client
 
 
 @pytest.fixture
-def test_client(create_qcrbox_test_client):
-    return create_qcrbox_test_client()
+async def test_server(create_qcrbox_test_server):
+    async with create_qcrbox_test_server() as test_server:
+        yield test_server
+
+
+@pytest.fixture
+async def test_client(create_qcrbox_test_client):
+    async with create_qcrbox_test_client() as test_client:
+        yield test_client
