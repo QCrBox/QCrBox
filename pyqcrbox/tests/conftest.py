@@ -58,11 +58,11 @@ def create_qcrbox_test_client():
 
 @pytest.fixture
 async def test_server(create_qcrbox_test_server):
-    async with create_qcrbox_test_server() as test_server:
+    async with create_qcrbox_test_server() as test_server, test_server.run():
         yield test_server
 
 
 @pytest.fixture
 async def test_client(create_qcrbox_test_client):
-    async with create_qcrbox_test_client() as test_client:
+    async with create_qcrbox_test_client() as test_client, test_client.run():
         yield test_client
