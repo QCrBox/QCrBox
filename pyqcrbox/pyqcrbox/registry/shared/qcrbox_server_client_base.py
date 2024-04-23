@@ -45,7 +45,9 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
         assert_never(self)
 
     def _set_up_uvicorn_server(self) -> None:
-        assert self.uvicorn_server is None
+        if self.uvicorn_server is not None:
+            raise RuntimeError("Uvicorn server has already been set up (unexpectedly).")
+
         assert self.broker is not None
 
         self._set_up_asgi_server()
@@ -70,7 +72,6 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
         logger.trace(f"<== Exiting from {self.clsname} lifespan function.")
 
     def run(self):
-        self._set_up_uvicorn_server()
         try:
             anyio.run(self.serve)
         except KeyboardInterrupt:
