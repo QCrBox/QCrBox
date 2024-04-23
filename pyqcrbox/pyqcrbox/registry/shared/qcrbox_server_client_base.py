@@ -112,6 +112,7 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
 class TestQCrBoxServerClientBase(QCrBoxServerClientBase):
     @asynccontextmanager
     async def run(self):
+        self._set_up_uvicorn_server()
         yield self
         self.shutdown()
 

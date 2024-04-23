@@ -5,7 +5,7 @@ from loguru import logger
 
 from pyqcrbox.settings import settings
 
-from ..shared import QCrBoxServerClientBase
+from ..shared import QCrBoxServerClientBase, TestQCrBoxServerClientBase
 from .asgi_server import create_asgi_server
 from .rabbit_broker import set_up_server_rabbitmq_broker
 
@@ -39,6 +39,10 @@ class QCrBoxServer(QCrBoxServerClientBase):
         except ExceptionGroup as e:  # pragma: no cover
             for ex in e.exceptions:
                 raise ex from None
+
+
+class TestQCrBoxServer(TestQCrBoxServerClientBase, QCrBoxServer):
+    pass
 
 
 async def init_database(purge_existing_db_tables: bool) -> None:
