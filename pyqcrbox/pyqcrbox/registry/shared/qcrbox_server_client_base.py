@@ -8,6 +8,7 @@ from anyio import TASK_STATUS_IGNORED
 from anyio.abc import TaskStatus
 from faststream.rabbit import RabbitBroker
 from litestar import Litestar
+from litestar.testing import AsyncTestClient
 from loguru import logger
 
 from pyqcrbox import settings
@@ -115,6 +116,11 @@ class TestQCrBoxServerClientBase(QCrBoxServerClientBase):
         self._set_up_uvicorn_server()
         yield self
         self.shutdown()
+
+    @asynccontextmanager
+    async def web_client(self):
+        async with AsyncTestClient(app=self.asgi_server) as web_client:
+            yield web_client
 
     def get_mock_handler(self, queue_name):
         subscr = self._get_subscriber(queue_name)
