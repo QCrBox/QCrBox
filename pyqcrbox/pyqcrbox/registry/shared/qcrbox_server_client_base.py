@@ -1,3 +1,4 @@
+import inspect
 from abc import ABCMeta, abstractmethod
 from contextlib import asynccontextmanager
 from typing import AsyncContextManager, Optional, assert_never
@@ -14,6 +15,13 @@ from loguru import logger
 from pyqcrbox import settings
 
 __all__ = ["QCrBoxServerClientBase", "TestQCrBoxServerClientBase"]
+
+
+def on_qcrbox_startup(func):
+    func._is_qcrbox_startup_hook = True
+    sig = inspect.signature(func)
+    func._param_names = [name for name in sig.parameters.keys() if name != "self"]
+    return func
 
 
 class QCrBoxServerClientBase(metaclass=ABCMeta):
@@ -55,10 +63,16 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
         uvicorn_config = uvicorn.Config(self.asgi_server)
         self.uvicorn_server = uvicorn.Server(uvicorn_config)
 
-    @abstractmethod
-    async def _run_custom_startup_tasks(self):
-        # This method can be overridden by derived classes to add custom startup functionality.
-        pass
+    async def execute_startup_hooks(self, **kwargs):
+        for name in dir(self):
+            func = getattr(self, name)
+            if inspect.ismethod(func) and hasattr(func, "_is_qcrbox_startup_hook"):
+                cur_kwargs = {name: value for (name, value) in kwargs.items() if name in func._param_names}
+                logger.debug(f"Executing startup hook {func.__name__!r} with kwargs={cur_kwargs}")
+                if not inspect.iscoroutinefunction(func):
+                    func(**cur_kwargs)
+                else:
+                    await func(**cur_kwargs)
 
     @asynccontextmanager
     async def lifespan_context(self, _: Litestar) -> AsyncContextManager:
@@ -66,7 +80,7 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
 
         self._set_up_rabbitmq_broker()
         await self.broker.start()
-        await self._run_custom_startup_tasks()
+
         try:
             logger.trace("Yielding control to ASGI server ...")
             yield
@@ -78,16 +92,21 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
 
         logger.trace(f"<== Exiting from {self.clsname} lifespan function.")
 
-    def run(self):
+    def run(self, **kwargs):
+        logger.trace(f"Running {self.clsname} with {kwargs=}")
         try:
-            anyio.run(self.serve)
+            anyio.run(self.serve, kwargs)
         except KeyboardInterrupt:
             logger.info("Received KeyboardInterrupt. Shutting down.")
 
-    async def serve(self, task_status: TaskStatus[None] = TASK_STATUS_IGNORED):
+    async def serve(self, kwargs: dict = None, task_status: TaskStatus[None] = TASK_STATUS_IGNORED):
+        kwargs = kwargs or {}
+
         self._set_up_uvicorn_server()
 
         logger.trace(f"Entering {self.clsname}.serve()...")
+
+        await self.execute_startup_hooks(**kwargs)
 
         try:
             async with anyio.create_task_group() as tg:
