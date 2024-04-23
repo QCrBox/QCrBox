@@ -17,11 +17,17 @@ class QCrBoxServer(QCrBoxServerClientBase):
     def _set_up_asgi_server(self) -> None:
         self.asgi_server = create_asgi_server(self.lifespan_context)
 
+    async def init_database(self, purge_existing_db_tables: bool) -> None:
+        logger.info("Initialising database...")
+        logger.debug(f"Database url: {settings.db.url}")
+        settings.db.create_db_and_tables(purge_existing_tables=purge_existing_db_tables)
+        logger.info("Finished initialising database...")
+
     async def publish(self, queue, msg):
         await self.broker.publish(msg, queue)
 
     async def serve(self, purge_existing_db_tables: bool = False, task_status: TaskStatus[None] = TASK_STATUS_IGNORED):
-        await init_database(purge_existing_db_tables)
+        await self.init_database(purge_existing_db_tables)
 
         logger.trace("Entering QCrBoxServer.serve()...")
 
@@ -43,13 +49,6 @@ class QCrBoxServer(QCrBoxServerClientBase):
 
 class TestQCrBoxServer(TestQCrBoxServerClientBase, QCrBoxServer):
     pass
-
-
-async def init_database(purge_existing_db_tables: bool) -> None:
-    logger.info("Initialising database...")
-    logger.debug(f"Database url: {settings.db.url}")
-    settings.db.create_db_and_tables(purge_existing_tables=purge_existing_db_tables)
-    logger.info("Finished initialising database...")
 
 
 def main():
