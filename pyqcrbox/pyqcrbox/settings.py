@@ -107,6 +107,7 @@ class QCrBoxSettings(BaseSettings):
     registry: FastAPISettings = FastAPISettings()
     db: DatabaseSettings = DatabaseSettings()
     testing: TestingSettings = TestingSettings()
+    log_level: str = "INFO"
 
 
 settings = QCrBoxSettings()

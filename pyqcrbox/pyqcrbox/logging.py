@@ -4,6 +4,8 @@ import sys
 
 from loguru import logger
 
+from pyqcrbox.settings import settings
+
 
 class Formatter:
     def __init__(self):
@@ -25,9 +27,9 @@ class Formatter:
 formatter = Formatter()
 
 
-def set_cli_log_level(level: str | int):
+def set_log_level(level: str | int):
     logger.remove()
     logger.add(sys.stderr, level=level, format=formatter.format)
 
 
-set_cli_log_level("INFO")
+set_log_level(settings.log_level)
