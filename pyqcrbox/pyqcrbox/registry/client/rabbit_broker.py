@@ -12,10 +12,8 @@ class HealthcheckMessage(BaseModel):
     payload: dict = dict()
 
 
-def set_up_client_rabbitmq_broker(broker: RabbitBroker, private_routing_key: str) -> RabbitBroker:
+def set_up_client_rabbitmq_broker(broker: RabbitBroker, private_routing_key: str) -> None:
     @broker.subscriber(private_routing_key)
     async def ping_handler(msg: HealthcheckMessage):
         logger.info("[DDD] Handling 'healthcheck' message")
         return {"response_to": "healthcheck", "status": "healthy"}
-
-    return broker

@@ -22,8 +22,12 @@ class QCrBoxClient(QCrBoxServerClientBase):
         super().__init__(broker=broker, asgi_server=asgi_server)
         self.private_routing_key = private_routing_key or generate_private_routing_key()
 
-    def _set_up_rabbitmq_broker(self):
+    def _set_up_rabbitmq_broker(self) -> None:
         set_up_client_rabbitmq_broker(self.broker, private_routing_key=self.private_routing_key)
+
+    def _set_up_asgi_server(self) -> None:
+        # Nothing to do here as we don't currently expose a web API from QCrBox clients
+        pass
 
     async def publish(self, queue, msg):
         await self.broker.publish(msg, queue)

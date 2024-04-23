@@ -6,6 +6,7 @@ from .qcrbox_server import QCrBoxServer
 class TestQCrBoxServer(QCrBoxServer):
     @asynccontextmanager
     async def run(self):
+        self._set_up_uvicorn_server()
         yield self
         self.shutdown()
 

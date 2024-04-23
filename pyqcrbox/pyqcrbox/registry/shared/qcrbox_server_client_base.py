@@ -11,7 +11,6 @@ from litestar import Litestar
 from loguru import logger
 
 from pyqcrbox import settings
-from pyqcrbox.registry.client.asgi_server import create_client_asgi_server
 
 __all__ = ["QCrBoxServerClientBase", "TestQCrBoxServerClientBase"]
 
@@ -40,11 +39,15 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
     def _set_up_rabbitmq_broker(self):
         assert_never(self)
 
-    def _set_up_uvicorn_server(self):
+    @abstractmethod
+    def _set_up_asgi_server(self) -> None:
+        assert_never(self)
+
+    def _set_up_uvicorn_server(self) -> None:
+        assert self.uvicorn_server is None
         assert self.broker is not None
 
-        if self.asgi_server is None:
-            self.asgi_server = create_client_asgi_server(self.lifespan_context)
+        self._set_up_asgi_server()
 
         uvicorn_config = uvicorn.Config(self.asgi_server)
         self.uvicorn_server = uvicorn.Server(uvicorn_config)
@@ -66,6 +69,7 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
         logger.trace(f"<== Exiting from {self.clsname} lifespan function.")
 
     def run(self):
+        self._set_up_uvicorn_server()
         try:
             anyio.run(self.serve)
         except KeyboardInterrupt:
