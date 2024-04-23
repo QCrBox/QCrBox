@@ -68,7 +68,7 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
             func = getattr(self, name)
             if inspect.ismethod(func) and hasattr(func, "_is_qcrbox_startup_hook"):
                 cur_kwargs = {name: value for (name, value) in kwargs.items() if name in func._param_names}
-                logger.debug(f"Executing startup hook {func.__name__!r} with kwargs={cur_kwargs}")
+                logger.trace(f"Executing startup hook {func.__name__!r} with kwargs={cur_kwargs}")
                 if not inspect.iscoroutinefunction(func):
                     func(**cur_kwargs)
                 else:
