@@ -1,4 +1,4 @@
-from abc import abstractmethod
+from abc import ABCMeta, abstractmethod
 from contextlib import asynccontextmanager
 from typing import AsyncContextManager, Optional, assert_never
 
@@ -16,7 +16,7 @@ from pyqcrbox.registry.client.asgi_server import create_client_asgi_server
 __all__ = ["QCrBoxServerClientBase", "TestQCrBoxServerClientBase"]
 
 
-class QCrBoxServerClientBase:
+class QCrBoxServerClientBase(metaclass=ABCMeta):
     def __init__(
         self,
         *,
