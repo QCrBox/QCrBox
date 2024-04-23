@@ -17,6 +17,10 @@ class QCrBoxServer(QCrBoxServerClientBase):
     def _set_up_asgi_server(self) -> None:
         self.asgi_server = create_server_asgi_server(self.lifespan_context)
 
+    async def _run_custom_startup_tasks(self):
+        # Nothing custom to do here for the QCrBoxServer
+        pass
+
     async def init_database(self, purge_existing_db_tables: bool) -> None:
         logger.info("Initialising database...")
         logger.debug(f"Database url: {settings.db.url}")

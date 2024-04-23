@@ -29,6 +29,11 @@ class QCrBoxClient(QCrBoxServerClientBase):
     def _set_up_asgi_server(self) -> None:
         self.asgi_server = create_client_asgi_server(self.lifespan_context)
 
+    async def _run_custom_startup_tasks(self):
+        from pyqcrbox import logger
+
+        logger.error(f"[DDD] Running custom startup tasks for {self.clsname}.")
+
     async def publish(self, queue, msg):
         await self.broker.publish(msg, queue)
 

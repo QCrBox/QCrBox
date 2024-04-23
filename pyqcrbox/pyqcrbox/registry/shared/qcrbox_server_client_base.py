@@ -55,12 +55,18 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
         uvicorn_config = uvicorn.Config(self.asgi_server)
         self.uvicorn_server = uvicorn.Server(uvicorn_config)
 
+    @abstractmethod
+    async def _run_custom_startup_tasks(self):
+        # This method can be overridden by derived classes to add custom startup functionality.
+        pass
+
     @asynccontextmanager
     async def lifespan_context(self, _: Litestar) -> AsyncContextManager:
         logger.trace(f"==> Entering {self.clsname} lifespan function...")
 
         self._set_up_rabbitmq_broker()
         await self.broker.start()
+        await self._run_custom_startup_tasks()
         try:
             logger.trace("Yielding control to ASGI server ...")
             yield
