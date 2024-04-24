@@ -62,7 +62,7 @@ def create_qcrbox_test_client(rabbit_test_broker):
 
 @pytest.fixture
 async def test_server(create_qcrbox_test_server):
-    async with create_qcrbox_test_server() as test_server, test_server.run():
+    async with create_qcrbox_test_server() as test_server, test_server.run(purge_existing_db_tables=False):
         yield test_server
 
 
