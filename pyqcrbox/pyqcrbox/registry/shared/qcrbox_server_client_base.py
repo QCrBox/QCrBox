@@ -57,6 +57,8 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
             raise RuntimeError("Uvicorn server has already been set up (unexpectedly).")
 
         assert self.broker is not None
+        assert self.host is not None
+        assert self.port is not None
 
         self._set_up_asgi_server()
 
@@ -144,10 +146,34 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
 
 class TestQCrBoxServerClientBase(QCrBoxServerClientBase):
     @asynccontextmanager
-    async def run(self):
+    async def run(
+        self,
+        host: Optional[str] = None,
+        port: Optional[str] = None,
+        task_status: TaskStatus[None] = TASK_STATUS_IGNORED,
+        **kwargs,
+    ):
+        self.host = host or "127.0.0.1"
+        self.port = port or 8000
+        self._run_kwargs = kwargs
         self._set_up_uvicorn_server()
-        yield self
-        self.shutdown()
+
+        logger.trace(f"Entering {self.clsname}.serve()...")
+
+        try:
+            async with anyio.create_task_group() as tg:
+                logger.info("Starting uvicorn server...")
+                tg.start_soon(self.uvicorn_server.serve)
+                tg.start_soon(self._wait_for_and_handle_shutdown_request, tg.cancel_scope)
+                while not self.uvicorn_server.started:
+                    await anyio.sleep(0.01)
+                task_status.started()
+                yield self
+                self.shutdown()
+            logger.trace("Exited task group that served uvicorn...")
+        except ExceptionGroup as e:  # pragma: no cover
+            for ex in e.exceptions:
+                raise ex from None
 
     @asynccontextmanager
     async def web_client(self):
