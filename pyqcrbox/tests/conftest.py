@@ -3,10 +3,11 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 import pytest
-from faststream.rabbit import TestRabbitBroker
+from faststream.rabbit import RabbitBroker, TestRabbitBroker
 
-from pyqcrbox.registry.client import TestQCrBoxClient, set_up_client_rabbitmq_broker
-from pyqcrbox.registry.server import TestQCrBoxServer, set_up_server_rabbitmq_broker
+from pyqcrbox.registry.client import TestQCrBoxClient
+from pyqcrbox.registry.server import TestQCrBoxServer
+from pyqcrbox.settings import settings
 
 #
 # Insert the QCrBox repository root at the beginning of `sys.path`.
@@ -33,25 +34,28 @@ def sample_application_spec():
 
 
 @pytest.fixture
-def create_qcrbox_test_server():
+async def rabbit_test_broker():
+    broker = RabbitBroker(settings.rabbitmq.url)
+    async with TestRabbitBroker(broker, with_real=False):
+        yield broker
+
+
+@pytest.fixture
+def create_qcrbox_test_server(rabbit_test_broker):
     @asynccontextmanager
     async def _create_qcrbox_test_server():
-        test_server = TestQCrBoxServer()
-        set_up_server_rabbitmq_broker(test_server.broker)
-        async with TestRabbitBroker(test_server.broker, with_real=False):
-            yield test_server
+        test_server = TestQCrBoxServer(broker=rabbit_test_broker)
+        yield test_server
 
     return _create_qcrbox_test_server
 
 
 @pytest.fixture
-def create_qcrbox_test_client():
+def create_qcrbox_test_client(rabbit_test_broker):
     @asynccontextmanager
     async def _create_qcrbox_test_client(private_routing_key: str = "rk_qcrbox_test_private_routing_key"):
-        test_client = TestQCrBoxClient()
-        set_up_client_rabbitmq_broker(test_client.broker, private_routing_key=private_routing_key)
-        async with TestRabbitBroker(test_client.broker, with_real=False):
-            yield test_client
+        test_client = TestQCrBoxClient(broker=rabbit_test_broker, private_routing_key=private_routing_key)
+        yield test_client
 
     return _create_qcrbox_test_client
 
