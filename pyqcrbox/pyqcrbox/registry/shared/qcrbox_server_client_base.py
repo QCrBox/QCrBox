@@ -60,7 +60,11 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
 
         self._set_up_asgi_server()
 
-        uvicorn_config = uvicorn.Config(self.asgi_server)
+        uvicorn_config = uvicorn.Config(
+            self.asgi_server,
+            host=self.host,
+            port=self.port,
+        )
         self.uvicorn_server = uvicorn.Server(uvicorn_config)
 
     async def execute_startup_hooks(self, **kwargs):
@@ -94,7 +98,9 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
 
         logger.trace(f"<== Exiting from {self.clsname} lifespan function.")
 
-    def run(self, **kwargs):
+    def run(self, host: Optional[str] = None, port: Optional[str] = None, **kwargs):
+        self.host = host or "127.0.0.1"
+        self.port = port or 8000
         logger.trace(f"Running {self.clsname} with {kwargs=}")
         self._run_kwargs = kwargs
         try:
