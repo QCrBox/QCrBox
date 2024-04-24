@@ -47,7 +47,7 @@ class TestQCrBoxClient(TestQCrBoxServerClientBase, QCrBoxClient):
 
 def main():
     qcrbox_client = QCrBoxClient()
-    qcrbox_client.run(port=8001)
+    qcrbox_client.run(port=settings.registry.client.port)
 
 
 if __name__ == "__main__":
