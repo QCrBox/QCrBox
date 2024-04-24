@@ -81,6 +81,8 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
         self._set_up_rabbitmq_broker()
         await self.broker.start()
 
+        await self.execute_startup_hooks(**self._run_kwargs)
+
         try:
             logger.trace("Yielding control to ASGI server ...")
             yield
@@ -94,19 +96,16 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
 
     def run(self, **kwargs):
         logger.trace(f"Running {self.clsname} with {kwargs=}")
+        self._run_kwargs = kwargs
         try:
-            anyio.run(self.serve, kwargs)
+            anyio.run(self.serve)
         except KeyboardInterrupt:
             logger.info("Received KeyboardInterrupt. Shutting down.")
 
-    async def serve(self, kwargs: dict = None, task_status: TaskStatus[None] = TASK_STATUS_IGNORED):
-        kwargs = kwargs or {}
-
+    async def serve(self, task_status: TaskStatus[None] = TASK_STATUS_IGNORED):
         self._set_up_uvicorn_server()
 
         logger.trace(f"Entering {self.clsname}.serve()...")
-
-        await self.execute_startup_hooks(**kwargs)
 
         try:
             async with anyio.create_task_group() as tg:
@@ -132,7 +131,7 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
         # number of messages has been processed.
         logger.trace("Waiting for shutdown event to be set...")
         await self._shutdown_event.wait()
-        logger.info("Received shutdown request, shutting down QCrBox client.")
+        logger.info(f"Received shutdown request, shutting down {self.clsname}.")
         await self.uvicorn_server.shutdown()
         cancel_scope.cancel()
 
