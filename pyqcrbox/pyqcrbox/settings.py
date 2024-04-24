@@ -86,9 +86,19 @@ class RabbitMQSettings(BaseModel):
         return f"amqp://{self.username}:{self.password}@{self.host}:{self.port}/"
 
 
-class FastAPISettings(BaseModel):
+class ServerAPISettings(BaseModel):
     host: str = "127.0.0.1"
-    port: int = 11000
+    port: int = 8001
+
+
+class ClientAPISettings(BaseModel):
+    host: str = "127.0.0.1"
+    port: int = 8002
+
+
+class RegistrySettings(BaseModel):
+    server: ServerAPISettings = ServerAPISettings()
+    client: ClientAPISettings = ClientAPISettings()
 
 
 class TestingSettings(BaseModel):
@@ -104,7 +114,7 @@ class QCrBoxSettings(BaseSettings):
     )
 
     rabbitmq: RabbitMQSettings = RabbitMQSettings()
-    registry: FastAPISettings = FastAPISettings()
+    registry: RegistrySettings = RegistrySettings()
     db: DatabaseSettings = DatabaseSettings()
     testing: TestingSettings = TestingSettings()
     log_level: str = "INFO"
