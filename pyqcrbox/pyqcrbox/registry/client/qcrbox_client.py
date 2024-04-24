@@ -6,7 +6,7 @@ from litestar import Litestar
 from pyqcrbox import settings
 from pyqcrbox.helpers import generate_private_routing_key
 
-from ..shared import QCrBoxServerClientBase, TestQCrBoxServerClientBase
+from ..shared import QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup
 from .asgi_server import create_client_asgi_server
 from .rabbit_broker import set_up_client_rabbitmq_broker
 
@@ -30,7 +30,8 @@ class QCrBoxClient(QCrBoxServerClientBase):
     def _set_up_asgi_server(self) -> None:
         self.asgi_server = create_client_asgi_server(self.lifespan_context)
 
-    async def _run_custom_startup_tasks(self):
+    @on_qcrbox_startup
+    async def send_registration_request(self):
         from pyqcrbox import logger
 
         logger.error(f"[DDD] Running custom startup tasks for {self.clsname}.")
