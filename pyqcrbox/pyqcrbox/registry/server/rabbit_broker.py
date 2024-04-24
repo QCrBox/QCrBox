@@ -6,6 +6,8 @@ from pydantic import BaseModel
 
 __all__ = ["set_up_server_rabbitmq_broker"]
 
+from pyqcrbox import settings
+
 
 class PingMessage(BaseModel):
     action: str = Literal["ping"]
@@ -13,7 +15,7 @@ class PingMessage(BaseModel):
 
 
 def set_up_server_rabbitmq_broker(broker: RabbitBroker) -> None:
-    @broker.subscriber("qcrbox-registry")
+    @broker.subscriber(settings.rabbitmq.routing_key_qcrbox_registry)
     async def ping_handler(msg: PingMessage):
         logger.info("[DDD] Handling 'ping' message")
         return {"response_to": "ping", "msg": "Hello from QCrBox!"}

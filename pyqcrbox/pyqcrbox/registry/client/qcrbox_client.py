@@ -3,6 +3,7 @@ from typing import Optional
 from faststream.rabbit import RabbitBroker
 from litestar import Litestar
 
+from pyqcrbox import settings
 from pyqcrbox.helpers import generate_private_routing_key
 
 from ..shared import QCrBoxServerClientBase, TestQCrBoxServerClientBase
@@ -33,6 +34,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         from pyqcrbox import logger
 
         logger.error(f"[DDD] Running custom startup tasks for {self.clsname}.")
+        await self.broker.publish({"msg": "hello"}, settings.rabbitmq.routing_key_qcrbox_registry)
 
     async def publish(self, queue, msg):
         await self.broker.publish(msg, queue)
