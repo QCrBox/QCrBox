@@ -40,7 +40,8 @@ class QCrBoxGenericResponse(QCrBoxBaseMessage):
     @property
     def response_to_str(cls) -> str:
         """
-        Allows accessing the value of 'response_to' directly from the class (without needing a concrete instance).
+        Allows accessing the value of 'response_to' directly from the QCrBoxGenericResponse class
+        (without needing to instantiate a concrete object).
         """
         return cls.model_fields["response_to"].annotation.__args__[0]
 

@@ -1,9 +1,9 @@
 from typing import Literal
 
 from pyqcrbox import sql_models
-from pyqcrbox.msg_specs.base import QCrBoxActionBasePayload, QCrBoxBaseAction, QCrBoxGenericResponse
+from pyqcrbox.msg_specs.base import QCrBoxActionBasePayload, QCrBoxBaseAction
 
-__all__ = ["PayloadForRegisterApplication", "RegisterApplication", "RegisterApplicationResponse"]
+__all__ = ["PayloadForRegisterApplication", "RegisterApplication"]
 
 
 class PayloadForRegisterApplication(QCrBoxActionBasePayload):
@@ -14,9 +14,3 @@ class PayloadForRegisterApplication(QCrBoxActionBasePayload):
 class RegisterApplication(QCrBoxBaseAction):
     action: Literal["register_application"]
     payload: PayloadForRegisterApplication
-
-
-class RegisterApplicationResponse(QCrBoxGenericResponse):
-    response_to: Literal[RegisterApplication.action_name]
-    status: str
-    msg: str
