@@ -180,6 +180,9 @@ class TestQCrBoxServerClientBase(QCrBoxServerClientBase):
         async with AsyncTestClient(app=self.asgi_server) as web_client:
             yield web_client
 
+    def handler_was_called(self, queue_name):
+        return self.get_mock_handler(queue_name).called
+
     def get_mock_handler(self, queue_name):
         subscr = self._get_subscriber(queue_name)
         assert len(subscr.calls) == 1
