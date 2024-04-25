@@ -81,15 +81,13 @@ def populate_valid_qcrbox_actions_lookup():
 
     Note that this must happen within a helper function (rather than during
     import of this module) to avoid an error due to the 'actions' submodule
-    only being partially imoported. However, we're caching the result to
+    only being partially imported. However, we're caching the result to
     avoid repeated construction of this dictionary upon each lookup.
     """
-    VALID_QCRBOX_ACTIONS_BY_NAME = {
-        cls.action_name: cls
-        for cls in msg_types._qcrbox_actions_and_other_local_vars
-        if represents_valid_qcrbox_action(cls)
+    valid_qcrbox_actions_by_name = {
+        cls.action_name: cls for cls in msg_types._qcrbox_actions if represents_valid_qcrbox_action(cls)
     }
-    return VALID_QCRBOX_ACTIONS_BY_NAME
+    return valid_qcrbox_actions_by_name
 
 
 def look_up_action_class(action_name: str):
