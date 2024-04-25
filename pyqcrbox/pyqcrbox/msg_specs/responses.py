@@ -12,5 +12,5 @@ def success(*, response_to: str):
     return QCrBoxGenericResponse(response_to=response_to, status=ResponseStatusEnum.SUCCESS)
 
 
-def error(*, response_to: str):
-    return QCrBoxGenericResponse(response_to=response_to, status=ResponseStatusEnum.ERROR)
+def error(*, response_to: str, msg: str = ""):
+    return QCrBoxGenericResponse(response_to=response_to, status=ResponseStatusEnum.ERROR, msg=msg)
