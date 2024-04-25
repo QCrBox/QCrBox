@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 __all__ = ["set_up_server_rabbitmq_broker"]
 
-from pyqcrbox import settings
+from pyqcrbox import msg_specs, settings
 
 
 class PingMessage(BaseModel):
@@ -16,6 +16,23 @@ class PingMessage(BaseModel):
 
 def set_up_server_rabbitmq_broker(broker: RabbitBroker) -> None:
     @broker.subscriber(settings.rabbitmq.routing_key_qcrbox_registry)
-    async def ping_handler(msg: PingMessage):
+    def process_incoming_messages(msg_json: dict):
+        match msg_json["action"]:
+            case "ping":
+                return ping_handler(msg_json)
+            case "register_application":
+                msg = msg_specs.RegisterApplication(**msg_json)
+                return handle_application_registration_request(msg)
+            case _:
+                return
+
+    def ping_handler(msg: msg_specs.QCrBoxBaseAction):
+        assert msg.action == "ping"
         logger.info("[DDD] Handling 'ping' message")
-        return {"response_to": "ping", "msg": "Hello from QCrBox!"}
+        return msg_specs.responses.success(response_to=msg.action)
+
+    def handle_application_registration_request(msg: msg_specs.RegisterApplication):
+        assert msg.action == "register_application"
+        response_msg = msg_specs.responses.success(response_to=msg.action)
+        # broker.publish(response_msg, msg.payload.private_routing_key)
+        return response_msg

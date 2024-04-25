@@ -3,7 +3,8 @@ from typing import Optional
 from faststream.rabbit import RabbitBroker
 from litestar import Litestar
 
-from pyqcrbox import settings
+from pyqcrbox import logger, msg_specs, settings, sql_models
+from pyqcrbox.cli.helpers import get_repo_root
 from pyqcrbox.helpers import generate_private_routing_key
 
 from ..shared import QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup
@@ -17,11 +18,13 @@ class QCrBoxClient(QCrBoxServerClientBase):
     def __init__(
         self,
         *,
+        application_spec: sql_models.ApplicationSpecCreate,
         private_routing_key: Optional[str] = None,
         broker: Optional[RabbitBroker] = None,
         asgi_server: Optional[Litestar] = None,
     ):
         super().__init__(broker=broker, asgi_server=asgi_server)
+        self.application_spec = application_spec
         self.private_routing_key = private_routing_key or generate_private_routing_key()
 
     def _set_up_rabbitmq_broker(self) -> None:
@@ -32,10 +35,20 @@ class QCrBoxClient(QCrBoxServerClientBase):
 
     @on_qcrbox_startup
     async def send_registration_request(self):
-        from pyqcrbox import logger
-
-        logger.error(f"[DDD] Running custom startup tasks for {self.clsname}.")
-        await self.broker.publish({"msg": "hello"}, settings.rabbitmq.routing_key_qcrbox_registry)
+        logger.debug("Sending registration request to QCrBox server")
+        msg = msg_specs.RegisterApplication(
+            action="register_application",
+            payload=msg_specs.PayloadForRegisterApplication(
+                application_spec=self.application_spec,
+                private_routing_key=self.private_routing_key,
+            ),
+        )
+        await self.broker.publish(
+            msg,
+            settings.rabbitmq.routing_key_qcrbox_registry,
+            rpc=True,
+            reply_to=self.private_routing_key,
+        )
 
     async def publish(self, queue, msg):
         await self.broker.publish(msg, queue)
@@ -46,9 +59,12 @@ class TestQCrBoxClient(TestQCrBoxServerClientBase, QCrBoxClient):
 
 
 def main():
-    qcrbox_client = QCrBoxClient()
+    repo_root = get_repo_root()
+    sample_spec_file = repo_root.joinpath("services/applications/olex2_linux/config_olex2.yaml")
+    application_spec = sql_models.ApplicationSpecCreate.from_yaml_file(sample_spec_file)
+    qcrbox_client = QCrBoxClient(application_spec=application_spec)
     qcrbox_client.run(port=settings.registry.client.port)
 
 
 if __name__ == "__main__":
-    QCrBoxClient()
+    main()

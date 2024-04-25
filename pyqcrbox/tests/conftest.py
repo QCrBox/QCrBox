@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 from faststream.rabbit import RabbitBroker, TestRabbitBroker
 
+from pyqcrbox import sql_models
 from pyqcrbox.registry.client import TestQCrBoxClient
 from pyqcrbox.registry.server import TestQCrBoxServer
 from pyqcrbox.settings import settings
@@ -53,8 +54,16 @@ def create_qcrbox_test_server(rabbit_test_broker):
 @pytest.fixture
 def create_qcrbox_test_client(rabbit_test_broker):
     @asynccontextmanager
-    async def _create_qcrbox_test_client(private_routing_key: str = "rk_qcrbox_test_private_routing_key"):
-        test_client = TestQCrBoxClient(broker=rabbit_test_broker, private_routing_key=private_routing_key)
+    async def _create_qcrbox_test_client(
+        *,
+        application_spec: sql_models.ApplicationSpecCreate,
+        private_routing_key: str = "rk_qcrbox_test_private_routing_key",
+    ):
+        test_client = TestQCrBoxClient(
+            broker=rabbit_test_broker,
+            application_spec=application_spec,
+            private_routing_key=private_routing_key,
+        )
         yield test_client
 
     return _create_qcrbox_test_client
