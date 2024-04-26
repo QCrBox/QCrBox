@@ -34,6 +34,6 @@ class PayloadForReportCalculationStatusDetails(BaseModel):
 
 
 class ReportCalculationStatusDetails(QCrBoxGenericResponse):
-    response_to: str = Literal[PollCalculationStatus.action_name]
+    response_to: Literal[PollCalculationStatus.action_name]
     status: str = "ok"
     payload: PayloadForReportCalculationStatusDetails
