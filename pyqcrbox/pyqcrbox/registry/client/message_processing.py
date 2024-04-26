@@ -30,7 +30,7 @@ def client_side_message_dispatcher(msg: dict):
     return msg_specs.responses.error(response_to="incoming_message", msg=error_msg)
 
 
-# @client_side_message_dispatcher.register
-# def health_check(msg: msg_specs.HealthCheck):
-#     assert msg.action == "health_check"
-#     return msg_specs.responses.health_check_healthy()
+@client_side_message_dispatcher.register
+def health_check(msg: msg_specs.HealthCheck):
+    assert msg.action == "health_check"
+    return msg_specs.responses.health_check_healthy()

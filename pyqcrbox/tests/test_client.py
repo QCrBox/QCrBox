@@ -1,16 +1,17 @@
 import pytest
 
-from pyqcrbox import logger
+from pyqcrbox import msg_specs
 
 
 @pytest.mark.anyio
-async def test_health_check_via_rabbitmq(test_client):
+async def test_health_check_via_rabbitmq(test_client, rabbit_test_broker):
     msg = {"action": "health_check", "payload": {}}
+    expected_response = msg_specs.responses.health_check_healthy()
 
     private_routing_key = test_client.private_routing_key
     assert not test_client.handler_was_called(private_routing_key)
 
-    await test_client.publish(private_routing_key, msg)
+    response = await rabbit_test_broker.publish(msg, private_routing_key, rpc=True)
 
     test_client.get_mock_handler(private_routing_key).assert_called_once_with(msg)
-    logger.warning("TODO: verify the client response")
+    assert response == expected_response
