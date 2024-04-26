@@ -2,15 +2,14 @@ import inspect
 import json
 
 import pydantic
-from faststream.rabbit import RabbitBroker
 from loguru import logger
 
-from pyqcrbox import msg_specs, settings
+from pyqcrbox import msg_specs
 from pyqcrbox.msg_specs import InvalidQCrBoxAction, look_up_action_class
 
 from .message_processing import message_dispatcher
 
-__all__ = ["set_up_server_rabbitmq_broker"]
+__all__ = ["process_message_server_side"]
 
 
 async def process_message_server_side(msg: dict):
@@ -56,12 +55,3 @@ async def process_message_server_side(msg: dict):
         # to await this in order to retrieve the actual result.
         result = await result
     return result
-
-
-def set_up_server_rabbitmq_broker(broker: RabbitBroker) -> None:
-    # Note: `@broker.subscriber(...)` is typically used as a decorator on a
-    #       function definition. However, here we call it directly with the
-    #       existing function `process_message` as an argument. This will
-    #       automatically register this function as a handler for incoming messages.
-    declare_as_incoming_msg_handler = broker.subscriber(settings.rabbitmq.routing_key_qcrbox_registry)
-    declare_as_incoming_msg_handler(process_message_server_side)

@@ -4,12 +4,17 @@ from pyqcrbox.settings import settings
 
 from ..shared import QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup
 from .asgi_server import create_server_asgi_server
-from .rabbit_broker import set_up_server_rabbitmq_broker
+from .rabbit_broker import process_message_server_side
 
 
 class QCrBoxServer(QCrBoxServerClientBase):
     def _set_up_rabbitmq_broker(self) -> None:
-        set_up_server_rabbitmq_broker(self.broker)
+        # Note: `@broker.subscriber(...)` is typically used as a decorator on a
+        #       function definition. However, here we call it directly with the
+        #       existing function `process_message` as an argument. This will
+        #       automatically register this function as a handler for incoming messages.
+        declare_as_incoming_msg_handler = self.broker.subscriber(settings.rabbitmq.routing_key_qcrbox_registry)
+        declare_as_incoming_msg_handler(process_message_server_side)
 
     def _set_up_asgi_server(self) -> None:
         self.asgi_server = create_server_asgi_server(self.lifespan_context)
