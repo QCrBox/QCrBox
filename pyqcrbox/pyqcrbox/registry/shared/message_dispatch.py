@@ -7,7 +7,13 @@ from faststream.rabbit import RabbitBroker
 from loguru import logger
 
 from pyqcrbox import msg_specs
-from pyqcrbox.msg_specs import InvalidQCrBoxAction, InvalidQCrBoxResponse, look_up_action_class, look_up_response_class
+from pyqcrbox.msg_specs import (
+    InvalidQCrBoxAction,
+    InvalidQCrBoxResponse,
+    QCrBoxBaseMessage,
+    look_up_action_class,
+    look_up_response_class,
+)
 
 __all__ = ["declare_rabbitmq_message_handler"]
 
@@ -36,7 +42,7 @@ def declare_rabbitmq_message_handler(
     """
 
     @broker.subscriber(routing_key)
-    async def process_message(msg: dict):
+    async def process_message(msg: dict) -> QCrBoxBaseMessage | None:
         """
         Wrapper function which allows to define both sync and async implementations of `process_message`.
         """
@@ -69,8 +75,10 @@ def declare_rabbitmq_message_handler(
             try:
                 response_cls = look_up_response_class(msg["response_to"])
             except InvalidQCrBoxResponse:
-                error_msg = f"Invalid response: {msg['response_to']!r}"
-                return log_error_msg_and_create_response(error_msg)
+                logger.trace(f"No explicit handler defined for response type: {msg['response_to']}")
+                # TODO: return at least some kind of valid QCrBox message instead of None
+                #       (also remove 'None' from the return type annotation above)
+                return None
 
             try:
                 msg_obj = response_cls(**msg)

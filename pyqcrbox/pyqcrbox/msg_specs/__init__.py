@@ -6,6 +6,7 @@ from .base import (
     InvalidQCrBoxAction,
     InvalidQCrBoxResponse,
     QCrBoxBaseAction,
+    QCrBoxBaseMessage,
     QCrBoxGenericResponse,
     look_up_action_class,
     look_up_response_class,
