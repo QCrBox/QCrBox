@@ -1,6 +1,6 @@
 import functools
 import inspect
-from typing import Any, Literal, Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, ConfigDict
 
@@ -31,7 +31,7 @@ class QCrBoxBaseAction(QCrBoxBaseMessage):
 
 
 class QCrBoxGenericResponse(QCrBoxBaseMessage):
-    response_to: str = Literal["incoming_message"]
+    response_to: str
     status: str
     msg: Optional[str] = None
     payload: Optional[QCrBoxBasePayload] = None
@@ -56,7 +56,7 @@ def represents_valid_qcrbox_action(cls: Any) -> bool:
     return inspect.isclass(cls) and issubclass(cls, QCrBoxBaseAction) and cls is not QCrBoxBaseAction
 
 
-def represents_valid_qcrbox_response(cls, include_generic_base_class: bool = False):
+def represents_valid_qcrbox_response(cls):
     return inspect.isclass(cls) and issubclass(cls, QCrBoxGenericResponse)
 
 
@@ -74,15 +74,21 @@ class InvalidQCrBoxAction(Exception):
     """
 
 
+class InvalidQCrBoxResponse(Exception):
+    """
+    Custom exception to indicate that a response type is not supported by QCrbox.
+    """
+
+
 @functools.lru_cache(maxsize=1)
 def populate_valid_qcrbox_actions_lookup():
     """
     Populate a dictionary to allow looking up valid QCrBox actions by name.
 
     Note that this must happen within a helper function (rather than during
-    import of this module) to avoid an error due to the 'actions' submodule
-    only being partially imported. However, we're caching the result to
-    avoid repeated construction of this dictionary upon each lookup.
+    import of this module) to avoid an error due to a circular import. However,
+    we're caching the result to avoid repeated construction of this dictionary
+    upon each lookup.
     """
     valid_qcrbox_actions_by_name = {
         cls.action_name: cls for cls in msg_types._qcrbox_actions if represents_valid_qcrbox_action(cls)
@@ -91,8 +97,32 @@ def populate_valid_qcrbox_actions_lookup():
 
 
 def look_up_action_class(action_name: str):
-    VALID_QCRBOX_ACTIONS_BY_NAME = populate_valid_qcrbox_actions_lookup()
+    valid_qcrbox_actions_by_name = populate_valid_qcrbox_actions_lookup()
     try:
-        return VALID_QCRBOX_ACTIONS_BY_NAME[action_name]
+        return valid_qcrbox_actions_by_name[action_name]
     except KeyError:
         raise InvalidQCrBoxAction(f"Invalid action: {action_name!r}")
+
+
+@functools.lru_cache(maxsize=1)
+def populate_valid_qcrbox_responses_lookup():
+    """
+    Populate a dictionary to allow looking up valid QCrBox responses by name.
+
+    Note that this must happen within a helper function (rather than during
+    import of this module) to avoid an error due to a circular import. However,
+    we're caching the result to avoid repeated construction of this dictionary
+    upon each lookup.
+    """
+    valid_qcrbox_responses_by_name = {
+        cls.response_to_str: cls for cls in msg_types._qcrbox_responses if represents_valid_qcrbox_response(cls)
+    }
+    return valid_qcrbox_responses_by_name
+
+
+def look_up_response_class(response_name: str):
+    valid_qcrbox_responses_by_name = populate_valid_qcrbox_responses_lookup()
+    try:
+        return valid_qcrbox_responses_by_name[response_name]
+    except KeyError:
+        raise InvalidQCrBoxResponse(f"Invalid response: {response_name!r}")

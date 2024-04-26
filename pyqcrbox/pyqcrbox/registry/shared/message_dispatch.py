@@ -7,13 +7,16 @@ from faststream.rabbit import RabbitBroker
 from loguru import logger
 
 from pyqcrbox import msg_specs
-from pyqcrbox.msg_specs import InvalidQCrBoxAction, look_up_action_class
+from pyqcrbox.msg_specs import InvalidQCrBoxAction, InvalidQCrBoxResponse, look_up_action_class, look_up_response_class
 
 __all__ = ["declare_rabbitmq_message_handler"]
 
 
 def declare_rabbitmq_message_handler(
-    broker: RabbitBroker, *, routing_key: str, msg_dispatcher_func: Callable
+    broker: RabbitBroker,
+    *,
+    routing_key: str,
+    msg_dispatcher_func: Callable,
 ) -> Callable:
     """
     This helper function takes the input argument `msg_dispatcher_func`, warps it
@@ -38,36 +41,45 @@ def declare_rabbitmq_message_handler(
         Wrapper function which allows to define both sync and async implementations of `process_message`.
         """
 
+        def log_error_msg_and_create_response(error_msg: str):
+            logger.error(error_msg)
+            return msg_specs.responses.error(response_to="incoming_message", msg=error_msg)
+
         if isinstance(msg, (str, bytes)):
             try:
                 msg = json.loads(msg)
             except Exception as exc:
-                error_msg = (
+                return log_error_msg_and_create_response(
                     f"Incoming message does not represent a valid JSON structure: {msg}.\nThe original error was: {exc}"
                 )
-                logger.error(error_msg)
-                return msg_specs.QCrBoxGenericResponse(
-                    response_to="incoming_message", status="error", msg=error_msg, payload=None
-                )
 
-        if "action" not in msg:
-            error_msg = "Invalid message structure: message must have an 'action' field"
-            logger.error(error_msg)
-            return msg_specs.QCrBoxGenericResponse(response_to="incoming_message", status="error", msg=error_msg)
+        if "action" in msg:
+            try:
+                action_cls = look_up_action_class(msg["action"])
+            except InvalidQCrBoxAction:
+                error_msg = f"Invalid action: {msg['action']!r}"
+                return log_error_msg_and_create_response(error_msg)
 
-        try:
-            action_cls = look_up_action_class(msg["action"])
-        except InvalidQCrBoxAction:
-            error_msg = f"Invalid action: {msg['action']!r}"
-            logger.error(error_msg)
-            return msg_specs.QCrBoxGenericResponse(response_to="incoming_message", status="error", msg=error_msg)
+            try:
+                msg_obj = action_cls(**msg)
+            except pydantic.ValidationError as exc:
+                error_msg = f"Invalid message structure for action {msg['action']!r}. Errors: {exc.errors()}"
+                return log_error_msg_and_create_response(error_msg)
+        elif "response_to" in msg:
+            try:
+                response_cls = look_up_response_class(msg["response_to"])
+            except InvalidQCrBoxResponse:
+                error_msg = f"Invalid response: {msg['response_to']!r}"
+                return log_error_msg_and_create_response(error_msg)
 
-        try:
-            msg_obj = action_cls(**msg)
-        except pydantic.ValidationError as exc:
-            error_msg = f"Invalid message structure for action {msg['action']!r}. Errors: {exc.errors()}"
-            logger.error(error_msg)
-            return msg_specs.QCrBoxGenericResponse(response_to="incoming_message", status="error", msg=error_msg)
+            try:
+                msg_obj = response_cls(**msg)
+            except pydantic.ValidationError as exc:
+                error_msg = f"Invalid message structure for response {msg['response_to']!r}. Errors: {exc.errors()}"
+                return log_error_msg_and_create_response(error_msg)
+        else:
+            error_msg = "Invalid message structure: message must have an 'action' or 'response_to' field"
+            return log_error_msg_and_create_response(error_msg)
 
         result = msg_dispatcher_func(msg_obj)
         if inspect.iscoroutine(result):
