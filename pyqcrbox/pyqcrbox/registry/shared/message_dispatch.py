@@ -3,24 +3,26 @@ import json
 from typing import Callable
 
 import pydantic
+from faststream.rabbit import RabbitBroker
 from loguru import logger
 
 from pyqcrbox import msg_specs
 from pyqcrbox.msg_specs import InvalidQCrBoxAction, look_up_action_class
 
-__all__ = ["create_message_handler"]
+__all__ = ["declare_rabbitmq_message_handler"]
 
 
-def create_message_handler(message_dispatcher: Callable) -> Callable:
+def declare_rabbitmq_message_handler(
+    broker: RabbitBroker, *, routing_key: str, msg_dispatcher_func: Callable
+) -> Callable:
     """
-    This helper function takes the input argument `message_dispatcher` and
-    wraps it with some generic validation code, returning an output callable
-    which can be used as a message handler for incoming action messages
-    delivered via RabbitMQ.
+    This helper function takes the input argument `msg_dispatcher_func`, warps it
+    with some generic validation code, and declares it as a message handler for
+    incoming action messages on the given RabbitMQ broker.
 
     Parameters
     ----------
-    message_dispatcher: Callable
+    msg_dispatcher_func: Callable
         The message dispatcher to be wrapped. This must be a callable that has
         been decorated with `@functools.singledispatch`
 
@@ -30,6 +32,7 @@ def create_message_handler(message_dispatcher: Callable) -> Callable:
 
     """
 
+    @broker.subscriber(routing_key)
     async def process_message(msg: dict):
         """
         Wrapper function which allows to define both sync and async implementations of `process_message`.
@@ -66,7 +69,7 @@ def create_message_handler(message_dispatcher: Callable) -> Callable:
             logger.error(error_msg)
             return msg_specs.QCrBoxGenericResponse(response_to="incoming_message", status="error", msg=error_msg)
 
-        result = message_dispatcher(msg_obj)
+        result = msg_dispatcher_func(msg_obj)
         if inspect.iscoroutine(result):
             # If the given message type is processed by an async function,
             # calling `process_message` will return a coroutine, so we need

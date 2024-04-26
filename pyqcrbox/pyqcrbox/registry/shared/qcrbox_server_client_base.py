@@ -1,7 +1,7 @@
 import inspect
 from abc import ABCMeta, abstractmethod
 from contextlib import asynccontextmanager
-from typing import AsyncContextManager, Optional, assert_never
+from typing import AsyncContextManager, Callable, Optional, assert_never
 
 import anyio
 import uvicorn
@@ -13,6 +13,8 @@ from litestar.testing import AsyncTestClient
 from loguru import logger
 
 from pyqcrbox import settings
+
+from ..shared.message_dispatch import declare_rabbitmq_message_handler
 
 __all__ = ["QCrBoxServerClientBase", "TestQCrBoxServerClientBase"]
 
@@ -99,6 +101,9 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
             logger.trace("Done (broker is closed).")
 
         logger.trace(f"<== Exiting from {self.clsname} lifespan function.")
+
+    def declare_rabbitmq_message_handler(self, *, routing_key: str, message_dispatcher: Callable):
+        declare_rabbitmq_message_handler(self.broker, routing_key=routing_key, msg_dispatcher_func=message_dispatcher)
 
     def run(self, host: Optional[str] = None, port: Optional[int] = None, **kwargs):
         self.host = host or "127.0.0.1"
