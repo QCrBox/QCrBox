@@ -2,7 +2,7 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel
 
-from pyqcrbox.msg_specs.base import QCrBoxActionBasePayload, QCrBoxBaseAction, QCrBoxGenericResponse
+from pyqcrbox.msg_specs.base import QCrBoxBaseAction, QCrBoxBasePayload, QCrBoxGenericResponse
 
 __all__ = [
     "CalculationStatusDetails",
@@ -13,7 +13,7 @@ __all__ = [
 ]
 
 
-class PayloadForPollCalculationStatus(QCrBoxActionBasePayload):
+class PayloadForPollCalculationStatus(QCrBoxBasePayload):
     correlation_id: str
 
 

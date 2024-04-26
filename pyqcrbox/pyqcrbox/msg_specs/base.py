@@ -13,13 +13,13 @@ class QCrBoxBaseMessage(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class QCrBoxActionBasePayload(BaseModel):
+class QCrBoxBasePayload(BaseModel):
     pass
 
 
 class QCrBoxBaseAction(QCrBoxBaseMessage):
     action: str
-    payload: QCrBoxActionBasePayload
+    payload: QCrBoxBasePayload
 
     @classmethod
     @property
@@ -34,7 +34,7 @@ class QCrBoxGenericResponse(QCrBoxBaseMessage):
     response_to: str = Literal["incoming_message"]
     status: str
     msg: Optional[str] = None
-    payload: Optional[BaseModel] = None
+    payload: Optional[QCrBoxBasePayload] = None
 
     @classmethod
     @property

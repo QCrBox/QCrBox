@@ -28,16 +28,13 @@ def process_message_dispatcher(msg: dict):
     return msg_specs.responses.error(response_to="incoming_message", msg=error_msg)
 
 
-# @process_message_dispatcher.register
+@process_message_dispatcher.register
 def handle_application_registration_request(msg: msg_specs.RegisterApplication):
     assert msg.action == "register_application"
-    response_msg = msg_specs.responses.success(response_to=msg.action)
-    # broker.publish(response_msg, msg.payload.private_routing_key)
-    return response_msg
-
-
-# @process_message_dispatcher.register
-def ping_handler(msg: msg_specs.QCrBoxBaseAction):
-    assert msg.action == "ping"
-    logger.info("[DDD] Handling 'ping' message")
     return msg_specs.responses.success(response_to=msg.action)
+
+
+@process_message_dispatcher.register
+def health_check(msg: msg_specs.HealthCheck):
+    assert msg.action == "health_check"
+    return msg_specs.responses.health_check_healthy()

@@ -1,18 +1,18 @@
 import pytest
 from litestar.status_codes import HTTP_200_OK
 
-from pyqcrbox import logger
-
 
 @pytest.mark.anyio
-async def test_health_check_via_rabbitmq(test_server):
+async def test_health_check_via_rabbitmq(test_server, rabbit_test_broker):
     msg = {"action": "health_check", "payload": {}}
     assert not test_server.get_mock_handler("qcrbox-registry").called
 
-    await test_server.publish("qcrbox-registry", msg)
+    response = await rabbit_test_broker.publish(msg, "qcrbox-registry", rpc=True)
 
     test_server.get_mock_handler("qcrbox-registry").assert_called_once_with(msg)
-    logger.warning("TODO: verify the server response")
+    assert response.status == "success"
+    assert response.msg == "healthy"
+    assert response.payload.dict() == {"health_status": "healthy"}
 
 
 @pytest.mark.anyio
