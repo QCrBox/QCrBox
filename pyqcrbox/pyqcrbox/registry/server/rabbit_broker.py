@@ -8,7 +8,7 @@ from loguru import logger
 from pyqcrbox import msg_specs, settings
 from pyqcrbox.msg_specs import InvalidQCrBoxAction, look_up_action_class
 
-from .message_processing import process_message_dispatcher
+from .message_processing import message_dispatcher
 
 __all__ = ["set_up_server_rabbitmq_broker"]
 
@@ -49,7 +49,7 @@ async def process_message_server_side(msg: dict):
         logger.error(error_msg)
         return msg_specs.QCrBoxGenericResponse(response_to="incoming_message", status="error", msg=error_msg)
 
-    result = process_message_dispatcher(msg_obj)
+    result = message_dispatcher(msg_obj)
     if inspect.iscoroutine(result):
         # If the given message type is processed by an async function,
         # calling `process_message` will return a coroutine, so we need
@@ -59,8 +59,9 @@ async def process_message_server_side(msg: dict):
 
 
 def set_up_server_rabbitmq_broker(broker: RabbitBroker) -> None:
-    # Note: usually `@broker.subscriber(...)` is used as a decorator,
-    #       but here we call it directly with `process_message_NEW`
-    #       as an argument, which will register this function as a
-    #       handler for incoming messages.
-    broker.subscriber(settings.rabbitmq.routing_key_qcrbox_registry)(process_message_server_side)
+    # Note: `@broker.subscriber(...)` is typically used as a decorator on a
+    #       function definition. However, here we call it directly with the
+    #       existing function `process_message` as an argument. This will
+    #       automatically register this function as a handler for incoming messages.
+    declare_as_incoming_msg_handler = broker.subscriber(settings.rabbitmq.routing_key_qcrbox_registry)
+    declare_as_incoming_msg_handler(process_message_server_side)
