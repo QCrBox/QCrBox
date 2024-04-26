@@ -6,10 +6,10 @@ from litestar import Litestar
 from pyqcrbox import logger, msg_specs, settings, sql_models
 from pyqcrbox.cli.helpers import get_repo_root
 from pyqcrbox.helpers import generate_private_routing_key
+from pyqcrbox.registry.client.message_processing import client_side_message_dispatcher
 
 from ..shared import QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup
 from .asgi_server import create_client_asgi_server
-from .rabbit_broker import set_up_client_rabbitmq_broker
 
 __all__ = ["QCrBoxClient", "TestQCrBoxClient"]
 
@@ -28,7 +28,10 @@ class QCrBoxClient(QCrBoxServerClientBase):
         self.private_routing_key = private_routing_key or generate_private_routing_key()
 
     def _set_up_rabbitmq_broker(self) -> None:
-        set_up_client_rabbitmq_broker(self.broker, private_routing_key=self.private_routing_key)
+        self.declare_rabbitmq_message_handler(
+            routing_key=self.private_routing_key,
+            message_dispatcher=client_side_message_dispatcher,
+        )
 
     def _set_up_asgi_server(self) -> None:
         self.asgi_server = create_client_asgi_server(self.lifespan_context)
