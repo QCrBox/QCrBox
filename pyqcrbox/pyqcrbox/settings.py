@@ -1,5 +1,5 @@
 import functools
-import os
+import sys
 from typing import Annotated, Any, Literal, Optional, Union
 
 import sqlalchemy
@@ -11,8 +11,7 @@ from sqlmodel import Session, create_engine
 
 __all__ = ["settings"]
 
-IS_RUNNING_INSIDE_TESTS = os.environ.get("PYTEST_VERSION") is not None
-
+IS_RUNNING_INSIDE_TESTS = hasattr(sys, "_qcrbox_running_inside_tests")
 
 SQLiteDsn = Union[
     Annotated[Literal["sqlite:///:memory:"], Tag("in-memory")],

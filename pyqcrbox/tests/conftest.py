@@ -5,6 +5,8 @@ from pathlib import Path
 import pytest
 from faststream.rabbit import RabbitBroker, TestRabbitBroker
 
+sys._qcrbox_running_inside_tests = True  # noqa
+
 from pyqcrbox import logger, sql_models
 from pyqcrbox.registry.client import TestQCrBoxClient
 from pyqcrbox.registry.server import TestQCrBoxServer
@@ -39,6 +41,7 @@ else:
             "Explicitly assigning a database url to `settings.db.url` will likely break if "
             "tests are executed in parallel. We should use dependency injection instead."
         )
+        logger.debug(f"Test db path: {test_db_path}")
         settings.db.url = f"sqlite:///{test_db_path}"
         return test_db_path
 
