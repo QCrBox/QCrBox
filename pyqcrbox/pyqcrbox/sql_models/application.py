@@ -83,7 +83,7 @@ class ApplicationSpecDB(QCrBoxBaseSQLModel, table=True):
     cif_entry_sets: list[str] = Field(sa_column=Column(JSON()))
 
     @classmethod
-    def from_pydantic_model(cls, application, private_routing_key: str = None):
+    def from_pydantic_model(cls, application: __pydantic_model_cls__, private_routing_key: str = None):
         pydantic_model_cls = getattr(cls, "__pydantic_model_cls__")
         assert isinstance(application, pydantic_model_cls)
         data = application.model_dump(exclude={"commands"})
