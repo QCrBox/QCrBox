@@ -19,6 +19,8 @@ from pyqcrbox.settings import settings
 #
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+CURRENT_DIRECTORY = Path(__file__).parent
+
 
 @pytest.fixture
 def anyio_backend():
@@ -43,11 +45,8 @@ else:
 
 @pytest.fixture
 def sample_application_spec():
-    return {
-        "name": "Olex2",
-        "slug": "olex2",
-        "version": "x.y.z",
-    }
+    spec_yaml_file = CURRENT_DIRECTORY.joinpath("sample_application_spec.yaml")
+    return sql_models.ApplicationSpecCreate.from_yaml_file(spec_yaml_file)
 
 
 @pytest.fixture
@@ -95,3 +94,8 @@ async def test_server(create_qcrbox_test_server):
 async def test_client(create_qcrbox_test_client):
     async with create_qcrbox_test_client() as test_client, test_client.run():
         yield test_client
+
+
+@pytest.fixture(scope="session")
+def server_public_queue_name():
+    return settings.rabbitmq.routing_key_qcrbox_registry
