@@ -1,4 +1,5 @@
 import functools
+import os
 from typing import Annotated, Any, Literal, Optional, Union
 
 import sqlalchemy
@@ -9,6 +10,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlmodel import Session, create_engine
 
 __all__ = ["settings"]
+
+IS_RUNNING_INSIDE_TESTS = os.environ.get("PYTEST_VERSION") is not None
 
 
 SQLiteDsn = Union[
@@ -118,7 +121,7 @@ class QCrBoxSettings(BaseSettings):
     registry: RegistrySettings = RegistrySettings()
     db: DatabaseSettings = DatabaseSettings()
     testing: TestingSettings = TestingSettings()
-    log_level: str = "INFO"
+    log_level: str = "INFO" if not IS_RUNNING_INSIDE_TESTS else "DEBUG"
 
 
 settings = QCrBoxSettings()
