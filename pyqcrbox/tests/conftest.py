@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 from faststream.rabbit import RabbitBroker, TestRabbitBroker
 
-from pyqcrbox import sql_models
+from pyqcrbox import logger, sql_models
 from pyqcrbox.registry.client import TestQCrBoxClient
 from pyqcrbox.registry.server import TestQCrBoxServer
 from pyqcrbox.settings import settings
@@ -23,6 +23,22 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 @pytest.fixture
 def anyio_backend():
     return "asyncio"
+
+
+if settings.testing.use_in_memory_db:
+    logger.debug("Tests will use in-memory SQLite databases.")
+else:
+    logger.debug("Tests will use SQLite database in temporary directories.")
+
+    @pytest.fixture(autouse=True)
+    def set_sqlite_test_db_path(tmp_path):
+        test_db_path = tmp_path / "test_db.sqlite"
+        logger.warning(
+            "Explicitly assigning a database url to `settings.db.url` will likely break if "
+            "tests are executed in parallel. We should use dependency injection instead."
+        )
+        settings.db.url = f"sqlite:///{test_db_path}"
+        return test_db_path
 
 
 @pytest.fixture

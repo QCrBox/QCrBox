@@ -102,7 +102,8 @@ class RegistrySettings(BaseModel):
 
 
 class TestingSettings(BaseModel):
-    report_coverage: bool = False
+    # report_coverage: bool = False
+    use_in_memory_db: bool = True
 
 
 class QCrBoxSettings(BaseSettings):
