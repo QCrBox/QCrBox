@@ -3,14 +3,14 @@
 import click
 
 from . import subcommands
-from .helpers import add_verbose_option
+from .helpers import ClickGroupCls, add_verbose_option
 
 CONTEXT_SETTINGS = {
     "help_option_names": ["-h", "--help"],
 }
 
 
-@click.group(context_settings=CONTEXT_SETTINGS)
+@click.group(context_settings=CONTEXT_SETTINGS, cls=ClickGroupCls)
 @add_verbose_option
 def entry_point():
     """

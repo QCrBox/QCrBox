@@ -109,6 +109,10 @@ class TestingSettings(BaseModel):
     use_in_memory_db: bool = True
 
 
+class CLISettings(BaseModel):
+    disable_rich: bool = False
+
+
 class QCrBoxSettings(BaseSettings):
     model_config = SettingsConfigDict(
         case_sensitive=False,
@@ -121,6 +125,7 @@ class QCrBoxSettings(BaseSettings):
     registry: RegistrySettings = RegistrySettings()
     db: DatabaseSettings = DatabaseSettings()
     testing: TestingSettings = TestingSettings()
+    cli: CLISettings = CLISettings()
     log_level: str = "INFO" if not IS_RUNNING_INSIDE_TESTS else "DEBUG"
 
 

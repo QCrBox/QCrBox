@@ -3,10 +3,10 @@
 import click
 import doit.task
 
-from ..helpers import DockerProject, run_tasks
+from ..helpers import ClickCommandCls, DockerProject, run_tasks
 
 
-@click.command(name="down")
+@click.command(name="down", cls=ClickCommandCls)
 @click.option(
     "-n",
     "--dry-run",

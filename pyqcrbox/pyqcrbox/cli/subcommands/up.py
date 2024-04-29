@@ -5,11 +5,17 @@ from typing import Optional
 import click
 import doit.task
 
-from ..helpers import DockerProject, add_cli_option_to_enable_or_disable_components, add_verbose_option, run_tasks
+from ..helpers import (
+    ClickCommandCls,
+    DockerProject,
+    add_cli_option_to_enable_or_disable_components,
+    add_verbose_option,
+    run_tasks,
+)
 from .build import populate_build_tasks
 
 
-@click.command(name="up")
+@click.command(name="up", cls=ClickCommandCls)
 @add_cli_option_to_enable_or_disable_components
 @click.option(
     "--build/--no-build",

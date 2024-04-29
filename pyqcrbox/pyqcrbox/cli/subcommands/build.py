@@ -9,6 +9,7 @@ from doit.task import Task
 from loguru import logger
 
 from ..helpers import (
+    ClickCommandCls,
     DockerProject,
     QCrBoxSubprocessError,
     add_cli_option_to_enable_or_disable_components,
@@ -20,7 +21,7 @@ from ..helpers import (
 )
 
 
-@click.command(name="build")
+@click.command(name="build", cls=ClickCommandCls)
 @add_cli_option_to_enable_or_disable_components
 @click.option("--no-deps/--with-deps", default=False, help="Build given components without/with dependencies.")
 @click.option(
