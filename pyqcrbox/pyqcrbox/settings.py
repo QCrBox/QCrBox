@@ -109,8 +109,8 @@ class QCrBoxSettings(BaseSettings):
     model_config = SettingsConfigDict(
         case_sensitive=False,
         # env_file='.env',
-        env_nested_delimiter="_",
-        env_prefix="QCRBOX_",
+        env_nested_delimiter="__",
+        env_prefix="QCRBOX__",
     )
 
     rabbitmq: RabbitMQSettings = RabbitMQSettings()
