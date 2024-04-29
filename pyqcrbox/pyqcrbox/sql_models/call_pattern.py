@@ -11,7 +11,7 @@ def remove_linebreaks(value: str) -> str:
 
 
 def condense_whitespace(value: str) -> str:
-    return re.sub("\s+", " ", value)
+    return re.sub(r"\s+", " ", value)
 
 
 def normalise_call_pattern(value: str) -> str:
