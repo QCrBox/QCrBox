@@ -15,7 +15,7 @@ from .command import CommandSpecCreate, CommandSpecDB
 from .qcrbox_base_models import QCrBoxBaseSQLModel, QCrBoxPydanticBaseModel
 
 
-class ApplicationSpecCreate(QCrBoxPydanticBaseModel):
+class ApplicationSpecBase(QCrBoxPydanticBaseModel):
     name: str
     slug: str
     version: str
@@ -23,6 +23,8 @@ class ApplicationSpecCreate(QCrBoxPydanticBaseModel):
     url: Optional[str] = None
     email: Optional[str] = None
 
+
+class ApplicationSpecCreate(ApplicationSpecBase):
     commands: list[CommandSpecCreate] = []
     cif_entry_sets: list[CifEntrySetCreate] = []
 
@@ -61,17 +63,10 @@ class ApplicationSpecCreate(QCrBoxPydanticBaseModel):
         return sql_model.save_to_db()
 
 
-class ApplicationSpecDB(QCrBoxBaseSQLModel, table=True):
+class ApplicationSpecDB(ApplicationSpecBase, QCrBoxBaseSQLModel, table=True):
     __tablename__ = "application"
     __table_args__ = (UniqueConstraint("name", "version"),)
     __pydantic_model_cls__ = ApplicationSpecCreate
-
-    name: str
-    slug: str
-    version: str
-    description: Optional[str] = None
-    url: Optional[str] = None
-    email: Optional[str] = None
 
     id: Optional[int] = Field(default=None, primary_key=True)
     registered_at: datetime = Field(default_factory=datetime.now)
