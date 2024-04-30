@@ -1,8 +1,8 @@
 import functools
 import inspect
-from typing import Any, Optional
+from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 
 from . import msg_types
 
@@ -33,8 +33,13 @@ class QCrBoxBaseAction(QCrBoxBaseMessage):
 class QCrBoxGenericResponse(QCrBoxBaseMessage):
     response_to: str
     status: str
-    msg: Optional[str] = None
-    payload: Optional[QCrBoxBasePayload] = None
+    msg: str = ""
+    payload: QCrBoxBasePayload
+
+    @field_validator("payload", mode="before")
+    @classmethod
+    def set_empty_payload_if_not_explicitly_provided(cls, value: QCrBoxBasePayload | None) -> QCrBoxBasePayload:
+        return value or QCrBoxBasePayload()
 
     @classmethod
     @property
