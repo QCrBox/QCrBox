@@ -24,6 +24,10 @@ def get_one_or_none(model_cls, **kwargs):
         return None
 
 
-def table_is_empty(model_cls):
+def get_first_or_none(model_cls):
     with settings.db.get_session() as session:
-        return len(session.exec(select(model_cls)).all()) == 0
+        return session.exec(select(model_cls)).first()
+
+
+def table_is_empty(model_cls):
+    return get_first_or_none(model_cls) is None
