@@ -55,6 +55,7 @@ async def test_register_application(test_server, rabbit_test_broker, server_publ
 
     # Check that we received a successful response
     assert response.status == "success"
+    # assert response.payload.application_id == 1
 
     # Check that the application spec was saved to the database
     with settings.db.get_session() as session:
