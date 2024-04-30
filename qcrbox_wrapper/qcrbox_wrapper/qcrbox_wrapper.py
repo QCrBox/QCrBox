@@ -1,4 +1,9 @@
+# Copyright 2024 Paul Niklas Ruth.
+# SPDX-License-Identifier: MPL-2.0
 """
+This file is licenced under the MPL-2.0 license. For more information see the LICENSE file
+at https://github.com/QCrBox/QCrBox/blob/dev/LICENSE.
+
 This module provides a comprehensive interface for interacting with the QCrBox server,
 enabling the execution of commands, retrieval of application information, and management
 of calculation statuses. It defines classes for wrapping the QCrBox API, representing

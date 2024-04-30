@@ -3,7 +3,7 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from qcrboxtools.cif.cif2cif import cif_file_unified_yml_instr, cif_file_unify_split
+from qcrboxtools.cif.cif2cif import cif_file_to_specific_by_yml, cif_file_to_unified
 from qcrboxtools.cif.file_converter.hkl import cif2hkl4
 
 from qcrbox.registry.client import QCrBoxRegistryClient
@@ -24,7 +24,7 @@ def atom_form_fact_gpaw(
     gridspacing
 ):
     work_cif_path = Path(input_cif_path).parent / "work.cif"
-    cif_file_unified_yml_instr(input_cif_path, work_cif_path, YAML_PATH, "atom_form_fact_gpaw")
+    cif_file_to_specific_by_yml(input_cif_path, work_cif_path, YAML_PATH, "atom_form_fact_gpaw")
     subprocess.check_call([
         "python", "-m", "xharpy.cli_tsc",
         "--cif_name", str(work_cif_path),
@@ -61,7 +61,7 @@ def ha_refine(
         entry = cif_text.split("refine_ls.extinction_coef")[1].strip()[:2]
         if entry.strip() != ".":
             extinction_method = "shelxl"
-    cif_file_unified_yml_instr(input_cif_path, work_cif_path, YAML_PATH, "ha_refine")
+    cif_file_to_specific_by_yml(input_cif_path, work_cif_path, YAML_PATH, "ha_refine")
 
     subprocess.check_call([
         "python", "-m", "xharpy.cli_refine",
@@ -77,7 +77,7 @@ def ha_refine(
         "--output_folder", output_dir
     ])
 
-    cif_file_unify_split(output_dir / "xharpy.cif", output_cif_path, custom_categories=["iucr, shelx"])
+    cif_file_to_unified(output_dir / "xharpy.cif", output_cif_path, custom_categories=["iucr, shelx"])
     shutil.rmtree(output_dir)
     os.remove("shelx.hkl")
 

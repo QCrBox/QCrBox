@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 
 from qcrboxtools.analyse.convergence import check_converged
-from qcrboxtools.cif.cif2cif import cif_file_unified_yml_instr
+from qcrboxtools.cif.cif2cif import cif_file_to_specific_by_yml
 
 YML_PATH = "/opt/qcrbox/config_qcrboxtools.yaml"
 
@@ -75,9 +75,9 @@ def main():
 
     converted2_path = args.cif2_path.parent / "converted2.cif"
 
-    cif_file_unified_yml_instr(args.cif1_path, converted1_path, YML_PATH, "check_structure_convergence")
+    cif_file_to_specific_by_yml(args.cif1_path, converted1_path, YML_PATH, "check_structure_convergence")
 
-    cif_file_unified_yml_instr(args.cif2_path, converted2_path, YML_PATH, "check_structure_convergence")
+    cif_file_to_specific_by_yml(args.cif2_path, converted2_path, YML_PATH, "check_structure_convergence")
 
     criteria = {
         "max abs position": args.max_abs_position,
