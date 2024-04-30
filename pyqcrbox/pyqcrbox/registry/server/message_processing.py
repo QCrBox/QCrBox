@@ -1,9 +1,7 @@
 import functools
 import textwrap
 
-from pyqcrbox import logger, msg_specs, settings, sql_models
-
-from . import db_helpers
+from pyqcrbox import db_helpers, logger, msg_specs, settings, sql_models
 
 
 @functools.singledispatch
