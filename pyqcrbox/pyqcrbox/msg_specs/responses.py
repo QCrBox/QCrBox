@@ -1,4 +1,5 @@
 from enum import StrEnum
+from typing import Optional
 
 from .base import QCrBoxBasePayload, QCrBoxGenericResponse
 
@@ -8,12 +9,12 @@ class ResponseStatusEnum(StrEnum):
     ERROR = "error"
 
 
-def success(*, response_to: str):
-    return QCrBoxGenericResponse(response_to=response_to, status=ResponseStatusEnum.SUCCESS)
+def success(*, response_to: str, msg: str = "", payload: Optional[QCrBoxBasePayload] = None):
+    return QCrBoxGenericResponse(response_to=response_to, status=ResponseStatusEnum.SUCCESS, msg=msg, payload=payload)
 
 
-def error(*, response_to: str, msg: str = ""):
-    return QCrBoxGenericResponse(response_to=response_to, status=ResponseStatusEnum.ERROR, msg=msg)
+def error(*, response_to: str, msg: str = "", payload: Optional[QCrBoxBasePayload] = None):
+    return QCrBoxGenericResponse(response_to=response_to, status=ResponseStatusEnum.ERROR, msg=msg, payload=payload)
 
 
 class HealthStatusEnum(StrEnum):
