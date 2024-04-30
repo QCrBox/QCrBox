@@ -22,3 +22,8 @@ def get_one_or_none(model_cls, **kwargs):
         return get_one(model_cls, **kwargs)
     except sqlalchemy.exc.NoResultFound:
         return None
+
+
+def table_is_empty(model_cls):
+    with settings.db.get_session() as session:
+        return len(session.exec(select(model_cls)).all()) == 0

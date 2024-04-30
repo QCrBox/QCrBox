@@ -2,7 +2,7 @@ import pytest
 from litestar.status_codes import HTTP_200_OK
 from sqlmodel import select
 
-from pyqcrbox import msg_specs, settings, sql_models
+from pyqcrbox import db_helpers, msg_specs, settings, sql_models
 
 
 @pytest.mark.anyio
@@ -47,8 +47,7 @@ async def test_register_application(test_server, rabbit_test_broker, server_publ
     )
 
     # Ensure we're starting with an empty database
-    with settings.db.get_session() as session:
-        assert len(session.exec(select(spec_cls)).all()) == 0
+    assert db_helpers.table_is_empty(sql_models.ApplicationSpecDB)
 
     # Send registration message to the server
     response = await rabbit_test_broker.publish(msg, server_public_queue_name, rpc=True)
