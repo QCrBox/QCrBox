@@ -186,6 +186,7 @@ class QCrBoxWrapper:
             "Eval1X": {"port": 12005, "commands": ["interactive"]},
             "Olex2 (Linux)": {"port": 12004, "commands": ["interactive"]},
             "CrystalExplorer": {"port": 12003, "commands": ["interactive"]},
+            "CrysalisPro": {"port": 12001, "commands": ["interactive"]},
         }
         if gui_infos is None:
             self.gui_infos = default_gui_infos
