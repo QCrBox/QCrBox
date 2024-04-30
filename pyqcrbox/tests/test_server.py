@@ -1,8 +1,7 @@
 import pytest
 from litestar.status_codes import HTTP_200_OK
-from sqlmodel import select
 
-from pyqcrbox import db_helpers, msg_specs, settings, sql_models
+from pyqcrbox import db_helpers, msg_specs, sql_models
 
 
 @pytest.mark.anyio
@@ -36,8 +35,6 @@ async def test_health_check_via_web_api(test_server):
 
 @pytest.mark.anyio
 async def test_register_application(test_server, rabbit_test_broker, server_public_queue_name, sample_application_spec):
-    spec_cls = sql_models.ApplicationSpecDB
-
     msg = msg_specs.RegisterApplication(
         action="register_application",
         payload=msg_specs.PayloadForRegisterApplication(
@@ -57,12 +54,11 @@ async def test_register_application(test_server, rabbit_test_broker, server_publ
     # assert response.payload.application_id == 1
 
     # Check that the application spec was saved to the database
-    with settings.db.get_session() as session:
-        result = session.exec(
-            select(spec_cls).where(
-                spec_cls.slug == sample_application_spec.slug and spec_cls.version == sample_application_spec.slug
-            )
-        ).one()
-        assert result.name == sample_application_spec.name
-        assert result.slug == sample_application_spec.slug
-        assert result.version == sample_application_spec.version
+    result = db_helpers.get_one(
+        sql_models.ApplicationSpecDB,
+        slug=sample_application_spec.slug,
+        version=sample_application_spec.version,
+    )
+    assert result.name == sample_application_spec.name
+    assert result.slug == sample_application_spec.slug
+    assert result.version == sample_application_spec.version
