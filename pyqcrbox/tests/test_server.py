@@ -54,11 +54,19 @@ async def test_register_application(test_server, rabbit_test_broker, server_publ
     # assert response.payload.application_id == 1
 
     # Check that the application spec was saved to the database
-    result = db_helpers.get_one(
+    app_db = db_helpers.get_one(
         sql_models.ApplicationSpecDB,
         slug=sample_application_spec.slug,
         version=sample_application_spec.version,
     )
-    assert result.name == sample_application_spec.name
-    assert result.slug == sample_application_spec.slug
-    assert result.version == sample_application_spec.version
+    assert app_db.name == sample_application_spec.name
+    assert app_db.slug == sample_application_spec.slug
+    assert app_db.version == sample_application_spec.version
+
+    command_spec = sample_application_spec.commands[0]
+    cmd_db = db_helpers.get_one(
+        sql_models.CommandSpecDB,
+        name=command_spec.name,
+    )
+    assert cmd_db.name == command_spec.name
+    assert cmd_db.implemented_as == command_spec.implemented_as

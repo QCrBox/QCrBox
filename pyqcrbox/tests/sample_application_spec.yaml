@@ -7,7 +7,7 @@ version: "x.y.z"
 description: "This is the greatest program ever"
 url: "https://www.example.com/"
 
-#commands:
-#  - name: "say_hello"
-#    implemented_as: "python_callable"
-#    import_path: "pyqcrbox.helpers"
+commands:
+  - name: "say_hello"
+    implemented_as: "python_callable"
+    import_path: "pyqcrbox.helpers"
