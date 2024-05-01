@@ -159,7 +159,7 @@ class TestQCrBoxServerClientBase(QCrBoxServerClientBase):
         **kwargs,
     ):
         self.host = host or "127.0.0.1"
-        self.port = port or 8000
+        self.port = port or 0  # zero means "choose a random unused port"
         self._run_kwargs = kwargs
         self._set_up_uvicorn_server()
 
