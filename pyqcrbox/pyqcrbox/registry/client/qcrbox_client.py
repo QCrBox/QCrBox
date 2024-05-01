@@ -49,7 +49,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         await self.broker.publish(
             msg,
             settings.rabbitmq.routing_key_qcrbox_registry,
-            rpc=True,
+            # rpc=True,
             reply_to=self.private_routing_key,
         )
 
