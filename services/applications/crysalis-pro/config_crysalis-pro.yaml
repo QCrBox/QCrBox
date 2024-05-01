@@ -1,0 +1,17 @@
+#
+# Configuration for the application 'crysalis-pro'
+#
+name: "CrysalisPro"
+slug: "crysalis-pro"
+version: "171.43.48a"
+description: "CrysalisPro is used for data reduction on frame folders produced by Rigaku instruments."
+url: ""
+
+commands:
+  - name: "interactive"
+    implemented_as: "CLI"  # other options: "python_callable"
+    parameters:
+      - name: "work_folder"
+        type: "str"
+        default_value: None
+

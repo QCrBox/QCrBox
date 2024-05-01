@@ -1,0 +1,18 @@
+services:
+  crysalis-pro:
+    image: "qcrbox/crysalis-pro:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
+    environment:
+      QCRBOX_APPLICATION_DISPLAY_NAME: "CrysalisPro"
+      QCRBOX_RABBITMQ_QUEUE_NAME: "crysalis-pro"
+      QCRBOX_REGISTRY_HOST: "qcrbox-registry"
+      QCRBOX_REGISTRY_PORT: "8000"
+    ports:
+      - "${QCRBOX_BIND_ADDRESS}:${QCRBOX_CRYSALIS_PRO_PORT:?Must set env var QCRBOX_CRYSALIS_PRO_PORT}:8080"
+    volumes:
+      - ${QCRBOX_SHARED_FILES_DIR_HOST_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_HOST_PATH}:${QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH}
+    depends_on:
+      qcrbox-registry:
+        condition: service_healthy
+    networks:
+      - qcrbox-net
+    restart: unless-stopped
