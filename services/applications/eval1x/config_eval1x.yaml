@@ -14,21 +14,33 @@ commands:
       - name: "work_folder"
         type: "str"
         default_value: None
+      - name: "output_cif_path"
+        type: "QCrBox.output_file"
+        default_value: None
+    cif_output:
+      required_entry_sets: ["integration_output"]
+      merge_su: Yes
+      custom_categories: ["iucr", "shelx"]
+      output_block: "0"
+
 
   - name: "interactive"
     implemented_as: "python_callable"  # other options: "python_callable"
     parameters:
       - name: "work_folder"
-        type: "str"
+        type: "QCrBox.input_folder"
+        default_value: None
+      - name: "output_cif_path"
+        type: "QCrBox.output_file"
         default_value: None
       - name: "rmat_file_path"
-        type: "str"
+        type: "QCrBox.input_file"
         default_value: None
       - name: "beamstop_file_path"
-        type: "str"
+        type: "QCrBox.input_file"
         default_value: None
       - name: "detalign_file_path"
-        type: "str"
+        type: "QCrBox.input_file"
         default_value: None
       - name: "maximum_res"
         type: "float"
@@ -49,5 +61,65 @@ commands:
         type: "int"
         default_value: None
       - name: "pic_dir"
-        type: "str"
+        type: "QCrBox.input_folder"
         default_value: None
+    cif_output:
+      required_entry_sets: ["integration_output"]
+      custom_categories: ["iucr", "shelx"]
+      output_block: "0"
+
+cif_entry_sets:
+  - name: "integration_output"
+    required: [
+      "_diffrn_refln.index_h",
+      "_diffrn_refln.index_k",
+      "_diffrn_refln.index_l",
+      "_diffrn_refln.intensity_net",
+      "_diffrn_refln.intensity_net_su",
+      "_diffrn_refln.class_code",
+      "_qcrbox.diffrn_refln.direction_cosine_incid_x",
+      "_qcrbox.diffrn_refln.direction_cosine_incid_y",
+      "_qcrbox.diffrn_refln.direction_cosine_incid_z",
+      "_qcrbox.diffrn_refln.direction_cosine_diffrn_x",
+      "_qcrbox.diffrn_refln.direction_cosine_diffrn_y",
+      "_qcrbox.diffrn_refln.direction_cosine_diffrn_z",
+      "_qcrbox.diffrn_refln.detector_px_x_obs",
+      "_qcrbox.diffrn_refln.detector_px_y_obs",
+      "_qcrbox.diffrn_refln.detector_frame_obs",
+      "_qcrbox.diffrn_refln.evalsad_mystery_val1",
+      "_qcrbox.diffrn_refln.evalsad_mystery_val2",
+      "_diffrn_orient_matrix.ub_11",
+      "_diffrn_orient_matrix.ub_12",
+      "_diffrn_orient_matrix.ub_13",
+      "_diffrn_orient_matrix.ub_21",
+      "_diffrn_orient_matrix.ub_22",
+      "_diffrn_orient_matrix.ub_23",
+      "_diffrn_orient_matrix.ub_31",
+      "_diffrn_orient_matrix.ub_32",
+      "_diffrn_orient_matrix.ub_33",
+      "_space_group.centring_type",
+      "_diffrn_reflns_transf_matrix.11",
+      "_diffrn_reflns_transf_matrix.12",
+      "_diffrn_reflns_transf_matrix.13",
+      "_diffrn_reflns_transf_matrix.21",
+      "_diffrn_reflns_transf_matrix.22",
+      "_diffrn_reflns_transf_matrix.23",
+      "_diffrn_reflns_transf_matrix.31",
+      "_diffrn_reflns_transf_matrix.32",
+      "_diffrn_reflns_transf_matrix.33",
+      "_space_group.point_group_h-m",
+      "_cell.length_a",
+      "_cell.length_b",
+      "_cell.length_c",
+      "_cell.angle_alpha",
+      "_cell.angle_beta",
+      "_cell.angle_gamma",
+      "_cell.volume",
+      "_cell.length_a_su",
+      "_cell.length_b_su",
+      "_cell.length_c_su",
+      "_cell.angle_alpha_su",
+      "_cell.angle_beta_su",
+      "_cell.angle_gamma_su",
+      "_cell.volume_su",
+    ]

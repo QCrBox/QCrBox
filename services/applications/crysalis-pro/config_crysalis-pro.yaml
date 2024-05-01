@@ -12,6 +12,5 @@ commands:
     implemented_as: "CLI"  # other options: "python_callable"
     parameters:
       - name: "work_folder"
-        type: "str"
+        type: "QCrBox.input_folder"
         default_value: None
-

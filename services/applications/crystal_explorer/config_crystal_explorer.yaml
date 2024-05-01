@@ -12,12 +12,13 @@ commands:
     interactive: Yes
     implemented_as: "GUI"  # other options: "python_callable"
     parameters:
-      - name: "cif_path"
-        type: "str"
+      - name: "input_cif_path"
+        type: "QCrBox.cif_path"
         default_value: None
-    optional_cif_entry_sets: ["cif_structure_ddl1"]
-    merge_cif_su: Yes
-    custom_cif_categories: ["iucr", "shelx"]
+    cif_input:
+      optional_cif_entry_sets: ["cif_structure_ddl1"]
+      merge_cif_su: Yes
+      custom_cif_categories: ["iucr", "shelx"]
 
 cif_entry_sets:
   - name: cif_structure_ddl1
