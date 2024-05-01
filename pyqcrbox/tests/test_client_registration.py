@@ -3,7 +3,6 @@ import pytest
 from pyqcrbox import msg_specs, settings
 
 
-# @pytest.mark.xfail(reason="Client startup not fully implemented yet")
 @pytest.mark.anyio
 async def test_client_registers_itself_with_server_during_startup(
     rabbit_test_broker,
