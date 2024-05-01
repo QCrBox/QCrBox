@@ -24,7 +24,7 @@ commands:
     implemented_as: "CLI"  # other options: "python_callable"
     call_pattern: |
       python /opt/qcrbox/olex2_glue_cli.py refine \
-         --structure_path {cif_path} \
+         --structure_path {input_cif_path} \
          --n_cycles {ls_cycles} \
          --weight_cycles {weight_cycles}
     parameters:
@@ -47,7 +47,7 @@ commands:
     implemented_as: "CLI"  # other options: "python_callable"
     call_pattern: |
       python /opt/qcrbox/olex2_glue_cli.py refine
-        --structure_path {cif_path}
+        --structure_path {input_cif_path}
         --tsc_path {tsc_path}
         --n_cycles {ls_cycles}
         --weight_cycles {weight_cycles}
@@ -74,7 +74,7 @@ commands:
     implemented_as: "CLI"
     call_pattern: |
       python /opt/qcrbox/olex2_glue_cli.py cmds
-        --structure_path {cif_path}
+        --structure_path {input_cif_path}
         --cmd_file_path {cmd_file_path}
     parameters:
       - name: "input_cif_path"
