@@ -12,10 +12,10 @@ commands:
     implemented_as: "python_callable"  # other options: "python_callable"
     parameters:
       - name: "input_cif_path"
-        type: "str"
+        type: "QCrBox.input_cif"
         default_value: None
       - name: "output_tsc_path"
-        type: "str"
+        type: "QCrBox.output_file"
         default_value: None
       - name: "functional"
         type: "str"
@@ -24,8 +24,10 @@ commands:
         type: "float"
         default_value: 0.16
         required: False
-    required_cif_entry_sets: ["structure"]
-    merge_cif_su: True
+    input_cif:
+      required_entry_sets: ["cell", "structure", "resolution"]
+      required_entries: ["_space_group_symop_operation_xyz"]
+      merge_su: True
 
   - name: "ha_refine"
     implemented_as: "python_callable"  # other options: "python_callable"
@@ -43,34 +45,68 @@ commands:
         type: "float"
         default_value: 0.16
         required: False
-    required_cif_entry_sets: ["structure", "full_refinement"]
-    merge_cif_su: True
-    custom_cif_categories: ["shelx"]
+    input_cif:
+      required_entry_sets: ["cell", "structure", "diffraction_intensities", "atomic_information"]
+      optional_entry_sets: ["geometry_lookup"]
+      required_entries: ["_space_group_symop_operation_xyz", "_space_group_crystal_system"]
+      merge_su: True
+      custom_categories: ["shelx"]
+    output_cif:
+      required_entry_sets: ["structure", "atomic_information"]
+      optional_entry_sets: ["geometry_lookup"]
+      custom_categories: ["shelx"]
 
 cif_entry_sets:
-  - name: "structure"
+  - name: "cell"
     required: [
       "_cell_length_a", "_cell_length_b", "_cell_length_c", "_cell_angle_alpha",
-      "_cell_angle_beta", "_cell_angle_gamma", "_space_group_symop_operation_xyz",
+      "_cell_angle_beta", "_cell_angle_gamma"
+    ]
+  - name: "structure"
+    required: [
       "_atom_site_label", "_atom_site_type_symbol", "_atom_site_fract_x",
       "_atom_site_fract_y", "_atom_site_fract_z", "_atom_site_U_iso_or_equiv"
     ]
-    optional: [ # There is currently no mechanism for either/or. A possibility for resolution is required
-      "_refln_index_h", "_refln_index_k", "_refln_index_l", "_diffrn_refln_index_h",
-      "_diffrn_refln_index_k", "_diffrn_refln_index_l", '_reflns_d_resolution_high',
-      "_diffrn_reflns_theta_max", "_diffrn_radiation_wavelength",
+    optional: [
       "_atom_site_fract_x_su", "_atom_site_fract_y_su", "_atom_site_fract_z_su", # prevent su merging to prevent loss of precision
       "_atom_site_U_iso_or_equiv_su"
     ]
-  - name: "full_refinement"
+  - name: "resolution"
+    required: [
+      one_of: [
+        "_reflns_d_resolution_high",
+        ["_diffrn_reflns_theta_max", "_diffrn_radiation_wavelength"],
+        [
+          "_diffrn_refln_index_h", "_diffrn_refln_index_k", "_diffrn_refln_index_l",
+          "_cell_length_a", "_cell_length_b", "_cell_length_c",
+          "_cell_angle_alpha", "_cell_angle_beta", "_cell_angle_gamma"
+        ],
+        [
+          "_refln_index_h", "_refln_index_k", "_refln_index_l",
+          "_cell_length_a", "_cell_length_b", "_cell_length_c",
+          "_cell_angle_alpha", "_cell_angle_beta", "_cell_angle_gamma"
+        ]
+      ]
+    ]
+  - name: "diffraction_intensities"
+    required: [
+      one_of: [
+        ["_diffrn_refln_index_h", "_diffrn_refln_index_k", "_diffrn_refln_index_l", "_diffrn_refln_intensity_net", "_diffrn_refln_intensity_u"],
+        "_shelx_hkl_file"
+      ]
+    ]
+  - name: "atomic_information"
     required: [
       "_atom_site_aniso_label", "_atom_site_aniso_U_11", "_atom_site_aniso_U_22", "_atom_site_aniso_U_33",
       "_atom_site_aniso_U_12", "_atom_site_aniso_U_13", "_atom_site_aniso_U_23", "_atom_type_symbol",
       "_atom_type_scat_dispersion_real", "_atom_type_scat_dispersion_imag", "_diffrn_radiation_wavelength",
-      "_atom_site_adp_type", "_atom_site_occupancy", "_space_group_crystal_system", "_geom_bond_atom_site_label_1",
-      "_geom_bond_atom_site_label_2", "_geom_bond_distance", "_geom_bond_site_symmetry_2", "_geom_angle_atom_site_label_1",
-      "_geom_angle_atom_site_label_2", "_geom_angle_atom_site_label_3", "_geom_angle", "_geom_angle_site_symmetry_1",
-      "_geom_angle_site_symmetry_3"
+      "_atom_site_adp_type", "_atom_site_occupancy", "_space_group_crystal_system"
     ]
-    optional: ["_shelx_hkl_file", "_diffrn_refln_intensity_net", "_diffrn_refln_intensity_u"]
+  - name: "geometry_lookup"
+    required: [
+      "_geom_bond_atom_site_label_1", "_geom_bond_atom_site_label_2",
+      "_geom_bond_distance", "_geom_bond_site_symmetry_2",
+      "_geom_angle_atom_site_label_1", "_geom_angle_atom_site_label_2", "_geom_angle_atom_site_label_3",
+      "_geom_angle", "_geom_angle_site_symmetry_1", "_geom_angle_site_symmetry_3"
+    ]
 

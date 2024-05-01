@@ -35,9 +35,6 @@ commands:
       invalidated_entry_sets: ["molecular_structure"]
       merge_su: No
 
-    optional_cif_entries: ["all_unified"]
-    merge_cif_su: False # as this is the format qcrbox gives out of the box -> the last two lines mean nothing changes
-
   - name: "check_structure_convergence"
     implemented_as: "CLI"  # other options: "python_callable"
     parameters:
