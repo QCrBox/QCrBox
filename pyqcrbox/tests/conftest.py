@@ -75,7 +75,7 @@ def create_qcrbox_test_client(rabbit_test_broker, sample_application_spec):
     async def _create_qcrbox_test_client(
         *,
         application_spec: sql_models.ApplicationSpecCreate = sample_application_spec,
-        private_routing_key: str = "rk_qcrbox_test_private_routing_key",
+        private_routing_key: str = "qcrbox_rk_test_client_xyz",
     ):
         test_client = TestQCrBoxClient(
             broker=rabbit_test_broker,
