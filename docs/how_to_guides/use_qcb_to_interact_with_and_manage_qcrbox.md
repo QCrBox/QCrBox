@@ -8,7 +8,7 @@
 ## Listing available QCrBox components
 
 Let's check which components are available in QCrBox.
-```console exec="1" source="console"
+```console exec="1" source="console" result="ansi"
 $ qcb list components
 ```
 
@@ -30,7 +30,7 @@ xharpy-gpaw
 
 You can build the Docker image for a given component by running `qcb build`. For example, let's build the docker image
 for Olex2. Before we run the actual build, let's use the `--dry-run` flag to inspect what would happen.
-```console exec="1" source="console"
+```console exec="1" source="console" result="ansi"
 $ qcb build --dry-run olex2
 ```
 
@@ -38,7 +38,7 @@ You will notice that the logging output mentions additional Python packages and 
 for running application containers such as Olex2. The `qcb` tool knows about their dependencies and builds them
 automatically. You can pass the `--no-deps` flag to only build Olex2 itself (this can speed up the build during
 development if you are certain that the dependencies are already up-to-date).
-```console exec="1" source="console"
+```console exec="1" source="console" result="ansi"
 $ qcb build --dry-run --no-deps olex2
 ```
 
@@ -66,7 +66,7 @@ $ qcb build --all
     Building components that are disabled by default may require you to set certain environment variables
     or download password-protected files manually and placing them in the correct location. We will provide
     much better support for this in the future as part of the `qcb` toolchain. For the time being, please
-    [get in touch](https://discord.gg/CWnQJvVv) if you would like to build these and need support.
+    [get in touch](https://discord.com/invite/eU2ya5psxH) if you would like to build these and need support.
 
 
 ## Starting up containers
@@ -115,4 +115,4 @@ $ qcb down
 
     [http://localhost:12004/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true](http://localhost:12004/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true){:target="_blank"}
 
-- Read the [Tutorials](../tutorials) to see several examples showing how to interact programmatically with crystallographic software within QCrBox.
+- Read the [Tutorials](../../tutorials) to see several examples showing how to interact programmatically with crystallographic software within QCrBox.
