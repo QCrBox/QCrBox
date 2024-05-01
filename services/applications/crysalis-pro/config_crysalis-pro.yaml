@@ -14,3 +14,6 @@ commands:
       - name: "work_folder"
         type: "QCrBox.input_folder"
         default_value: None
+      - name: "output_cif_path"
+        type: "QCrBox.output_file"
+        default_value: None

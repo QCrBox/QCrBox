@@ -14,26 +14,23 @@ commands:
       - name: "input_cif_path"
         type: "QCrBox.input_cif"
         default_value: None
+        required_entries: [
+          "_space_group.crystal_system",
+          one_of: ["_space_group.centring_type", "_space_group.name_h-m_alt", "_space_group.name_hall"]
+        ]
+        merge_su: No
       - name: "structure_cif_path"
         type: "QCrBox.input_file" # not cif as it should not be cut to input_cif entries
         default_value: None
       - name: "output_cif_path"
         type: "QCrBox.output_cif"
         default_value: None
-    input_cif:
-      required_entries: [
-        "_space_group.crystal_system",
-        one_of: ["_space_group.centring_type", "_space_group.name_h-m_alt", "_space_group.name_hall"]
-      ]
-      merge_su: No
-    output_cif:
-      required_entry_sets: ["molecular_structure"]
-      invalidated_entries: [
-        "_geom.*", "_refln.*calc.*", "_shelx.*", "_iucr.refine_instructions_details",
-        "_refine(?!_ls\.weighting|_ls\.extinction)"
-      ]
-      invalidated_entry_sets: ["molecular_structure"]
-      merge_su: No
+        required_entry_sets: ["molecular_structure"]
+        invalidated_entries: [
+          "_geom.*", "_refln.*calc.*", "_shelx.*", "_iucr.refine_instructions_details",
+          "_refine(?!_ls\.weighting|_ls\.extinction)"
+        ]
+        invalidated_entry_sets: ["molecular_structure"]
 
   - name: "check_structure_convergence"
     implemented_as: "CLI"  # other options: "python_callable"
@@ -41,9 +38,11 @@ commands:
       - name: "cif1_path"
         type: "QCrBox.input_cif"
         default_value: None
+        required_entry_sets: ["comparison"]
       - name: "cif2_path"
         type: "QCrBox.input_cif"
         default_value: None
+        required_entry_sets: ["comparison"]
       - name: "max_abs_position"
         type: "float"
         default_value: None
@@ -59,16 +58,6 @@ commands:
       - name: "output_json_path"
         type: "QCrBox.output_file"
         default_value: None
-    input_cif:
-      required_entries: [
-        "_cell.length_a", "_cell.length_b", "_cell.length_c", "_cell.angle_alpha",
-        "_cell.angle_beta", "_cell.angle_gamma", "_atom_site.label", "_atom_site.type_symbol",
-        "_atom_site.fract_x", "_atom_site.fract_y", "_atom_site.fract_z", "_atom_site_aniso.label",
-        "_atom_site_aniso.type_symbol", "_atom_site_aniso.u_11", "_atom_site_aniso.u_22",
-        "_atom_site_aniso.u_33", "_atom_site_aniso.u_12", "_atom_site_aniso.u_13",
-        "_atom_site_aniso.u_23"
-      ]
-      merge_su: True
 
   - name: "iso2aniso"
     implemented_as: "CLI"  # other options: "python_callable"
@@ -76,9 +65,19 @@ commands:
       - name: "input_cif_path"
         type: "QCrBox.input_cif"
         default_value: null
+        required_entries: [
+          "_cell.length_a", "_cell.length_b", "_cell.length_c", "_cell.angle_alpha",
+          "_cell.angle_beta", "_cell.angle_gamma", "_atom_site.label", "_atom_site.u_iso_or_equiv"
+        ]
+        merge_su: False
       - name: "output_cif_path"
         type: "QCrBox.output_cif"
         default_value: null
+        required_entries: [
+          "_atom_site_aniso.label", "_atom_site_aniso.u_11", "_atom_site_aniso.u_22",
+          "_atom_site_aniso.u_33", "_atom_site_aniso.u_12", "_atom_site_aniso.u_13",
+          "_atom_site_aniso.u_23"
+        ]
       - name: "select_names"
         type: str
         default_value: null
@@ -91,18 +90,6 @@ commands:
         type: str
         default_value: null
         required: False
-    input_cif:
-      required_entries: [
-        "_cell.length_a", "_cell.length_b", "_cell.length_c", "_cell.angle_alpha",
-        "_cell.angle_beta", "_cell.angle_gamma", "_atom_site.label", "_atom_site.u_iso_or_equiv"
-      ]
-      merge_su: False
-    output_cif:
-      required_entries: [
-        "_atom_site_aniso.label", "_atom_site_aniso.u_11", "_atom_site_aniso.u_22",
-        "_atom_site_aniso.u_33", "_atom_site_aniso.u_12", "_atom_site_aniso.u_13",
-        "_atom_site_aniso.u_23"
-      ]
 
   - name: "to_unified_cif"
     implemented_as: "CLI"  # other options: "python_callable"
@@ -110,19 +97,16 @@ commands:
       - name: "input_cif_path"
         type: "QCrBox.input_cif"
         default_value: None
+        optional_entries: ["all_unified"]
+        merge_su: False
       - name: "output_cif_path"
         type: "QCrBox.output_cif"
         default_value: None
+        optional_entries: ["all_unified"]
       - name: "custom_category_list"
         type: "str"
         default_value: None
         required: False
-    input_cif:
-      optional_entries: ["all_unified"]
-      merge_su: False
-    output_cif:
-      optional_entries: ["all_unified"]
-
 
 cif_entry_sets:
   - name: "molecular_structure"
@@ -145,4 +129,13 @@ cif_entry_sets:
       "_atom_site_aniso.u_23",
       "_atom_site.adp_type",
       "_atom_site.refinement_flags_posn",
+    ]
+  - name: "comparison"
+    required: [
+      "_cell.length_a", "_cell.length_b", "_cell.length_c", "_cell.angle_alpha",
+      "_cell.angle_beta", "_cell.angle_gamma", "_atom_site.label", "_atom_site.type_symbol",
+      "_atom_site.fract_x", "_atom_site.fract_y", "_atom_site.fract_z", "_atom_site_aniso.label",
+      "_atom_site_aniso.type_symbol", "_atom_site_aniso.u_11", "_atom_site_aniso.u_22",
+      "_atom_site_aniso.u_33", "_atom_site_aniso.u_12", "_atom_site_aniso.u_13",
+      "_atom_site_aniso.u_23"
     ]

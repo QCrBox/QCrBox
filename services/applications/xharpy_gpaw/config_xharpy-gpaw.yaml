@@ -14,6 +14,9 @@ commands:
       - name: "input_cif_path"
         type: "QCrBox.input_cif"
         default_value: None
+        required_entry_sets: ["cell", "structure", "resolution"]
+        required_entries: ["_space_group_symop_operation_xyz"]
+        merge_su: True
       - name: "output_tsc_path"
         type: "QCrBox.output_file"
         default_value: None
@@ -25,9 +28,7 @@ commands:
         default_value: 0.16
         required: False
     input_cif:
-      required_entry_sets: ["cell", "structure", "resolution"]
-      required_entries: ["_space_group_symop_operation_xyz"]
-      merge_su: True
+
 
   - name: "ha_refine"
     implemented_as: "python_callable"  # other options: "python_callable"
@@ -35,9 +36,17 @@ commands:
       - name: "input_cif_path"
         type: "str"
         default_value: None
-      - name: "output_tsc_path"
-        type: "str"
+        required_entry_sets: ["cell", "structure", "diffraction_intensities", "atomic_information"]
+        optional_entry_sets: ["geometry_lookup"]
+        required_entries: ["_space_group_symop_operation_xyz", "_space_group_crystal_system"]
+        merge_su: True
+        custom_categories: ["shelx"]
+      - name: "output_cif_path"
+        type: "QCrBox.output_cif"
         default_value: None
+        required_entry_sets: ["structure", "atomic_information"]
+        optional_entry_sets: ["geometry_lookup"]
+        custom_categories: ["shelx"]
       - name: "functional"
         type: "str"
         default_value: None
@@ -45,16 +54,7 @@ commands:
         type: "float"
         default_value: 0.16
         required: False
-    input_cif:
-      required_entry_sets: ["cell", "structure", "diffraction_intensities", "atomic_information"]
-      optional_entry_sets: ["geometry_lookup"]
-      required_entries: ["_space_group_symop_operation_xyz", "_space_group_crystal_system"]
-      merge_su: True
-      custom_categories: ["shelx"]
-    output_cif:
-      required_entry_sets: ["structure", "atomic_information"]
-      optional_entry_sets: ["geometry_lookup"]
-      custom_categories: ["shelx"]
+
 
 cif_entry_sets:
   - name: "cell"
