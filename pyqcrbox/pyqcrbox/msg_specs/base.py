@@ -1,6 +1,6 @@
 import functools
 import inspect
-from typing import Any
+from typing import Any, Optional
 
 from pydantic import BaseModel, ConfigDict, field_validator
 
@@ -34,7 +34,7 @@ class QCrBoxGenericResponse(QCrBoxBaseMessage):
     response_to: str
     status: str
     msg: str = ""
-    payload: QCrBoxBasePayload
+    payload: Optional[QCrBoxBasePayload] = None
 
     @field_validator("payload", mode="before")
     @classmethod
