@@ -116,6 +116,7 @@ filterwarnings =["ignore::DeprecationWarning"]
 #addopts = "--cov=pyqcrbox --cov-report=term-missing"
 markers = [
     "requires_mock_rabbitmq_broker",
+    "xfail_with_real_rabbitmq_broker",
 ]
 [tool.mypy]
 strict = true

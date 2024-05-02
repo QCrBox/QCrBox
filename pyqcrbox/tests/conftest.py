@@ -78,10 +78,18 @@ def pytest_collection_modifyitems(config, items):
         settings.testing.use_real_rabbitmq_broker,
         reason="Test requires mock RabbitMQ broker but running with real broker",
     )
+    mark_xfail_with_real_rabbitmq = pytest.mark.xfail(
+        reason="This test is not currently working with a real RabbitMQ broker",
+    )
 
     for item in items:
         if item.get_closest_marker("requires_mock_rabbitmq_broker") is not None:
             item.add_marker(mark_skip_with_real_rabbitmq)
+        if (
+            item.get_closest_marker("xfail_with_real_rabbitmq_broker") is not None
+            and settings.testing.use_real_rabbitmq_broker
+        ):
+            item.add_marker(mark_xfail_with_real_rabbitmq)
 
 
 @pytest.fixture(scope="session")
