@@ -17,34 +17,32 @@ application = client.register_application(
 )
 
 
-def atom_form_fact_gpaw(
-    input_cif_path,
-    output_tsc_path,
-    functional,
-    gridspacing
-):
+def atom_form_fact_gpaw(input_cif_path, output_tsc_path, functional, gridspacing):
     work_cif_path = Path(input_cif_path).parent / "work.cif"
     cif_file_to_specific_by_yml(input_cif_path, work_cif_path, YAML_PATH, "atom_form_fact_gpaw")
-    subprocess.check_call([
-        "python", "-m", "xharpy.cli_tsc",
-        "--cif_name", str(work_cif_path),
-        "--tsc_name", str(output_tsc_path),
-        "--xc", str(functional),
-        #"--kpoints", Param("kpoints"),
-        "--gridspacing", str(gridspacing),
-        "--auto_default",
-    ])
+    subprocess.check_call(
+        [
+            "python",
+            "-m",
+            "xharpy.cli_tsc",
+            "--cif_name",
+            str(work_cif_path),
+            "--tsc_name",
+            str(output_tsc_path),
+            "--xc",
+            str(functional),
+            # "--kpoints", Param("kpoints"),
+            "--gridspacing",
+            str(gridspacing),
+            "--auto_default",
+        ]
+    )
 
 
 application.register_python_callable("atom_form_fact_gpaw", atom_form_fact_gpaw)
 
 
-def ha_refine(
-    input_cif_path: str,
-    output_cif_path: str,
-    functional: str,
-    gridspacing: float
-):
+def ha_refine(input_cif_path: str, output_cif_path: str, functional: str, gridspacing: float):
     input_cif_path = Path(input_cif_path)
     output_dir = Path("./xharpy_output")
     if output_dir.exists():
@@ -63,19 +61,35 @@ def ha_refine(
             extinction_method = "shelxl"
     cif_file_to_specific_by_yml(input_cif_path, work_cif_path, YAML_PATH, "ha_refine")
 
-    subprocess.check_call([
-        "python", "-m", "xharpy.cli_refine",
-        "--cif_name", work_cif_path,
-        "--cif_index", "0",
-        "--hkl_name", output_dir / "shelx.hkl",
-        "--lst_name", "./dummy.lst",
-        "--extinction", extinction_method,
-        "--xc", functional,
-        "--gridspacing", gridspacing,
-        "--kpoints", "1", "1", "1",
-        "--mpi_cores", "auto",
-        "--output_folder", output_dir
-    ])
+    subprocess.check_call(
+        [
+            "python",
+            "-m",
+            "xharpy.cli_refine",
+            "--cif_name",
+            work_cif_path,
+            "--cif_index",
+            "0",
+            "--hkl_name",
+            output_dir / "shelx.hkl",
+            "--lst_name",
+            "./dummy.lst",
+            "--extinction",
+            extinction_method,
+            "--xc",
+            functional,
+            "--gridspacing",
+            gridspacing,
+            "--kpoints",
+            "1",
+            "1",
+            "1",
+            "--mpi_cores",
+            "auto",
+            "--output_folder",
+            output_dir,
+        ]
+    )
 
     cif_file_to_unified(output_dir / "xharpy.cif", output_cif_path, custom_categories=["iucr, shelx"])
     shutil.rmtree(output_dir)

@@ -25,6 +25,16 @@ commands:
         merge_su: Yes
         custom_categories: ["iucr", "shelx"]
         output_block: "0"
+    interactive_lifecycle:
+      run:
+        implemented_as: "CLI"
+        command: "lxterminal --working-directory={work_folder}"
+        used_basecommand_parameters: ["work_folder"]
+      finalise:
+        implemented_as: "python_callable"
+        module: "configure_eval1x"
+        function: "finalise__interactive"
+        used_basecommand_parameters: ["work_folder", "output_cif_path"]
 
   - name: "integrate"
     implemented_as: "python_callable"

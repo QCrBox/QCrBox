@@ -211,7 +211,7 @@ def final_cell_refinement(work_folder, rmat_file_path):
     peakref.folder_to_cif("cell.cif")
 
 
-def finalise__interactive(work_folder):
+def finalise__interactive(work_folder, output_cif_path):
     work_folder = pathlib.Path(work_folder)
     create_reflection_cif(work_folder)
     final_cell_refinement(work_folder, "work_folder")
@@ -221,7 +221,7 @@ def finalise__interactive(work_folder):
         "0",
         work_folder / "cell.cif",
         "0",
-        work_folder / "output.cif",
+        output_cif_path,
         "output",
     )
 

@@ -20,6 +20,11 @@ commands:
         optional_cif_entry_sets: ["cif_structure_ddl1"]
         merge_cif_su: Yes
         custom_cif_categories: ["iucr", "shelx"]
+    interactive_lifecycle:
+      run:
+        implemented_as: "CLI"
+        command: "/usr/bin/CrystalExplorer --open {input_cif_path}"
+        used_basecommand_parameters: ["input_cif_path"]
 
 cif_entry_sets:
   - name: cif_structure_ddl1
