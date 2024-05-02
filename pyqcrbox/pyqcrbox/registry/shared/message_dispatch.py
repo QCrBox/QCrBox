@@ -89,7 +89,15 @@ def declare_rabbitmq_message_handler(
             error_msg = "Invalid message structure: message must have an 'action' or 'response_to' field"
             return log_error_msg_and_create_response(error_msg)
 
-        result = msg_dispatcher_func(msg_obj)
+        try:
+            result = msg_dispatcher_func(msg_obj, broker=broker)
+        except TypeError as exc:
+            error_msg = exc.args[0]
+            if "got an unexpected keyword argument 'broker'" in error_msg:
+                result = msg_dispatcher_func(msg_obj)
+            else:
+                raise exc
+
         if inspect.iscoroutine(result):
             # If the given message type is processed by an async function,
             # calling `process_message` will return a coroutine, so we need
