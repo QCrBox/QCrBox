@@ -28,6 +28,6 @@ async def test_client_registers_itself_with_server_during_startup(
     async with create_qcrbox_test_client(
         application_spec=sample_application_spec,
         private_routing_key=private_routing_key,
-    ) as test_client, test_client.run(port=8003):
+    ) as test_client, test_client.run():
         test_server.get_mock_handler(routing_key_qcrbox_registry).assert_called_once_with(expected_registration_message)
         test_client.get_mock_handler(private_routing_key).assert_called_once_with(expected_server_response)
