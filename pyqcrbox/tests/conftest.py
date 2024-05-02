@@ -23,25 +23,13 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 CURRENT_DIRECTORY = Path(__file__).parent
 
-
-def pytest_collection_modifyitems(items):
-    marker_skip_when_running_with_real_rabbitmq = pytest.mark.skip(
-        reason="Test requires mock RabbitMQ broker but running with real broker"
-    )
-    for item in items:
-        if item.get_closest_marker("requires_mock_rabbitmq_broker") is not None:
-            item.add_marker(marker_skip_when_running_with_real_rabbitmq)
-
-
-@pytest.fixture
-def anyio_backend():
-    return "asyncio"
+logger.debug(f"Tests are being run with real RabbitMQ broker: {settings.testing.use_real_rabbitmq_broker}")
 
 
 if settings.testing.use_in_memory_db:
     logger.debug("Tests will use in-memory SQLite databases.")
 else:
-    logger.debug("Tests will use SQLite database in temporary directories.")
+    logger.debug("Tests will use on-disk SQLite database in temporary directories.")
 
     @pytest.fixture(autouse=True)
     def set_sqlite_test_db_path(tmp_path):
@@ -53,6 +41,27 @@ else:
         logger.debug(f"Test db path: {test_db_path}")
         settings.db.url = f"sqlite:///{test_db_path}"
         return test_db_path
+
+
+@pytest.fixture(scope="session")
+def anyio_backend():
+    return "asyncio"
+
+
+@pytest.fixture(scope="session")
+def using_mock_rabbitmq_broker():
+    return not settings.testing.use_real_rabbitmq_broker
+
+
+def pytest_collection_modifyitems(items):
+    mark_skip_with_real_rabbitmq = pytest.mark.skipif(
+        settings.testing.use_real_rabbitmq_broker,
+        reason="Test requires mock RabbitMQ broker but running with real broker",
+    )
+
+    for item in items:
+        if item.get_closest_marker("requires_mock_rabbitmq_broker") is not None:
+            item.add_marker(mark_skip_with_real_rabbitmq)
 
 
 @pytest.fixture
