@@ -14,7 +14,7 @@ class QCrBoxBaseMessage(BaseModel):
 
 
 class QCrBoxBasePayload(BaseModel):
-    pass
+    model_config = ConfigDict(extra="allow")
 
 
 class QCrBoxBaseAction(QCrBoxBaseMessage):

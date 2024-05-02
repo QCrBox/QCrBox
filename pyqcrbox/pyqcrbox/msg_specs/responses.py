@@ -26,8 +26,12 @@ class PayloadForHealthCheckResponse(QCrBoxBasePayload):
     health_status: HealthStatusEnum
 
 
-def health_check_healthy():
-    return QCrBoxGenericResponse(
+class QCrBoxHealthCheckResponse(QCrBoxGenericResponse):
+    payload: PayloadForHealthCheckResponse
+
+
+def health_check_healthy() -> QCrBoxHealthCheckResponse:
+    return QCrBoxHealthCheckResponse(
         response_to="health_check",
         status=ResponseStatusEnum.SUCCESS,
         msg="healthy",
