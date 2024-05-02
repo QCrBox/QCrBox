@@ -21,6 +21,7 @@ dependencies = [
     "loguru",
     "pydantic",
     "pydantic-settings",
+    "rich",
     "sqlmodel",
     "tabulate",
 ]
