@@ -1,7 +1,9 @@
 import functools
 import textwrap
 
-from pyqcrbox import logger, msg_specs
+from loguru import logger
+
+from pyqcrbox import msg_specs
 
 
 @functools.singledispatch
@@ -28,9 +30,3 @@ def client_side_message_dispatcher(msg: dict):
     )
     logger.warning(error_msg)
     return msg_specs.responses.error(response_to="incoming_message", msg=error_msg)
-
-
-@client_side_message_dispatcher.register
-def health_check(msg: msg_specs.HealthCheck):
-    assert msg.action == "health_check"
-    return msg_specs.responses.health_check_healthy()
