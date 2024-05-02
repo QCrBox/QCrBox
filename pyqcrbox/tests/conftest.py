@@ -55,7 +55,7 @@ def sample_application_spec():
 @pytest.fixture
 async def rabbit_test_broker():
     broker = RabbitBroker(settings.rabbitmq.url)
-    async with TestRabbitBroker(broker, with_real=False):
+    async with TestRabbitBroker(broker, with_real=settings.testing.use_real_rabbitmq_broker):
         yield broker
 
 
