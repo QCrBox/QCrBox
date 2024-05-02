@@ -4,6 +4,7 @@ from pyqcrbox import msg_specs, settings
 
 
 @pytest.mark.anyio
+@pytest.mark.requires_mock_rabbitmq_broker
 async def test_client_registers_itself_with_server_during_startup(
     rabbit_test_broker,
     test_server,
