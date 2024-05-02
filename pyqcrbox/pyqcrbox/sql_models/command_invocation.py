@@ -17,8 +17,8 @@ class CommandInvocationCreate(QCrBoxPydanticBaseModel):
     application_slug: str
     application_version: str
     command_name: str
-    correlation_id: str = Field(default_factory=generate_correlation_id)
     arguments: dict[str, Any]
+    correlation_id: str = Field(default_factory=generate_correlation_id)
 
     def to_sql_model(self):
         return CommandInvocationDB.from_pydantic_model(self)
