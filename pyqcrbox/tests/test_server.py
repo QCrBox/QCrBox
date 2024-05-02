@@ -5,19 +5,30 @@ from pyqcrbox import db_helpers, msg_specs, sql_models
 
 
 @pytest.mark.anyio
-async def test_health_check_via_rabbitmq(test_server, rabbit_test_broker, server_public_queue_name):
+async def test_health_check_via_rabbitmq(
+    test_server,
+    rabbit_test_broker,
+    server_public_queue_name,
+    using_mock_rabbitmq_broker,
+):
     msg = {"action": "health_check", "payload": {}}
-    assert not test_server.get_mock_handler(server_public_queue_name).called
+
+    if using_mock_rabbitmq_broker:
+        assert not test_server.get_mock_handler(server_public_queue_name).called
 
     response = await rabbit_test_broker.publish(msg, server_public_queue_name, rpc=True)
 
-    test_server.get_mock_handler(server_public_queue_name).assert_called_once_with(msg)
-    assert response.status == "success"
-    assert response.msg == "healthy"
-    assert response.payload.dict() == {"health_status": "healthy"}
+    if using_mock_rabbitmq_broker:
+        response = response.model_dump()
+        test_server.get_mock_handler(server_public_queue_name).assert_called_once_with(msg)
+
+    assert response["status"] == "success"
+    assert response["msg"] == "healthy"
+    assert response["payload"] == {"health_status": "healthy"}
 
 
 @pytest.mark.anyio
+@pytest.mark.xfail_with_real_rabbitmq_broker
 async def test_hello(test_server):
     async with test_server.web_client() as web_client:
         response = await web_client.get("/")
@@ -26,6 +37,7 @@ async def test_hello(test_server):
 
 
 @pytest.mark.anyio
+@pytest.mark.xfail_with_real_rabbitmq_broker
 async def test_health_check_via_web_api(test_server):
     async with test_server.web_client() as web_client:
         response = await web_client.get("/health-check")
@@ -34,7 +46,13 @@ async def test_health_check_via_web_api(test_server):
 
 
 @pytest.mark.anyio
-async def test_register_application(test_server, rabbit_test_broker, server_public_queue_name, sample_application_spec):
+async def test_register_application(
+    test_server,
+    rabbit_test_broker,
+    server_public_queue_name,
+    sample_application_spec,
+    using_mock_rabbitmq_broker,
+):
     msg = msg_specs.RegisterApplication(
         action="register_application",
         payload=msg_specs.PayloadForRegisterApplication(
@@ -48,9 +66,11 @@ async def test_register_application(test_server, rabbit_test_broker, server_publ
 
     # Send registration message to the server
     response = await rabbit_test_broker.publish(msg, server_public_queue_name, rpc=True)
+    if using_mock_rabbitmq_broker:
+        response = response.model_dump()
 
     # Check that we received a successful response
-    assert response.status == "success"
+    assert response["status"] == "success"
     # assert response.payload.application_id == 1
 
     # Check that the application spec was saved to the database
