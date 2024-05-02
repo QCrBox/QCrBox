@@ -26,10 +26,16 @@ class QCrBoxClient(QCrBoxServerClientBase):
         super().__init__(broker=broker, asgi_server=asgi_server)
         self.application_spec = application_spec
         self.private_routing_key = private_routing_key or generate_private_routing_key()
+        self.routing_key_command_invocation = application_spec.routing_key_command_invocation
 
     def _set_up_rabbitmq_broker(self) -> None:
         self.declare_rabbitmq_message_handler(
             routing_key=self.private_routing_key,
+            message_dispatcher=client_side_message_dispatcher,
+        )
+        self.declare_rabbitmq_message_handler(
+            routing_key=self.routing_key_command_invocation,
+            # TODO: use separate dispatcher from the one for private routing key
             message_dispatcher=client_side_message_dispatcher,
         )
 

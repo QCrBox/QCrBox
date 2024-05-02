@@ -55,3 +55,7 @@ def get_qcrbox_registry_api_connection_url(
     port = port or int(os.environ.get("QCRBOX_REGISTRY_PORT", 11000))
     url = f"http://{host}:{port}"
     return url
+
+
+def get_routing_key_for_command_invocation_requests(*, application_slug: str, application_version: str):
+    return f"qcrbox_rk_{application_slug}_{application_version}"

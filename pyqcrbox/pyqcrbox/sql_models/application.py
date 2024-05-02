@@ -10,6 +10,7 @@ from sqlmodel import JSON, Column, Field, Relationship, UniqueConstraint, select
 
 from pyqcrbox.settings import settings
 
+from .. import helpers
 from .cif_entry_set import CifEntrySetCreate
 from .command import CommandSpecCreate, CommandSpecDB
 from .qcrbox_base_models import QCrBoxBaseSQLModel, QCrBoxPydanticBaseModel
@@ -42,7 +43,10 @@ class ApplicationSpecCreate(ApplicationSpecBase):
 
     @property
     def routing_key_command_invocation(self):
-        return f"qcrbox_rk_{self.slug}_{self.version}"
+        return helpers.get_routing_key_for_command_invocation_requests(
+            application_slug=self.slug,
+            application_version=self.version,
+        )
 
     def get_command_spec(self, command_name: str) -> CommandSpecCreate:
         cmds = [c for c in self.commands if c.name == command_name]
