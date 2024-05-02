@@ -20,9 +20,9 @@ async def test_client_registers_itself_with_server_during_startup(
             application_spec=sample_application_spec,
             private_routing_key=private_routing_key,
         ),
-    ).dict()
+    ).model_dump()
 
-    expected_server_response = msg_specs.responses.success(response_to="register_application").dict()
+    expected_server_response = msg_specs.responses.success(response_to="register_application").model_dump()
 
     assert not test_server.get_mock_handler(routing_key_qcrbox_registry).called
 
