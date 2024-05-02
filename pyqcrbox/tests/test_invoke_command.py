@@ -9,7 +9,7 @@ async def test_invoke_command(
     test_server,
     test_client,
     server_public_queue_name,
-    # sample_application_spec,
+    using_mock_rabbitmq_broker,
 ):
     routing_key_qcrbox_registry = settings.rabbitmq.routing_key_qcrbox_registry
     # private_routing_key = "qcrbox_rk_test_client_xyz"
@@ -36,7 +36,8 @@ async def test_invoke_command(
     # assert False, "TODO: implement the remainder of the test"
 
     # Check that the server received the 'invoke_command' message
-    test_server.get_mock_handler(server_public_queue_name).assert_called_with(msg_invoke_cmd)
+    if using_mock_rabbitmq_broker:
+        test_server.get_mock_handler(server_public_queue_name).assert_called_with(msg_invoke_cmd)
 
     # Check that the server sends a command invocation request and this is picked up by the client
     expected_msg_command_invocation_request = msg_specs.CommandInvocationRequest(
@@ -49,4 +50,7 @@ async def test_invoke_command(
             correlation_id=correlation_id,
         ),
     ).model_dump()
-    test_client.get_mock_handler(application_routing_key).assert_called_with(expected_msg_command_invocation_request)
+    if using_mock_rabbitmq_broker:
+        test_client.get_mock_handler(application_routing_key).assert_called_with(
+            expected_msg_command_invocation_request
+        )
