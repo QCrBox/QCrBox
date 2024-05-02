@@ -5,15 +5,18 @@ name: "CrysalisPro"
 slug: "crysalis-pro"
 version: "171.43.48a"
 description: "CrysalisPro is used for data reduction on frame folders produced by Rigaku instruments."
-url: ""
+url: "https://www.rigaku.com/de/products/smc/crysalis"
 
 commands:
   - name: "interactive"
-    implemented_as: "CLI"  # other options: "python_callable"
+    implemented_as: "interactive"  # other options: "python_callable"
+    description: "Run CrysalisPro interactively"
     parameters:
       - name: "work_folder"
         type: "QCrBox.input_folder"
         default_value: None
+        description: "The folder containing the images / data"
       - name: "output_cif_path"
         type: "QCrBox.output_file"
         default_value: None
+        description: "Path to save the CIF file to, after finishing the interactive session"

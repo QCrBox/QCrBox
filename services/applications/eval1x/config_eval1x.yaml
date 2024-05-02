@@ -10,7 +10,7 @@ doi: ["10.1107/S0021889802022628", "10.1107/S0021889809043234"]
 
 commands:
   - name: "interactive"
-    implemented_as: "GUI"  # other options: "python_callable"
+    implemented_as: "interactive"  # other options: "python_callable"
     description: "Run the Eval Software Suite interactively"
     parameters:
       - name: "work_folder"
@@ -44,34 +44,43 @@ commands:
       - name: "rmat_file_path"
         type: "QCrBox.input_file"
         default_value: None
-        description: "Path to the rmat file or the cif file containing the rotation matrix information"
+        description: "Path to the rmat file or the CIF file containing the rotation matrix information"
       - name: "beamstop_file_path"
         type: "QCrBox.input_file"
         default_value: None
+        description: "Path to the Eval .vic file containing the beamstop information"
       - name: "detalign_file_path"
         type: "QCrBox.input_file"
         default_value: None
+        description: "Path to the Eval .vic file containing the detector alignment information"
       - name: "maximum_res"
         type: "float"
         default_value: None
+        description: "The maximum resolution to integrate to in Angstrom"
       - name: "minimum_res"
         type: "float"
         default_value: None
+        description: "The minimum resolution to integrate from in Angstrom"
       - name: "box_size"
         type: "float"
         default_value: None
+        description: "The size of the box in millimeters"
       - name: "box_depth"
         type: "int"
         default_value: None
+        description: "The depth of the box in number of frames"
       - name: "maximum_duration"
         type: "float"
         default_value: None
+        description: "The maximum duration"
       - name: "min_refln_in_box"
         type: "int"
         default_value: None
+        description: "The minimum number of reflections in the box"
       - name: "pic_dir"
         type: "QCrBox.input_folder"
         default_value: None
+        description: "The folder containing the pic files with the integration settings"
 
 cif_entry_sets:
   - name: "integration_output"

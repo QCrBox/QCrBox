@@ -6,19 +6,20 @@ slug: "crystal-explorer"
 version: "21.5"
 description: "Hirshfeld surfaces, intermolecular interaction energies and more..."
 url: "https://crystalexplorer.net/"
+doi: 10.1107/S1600576721002910
 
 commands:
   - name: "interactive"
-    interactive: Yes
-    implemented_as: "GUI"  # other options: "python_callable"
+    implemented_as: "interactive"  # other options: "python_callable"
+    description: "Run Crystal Explorer interactively"
     parameters:
       - name: "input_cif_path"
         type: "QCrBox.cif_path"
         default_value: None
-    cif_input:
-      optional_cif_entry_sets: ["cif_structure_ddl1"]
-      merge_cif_su: Yes
-      custom_cif_categories: ["iucr", "shelx"]
+        description: "Path to the CIF file to be analyzed"
+        optional_cif_entry_sets: ["cif_structure_ddl1"]
+        merge_cif_su: Yes
+        custom_cif_categories: ["iucr", "shelx"]
 
 cif_entry_sets:
   - name: cif_structure_ddl1

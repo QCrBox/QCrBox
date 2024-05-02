@@ -6,36 +6,42 @@ slug: "xharpy-gpaw"
 version: "0.2.0"
 description: "A pure Python library that enables the calculation of and the refinement with custom atomic form factors from periodic calculations with GPAW."
 url: "https://github.com/Niolon/XHARPy"
+doi: "10.1107/S2052252522001385"
 
 commands:
   - name: "atom_form_fact_gpaw"
     implemented_as: "python_callable"  # other options: "python_callable"
+    description: "Calculate the atomic form factors for a given structure using GPAW and XHARPy"
     parameters:
       - name: "input_cif_path"
         type: "QCrBox.input_cif"
         default_value: None
+        description: "Path to the CIF file containing the structure to calculate the atomic form factors for"
         required_entry_sets: ["cell", "structure", "resolution"]
         required_entries: ["_space_group_symop_operation_xyz"]
         merge_su: True
       - name: "output_tsc_path"
         type: "QCrBox.output_file"
         default_value: None
+        description: "Path to save the TSC file to after calculating the atomic form factors"
       - name: "functional"
         type: "str"
         default_value: None
+        description: "The DFT functional to use for the GPAW calculation"
       - name: "gridspacing"
         type: "float"
         default_value: 0.16
         required: False
-    input_cif:
-
+        description: "The grid spacing in Angstrom to use for the GPAW calculation"
 
   - name: "ha_refine"
     implemented_as: "python_callable"  # other options: "python_callable"
+    description: "Do a Hirshfeld atom refinement using XHARPy and GPAW"
     parameters:
       - name: "input_cif_path"
         type: "str"
         default_value: None
+        description: "Path to the CIF file containing the structure to refine"
         required_entry_sets: ["cell", "structure", "diffraction_intensities", "atomic_information"]
         optional_entry_sets: ["geometry_lookup"]
         required_entries: ["_space_group_symop_operation_xyz", "_space_group_crystal_system"]
@@ -44,16 +50,19 @@ commands:
       - name: "output_cif_path"
         type: "QCrBox.output_cif"
         default_value: None
+        description: "Path to save the CIF file to after refining the structure"
         required_entry_sets: ["structure", "atomic_information"]
         optional_entry_sets: ["geometry_lookup"]
         custom_categories: ["shelx"]
       - name: "functional"
         type: "str"
         default_value: None
+        description: "The DFT functional to use for the GPAW calculation"
       - name: "gridspacing"
         type: "float"
         default_value: 0.16
         required: False
+        description: "The grid spacing in Angstrom to use for the GPAW calculation"
 
 
 cif_entry_sets:
