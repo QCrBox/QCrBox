@@ -24,6 +24,15 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 CURRENT_DIRECTORY = Path(__file__).parent
 
 
+def pytest_collection_modifyitems(items):
+    marker_skip_when_running_with_real_rabbitmq = pytest.mark.skip(
+        reason="Test requires mock RabbitMQ broker but running with real broker"
+    )
+    for item in items:
+        if item.get_closest_marker("requires_mock_rabbitmq_broker") is not None:
+            item.add_marker(marker_skip_when_running_with_real_rabbitmq)
+
+
 @pytest.fixture
 def anyio_backend():
     return "asyncio"

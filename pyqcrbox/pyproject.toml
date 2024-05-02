@@ -114,7 +114,9 @@ only-include = ["pyqcrbox"]
 [tool.pytest.ini_options]
 filterwarnings =["ignore::DeprecationWarning"]
 #addopts = "--cov=pyqcrbox --cov-report=term-missing"
-
+markers = [
+    "requires_mock_rabbitmq_broker",
+]
 [tool.mypy]
 strict = true
 python_version = "3.8"
