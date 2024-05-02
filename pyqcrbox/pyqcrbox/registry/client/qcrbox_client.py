@@ -62,7 +62,7 @@ class TestQCrBoxClient(TestQCrBoxServerClientBase, QCrBoxClient):
 
 
 def main():
-    repo_root = get_repo_root()
+    repo_root = get_repo_root(__file__)
     sample_spec_file = repo_root.joinpath("services/applications/olex2_linux/config_olex2.yaml")
     application_spec = sql_models.ApplicationSpecCreate.from_yaml_file(sample_spec_file)
     qcrbox_client = QCrBoxClient(application_spec=application_spec)
