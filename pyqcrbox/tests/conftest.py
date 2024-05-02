@@ -23,7 +23,27 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 CURRENT_DIRECTORY = Path(__file__).parent
 
-logger.debug(f"Tests are being run with real RabbitMQ broker: {settings.testing.use_real_rabbitmq_broker}")
+
+def _convert_str_to_bool(value):
+    if not isinstance(value, str):
+        raise TypeError(f"Value must be a string, got: {value} ({type(value)})")
+    else:
+        match value.lower():
+            case "true":
+                return True
+            case "false":
+                return False
+            case _:
+                raise ValueError(f"Value must be 'true' or 'false', got: {value!r}")
+
+
+def pytest_addoption(parser):
+    parser.addoption(
+        "--with-real-rabbitmq",
+        action="store",
+        type=_convert_str_to_bool,
+        help="run tests using the real RabbitMQ broker",
+    )
 
 
 if settings.testing.use_in_memory_db:
@@ -43,17 +63,17 @@ else:
         return test_db_path
 
 
-@pytest.fixture(scope="session")
-def anyio_backend():
-    return "asyncio"
+def pytest_collection_modifyitems(config, items):
+    match config.getoption("--with-real-rabbitmq"):
+        case True:
+            settings.testing.use_real_rabbitmq_broker = True
+        case False:
+            settings.testing.use_real_rabbitmq_broker = False
+        case None:
+            pass
 
+    logger.debug(f"Tests are being run with real RabbitMQ broker: {settings.testing.use_real_rabbitmq_broker}")
 
-@pytest.fixture(scope="session")
-def using_mock_rabbitmq_broker():
-    return not settings.testing.use_real_rabbitmq_broker
-
-
-def pytest_collection_modifyitems(items):
     mark_skip_with_real_rabbitmq = pytest.mark.skipif(
         settings.testing.use_real_rabbitmq_broker,
         reason="Test requires mock RabbitMQ broker but running with real broker",
@@ -62,6 +82,16 @@ def pytest_collection_modifyitems(items):
     for item in items:
         if item.get_closest_marker("requires_mock_rabbitmq_broker") is not None:
             item.add_marker(mark_skip_with_real_rabbitmq)
+
+
+@pytest.fixture(scope="session")
+def anyio_backend():
+    return "asyncio"
+
+
+@pytest.fixture(scope="session")
+def using_mock_rabbitmq_broker():
+    return not settings.testing.use_real_rabbitmq_broker
 
 
 @pytest.fixture
