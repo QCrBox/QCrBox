@@ -12,7 +12,6 @@ async def test_invoke_command(
     using_mock_rabbitmq_broker,
 ):
     routing_key_qcrbox_registry = settings.rabbitmq.routing_key_qcrbox_registry
-    # private_routing_key = "qcrbox_rk_test_client_xyz"
     application_routing_key = "qcrbox_rk_dummy_application_x.y.z"
     correlation_id = "abcd1234"
 
@@ -53,4 +52,17 @@ async def test_invoke_command(
     if using_mock_rabbitmq_broker:
         test_client.get_mock_handler(application_routing_key).assert_called_with(
             expected_msg_command_invocation_request
+        )
+
+    # Check that the client sends a reply to accept the command invocation request
+    expected_msg_accept_command_invocation_request = msg_specs.ClientIsAvailableToExecuteCommand(
+        action="client_is_available_to_execute_command",
+        payload=msg_specs.PayloadForClientIsAvailableToExecuteCommand(
+            cmd_invocation_payload=msg_invoke_cmd["payload"],
+            private_routing_key=test_client.private_routing_key,
+        ),
+    ).model_dump()
+    if using_mock_rabbitmq_broker:
+        test_server.get_mock_handler(application_routing_key).assert_called_with(
+            expected_msg_accept_command_invocation_request
         )
