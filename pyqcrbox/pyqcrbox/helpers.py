@@ -1,5 +1,7 @@
 import os
 import time
+from importlib import import_module
+from pathlib import Path
 from typing import Optional
 from uuid import uuid4
 
@@ -59,3 +61,23 @@ def get_qcrbox_registry_api_connection_url(
 
 def get_routing_key_for_command_invocation_requests(*, application_slug: str, application_version: str):
     return f"qcrbox_rk_{application_slug}_{application_version}"
+
+
+def import_all_submodules(parent_dir: Path, parent_package_name: str):
+    excluded_submodules = ["__init__", "__pycache__", "base_message_dispatcher"]
+
+    submodules_imported = []
+    for path in parent_dir.iterdir():
+        submodule_name = path.name.removesuffix(".py")
+        if submodule_name not in excluded_submodules:
+            import_module(f".{submodule_name}", package=parent_package_name)
+            submodules_imported.append(submodule_name)
+
+    logger.debug(
+        f"Found and imported the following submodules of {parent_package_name!r}: "
+        f"{join_string_reprs(submodules_imported)}"
+    )
+
+
+def join_string_reprs(some_strings: list[str]):
+    return ", ".join(repr(s) for s in some_strings)
