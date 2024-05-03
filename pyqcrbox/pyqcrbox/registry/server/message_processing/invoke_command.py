@@ -7,7 +7,7 @@ from .base_message_dispatcher import server_side_message_dispatcher
 
 
 @server_side_message_dispatcher.register
-async def handle_command_invocation(msg: msg_specs.InvokeCommand, broker: RabbitBroker):
+async def handle_command_invocation(msg: msg_specs.InvokeCommand, broker: RabbitBroker, **kwargs):
     assert msg.action == "invoke_command"
 
     new_msg = msg_specs.CommandInvocationRequest(

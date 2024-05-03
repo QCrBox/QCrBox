@@ -103,7 +103,9 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
         logger.trace(f"<== Exiting from {self.clsname} lifespan function.")
 
     def declare_rabbitmq_message_handler(self, *, routing_key: str, message_dispatcher: Callable):
-        declare_rabbitmq_message_handler(self.broker, routing_key=routing_key, msg_dispatcher_func=message_dispatcher)
+        declare_rabbitmq_message_handler(
+            self, self.broker, routing_key=routing_key, msg_dispatcher_func=message_dispatcher
+        )
 
     def run(self, host: Optional[str] = None, port: Optional[int] = None, **kwargs):
         self.host = host or "127.0.0.1"

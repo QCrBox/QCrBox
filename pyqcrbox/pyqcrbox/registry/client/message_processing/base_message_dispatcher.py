@@ -7,7 +7,7 @@ from pyqcrbox import msg_specs
 
 
 @functools.singledispatch
-def client_side_message_dispatcher(msg: dict):
+def client_side_message_dispatcher(msg: dict, **kwargs):
     """
     Fallback processing definition.
 
