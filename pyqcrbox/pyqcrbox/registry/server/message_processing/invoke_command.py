@@ -38,4 +38,5 @@ async def handle_client_indicating_availability_for_command_execution(
             private_routing_key=msg.payload.private_routing_key,
         ),
     )
-    await broker.publish(msg_execute_command, msg.payload.private_routing_key)
+    response = await broker.publish(msg_execute_command, msg.payload.private_routing_key, rpc=True)
+    assert response.status == msg_specs.ResponseStatusEnum.OK
