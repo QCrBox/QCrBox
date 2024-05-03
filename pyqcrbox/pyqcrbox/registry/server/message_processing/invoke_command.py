@@ -20,3 +20,11 @@ async def handle_command_invocation(msg: msg_specs.InvokeCommand, broker: Rabbit
         application_version=msg.payload.application_version,
     )
     await broker.publish(new_msg, rk_command_invocation_requests)
+
+
+@server_side_message_dispatcher.register
+async def handle_client_availability_for_command_invocation(
+    msg: msg_specs.ClientIsAvailableToExecuteCommand, broker: RabbitBroker, **kwargs
+):
+    assert msg.action == "client_is_available_to_execute_command"
+    raise NotImplementedError("TODO")

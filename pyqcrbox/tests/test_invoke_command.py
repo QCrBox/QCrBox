@@ -36,7 +36,7 @@ async def test_invoke_command(
 
     # Check that the server received the 'invoke_command' message
     if using_mock_rabbitmq_broker:
-        test_server.get_mock_handler(server_public_queue_name).assert_called_with(msg_invoke_cmd)
+        test_server.get_mock_handler(server_public_queue_name).assert_any_call(msg_invoke_cmd)
 
     # Check that the server sends a command invocation request and this is picked up by the client
     expected_msg_command_invocation_request = msg_specs.CommandInvocationRequest(
@@ -50,9 +50,7 @@ async def test_invoke_command(
         ),
     ).model_dump()
     if using_mock_rabbitmq_broker:
-        test_client.get_mock_handler(application_routing_key).assert_called_with(
-            expected_msg_command_invocation_request
-        )
+        test_client.get_mock_handler(application_routing_key).assert_any_call(expected_msg_command_invocation_request)
 
     # Check that the client sends a reply to accept the command invocation request
     expected_msg_accept_command_invocation_request = msg_specs.ClientIsAvailableToExecuteCommand(
@@ -63,6 +61,6 @@ async def test_invoke_command(
         ),
     ).model_dump()
     if using_mock_rabbitmq_broker:
-        test_server.get_mock_handler(application_routing_key).assert_called_with(
+        test_server.get_mock_handler(routing_key_qcrbox_registry).assert_any_call(
             expected_msg_accept_command_invocation_request
         )
