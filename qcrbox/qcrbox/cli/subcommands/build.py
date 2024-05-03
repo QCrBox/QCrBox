@@ -81,13 +81,16 @@ def make_action_to_build_qcrbox_wheel(base_ancestor_qcrbox_dist_dir):
 
 @make_task
 def task_clone_qcrboxtools_repo(dry_run: bool):
+    # TODO: Remove branch option again !!!!!
     qcrboxtools_repo_url = "https://github.com/QCrBox/QCrBoxTools.git"
+    git_branch = "cif_via_yml_adapt"
     repo_root = get_repo_root()
     target_dir = repo_root.joinpath(".build", "QCrBoxTools")
     action_descr = "Pulling/cloning" if not dry_run else "Would pull/clone"
     actions = [lambda: logger.info(f"{action_descr} QCrBoxTools repo in {target_dir} ...", dry_run=dry_run)]
     if not dry_run:
-        actions.append(f"git -C {target_dir} pull || git clone {qcrboxtools_repo_url} {target_dir}")
+        branch_option = f"-b {git_branch} " if git_branch is not None else ""
+        actions.append(f"git -C {target_dir} pull || git clone {branch_option}{qcrboxtools_repo_url} {target_dir}")
     return {"name": "task_clone_repo:qcrboxtools", "actions": actions}
 
 
