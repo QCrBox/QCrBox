@@ -5,8 +5,13 @@ from .base import QCrBoxBasePayload, QCrBoxGenericResponse
 
 
 class ResponseStatusEnum(StrEnum):
+    OK = "ok"
     SUCCESS = "success"
     ERROR = "error"
+
+
+def ok(*, response_to: str, msg: str = "", payload: Optional[QCrBoxBasePayload] = None):
+    return QCrBoxGenericResponse(response_to=response_to, status=ResponseStatusEnum.OK, msg=msg, payload=payload)
 
 
 def success(*, response_to: str, msg: str = "", payload: Optional[QCrBoxBasePayload] = None):
