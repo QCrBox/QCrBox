@@ -1,6 +1,6 @@
 from faststream.rabbit import RabbitBroker
 
-from pyqcrbox import msg_specs
+from pyqcrbox import msg_specs, sql_models
 from pyqcrbox.helpers import get_routing_key_for_command_invocation_requests
 
 from .base_message_dispatcher import server_side_message_dispatcher
@@ -23,8 +23,19 @@ async def handle_command_invocation(msg: msg_specs.InvokeCommand, broker: Rabbit
 
 
 @server_side_message_dispatcher.register
-async def handle_client_availability_for_command_invocation(
+async def handle_client_indicating_availability_for_command_execution(
     msg: msg_specs.ClientIsAvailableToExecuteCommand, broker: RabbitBroker, **kwargs
 ):
     assert msg.action == "client_is_available_to_execute_command"
-    raise NotImplementedError("TODO")
+    msg_execute_command = msg_specs.ExecuteCommand(
+        action="execute_command",
+        payload=sql_models.CommandExecutionCreate(
+            application_slug=msg.payload.cmd_invocation_payload.application_slug,
+            application_version=msg.payload.cmd_invocation_payload.application_version,
+            command_name=msg.payload.cmd_invocation_payload.command_name,
+            arguments=msg.payload.cmd_invocation_payload.arguments,
+            correlation_id=msg.payload.cmd_invocation_payload.correlation_id,
+            private_routing_key=msg.payload.private_routing_key,
+        ),
+    )
+    await broker.publish(msg_execute_command, msg.payload.private_routing_key)

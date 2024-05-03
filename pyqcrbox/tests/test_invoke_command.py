@@ -64,3 +64,14 @@ async def test_invoke_command(
         test_server.get_mock_handler(routing_key_qcrbox_registry).assert_any_call(
             expected_msg_accept_command_invocation_request
         )
+
+    # Check that the server sends the 'execute_command' message to the client
+    expected_msg_execute_command = msg_specs.ExecuteCommand(
+        action="execute_command",
+        payload=msg_specs.PayloadForExecuteCommand(
+            private_routing_key=test_client.private_routing_key,
+            **expected_msg_command_invocation_request["payload"],
+        ),
+    ).model_dump()
+    if using_mock_rabbitmq_broker:
+        test_client.get_mock_handler(test_client.private_routing_key).assert_any_call(expected_msg_execute_command)
