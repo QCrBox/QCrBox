@@ -56,7 +56,7 @@ class ApplicationSpecCreate(ApplicationSpecBase):
             return cmds[0]
         else:
             raise RuntimeError(
-                f"This branch should never be reached (found multiple definitions for command {command_name!r})"
+                f"Found multiple definitions for command {command_name!r}. This branch should never be reached."
             )
 
     def to_sql_model(self, private_routing_key: str = None):
