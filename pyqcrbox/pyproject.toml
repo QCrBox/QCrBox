@@ -17,7 +17,7 @@ dependencies = [
     "doit",
     "faststream[rabbit]>=0.5.2",
     "gitpython",
-    "hatch",
+    "hatch>=v1.10.0",
     "loguru",
     "pydantic",
     "pydantic-settings",
@@ -94,6 +94,9 @@ pyqcrbox-run-registry-client = "pyqcrbox.registry.client.qcrbox_client:main"
 [build-system]
 requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
+
+[tool.hatch.envs.default]
+installer = "uv"
 
 [tool.hatch.version]
 source = "vcs"
