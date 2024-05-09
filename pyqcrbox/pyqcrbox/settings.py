@@ -105,7 +105,7 @@ class RegistrySettings(BaseModel):
 
 class TestingSettings(BaseModel):
     # report_coverage: bool = False
-    use_in_memory_db: bool = True
+    use_in_memory_db: bool = False
     use_real_rabbitmq_broker: bool = False
 
 
