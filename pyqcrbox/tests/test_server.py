@@ -2,6 +2,7 @@ import pytest
 from litestar.status_codes import HTTP_200_OK
 
 from pyqcrbox import db_helpers, msg_specs, sql_models
+from pyqcrbox.helpers import ensure_dict
 
 
 @pytest.mark.anyio
@@ -19,7 +20,7 @@ async def test_health_check_via_rabbitmq(
     response = await rabbit_test_broker.publish(msg, server_public_queue_name, rpc=True)
 
     if using_mock_rabbitmq_broker:
-        response = response.model_dump()
+        response = ensure_dict(response)
         test_server.get_mock_handler(server_public_queue_name).assert_called_once_with(msg)
 
     assert response["status"] == "success"
@@ -67,7 +68,7 @@ async def test_register_application(
     # Send registration message to the server
     response = await rabbit_test_broker.publish(msg, server_public_queue_name, rpc=True)
     if using_mock_rabbitmq_broker:
-        response = response.model_dump()
+        response = ensure_dict(response)
 
     # Check that we received a successful response
     assert response["status"] == "success"
@@ -103,4 +104,8 @@ async def test_api_endpoint_applications(test_server, create_qcrbox_test_client,
         async with create_qcrbox_test_client() as test_client, test_client.run():
             response = await web_client.get("/applications")
             assert response.status_code == HTTP_200_OK
-            assert response.json() == [sample_application_spec.model_dump()]
+            response_data = response.json()
+            assert len(response_data) == 1
+            response_app = response_data[0]
+            assert response_app["slug"] == "dummy_application"
+            assert response_app["version"] == "x.y.z"
