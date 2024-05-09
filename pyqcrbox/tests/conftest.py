@@ -1,6 +1,7 @@
 import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import Callable
 
 import pytest
 from faststream.rabbit import RabbitBroker, TestRabbitBroker
@@ -116,7 +117,7 @@ async def rabbit_test_broker():
 
 
 @pytest.fixture
-def create_qcrbox_test_server(rabbit_test_broker):
+def create_qcrbox_test_server(rabbit_test_broker) -> Callable[[], TestQCrBoxServer]:
     @asynccontextmanager
     async def _create_qcrbox_test_server():
         test_server = TestQCrBoxServer(broker=rabbit_test_broker)
