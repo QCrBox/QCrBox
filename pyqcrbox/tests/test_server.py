@@ -90,3 +90,17 @@ async def test_register_application(
     )
     assert cmd_db.name == command_spec.name
     assert cmd_db.implemented_as == command_spec.implemented_as
+
+
+@pytest.mark.anyio
+@pytest.mark.xfail_with_real_rabbitmq_broker
+async def test_api_endpoint_applications(test_server, create_qcrbox_test_client, sample_application_spec):
+    async with test_server.web_client() as web_client:
+        response = await web_client.get("/applications")
+        assert response.status_code == HTTP_200_OK
+        assert response.json() == []
+
+        async with create_qcrbox_test_client() as test_client, test_client.run():
+            response = await web_client.get("/applications")
+            assert response.status_code == HTTP_200_OK
+            assert response.json() == [sample_application_spec.model_dump()]
