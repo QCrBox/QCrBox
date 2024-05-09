@@ -3,6 +3,10 @@ from litestar.openapi import OpenAPIConfig
 
 __all__ = ["create_server_asgi_server"]
 
+from sqlmodel import select
+
+from pyqcrbox import settings, sql_models
+
 
 @get("/", media_type=MediaType.TEXT, include_in_schema=False)
 async def hello() -> str:
@@ -14,9 +18,20 @@ async def health_check() -> str:
     return "healthy"
 
 
+@get(path="/applications", media_type=MediaType.JSON)
+async def applications() -> list[sql_models.ApplicationSpecDB]:
+    model_cls = sql_models.ApplicationSpecDB
+    # filter_clauses = construct_filter_clauses(model_cls, name=name, version=version)
+
+    with settings.db.get_session() as session:
+        # applications = session.scalars(select(model_cls).where(*filter_clauses)).all()
+        applications = session.scalars(select(model_cls)).all()
+        return applications
+
+
 def create_server_asgi_server(custom_lifespan) -> Litestar:
     app = Litestar(
-        route_handlers=[hello, health_check],
+        route_handlers=[hello, health_check, applications],
         lifespan=[custom_lifespan],
         openapi_config=OpenAPIConfig(title="QCrBox Server API", version="0.0.1"),
     )
