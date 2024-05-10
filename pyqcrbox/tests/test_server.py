@@ -109,3 +109,21 @@ async def test_api_endpoint_applications(test_server, create_qcrbox_test_client,
             response_app = response_data[0]
             assert response_app["slug"] == "dummy_application"
             assert response_app["version"] == "x.y.z"
+
+
+@pytest.mark.anyio
+@pytest.mark.xfail_with_real_rabbitmq_broker
+async def test_api_endpoint_commands(test_server, create_qcrbox_test_client, sample_application_spec):
+    async with test_server.web_client() as web_client:
+        response = await web_client.get("/commands")
+        assert response.status_code == HTTP_200_OK
+        assert response.json() == []
+
+        async with create_qcrbox_test_client() as test_client, test_client.run():
+            response = await web_client.get("/commands")
+            assert response.status_code == HTTP_200_OK
+            response_data = response.json()
+            assert len(response_data) == 1
+            response_cmd = response_data[0]
+            assert response_cmd["name"] == "say_hello"
+            assert response_cmd["implemented_as"] == "python_callable"
