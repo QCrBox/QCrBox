@@ -5,10 +5,10 @@ import sqlalchemy
 from faststream import Logger, apply_types
 from sqlmodel import JSON, Column, Field, Relationship, UniqueConstraint, select
 
+from pyqcrbox import sql_models
 from pyqcrbox.helpers import generate_correlation_id
 from pyqcrbox.settings import settings
 
-from .application import ApplicationSpecDB
 from .command import CommandSpecDB
 from .qcrbox_base_models import QCrBoxBaseSQLModel, QCrBoxPydanticBaseModel
 
@@ -67,9 +67,9 @@ class CommandInvocationDB(QCrBoxBaseSQLModel, table=True):
 
             try:
                 application = session.exec(
-                    select(ApplicationSpecDB).where(
-                        ApplicationSpecDB.slug == self.application_slug,
-                        ApplicationSpecDB.version == self.application_version,
+                    select(sql_models.ApplicationSpecDB).where(
+                        sql_models.ApplicationSpecDB.slug == self.application_slug,
+                        sql_models.ApplicationSpecDB.version == self.application_version,
                     )
                 ).one()
                 self.application = application

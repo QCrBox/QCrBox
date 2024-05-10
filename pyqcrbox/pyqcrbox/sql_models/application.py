@@ -13,6 +13,7 @@ from pyqcrbox.settings import settings
 from .. import helpers
 from .cif_entry_set import CifEntrySetCreate
 from .command import CommandSpecCreate, CommandSpecDB
+from .command_invocation import CommandInvocationDB
 from .qcrbox_base_models import QCrBoxBaseSQLModel, QCrBoxPydanticBaseModel
 
 
@@ -78,7 +79,7 @@ class ApplicationSpecDB(ApplicationSpecBase, QCrBoxBaseSQLModel, table=True):
     routing_key_command_invocation: str
 
     commands: list[CommandSpecDB] = Relationship(back_populates="application")
-    command_invocations: list["CommandInvocationDB"] = Relationship(back_populates="application")
+    command_invocations: list[CommandInvocationDB] = Relationship(back_populates="application")
     cif_entry_sets: list[str] = Field(sa_column=Column(JSON()))
 
     @classmethod
