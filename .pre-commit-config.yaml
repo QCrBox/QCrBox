@@ -9,8 +9,13 @@ repos:
       # Run the ruff formatter.
       - id: ruff-format
         args: [ --config, pyqcrbox/pyproject.toml ]
-      # Check import contracts
   - repo: https://github.com/seddonym/import-linter
     rev: v2.0
     hooks:
+      # Check import contracts
       - id: import-linter
+        # Note: specifying the 'entry' line is a workaround for the fact that we need to run the linter
+        #       from the pyqcrbox/ subdirectory.
+        #       See: https://github.com/pre-commit/pre-commit/issues/1417#issuecomment-620705161
+        entry: bash -c 'cd pyqcrbox && exec lint-imports'
+        args: [ --config, pyqcrbox/pyproject.toml ]
