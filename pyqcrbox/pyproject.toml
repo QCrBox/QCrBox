@@ -39,8 +39,9 @@ dev = [
     "uv",
     #
     # linting
+    "import-linter",
+    #"pyupgrade-directories",
     "ruff>=0.2.2",
-    "pyupgrade-directories",
     #
     # static analysis
     "types-PyYAML",
@@ -176,3 +177,22 @@ exclude = ["services/applications/*/configure_*.py"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
+
+[tool.importlinter]
+root_package = "pyqcrbox"
+# Optional:
+#include_external_packages = True
+#exclude_type_checking_imports = True
+
+[[tool.importlinter.contracts]]
+name = "Server does not import client modules"
+type = "forbidden"
+source_modules = ["pyqcrbox.registry.server"]
+forbidden_modules = ["pyqcrbox.registry.client"]
+
+[[tool.importlinter.contracts]]
+name = "Client does not import server modules"
+type = "forbidden"
+source_modules = ["pyqcrbox.registry.client"]
+forbidden_modules = ["pyqcrbox.registry.server"]
