@@ -196,3 +196,13 @@ name = "Client does not import server modules"
 type = "forbidden"
 source_modules = ["pyqcrbox.registry.client"]
 forbidden_modules = ["pyqcrbox.registry.server"]
+
+[[tool.importlinter.contracts]]
+name = "Verify sql_model layers"
+type = "layers"
+layers = [
+    "application",
+    "command | cif_entry_set",
+    "parameter",
+]
+containers = ["pyqcrbox.sql_models"]
