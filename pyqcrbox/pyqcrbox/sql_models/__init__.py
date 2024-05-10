@@ -4,7 +4,7 @@
 # from .command_spec import CommandSpecCreate, CommandSpecDB
 # from .parameter_spec import ParameterSpecCreate, ParameterSpecDB
 
-from .application import ApplicationSpecCreate, ApplicationSpecDB
+from .application import ApplicationReadDTO, ApplicationSpecCreate, ApplicationSpecDB
 from .cif_entry_set import CifEntrySetCreate
 from .command import CommandSpecCreate, CommandSpecDB
 from .command_execution import CommandExecutionCreate, CommandExecutionDB

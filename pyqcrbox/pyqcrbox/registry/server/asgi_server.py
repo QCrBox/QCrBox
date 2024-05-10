@@ -18,8 +18,8 @@ async def health_check() -> str:
     return "healthy"
 
 
-@get(path="/applications", media_type=MediaType.JSON)
-async def applications() -> list[sql_models.ApplicationSpecDB]:
+@get(path="/applications", media_type=MediaType.JSON, return_dto=sql_models.ApplicationReadDTO)
+async def retrieve_applications() -> list[sql_models.ApplicationSpecDB]:
     model_cls = sql_models.ApplicationSpecDB
     # filter_clauses = construct_filter_clauses(model_cls, name=name, version=version)
 
@@ -31,7 +31,7 @@ async def applications() -> list[sql_models.ApplicationSpecDB]:
 
 def create_server_asgi_server(custom_lifespan) -> Litestar:
     app = Litestar(
-        route_handlers=[hello, health_check, applications],
+        route_handlers=[hello, health_check, retrieve_applications],
         lifespan=[custom_lifespan],
         openapi_config=OpenAPIConfig(title="QCrBox Server API", version="0.0.1"),
     )

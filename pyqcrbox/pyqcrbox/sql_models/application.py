@@ -5,6 +5,8 @@ from typing import Optional
 import sqlalchemy
 import yaml
 from faststream import Logger, apply_types
+from litestar.contrib.pydantic import PydanticDTO
+from litestar.dto import DTOConfig
 from pydantic import field_validator
 from sqlmodel import JSON, Column, Field, Relationship, UniqueConstraint, select
 
@@ -114,3 +116,7 @@ class ApplicationSpecDB(ApplicationSpecBase, QCrBoxBaseSQLModel, table=True):
                 session.commit()
                 session.refresh(self)
                 return self
+
+
+class ApplicationReadDTO(PydanticDTO[ApplicationSpecDB]):
+    config = DTOConfig(exclude={"private_routing_key", "cif_entry_sets"})
