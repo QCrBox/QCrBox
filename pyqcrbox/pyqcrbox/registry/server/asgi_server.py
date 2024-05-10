@@ -29,9 +29,20 @@ async def retrieve_applications() -> list[sql_models.ApplicationSpecDB]:
         return applications
 
 
+@get(path="/commands", media_type=MediaType.JSON)
+async def retrieve_commands() -> list[sql_models.CommandSpecDB]:
+    model_cls = sql_models.CommandSpecDB
+    # filter_clauses = construct_filter_clauses(model_cls, name=name, version=version)
+
+    with settings.db.get_session() as session:
+        # applications = session.scalars(select(model_cls).where(*filter_clauses)).all()
+        commands = session.scalars(select(model_cls)).all()
+        return commands
+
+
 def create_server_asgi_server(custom_lifespan) -> Litestar:
     app = Litestar(
-        route_handlers=[hello, health_check, retrieve_applications],
+        route_handlers=[hello, health_check, retrieve_applications, retrieve_commands],
         lifespan=[custom_lifespan],
         openapi_config=OpenAPIConfig(title="QCrBox Server API", version="0.0.1"),
     )
