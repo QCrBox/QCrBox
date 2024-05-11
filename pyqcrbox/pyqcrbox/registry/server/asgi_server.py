@@ -35,7 +35,7 @@ async def retrieve_commands() -> list[sql_models.CommandSpecDB]:
     # filter_clauses = construct_filter_clauses(model_cls, name=name, version=version)
 
     with settings.db.get_session() as session:
-        # applications = session.scalars(select(model_cls).where(*filter_clauses)).all()
+        # commands = session.scalars(select(model_cls).where(*filter_clauses)).all()
         commands = session.scalars(select(model_cls)).all()
         return commands
 
