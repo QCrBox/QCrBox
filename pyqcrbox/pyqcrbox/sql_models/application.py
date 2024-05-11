@@ -4,12 +4,12 @@ from typing import Optional
 
 import sqlalchemy
 import yaml
-from faststream import Logger, apply_types
 from litestar.contrib.pydantic import PydanticDTO
 from litestar.dto import DTOConfig
 from pydantic import field_validator
 from sqlmodel import JSON, Column, Field, Relationship, UniqueConstraint, select
 
+from pyqcrbox import logger
 from pyqcrbox.settings import settings
 
 from .. import helpers
@@ -95,8 +95,7 @@ class ApplicationSpecDB(ApplicationSpecBase, QCrBoxBaseSQLModel, table=True):
         # logger.debug(f"{command.name=}: {data=}")
         return cls(**data)
 
-    @apply_types
-    def save_to_db(self, logger: Logger):
+    def save_to_db(self):
         cls = self.__class__
 
         with settings.db.get_session() as session:
