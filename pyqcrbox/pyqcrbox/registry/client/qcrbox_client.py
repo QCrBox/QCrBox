@@ -9,7 +9,7 @@ from pyqcrbox.helpers import generate_private_routing_key
 from pyqcrbox.registry.client.message_processing import client_side_message_dispatcher
 
 from ..shared import QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup
-from .asgi_server import create_client_asgi_server
+from .api import create_client_asgi_server
 
 __all__ = ["QCrBoxClient", "TestQCrBoxClient"]
 

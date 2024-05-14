@@ -3,7 +3,7 @@ from loguru import logger
 from pyqcrbox.settings import settings
 
 from ..shared import QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup
-from .asgi_server import create_server_asgi_server
+from .api import create_server_asgi_server
 from .message_processing import server_side_message_dispatcher
 
 
