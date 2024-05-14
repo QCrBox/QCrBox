@@ -3,10 +3,10 @@ from typing import Optional
 
 from loguru import logger
 from pydantic import model_validator
-from sqlmodel import JSON, Column, Field, Relationship, UniqueConstraint
+from sqlmodel import Field, Relationship, UniqueConstraint
 
 from .call_pattern import CallPattern
-from .parameter import ParameterSpecCreate, ParameterSpecDB
+from .parameter import ParameterSpecCreate, ParameterSpecDB, ParameterSpecRead
 from .qcrbox_base_models import QCrBoxBaseSQLModel, QCrBoxPydanticBaseModel
 
 
@@ -16,21 +16,26 @@ class ImplementedAs(str, Enum):
     gui = "GUI"
 
 
-class CommandSpecCreate(QCrBoxPydanticBaseModel):
+class CommandSpecBase(QCrBoxPydanticBaseModel):
     name: str
     implemented_as: ImplementedAs
     interactive: bool = False
-    call_pattern: Optional[CallPattern] = None  # for CLI commands
+    call_pattern: Optional[str] = None  # for CLI commands
     import_path: Optional[str] = None  # for python_callable
     callable_name: Optional[str] = None  # for python_callable
     description: str = ""
     merge_cif_su: bool = False
     # TODO: verify that implemented_as == "GUI" when interactive == True
 
+    # required_cif_entry_sets: list[str] = []
+    # optional_cif_entry_sets: list[str] = []
+    # custom_cif_categories: list[str] = []
+
+
+class CommandSpecCreate(CommandSpecBase):
+    call_pattern: Optional[CallPattern] = None  # for CLI commands
+
     parameters: list[ParameterSpecCreate] = []
-    required_cif_entry_sets: list[str] = []
-    optional_cif_entry_sets: list[str] = []
-    custom_cif_categories: list[str] = []
 
     @model_validator(mode="after")
     def validate_interactive_commands(self) -> "CommandSpecCreate":
@@ -80,17 +85,10 @@ class CommandSpecCreate(QCrBoxPydanticBaseModel):
         return CommandSpecDB.from_pydantic_model(self)
 
 
-class CommandSpecDB(QCrBoxBaseSQLModel, table=True):
+class CommandSpecDB(CommandSpecBase, QCrBoxBaseSQLModel, table=True):
     __tablename__ = "command"
     __table_args__ = (UniqueConstraint("name", "application_id"),)
     __pydantic_model_cls__ = CommandSpecCreate
-
-    name: str
-    implemented_as: ImplementedAs
-    interactive: bool = False
-    call_pattern: Optional[str] = None
-    description: str = ""
-    merge_cif_su: bool = False
 
     id: Optional[int] = Field(default=None, primary_key=True)
 
@@ -99,9 +97,14 @@ class CommandSpecDB(QCrBoxBaseSQLModel, table=True):
     parameters: list["ParameterSpecDB"] = Relationship(back_populates="command")
     command_invocations: list["CommandInvocationDB"] = Relationship(back_populates="command")
 
-    required_cif_entry_sets: list[str] = Field(sa_column=Column(JSON()))
-    optional_cif_entry_sets: list[str] = Field(sa_column=Column(JSON()))
-    custom_cif_categories: list[str] = Field(sa_column=Column(JSON()))
+    # required_cif_entry_sets: list[str] = Field(sa_column=Column(JSON()))
+    # optional_cif_entry_sets: list[str] = Field(sa_column=Column(JSON()))
+    # custom_cif_categories: list[str] = Field(sa_column=Column(JSON()))
+
+    # def model_dump(self, **kwargs):
+    #     data = super().model_dump(**kwargs)
+    #     data["parameters"] = [param.model_dump(**kwargs) for param in self.parameters]
+    #     return data
 
     @classmethod
     def from_pydantic_model(cls, command):
@@ -111,3 +114,13 @@ class CommandSpecDB(QCrBoxBaseSQLModel, table=True):
         data["parameters"] = [ParameterSpecDB.from_pydantic_model(param) for param in command.parameters]
         # logger.debug(f"{command.name=}: {data=}")
         return cls(**data)
+
+    def to_read_model(self):
+        return CommandSpecWithParameters(**self.model_dump())
+
+
+class CommandSpecWithParameters(CommandSpecBase):
+    parameters: list[ParameterSpecRead]
+    # commands: list[CommandSpecRead] = []
+    # cif_entry_sets: list[CifEntrySetRead] = []
+    pass

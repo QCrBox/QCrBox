@@ -14,7 +14,7 @@ from pyqcrbox.settings import settings
 
 from .. import helpers
 from .cif_entry_set import CifEntrySetCreate
-from .command import CommandSpecCreate, CommandSpecDB
+from .command import CommandSpecCreate, CommandSpecDB, CommandSpecWithParameters
 from .command_invocation import CommandInvocationDB
 from .qcrbox_base_models import QCrBoxBaseSQLModel, QCrBoxPydanticBaseModel
 
@@ -84,6 +84,11 @@ class ApplicationSpecDB(ApplicationSpecBase, QCrBoxBaseSQLModel, table=True):
     command_invocations: list[CommandInvocationDB] = Relationship(back_populates="application")
     cif_entry_sets: list[str] = Field(sa_column=Column(JSON()))
 
+    # def model_dump(self, **kwargs):
+    #     data = super().model_dump(**kwargs)
+    #     data["commands"] = [cmd.model_dump(**kwargs) for cmd in self.commands]
+    #     return data
+
     @classmethod
     def from_pydantic_model(cls, application: __pydantic_model_cls__, private_routing_key: str = None):
         pydantic_model_cls = getattr(cls, "__pydantic_model_cls__")
@@ -115,6 +120,14 @@ class ApplicationSpecDB(ApplicationSpecBase, QCrBoxBaseSQLModel, table=True):
                 session.commit()
                 session.refresh(self)
                 return self
+
+    def to_read_model(self):
+        return ApplicationSpecWithCommands(**self.model_dump())
+
+
+class ApplicationSpecWithCommands(ApplicationSpecBase):
+    commands: list[CommandSpecWithParameters]
+    # cif_entry_sets: list[CifEntrySetRead] = []
 
 
 class ApplicationReadDTO(PydanticDTO[ApplicationSpecDB]):

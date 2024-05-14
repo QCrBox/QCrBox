@@ -18,25 +18,28 @@ async def health_check() -> str:
     return "healthy"
 
 
-@get(path="/applications", media_type=MediaType.JSON, return_dto=sql_models.ApplicationReadDTO)
-async def retrieve_applications() -> list[sql_models.ApplicationSpecDB]:
+# @get(path="/applications", media_type=MediaType.JSON, return_dto=sql_models.ApplicationReadDTO)
+@get(path="/applications", media_type=MediaType.JSON)
+async def retrieve_applications() -> list[sql_models.ApplicationSpecWithCommands]:
     model_cls = sql_models.ApplicationSpecDB
     # filter_clauses = construct_filter_clauses(model_cls, name=name, version=version)
 
     with settings.db.get_session() as session:
         # applications = session.scalars(select(model_cls).where(*filter_clauses)).all()
         applications = session.scalars(select(model_cls)).all()
+        applications = [app.to_read_model() for app in applications]
         return applications
 
 
 @get(path="/commands", media_type=MediaType.JSON)
-async def retrieve_commands() -> list[sql_models.CommandSpecDB]:
+async def retrieve_commands() -> list[sql_models.CommandSpecWithParameters]:
     model_cls = sql_models.CommandSpecDB
     # filter_clauses = construct_filter_clauses(model_cls, name=name, version=version)
 
     with settings.db.get_session() as session:
         # commands = session.scalars(select(model_cls).where(*filter_clauses)).all()
         commands = session.scalars(select(model_cls)).all()
+        commands = [cmd.to_read_model() for cmd in commands]
         return commands
 
 
