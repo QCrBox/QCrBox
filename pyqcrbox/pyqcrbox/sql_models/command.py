@@ -3,10 +3,10 @@ from typing import Optional
 
 from loguru import logger
 from pydantic import model_validator
+from sqlalchemy import JSON, Column
 from sqlmodel import Field, Relationship, UniqueConstraint
 
 from .call_pattern import CallPattern
-from .parameter import ParameterSpecCreate, ParameterSpecDB, ParameterSpecRead
 from .qcrbox_base_models import QCrBoxBaseSQLModel, QCrBoxPydanticBaseModel
 
 
@@ -35,7 +35,7 @@ class CommandSpecBase(QCrBoxPydanticBaseModel):
 class CommandSpecCreate(CommandSpecBase):
     call_pattern: Optional[CallPattern] = None  # for CLI commands
 
-    parameters: list[ParameterSpecCreate] = []
+    parameters: list[dict] = []
 
     @model_validator(mode="after")
     def validate_interactive_commands(self) -> "CommandSpecCreate":
@@ -51,7 +51,7 @@ class CommandSpecCreate(CommandSpecBase):
 
         if self.call_pattern is not None:
             call_pattern_params = set(self.call_pattern.param_names)
-            cmd_params = set([x.name for x in self.parameters])
+            cmd_params = set([x["name"] for x in self.parameters])
             if not call_pattern_params.issubset(cmd_params):
                 missing_params = sorted(call_pattern_params.difference(cmd_params))
                 raise ValueError(
@@ -94,24 +94,25 @@ class CommandSpecDB(CommandSpecBase, QCrBoxBaseSQLModel, table=True):
 
     application_id: Optional[int] = Field(default=None, foreign_key="application.id")
     application: "ApplicationSpecDB" = Relationship(back_populates="commands")
-    parameters: list["ParameterSpecDB"] = Relationship(back_populates="command")
+    parameters: dict = Field(sa_column=Column(JSON), default={})
     command_invocations: list["CommandInvocationDB"] = Relationship(back_populates="command")
 
     # required_cif_entry_sets: list[str] = Field(sa_column=Column(JSON()))
     # optional_cif_entry_sets: list[str] = Field(sa_column=Column(JSON()))
     # custom_cif_categories: list[str] = Field(sa_column=Column(JSON()))
 
-    def model_dump(self, **kwargs):
-        data = super().model_dump(**kwargs)
-        data["parameters"] = [param.model_dump(**kwargs) for param in self.parameters]
-        return data
+    # def model_dump(self, **kwargs):
+    #     data = super().model_dump(**kwargs)
+    #     data["parameters"] = [param.model_dump(**kwargs) for param in self.parameters]
+    #     return data
 
     @classmethod
     def from_pydantic_model(cls, command):
         pydantic_model_cls = getattr(cls, "__pydantic_model_cls__")
         assert isinstance(command, pydantic_model_cls)
         data = command.model_dump(exclude={"parameters"})
-        data["parameters"] = [ParameterSpecDB.from_pydantic_model(param) for param in command.parameters]
+        # data["parameters"] = [ParameterSpecDB.from_pydantic_model(param) for param in command.parameters]
+        data["parameters"] = {param["name"]: param for param in command.parameters}
         # logger.debug(f"{command.name=}: {data=}")
         return cls(**data)
 
@@ -122,5 +123,5 @@ class CommandSpecDB(CommandSpecBase, QCrBoxBaseSQLModel, table=True):
 class CommandSpecWithParameters(CommandSpecBase):
     id: int
     application_id: int
-    parameters: list[ParameterSpecRead]
+    parameters: dict
     # cif_entry_sets: list[CifEntrySetRead] = []
