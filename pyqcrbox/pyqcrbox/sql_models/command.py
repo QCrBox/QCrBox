@@ -101,10 +101,10 @@ class CommandSpecDB(CommandSpecBase, QCrBoxBaseSQLModel, table=True):
     # optional_cif_entry_sets: list[str] = Field(sa_column=Column(JSON()))
     # custom_cif_categories: list[str] = Field(sa_column=Column(JSON()))
 
-    # def model_dump(self, **kwargs):
-    #     data = super().model_dump(**kwargs)
-    #     data["parameters"] = [param.model_dump(**kwargs) for param in self.parameters]
-    #     return data
+    def model_dump(self, **kwargs):
+        data = super().model_dump(**kwargs)
+        data["parameters"] = [param.model_dump(**kwargs) for param in self.parameters]
+        return data
 
     @classmethod
     def from_pydantic_model(cls, command):

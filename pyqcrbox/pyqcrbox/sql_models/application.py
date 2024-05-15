@@ -7,7 +7,7 @@ import yaml
 from litestar.contrib.pydantic import PydanticDTO
 from litestar.dto import DTOConfig
 from pydantic import field_validator
-from sqlmodel import JSON, Column, Field, Relationship, UniqueConstraint, select
+from sqlmodel import Field, Relationship, UniqueConstraint, select
 
 from pyqcrbox import logger
 from pyqcrbox.settings import settings
@@ -82,12 +82,12 @@ class ApplicationSpecDB(ApplicationSpecBase, QCrBoxBaseSQLModel, table=True):
 
     commands: list[CommandSpecDB] = Relationship(back_populates="application")
     command_invocations: list[CommandInvocationDB] = Relationship(back_populates="application")
-    cif_entry_sets: list[str] = Field(sa_column=Column(JSON()))
+    # cif_entry_sets: list[str] = Field(sa_column=Column(JSON()))
 
-    # def model_dump(self, **kwargs):
-    #     data = super().model_dump(**kwargs)
-    #     data["commands"] = [cmd.model_dump(**kwargs) for cmd in self.commands]
-    #     return data
+    def model_dump(self, **kwargs):
+        data = super().model_dump(**kwargs)
+        data["commands"] = [cmd.model_dump(**kwargs) for cmd in self.commands]
+        return data
 
     @classmethod
     def from_pydantic_model(cls, application: __pydantic_model_cls__, private_routing_key: str = None):
