@@ -10,6 +10,8 @@ external_cmd_replace = ExternalCommand(
     "0",
     Param("structure_cif_path"),
     "0",
+    "--output_cif_path",
+    Param("output_cif_path"),
 )
 
 qcrboxtools_obj.register_external_command("replace_structure_from_cif", external_cmd_replace)
@@ -39,8 +41,8 @@ qcrboxtools_obj.register_external_command("check_structure_convergence", externa
 external_cmd_cif_iso2aniso = ExternalCommand(
     "python",
     "/opt/qcrbox/qcrbtls_iso2aniso_glue.py",
-    Param("cif_path"),
-    Param("cif_dataset"),
+    Param("input_cif_path"),
+    Param("output_cif_path"),
     "--select_names",
     Param("select_names"),
     "--select_elements",

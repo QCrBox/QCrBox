@@ -37,7 +37,7 @@ commands:
         required_entry_sets: ["molecular_structure"]
         invalidated_entries: [
           "_geom.*", "_refln.*calc.*", "_shelx.*", "_iucr.refine_instructions_details",
-          "_refine(?!_ls\.weighting|_ls\.extinction)"
+          '_refine(?!_ls\.weighting|_ls\.extinction).+', "_atom_site_aniso.u_.._su"
         ]
         invalidated_entry_sets: ["molecular_structure"]
 
@@ -86,7 +86,13 @@ commands:
         description: "Path to the CIF file to be converted"
         required_entries: [
           "_cell.length_a", "_cell.length_b", "_cell.length_c", "_cell.angle_alpha",
-          "_cell.angle_beta", "_cell.angle_gamma", "_atom_site.label", "_atom_site.u_iso_or_equiv"
+          "_cell.angle_beta", "_cell.angle_gamma", "_atom_site.label", "_atom_site.type_symbol",
+          "_atom_site.u_iso_or_equiv"
+        ]
+        optional_entries: [
+          "_atom_site_aniso.label", "_atom_site_aniso.u_11", "_atom_site_aniso.u_22",
+          "_atom_site_aniso.u_33", "_atom_site_aniso.u_12", "_atom_site_aniso.u_13",
+          "_atom_site_aniso.u_23"
         ]
         merge_su: False
       - name: "output_cif_path"
@@ -97,6 +103,10 @@ commands:
           "_atom_site_aniso.label", "_atom_site_aniso.u_11", "_atom_site_aniso.u_22",
           "_atom_site_aniso.u_33", "_atom_site_aniso.u_12", "_atom_site_aniso.u_13",
           "_atom_site_aniso.u_23"
+        ]
+        invalidated_entries: [
+          "_refln.*calc.*", "_shelx.*", "_iucr.refine_instructions_details",
+          '_refine(?!_ls\.weighting|_ls\.extinction)'
         ]
       - name: "select_names"
         type: str
@@ -142,7 +152,7 @@ cif_entry_sets:
       "_atom_site.type_symbol",
       "_atom_site.fract_x",
       "_atom_site.fract_y",
-      "_atom_site.fract_z"
+      "_atom_site.fract_z",
       "_atom_site.occupancy",
       "_atom_site.u_iso_or_equiv"
     ]
