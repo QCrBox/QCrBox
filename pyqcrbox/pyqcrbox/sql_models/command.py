@@ -120,7 +120,6 @@ class CommandSpecDB(CommandSpecBase, QCrBoxBaseSQLModel, table=True):
 
 
 class CommandSpecWithParameters(CommandSpecBase):
+    id: int
     parameters: list[ParameterSpecRead]
-    # commands: list[CommandSpecRead] = []
     # cif_entry_sets: list[CifEntrySetRead] = []
-    pass
