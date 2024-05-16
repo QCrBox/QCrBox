@@ -283,7 +283,7 @@ class QCrBoxWrapper:
             answers = json.loads(r.read().decode("UTF-8"))
 
         prepare_commands = {
-            ans["name"][9:]: QCrBoxCommand(
+            (ans["name"][9:], int(ans["application_id"])): QCrBoxCommand(
                 cmd_id=int(ans["id"]),
                 name=ans["name"],
                 application_id=int(ans["application_id"]),
@@ -295,7 +295,7 @@ class QCrBoxWrapper:
         }
 
         finalise_commands = {
-            ans["name"][10:]: QCrBoxCommand(
+            (ans["name"][10:], int(ans["application_id"])): QCrBoxCommand(
                 cmd_id=int(ans["id"]),
                 name=ans["name"],
                 application_id=int(ans["application_id"]),
@@ -312,11 +312,13 @@ class QCrBoxWrapper:
                 continue
             if to_gui_url(ans["application_id"], ans["name"]) is not None:
                 parameters = [QCrBoxParameter(key, dtype) for key, dtype in ans["parameters"].items()]
-                prepare_command = prepare_commands.get(ans["name"], None)
+
+                application_id = int(ans["application_id"])
+                prepare_command = prepare_commands.get((ans["name"], application_id), None)
                 if prepare_command is not None:
                     parameters += [par for par in prepare_command.parameters if par not in parameters]
                 
-                finalise_command = finalise_commands.get(ans["name"], None)
+                finalise_command = finalise_commands.get((ans["name"], application_id), None)
                 if finalise_command is not None:
                     parameters += [par for par in finalise_command.parameters if par not in parameters]
 
