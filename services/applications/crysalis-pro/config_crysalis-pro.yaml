@@ -1,5 +1,5 @@
 #
-# Configuration for the application 'crysalis-pro'
+# Configuration for the application "crysalis-pro"
 #
 name: "CrysalisPro"
 slug: "crysalis-pro"
@@ -60,20 +60,6 @@ cif_entry_sets:
       "_cell_oxdiff_angle_gamma",
       "_cell_oxdiff_volume",
       "_cell_oxdiff_measurement_reflns_used",
-      "_exptl_crystal_size_max",
-      "_exptl_crystal_size_mid",
-      "_exptl_crystal_size_min",
-      "_exptl_crystal_face_index_h",
-      "_exptl_crystal_face_index_k",
-      "_exptl_crystal_face_index_l",
-      "_exptl_crystal_face_perp_dist",
-      "_exptl_oxdiff_crystal_face_indexfrac_h",
-      "_exptl_oxdiff_crystal_face_indexfrac_k",
-      "_exptl_oxdiff_crystal_face_indexfrac_l",
-      "_exptl_oxdiff_crystal_face_x",
-      "_exptl_oxdiff_crystal_face_y",
-      "_exptl_oxdiff_crystal_face_z",
-      "_exptl_absorpt_coefficient_mu",
       "_exptl_absorpt_correction_T_min",
       "_exptl_absorpt_correction_T_max",
       "_exptl_absorpt_correction_type",
@@ -131,6 +117,21 @@ cif_entry_sets:
       "_diffrn_refln_index_k",
       "_diffrn_refln_index_l",
       "_diffrn_refln_intensity_net",
-      "_diffrn_refln_intensity_net_su",
+      "_diffrn_refln_intensity_u"
     ]
-    optional: [" _diffrn_refln_scale_group_code"]
+    optional: [
+      "_diffrn_refln_scale_group_code",
+      "_exptl_crystal_face_perp_dist",
+      "_exptl_oxdiff_crystal_face_x",
+      "_exptl_oxdiff_crystal_face_y",
+      "_exptl_crystal_face_index_l",
+      "_exptl_absorpt_coefficient_mu",
+      "_exptl_oxdiff_crystal_face_indexfrac_k",
+      "_exptl_oxdiff_crystal_face_indexfrac_l",
+      "_exptl_oxdiff_crystal_face_z",
+      "_exptl_crystal_face_index_h",
+      "_exptl_crystal_size_max",
+      "_exptl_oxdiff_crystal_face_indexfrac_h",
+      "_exptl_crystal_size_mid",
+      "_exptl_crystal_face_index_k",
+      "_exptl_crystal_size_min"]

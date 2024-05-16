@@ -284,14 +284,11 @@ class QCrBoxWrapper:
 
         prepare_commands = {
             ans["name"][9:]: QCrBoxCommand(
-                int(ans["id"]),
-                ans["name"],
-                int(ans["application_id"]),
-                [QCrBoxParameter(key, dtype) for key, dtype in ans["parameters"].items()],
-                to_gui_url(ans["application_id"], ans["name"]),
-                self,
-                None,
-                None,
+                cmd_id=int(ans["id"]),
+                name=ans["name"],
+                application_id=int(ans["application_id"]),
+                parameters=[QCrBoxParameter(key, dtype) for key, dtype in ans["parameters"].items()],
+                wrapper_parent=self,
             )
             for ans in answers
             if ans["name"].startswith("prepare__")
@@ -299,33 +296,56 @@ class QCrBoxWrapper:
 
         finalise_commands = {
             ans["name"][10:]: QCrBoxCommand(
-                int(ans["id"]),
-                ans["name"],
-                int(ans["application_id"]),
-                [QCrBoxParameter(key, dtype) for key, dtype in ans["parameters"].items()],
-                to_gui_url(ans["application_id"], ans["name"]),
-                self,
-                None,
-                None,
+                cmd_id=int(ans["id"]),
+                name=ans["name"],
+                application_id=int(ans["application_id"]),
+                parameters=[QCrBoxParameter(key, dtype) for key, dtype in ans["parameters"].items()],
+                wrapper_parent=self,
             )
             for ans in answers
             if ans["name"].startswith("finalise__")
         }
 
-        commands = [
-            QCrBoxCommand(
-                int(ans["id"]),
-                ans["name"],
-                int(ans["application_id"]),
-                [QCrBoxParameter(key, dtype) for key, dtype in ans["parameters"].items()],
-                to_gui_url(ans["application_id"], ans["name"]),
-                self,
-                prepare_commands.get(ans["name"], None),
-                finalise_commands.get(ans["name"], None),
-            )
-            for ans in answers
-            if not any([ans["name"].startswith("prepare__"), ans["name"].startswith("finalise__")])
-        ]
+        commands = []
+        for ans in answers:
+            if any([ans["name"].startswith("prepare__"), ans["name"].startswith("finalise__")]):
+                continue
+            if to_gui_url(ans["application_id"], ans["name"]) is not None:
+                parameters = [QCrBoxParameter(key, dtype) for key, dtype in ans["parameters"].items()]
+                prepare_command = prepare_commands.get(ans["name"], None)
+                if prepare_command is not None:
+                    parameters += [par for par in prepare_command.parameters if par not in parameters]
+                
+                finalise_command = finalise_commands.get(ans["name"], None)
+                if finalise_command is not None:
+                    parameters += [par for par in finalise_command.parameters if par not in parameters]
+
+                commands.append(QCrBoxInteractiveCommand(
+                    cmd_id=int(ans["id"]),
+                    name=ans["name"],
+                    application_id=int(ans["application_id"]),
+                    parameters=parameters,
+                    gui_url=to_gui_url(ans["application_id"], ans["name"]),
+                    wrapper_parent=self,
+                    run_cmd=QCrBoxCommand(
+                        int(ans["id"]),
+                        ans["name"],
+                        int(ans["application_id"]),
+                        [QCrBoxParameter(key, dtype) for key, dtype in ans["parameters"].items()],
+                        self,
+                    ),
+                    prepare_cmd=prepare_command,
+                    finalise_cmd=finalise_command,
+                ))
+            else:
+                commands.append(QCrBoxCommand(
+                    cmd_id=int(ans["id"]),
+                    name=ans["name"],
+                    application_id=int(ans["application_id"]),
+                    parameters=[QCrBoxParameter(key, dtype) for key, dtype in ans["parameters"].items()],
+                    wrapper_parent=self,
+                ))
+
         return commands
 
     def __repr__(self) -> str:
@@ -407,9 +427,53 @@ class QCrBoxApplication:
 
     def __repr__(self) -> str:
         return f"{self.name}()"
+    
+
+class QCrBoxCommandBase:
+    def __init__(
+        self,
+        cmd_id: int,
+        name: str,
+        application_id: int,
+        parameters: List[QCrBoxParameter],
+        wrapper_parent: QCrBoxWrapper
+    ) -> None:
+        self.id = cmd_id
+        self.name = name
+        self.application_id = application_id
+        self.parameters = parameters
+        self.wrapper_parent = wrapper_parent
+        self._server_url = wrapper_parent.server_url
+
+    @property
+    def par_name_list(self) -> List[str]:
+        """
+        Retrieves the names of the parameters for the command.
+
+        Returns
+        -------
+        List[str]
+            A list containing the names of the parameters.
+        """
+        return [par.name for par in self.parameters]
+    
+    def args_to_kwargs(self, *args, **kwargs):
+        arguments = {key: str(val) for key, val in zip(self.par_name_list, args)}
+
+        invalid_args = [arg for arg in kwargs if arg not in self.par_name_list]
+        if len(invalid_args) > 0:
+            raise NameError(f'This method got one or more invalid keywords: {", ".join(invalid_args)}')
+
+        overbooked_args = [arg for arg in kwargs if arg in arguments]
+
+        if len(overbooked_args) > 0:
+            raise NameError(f'One or more kwargs already set as args: {", ".join(overbooked_args)}')
+
+        arguments.update({key: str(val) for key, val in kwargs.items()})
+        return arguments
 
 
-class QCrBoxCommand:
+class QCrBoxCommand(QCrBoxCommandBase):
     """
     Represents a command to be executed on the QCrBox server.
 
@@ -423,70 +487,9 @@ class QCrBoxCommand:
         ID of the application used by the command.
     parameters : List[QCrBoxParameter]
         List of parameters for the command.
-    gui_url : Optional[str]
-        URL for the GUI, if applicable.
     wrapper_parent : QCrBoxWrapper
         Parent wrapper object that instantiated the command.
     """
-
-    def __init__(
-        self,
-        cmd_id: int,
-        name: str,
-        application_id: int,
-        parameters: List[QCrBoxParameter],
-        gui_url: str,
-        wrapper_parent: QCrBoxWrapper,
-        prepare_cmd: Optional["QCrBoxCommand"] = None,
-        finalise_cmd: Optional["QCrBoxCommand"] = None,
-    ) -> None:
-        """
-        Initializes the QCrBoxCommand instance.
-
-        Parameters
-        ----------
-        cmd_id : int
-            Unique identifier for the command.
-        name : str
-            Name of the command.
-        application_id : int
-            ID of the application used by the command.
-        parameters : List[QCrBoxParameter]
-            List of parameters for the command.
-        gui_url : Optional[str]
-            URL for the GUI, if applicable.
-        wrapper_parent : QCrBoxWrapper
-            Parent wrapper object that instantiated the command.
-        prepare_cmd : Optional[QCrBoxCommand]
-            Passes an optional command that is executed before
-            the actual command is run.
-        finalise_cmd : Optional[QCrBoxCommand]
-            Passes an optional command that is run after the
-            command itself. Is meant for GUI commands where
-            the execution of this command is done after user
-            input.
-        """
-        self.id = cmd_id
-        self.name = name
-        self.application_id = application_id
-        self.parameters = parameters
-        self.wrapper_parent = wrapper_parent
-        self.gui_url = gui_url
-        self._server_url = wrapper_parent.server_url
-        self.prepare_cmd = prepare_cmd
-        self.finalise_cmd = finalise_cmd
-
-    @property
-    def par_name_list(self) -> List[str]:
-        """
-        Retrieves the names of the parameters for the command.
-
-        Returns
-        -------
-        List[str]
-            A list containing the names of the parameters.
-        """
-        return [par.name for par in self.parameters]
 
     def __call__(self, *args, **kwargs) -> "QCrBoxCalculation":
         """
@@ -511,26 +514,7 @@ class QCrBoxCommand:
         ConnectionError
             If the command cannot be successfully sent to the server.
         """
-        arguments = {key: str(val) for key, val in zip(self.par_name_list, args)}
-
-        invalid_args = [arg for arg in kwargs if arg not in self.par_name_list]
-        if len(invalid_args) > 0:
-            raise NameError(f'This method got one or more invalid keywords: {", ".join(invalid_args)}')
-
-        overbooked_args = [arg for arg in kwargs if arg in arguments]
-
-        if len(overbooked_args) > 0:
-            raise NameError(f'One or more kwargs already set as args: {", ".join(overbooked_args)}')
-
-        arguments.update({key: str(val) for key, val in kwargs.items()})
-        if self.prepare_cmd is not None:
-            prepare_arguments = {key: val for key, val in arguments.items() if key in self.prepare_cmd.par_name_list}
-
-            self.prepare_cmd(**prepare_arguments)
-
-            if "input_cif_path" in prepare_arguments:
-                input_cif_path = pathlib.PurePosixPath(arguments["input_cif_path"])
-                arguments["input_cif_path"] = str(input_cif_path.parent / "work.cif")
+        arguments = self.args_to_kwargs(*args, **kwargs)
 
         data_dict = {
             "action": "invoke_command",
@@ -546,20 +530,83 @@ class QCrBoxCommand:
             print(answer)
             raise ConnectionError("Command not successfully send")
 
-        if self.gui_url is not None:
-            webbrowser.open(self.gui_url)
-
-            input("Press enter when you have finished your interactive session")
-            if self.finalise_cmd is not None:
-                finalise_arguments = {
-                    key: val for key, val in arguments.items() if key in self.finalise_cmd.par_name_list
-                }
-                self.finalise_cmd(**finalise_arguments)
-
         return QCrBoxCalculation(answer["payload"]["calculation_id"], self)
 
     def __repr__(self) -> str:
         return f"QCrBoxCommand({self.name})"
+  
+
+class QCrBoxInteractiveCommand(QCrBoxCommandBase):
+
+    def __init__(
+        self, 
+        cmd_id: int, 
+        name: str, 
+        application_id: int, 
+        parameters: List[QCrBoxParameter], 
+        gui_url: str, wrapper_parent: QCrBoxWrapper, 
+        run_cmd: QCrBoxCommand,
+        prepare_cmd: Optional[QCrBoxCommand] = None,
+        finalise_cmd: Optional[QCrBoxCommand] = None
+    ) -> None:
+        
+        super().__init__(
+            cmd_id=cmd_id,
+            name=name,
+            application_id=application_id, 
+            parameters=parameters, 
+            wrapper_parent=wrapper_parent
+        )
+        self.gui_url = gui_url
+        self._server_url = wrapper_parent.server_url
+        self.run_cmd = run_cmd
+        self.prepare_cmd = prepare_cmd
+        self.finalise_cmd = finalise_cmd
+
+    def execute_prepare(self, arguments: dict):
+        prepare_calculation = None
+        if self.prepare_cmd is not None:
+            prepare_arguments = {key: val for key, val in arguments.items() if key in self.prepare_cmd.par_name_list}
+
+            prepare_calculation = self.prepare_cmd(**prepare_arguments)
+            prepare_calculation.wait_while_running(0.1)
+
+            if "input_cif_path" in prepare_arguments:
+                # TODO: Replace with return value from prepare command when refactoring done there
+                input_cif_path = pathlib.PurePosixPath(arguments["input_cif_path"])
+                replace_dict = {"input_cif_path": str(input_cif_path.parent / "qcrbox_work.cif")}
+
+                arguments.update(replace_dict)
+        return arguments
+    
+    def execute_run(self, arguments: dict):
+        run_arguments = {key: val for key, val in arguments.items() if key in self.run_cmd.par_name_list}
+        run_calculation = self.run_cmd(**run_arguments)
+        return run_calculation, arguments
+
+    def execute_finalise(self, arguments: dict):
+        if self.finalise_cmd is not None:
+            finalise_arguments = {key: val for key, val in arguments.items() if key in self.finalise_cmd.par_name_list}
+            finalise_calculation = self.finalise_cmd(**finalise_arguments)
+            
+            #finalise_calculation.wait_while_running(0.1)
+
+        return arguments, finalise_calculation
+    
+    def __call__(self, *args, **kwargs) -> "QCrBoxCalculation":
+        arguments = self.args_to_kwargs(*args, **kwargs)
+        
+        arguments = self.execute_prepare(arguments)
+        run_calculation, arguments = self.execute_run(arguments)
+        # run_calculation.wait_while_running(0.1)
+        if self.gui_url is not None:
+            webbrowser.open(self.gui_url)
+
+            input("Press enter when you have finished your interactive session")
+
+        arguments, finalise_calculation = self.execute_finalise(arguments)
+        
+        return run_calculation, finalise_calculation
 
 
 class QCrBoxCalculation:
@@ -734,7 +781,7 @@ class QCrBoxPathHelper:
             )
 
         shared_files_path = pathlib.Path(os.environ["QCRBOX_SHARED_FILES_DIR_HOST_PATH"])
-        if str(shared_files_path).startswith("\\wsl"):
+        if str(shared_files_path).startswith(r"\wsl"):
             shared_files_path = pathlib.Path("\\" + str(shared_files_path))
         elif not shared_files_path.is_absolute():
             shared_files_path = dotenv_path.parent / shared_files_path

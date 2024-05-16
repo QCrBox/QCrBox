@@ -7,6 +7,8 @@ from qcrboxtools.cif.cif2cif import cif_file_merge_to_unified_by_yml
 
 from qcrbox.registry.client import ExternalCommand, Param, QCrBoxRegistryClient
 
+YAML_PATH = "./config_crysalis-pro.yaml"
+
 client = QCrBoxRegistryClient()
 application = client.register_application(
     "CrysalisPro",
@@ -20,7 +22,7 @@ def split_hkl_line(line: str):
     return line[:4], line[4:8], line[8:12], line[12:20], line[20:28], line[28:]
 
 
-def interactive__finalise(work_folder: str, output_cif_path: str):
+def finalise__interactive(work_folder: str, output_cif_path: str):
     work_folder = Path(work_folder)
 
     newest_cif_path = next(
@@ -48,7 +50,7 @@ def interactive__finalise(work_folder: str, output_cif_path: str):
         with newest_hkl_path.open("r") as fobj:
             hkl_content = fobj.read()
         cut = hkl_content.split("\n   0   0   0")[0]
-        cut = cut.strip().split("\n\n")[0]
+        cut = cut.rstrip().split("\n\n")[0]
         hkl_values = [split_hkl_line(line) for line in cut.split("\n")]
         loop_base = dedent(
             """
@@ -66,13 +68,20 @@ def interactive__finalise(work_folder: str, output_cif_path: str):
         hkl_string = "\n".join(" ".join(value) for value in hkl_values)
         cif_content += "\n" + loop_base + "\n" + hkl_string + "\n\n"
 
-        with tempfile.NamedTemporaryFile(mode="w+", encoding="UTF-8", delete_on_close=False) as fobj:
+        with tempfile.NamedTemporaryFile(mode="w+", encoding="UTF-8", delete=False) as fobj:
             fobj.write(cif_content)
             fobj.close()
 
-            cif_file_merge_to_unified_by_yml(fobj.name, output_cif_path, None, "interactive", "output_cif_path")
+            cif_file_merge_to_unified_by_yml(fobj.name, output_cif_path, None, YAML_PATH, "interactive", "output_cif_path")
+
+            Path(fobj.name).unlink()
     else:
-        cif_file_merge_to_unified_by_yml(fobj.name, output_cif_path, None, "interactive", "output_cif_path")
+        cif_file_merge_to_unified_by_yml(newest_cif_path, output_cif_path, None, YAML_PATH, "interactive", "output_cif_path")
+
+application.register_python_callable(
+    "finalise__interactive",
+    finalise__interactive,
+)
 
 
 external_cmd_open_folder_in_crysalis_pro = ExternalCommand(
