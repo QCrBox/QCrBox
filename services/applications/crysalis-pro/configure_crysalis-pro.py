@@ -3,7 +3,7 @@ import tempfile
 from pathlib import Path
 from textwrap import dedent
 
-from qcrboxtools.cif.cif2cif import cif_file_to_unified
+from qcrboxtools.cif.cif2cif import cif_file_merge_to_unified_by_yml
 
 from qcrbox.registry.client import ExternalCommand, Param, QCrBoxRegistryClient
 
@@ -69,9 +69,10 @@ def interactive__finalise(work_folder: str, output_cif_path: str):
         with tempfile.NamedTemporaryFile(mode="w+", encoding="UTF-8", delete_on_close=False) as fobj:
             fobj.write(cif_content)
             fobj.close()
-            cif_file_to_unified(fobj.name, output_cif_path, custom_categories=["iucr", "olex2"])
+
+            cif_file_merge_to_unified_by_yml(fobj.name, output_cif_path, None, "interactive", "output_cif_path")
     else:
-        cif_file_to_unified(newest_cif_path, output_cif_path, custom_categories=["iucr", "olex2"])
+        cif_file_merge_to_unified_by_yml(fobj.name, output_cif_path, None, "interactive", "output_cif_path")
 
 
 external_cmd_open_folder_in_crysalis_pro = ExternalCommand(
