@@ -320,7 +320,6 @@ cif_entry_sets:
       "_refine_ls_wR_factor_gt",
       "_refine_ls_wR_factor_ref",
       "_olex2_refinement_description",
-      "_olex2_refine_details",
       "_atom_site_label",
       "_atom_site_type_symbol",
       "_atom_site_fract_x",
@@ -357,6 +356,9 @@ cif_entry_sets:
       "_iucr_refine_fcf_details",
       "_iucr_refine_instructions_details",
       "_olex2_submission_special_instructions"
+    ]
+    optional: [
+      "_olex2_refine_details"
     ]
   - name: olex2_only_interactive_output
     required : [
@@ -425,7 +427,6 @@ cif_entry_sets:
       "_audit_creation_date",
       "_audit_creation_method",
       "_publ_section_references",
-      "_computing_structure_refinement",
       "_refine_diff_density_max",
       "_refine_diff_density_min",
       "_refine_diff_density_rms",
@@ -449,7 +450,6 @@ cif_entry_sets:
       "_refine_ls_wR_factor_gt",
       "_refine_ls_wR_factor_ref",
       "_olex2_refinement_description",
-      "_olex2_refine_details",
       "_atom_site_label",
       "_atom_site_type_symbol",
       "_atom_site_fract_x",
@@ -481,4 +481,7 @@ cif_entry_sets:
       "_iucr_refine_fcf_details",
       "_iucr_refine_instructions_details",
       "_olex2_submission_special_instructions"
+    ]
+    optional: [
+      "_olex2_refine_details"
     ]
