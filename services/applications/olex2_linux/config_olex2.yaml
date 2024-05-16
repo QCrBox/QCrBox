@@ -42,7 +42,7 @@ commands:
         implemented_as: "python_callable"
         module: "configure_olex2"
         function: "prepare__interactive"
-        used_basecommand_parameters: ["input_cif_path", "output_cif_path"]
+        used_basecommand_parameters: ["input_cif_path"]
       run:
         implemented_as: "CLI"
         command: "/bin/bash /opt/olex2/start {input_cif_path}"
