@@ -16,9 +16,7 @@ def refine(args):
     else:
         command_name = "refine_iam"
 
-    cif_file_to_specific_by_yml(
-        args.input_cif_path, work_cif_path, YAML_PATH, command_name, "input_cif_path"
-    )
+    cif_file_to_specific_by_yml(args.input_cif_path, work_cif_path, YAML_PATH, command_name, "input_cif_path")
 
     olex2_socket = Olex2Socket(structure_path=work_cif_path)
 

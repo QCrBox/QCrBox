@@ -1,7 +1,7 @@
 import json
 import os
-from pathlib import Path
 import shutil
+from pathlib import Path
 
 from qcrboxtools.cif.cif2cif import cif_file_merge_to_unified_by_yml
 from qcrboxtools.cif.merge import merge_cif_files

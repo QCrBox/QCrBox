@@ -72,11 +72,15 @@ def finalise__interactive(work_folder: str, output_cif_path: str):
             fobj.write(cif_content)
             fobj.close()
 
-            cif_file_merge_to_unified_by_yml(fobj.name, output_cif_path, None, YAML_PATH, "interactive", "output_cif_path")
+            cif_file_merge_to_unified_by_yml(
+                fobj.name, output_cif_path, None, YAML_PATH, "interactive", "output_cif_path"
+            )
 
             Path(fobj.name).unlink()
     else:
-        cif_file_merge_to_unified_by_yml(newest_cif_path, output_cif_path, None, YAML_PATH, "interactive", "output_cif_path")
+        cif_file_merge_to_unified_by_yml(
+            newest_cif_path, output_cif_path, None, YAML_PATH, "interactive", "output_cif_path"
+        )
 
 application.register_python_callable(
     "finalise__interactive",

@@ -317,36 +317,40 @@ class QCrBoxWrapper:
                 prepare_command = prepare_commands.get((ans["name"], application_id), None)
                 if prepare_command is not None:
                     parameters += [par for par in prepare_command.parameters if par not in parameters]
-                
+
                 finalise_command = finalise_commands.get((ans["name"], application_id), None)
                 if finalise_command is not None:
                     parameters += [par for par in finalise_command.parameters if par not in parameters]
 
-                commands.append(QCrBoxInteractiveCommand(
-                    cmd_id=int(ans["id"]),
-                    name=ans["name"],
-                    application_id=int(ans["application_id"]),
-                    parameters=parameters,
-                    gui_url=to_gui_url(ans["application_id"], ans["name"]),
-                    wrapper_parent=self,
-                    run_cmd=QCrBoxCommand(
-                        int(ans["id"]),
-                        ans["name"],
-                        int(ans["application_id"]),
-                        [QCrBoxParameter(key, dtype) for key, dtype in ans["parameters"].items()],
-                        self,
-                    ),
-                    prepare_cmd=prepare_command,
-                    finalise_cmd=finalise_command,
-                ))
+                commands.append(
+                    QCrBoxInteractiveCommand(
+                        cmd_id=int(ans["id"]),
+                        name=ans["name"],
+                        application_id=int(ans["application_id"]),
+                        parameters=parameters,
+                        gui_url=to_gui_url(ans["application_id"], ans["name"]),
+                        wrapper_parent=self,
+                        run_cmd=QCrBoxCommand(
+                            int(ans["id"]),
+                            ans["name"],
+                            int(ans["application_id"]),
+                            [QCrBoxParameter(key, dtype) for key, dtype in ans["parameters"].items()],
+                            self,
+                        ),
+                        prepare_cmd=prepare_command,
+                        finalise_cmd=finalise_command,
+                    )
+                )
             else:
-                commands.append(QCrBoxCommand(
-                    cmd_id=int(ans["id"]),
-                    name=ans["name"],
-                    application_id=int(ans["application_id"]),
-                    parameters=[QCrBoxParameter(key, dtype) for key, dtype in ans["parameters"].items()],
-                    wrapper_parent=self,
-                ))
+                commands.append(
+                    QCrBoxCommand(
+                        cmd_id=int(ans["id"]),
+                        name=ans["name"],
+                        application_id=int(ans["application_id"]),
+                        parameters=[QCrBoxParameter(key, dtype) for key, dtype in ans["parameters"].items()],
+                        wrapper_parent=self,
+                    )
+                )
 
         return commands
 
@@ -429,7 +433,7 @@ class QCrBoxApplication:
 
     def __repr__(self) -> str:
         return f"{self.name}()"
-    
+
 
 class QCrBoxCommandBase:
     """
@@ -448,13 +452,14 @@ class QCrBoxCommandBase:
     wrapper_parent : QCrBoxWrapper
         Parent wrapper object that instantiated the command.
     """
+
     def __init__(
         self,
         cmd_id: int,
         name: str,
         application_id: int,
         parameters: List[QCrBoxParameter],
-        wrapper_parent: QCrBoxWrapper
+        wrapper_parent: QCrBoxWrapper,
     ) -> None:
         """
         Initializes the QCrBoxCommandBase instance.
@@ -490,7 +495,7 @@ class QCrBoxCommandBase:
             A list containing the names of the parameters.
         """
         return [par.name for par in self.parameters]
-    
+
     def args_to_kwargs(self, *args, **kwargs):
         """
         Converts positional and keyword arguments into a dictionary of only keyword
@@ -592,7 +597,7 @@ class QCrBoxCommand(QCrBoxCommandBase):
 
     def __repr__(self) -> str:
         return f"QCrBoxCommand({self.name})"
-  
+
 
 class QCrBoxInteractiveCommand(QCrBoxCommandBase):
     """
@@ -622,16 +627,18 @@ class QCrBoxInteractiveCommand(QCrBoxCommandBase):
     finalise_cmd : Optional[QCrBoxCommand], optional
         Command to be executed as the finalization command, by default None.
     """
+
     def __init__(
-        self, 
-        cmd_id: int, 
-        name: str, 
-        application_id: int, 
-        parameters: List[QCrBoxParameter], 
-        gui_url: str, wrapper_parent: QCrBoxWrapper, 
+        self,
+        cmd_id: int,
+        name: str,
+        application_id: int,
+        parameters: List[QCrBoxParameter],
+        gui_url: str,
+        wrapper_parent: QCrBoxWrapper,
         run_cmd: QCrBoxCommand,
         prepare_cmd: Optional[QCrBoxCommand] = None,
-        finalise_cmd: Optional[QCrBoxCommand] = None
+        finalise_cmd: Optional[QCrBoxCommand] = None,
     ) -> None:
         """
         Initializes the QCrBoxInteractiveCommand instance.
@@ -655,15 +662,15 @@ class QCrBoxInteractiveCommand(QCrBoxCommandBase):
         prepare_cmd : Optional[QCrBoxCommand], optional
             Command to be executed as the preparation command (before run), by default None.
         finalise_cmd : Optional[QCrBoxCommand], optional
-            Command to be executed as the finalization command (after trigger after run), 
+            Command to be executed as the finalization command (after trigger after run),
             by default None.
         """
         super().__init__(
             cmd_id=cmd_id,
             name=name,
-            application_id=application_id, 
-            parameters=parameters, 
-            wrapper_parent=wrapper_parent
+            application_id=application_id,
+            parameters=parameters,
+            wrapper_parent=wrapper_parent,
         )
         self.gui_url = gui_url
         self._server_url = wrapper_parent.server_url
@@ -699,7 +706,7 @@ class QCrBoxInteractiveCommand(QCrBoxCommandBase):
 
                 arguments.update(replace_dict)
         return arguments
-    
+
     def execute_run(self, arguments: dict) -> Tuple["QCrBoxCalculation", dict]:
         """
         Executes the main run command with the provided arguments.
@@ -735,11 +742,11 @@ class QCrBoxInteractiveCommand(QCrBoxCommandBase):
         if self.finalise_cmd is not None:
             finalise_arguments = {key: val for key, val in arguments.items() if key in self.finalise_cmd.par_name_list}
             finalise_calculation = self.finalise_cmd(**finalise_arguments)
-            
+
             finalise_calculation.wait_while_running(0.1)
 
         return arguments
-    
+
     def __call__(self, *args, **kwargs) -> "QCrBoxCalculation":
         """
         Executes the interactive command with the provided arguments.
@@ -764,7 +771,7 @@ class QCrBoxInteractiveCommand(QCrBoxCommandBase):
             If the command cannot be successfully sent to the server.
         """
         arguments = self.args_to_kwargs(*args, **kwargs)
-        
+
         arguments = self.execute_prepare(arguments)
         run_calculation, arguments = self.execute_run(arguments)
         if self.gui_url is not None:
@@ -773,7 +780,7 @@ class QCrBoxInteractiveCommand(QCrBoxCommandBase):
             input("Press enter when you have finished your interactive session")
 
         arguments = self.execute_finalise(arguments)
-        
+
         return run_calculation
 
 
