@@ -3,7 +3,7 @@
 #
 name: "CrysalisPro"
 slug: "crysalis-pro"
-version: "171.43.48a"
+version: "171.44.48a"
 description: "CrysalisPro is used for data reduction on frame folders produced by Rigaku instruments."
 url: "https://www.rigaku.com/de/products/smc/crysalis"
 

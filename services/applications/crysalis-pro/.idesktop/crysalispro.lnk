@@ -1,9 +1,0 @@
-table Icon
-  Caption: CrysAlisPro
-  Command: wine /opt/wine_installations/wine_win64/drive_c/Xcalibur/CrysAlisPro171.43.48a/pro.exe
-  Icon: /opt/qcrbox/.idesktop/rigaku_oxford_diffraction_logo.png
-  Width: 48
-  Height: 48
-  X: 70
-  Y: 50
-end

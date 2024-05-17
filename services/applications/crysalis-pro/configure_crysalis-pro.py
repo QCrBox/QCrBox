@@ -12,7 +12,7 @@ YAML_PATH = "./config_crysalis-pro.yaml"
 client = QCrBoxRegistryClient()
 application = client.register_application(
     "CrysalisPro",
-    version="171.43.48a",
+    version="171.44.48a",
 )
 
 
@@ -83,9 +83,14 @@ application.register_python_callable(
     finalise__interactive,
 )
 
+def get_crysalis_path():
+    xcalibur_dir = Path("/opt/wine_installations/wine_win64/drive_c/Xcalibur")
+    crysalis_install_dir = next(d for d in xcalibur_dir.glob("CrysAlisPro*.*.*") if d.is_dir())
+    return str(crysalis_install_dir / "pro.exe")
+
 
 external_cmd_open_folder_in_crysalis_pro = ExternalCommand(
-    "wine", "/opt/wine_installations/wine_win64/drive_c/Xcalibur/CrysAlisPro171.43.48a/pro.exe", Param("par_path")
+    "wine", get_crysalis_path(), Param("par_path")
 )
 
 application.register_external_command(

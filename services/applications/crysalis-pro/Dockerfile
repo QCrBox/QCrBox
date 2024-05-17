@@ -8,7 +8,7 @@ ARG QCRBOX_ROOT_DIR
 ARG QCRBOX_USER
 
 
-COPY --chown=${QCRBOX_USER}:${QCRBOX_USER} run_crysalis_pro_setup_if_not_yet_installed.sh CrysAlisPro171.43.48a.exe ${QCRBOX_ROOT_DIR}/
+COPY --chown=${QCRBOX_USER}:${QCRBOX_USER} run_crysalis_pro_setup_if_not_yet_installed.sh CrysAlisPro171.44.48a.exe ${QCRBOX_ROOT_DIR}/
 
 ARG QUBOX_WINE_INSTALLATIONS_DIR
 #ARG WINEPREFIX=${QCRBOX_WINE_INSTALLATIONS_DIR}/wine_win64
@@ -18,9 +18,10 @@ ARG WINEARCH="win64"
 ENV WINEARCH=${WINEARCH}
 ENV QCRBOX_ROOT_DIR=${QCRBOX_ROOT_DIR}
 
+COPY --chown=${QCRBOX_USER}:${QCRBOX_USER} ./.idesktop ./.idesktop
+
 RUN gosu ${QCRBOX_USER} bash -x ${QCRBOX_ROOT_DIR}/run_crysalis_pro_setup_if_not_yet_installed.sh
 
-COPY --chown=${QCRBOX_USER}:${QCRBOX_USER} ./.idesktop ./.idesktop
 COPY configure_crysalis-pro.py ./
 COPY config_crysalis-pro.yaml ./
 
