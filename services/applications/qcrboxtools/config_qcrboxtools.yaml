@@ -87,7 +87,7 @@ commands:
         required_entries: [
           "_cell.length_a", "_cell.length_b", "_cell.length_c", "_cell.angle_alpha",
           "_cell.angle_beta", "_cell.angle_gamma", "_atom_site.label", "_atom_site.type_symbol",
-          "_atom_site.u_iso_or_equiv"
+          "_atom_site.u_iso_or_equiv", "_atom_site.adp_type"
         ]
         optional_entries: [
           "_atom_site_aniso.label", "_atom_site_aniso.u_11", "_atom_site_aniso.u_22",

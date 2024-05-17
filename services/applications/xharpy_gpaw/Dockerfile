@@ -5,7 +5,8 @@ ARG QCRBOX_GROUP=${QCRBOX_USER}
 FROM qcrbox/base-application:${QCRBOX_DOCKER_TAG}
 SHELL ["/bin/bash", "-c"]
 COPY ./conda_xharpy_gpaw.yml .
-RUN micromamba install -n qcrbox --file conda_xharpy_gpaw.yml --yes
+RUN micromamba install -n qcrbox --file conda_xharpy_gpaw.yml --yes && \
+    micromamba clean --all --yes
 COPY ./XHARPy/xharpy ./xharpy
 COPY ./configure_xharpy-gpaw.py ./
 COPY ./dummy.lst ./
