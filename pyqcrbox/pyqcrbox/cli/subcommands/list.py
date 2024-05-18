@@ -9,6 +9,8 @@ from dateutil.parser import parse as parse_date
 from loguru import logger
 from tabulate import tabulate
 
+from pyqcrbox import settings
+
 from ...helpers import get_qcrbox_registry_api_connection_url
 from ..helpers import DockerProject, NaturalOrderGroup
 
@@ -49,12 +51,11 @@ def list_qcrbox_resources():
 
 
 def run_request_against_registry_api(endpoint, params):
-    qcrbox_api_base_url = get_qcrbox_registry_api_connection_url()
     try:
-        r = requests.get(qcrbox_api_base_url + endpoint, params=params)
+        r = requests.get(settings.registry.server.api_url + endpoint, params=params)
         return r
     except requests.exceptions.ConnectionError:
-        click.echo(f"Error: could not connect to QCrBox registry at {qcrbox_api_base_url}")
+        click.echo(f"Error: could not connect to QCrBox registry at {settings.registry.server.api_url}")
         sys.exit(1)
 
 
