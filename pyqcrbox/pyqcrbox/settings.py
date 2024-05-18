@@ -92,6 +92,11 @@ class ServerAPISettings(BaseModel):
     host: str = "127.0.0.1"
     port: int = 8001
 
+    @computed_field  # type: ignore
+    @property
+    def api_url(self) -> str:
+        return f"http://{self.host}:{self.port}/"
+
 
 class ClientAPISettings(BaseModel):
     host: str = "127.0.0.1"
