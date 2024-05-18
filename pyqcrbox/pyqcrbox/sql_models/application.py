@@ -127,6 +127,7 @@ class ApplicationSpecDB(ApplicationSpecBase, QCrBoxBaseSQLModel, table=True):
 
 class ApplicationSpecWithCommands(ApplicationSpecBase):
     id: int
+    registered_at: datetime
     commands: list[CommandSpecWithParameters]
     # cif_entry_sets: list[CifEntrySetRead] = []
 
