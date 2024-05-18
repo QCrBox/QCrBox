@@ -137,6 +137,8 @@ def list_commands(name: Optional[str], application_id: Optional[int]):
         "parameters",
     )
     data = [extract_columns(cols_to_print)(row) for row in r.json()]
+    for row in data:
+        row["parameters"] = list(row["parameters"].keys())
     click.echo(tabulate(data, headers="keys", tablefmt="simple"))
 
 
