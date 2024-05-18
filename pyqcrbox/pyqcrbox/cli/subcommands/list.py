@@ -101,7 +101,15 @@ def list_applications(name: Optional[str], version: Optional[str]):
     List registered applications.
     """
     r = run_request_against_registry_api("/applications", params={"name": name, "version": version})
-    data = [pretty_print_timestamp("registered_at")(row) for row in r.json()]
+
+    cols_to_print = (
+        "id",
+        "slug",
+        "name",
+        "version",
+        "registered_at",
+    )  # we're dropping column 'routing_key__registry_to_application'
+    data = [pretty_print_timestamp("registered_at")(extract_columns(cols_to_print)(row)) for row in r.json()]
     click.echo(tabulate(data, headers="keys", tablefmt="simple"))
 
 
