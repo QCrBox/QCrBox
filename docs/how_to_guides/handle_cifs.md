@@ -34,9 +34,9 @@ QCrBox does offer tools to convert between formats to make integration of softwa
 
 **Specific CIF entry**: A name of a cif entry **in any convention** that is contained within the CIF dictionaries. `_atom_site_fract_x` and `_atom_site.fract_x` are both valid specific cif entries.
 
-**Required CIF entry**: A specific CIF entry that is required to run a script or program. The QCrBoxTools functions will include the entry in the newly produced CIF file, if the unified CIF equivalent of that keyword is found. Otherwise they will throw an error.
+**Required CIF entry**: A specific CIF entry that has to be in a CIF file. Either needed run the program (input) and therefore needs to be created from its unified equivalent. The other possibility is that it needs to be present in the output for the program to have run successfully and will be converted to its unified equivalent after the end of the data processing. Defined in the format (DDL1 or DDLm) of the program that is running within the QCrBox container.
 
-**Optional CIF entry**: A specific CIF entry that might be used by a script or program. Will be included if the unified CIF equivalent is present and otherwise ignored.
+**Optional CIF entry**: A specific CIF entry that might be used by a script or program (input). In this case it will be included if the unified CIF equivalent is present and otherwise ignored. For the definition of an output parameter, it will be included if the containerised program has written it, but will not cause an error if not present for conversion to unified cif.
 
 **Split SUs**: Splitting the standard uncertainties into their own keywords.
 
@@ -61,39 +61,77 @@ Invoke with `--help` instead of arguments to see the available options.
 The required functions are located within the `qcrboxtools.cif.cif2cif` module if you want to work from and to files and in `qcrboxtools.cif.entries` and `qcrboxtools.cif.uncertainties` if you want to work with `iotbx.cif` objects. The docstrings of the functions should be covering the use cases. If they are unclear, please raise a GitHub issue.
 
 ## Working with QCrBox `config*.yml` files
-This section will focus on how to work with the CIF capabilities of the yaml file. For parameter definition look into the [tutorial](../tutorials/wrap_python_command.md).
 
-The yaml file can contain the following options in a command:
+This section will focus on how to work with the CIF capabilities of the yaml file. For the other aspects of parameter definition look into the [tutorial](../tutorials/wrap_python_command.md). The specification of cif entries is tied to a parameter of the type `"QCrBox.input_cif"` or `"QCrBox.output_cif"`.
 
+### Defining input parameters.
 ```YAML
 commands:
   - name: "my_command"
     implemented_as: "CLI/python_callable/GUI"
     parameters:
-      # Definition covered in tutorial
-    required_cif_entries: ["_some_entry", "_some_other_entry"]
-    optional_cif_entries: ["_some_entry_su"]
-    required_cif_entry_sets: ["cell_data", "diffraction_data"]
-    optional_cif_entry_sets: ["atom_data"]
-    merge_cif_su: Yes
-    custom_cif_categories: ["iucr", "shelx"]
+      - name: "example_input_parameter"
+        type: "QCrBox.input_cif"
+        required_entries: [
+          "_some_entry",
+          one_of: ["_some_other_entry", ["_set_entry_one", "_set_entry_two"]]
+        ]
+        optional_entries: ["_some_entry_su"]
+        required_entry_sets: ["cell_data", "diffraction_data"]
+        optional_entry_sets: ["atom_data"]
+        merge_su: Yes
+        custom_categories: ["iucr", "shelx"]
 ```
 
-Let us go through the options line by line:
+Let us go through the options of this input parameter line by line:
 
-  - **`name`**: The QCrBoxTools function working with CIF require a command name or command. This is that name
+  - **`commands`**: Start of the command list. As specified in the YAML file, all following entries in the command list must be indended
 
-  - **`required_cif_entries`**: List of specific CIF entries to include (see [Nomenclature](#nomenclature-in-this-howto))
+  - **`name`**: The name of the first (and here only) command within the command list
 
-  - **`optional_cif_entries`**: List of specific CIF entries to include when present (see [Nomenclature](#nomenclature-in-this-howto))
+  - **`parameters`**: List of parameters of `my_command`. For entries within the parameter list we need another level of indentation
 
-  - **`required_cif_entry_sets`**: List of CIF entry sets to include. All required entries will be treated as required and optional entries will be included as optional. (For definition of entry sets see next section).
+    - **`name`**: Name of the parameter (here: `example_input_parameter`).
 
-  - **`optional_cif_entry_sets`**: List of CIF entry sets to include. All required entries and optional entries will be included as optional. (For definition of entry sets see next section).
+    - **`type`**: Type of the parameter. Special types that concert cif handling are `"QCrBox.input_cif"` and `"QCrBox.output_cif"`
 
-   - **`merge_cif_su`**: If set to `Yes`, the standard uncertainty entries will be merged with the base entry using bracket notation, **unless the standard uncertainty is requested separately as its own entry**. So in the example above `_some_entry` would not be merged with a present standard uncertainty entry, both `_some_entry` and `_some_entry_su` are included separately. `_some_other_entry` would be merged if an SU was present.
+    - **`required_entries`**: List of specific CIF entries to include (see [Nomenclature](#nomenclature-in-this-howto)). If the packaged program has more than one possibility to calculate an essential value, you can use the `one_of:` keyword demonstrated in the second line. Here we need either the entry `_some_other_entry` or all the entries within the second list, which means both `_set_entry_one` and `_set_entry_two` have to be present.
 
-   - **`custom_cif_categories`**: List of custom CIF categories to include in the output cif file (see [Nomenclature](#nomenclature-in-this-howto)).
+    - **`optional_entries`**: List of specific CIF entries to include when present (see [Nomenclature](#nomenclature-in-this-howto)). Can also include `one_of` to only include the first option that can be found.
+
+    - **`required_entry_sets`**: List of CIF entry sets to include. All required entries will be treated as required and optional entries will be included as optional. (For definition of entry sets see next section).
+
+    - **`optional_entry_sets`**: List of CIF entry sets to include. All required entries and optional entries will be included as optional. (For definition of entry sets see next section).
+
+    - **`merge_su`**: If set to `Yes`, the standard uncertainty entries will be merged with the base entry using bracket notation, **unless the standard uncertainty is requested separately as its own entry**. So in the example above `_some_entry` would not be merged with a present standard uncertainty entry, both `_some_entry` and `_some_entry_su` are included separately. `_some_other_entry` would be merged if an SU was present.
+
+    - **`custom_categories`**: List of custom CIF categories to include in the output cif file (see [Nomenclature](#nomenclature-in-this-howto)).
+
+### Defining output parameters
+```YAML
+commands:
+  - name: "my_command"
+    implemented_as: "CLI/python_callable/GUI"
+    parameters:
+      - name: "example_output_parameter"
+        type: "QCrBox.output_cif"
+        required_entries: [
+          "_meaningful_entry",
+          one_of: ["_meaningful_other_entry", ["_set_entry_a", "_set_entry_b"]]
+        ]
+        required_entry_sets: ["diffraction_data"]
+        optional_entry_sets: ["atom_data"]
+        custom_categories: ["iucr", "shelx"]
+        invalidated_entries: ["_calculation_remnant", "_everything_fitting_regex.*"]
+```
+QCrBox assumes that each command will only update part of the available information, while other information in the `input_cif` file remains valid. As such we need to define which entries from the `input_cif` should be kept and which values created by the executable within the command should be added.
+
+The `invalidated_entries` section is a list of [python re](https://docs.python.org/3/library/re.html) RegExes that can be used to filter out values from the original cif file. For example a change in any of the parameters might invalidate the contained quality indicators within the `input_cif` file. We can filter them out using `"_refine.*"`. Invalidated entries only work on the `input_cif`.
+
+The entries transferred from the cif file created during command execution can be chosen using `required` and `optional` cif entries. `required` in this context means that a missing value indicates that the calculation has failed (and therefore the result should not be used). Optional entries are copied but do not indicate a failure.
+
+In future `required` entries will also be used to check whether a command can be run given its precesing commands.
+
 
 ### CIF entry sets in a YAML file
 In order to keep the command definition somewhat compact and not redefine entries shared between commands, the YML also contains the possibility to define cif entry sets. The syntax is:
