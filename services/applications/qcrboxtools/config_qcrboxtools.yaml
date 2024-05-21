@@ -10,87 +10,169 @@ url: "https://github.com/QCrBox/QCrBoxTools"
 commands:
   - name: "replace_structure_from_cif"
     implemented_as: "CLI"  # other options: "python_callable"
+    description: "Replace the structure (atoms/adps) in a CIF file with the structure from another CIF file"
     parameters:
       - name: "input_cif_path"
-        type: "str"
+        type: "QCrBox.input_cif"
         default_value: None
+        description: "Path to the CIF file where the structure should be replaced"
+        required_entries: [
+          "_space_group.crystal_system",
+          one_of: ["_space_group.centring_type", "_space_group.name_h-m_alt", "_space_group.name_hall"]
+        ]
+        merge_su: No
       - name: "structure_cif_path"
-        type: "str"
+        type: "QCrBox.additional_input_cif" # not cif as it should not be cut to input_cif entries
         default_value: None
-    optional_cif_entries: ["all_unified"]
-    merge_cif_su: False # as this is the format qcrbox gives out of the box -> the last two lines mean nothing changes
+        description: "Path to the CIF file containing the structure to be inserted"
+        required_entries: [
+          "_space_group.crystal_system",
+          one_of: ["_space_group.centring_type", "_space_group.name_h-m_alt", "_space_group.name_hall"]
+        ]
+        required_entry_sets: ["molecular_structure"]
+      - name: "output_cif_path"
+        type: "QCrBox.output_cif"
+        default_value: None
+        description: "Path to save the CIF file to after replacing the structure"
+        required_entry_sets: ["molecular_structure"]
+        invalidated_entries: [
+          "_geom.*", "_refln.*calc.*", "_shelx.*", "_iucr.refine_instructions_details",
+          '_refine(?!_ls\.weighting|_ls\.extinction).+', "_atom_site_aniso.u_.._su"
+        ]
+        invalidated_entry_sets: ["molecular_structure"]
 
   - name: "check_structure_convergence"
     implemented_as: "CLI"  # other options: "python_callable"
+    description: "Check the convergence of a structure, to be used for refinement with changing atomic form factors"
     parameters:
       - name: "cif1_path"
-        type: "str"
+        type: "QCrBox.input_cif"
         default_value: None
+        description: "Path to the first CIF file to be compared"
+        required_entry_sets: ["comparison"]
       - name: "cif2_path"
-        type: "str"
+        type: "QCrBox.input_cif"
         default_value: None
+        description: "Path to the second CIF file to be compared"
+        required_entry_sets: ["comparison"]
       - name: "max_abs_position"
         type: "float"
         default_value: None
+        description: "Maximum absolute difference in position in Angstrom"
       - name: "max_position_su"
         type: "float"
         default_value: None
+        description: "Maximum absolute difference in position / standard uncertainties"
       - name: "max_abs_uij"
         type: "float"
         default_value: None
+        description: "Maximum absolute difference in U(cif) in Angstrom^2"
       - name: "max_uij_su"
         type: "float"
         default_value: None
+        description: "Maximum absolute difference in U(cif) / standard uncertainties"
       - name: "output_json_path"
-        type: "str"
+        type: "QCrBox.output_file"
         default_value: None
-    required_cif_entries: [
+        description: "Path to save the result as JSON file to after comparing the CIF files"
+
+  - name: "iso2aniso"
+    implemented_as: "CLI"  # other options: "python_callable"
+    description: "Convert isotropic ADPs to anisotropic ADPs in a CIF file"
+    parameters:
+      - name: "input_cif_path"
+        type: "QCrBox.input_cif"
+        default_value: null
+        description: "Path to the CIF file to be converted"
+        required_entries: [
+          "_cell.length_a", "_cell.length_b", "_cell.length_c", "_cell.angle_alpha",
+          "_cell.angle_beta", "_cell.angle_gamma", "_atom_site.label", "_atom_site.type_symbol",
+          "_atom_site.u_iso_or_equiv", "_atom_site.adp_type"
+        ]
+        optional_entries: [
+          "_atom_site_aniso.label", "_atom_site_aniso.u_11", "_atom_site_aniso.u_22",
+          "_atom_site_aniso.u_33", "_atom_site_aniso.u_12", "_atom_site_aniso.u_13",
+          "_atom_site_aniso.u_23"
+        ]
+        merge_su: False
+      - name: "output_cif_path"
+        type: "QCrBox.output_cif"
+        default_value: null
+        description: "Path to save the CIF file to after converting"
+        required_entries: [
+          "_atom_site_aniso.label", "_atom_site_aniso.u_11", "_atom_site_aniso.u_22",
+          "_atom_site_aniso.u_33", "_atom_site_aniso.u_12", "_atom_site_aniso.u_13",
+          "_atom_site_aniso.u_23"
+        ]
+        invalidated_entries: [
+          "_refln.*calc.*", "_shelx.*", "_iucr.refine_instructions_details",
+          '_refine(?!_ls\.weighting|_ls\.extinction)'
+        ]
+      - name: "select_names"
+        type: str
+        default_value: null
+        required: False
+        description: "Comma separated list of atom names to include in the conversion"
+      - name: "select_elements"
+        type: str
+        default_value: null
+        required: False
+        description: "Comma separated list of element symbols to include in the conversion"
+      - name: "select_regexes"
+        type: str
+        default_value: null
+        required: False
+        description: "Comma separated list of python re regexes to match atom names against"
+
+  - name: "to_unified_cif"
+    implemented_as: "CLI"  # other options: "python_callable"
+    description: "Convert a CIF file to a unified CIF file"
+    parameters:
+      - name: "input_cif_path"
+        type: "QCrBox.input_cif"
+        default_value: None
+        description: "Path to the CIF file to be converted"
+        optional_entries: ["all_unified"]
+        merge_su: False
+      - name: "output_cif_path"
+        type: "QCrBox.output_cif"
+        default_value: None
+        description: "Path to save the CIF file to after converting"
+        optional_entries: ["all_unified"]
+      - name: "custom_category_list"
+        type: "str"
+        description: "Comma separated list of custom categories (such as iucr, shelx ...) to include in the unified CIF"
+        default_value: None
+        required: False
+
+cif_entry_sets:
+  - name: "molecular_structure"
+    required: [
+      "_atom_site.label",
+      "_atom_site.type_symbol",
+      "_atom_site.fract_x",
+      "_atom_site.fract_y",
+      "_atom_site.fract_z",
+      "_atom_site.occupancy",
+      "_atom_site.u_iso_or_equiv"
+    ]
+    optional: [
+      "_atom_site_aniso.label",
+      "_atom_site_aniso.u_11",
+      "_atom_site_aniso.u_22",
+      "_atom_site_aniso.u_33",
+      "_atom_site_aniso.u_12",
+      "_atom_site_aniso.u_13",
+      "_atom_site_aniso.u_23",
+      "_atom_site.adp_type",
+      "_atom_site.refinement_flags_posn",
+    ]
+  - name: "comparison"
+    required: [
       "_cell.length_a", "_cell.length_b", "_cell.length_c", "_cell.angle_alpha",
       "_cell.angle_beta", "_cell.angle_gamma", "_atom_site.label", "_atom_site.type_symbol",
       "_atom_site.fract_x", "_atom_site.fract_y", "_atom_site.fract_z", "_atom_site_aniso.label",
       "_atom_site_aniso.type_symbol", "_atom_site_aniso.u_11", "_atom_site_aniso.u_22",
       "_atom_site_aniso.u_33", "_atom_site_aniso.u_12", "_atom_site_aniso.u_13",
       "_atom_site_aniso.u_23"
-      ]
-    merge_cif_su: True
-
-  - name: "iso2aniso"
-    implemented_as: "CLI"  # other options: "python_callable"
-    parameters:
-      - name: "cif_path"
-        type: str
-        default_value: null
-      - name: "cif_dataset"
-        type: int
-        default_value: 0
-      - name: "select_names"
-        type: str
-        default_value: null
-        required: False
-      - name: "select_elements"
-        type: str
-        default_value: null
-        required: False
-      - name: "select_regexes"
-        type: str
-        default_value: null
-        required: False
-    required_cif_entries: [
-      "_cell.length_a", "_cell.length_b", "_cell.length_c", "_cell.angle_alpha",
-      "_cell.angle_beta", "_cell.angle_gamma", "_atom_site.label", "_atom_site.u_iso_or_equiv"
     ]
-    optional_cif_entries: ["all_unified"]
-    merge_cif_su: False
-
-  - name: "to_unified_cif"
-    implemented_as: "CLI"  # other options: "python_callable"
-    parameters:
-      - name: "input_cif_path"
-        type: "str"
-        default_value: None
-      - name: "custom_category_list"
-        type: "str"
-        default_value: None
-        required: False
-    optional_cif_entries: ["all_unified"]
-    merge_sus: False

@@ -40,6 +40,7 @@ RUN cd /opt &&  \
 
 COPY ./.idesktop ${QCRBOX_HOME}/.idesktop
 COPY ./configure_eval1x.py ${QCRBOX_HOME}/
+COPY ./config_eval1x.yaml ${QCRBOX_HOME}/
 
 ENV QCRBOX_USER=${QCRBOX_USER}
 ENV QCRBOX_HOME=${QCRBOX_HOME}

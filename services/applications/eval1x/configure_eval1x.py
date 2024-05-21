@@ -1,8 +1,9 @@
 import json
 import os
-import pathlib
 import shutil
+from pathlib import Path
 
+from qcrboxtools.cif.cif2cif import cif_file_merge_to_unified_by_yml
 from qcrboxtools.cif.merge import merge_cif_files
 from qcrboxtools.robots.eval import (
     Eval15AllRobot,
@@ -18,9 +19,11 @@ from qcrboxtools.robots.eval import (
 
 from qcrbox.registry.client import ExternalCommand, FormattedParam, QCrBoxRegistryClient
 
+YAML_PATH = "./config_eval1x.yaml"
 
 def integrate(
     work_folder: str,
+    output_cif_path: str,
     rmat_file_path: str,
     beamstop_file_path: str,
     detalign_file_path: str,
@@ -32,12 +35,12 @@ def integrate(
     min_refln_in_box: int,
     pic_dir: str,
 ):
-    work_folder = pathlib.Path(work_folder)
-    rmat_file = pathlib.Path(rmat_file_path)
+    work_folder = Path(work_folder)
+    rmat_file = Path(rmat_file_path)
     if rmat_file.suffix == ".cif":
         new_rmat = RmatFile.from_cif_file("ic.rmat", rmat_file_path)
         new_rmat.to_file(work_folder)
-        rmat_file_path = pathlib.Path(work_folder) / new_rmat.filename
+        rmat_file_path = Path(work_folder) / new_rmat.filename
 
     builddatcol(
         work_folder,
@@ -71,8 +74,17 @@ def integrate(
         "0",
         work_folder / "cell.cif",
         "0",
-        work_folder / "output.cif",
+        work_folder / "merged_eval.cif",
         "output",
+    )
+
+    cif_file_merge_to_unified_by_yml(
+        work_folder / "merged_eval.cif",
+        output_cif_path,
+        None,
+        YAML_PATH,
+        "integrate",
+        "output_cif_path",
     )
 
 
@@ -88,7 +100,7 @@ def builddatcol(
     maximum_duration: float,
     min_refln_in_box: int,
 ):
-    work_folder = pathlib.Path(work_folder)
+    work_folder = Path(work_folder)
     if rmat_file_path == "work_folder":
         rmat_file_path = next(reversed(sorted(work_folder.glob("*.rmat"), key=os.path.getmtime)))
     if beamstop_file_path != "work_folder":
@@ -120,7 +132,7 @@ def create_shoes(
     detalign_file_path: str,
     datcol_dir: str,
 ):
-    work_folder = pathlib.Path(work_folder)
+    work_folder = Path(work_folder)
     if rmat_file_path == "work_folder":
         rmat_file_path = next(reversed(sorted(work_folder.glob("*.rmat"), key=os.path.getmtime)))
     if beamstop_file_path == "work_folder":
@@ -130,7 +142,7 @@ def create_shoes(
     if datcol_dir == "work_folder":
         datcol_dir = work_folder
     else:
-        datcol_dir = pathlib.Path(datcol_dir)
+        datcol_dir = Path(datcol_dir)
 
     rmat_file = RmatFile.from_file(rmat_file_path)
     beamstop_file = SettingsVicFile.from_file(beamstop_file_path)
@@ -168,11 +180,11 @@ def create_shoes(
 
 
 def eval15all(work_folder, pic_dir):
-    work_folder = pathlib.Path(work_folder)
+    work_folder = Path(work_folder)
     if pic_dir == "work_folder":
         pic_dir = work_folder
     else:
-        pic_dir = pathlib.Path(pic_dir)
+        pic_dir = Path(pic_dir)
     pic_files = [PicFile.from_file(path) for path in pic_dir.glob("*.pic")]
 
     if len(pic_files) == 0 and (pic_dir / "ic").exists():
@@ -186,7 +198,7 @@ def eval15all(work_folder, pic_dir):
 
 
 def create_reflection_cif(work_folder):
-    work_folder = pathlib.Path(work_folder)
+    work_folder = Path(work_folder)
 
     if (work_folder / "ic").exists():
         anyrob = EvalAnyRobot(work_folder=work_folder / "ic")
@@ -197,7 +209,7 @@ def create_reflection_cif(work_folder):
 
 
 def final_cell_refinement(work_folder, rmat_file_path):
-    work_folder = pathlib.Path(work_folder)
+    work_folder = Path(work_folder)
     if rmat_file_path == "work_folder":
         rmat_file_path = next(reversed(sorted(work_folder.glob("*.rmat"), key=os.path.getmtime)))
 
@@ -211,8 +223,8 @@ def final_cell_refinement(work_folder, rmat_file_path):
     peakref.folder_to_cif("cell.cif")
 
 
-def finalise__interactive(work_folder):
-    work_folder = pathlib.Path(work_folder)
+def finalise__interactive(work_folder, output_cif_path):
+    work_folder = Path(work_folder)
     create_reflection_cif(work_folder)
     final_cell_refinement(work_folder, "work_folder")
 
@@ -221,14 +233,23 @@ def finalise__interactive(work_folder):
         "0",
         work_folder / "cell.cif",
         "0",
-        work_folder / "output.cif",
+        work_folder / "merged_eval.cif",
         "output",
+    )
+
+    cif_file_merge_to_unified_by_yml(
+        work_folder / "merged_eval.cif",
+        output_cif_path,
+        None,
+        YAML_PATH,
+        "interactive",
+        "output_cif_path",
     )
 
 
 def toparams__interactive(work_folder, par_json, par_folder):
-    work_folder = pathlib.Path(work_folder)
-    par_folder = pathlib.Path(par_folder)
+    work_folder = Path(work_folder)
+    par_folder = Path(par_folder)
     # TODO Check if par_folder is empty?
 
     bdatcol = EvalBuilddatcolRobot(work_folder)
@@ -266,7 +287,7 @@ def toparams__interactive(work_folder, par_json, par_folder):
 
     tojson["pic_dir"] = "$par_folder/pic_dir"
 
-    json_path = pathlib.Path(par_json)
+    json_path = Path(par_json)
     with json_path.open("w", encoding="UTF-8") as fobj:
         json.dump(tojson, fobj, indent=4)
 

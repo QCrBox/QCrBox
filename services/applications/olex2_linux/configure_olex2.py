@@ -3,7 +3,7 @@ import os
 import shutil
 from pathlib import Path
 
-from qcrboxtools.cif.cif2cif import cif_file_to_specific_by_yml, cif_file_to_unified
+from qcrboxtools.cif.cif2cif import cif_file_merge_to_unified_by_yml, cif_file_to_specific_by_yml
 from qcrboxtools.cif.merge import replace_structure_from_cif
 from qcrboxtools.robots.olex2 import Olex2Socket
 
@@ -15,15 +15,20 @@ YAML_PATH = "./config_olex2.yaml"
 def prepare__interactive(input_cif_path):
     input_cif_path = Path(input_cif_path)
     work_folder = input_cif_path.parent
-    work_cif = work_folder / "work.cif"
+    work_cif = work_folder / "qcrbox_work.cif"
 
     # create a cif file using the requested cif entries in olex2 format
     # will most likely be handled internally by QCrBox in the future
-    cif_file_to_specific_by_yml(input_cif_path, work_cif, YAML_PATH, "interactive")
+    cif_file_to_specific_by_yml(input_cif_path, work_cif, YAML_PATH, "interactive", "input_cif_path")
+
+    # the returned kwdict replaces values in the run function of the QCrBox command
+    # Put here in anticipation of the merge of capability to return values in QCrBox commands.
+    return {"input_cif_path": str(work_cif)}
 
 
-def finalise__interactive(input_cif_path):
+def finalise__interactive(input_cif_path, output_cif_path):
     input_cif_path = Path(input_cif_path)
+    output_cif_path = Path(output_cif_path)
     work_folder = input_cif_path.parent
 
     newest_cif_path = next(
@@ -38,7 +43,9 @@ def finalise__interactive(input_cif_path):
     # TODO if not existing, rerun newest res with ACTA
 
     # Go to unified keywords and split SUs into separate entries
-    cif_file_to_unified(newest_cif_path, work_folder / "output.cif", custom_categories=["iucr", "olex2"])
+    cif_file_merge_to_unified_by_yml(
+        newest_cif_path, output_cif_path, input_cif_path, YAML_PATH, "interactive", "output_cif_path"
+    )
 
 
 def toparams__interactive(input_cif_path, par_json, par_folder):
@@ -55,7 +62,9 @@ def toparams__interactive(input_cif_path, par_json, par_folder):
         )
     )
 
-    cif_file_to_unified(newest_cif_path, par_folder / "combine.cif", custom_categories=["iucr", "olex2"])
+    cif_file_merge_to_unified_by_yml(
+        newest_cif_path, par_folder / "combine.cif", input_cif_path, YAML_PATH, "interactive", "output_cif_path"
+    )
 
     tojson = {"structure_cif": "$par_folder/combine.cif"}
     cif_text = (par_folder / "combine.cif").read_text().lower()
@@ -75,9 +84,9 @@ def toparams__interactive(input_cif_path, par_json, par_folder):
         json.dump(tojson, fobj, indent=4)
 
 
-def redo__interactive(input_cif_path, par_json, par_folder):
-    input_cif_path = Path(input_cif_path)
-    work_folder = input_cif_path.parent
+def redo__interactive(redo_input_cif_path, redo_output_path, par_json, par_folder):
+    redo_input_cif_path = Path(redo_input_cif_path)
+    work_folder = redo_input_cif_path.parent
     par_folder = Path(par_folder)
     with open(par_json, "r", encoding="UTF-8") as fobj:
         par_dict = json.load(fobj)
@@ -87,9 +96,9 @@ def redo__interactive(input_cif_path, par_json, par_folder):
 
     merge_cif = work_folder / "merge.cif"
 
-    replace_structure_from_cif(input_cif_path, 0, par_dict["structure_cif"], 0, merge_cif)
+    replace_structure_from_cif(redo_input_cif_path, 0, par_dict["structure_cif"], 0, merge_cif)
 
-    work_cif = work_folder / "work.cif"
+    work_cif = work_folder / "qcrbox_work.cif"
 
     cif_file_to_specific_by_yml(merge_cif, work_cif, YAML_PATH, "interactive")
 
@@ -102,7 +111,7 @@ def redo__interactive(input_cif_path, par_json, par_folder):
 
     _ = olex2_socket.refine(n_cycles=10, refine_starts=5)
 
-    cif_file_to_unified(work_cif, work_folder / "output.cif", custom_categories=["iucr", "olex2"])
+    cif_file_merge_to_unified_by_yml(work_cif, redo_output_path, redo_input_cif_path, YAML_PATH, "interactive")
 
 
 client = QCrBoxRegistryClient()
@@ -116,8 +125,10 @@ external_cmd_refine_iam = ExternalCommand(
     "python",
     "/opt/qcrbox/olex2_glue_cli.py",
     "refine",
-    "--structure_path",
+    "--input_cif_path",
     Param("input_cif_path"),
+    "--output_cif_path",
+    Param("output_cif_path"),
     "--n_cycles",
     Param("ls_cycles"),
     "--weight_cycles",
@@ -130,8 +141,10 @@ external_cmd_refine_tsc = ExternalCommand(
     "python",
     "/opt/qcrbox/olex2_glue_cli.py",
     "refine",
-    "--structure_path",
+    "--input_cif_path",
     Param("input_cif_path"),
+    "--output_cif_path",
+    Param("output_cif_path"),
     "--tsc_path",
     Param("tsc_path"),
     "--n_cycles",
@@ -146,8 +159,10 @@ external_cmd_arbitry_cmds = ExternalCommand(
     "python",
     "/opt/qcrbox/olex2_glue_cli.py",
     "cmds",
-    "--structure_path",
+    "--input_cif_path",
     Param("input_cif_path"),
+    "--output_cif_path",
+    Param("output_cif_path"),
     "--cmd_file_path",
     Param("cmd_file_path"),
 )
