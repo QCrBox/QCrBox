@@ -2,16 +2,18 @@
 #    uv pip compile --extra=all --output-file=requirements-all.txt pyproject.toml
 aio-pika==9.4.1
     # via faststream
+aioresult==1.0
+    # via pyqcrbox (pyproject.toml)
 aiormq==6.8.0
     # via aio-pika
-annotated-types==0.6.0
+annotated-types==0.7.0
     # via pydantic
-anyio==4.3.0
+anyio==4.4.0
     # via
     #   fast-depends
     #   faststream
     #   httpx
-    #   starlette
+    #   litestar
     #   watchfiles
 appnope==0.1.4
     # via ipykernel
@@ -21,10 +23,8 @@ attrs==23.2.0
     # via
     #   jsonschema
     #   referencing
-babel==2.14.0
+babel==2.15.0
     # via mkdocs-material
-backports-tarfile==1.0.0
-    # via jaraco-context
 beautifulsoup4==4.12.3
     # via nbconvert
 binaryornot==0.4.4
@@ -53,7 +53,10 @@ charset-normalizer==3.3.2
 click==8.1.7
     # via
     #   hatch
+    #   import-linter
+    #   litestar
     #   mkdocs
+    #   rich-click
     #   typer
     #   userpath
     #   uvicorn
@@ -63,7 +66,7 @@ colorama==0.4.6
     # via mkdocs-material
 comm==0.2.2
     # via ipykernel
-coverage==7.4.4
+coverage==7.5.2
     # via pytest-cov
 debugpy==1.8.1
     # via ipykernel
@@ -76,81 +79,90 @@ defusedxml==0.7.1
 distlib==0.3.8
     # via virtualenv
 doit==0.36.0
-editables==0.5
-    # via hatchling
+    # via pyqcrbox (pyproject.toml)
 executing==2.0.1
     # via stack-data
-fast-depends==2.4.2
+faker==25.2.0
+    # via polyfactory
+fast-depends==2.4.3
     # via faststream
-fastapi==0.110.1
 fastjsonschema==2.19.1
     # via nbformat
-faststream==0.5.0rc2
-filelock==3.13.4
+faststream==0.5.9
+    # via pyqcrbox (pyproject.toml)
+filelock==3.14.0
     # via virtualenv
 ghp-import==2.1.0
     # via mkdocs
 gitdb==4.0.11
     # via gitpython
 gitpython==3.1.43
+    # via pyqcrbox (pyproject.toml)
 greenlet==3.0.3
     # via sqlalchemy
+grimp==3.2
+    # via import-linter
 h11==0.14.0
     # via
     #   httpcore
     #   uvicorn
-hatch==1.9.4
-hatchling==1.21.1
+hatch==1.11.1
+    # via pyqcrbox (pyproject.toml)
+hatchling==1.24.2
     # via hatch
 httpcore==1.0.5
     # via httpx
 httptools==0.6.1
     # via uvicorn
 httpx==0.27.0
-    # via hatch
+    # via
+    #   hatch
+    #   litestar
 hyperlink==21.0.0
     # via hatch
-identify==2.5.35
+identify==2.5.36
     # via pre-commit
-idna==3.6
+idna==3.7
     # via
     #   anyio
     #   httpx
     #   hyperlink
     #   requests
     #   yarl
+import-linter==2.0
+    # via pyqcrbox (pyproject.toml)
 importlib-metadata==7.1.0
-    # via
-    #   doit
-    #   keyring
+    # via doit
 iniconfig==2.0.0
     # via pytest
 ipdb==0.13.13
+    # via pyqcrbox (pyproject.toml)
 ipykernel==6.29.4
     # via mkdocs-jupyter
-ipython==8.23.0
+ipython==8.24.0
     # via
+    #   pyqcrbox (pyproject.toml)
     #   ipdb
     #   ipykernel
 jaraco-classes==3.4.0
     # via keyring
 jaraco-context==5.3.0
     # via keyring
-jaraco-functools==4.0.0
+jaraco-functools==4.0.1
     # via keyring
 jedi==0.19.1
     # via ipython
-jinja2==3.1.3
+jinja2==3.1.4
     # via
     #   mkdocs
     #   mkdocs-material
     #   nbconvert
     #   reuse
-jsonschema==4.21.1
+jsonschema==4.22.0
     # via nbformat
 jsonschema-specifications==2023.12.1
     # via jsonschema
-jupyter-client==8.6.1
+jupyter-client==8.6.2
     # via
     #   ipykernel
     #   nbclient
@@ -163,19 +175,23 @@ jupyter-core==5.7.2
     #   nbformat
 jupyterlab-pygments==0.3.0
     # via nbconvert
-jupytext==1.16.1
+jupytext==1.16.2
     # via mkdocs-jupyter
-keyring==25.1.0
+keyring==25.2.1
     # via hatch
 license-expression==30.3.0
     # via reuse
+litestar==2.8.3
+    # via pyqcrbox (pyproject.toml)
 loguru==0.7.2
+    # via pyqcrbox (pyproject.toml)
 markdown==3.6
     # via
     #   mkdocs
     #   mkdocs-material
     #   pymdown-extensions
-markdown-exec==1.8.0
+markdown-exec==1.8.3
+    # via pyqcrbox (pyproject.toml)
 markdown-it-py==3.0.0
     # via
     #   jupytext
@@ -186,43 +202,57 @@ markupsafe==2.1.5
     #   jinja2
     #   mkdocs
     #   nbconvert
-matplotlib-inline==0.1.6
+matplotlib-inline==0.1.7
     # via
     #   ipykernel
     #   ipython
-mdit-py-plugins==0.4.0
+mdit-py-plugins==0.4.1
     # via jupytext
 mdurl==0.1.2
     # via markdown-it-py
 mergedeep==1.3.4
-    # via mkdocs
+    # via
+    #   mkdocs
+    #   mkdocs-get-deps
 mistune==3.0.2
     # via nbconvert
-mkdocs==1.5.3
+mkdocs==1.6.0
     # via
+    #   pyqcrbox (pyproject.toml)
     #   mkdocs-awesome-pages-plugin
     #   mkdocs-jupyter
     #   mkdocs-material
 mkdocs-awesome-pages-plugin==2.9.2
+    # via pyqcrbox (pyproject.toml)
+mkdocs-get-deps==0.2.0
+    # via mkdocs
 mkdocs-jupyter==0.24.7
-mkdocs-material==9.5.17
-    # via mkdocs-jupyter
+    # via pyqcrbox (pyproject.toml)
+mkdocs-material==9.5.24
+    # via
+    #   pyqcrbox (pyproject.toml)
+    #   mkdocs-jupyter
 mkdocs-material-extensions==1.3.1
     # via mkdocs-material
 more-itertools==10.2.0
     # via
     #   jaraco-classes
     #   jaraco-functools
+msgspec==0.18.6
+    # via litestar
 multidict==6.0.5
-    # via yarl
-mypy==1.9.0
+    # via
+    #   litestar
+    #   yarl
+mypy==1.10.0
+    # via pyqcrbox (pyproject.toml)
 mypy-extensions==1.0.0
     # via mypy
 natsort==8.4.0
     # via mkdocs-awesome-pages-plugin
 nbclient==0.10.0
     # via nbconvert
-nbconvert==7.16.3
+nbconvert==7.16.4
     # via mkdocs-jupyter
 nbformat==5.10.4
     # via
@@ -259,17 +289,20 @@ pexpect==4.9.0
     # via
     #   hatch
     #   ipython
-platformdirs==4.2.0
+platformdirs==4.2.2
     # via
     #   hatch
     #   jupyter-core
-    #   mkdocs
+    #   mkdocs-get-deps
     #   virtualenv
-pluggy==1.4.0
+pluggy==1.5.0
     # via
     #   hatchling
     #   pytest
-pre-commit==3.7.0
+polyfactory==2.16.0
+    # via litestar
+pre-commit==3.7.1
+    # via pyqcrbox (pyproject.toml)
 prompt-toolkit==3.0.43
     # via ipython
 psutil==5.9.8
@@ -278,34 +311,40 @@ ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.2
     # via stack-data
-pydantic==2.6.4
+pydantic==2.7.1
     # via
+    #   pyqcrbox (pyproject.toml)
     #   fast-depends
-    #   fastapi
     #   pydantic-settings
     #   sqlmodel
-pydantic-core==2.16.3
+pydantic-core==2.18.2
     # via pydantic
 pydantic-settings==2.2.1
-pygments==2.17.2
+    # via pyqcrbox (pyproject.toml)
+pygments==2.18.0
     # via
     #   ipython
     #   mkdocs-jupyter
     #   mkdocs-material
     #   nbconvert
     #   rich
-pymdown-extensions==10.7.1
+pymdown-extensions==10.8.1
     # via
+    #   pyqcrbox (pyproject.toml)
     #   markdown-exec
     #   mkdocs-material
-pytest==8.1.1
+pytest==8.2.1
     # via
+    #   pyqcrbox (pyproject.toml)
     #   pytest-asyncio
     #   pytest-cov
-pytest-asyncio==0.23.6
+pytest-asyncio==0.23.7
+    # via pyqcrbox (pyproject.toml)
 pytest-cov==5.0.0
+    # via pyqcrbox (pyproject.toml)
 python-dateutil==2.9.0.post0
     # via
+    #   faker
     #   ghp-import
     #   jupyter-client
 python-debian==0.1.49
@@ -314,46 +353,53 @@ python-dotenv==1.0.1
     # via
     #   pydantic-settings
     #   uvicorn
-pyupgrade==3.15.2
-    # via pyupgrade-directories
-pyupgrade-directories==0.3.0
 pyyaml==6.0.1
     # via
     #   jupytext
+    #   litestar
     #   mkdocs
+    #   mkdocs-get-deps
     #   pre-commit
     #   pymdown-extensions
     #   pyyaml-env-tag
     #   uvicorn
 pyyaml-env-tag==0.1
     # via mkdocs
-pyzmq==25.1.2
+pyzmq==26.0.3
     # via
     #   ipykernel
     #   jupyter-client
-referencing==0.34.0
+referencing==0.35.1
     # via
     #   jsonschema
     #   jsonschema-specifications
-regex==2023.12.25
+regex==2024.5.15
     # via mkdocs-material
-requests==2.31.0
+requests==2.32.2
     # via mkdocs-material
 reuse==3.0.2
+    # via pyqcrbox (pyproject.toml)
 rich==13.7.1
     # via
+    #   pyqcrbox (pyproject.toml)
     #   hatch
+    #   litestar
+    #   rich-click
     #   typer
-rpds-py==0.18.0
+rich-click==1.8.2
+    # via litestar
+rpds-py==0.18.1
     # via
     #   jsonschema
     #   referencing
-ruff==0.3.5
-setuptools==69.2.0
+ruff==0.4.5
+    # via pyqcrbox (pyproject.toml)
+setuptools==70.0.0
     # via
     #   nodeenv
     #   setuptools-scm
-setuptools-scm==8.0.4
+setuptools-scm==8.1.0
+    # via pyqcrbox (pyproject.toml)
 shellingham==1.5.4
     # via
     #   hatch
@@ -367,34 +413,32 @@ smmap==5.0.1
     # via gitdb
 sniffio==1.3.1
     # via
+    #   aioresult
     #   anyio
     #   httpx
 soupsieve==2.5
     # via beautifulsoup4
-sqlalchemy==2.0.29
+sqlalchemy==2.0.30
     # via sqlmodel
-sqlmodel==0.0.16
+sqlmodel==0.0.18
+    # via pyqcrbox (pyproject.toml)
 stack-data==0.6.3
     # via ipython
-starlette==0.37.2
-    # via fastapi
 tabulate==0.9.0
-tenacity==8.2.3
-tinycss2==1.2.1
+    # via pyqcrbox (pyproject.toml)
+tenacity==8.3.0
+    # via pyqcrbox (pyproject.toml)
+tinycss2==1.3.0
     # via nbconvert
-tokenize-rt==5.2.0
-    # via pyupgrade
-toml==0.10.2
-    # via jupytext
 tomli-w==1.0.0
     # via hatch
-tomlkit==0.12.4
+tomlkit==0.12.5
     # via hatch
 tornado==6.4
     # via
     #   ipykernel
     #   jupyter-client
-traitlets==5.14.2
+traitlets==5.14.3
     # via
     #   comm
     #   ipykernel
@@ -405,41 +449,50 @@ traitlets==5.14.2
     #   nbclient
     #   nbconvert
     #   nbformat
-trove-classifiers==2024.3.25
+trove-classifiers==2024.5.22
     # via hatchling
 typer==0.12.3
     # via faststream
 types-pyyaml==6.0.12.20240311
-types-setuptools==69.2.0.20240317
-types-ujson==5.9.0.0
+    # via pyqcrbox (pyproject.toml)
+types-setuptools==70.0.0.20240524
+    # via pyqcrbox (pyproject.toml)
+types-ujson==5.10.0.20240515
+    # via pyqcrbox (pyproject.toml)
 typing-extensions==4.11.0
     # via
-    #   fastapi
     #   faststream
-    #   ipython
+    #   grimp
+    #   import-linter
+    #   litestar
     #   mypy
+    #   polyfactory
     #   pydantic
     #   pydantic-core
-    #   setuptools-scm
+    #   rich-click
     #   sqlalchemy
     #   typer
 urllib3==2.2.1
     # via requests
 userpath==1.9.2
     # via hatch
-uv==0.1.31
+uv==0.2.4
+    # via
+    #   pyqcrbox (pyproject.toml)
+    #   hatch
 uvicorn==0.29.0
+    # via pyqcrbox (pyproject.toml)
 uvloop==0.19.0
     # via uvicorn
-virtualenv==20.25.1
+virtualenv==20.26.2
     # via
     #   hatch
     #   pre-commit
-watchdog==4.0.0
+watchdog==4.0.1
     # via mkdocs
 watchfiles==0.21.0
     # via uvicorn
-wcmatch==8.5.1
+wcmatch==8.5.2
     # via mkdocs-awesome-pages-plugin
 wcwidth==0.2.13
     # via prompt-toolkit
@@ -453,7 +506,7 @@ yarl==1.9.4
     # via
     #   aio-pika
     #   aiormq
-zipp==3.18.1
+zipp==3.19.0
     # via importlib-metadata
 zstandard==0.22.0
     # via hatch

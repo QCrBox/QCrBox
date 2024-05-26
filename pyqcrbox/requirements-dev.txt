@@ -2,19 +2,19 @@
 #    uv pip compile --extra=dev --output-file=requirements-dev.txt pyproject.toml
 aio-pika==9.4.1
     # via faststream
+aioresult==1.0
+    # via pyqcrbox (pyproject.toml)
 aiormq==6.8.0
     # via aio-pika
-annotated-types==0.6.0
+annotated-types==0.7.0
     # via pydantic
-anyio==4.3.0
+anyio==4.4.0
     # via
     #   fast-depends
     #   faststream
     #   httpx
 asttokens==2.4.1
     # via stack-data
-backports-tarfile==1.0.0
-    # via jaraco-context
 binaryornot==0.4.4
     # via reuse
 boolean-py==4.0
@@ -34,11 +34,12 @@ chardet==5.2.0
 click==8.1.7
     # via
     #   hatch
+    #   import-linter
     #   typer
     #   userpath
 cloudpickle==3.0.0
     # via doit
-coverage==7.4.4
+coverage==7.5.2
     # via pytest-cov
 decorator==5.1.1
     # via
@@ -47,24 +48,28 @@ decorator==5.1.1
 distlib==0.3.8
     # via virtualenv
 doit==0.36.0
-editables==0.5
-    # via hatchling
+    # via pyqcrbox (pyproject.toml)
 executing==2.0.1
     # via stack-data
-fast-depends==2.4.2
+fast-depends==2.4.3
     # via faststream
-faststream==0.5.0rc2
-filelock==3.13.4
+faststream==0.5.9
+    # via pyqcrbox (pyproject.toml)
+filelock==3.14.0
     # via virtualenv
 gitdb==4.0.11
     # via gitpython
 gitpython==3.1.43
+    # via pyqcrbox (pyproject.toml)
 greenlet==3.0.3
     # via sqlalchemy
+grimp==3.2
+    # via import-linter
 h11==0.14.0
     # via httpcore
-hatch==1.9.4
-hatchling==1.21.1
+hatch==1.11.1
+    # via pyqcrbox (pyproject.toml)
+hatchling==1.24.2
     # via hatch
 httpcore==1.0.5
     # via httpx
@@ -72,43 +77,47 @@ httpx==0.27.0
     # via hatch
 hyperlink==21.0.0
     # via hatch
-identify==2.5.35
+identify==2.5.36
     # via pre-commit
-idna==3.6
+idna==3.7
     # via
     #   anyio
     #   httpx
     #   hyperlink
     #   yarl
+import-linter==2.0
+    # via pyqcrbox (pyproject.toml)
 importlib-metadata==7.1.0
-    # via
-    #   doit
-    #   keyring
+    # via doit
 iniconfig==2.0.0
     # via pytest
 ipdb==0.13.13
-ipython==8.23.0
-    # via ipdb
+    # via pyqcrbox (pyproject.toml)
+ipython==8.24.0
+    # via
+    #   pyqcrbox (pyproject.toml)
+    #   ipdb
 jaraco-classes==3.4.0
     # via keyring
 jaraco-context==5.3.0
     # via keyring
-jaraco-functools==4.0.0
+jaraco-functools==4.0.1
     # via keyring
 jedi==0.19.1
     # via ipython
-jinja2==3.1.3
+jinja2==3.1.4
     # via reuse
-keyring==25.1.0
+keyring==25.2.1
     # via hatch
 license-expression==30.3.0
     # via reuse
 loguru==0.7.2
+    # via pyqcrbox (pyproject.toml)
 markdown-it-py==3.0.0
     # via rich
 markupsafe==2.1.5
     # via jinja2
-matplotlib-inline==0.1.6
+matplotlib-inline==0.1.7
     # via ipython
 mdurl==0.1.2
     # via markdown-it-py
@@ -118,7 +127,8 @@ more-itertools==10.2.0
     #   jaraco-functools
 multidict==6.0.5
     # via yarl
-mypy==1.9.0
+mypy==1.10.0
+    # via pyqcrbox (pyproject.toml)
 mypy-extensions==1.0.0
     # via mypy
 nodeenv==1.8.0
@@ -139,59 +149,66 @@ pexpect==4.9.0
     # via
     #   hatch
     #   ipython
-platformdirs==4.2.0
+platformdirs==4.2.2
     # via
     #   hatch
     #   virtualenv
-pluggy==1.4.0
+pluggy==1.5.0
     # via
     #   hatchling
     #   pytest
-pre-commit==3.7.0
+pre-commit==3.7.1
+    # via pyqcrbox (pyproject.toml)
 prompt-toolkit==3.0.43
     # via ipython
 ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.2
     # via stack-data
-pydantic==2.6.4
+pydantic==2.7.1
     # via
+    #   pyqcrbox (pyproject.toml)
     #   fast-depends
     #   pydantic-settings
     #   sqlmodel
-pydantic-core==2.16.3
+pydantic-core==2.18.2
     # via pydantic
 pydantic-settings==2.2.1
-pygments==2.17.2
+    # via pyqcrbox (pyproject.toml)
+pygments==2.18.0
     # via
     #   ipython
     #   rich
-pytest==8.1.1
+pytest==8.2.1
     # via
+    #   pyqcrbox (pyproject.toml)
     #   pytest-asyncio
     #   pytest-cov
-pytest-asyncio==0.23.6
+pytest-asyncio==0.23.7
+    # via pyqcrbox (pyproject.toml)
 pytest-cov==5.0.0
+    # via pyqcrbox (pyproject.toml)
 python-debian==0.1.49
     # via reuse
 python-dotenv==1.0.1
     # via pydantic-settings
-pyupgrade==3.15.2
-    # via pyupgrade-directories
-pyupgrade-directories==0.3.0
 pyyaml==6.0.1
     # via pre-commit
 reuse==3.0.2
+    # via pyqcrbox (pyproject.toml)
 rich==13.7.1
     # via
+    #   pyqcrbox (pyproject.toml)
     #   hatch
     #   typer
-ruff==0.3.5
-setuptools==69.2.0
+ruff==0.4.5
+    # via pyqcrbox (pyproject.toml)
+setuptools==70.0.0
     # via
     #   nodeenv
     #   setuptools-scm
-setuptools-scm==8.0.4
+setuptools-scm==8.1.0
+    # via pyqcrbox (pyproject.toml)
 shellingham==1.5.4
     # via
     #   hatch
@@ -202,45 +219,52 @@ smmap==5.0.1
     # via gitdb
 sniffio==1.3.1
     # via
+    #   aioresult
     #   anyio
     #   httpx
-sqlalchemy==2.0.29
+sqlalchemy==2.0.30
     # via sqlmodel
-sqlmodel==0.0.16
+sqlmodel==0.0.18
+    # via pyqcrbox (pyproject.toml)
 stack-data==0.6.3
     # via ipython
 tabulate==0.9.0
-tokenize-rt==5.2.0
-    # via pyupgrade
+    # via pyqcrbox (pyproject.toml)
 tomli-w==1.0.0
     # via hatch
-tomlkit==0.12.4
+tomlkit==0.12.5
     # via hatch
-traitlets==5.14.2
+traitlets==5.14.3
     # via
     #   ipython
     #   matplotlib-inline
-trove-classifiers==2024.3.25
+trove-classifiers==2024.5.22
     # via hatchling
 typer==0.12.3
     # via faststream
 types-pyyaml==6.0.12.20240311
-types-setuptools==69.2.0.20240317
-types-ujson==5.9.0.0
+    # via pyqcrbox (pyproject.toml)
+types-setuptools==70.0.0.20240524
+    # via pyqcrbox (pyproject.toml)
+types-ujson==5.10.0.20240515
+    # via pyqcrbox (pyproject.toml)
 typing-extensions==4.11.0
     # via
     #   faststream
-    #   ipython
+    #   grimp
+    #   import-linter
     #   mypy
     #   pydantic
     #   pydantic-core
-    #   setuptools-scm
     #   sqlalchemy
     #   typer
 userpath==1.9.2
     # via hatch
-uv==0.1.31
-virtualenv==20.25.1
+uv==0.2.4
+    # via
+    #   pyqcrbox (pyproject.toml)
+    #   hatch
+virtualenv==20.26.2
     # via
     #   hatch
     #   pre-commit
@@ -250,7 +274,7 @@ yarl==1.9.4
     # via
     #   aio-pika
     #   aiormq
-zipp==3.18.1
+zipp==3.19.0
     # via importlib-metadata
 zstandard==0.22.0
     # via hatch
