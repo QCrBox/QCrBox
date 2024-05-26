@@ -2,7 +2,10 @@ import argparse
 from pathlib import Path
 from typing import List, Optional
 
+from qcrboxtools.cif.cif2cif import cif_file_merge_to_unified_by_yml, cif_file_to_specific_by_yml
 from qcrboxtools.cif.iso2aniso import cif_iso2aniso
+
+YML_PATH = "/opt/qcrbox/config_qcrboxtools.yaml"
 
 
 def parse_args_to_none(value: str) -> Optional[List[str]]:
@@ -30,8 +33,8 @@ def main():
     )
 
     # Required arguments
-    parser.add_argument("cif_path", type=Path, help="Path to the CIF file.")
-    parser.add_argument("cif_dataset", type=str, help="Dataset name in the CIF file.")
+    parser.add_argument("input_cif_path", type=Path, help="Path to the input CIF file.")
+    parser.add_argument("output_cif_path", type=Path, help="Path to the output CIF file.")
 
     # Optional arguments
     parser.add_argument(
@@ -61,17 +64,24 @@ def main():
 
     args = parser.parse_args()
 
-    cif_dataset = int(args.cif_dataset) if args.cif_dataset.isdigit() else args.cif_dataset
+    input_cif_path = args.input_cif_path
+    work_cif_path = input_cif_path.parent / "qcrbox_work.cif"
+
+    cif_file_to_specific_by_yml(input_cif_path, work_cif_path, YML_PATH, "iso2aniso", "input_cif_path")
 
     # Call the function with parsed arguments
     cif_iso2aniso(
-        input_cif_path=args.cif_path,
-        cif_dataset=cif_dataset,
-        output_cif_path=args.cif_path,
+        input_cif_path=work_cif_path,
+        cif_dataset="0",
+        output_cif_path=work_cif_path,
         select_names=args.select_names,
         select_elements=args.select_elements,
         select_regexes=args.select_regexes,
         overwrite=args.overwrite,
+    )
+
+    cif_file_merge_to_unified_by_yml(
+        work_cif_path, args.output_cif_path, input_cif_path, YML_PATH, "iso2aniso", "output_cif_path"
     )
 
 

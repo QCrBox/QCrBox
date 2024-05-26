@@ -21,7 +21,7 @@ hide:
 
     Do you have any questions, suggestions, want to get involved, or are simply curious to learn more?
 
-      - Join our [Discord server](https://discord.gg/CWnQJvVv){:target="_blank"} to come and chat with us!
+      - Join our [Discord server](https://discord.com/invite/eU2ya5psxH){:target="_blank"} to come and chat with us!
 
 
 # Documentation:

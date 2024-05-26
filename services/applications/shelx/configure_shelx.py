@@ -22,7 +22,7 @@ def get_ins_file_path(input_cif_path: Path):
     if m is None:
         raise RuntimeError(f"Could not determine filename of .res file from {input_cif_path.as_posix()}")
 
-    res_filename =m.group("res_filename")
+    res_filename = m.group("res_filename")
     return input_cif_path.parent.joinpath(res_filename).with_suffix(".ins")
 
 
@@ -30,7 +30,7 @@ def func_test_iso_to_aniso(input_cif_file, insert_anis_directive=True):
     msg = f"Running TEST: iso -> aniso ({input_cif_file!r}, insert_anis_directive={insert_anis_directive!r})"
     logger.debug(msg)
 
-    #input_cif_path = Path(input_cif_file).resolve()
+    # input_cif_path = Path(input_cif_file).resolve()
     input_cif_path = Path(input_cif_file)
     workdir = input_cif_path.parent
     cmd = ["shredcif", input_cif_path.name]

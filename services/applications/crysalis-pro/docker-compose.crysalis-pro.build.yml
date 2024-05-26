@@ -1,0 +1,8 @@
+services:
+  crysalis-pro:
+    build:
+      context: services/applications/crysalis-pro/
+      args:
+        QCRBOX_DOCKER_TAG: ${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}
+        QCRBOX_WINE_INSTALLATIONS_DIR: ${QCRBOX_WINE_INSTALLATIONS_DIR:?Must set env var QCRBOX_WINE_INSTALLATIONS_DIR}
+        QCRBOX_ROOT_DIR: ${QCRBOX_ROOT_DIR:?Must set env var QCRBOX_ROOT_DIR}

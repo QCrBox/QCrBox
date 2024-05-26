@@ -1,0 +1,66 @@
+[project]
+name = "qcrbox_wrapper"
+authors = [
+  { name="Paul Niklas Ruth", email="paul.n.ruth@durham.ac.uk" },
+]
+description = "Quantum Crystallography Toolbox Wrapper"
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+dynamic = [
+    "version",
+]
+#dependencies = [
+#]
+
+[project.optional-dependencies]
+env-file = [
+    "python-dotenv"
+]
+
+[project.urls]
+"Repository" = "https://github.com/QCrBox/QCrBox/"
+"Issue Tracker" = "https://github.com/QCrBox/QCrBox/issues"
+
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "vcs"
+raw-options = { root = ".." }
+
+[tool.setuptools_scm]
+version_file = "qcrbox_wrapper/_version.py"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "qcrbox_wrapper/_version.py"
+
+[tool.hatch.build.targets.sdist]
+only-include = ["qcrbox_wrapper"]
+
+[tool.hatch.build.targets.wheel]
+only-include = ["qcrbox_wrapper"]
+
+[tool.ruff]
+line-length = 120
+exclude = ["_version.py"]
+
+[tool.ruff.lint]
+select = [
+    # pycodestyle
+    "E",
+    # Pyflakes
+    "F",
+#    # pyupgrade
+#    "UP",
+#    # flake8-bugbear
+#    "B",
+#    # flake8-simplify
+#    "SIM",
+    # isort
+    "I",
+]

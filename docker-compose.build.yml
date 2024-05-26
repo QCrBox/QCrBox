@@ -33,6 +33,30 @@ services:
         QCRBOX_ROOT_DIR: ${QCRBOX_ROOT_DIR:?Must set env var QCRBOX_ROOT_DIR}
         QCRBOX_SUPERVISORD_CONF_DIR: ${QCRBOX_SUPERVISORD_CONF_DIR:?Must set env var QCRBOX_SUPERVISORD_CONF_DIR}
 
+  base-wine:
+    image: "qcrbox/base-wine:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
+    build:
+      context: services/base_images/base_wine/
+      args:
+        QCRBOX_DOCKER_TAG: ${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}
+        QCRBOX_WINE_INSTALLATIONS_DIR: ${QCRBOX_WINE_INSTALLATIONS_DIR:?Must set env var QCRBOX_WINE_INSTALLATIONS_DIR}
+        QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH: ${QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH}
+        # We set a default value for QCRBOX_WINEARCH just so that we can run the base-wine container for debugging,
+        # but this must be set by each application as required.
+        QCRBOX_WINEARCH: ${QCRBOX_WINEARCH:-win32}
+    #depends_on:
+    #  - base-novnc
+    #environment:
+    #  QCRBOX_APP_DISPLAY_NAME: "QCrBox-Wine"
+    #  QCRBOX_RABBITMQ_QUEUE_NAME: "qcrbox-base-wine"
+    #volumes:
+    #  - wine_installations_dir:${QCRBOX_WINE_INSTALLATIONS_DIR:?Must set env var QCRBOX_WINE_INSTALLATIONS_DIR}
+    #networks:
+    #  - qcrbox-net
+    #ports:
+    #  - "${QCRBOX_BIND_ADDRESS}:${QCRBOX_PORT_BASE_IMAGE_WINE:?Must set env var QCRBOX_PORT_BASE_IMAGE_WINE}:8080"
+    #restart: "unless-stopped"
+
   qcrbox-message-bus:
     build:
       context: services/core/qcrbox_message_bus/

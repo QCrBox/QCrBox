@@ -26,8 +26,10 @@ However, there will be an initial period of stabilisation where this is not adhe
 
 ### Documentation
 
+- How-to guide on building and running components using the `qcb` command line tool. ([#167](https://github.com/QCrBox/QCrBox/issues/167))
+- Output of code blocks is now coloured correctly. ([#194](https://github.com/QCrBox/QCrBox/issues/194))
 
-## [0.0.1]
+## [v0.0.1]
 
 ### New Features
 
@@ -78,5 +80,5 @@ However, there will be an initial period of stabilisation where this is not adhe
 - The folder structure in `qcrbox/cli/subcommands` has been simplified by removing an extra level of subfolders. ([#90](https://github.com/QCrBox/QCrBox/issues/90))
 
 
-[unreleased]: https://github.com/QCrBox/QCrBox/compare/0.0.1...master
-[0.0.1]: https://github.com/QCrBox/QCrBox/compare/initial_commit...0.0.1
+[unreleased]: https://github.com/QCrBox/QCrBox/compare/v0.0.1...master
+[v0.0.1]: https://github.com/QCrBox/QCrBox/compare/initial_commit...v0.0.1

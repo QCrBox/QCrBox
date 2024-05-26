@@ -1,5 +1,6 @@
 nav:
   - Contents: contents.md
   - set_up_a_dev_environment.md
+  - Using the `qcb` command line tool: use_qcb_to_interact_with_and_manage_qcrbox.md
   - handle_cifs.md
   - ...
