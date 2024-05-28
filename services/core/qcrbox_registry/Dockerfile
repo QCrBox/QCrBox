@@ -6,7 +6,7 @@ HEALTHCHECK \
     --interval=10s \
     #--start-period=${STARTUP_TIME}s \
     #--start-interval=${STARTUP_TIME}s \
-    CMD curl --fail http://localhost:8000/ping || exit 1
+    CMD curl --fail http://localhost:${QCRBOX__REGISTRY__SERVER__PORT}/health-check || exit 1
 
 
 ARG QCRBOX_REGISTRY_DB_DIR=${QCRBOX_REGISTRY_DB_DIR}
