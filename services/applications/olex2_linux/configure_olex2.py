@@ -7,7 +7,10 @@ from qcrboxtools.cif.cif2cif import cif_file_merge_to_unified_by_yml, cif_file_t
 from qcrboxtools.cif.merge import replace_structure_from_cif
 from qcrboxtools.robots.olex2 import Olex2Socket
 
-from qcrbox.registry.client import ExternalCommand, Param, QCrBoxRegistryClient
+from pyqcrbox import sql_models
+
+#from pyqcrbox.registry.client import ExternalCommand, Param, QCrBoxRegistryClient
+from pyqcrbox.registry.client import QCrBoxClient
 
 YAML_PATH = "./config_olex2.yaml"
 
@@ -113,64 +116,17 @@ def redo__interactive(redo_input_cif_path, redo_output_path, par_json, par_folde
 
     cif_file_merge_to_unified_by_yml(work_cif, redo_output_path, redo_input_cif_path, YAML_PATH, "interactive")
 
+application_spec = sql_models.ApplicationSpecCreate.from_yaml_file("config_olex2.yaml")
 
-client = QCrBoxRegistryClient()
-application = client.register_application("Olex2 (Linux)", version="1.5")
-application.register_external_command(
-    "interactive",
-    ExternalCommand("/bin/bash", "/opt/olex2/start", Param("input_cif_path")),
-)
+client = QCrBoxClient(application_spec=application_spec)
+#application = client.register_application("Olex2 (Linux)", version="1.5")
+# application.register_external_command(
+#     "interactive",
+#     ExternalCommand("/bin/bash", "/opt/olex2/start", Param("input_cif_path")),
+# )
 
-external_cmd_refine_iam = ExternalCommand(
-    "python",
-    "/opt/qcrbox/olex2_glue_cli.py",
-    "refine",
-    "--input_cif_path",
-    Param("input_cif_path"),
-    "--output_cif_path",
-    Param("output_cif_path"),
-    "--n_cycles",
-    Param("ls_cycles"),
-    "--weight_cycles",
-    Param("weight_cycles"),
-)
-
-application.register_external_command("refine_iam", external_cmd_refine_iam)
-
-external_cmd_refine_tsc = ExternalCommand(
-    "python",
-    "/opt/qcrbox/olex2_glue_cli.py",
-    "refine",
-    "--input_cif_path",
-    Param("input_cif_path"),
-    "--output_cif_path",
-    Param("output_cif_path"),
-    "--tsc_path",
-    Param("tsc_path"),
-    "--n_cycles",
-    Param("ls_cycles"),
-    "--weight_cycles",
-    Param("weight_cycles"),
-)
-
-application.register_external_command("refine_tsc", external_cmd_refine_tsc)
-
-external_cmd_arbitry_cmds = ExternalCommand(
-    "python",
-    "/opt/qcrbox/olex2_glue_cli.py",
-    "cmds",
-    "--input_cif_path",
-    Param("input_cif_path"),
-    "--output_cif_path",
-    Param("output_cif_path"),
-    "--cmd_file_path",
-    Param("cmd_file_path"),
-)
-
-application.register_external_command("run_cmds_file", external_cmd_arbitry_cmds)
-
-application.register_python_callable("prepare__interactive", prepare__interactive)
-application.register_python_callable("finalise__interactive", finalise__interactive)
-application.register_python_callable("toparams__interactive", toparams__interactive)
-application.register_python_callable("redo__interactive", redo__interactive)
+# application.register_python_callable("prepare__interactive", prepare__interactive)
+# application.register_python_callable("finalise__interactive", finalise__interactive)
+# application.register_python_callable("toparams__interactive", toparams__interactive)
+# application.register_python_callable("redo__interactive", redo__interactive)
 client.run()
