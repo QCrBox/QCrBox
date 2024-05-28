@@ -93,4 +93,6 @@ RUN micromamba shell init --shell bash --root-prefix=${MAMBA_ROOT_PREFIX} && \
 
 COPY --chown=${QCRBOX_USER}:${QCRBOX_GROUP} entrypoint.sh execute_startup_cmd.sh ./
 
+ENV QCRBOX__RABBITMQ__HOST="qcrbox-message-bus"
+
 ENTRYPOINT ["/opt/qcrbox/entrypoint.sh"]
