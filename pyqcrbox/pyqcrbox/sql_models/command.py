@@ -13,7 +13,8 @@ from .qcrbox_base_models import QCrBoxBaseSQLModel, QCrBoxPydanticBaseModel
 class ImplementedAs(str, Enum):
     cli = "CLI"
     python_callable = "python_callable"
-    gui = "GUI"
+    # gui = "GUI"
+    interactive = "interactive"
 
 
 class CommandSpecBase(QCrBoxPydanticBaseModel):
