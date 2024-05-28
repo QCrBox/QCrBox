@@ -9,8 +9,13 @@ url: "https://github.com/QCrBox/QCrBoxTools"
 
 commands:
   - name: "replace_structure_from_cif"
-    implemented_as: "CLI"  # other options: "python_callable"
     description: "Replace the structure (atoms/adps) in a CIF file with the structure from another CIF file"
+    implemented_as: "CLI"
+    call_pattern: |
+      python /opt/qcrbox/qcrbtls_replace_structure_glue.py \
+        {input_cif_path} 0 \
+        {structure_cif_path} 0 \
+        --output_cif_path {output_cif_path}
     parameters:
       - name: "input_cif_path"
         type: "QCrBox.input_cif"
@@ -42,8 +47,17 @@ commands:
         invalidated_entry_sets: ["molecular_structure"]
 
   - name: "check_structure_convergence"
-    implemented_as: "CLI"  # other options: "python_callable"
     description: "Check the convergence of a structure, to be used for refinement with changing atomic form factors"
+    implemented_as: "CLI"
+    call_pattern: |
+      python /opt/qcrbox/qcrbtls_check_convergence_glue.py \
+        {cif1_path} 0 \
+        {cif2_path} 0 \
+        --max_abs_position {max_abs_position} \
+        --max_position_su {max_position_su} \
+        --max_abs_uij {max_abs_uij} \
+        --max_uij_su {max_uij_su} \
+        --output {output_json_path}
     parameters:
       - name: "cif1_path"
         type: "QCrBox.input_cif"
@@ -77,8 +91,15 @@ commands:
         description: "Path to save the result as JSON file to after comparing the CIF files"
 
   - name: "iso2aniso"
-    implemented_as: "CLI"  # other options: "python_callable"
     description: "Convert isotropic ADPs to anisotropic ADPs in a CIF file"
+    implemented_as: "CLI"
+    call_pattern: |
+      python /opt/qcrbox/qcrbtls_iso2aniso_glue.py \
+        {input_cif_path} \
+        {output_cif_path} \
+        --select_names {select_names} \
+        --select_elements {select_elements} \
+        --select_regexes {select_regexes}
     parameters:
       - name: "input_cif_path"
         type: "QCrBox.input_cif"
@@ -125,8 +146,13 @@ commands:
         description: "Comma separated list of python re regexes to match atom names against"
 
   - name: "to_unified_cif"
-    implemented_as: "CLI"  # other options: "python_callable"
     description: "Convert a CIF file to a unified CIF file"
+    implemented_as: "CLI"
+    call_pattern: |
+      python /opt/qcrbox/qcrbtls_to_unified_cif_glue.py \
+        {input_cif_path} \
+        {output_cif_path} \
+        --custom_categories {custom_category_list}
     parameters:
       - name: "input_cif_path"
         type: "QCrBox.input_cif"

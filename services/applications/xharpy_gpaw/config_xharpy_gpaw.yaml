@@ -36,8 +36,9 @@ commands:
         description: "The grid spacing in Angstrom to use for the GPAW calculation"
 
   - name: "ha_refine"
-    implemented_as: "python_callable"  # other options: "python_callable"
     description: "Do a Hirshfeld atom refinement using XHARPy and GPAW"
+    implemented_as: "python_callable"
+    import_path: "configure_xharpy_gpaw"
     parameters:
       - name: "input_cif_path"
         type: "str"
