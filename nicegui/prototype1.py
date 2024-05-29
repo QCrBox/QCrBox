@@ -1,6 +1,9 @@
 import pathlib
 import shutil
+import urllib.request
 import webbrowser
+import zipfile
+from pathlib import Path
 from textwrap import dedent
 
 from nicegui import ui
@@ -89,6 +92,35 @@ def click_btn_cryst_exp_start():
         input_cif_path=crystal_explorer.qcrbox_app_dir / "input.cif",
     )
 
+
+def click_btn_setup():
+    for application in [cryspro, olex2, crystal_explorer]:
+        application.started_run = False
+        application.finalised_run = False
+
+    btn_cap_start.enabled = False
+    this_script = Path(__file__).parents[1]
+    frames_zip = this_script / "docs/tutorials/examples/input_files/Ylid_Mo_RT.zip"
+    if not frames_zip.exists():
+        url = f"https://github.com/QCrBox/QCrBoxExamples/raw/main/CrysAlisPro/{frames_zip.name}"
+        urllib.request.urlretrieve(url, frames_zip)
+
+    work_folder_empty = not any(pathhelper.local_path.iterdir())
+
+    if not work_folder_empty:
+        shutil.rmtree(pathhelper.local_path)
+        pathhelper.local_path.mkdir()
+
+    cryspro_dir = pathhelper.local_path / "step1_cryspro"
+    cryspro_dir.mkdir()
+
+    with zipfile.ZipFile(frames_zip, "r") as zip_ref:
+        zip_ref.extractall(cryspro_dir)
+
+    btn_cap_start.enabled = True
+
+
+btn_setup = ui.button("Delete data in and freshly setup work folder", on_click=click_btn_setup)
 
 ui.markdown(
     dedent(
