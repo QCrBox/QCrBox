@@ -1,12 +1,10 @@
 import os
-import tempfile
 from pathlib import Path
 from textwrap import dedent
 
+from qcrbox.registry.client import ExternalCommand, Param, QCrBoxRegistryClient
 from qcrboxtools.cif.cif2cif import cif_file_merge_to_unified_by_yml
 from qcrboxtools.cif.file_converter.shelxt import ins2symop_loop
-
-from qcrbox.registry.client import ExternalCommand, Param, QCrBoxRegistryClient
 
 YAML_PATH = "./config_crysalis-pro.yaml"
 
@@ -35,7 +33,7 @@ def finalise__interactive(work_folder: str, output_cif_path: str):
             )
         )
     )
-    
+
     cif_file_merge_to_unified_by_yml(
         newest_cif_path, output_cif_path, None, YAML_PATH, "interactive", "output_cif_path"
     )
@@ -79,30 +77,32 @@ def finalise__interactive(work_folder: str, output_cif_path: str):
 
     if "_space_group_symop.id" not in output_cif_text:
         newest_ins_path = next(
-                reversed(
-                    sorted(
-                        (file_path for file_path in work_folder.glob("*.ins")),
-                        key=os.path.getmtime,
-                    )
+            reversed(
+                sorted(
+                    (file_path for file_path in work_folder.glob("*.ins")),
+                    key=os.path.getmtime,
                 )
             )
+        )
 
         symop_loop_str = ins2symop_loop(newest_ins_path)
 
-        output_cif_text += '\n\n' + symop_loop_str
+        output_cif_text += "\n\n" + symop_loop_str
         rewrite = True
 
-    if '_chemical_formula.sum' not in output_cif_text and '_chemical_oxdiff_formula' in output_cif_text:
-        output_cif_text = output_cif_text.replace('_chemical_oxdiff_formula', '_chemical_formula.sum')
+    if "_chemical_formula.sum" not in output_cif_text and "_chemical_oxdiff_formula" in output_cif_text:
+        output_cif_text = output_cif_text.replace("_chemical_oxdiff_formula", "_chemical_formula.sum")
         rewrite = True
 
     if rewrite:
         output_cif_path.write_text(output_cif_text, encoding="UTF-8")
 
+
 application.register_python_callable(
     "finalise__interactive",
     finalise__interactive,
 )
+
 
 def get_crysalis_path():
     xcalibur_dir = Path("/opt/wine_installations/wine_win64/drive_c/Xcalibur")
@@ -110,9 +110,7 @@ def get_crysalis_path():
     return str(crysalis_install_dir / "pro.exe")
 
 
-external_cmd_open_folder_in_crysalis_pro = ExternalCommand(
-    "wine", get_crysalis_path(), Param("par_path")
-)
+external_cmd_open_folder_in_crysalis_pro = ExternalCommand("wine", get_crysalis_path(), Param("par_path"))
 
 application.register_external_command(
     "interactive",
