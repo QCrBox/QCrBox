@@ -25,7 +25,10 @@ def test_refine_iam(tmp_path_helper):
     olex2 = qcrbox.application_dict["Olex2 (Linux)"]
 
     calc = olex2.refine_iam(
-        input_cif_path=tmp_path_helper.path_to_qcrbox("input.cif"), ls_cycles="20", weight_cycles="5"
+        input_cif_path=tmp_path_helper.path_to_qcrbox("input.cif"),
+        ls_cycles="20",
+        weight_cycles="5",
+        output_cif_path=tmp_path_helper.path_to_qcrbox("output.cif"),
     )
 
     calc.wait_while_running(1.0)
