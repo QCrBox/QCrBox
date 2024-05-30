@@ -20,17 +20,20 @@ commands:
         required_entry_sets: ["cif_structure_ddl1"]
         merge_su: Yes
         custom_categories: ["iucr", "shelx"]
+      - name: "work_cif_path"
+        type: "QCrBox.work_cif"
+        description: "Path used for creating the specific cif file in Crystal Explorer compatible format."
     interactive_lifecycle:
       prepare:
         implemented_as: "python_callable"
         module: "config_crystal_explorer"
         function: "prepare__interactive"
-        used_basecommand_parameters: ["input_cif_path"]
+        used_basecommand_parameters: ["input_cif_path", "work_cif_path"]
 
       run:
         implemented_as: "CLI"
-        command: "/usr/bin/CrystalExplorer --open {input_cif_path}"
-        used_basecommand_parameters: ["input_cif_path"]
+        command: "/usr/bin/CrystalExplorer --open {work_cif_path}"
+        used_basecommand_parameters: ["work_cif_path"]
 
 cif_entry_sets:
   - name: cif_structure_ddl1
@@ -166,3 +169,5 @@ cif_entry_sets:
       "_iucr_refine_instructions_details",
       "_olex2_submission_special_instructions"
     ]
+
+qcrbox_yaml_spec_version: "0.1"

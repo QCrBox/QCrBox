@@ -119,3 +119,4 @@ cif_entry_sets:
       "_geom_angle", "_geom_angle_site_symmetry_1", "_geom_angle_site_symmetry_3"
     ]
 
+qcrbox_yaml_spec_version: "0.1"

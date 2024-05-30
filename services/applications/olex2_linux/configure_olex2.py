@@ -12,18 +12,13 @@ from qcrbox.registry.client import ExternalCommand, Param, QCrBoxRegistryClient
 YAML_PATH = "./config_olex2.yaml"
 
 
-def prepare__interactive(input_cif_path):
+def prepare__interactive(input_cif_path, work_cif_path):
     input_cif_path = Path(input_cif_path)
-    work_folder = input_cif_path.parent
-    work_cif = work_folder / "qcrbox_work.cif"
 
     # create a cif file using the requested cif entries in olex2 format
     # will most likely be handled internally by QCrBox in the future
-    cif_file_to_specific_by_yml(input_cif_path, work_cif, YAML_PATH, "interactive", "input_cif_path")
+    cif_file_to_specific_by_yml(input_cif_path, work_cif_path, YAML_PATH, "interactive", "input_cif_path")
 
-    # the returned kwdict replaces values in the run function of the QCrBox command
-    # Put here in anticipation of the merge of capability to return values in QCrBox commands.
-    return {"input_cif_path": str(work_cif)}
 
 
 def finalise__interactive(input_cif_path, output_cif_path):
@@ -118,7 +113,7 @@ client = QCrBoxRegistryClient()
 application = client.register_application("Olex2 (Linux)", version="1.5")
 application.register_external_command(
     "interactive",
-    ExternalCommand("/bin/bash", "/opt/olex2/start", Param("input_cif_path")),
+    ExternalCommand("/bin/bash", "/opt/olex2/start", Param("work_cif_path")),
 )
 
 external_cmd_refine_iam = ExternalCommand(
