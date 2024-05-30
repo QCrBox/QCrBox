@@ -2,9 +2,10 @@ import os
 from pathlib import Path
 from textwrap import dedent
 
-from qcrbox.registry.client import ExternalCommand, Param, QCrBoxRegistryClient
 from qcrboxtools.cif.cif2cif import cif_file_merge_to_unified_by_yml
 from qcrboxtools.cif.file_converter.shelxt import ins2symop_loop
+
+from qcrbox.registry.client import ExternalCommand, Param, QCrBoxRegistryClient
 
 YAML_PATH = "./config_crysalis-pro.yaml"
 
