@@ -32,7 +32,8 @@ services:
       qcrbox-message-bus:
         condition: service_healthy
     environment:
-      QCRBOX__REGISTRY__SERVER__PORT: 8000
+      QCRBOX__REGISTRY__SERVER__HOST: "0.0.0.0"
+      QCRBOX__REGISTRY__SERVER__PORT: "8000"
       QCRBOX_RABBITMQ_QUEUE_NAME: "qcrbox_registry"
       QCRBOX_REGISTRY_DB_DIR: "${QCRBOX_REGISTRY_DB_DIR:?Must set env var QCRBOX_REGISTRY_DB_DIR}"
     networks:
