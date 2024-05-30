@@ -1,0 +1,6 @@
+services:
+  cod_check:
+    build:
+      context: services/applications/cod_check/
+      args:
+        QCRBOX_DOCKER_TAG: ${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}
