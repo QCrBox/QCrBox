@@ -11,13 +11,17 @@ commands:
   - name: "sample_cmd"
     implemented_as: "CLI"  # other options: "python_callable"
     parameters:
-      - name: "msg"
-        type: "str"
-        default_value: None
-      - name: "some_number"
-        type: "int"
-        default_value: 42
-        required: false
+      - name: "input_cif_path"
+        type: "QCrBox.input_cif"
+        required_entries: ["_cif_category.ddlm_entry"]
+        optional_entries: ["_cif_category_ddl1_entry"]
+        required_entry_sets: ["example_entry_set"]
+      - name: "output_cif_path"
+        type: "QCrBox.output_cif"
+        required_entries: ["_cif_category.ddlm_entry"]
+        optional_entries: ["_cif_category_ddl1_entry"]
+        required_entry_sets: ["example_entry_set"]
+        invalidated_entries: ["_processing_category\..*"]
 
   - name: "sample_cmd_v2"
     implemented_as: "CLI"  # other options: "python_callable"
@@ -29,3 +33,10 @@ commands:
         type: int
         default_value: 42
         required: False
+
+cif_entry_sets:
+  - name: "example_entry_set"
+    required: ["_cif_category.another_ddlm_entry"]
+    optional: ["_cif_category.another_ddl1_entry"]
+
+qcrbox_yaml_spec_version: "0.1"

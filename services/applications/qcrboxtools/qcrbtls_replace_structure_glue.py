@@ -20,23 +20,30 @@ appropriate parameters.
 """
 
 import argparse
+from pathlib import Path
 
+from qcrboxtools.cif.cif2cif import cif_file_merge_to_unified_by_yml, cif_file_to_specific_by_yml
 from qcrboxtools.cif.merge import replace_structure_from_cif
+
+YML_PATH = "/opt/qcrbox/config_qcrboxtools.yaml"
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog="QCrBoxTools cif cli", description="combine cifs via module call")
 
-    parser.add_argument("cif_path", help="Path to cif file where the structure is copied TO")
-    parser.add_argument("cif_dataset", help="Name of dataset in cif file where the structure is copied TO")
+    parser.add_argument("cif_path", help="Path to cif file where the structure is copied TO", type=Path)
+    parser.add_argument("cif_dataset", help="Name of dataset in cif file where the structure is copied TO", type=str)
 
-    parser.add_argument("structure_cif_path", help="Path to cif file where the structure is copied FROM")
+    parser.add_argument("structure_cif_path", help="Path to cif file where the structure is copied FROM", type=Path)
 
-    parser.add_argument("structure_cif_dataset", help="Name of dataset in cif file where the structure is copied FROM")
+    parser.add_argument(
+        "structure_cif_dataset", help="Name of dataset in cif file where the structure is copied FROM", type=str
+    )
 
     parser.add_argument(
         "--output_cif_path",
         help="Path to where the combined output cif will be written (default: cif_path)",
         default=None,
+        type=Path,
     )
 
     args = parser.parse_args()
@@ -56,6 +63,21 @@ if __name__ == "__main__":
     except ValueError:
         structure_cif_dataset = args.structure_cif_dataset
 
+    work_cif_path = args.cif_path.parent / "qcrbox_work.cif"
+    work_structure_cif_path = args.structure_cif_path.parent / "qcrbox_structure.cif"
+
+    cif_file_to_specific_by_yml(args.cif_path, work_cif_path, YML_PATH, "replace_structure_from_cif", "input_cif_path")
+
+    cif_file_to_specific_by_yml(
+        args.structure_cif_path, work_structure_cif_path, YML_PATH, "replace_structure_from_cif", "structure_cif_path"
+    )
+
+    replaced_cif_path = args.cif_path.parent / "qcrbox_replaced.cif"
+
     replace_structure_from_cif(
-        args.cif_path, cif_dataset, args.structure_cif_path, structure_cif_dataset, output_cif_path
+        work_cif_path, cif_dataset, work_structure_cif_path, structure_cif_dataset, replaced_cif_path
+    )
+
+    cif_file_merge_to_unified_by_yml(
+        replaced_cif_path, output_cif_path, args.cif_path, YML_PATH, "replace_structure_from_cif", "output_cif_path"
     )

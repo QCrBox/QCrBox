@@ -75,9 +75,9 @@ def main():
 
     converted2_path = args.cif2_path.parent / "converted2.cif"
 
-    cif_file_to_specific_by_yml(args.cif1_path, converted1_path, YML_PATH, "check_structure_convergence")
+    cif_file_to_specific_by_yml(args.cif1_path, converted1_path, YML_PATH, "check_structure_convergence", "cif1_path")
 
-    cif_file_to_specific_by_yml(args.cif2_path, converted2_path, YML_PATH, "check_structure_convergence")
+    cif_file_to_specific_by_yml(args.cif2_path, converted2_path, YML_PATH, "check_structure_convergence", "cif2_path")
 
     criteria = {
         "max abs position": args.max_abs_position,

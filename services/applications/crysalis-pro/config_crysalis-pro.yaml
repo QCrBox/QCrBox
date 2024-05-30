@@ -1,0 +1,142 @@
+#
+# Configuration for the application "crysalis-pro"
+#
+name: "CrysalisPro"
+slug: "crysalis-pro"
+version: "171.44.48a"
+description: "CrysalisPro is used for data reduction on frame folders produced by Rigaku instruments."
+url: "https://www.rigaku.com/de/products/smc/crysalis"
+
+commands:
+  - name: "interactive"
+    implemented_as: "interactive"  # other options: "python_callable"
+    description: "Run CrysalisPro interactively"
+    parameters:
+      - name: "par_path"
+        type: "QCrBox.input_file"
+        default_value: None
+        description: "Path to the CrysAlisPro .par file. Must be located in the folder containing the remaining frames and other data"
+      - name: "output_cif_path"
+        type: "QCrBox.output_file"
+        default_value: None
+        description: "Path to save the CIF file to, after finishing the interactive session"
+        required_entry_sets: ["integration_output"]
+        custom_categories: ["iucr", "shelx", "oxdiff"]
+    interactive_lifecycle:
+      run:
+        implemented_as: "CLI"
+        command: "wine /opt/wine_installations/wine_win64/drive_c/Xcalibur/CrysAlisPro171.43.48a/pro.exe {work_folder}"
+        used_basecommand_parameters: ["work_folder"]
+      finalise:
+        implemented_as: "python_callable"
+        module: "configure_crysalis-pro"
+        function: "finalise__interactive"
+        used_basecommand_parameters: ["work_folder", "output_cif_path"]
+
+cif_entry_sets:
+  - name: "integration_output"
+    required: [
+      "_audit_creation_date",
+      "_audit_creation_method",
+      "_computing_data_collection",
+      "_computing_cell_refinement",
+      "_computing_data_reduction",
+      "_cell_length_a",
+      "_cell_length_b",
+      "_cell_length_c",
+      "_cell_angle_alpha",
+      "_cell_angle_beta",
+      "_cell_angle_gamma",
+      "_cell_volume",
+      "_cell_measurement_temperature",
+      "_cell_measurement_reflns_used",
+      "_cell_measurement_theta_min",
+      "_cell_measurement_theta_max",
+      "_cell_oxdiff_length_a",
+      "_cell_oxdiff_length_b",
+      "_cell_oxdiff_length_c",
+      "_cell_oxdiff_angle_alpha",
+      "_cell_oxdiff_angle_beta",
+      "_cell_oxdiff_angle_gamma",
+      "_cell_oxdiff_volume",
+      "_cell_oxdiff_measurement_reflns_used",
+      "_exptl_absorpt_correction_T_min",
+      "_exptl_absorpt_correction_T_max",
+      "_exptl_absorpt_correction_type",
+      "_exptl_absorpt_process_details",
+      "_oxdiff_exptl_absorpt_empirical_full_min",
+      "_oxdiff_exptl_absorpt_empirical_full_max",
+      "_oxdiff_exptl_absorpt_empirical_details",
+      "_diffrn_ambient_temperature",
+      "_diffrn_ambient_environment",
+      "_diffrn_source",
+      "_diffrn_source_type",
+      "_diffrn_radiation_probe",
+      "_diffrn_radiation_type",
+      "_diffrn_radiation_wavelength",
+      "_diffrn_radiation_monochromator",
+      "_diffrn_measurement_device",
+      "_diffrn_measurement_device_type",
+      "_diffrn_detector",
+      "_diffrn_detector_type",
+      "_diffrn_detector_area_resol_mean",
+      "_diffrn_reflns_number",
+      "_diffrn_reflns_av_R_equivalents",
+      "_diffrn_reflns_av_sigmaI/netI",
+      "_diffrn_reflns_limit_h_min",
+      "_diffrn_reflns_limit_h_max",
+      "_diffrn_reflns_limit_k_min",
+      "_diffrn_reflns_limit_k_max",
+      "_diffrn_reflns_limit_l_min",
+      "_diffrn_reflns_limit_l_max",
+      "_diffrn_reflns_theta_min",
+      "_diffrn_reflns_theta_max",
+      "_diffrn_measured_fraction_theta_max",
+      "_diffrn_reflns_theta_full",
+      "_diffrn_measured_fraction_theta_full",
+      "_diffrn_orient_matrix_type",
+      "_diffrn_orient_matrix_UB_11",
+      "_diffrn_orient_matrix_UB_12",
+      "_diffrn_orient_matrix_UB_13",
+      "_diffrn_orient_matrix_UB_21",
+      "_diffrn_orient_matrix_UB_22",
+      "_diffrn_orient_matrix_UB_23",
+      "_diffrn_orient_matrix_UB_31",
+      "_diffrn_orient_matrix_UB_32",
+      "_diffrn_orient_matrix_UB_33",
+      "_diffrn_measurement_details",
+      "_diffrn_measurement_method",
+      "_space_group_IT_number",
+      "_space_group_crystal_system",
+      "_space_group_name_H-M_alt",
+      "_reflns_odcompleteness_completeness",
+      "_reflns_odcompleteness_theta",
+      "_reflns_odcompleteness_iscentric",
+      "_chemical_oxdiff_formula",
+      "_diffrn_refln_index_h",
+      "_diffrn_refln_index_k",
+      "_diffrn_refln_index_l",
+      "_diffrn_refln_intensity_net",
+      "_diffrn_refln_intensity_u",
+      "_space_group_symop_id",
+      "_space_group_symop_operation_xyz",
+      "_chemical_formula_sum",
+    ]
+    optional: [
+      "_diffrn_refln_scale_group_code",
+      "_exptl_crystal_face_perp_dist",
+      "_exptl_oxdiff_crystal_face_x",
+      "_exptl_oxdiff_crystal_face_y",
+      "_exptl_crystal_face_index_l",
+      "_exptl_absorpt_coefficient_mu",
+      "_exptl_oxdiff_crystal_face_indexfrac_k",
+      "_exptl_oxdiff_crystal_face_indexfrac_l",
+      "_exptl_oxdiff_crystal_face_z",
+      "_exptl_crystal_face_index_h",
+      "_exptl_crystal_size_max",
+      "_exptl_oxdiff_crystal_face_indexfrac_h",
+      "_exptl_crystal_size_mid",
+      "_exptl_crystal_face_index_k",
+      "_exptl_crystal_size_min"]
+
+qcrbox_yaml_spec_version: "0.1"

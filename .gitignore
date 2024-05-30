@@ -58,6 +58,12 @@ services/applications/qcrboxtools/qcrboxtools_dist/qcrboxtools-0.0.2-py3-none-an
 # CrystalExplorer
 services/applications/crystal_explorer/CrystalExplorer-21.5-ubuntu-20.04.deb
 
+# CrysalisPro
+services/applications/crysalis-pro/CrysAlisPro*.exe
+
+# CrysalisPro Examples
+docs/tutorials/examples/input_files/Ylid_Mo_RT.zip
+
 # Olex2
 services/applications/olex2_linux/olex2_files/olex2c-linux64
 services/applications/olex2_linux/olex2_files/olex2-linux64_hl.zip

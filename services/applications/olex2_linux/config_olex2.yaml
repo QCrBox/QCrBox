@@ -6,70 +6,172 @@ slug: "olex2"
 version: "1.5-alpha"
 description: "Olex2 is an easy-to-use program containing everything you need to solve, refine and finish small-molecule crystal structures."
 url: "https://www.olexsys.org/olex2/"
+doi: "10.1107/S0021889808042726"
 
 commands:
   - name: "interactive"
-    interactive: Yes
-    implemented_as: "GUI"  # other options: "python_callable"
-    parameters:
-      - name: "cif_path"
-        type: "str"
-        default_value: None
-    required_cif_entry_sets: ["cell_data", "diffraction_data"]
-    optional_cif_entry_sets: ["atom_data"]
-    merge_cif_su: Yes
-    custom_cif_categories: ["iucr", "shelx"]
-
-  - name: "refine_iam"
-    implemented_as: "CLI"  # other options: "python_callable"
+    implemented_as: "interactive"  # other options: "python_callable"
+    description: "Start Olex2 in interactive mode, this can be used to solve, refine and finish small-molecule crystal structures."
     parameters:
       - name: "input_cif_path"
-        type: str
+        type: "QCrBox.input_cif"
+        default_value: None
+        description: "Path to the CIF file to open in Olex2."
+        required_entry_sets: ["cell_data", "diffraction_data"]
+        optional_entry_sets: ["atom_data"]
+        merge_su: Yes
+        custom_categories: ["iucr", "shelx"]
+      - name: "work_cif_path"
+        type: "QCrBox.work_cif"
+        description: "Path used for creating the specific cif file in Olex compatible format."
+      - name: "output_cif_path"
+        type: "QCrBox.output_cif"
+        default_value: None
+        description: "Path to save the CIF file to after finishing the interactive session."
+        required_entry_sets: ["olex_structure_output", "olex2_only_interactive_output"]
+        invalidated_entries: ["_shelx_.*"]
+        custom_categories: ["iucr", "shelx"]
+        output_block: "0" # select first block from output cif file (the default)
+      - name: "parameter_json_path"
+        type: "QCrBox.output_file"
+        default_value: None
+        description: "Path to the JSON file to save the parameters for recreating the interactive result."
+      - name: "parameter_folder"
+        type: "str"
+        default_value: None
+        description: "Folder to save files needed as parameters for recreating the interactive result."
+    interactive_lifecycle:
+      prepare:
+        implemented_as: "python_callable"
+        module: "configure_olex2"
+        function: "prepare__interactive"
+        used_basecommand_parameters: ["input_cif_path", "work_cif_path"]
+      run:
+        implemented_as: "CLI"
+        command: "/bin/bash /opt/olex2/start {work_cif_path}"
+        used_basecommand_parameters: ["work_cif_path"]
+      finalise:
+        implemented_as: "python_callable"
+        module: "configure_olex2"
+        function: "finalise__interactive"
+        used_basecommand_parameters: ["input_cif_path", "output_cif_path"]
+      toparams:
+        implemented_as: "python_callable"
+        module: "configure_olex2"
+        function: "toparams__interactive"
+        used_basecommand_parameters: ["input_cif_path", "output_cif_path", "parameter_json_path", "parameter_folder"]
+    non-interactive_equivalent:
+      implemented_as: "python_callable"
+      module: "configure_olex2"
+      function: "redo__interactive"
+      parameters:
+        - name: "redo_input_cif_path"  # consider renaming to "redo_input_cif_path"
+          type: "QCrBox.input_cif"
+          default_value: None
+          description: "Path to the CIF file to recreate the interactive result for."
+          required_entry_sets: ["cell_data", "diffraction_data"]
+          optional_entry_sets: ["atom_data"]
+        - name: "redo_output_cif_path" # consider renaming to "redo_output_cif_path"
+          type: "QCrBox.output_cif"
+          default_value: None
+          description: "Path to save the CIF file to after finishing the interactive session."
+          required_entry_sets: ["olex_structure_output", "olex2_only_interactive_output"]
+          invalidated_entries: ["_shelx_.*"]
+          custom_categories: ["iucr", "shelx"]
+          output_block: "0" # select first block from output cif file (the default)
+        - name: "parameter_json_path"
+          type: "QCrBox.output_file"
+          default_value: None
+          description: "Path to the JSON file to load the parameters from for recreating the interactive result."
+        - name: "parameter_folder"
+          type: "QCrBox.output_folder"
+          default_value: None
+          description: "Folder to load files needed as parameters for recreating the interactive result."
+  - name: "refine_iam"
+    implemented_as: "CLI"  # other options: "python_callable"
+    description: "Refine a CIF file using the IAM method."
+    parameters:
+      - name: "input_cif_path"
+        type: QCrBox.input_cif
         default_value: null
+        description: "Path to the CIF file to refine."
+        required_entry_sets: ["cell_data", "diffraction_data", "atom_data"]
+        merge_su: No
+        custom_categories: ["iucr", "shelx"]
+      - name: "output_cif_path"
+        type: QCrBox.output_cif
+        default_value: null
+        description: "Path to save the refined CIF file to."
+        required_entry_sets: ["olex_structure_output"]
+        custom_categories: ["iucr", "shelx"]
+        invalidated_entries: ["_shelx_.*"]
       - name: "ls_cycles"
         type: int
         default_value: 5
         required: False
+        description: "Number of least squares cycles to run."
       - name: "weight_cycles"
         type: int
         default_value: 5
         required: False
-    required_cif_entry_sets: ["cell_data", "diffraction_data", "atom_data"]
-    merge_cif_su: No
-    custom_cif_categories: ["iucr", "shelx"]
+        description: "Number of weight cycles to run. Each weight cycle consists of the full number of least squares cycles."
 
   - name: "refine_tsc"
     implemented_as: "CLI"  # other options: "python_callable"
+    description: "Refine a CIF file using aspheric form factors from a tsc(b) file."
+    doi: 10.1039/D0SC05526C
     parameters:
       - name: "input_cif_path"
-        type: str
+        type: "QCrBox.input_cif"
         default_value: null
+        description: "Path to the CIF file to refine."
+        required_entry_sets: ["cell_data", "diffraction_data", "atom_data"]
+        merge_su: No
+        custom_categories: ["iucr", "shelx"]
+      - name: "output_cif_path"
+        type: "QCrBox.output_cif"
+        default_value: null
+        description: "Path to save the refined CIF file to."
+        required_entry_sets: ["olex_structure_output"]
+        custom_categories: ["iucr", "shelx"]
+        invalidated_entries: ["_shelx_.*"]
       - name: "tsc_path"
-        type: str
+        type: "QCrBox.input_file"
         default_value: null
+        description: "Path to the TSC file to use."
       - name: "ls_cycles"
         type: int
         default_value: 5
         required: False
+        description: "Number of least squares cycles to run."
       - name: "weight_cycles"
         type: int
         default_value: 5
         required: False
-    required_cif_entry_sets: ["cell_data", "diffraction_data", "atom_data"]
-    merge_cif_su: No
-    custom_cif_categories: ["iucr", "shelx"]
+        description: "Number of weight cycles to run. Each weight cycle consists of the full number of least squares cycles."
 
   - name: "run_cmds_file"
     implemented_as: "CLI"
+    description: "Run a olex console commands read from a text file."
     parameters:
       - name: "input_cif_path"
-        type: str
+        type: QCrBox.input_cif
         default_value: null
+        description: "Path to the CIF file to run the commands with."
+        optional_entry_sets: ["all_olex_optional"]
+        custom_categories: ["iucr", "shelx"]
+      - name: "output_cif_path"
+        type: QCrBox.output_cif
+        default_value: null
+        description: "Path to save the CIF file to after running the commands. If not given, no output will be read back."
+        optional: True
+        optional_entry_sets: ["all_olex_optional"]
+        custom_categories: ["iucr", "shelx"]
+        invalidated_entries: ["_shelx_.*"]
       - name: "cmd_file_path"
-        type: str
+        type: "QCrBox.input_file"
         default_value: null
-    optional_cif_entry_sets: ["all_olex_optional"]
-    custom_cif_categories: ["iucr", "shelx"]
+        description: "Path to the file containing the commands to run."
 
 cif_entry_sets:
   - name: "cell_data"
@@ -221,7 +323,6 @@ cif_entry_sets:
       "_refine_ls_wR_factor_gt",
       "_refine_ls_wR_factor_ref",
       "_olex2_refinement_description",
-      "_olex2_refine_details",
       "_atom_site_label",
       "_atom_site_type_symbol",
       "_atom_site_fract_x",
@@ -259,3 +360,133 @@ cif_entry_sets:
       "_iucr_refine_instructions_details",
       "_olex2_submission_special_instructions"
     ]
+    optional: [
+      "_olex2_refine_details"
+    ]
+  - name: olex2_only_interactive_output
+    required : [
+      "_chemical_formula_moiety",
+      "_chemical_formula_sum",
+      "_chemical_formula_weight",
+      "_atom_type_symbol",
+      "_atom_type_scat_dispersion_real",
+      "_atom_type_scat_dispersion_imag",
+      "_atom_type_scat_source",
+      "_atom_type_scat_dispersion_source",
+      "_space_group_crystal_system",
+      "_space_group_IT_number",
+      "_space_group_name_H-M_alt",
+      "_space_group_name_Hall",
+      "_space_group_symop_id",
+      "_space_group_symop_operation_xyz",
+      "_symmetry_Int_Tables_number",
+      "_cell_length_a",
+      "_cell_length_b",
+      "_cell_length_c",
+      "_cell_angle_alpha",
+      "_cell_angle_beta",
+      "_cell_angle_gamma",
+      "_cell_volume",
+      "_cell_formula_units_Z",
+      "_exptl_absorpt_coefficient_mu",
+      "_exptl_crystal_density_diffrn",
+      "_exptl_crystal_F_000",
+      "_diffrn_reflns_av_R_equivalents",
+      "_diffrn_reflns_av_unetI/netI",
+      "_diffrn_reflns_Laue_measured_fraction_full",
+      "_diffrn_reflns_Laue_measured_fraction_max",
+      "_diffrn_reflns_limit_h_max",
+      "_diffrn_reflns_limit_h_min",
+      "_diffrn_reflns_limit_k_max",
+      "_diffrn_reflns_limit_k_min",
+      "_diffrn_reflns_limit_l_max",
+      "_diffrn_reflns_limit_l_min",
+      "_diffrn_reflns_number",
+      "_diffrn_reflns_point_group_measured_fraction_full",
+      "_diffrn_reflns_point_group_measured_fraction_max",
+      "_diffrn_reflns_theta_full",
+      "_diffrn_reflns_theta_max",
+      "_diffrn_reflns_theta_min",
+      "_diffrn_measured_fraction_theta_full",
+      "_diffrn_measured_fraction_theta_max",
+      "_reflns_Friedel_coverage",
+      "_reflns_limit_h_max",
+      "_reflns_limit_h_min",
+      "_reflns_limit_k_max",
+      "_reflns_limit_k_min",
+      "_reflns_limit_l_max",
+      "_reflns_limit_l_min",
+      "_reflns_number_gt",
+      "_reflns_number_total",
+      "_reflns_threshold_expression",
+      "_diffrn_refln_index_h",
+      "_diffrn_refln_index_k",
+      "_diffrn_refln_index_l",
+      "_diffrn_refln_intensity_net",
+      "_diffrn_refln_intensity_u",
+    ]
+  - name: olex_structure_output
+    required : [
+      "_audit_creation_date",
+      "_audit_creation_method",
+      "_publ_section_references",
+      "_refine_diff_density_max",
+      "_refine_diff_density_min",
+      "_refine_diff_density_rms",
+      "_refine_ls_d_res_high",
+      "_refine_ls_d_res_low",
+      "_refine_ls_goodness_of_fit_ref",
+      "_refine_ls_hydrogen_treatment",
+      "_refine_ls_matrix_type",
+      "_refine_ls_number_constraints",
+      "_refine_ls_number_parameters",
+      "_refine_ls_number_reflns",
+      "_refine_ls_number_restraints",
+      "_refine_ls_R_factor_all",
+      "_refine_ls_R_factor_gt",
+      "_refine_ls_restrained_S_all",
+      "_refine_ls_shift/su_max",
+      "_refine_ls_shift/su_mean",
+      "_refine_ls_structure_factor_coef",
+      "_refine_ls_weighting_details",
+      "_refine_ls_weighting_scheme",
+      "_refine_ls_wR_factor_gt",
+      "_refine_ls_wR_factor_ref",
+      "_olex2_refinement_description",
+      "_atom_site_label",
+      "_atom_site_type_symbol",
+      "_atom_site_fract_x",
+      "_atom_site_fract_y",
+      "_atom_site_fract_z",
+      "_atom_site_U_iso_or_equiv",
+      "_atom_site_adp_type",
+      "_atom_site_occupancy",
+      "_atom_site_refinement_flags_posn",
+      "_atom_site_aniso_label",
+      "_atom_site_aniso_U_11",
+      "_atom_site_aniso_U_22",
+      "_atom_site_aniso_U_33",
+      "_atom_site_aniso_U_12",
+      "_atom_site_aniso_U_13",
+      "_atom_site_aniso_U_23",
+      "_geom_bond_atom_site_label_1",
+      "_geom_bond_atom_site_label_2",
+      "_geom_bond_distance",
+      "_geom_bond_site_symmetry_2",
+      "_geom_bond_publ_flag",
+      "_geom_angle_atom_site_label_1",
+      "_geom_angle_atom_site_label_2",
+      "_geom_angle_atom_site_label_3",
+      "_geom_angle",
+      "_geom_angle_site_symmetry_1",
+      "_geom_angle_site_symmetry_3",
+      "_geom_angle_publ_flag",
+      "_iucr_refine_fcf_details",
+      "_iucr_refine_instructions_details",
+      "_olex2_submission_special_instructions"
+    ]
+    optional: [
+      "_olex2_refine_details"
+    ]
+
+qcrbox_yaml_spec_version: "0.1"
