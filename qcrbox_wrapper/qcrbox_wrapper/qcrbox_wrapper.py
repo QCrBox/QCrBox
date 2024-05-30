@@ -149,6 +149,7 @@ class UnsuccessfulCalculationError(Exception):
 
         super().__init__(msg)
 
+
 class InteractiveExecutionError(Exception):
     pass
 
