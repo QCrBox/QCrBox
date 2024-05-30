@@ -137,10 +137,12 @@ btn_setup = ui.button("Delete data in and freshly setup work folder", on_click=c
 
 ui.markdown(
     dedent(
-        """
+        f"""
         # QCrBox GUI Prototype 1
 
         This is a prototype for developing the interaction of QCrBox with a GUI. Task 1: Three interactive tasks.
+
+        The work directory is `{pathhelper.local_path}`
     """
     ).strip()
 )
