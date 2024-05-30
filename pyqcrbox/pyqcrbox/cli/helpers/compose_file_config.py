@@ -152,4 +152,6 @@ class ComposeFileConfig:
 
     @property
     def command_line_options(self):
+        # TODO: only use the relevant compose files here (e.g. *.build.yml for the build stage,
+        #       and don't include any application compose files if we're building base/core containers).
         return [f"--file={compose_file}" for compose_file in self.compose_files]
