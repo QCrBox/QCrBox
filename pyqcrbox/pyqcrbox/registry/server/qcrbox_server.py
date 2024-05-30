@@ -34,7 +34,11 @@ class TestQCrBoxServer(TestQCrBoxServerClientBase, QCrBoxServer):
 
 def main():
     qcrbox_server = QCrBoxServer()
-    qcrbox_server.run(port=settings.registry.server.port, purge_existing_db_tables=False)
+    qcrbox_server.run(
+        host=settings.registry.server.host,
+        port=settings.registry.server.port,
+        purge_existing_db_tables=False,
+    )
 
 
 if __name__ == "__main__":

@@ -71,8 +71,9 @@ def main():
     repo_root = get_repo_root(__file__)
     sample_spec_file = repo_root.joinpath("services/applications/olex2_linux/config_olex2.yaml")
     application_spec = sql_models.ApplicationSpecCreate.from_yaml_file(sample_spec_file)
+
     qcrbox_client = QCrBoxClient(application_spec=application_spec)
-    qcrbox_client.run(port=settings.registry.client.port)
+    qcrbox_client.run(host=settings.registry.client.host, port=settings.registry.client.port)
 
 
 if __name__ == "__main__":
