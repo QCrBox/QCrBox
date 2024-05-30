@@ -34,14 +34,10 @@ def finalise__interactive(work_folder: str, output_cif_path: str):
         )
     )
 
-    cif_file_merge_to_unified_by_yml(
-        newest_cif_path, output_cif_path, None, YAML_PATH, "interactive", "output_cif_path"
-    )
-
     rewrite = False
-    output_cif_text = output_cif_path.read_text(encoding="UTF-8")
+    newest_cif_text = newest_cif_path.read_text(encoding="UTF-8")
 
-    if "_diffrn_refln.index_h" not in output_cif_text:
+    if "_diffrn_refln_index_h" not in newest_cif_text:
         # add diffraction data from newest hkl file
         newest_hkl_path = next(
             reversed(
@@ -60,22 +56,22 @@ def finalise__interactive(work_folder: str, output_cif_path: str):
         loop_base = dedent(
             """
             loop_
-              _diffrn_refln.index_h
-              _diffrn_refln.index_k
-              _diffrn_refln.index_l
-              _diffrn_refln.intensity_net
-              _diffrn_refln.intensity_net_su
+              _diffrn_refln_index_h
+              _diffrn_refln_index_k
+              _diffrn_refln_index_l
+              _diffrn_refln_intensity_net
+              _diffrn_refln_intensity_u
             """
         )
         if len(hkl_values[0]) == 6:
-            loop_base += "  _diffrn_refln.scale_group_code\n"
+            loop_base += "  _diffrn_refln_scale_group_code\n"
 
         hkl_string = "\n  ".join(" ".join(value) for value in hkl_values)
-        output_cif_text += "\n" + loop_base + "\n  " + hkl_string + "\n\n"
+        newest_cif_text += "\n" + loop_base + "\n  " + hkl_string + "\n\n"
 
         rewrite = True
 
-    if "_space_group_symop.id" not in output_cif_text:
+    if "_space_group_symop_id" not in newest_cif_text:
         newest_ins_path = next(
             reversed(
                 sorted(
@@ -86,16 +82,31 @@ def finalise__interactive(work_folder: str, output_cif_path: str):
         )
 
         symop_loop_str = ins2symop_loop(newest_ins_path)
+        cif2old = ['_space_group_symop.id', '_space_group_symop.operation_xyz']
+        for entry in cif2old:
+            symop_loop_str = symop_loop_str.replace(entry, entry.replace(".", "_"))
 
-        output_cif_text += "\n\n" + symop_loop_str
+        newest_cif_text += "\n\n" + symop_loop_str
         rewrite = True
 
-    if "_chemical_formula.sum" not in output_cif_text and "_chemical_oxdiff_formula" in output_cif_text:
-        output_cif_text = output_cif_text.replace("_chemical_oxdiff_formula", "_chemical_formula.sum")
+    if "_chemical_formula_sum" not in newest_cif_text and "_chemical_oxdiff_formula" in newest_cif_text:
+        oxdiff_formula_line = next(
+            line for line in newest_cif_text.split("\n") if "_chemical_oxdiff_formula" in line
+        )
+        new_line = oxdiff_formula_line.replace("_chemical_oxdiff_formula", "_chemical_formula_sum")
+        newest_cif_text += "\n\n" + new_line
         rewrite = True
 
     if rewrite:
-        output_cif_path.write_text(output_cif_text, encoding="UTF-8")
+        merged_cif_path = work_folder / "qcrbox_merged.cif"
+        merged_cif_path.write_text(newest_cif_text, encoding="UTF-8")
+        cif_file_merge_to_unified_by_yml(
+            merged_cif_path, output_cif_path, None, YAML_PATH, "interactive", "output_cif_path"
+        )
+    else:
+        cif_file_merge_to_unified_by_yml(
+            newest_cif_path, output_cif_path, None, YAML_PATH, "interactive", "output_cif_path"
+        )
 
 
 application.register_python_callable(
