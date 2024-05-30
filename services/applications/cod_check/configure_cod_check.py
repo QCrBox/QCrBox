@@ -1,18 +1,18 @@
 import json
 from pathlib import Path
 
-from qcrbox.registry.client import QCrBoxRegistryClient
 from qcrboxtools.cif.cif2cif import (
     cif_file_merge_to_unified_by_yml,
     cif_file_to_specific_by_yml,
 )
-
 from simple_cod_module import (
     cif_to_search_pars,
     download_cod_cif,
     get_fitting_cod_entries,
     get_number_fitting_cod_entries,
 )
+
+from qcrbox.registry.client import QCrBoxRegistryClient
 
 YAML_PATH = "./config_cod_check.yaml"
 
