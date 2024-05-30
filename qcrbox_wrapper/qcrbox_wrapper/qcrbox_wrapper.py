@@ -134,22 +134,23 @@ status_details : dict
 
 
 class UnsuccessfulCalculationError(Exception):
-    def __init__(self, calculation: "QCrBoxCalculation", prefix: Optional[str] = None):
+    def __init__(self, status: "QCrBoxCalculationStatus"):
         try:
-            error_message = calculation.status_details["details"]["msg"]
+            error_message = status.status_details["details"]["msg"]
         except KeyError:
             error_message = "No error message available"
 
         msg = dedent(f"""\
-            Calculation with id {calculation.id} does not have the status completed but {calculation.status}.
+            Calculation with id {status.calculation_id} does not have the status completed but {status.status}.
 
             Potential error message:
             {error_message}
         """).strip()
 
-        if prefix is not None:
-            msg = f"{prefix}:\n\n{msg}"
         super().__init__(msg)
+
+class InteractiveExecutionError(Exception):
+    pass
 
 
 class QCrBoxWrapper:
@@ -719,8 +720,8 @@ class QCrBoxInteractiveCommand(QCrBoxCommandBase):
             prepare_calculation = self.prepare_cmd(**prepare_arguments)
             try:
                 prepare_calculation.wait_while_running(0.1)
-            except UnsuccessfulCalculationError:
-                raise UnsuccessfulCalculationError(prepare_calculation, f"Prepare command of {self.name} failed")
+            except UnsuccessfulCalculationError as e:
+                raise InteractiveExecutionError(f"Prepare command of {self.name} failed") from e
 
     def execute_run(self, arguments: dict) -> Tuple["QCrBoxCalculation", dict]:
         """
@@ -738,7 +739,7 @@ class QCrBoxInteractiveCommand(QCrBoxCommandBase):
         """
         run_arguments = {key: val for key, val in arguments.items() if key in self.run_cmd.par_name_list}
         run_calculation = self.run_cmd(**run_arguments)
-        if run_calculation.status not in ("running", "completed"):
+        if run_calculation.status.status not in ("running", "completed"):
             raise UnsuccessfulCalculationError(run_calculation, f"Run command of {self.name} failed")
         return run_calculation
 
@@ -761,8 +762,8 @@ class QCrBoxInteractiveCommand(QCrBoxCommandBase):
             finalise_calculation = self.finalise_cmd(**finalise_arguments)
             try:
                 finalise_calculation.wait_while_running(0.1)
-            except UnsuccessfulCalculationError:
-                raise UnsuccessfulCalculationError(finalise_calculation, f"Finalise command of {self.name} failed")
+            except UnsuccessfulCalculationError as e:
+                raise InteractiveExecutionError(f"Finalise command of {self.name} failed") from e
 
     def __call__(self, *args, **kwargs) -> "QCrBoxCalculation":
         """
@@ -866,7 +867,7 @@ class QCrBoxCalculation:
         while self.status.status == "running":
             time.sleep(sleep_time)
         if self.status.status != "completed":
-            raise UnsuccessfulCalculationError(self)
+            raise UnsuccessfulCalculationError(self.status)
 
     def __repr__(self) -> str:
         return f"<QCrBoxCalculation(id={self.id}, parent_command={self.calculation_parent.name})>"
