@@ -39,6 +39,7 @@ dev = [
     "reuse",
     "ruff",
     "setuptools_scm",
+    "pytest",
 ]
 docs = [
     "markdown-exec[ansi]",
