@@ -36,6 +36,7 @@ import webbrowser
 from collections import namedtuple
 from functools import lru_cache
 from itertools import count
+from textwrap import dedent
 from typing import Dict, List, Optional, Tuple, Union
 
 
@@ -130,6 +131,25 @@ status : str
 status_details : dict
     Detailed status information of the calculation.
 """
+
+
+class UnsuccessfulCalculationError(Exception):
+    def __init__(self, calculation: "QCrBoxCalculation", prefix: Optional[str] = None):
+        try:
+            error_message = calculation.status_details["details"]["msg"]
+        except KeyError:
+            error_message = "No error message available"
+
+        msg = dedent(f"""\
+            Calculation with id {calculation.id} does not have the status completed but {calculation.status}.
+
+            Potential error message:
+            {error_message}
+        """).strip()
+
+        if prefix is not None:
+            msg = f"{prefix}:\n\n{msg}"
+        super().__init__(msg)
 
 
 class QCrBoxWrapper:
@@ -697,15 +717,10 @@ class QCrBoxInteractiveCommand(QCrBoxCommandBase):
             prepare_arguments = {key: val for key, val in arguments.items() if key in self.prepare_cmd.par_name_list}
 
             prepare_calculation = self.prepare_cmd(**prepare_arguments)
-            prepare_calculation.wait_while_running(0.1)
-
-            if "input_cif_path" in prepare_arguments:
-                # TODO: Replace with return value from prepare command when refactoring done there
-                input_cif_path = pathlib.PurePosixPath(arguments["input_cif_path"])
-                replace_dict = {"input_cif_path": str(input_cif_path.parent / "qcrbox_work.cif")}
-
-                arguments.update(replace_dict)
-        return arguments
+            try:
+                prepare_calculation.wait_while_running(0.1)
+            except UnsuccessfulCalculationError:
+                raise UnsuccessfulCalculationError(prepare_calculation, f"Prepare command of {self.name} failed")
 
     def execute_run(self, arguments: dict) -> Tuple["QCrBoxCalculation", dict]:
         """
@@ -723,7 +738,9 @@ class QCrBoxInteractiveCommand(QCrBoxCommandBase):
         """
         run_arguments = {key: val for key, val in arguments.items() if key in self.run_cmd.par_name_list}
         run_calculation = self.run_cmd(**run_arguments)
-        return run_calculation, arguments
+        if run_calculation.status not in ("running", "completed"):
+            raise UnsuccessfulCalculationError(run_calculation, f"Run command of {self.name} failed")
+        return run_calculation
 
     def execute_finalise(self, arguments: dict) -> dict:
         """
@@ -742,10 +759,10 @@ class QCrBoxInteractiveCommand(QCrBoxCommandBase):
         if self.finalise_cmd is not None:
             finalise_arguments = {key: val for key, val in arguments.items() if key in self.finalise_cmd.par_name_list}
             finalise_calculation = self.finalise_cmd(**finalise_arguments)
-
-            finalise_calculation.wait_while_running(0.1)
-
-        return arguments
+            try:
+                finalise_calculation.wait_while_running(0.1)
+            except UnsuccessfulCalculationError:
+                raise UnsuccessfulCalculationError(finalise_calculation, f"Finalise command of {self.name} failed")
 
     def __call__(self, *args, **kwargs) -> "QCrBoxCalculation":
         """
@@ -772,14 +789,14 @@ class QCrBoxInteractiveCommand(QCrBoxCommandBase):
         """
         arguments = self.args_to_kwargs(*args, **kwargs)
 
-        arguments = self.execute_prepare(arguments)
-        run_calculation, arguments = self.execute_run(arguments)
+        self.execute_prepare(arguments)
+        run_calculation = self.execute_run(arguments)
         if self.gui_url is not None:
             webbrowser.open(self.gui_url)
 
             input("Press enter when you have finished your interactive session")
 
-        arguments = self.execute_finalise(arguments)
+        self.execute_finalise(arguments)
 
         return run_calculation
 
@@ -849,10 +866,7 @@ class QCrBoxCalculation:
         while self.status.status == "running":
             time.sleep(sleep_time)
         if self.status.status != "completed":
-            raise RuntimeError(
-                f"Reported status is not completed but: {self.status.status}. "
-                + "Check status infos or Docker logs for error messages"
-            )
+            raise UnsuccessfulCalculationError(self)
 
     def __repr__(self) -> str:
         return f"<QCrBoxCalculation(id={self.id}, parent_command={self.calculation_parent.name})>"
