@@ -39,3 +39,4 @@ cif_entry_sets:
     required: ["_cif_category.another_ddlm_entry"]
     optional: ["_cif_category.another_ddl1_entry"]
 
+qcrbox_yaml_spec_version: "0.1"
