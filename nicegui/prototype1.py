@@ -35,15 +35,26 @@ class QCrBoxInteractiveHelper:
     def start_interactive(self, *args, **kwargs):
         self.finalised_run = False
         arguments = self.command.args_to_kwargs(*args, **kwargs)
-
-        arguments = self.command.execute_prepare(arguments)
-        _, arguments = self.command.execute_run(arguments)
+        try:
+            self.command.execute_prepare(arguments)
+        except Exception as e:
+            ui.notify(f"Error: {e}")
+            return None
+        try:
+            _ = self.command.execute_run(arguments)
+        except Exception as e:
+            ui.notify(f"Error: {e}")
+            return None
         self.current_arguments = arguments
         self.started_run = True
         webbrowser.open(self.command.gui_url)
 
     def finalise(self):
-        self.command.execute_finalise(self.current_arguments)
+        try:
+            self.command.execute_finalise(self.current_arguments)
+        except Exception as e:
+            ui.notify(f"Error: {e}")
+            return None
         self.finalised_run = True
 
 
@@ -76,6 +87,7 @@ def click_btn_cap_finalise():
 def click_btn_olex2_start():
     olex2.start_interactive(
         input_cif_path=olex2.qcrbox_app_dir / "input.cif",
+        work_cif_path=olex2.qcrbox_app_dir / "work.cif",
         output_cif_path=olex2.qcrbox_app_dir / "output.cif",
     )
 
@@ -90,6 +102,7 @@ def click_btn_olex2_finalise():
 def click_btn_cryst_exp_start():
     crystal_explorer.start_interactive(
         input_cif_path=crystal_explorer.qcrbox_app_dir / "input.cif",
+        work_cif_path=crystal_explorer.qcrbox_app_dir / "work.cif",
     )
 
 
