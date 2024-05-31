@@ -58,7 +58,7 @@ class QCrBoxInteractiveHelper:
         self.finalised_run = True
 
 
-pathhelper = QCrBoxPathHelper.from_dotenv(".env.dev", "gui_folder")
+pathhelper = QCrBoxPathHelper.from_dotenv(".env.dev", "gui_folder/prototype1")
 
 qcrbox = QCrBoxWrapper("127.0.0.1", 11000)
 
