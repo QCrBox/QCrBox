@@ -5,7 +5,7 @@ USER root
 
 RUN apt-get update -y && \
     apt-get install -y --fix-missing --no-install-recommends \
-        supervisor nano curl file wget rsync git \
+        supervisor nano curl file iputils-ping wget rsync git \
         gosu htop less ncdu procps psmisc tmux tree vim \
         tar cabextract gzip bzip2 zip unzip xzip xz-utils \
         gcc make bash-completion locales \
