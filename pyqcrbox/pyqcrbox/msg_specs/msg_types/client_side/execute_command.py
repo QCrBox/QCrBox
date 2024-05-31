@@ -12,7 +12,7 @@ PayloadForExecuteCommand = sql_models.CommandExecutionCreate
 
 
 class ExecuteCommand(QCrBoxBaseAction):
-    action: Literal["execute_command"]
+    action: Literal["execute_command"] = "execute_command"
     payload: PayloadForExecuteCommand
 
 

@@ -18,7 +18,7 @@ class PayloadForPollCalculationStatus(QCrBoxBasePayload):
 
 
 class PollCalculationStatus(QCrBoxBaseAction):
-    action: Literal["poll_calculation_status"]
+    action: Literal["poll_calculation_status"] = "poll_calculation_status"
     payload: PayloadForPollCalculationStatus
 
 

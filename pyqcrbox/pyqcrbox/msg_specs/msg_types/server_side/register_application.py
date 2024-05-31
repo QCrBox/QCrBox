@@ -16,5 +16,5 @@ class PayloadForRegisterApplicationResponse(QCrBoxBasePayload):
 
 
 class RegisterApplication(QCrBoxBaseAction):
-    action: Literal["register_application"]
+    action: Literal["register_application"] = "register_application"
     payload: PayloadForRegisterApplication

@@ -10,5 +10,5 @@ PayloadForCommandInvocationRequest = sql_models.CommandInvocationCreate
 
 
 class CommandInvocationRequest(QCrBoxBaseAction):
-    action: Literal["command_invocation_request"]
+    action: Literal["command_invocation_request"] = "command_invocation_request"
     payload: PayloadForCommandInvocationRequest

@@ -6,4 +6,4 @@ __all__ = ["HealthCheck"]
 
 
 class HealthCheck(QCrBoxBaseAction):
-    action: Literal["health_check"]
+    action: Literal["health_check"] = "health_check"

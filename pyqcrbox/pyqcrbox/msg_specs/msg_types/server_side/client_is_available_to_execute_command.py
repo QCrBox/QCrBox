@@ -12,5 +12,5 @@ class PayloadForClientIsAvailableToExecuteCommand(QCrBoxBasePayload):
 
 
 class ClientIsAvailableToExecuteCommand(QCrBoxBaseAction):
-    action: Literal["client_is_available_to_execute_command"]
+    action: Literal["client_is_available_to_execute_command"] = "client_is_available_to_execute_command"
     payload: PayloadForClientIsAvailableToExecuteCommand
