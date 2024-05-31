@@ -2,6 +2,9 @@ ARG QCRBOX_DOCKER_TAG
 FROM qcrbox/base-ancestor:${QCRBOX_DOCKER_TAG}
 SHELL ["/bin/bash", "-c"]
 
+ENV QCRBOX__REGISTRY__SERVER__HOST="0.0.0.0"
+ENV QCRBOX__REGISTRY__SERVER__PORT="8000"
+
 HEALTHCHECK \
     --interval=10s \
     #--start-period=${STARTUP_TIME}s \
