@@ -3,8 +3,10 @@ FROM qcrbox/base-ancestor:${QCRBOX_DOCKER_TAG}
 SHELL ["/bin/bash", "-c"]
 
 HEALTHCHECK \
-    --interval=5s \
-    CMD test -f /tmp/SENTINEL_QCRBOX_CLIENT_STARTUP_SUCCESSFUL.txt || exit 1
+    --interval=10s \
+    #--start-period=${STARTUP_TIME}s \
+    #--start-interval=${STARTUP_TIME}s \
+    CMD curl --fail http://localhost:${QCRBOX__REGISTRY__CLIENT__PORT}/health-check || exit 1
 
 ARG QCRBOX_SUPERVISORD_CONF_DIR=${QCRBOX_SUPERVISORD_CONF_DIR}
 COPY supervisord.base_application.conf ${QCRBOX_SUPERVISORD_CONF_DIR}/
