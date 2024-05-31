@@ -33,6 +33,7 @@ dev = [
     "ipdb",
     "ipython",
     "pre-commit",
+    "requests",
     "reuse",
     "ruff",
     "setuptools_scm",
