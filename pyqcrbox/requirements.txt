@@ -28,7 +28,7 @@ doit==0.36.0
     # via pyqcrbox (pyproject.toml)
 fast-depends==2.4.3
     # via faststream
-faststream==0.5.9
+faststream==0.5.10
     # via pyqcrbox (pyproject.toml)
 filelock==3.14.0
     # via virtualenv
@@ -40,7 +40,7 @@ greenlet==3.0.3
     # via sqlalchemy
 h11==0.14.0
     # via httpcore
-hatch==1.11.1
+hatch==1.12.0
     # via pyqcrbox (pyproject.toml)
 hatchling==1.24.2
     # via hatch
@@ -96,13 +96,13 @@ pluggy==1.5.0
     # via hatchling
 ptyprocess==0.7.0
     # via pexpect
-pydantic==2.7.1
+pydantic==2.7.2
     # via
     #   pyqcrbox (pyproject.toml)
     #   fast-depends
     #   pydantic-settings
     #   sqlmodel
-pydantic-core==2.18.2
+pydantic-core==2.18.3
     # via pydantic
 pydantic-settings==2.2.1
     # via pyqcrbox (pyproject.toml)
@@ -139,7 +139,7 @@ trove-classifiers==2024.5.22
     # via hatchling
 typer==0.12.3
     # via faststream
-typing-extensions==4.11.0
+typing-extensions==4.12.0
     # via
     #   faststream
     #   pydantic
@@ -148,7 +148,7 @@ typing-extensions==4.11.0
     #   typer
 userpath==1.9.2
     # via hatch
-uv==0.2.4
+uv==0.2.5
     # via hatch
 virtualenv==20.26.2
     # via hatch

@@ -62,7 +62,7 @@ fast-depends==2.4.3
     # via faststream
 fastjsonschema==2.19.1
     # via nbformat
-faststream==0.5.9
+faststream==0.5.10
     # via pyqcrbox (pyproject.toml)
 filelock==3.14.0
     # via virtualenv
@@ -76,7 +76,7 @@ greenlet==3.0.3
     # via sqlalchemy
 h11==0.14.0
     # via httpcore
-hatch==1.11.1
+hatch==1.12.0
     # via pyqcrbox (pyproject.toml)
 hatchling==1.24.2
     # via hatch
@@ -97,7 +97,7 @@ importlib-metadata==7.1.0
     # via doit
 ipykernel==6.29.4
     # via mkdocs-jupyter
-ipython==8.24.0
+ipython==8.25.0
     # via ipykernel
 jaraco-classes==3.4.0
     # via keyring
@@ -178,7 +178,7 @@ mkdocs-get-deps==0.2.0
     # via mkdocs
 mkdocs-jupyter==0.24.7
     # via pyqcrbox (pyproject.toml)
-mkdocs-material==9.5.24
+mkdocs-material==9.5.25
     # via
     #   pyqcrbox (pyproject.toml)
     #   mkdocs-jupyter
@@ -235,7 +235,7 @@ platformdirs==4.2.2
     #   virtualenv
 pluggy==1.5.0
     # via hatchling
-prompt-toolkit==3.0.43
+prompt-toolkit==3.0.45
     # via ipython
 psutil==5.9.8
     # via ipykernel
@@ -243,13 +243,13 @@ ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.2
     # via stack-data
-pydantic==2.7.1
+pydantic==2.7.2
     # via
     #   pyqcrbox (pyproject.toml)
     #   fast-depends
     #   pydantic-settings
     #   sqlmodel
-pydantic-core==2.18.2
+pydantic-core==2.18.3
     # via pydantic
 pydantic-settings==2.2.1
     # via pyqcrbox (pyproject.toml)
@@ -290,7 +290,7 @@ referencing==0.35.1
     #   jsonschema-specifications
 regex==2024.5.15
     # via mkdocs-material
-requests==2.32.2
+requests==2.32.3
     # via mkdocs-material
 rich==13.7.1
     # via
@@ -351,7 +351,7 @@ trove-classifiers==2024.5.22
     # via hatchling
 typer==0.12.3
     # via faststream
-typing-extensions==4.11.0
+typing-extensions==4.12.0
     # via
     #   faststream
     #   pydantic
@@ -362,7 +362,7 @@ urllib3==2.2.1
     # via requests
 userpath==1.9.2
     # via hatch
-uv==0.2.4
+uv==0.2.5
     # via hatch
 virtualenv==20.26.2
     # via hatch

@@ -66,10 +66,12 @@ colorama==0.4.6
     # via mkdocs-material
 comm==0.2.2
     # via ipykernel
-coverage==7.5.2
+coverage==7.5.3
     # via pytest-cov
 debugpy==1.8.1
     # via ipykernel
+decopatch==1.4.10
+    # via pytest-cases
 decorator==5.1.1
     # via
     #   ipdb
@@ -82,13 +84,13 @@ doit==0.36.0
     # via pyqcrbox (pyproject.toml)
 executing==2.0.1
     # via stack-data
-faker==25.2.0
+faker==25.3.0
     # via polyfactory
 fast-depends==2.4.3
     # via faststream
 fastjsonschema==2.19.1
     # via nbformat
-faststream==0.5.9
+faststream==0.5.10
     # via pyqcrbox (pyproject.toml)
 filelock==3.14.0
     # via virtualenv
@@ -106,7 +108,7 @@ h11==0.14.0
     # via
     #   httpcore
     #   uvicorn
-hatch==1.11.1
+hatch==1.12.0
     # via pyqcrbox (pyproject.toml)
 hatchling==1.24.2
     # via hatch
@@ -139,7 +141,7 @@ ipdb==0.13.13
     # via pyqcrbox (pyproject.toml)
 ipykernel==6.29.4
     # via mkdocs-jupyter
-ipython==8.24.0
+ipython==8.25.0
     # via
     #   pyqcrbox (pyproject.toml)
     #   ipdb
@@ -185,6 +187,10 @@ litestar==2.8.3
     # via pyqcrbox (pyproject.toml)
 loguru==0.7.2
     # via pyqcrbox (pyproject.toml)
+makefun==1.15.2
+    # via
+    #   decopatch
+    #   pytest-cases
 markdown==3.6
     # via
     #   mkdocs
@@ -228,7 +234,7 @@ mkdocs-get-deps==0.2.0
     # via mkdocs
 mkdocs-jupyter==0.24.7
     # via pyqcrbox (pyproject.toml)
-mkdocs-material==9.5.24
+mkdocs-material==9.5.25
     # via
     #   pyqcrbox (pyproject.toml)
     #   mkdocs-jupyter
@@ -261,7 +267,7 @@ nbformat==5.10.4
     #   nbconvert
 nest-asyncio==1.6.0
     # via ipykernel
-nodeenv==1.8.0
+nodeenv==1.9.0
     # via pre-commit
 packaging==24.0
     # via
@@ -272,6 +278,7 @@ packaging==24.0
     #   mkdocs
     #   nbconvert
     #   pytest
+    #   pytest-cases
     #   setuptools-scm
 paginate==0.5.6
     # via mkdocs-material
@@ -303,7 +310,7 @@ polyfactory==2.16.0
     # via litestar
 pre-commit==3.7.1
     # via pyqcrbox (pyproject.toml)
-prompt-toolkit==3.0.43
+prompt-toolkit==3.0.45
     # via ipython
 psutil==5.9.8
     # via ipykernel
@@ -311,13 +318,13 @@ ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.2
     # via stack-data
-pydantic==2.7.1
+pydantic==2.7.2
     # via
     #   pyqcrbox (pyproject.toml)
     #   fast-depends
     #   pydantic-settings
     #   sqlmodel
-pydantic-core==2.18.2
+pydantic-core==2.18.3
     # via pydantic
 pydantic-settings==2.2.1
     # via pyqcrbox (pyproject.toml)
@@ -339,6 +346,8 @@ pytest==8.2.1
     #   pytest-asyncio
     #   pytest-cov
 pytest-asyncio==0.23.7
+    # via pyqcrbox (pyproject.toml)
+pytest-cases==3.8.5
     # via pyqcrbox (pyproject.toml)
 pytest-cov==5.0.0
     # via pyqcrbox (pyproject.toml)
@@ -375,8 +384,10 @@ referencing==0.35.1
     #   jsonschema-specifications
 regex==2024.5.15
     # via mkdocs-material
-requests==2.32.2
-    # via mkdocs-material
+requests==2.32.3
+    # via
+    #   pyqcrbox (pyproject.toml)
+    #   mkdocs-material
 reuse==3.0.2
     # via pyqcrbox (pyproject.toml)
 rich==13.7.1
@@ -392,12 +403,10 @@ rpds-py==0.18.1
     # via
     #   jsonschema
     #   referencing
-ruff==0.4.5
+ruff==0.4.6
     # via pyqcrbox (pyproject.toml)
 setuptools==70.0.0
-    # via
-    #   nodeenv
-    #   setuptools-scm
+    # via setuptools-scm
 setuptools-scm==8.1.0
     # via pyqcrbox (pyproject.toml)
 shellingham==1.5.4
@@ -459,7 +468,7 @@ types-setuptools==70.0.0.20240524
     # via pyqcrbox (pyproject.toml)
 types-ujson==5.10.0.20240515
     # via pyqcrbox (pyproject.toml)
-typing-extensions==4.11.0
+typing-extensions==4.12.0
     # via
     #   faststream
     #   grimp
@@ -476,11 +485,11 @@ urllib3==2.2.1
     # via requests
 userpath==1.9.2
     # via hatch
-uv==0.2.4
+uv==0.2.5
     # via
     #   pyqcrbox (pyproject.toml)
     #   hatch
-uvicorn==0.29.0
+uvicorn==0.30.0
     # via pyqcrbox (pyproject.toml)
 uvloop==0.19.0
     # via uvicorn
@@ -490,7 +499,7 @@ virtualenv==20.26.2
     #   pre-commit
 watchdog==4.0.1
     # via mkdocs
-watchfiles==0.21.0
+watchfiles==0.22.0
     # via uvicorn
 wcmatch==8.5.2
     # via mkdocs-awesome-pages-plugin

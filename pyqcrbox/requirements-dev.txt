@@ -25,12 +25,15 @@ certifi==2024.2.2
     # via
     #   httpcore
     #   httpx
+    #   requests
 cfgv==3.4.0
     # via pre-commit
 chardet==5.2.0
     # via
     #   binaryornot
     #   python-debian
+charset-normalizer==3.3.2
+    # via requests
 click==8.1.7
     # via
     #   hatch
@@ -39,8 +42,10 @@ click==8.1.7
     #   userpath
 cloudpickle==3.0.0
     # via doit
-coverage==7.5.2
+coverage==7.5.3
     # via pytest-cov
+decopatch==1.4.10
+    # via pytest-cases
 decorator==5.1.1
     # via
     #   ipdb
@@ -53,7 +58,7 @@ executing==2.0.1
     # via stack-data
 fast-depends==2.4.3
     # via faststream
-faststream==0.5.9
+faststream==0.5.10
     # via pyqcrbox (pyproject.toml)
 filelock==3.14.0
     # via virtualenv
@@ -67,7 +72,7 @@ grimp==3.2
     # via import-linter
 h11==0.14.0
     # via httpcore
-hatch==1.11.1
+hatch==1.12.0
     # via pyqcrbox (pyproject.toml)
 hatchling==1.24.2
     # via hatch
@@ -84,6 +89,7 @@ idna==3.7
     #   anyio
     #   httpx
     #   hyperlink
+    #   requests
     #   yarl
 import-linter==2.0
     # via pyqcrbox (pyproject.toml)
@@ -93,7 +99,7 @@ iniconfig==2.0.0
     # via pytest
 ipdb==0.13.13
     # via pyqcrbox (pyproject.toml)
-ipython==8.24.0
+ipython==8.25.0
     # via
     #   pyqcrbox (pyproject.toml)
     #   ipdb
@@ -113,6 +119,10 @@ license-expression==30.3.0
     # via reuse
 loguru==0.7.2
     # via pyqcrbox (pyproject.toml)
+makefun==1.15.2
+    # via
+    #   decopatch
+    #   pytest-cases
 markdown-it-py==3.0.0
     # via rich
 markupsafe==2.1.5
@@ -131,13 +141,14 @@ mypy==1.10.0
     # via pyqcrbox (pyproject.toml)
 mypy-extensions==1.0.0
     # via mypy
-nodeenv==1.8.0
+nodeenv==1.9.0
     # via pre-commit
 packaging==24.0
     # via
     #   hatch
     #   hatchling
     #   pytest
+    #   pytest-cases
     #   setuptools-scm
 pamqp==3.3.0
     # via aiormq
@@ -159,19 +170,19 @@ pluggy==1.5.0
     #   pytest
 pre-commit==3.7.1
     # via pyqcrbox (pyproject.toml)
-prompt-toolkit==3.0.43
+prompt-toolkit==3.0.45
     # via ipython
 ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.2
     # via stack-data
-pydantic==2.7.1
+pydantic==2.7.2
     # via
     #   pyqcrbox (pyproject.toml)
     #   fast-depends
     #   pydantic-settings
     #   sqlmodel
-pydantic-core==2.18.2
+pydantic-core==2.18.3
     # via pydantic
 pydantic-settings==2.2.1
     # via pyqcrbox (pyproject.toml)
@@ -186,6 +197,8 @@ pytest==8.2.1
     #   pytest-cov
 pytest-asyncio==0.23.7
     # via pyqcrbox (pyproject.toml)
+pytest-cases==3.8.5
+    # via pyqcrbox (pyproject.toml)
 pytest-cov==5.0.0
     # via pyqcrbox (pyproject.toml)
 python-debian==0.1.49
@@ -194,6 +207,8 @@ python-dotenv==1.0.1
     # via pydantic-settings
 pyyaml==6.0.1
     # via pre-commit
+requests==2.32.3
+    # via pyqcrbox (pyproject.toml)
 reuse==3.0.2
     # via pyqcrbox (pyproject.toml)
 rich==13.7.1
@@ -201,12 +216,10 @@ rich==13.7.1
     #   pyqcrbox (pyproject.toml)
     #   hatch
     #   typer
-ruff==0.4.5
+ruff==0.4.6
     # via pyqcrbox (pyproject.toml)
 setuptools==70.0.0
-    # via
-    #   nodeenv
-    #   setuptools-scm
+    # via setuptools-scm
 setuptools-scm==8.1.0
     # via pyqcrbox (pyproject.toml)
 shellingham==1.5.4
@@ -248,7 +261,7 @@ types-setuptools==70.0.0.20240524
     # via pyqcrbox (pyproject.toml)
 types-ujson==5.10.0.20240515
     # via pyqcrbox (pyproject.toml)
-typing-extensions==4.11.0
+typing-extensions==4.12.0
     # via
     #   faststream
     #   grimp
@@ -258,9 +271,11 @@ typing-extensions==4.11.0
     #   pydantic-core
     #   sqlalchemy
     #   typer
+urllib3==2.2.1
+    # via requests
 userpath==1.9.2
     # via hatch
-uv==0.2.4
+uv==0.2.5
     # via
     #   pyqcrbox (pyproject.toml)
     #   hatch
