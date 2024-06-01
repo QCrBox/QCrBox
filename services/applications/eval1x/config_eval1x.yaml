@@ -148,3 +148,5 @@ cif_entry_sets:
       "_cell.angle_gamma_su",
       "_cell.volume_su",
     ]
+
+qcrbox_yaml_spec_version: "0.1"

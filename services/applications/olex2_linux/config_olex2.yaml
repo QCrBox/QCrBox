@@ -21,6 +21,9 @@ commands:
         optional_entry_sets: ["atom_data"]
         merge_su: Yes
         custom_categories: ["iucr", "shelx"]
+      - name: "work_cif_path"
+        type: "QCrBox.work_cif"
+        description: "Path used for creating the specific cif file in Olex compatible format."
       - name: "output_cif_path"
         type: "QCrBox.output_cif"
         default_value: None
@@ -42,11 +45,11 @@ commands:
         implemented_as: "python_callable"
         module: "configure_olex2"
         function: "prepare__interactive"
-        used_basecommand_parameters: ["input_cif_path"]
+        used_basecommand_parameters: ["input_cif_path", "work_cif_path"]
       run:
         implemented_as: "CLI"
-        command: "/bin/bash /opt/olex2/start {input_cif_path}"
-        used_basecommand_parameters: ["input_cif_path"]
+        command: "/bin/bash /opt/olex2/start {work_cif_path}"
+        used_basecommand_parameters: ["work_cif_path"]
       finalise:
         implemented_as: "python_callable"
         module: "configure_olex2"
@@ -503,3 +506,5 @@ cif_entry_sets:
     optional: [
       "_olex2_refine_details"
     ]
+
+qcrbox_yaml_spec_version: "0.1"
