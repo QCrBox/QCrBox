@@ -10,17 +10,46 @@ Make sure you have the necessary prerequisites installed.
     [raise an issue](https://github.com/QCrBox/QCrBox/issues/new){:target="_blank"}
     on GitHub if you experience any problems.
 
-```
+    Note that QCrBox requires Docker Engine version 25.0 or later due to the use of `--start-interval`
+    in container [health checks](https://docs.docker.com/reference/dockerfile/#healthcheck).
 
+```
 $ python --version
 Python 3.11.5
 
-$ docker --version
-Docker version 24.0.6, build ed223bc
+$ docker version
+Client:
+ Version:           24.0.9
+ API version:       1.43
+ Go version:        go1.22.5
+ Git commit:        v24.0.9
+ Built:             Thu Jan  1 00:00:00 1970
+ OS/Arch:           linux/amd64
+ Context:           default
+
+Server: Docker Engine - Community
+ Engine:
+  Version:          27.1.1
+  API version:      1.46 (minimum version 1.24)
+  Go version:       go1.21.12
+  Git commit:       cc13f95
+  Built:            Tue Jul 23 19:57:01 2024
+  OS/Arch:          linux/amd64
+  Experimental:     false
+ containerd:
+  Version:          1.7.19
+  GitCommit:        2bf793ef6dc9a18e00cb12efb64355c2c9d5eb41
+ runc:
+  Version:          1.7.19
+  GitCommit:        v1.1.13-0-g58aa920
+ docker-init:
+  Version:          0.19.0
+  GitCommit:        de40ad0
 
 $ docker compose version
 Docker Compose version v2.21.0
 ```
+
 
 ## Clone the QCrBox repository
 ```
