@@ -79,12 +79,12 @@ def click_btn_cap_start():
 
 def click_btn_cap_finalise():
     cryspro.finalise()
-    if not olex2.local_app_dir.exists():
-        olex2.local_app_dir.mkdir()
-    shutil.copy(cryspro.local_app_dir / "output.cif", olex2.local_app_dir / "input.cif")
 
 
 def click_btn_olex2_start():
+    if not olex2.local_app_dir.exists():
+        olex2.local_app_dir.mkdir()
+    shutil.copy(cryspro.local_app_dir / "output.cif", olex2.local_app_dir / "input.cif")
     olex2.start_interactive(
         input_cif_path=olex2.qcrbox_app_dir / "input.cif",
         work_cif_path=olex2.qcrbox_app_dir / "work.cif",
@@ -94,12 +94,12 @@ def click_btn_olex2_start():
 
 def click_btn_olex2_finalise():
     olex2.finalise()
-    if not crystal_explorer.local_app_dir.exists():
-        crystal_explorer.local_app_dir.mkdir()
-    shutil.copy(olex2.local_app_dir / "output.cif", crystal_explorer.local_app_dir / "input.cif")
 
 
 def click_btn_cryst_exp_start():
+    if not crystal_explorer.local_app_dir.exists():
+        crystal_explorer.local_app_dir.mkdir()
+    shutil.copy(olex2.local_app_dir / "output.cif", crystal_explorer.local_app_dir / "input.cif")
     crystal_explorer.start_interactive(
         input_cif_path=crystal_explorer.qcrbox_app_dir / "input.cif",
         work_cif_path=crystal_explorer.qcrbox_app_dir / "work.cif",
@@ -112,8 +112,8 @@ def click_btn_setup():
         application.finalised_run = False
 
     btn_cap_start.enabled = False
-    this_script = Path(__file__).parents[1]
-    frames_zip = this_script / "docs/tutorials/examples/input_files/Ylid_Mo_RT.zip"
+    qcrbox_basedir = Path(__file__).parents[1]
+    frames_zip = qcrbox_basedir / "docs/tutorials/examples/input_files/Ylid_Mo_RT.zip"
     if not frames_zip.exists():
         url = f"https://github.com/QCrBox/QCrBoxExamples/raw/main/CrysAlisPro/{frames_zip.name}"
         urllib.request.urlretrieve(url, frames_zip)
@@ -140,7 +140,7 @@ ui.markdown(
         f"""
         # QCrBox GUI Prototype 1
 
-        This is a prototype for developing the interaction of QCrBox with a GUI. Task 1: Three interactive tasks.
+        This is a prototype for developing the interaction of QCrBox with a GUI.
 
         The work directory is `{pathhelper.local_path}`
     """
