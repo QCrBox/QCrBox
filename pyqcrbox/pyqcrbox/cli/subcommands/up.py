@@ -36,18 +36,25 @@ from .build import populate_build_tasks
     default=False,
     help="Display actions that would be performed without actually doing anything.",
 )
+@click.option(
+    "-p",
+    "--project-name",
+    default="qcrbox",
+    help="Docker project name (see https://docs.docker.com/compose/project-name/)",
+)
 @add_verbose_option
 @click.argument("components", nargs=-1)
 def start_up_components(
     build: Optional[bool],
     build_deps: Optional[bool],
     dry_run: bool,
+    project_name: str,
     components: list[str],
 ):
     """
     Start up QCrBox components.
     """
-    docker_project = DockerProject()
+    docker_project = DockerProject(name=project_name)
 
     def fill_default_values(build, build_deps):
         match (build, build_deps):
