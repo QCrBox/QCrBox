@@ -8,7 +8,7 @@ services:
     hostname: "qcrbox-message-bus"
     ports:
       - "${QCRBOX_BIND_ADDRESS:?Must set env var QCRBOX_BIND_ADDRESS}:${QCRBOX__RABBITMQ__PORT:?Must set env var QCRBOX__RABBITMQ__PORT}:5672"
-      - "${QCRBOX_BIND_ADDRESS:?Must set env var QCRBOX_BIND_ADDRESS}:${QCRBOX_RABBITMQ_MANAGEMENT_PORT:?Must set env var QCRBOX_RABBITMQ_MANAGEMENT_PORT}:15672"
+      - "${QCRBOX_BIND_ADDRESS:?Must set env var QCRBOX_BIND_ADDRESS}:${QCRBOX__RABBITMQ__MANAGEMENT_PORT:?Must set env var QCRBOX__RABBITMQ__MANAGEMENT_PORT}:15672"
 #      - "${QCRBOX_BIND_ADDRESS:?Must set env var QCRBOX_BIND_ADDRESS}:${QCRBOX_PORT_WEBSOCKET:?Must set env var QCRBOX_PORT_WEBSOCKET}:4000"
     restart: unless-stopped
     healthcheck:
