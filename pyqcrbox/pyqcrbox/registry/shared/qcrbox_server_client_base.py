@@ -3,7 +3,9 @@ from abc import ABCMeta, abstractmethod
 from contextlib import asynccontextmanager
 from typing import AsyncContextManager, Callable, Optional, assert_never
 
+import aiormq
 import anyio
+import stamina
 import uvicorn
 from anyio import TASK_STATUS_IGNORED
 from anyio.abc import TaskStatus
@@ -87,7 +89,10 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
         logger.trace(f"==> Entering {self.clsname} lifespan function...")
 
         self._set_up_rabbitmq_broker()
-        await self.broker.start()
+
+        for attempt in stamina.retry_context(on=aiormq.exceptions.AMQPConnectionError, timeout=60.0, attempts=None):
+            with attempt:
+                await self.broker.start()
 
         await self.execute_startup_hooks(**self._run_kwargs)
 
