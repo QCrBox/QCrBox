@@ -19,6 +19,7 @@ from ..helpers import (
     prettyprint_called_process_error,
     run_tasks,
 )
+from ..helpers.compose_file_config import QCrBoxNoBuildContext
 
 
 @click.command(name="build", cls=ClickCommandCls)
@@ -190,24 +191,27 @@ def task_build_qcrboxtools_python_package(dry_run: bool):
 
 @make_task
 def task_build_docker_image(service: str, docker_project: DockerProject, with_deps: bool, dry_run: bool):
-    build_context = docker_project.get_build_context(service)
     actions = []
 
-    prebuild_scripts = sorted(Path(build_context).glob("prebuild_*.py"))
-    if prebuild_scripts != []:
-        logger.debug(f"Found {len(prebuild_scripts)} prebuild script(s) for {service!r}")
-        if not dry_run:
-            actions += [f"cd {build_context} && python {script.absolute()}" for script in prebuild_scripts]
+    try:
+        build_context = docker_project.get_build_context(service)
 
-    actions.append((docker_project.build_single_docker_image, (service, dry_run)))
+        prebuild_scripts = sorted(Path(build_context).glob("prebuild_*.py"))
+        if prebuild_scripts != []:
+            logger.debug(f"Found {len(prebuild_scripts)} prebuild script(s) for {service!r}")
+            if not dry_run:
+                actions += [f"cd {build_context} && python {script.absolute()}" for script in prebuild_scripts]
 
+        actions.append((docker_project.build_single_docker_image, (service, dry_run)))
+    except QCrBoxNoBuildContext:
+        logger.debug(f"No local build context found for service {service!r}, nothing to do.")
+
+    task_deps = []
     if with_deps:
         dependent_services = docker_project.get_direct_dependencies(service, include_build_deps=True)
         task_deps = [f"task_build_service:{dep}" for dep in dependent_services]
         if service == "base-ancestor":
             task_deps.append("task_build_python_package:pyqcrbox")
-    else:
-        task_deps = []
 
     return {
         "name": f"task_build_service:{service}",

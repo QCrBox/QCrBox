@@ -34,6 +34,10 @@ def load_docker_compose_data(*compose_files: PathLike):
     return docker_compose_data
 
 
+class QCrBoxNoBuildContext(Exception):
+    pass
+
+
 class ComposeFileConfig:
     def __init__(self, *, compose_files_build=None, compose_files_runtime=None):
         compose_files_build = compose_files_build or ()
@@ -83,24 +87,33 @@ class ComposeFileConfig:
 
     def get_build_context(self, service_name):
         try:
-            return self._full_service_metadata["services"][service_name]["build"]["context"]
+            service_metadata = self._full_service_metadata["services"][service_name]
         except KeyError:
             click.echo(f"Invalid component name: {service_name!r}")
             click.echo()
             click.echo("Run 'qcb list components' to get a list of valid component names.")
             sys.exit(1)
 
+        try:
+            return service_metadata["build"]["context"]
+        except KeyError:
+            raise QCrBoxNoBuildContext()
+
     def get_dockerfile_for_service(self, service_name):
         build_context = self.get_build_context(service_name)
         return self.repo_root.joinpath(build_context).joinpath("Dockerfile")
 
     def get_build_dependencies(self, service_name):
-        dockerfile = self.get_dockerfile_for_service(service_name)
-        contents = dockerfile.open().readlines()
-        dependency_lines = [line for line in contents if line.startswith("FROM qcrbox")]
-        dependency_names = [
-            re.match("^FROM qcrbox/(?P<image_name>.*):", line).group("image_name") for line in dependency_lines
-        ]
+        try:
+            dockerfile = self.get_dockerfile_for_service(service_name)
+            contents = dockerfile.open().readlines()
+            dependency_lines = [line for line in contents if line.startswith("FROM qcrbox")]
+            dependency_names = [
+                re.match("^FROM qcrbox/(?P<image_name>.*):", line).group("image_name") for line in dependency_lines
+            ]
+        except QCrBoxNoBuildContext:
+            dependency_names = []
+
         return dependency_names
 
     def get_runtime_dependencies(self, service_name):
