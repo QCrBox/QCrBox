@@ -2,6 +2,8 @@ import textwrap
 
 from pyqcrbox import sql_models
 
+from .qcrbox_command import QCrBoxCommand
+
 
 class QCrBoxApplication:
     """
@@ -24,26 +26,28 @@ class QCrBoxApplication:
         self.name = self.application_spec.name
         self.slug = self.application_spec.slug
         self.version = self.application_spec.version
+        self.commands = [QCrBoxCommand(cmd_spec) for cmd_spec in self.application_spec.commands]
+        self.__doc__ = self._construct_docstring()
 
+    def __repr__(self) -> str:
+        return f"<{self.name}>"
+
+    def _construct_docstring(self):
         method_strings = []
-        for cmd in self.application_spec.commands:
-            # parameter_strings = (f"{par.name}: {par.dtype}" for par in cmd.parameters)
-            parameter_strings = (f"{par['name']}: {par['type']}" for par in cmd.parameters.values())
+        for cmd in self.commands:
+            parameter_strings = (f"{par.name}: {par.dtype}" for par in cmd.parameters)
             base_indent = "\n                    "
             all_par_string = base_indent + ("," + base_indent).join(parameter_strings) + "\n                "
             method_strings.append(f"{cmd.name}({all_par_string})")
             setattr(self, cmd.name, cmd)
 
-        linker = "\n\n                "
+        separator = "\n\n" + (" " * 16)
 
-        self.__doc__ = textwrap.dedent(
+        return textwrap.dedent(
             f"""
             Represents the {self.name} application (v. {self.version}) in QCrBox
 
             Methods:
-                {linker.join(method_strings)}
+                {separator.join(method_strings)}
             """
         )
-
-    def __repr__(self) -> str:
-        return f"{self.name}()"
