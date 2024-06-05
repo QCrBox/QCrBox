@@ -14,7 +14,7 @@ commands:
     description: "Start Olex2 in interactive mode, this can be used to solve, refine and finish small-molecule crystal structures."
     parameters:
       - name: "input_cif_path"
-        type: "QCrBox.input_cif"
+        dtype: "QCrBox.input_cif"
         default_value: None
         description: "Path to the CIF file to open in Olex2."
         required_entry_sets: ["cell_data", "diffraction_data"]
@@ -22,10 +22,10 @@ commands:
         merge_su: Yes
         custom_categories: ["iucr", "shelx"]
       - name: "work_cif_path"
-        type: "QCrBox.work_cif"
+        dtype: "QCrBox.work_cif"
         description: "Path used for creating the specific cif file in Olex compatible format."
       - name: "output_cif_path"
-        type: "QCrBox.output_cif"
+        dtype: "QCrBox.output_cif"
         default_value: None
         description: "Path to save the CIF file to after finishing the interactive session."
         required_entry_sets: ["olex_structure_output", "olex2_only_interactive_output"]
@@ -33,11 +33,11 @@ commands:
         custom_categories: ["iucr", "shelx"]
         output_block: "0" # select first block from output cif file (the default)
       - name: "parameter_json_path"
-        type: "QCrBox.output_file"
+        dtype: "QCrBox.output_file"
         default_value: None
         description: "Path to the JSON file to save the parameters for recreating the interactive result."
       - name: "parameter_folder"
-        type: "str"
+        dtype: "str"
         default_value: None
         description: "Folder to save files needed as parameters for recreating the interactive result."
     interactive_lifecycle:
@@ -66,13 +66,13 @@ commands:
       function: "redo__interactive"
       parameters:
         - name: "redo_input_cif_path"  # consider renaming to "redo_input_cif_path"
-          type: "QCrBox.input_cif"
+          dtype: "QCrBox.input_cif"
           default_value: None
           description: "Path to the CIF file to recreate the interactive result for."
           required_entry_sets: ["cell_data", "diffraction_data"]
           optional_entry_sets: ["atom_data"]
         - name: "redo_output_cif_path" # consider renaming to "redo_output_cif_path"
-          type: "QCrBox.output_cif"
+          dtype: "QCrBox.output_cif"
           default_value: None
           description: "Path to save the CIF file to after finishing the interactive session."
           required_entry_sets: ["olex_structure_output", "olex2_only_interactive_output"]
@@ -80,11 +80,11 @@ commands:
           custom_categories: ["iucr", "shelx"]
           output_block: "0" # select first block from output cif file (the default)
         - name: "parameter_json_path"
-          type: "QCrBox.output_file"
+          dtype: "QCrBox.output_file"
           default_value: None
           description: "Path to the JSON file to load the parameters from for recreating the interactive result."
         - name: "parameter_folder"
-          type: "QCrBox.output_folder"
+          dtype: "QCrBox.output_folder"
           default_value: None
           description: "Folder to load files needed as parameters for recreating the interactive result."
   - name: "refine_iam"
@@ -98,26 +98,26 @@ commands:
          --weight_cycles {weight_cycles}
     parameters:
       - name: "input_cif_path"
-        type: QCrBox.input_cif
+        dtype: QCrBox.input_cif
         default_value: null
         description: "Path to the CIF file to refine."
         required_entry_sets: ["cell_data", "diffraction_data", "atom_data"]
         merge_su: No
         custom_categories: ["iucr", "shelx"]
       - name: "output_cif_path"
-        type: QCrBox.output_cif
+        dtype: QCrBox.output_cif
         default_value: null
         description: "Path to save the refined CIF file to."
         required_entry_sets: ["olex_structure_output"]
         custom_categories: ["iucr", "shelx"]
         invalidated_entries: ["_shelx_.*"]
       - name: "ls_cycles"
-        type: int
+        dtype: int
         default_value: 5
         required: False
         description: "Number of least squares cycles to run."
       - name: "weight_cycles"
-        type: int
+        dtype: int
         default_value: 5
         required: False
         description: "Number of weight cycles to run. Each weight cycle consists of the full number of least squares cycles."
@@ -135,30 +135,30 @@ commands:
         --weight_cycles {weight_cycles}
     parameters:
       - name: "input_cif_path"
-        type: "QCrBox.input_cif"
+        dtype: "QCrBox.input_cif"
         default_value: null
         description: "Path to the CIF file to refine."
         required_entry_sets: ["cell_data", "diffraction_data", "atom_data"]
         merge_su: No
         custom_categories: ["iucr", "shelx"]
       - name: "output_cif_path"
-        type: "QCrBox.output_cif"
+        dtype: "QCrBox.output_cif"
         default_value: null
         description: "Path to save the refined CIF file to."
         required_entry_sets: ["olex_structure_output"]
         custom_categories: ["iucr", "shelx"]
         invalidated_entries: ["_shelx_.*"]
       - name: "tsc_path"
-        type: "QCrBox.input_file"
+        dtype: "QCrBox.input_file"
         default_value: null
         description: "Path to the TSC file to use."
       - name: "ls_cycles"
-        type: int
+        dtype: int
         default_value: 5
         required: False
         description: "Number of least squares cycles to run."
       - name: "weight_cycles"
-        type: int
+        dtype: int
         default_value: 5
         required: False
         description: "Number of weight cycles to run. Each weight cycle consists of the full number of least squares cycles."
@@ -173,13 +173,13 @@ commands:
         --cmd_file_path {cmd_file_path}
     parameters:
       - name: "input_cif_path"
-        type: QCrBox.input_cif
+        dtype: QCrBox.input_cif
         default_value: null
         description: "Path to the CIF file to run the commands with."
         optional_entry_sets: ["all_olex_optional"]
         custom_categories: ["iucr", "shelx"]
       - name: "output_cif_path"
-        type: QCrBox.output_cif
+        dtype: QCrBox.output_cif
         default_value: null
         description: "Path to save the CIF file to after running the commands. If not given, no output will be read back."
         optional: True
@@ -187,7 +187,7 @@ commands:
         custom_categories: ["iucr", "shelx"]
         invalidated_entries: ["_shelx_.*"]
       - name: "cmd_file_path"
-        type: "QCrBox.input_file"
+        dtype: "QCrBox.input_file"
         default_value: null
         description: "Path to the file containing the commands to run."
 
