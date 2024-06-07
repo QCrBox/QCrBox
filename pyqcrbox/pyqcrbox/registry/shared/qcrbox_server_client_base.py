@@ -1,6 +1,6 @@
+import contextlib
 import inspect
 from abc import ABCMeta, abstractmethod
-from contextlib import asynccontextmanager
 from typing import AsyncContextManager, Callable, Optional, assert_never
 
 import aiormq
@@ -11,7 +11,7 @@ from anyio import TASK_STATUS_IGNORED
 from anyio.abc import TaskStatus
 from faststream.rabbit import RabbitBroker
 from litestar import Litestar
-from litestar.testing import AsyncTestClient
+from litestar.testing import AsyncTestClient, TestClient
 from loguru import logger
 
 from pyqcrbox import settings
@@ -84,7 +84,7 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
                 else:
                     await func(**cur_kwargs)
 
-    @asynccontextmanager
+    @contextlib.asynccontextmanager
     async def lifespan_context(self, _: Litestar) -> AsyncContextManager:
         logger.trace(f"==> Entering {self.clsname} lifespan function...")
 
@@ -157,7 +157,7 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
 
 
 class TestQCrBoxServerClientBase(QCrBoxServerClientBase):
-    @asynccontextmanager
+    @contextlib.asynccontextmanager
     async def run(
         self,
         host: Optional[str] = None,
@@ -187,9 +187,14 @@ class TestQCrBoxServerClientBase(QCrBoxServerClientBase):
             for ex in e.exceptions:
                 raise ex from None
 
-    @asynccontextmanager
+    @contextlib.asynccontextmanager
     async def web_client(self):
         async with AsyncTestClient(app=self.asgi_server) as web_client:
+            yield web_client
+
+    @contextlib.contextmanager
+    def web_client_sync(self):
+        with TestClient(app=self.asgi_server) as web_client:
             yield web_client
 
     def handler_was_called(self, queue_name):

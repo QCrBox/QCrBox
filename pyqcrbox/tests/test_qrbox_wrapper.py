@@ -7,9 +7,9 @@ async def test_qcrbox_wrapper(test_server, test_client):
     """
     QCrBoxWrapper can access registered applications and commands
     """
-    async with test_server.web_client() as web_client:
+    with test_server.web_client_sync() as web_client:
         qcrbox = QCrBoxWrapper(web_client)
-        apps = await qcrbox.applications
+        apps = qcrbox.applications
 
         assert len(apps) == 1
 
@@ -22,3 +22,9 @@ async def test_qcrbox_wrapper(test_server, test_client):
         cmd = app_info.commands[0]
         assert cmd.name == "say_hello"
         assert cmd.par_name_list == []
+
+
+# @pytest.mark.anyio
+# async def test_qcrbox_application(test_server, test_client):
+#     async with test_server.web_client() as web_client:
+#         qcrbox
