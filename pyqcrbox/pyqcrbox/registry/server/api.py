@@ -1,11 +1,11 @@
-from litestar import Litestar, MediaType, get
+from litestar import Litestar, MediaType, get, post
 from litestar.openapi import OpenAPIConfig
 
 __all__ = ["create_server_asgi_server"]
 
 from sqlmodel import select
 
-from pyqcrbox import settings, sql_models
+from pyqcrbox import logger, settings, sql_models
 
 
 @get("/", media_type=MediaType.TEXT, include_in_schema=False)
@@ -43,9 +43,21 @@ async def retrieve_commands() -> list[sql_models.CommandSpecWithParameters]:
         return commands
 
 
+@post(path="/invoke_command", media_type=MediaType.JSON)
+async def invoke_command(data: sql_models.CommandInvocationCreate) -> dict:
+    logger.info(f"[DDD] Received {data=}")
+    return data.model_dump()
+
+
 def create_server_asgi_server(custom_lifespan) -> Litestar:
     app = Litestar(
-        route_handlers=[hello, health_check, retrieve_applications, retrieve_commands],
+        route_handlers=[
+            hello,
+            health_check,
+            retrieve_applications,
+            retrieve_commands,
+            invoke_command,
+        ],
         lifespan=[custom_lifespan],
         openapi_config=OpenAPIConfig(title="QCrBox Server API", version="0.0.1"),
     )
