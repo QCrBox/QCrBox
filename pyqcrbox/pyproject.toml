@@ -23,6 +23,7 @@ dependencies = [
     "pydantic-settings",
     "rich",
     "sqlmodel",
+    "svcs",
     "stamina",
     "tabulate",
 ]
