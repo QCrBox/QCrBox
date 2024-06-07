@@ -518,12 +518,9 @@ class QCrBoxCommand(QCrBoxCommandBase):
         #     )
         # )
 
-        data_dict = {
-            "action": "invoke_command",
-            "payload": {"command_id": self.id, "arguments": arguments},
-        }
-        req = urllib.request.Request(f"{self._server_url}/invoke_command/", method="POST")
+        req = urllib.request.Request(f"{self._server_url}/invoke_command/{self.id}", method="POST")
         req.add_header("Content-Type", "application/json")
+        data_dict = {"arguments": arguments}
         data = json.dumps(data_dict)
         data = data.encode("UTF-8")
         r = urllib.request.urlopen(req, data=data)

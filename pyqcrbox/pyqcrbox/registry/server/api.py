@@ -1,4 +1,5 @@
-from litestar import Litestar, MediaType, get, post
+import sqlalchemy
+from litestar import Litestar, MediaType, Response, get, post
 from litestar.openapi import OpenAPIConfig
 
 __all__ = ["create_server_asgi_server"]
@@ -49,6 +50,17 @@ async def invoke_command(data: sql_models.CommandInvocationCreate) -> dict:
     return data.model_dump()
 
 
+@post(path="/invoke_command/{cmd_id:int}", media_type=MediaType.JSON)
+async def invoke_command_by_id(cmd_id: int) -> dict | Response[str]:
+    logger.info(f"[DDD] Invoking command with id {cmd_id}")
+    with settings.db.get_session() as session:
+        try:
+            command = session.get_one(sql_models.CommandSpecDB, cmd_id)
+            return command.model_dump()
+        except sqlalchemy.orm.exc.NoResultFound:
+            return Response(f"Command not found with id={cmd_id}", status_code=404)
+
+
 def create_server_asgi_server(custom_lifespan) -> Litestar:
     app = Litestar(
         route_handlers=[
@@ -57,7 +69,9 @@ def create_server_asgi_server(custom_lifespan) -> Litestar:
             retrieve_applications,
             retrieve_commands,
             invoke_command,
+            invoke_command_by_id,
         ],
+        debug=True,
         lifespan=[custom_lifespan],
         openapi_config=OpenAPIConfig(title="QCrBox Server API", version="0.0.1"),
     )
