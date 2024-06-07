@@ -35,7 +35,9 @@ import webbrowser
 from collections import namedtuple
 from functools import lru_cache
 from itertools import count
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Optional, Union
+
+import httpx
 
 from pyqcrbox import sql_models
 
@@ -43,7 +45,7 @@ from .qcrbox_application import QCrBoxApplication
 
 
 @lru_cache(maxsize=5)
-def get_time_cached_app_answer(server_url: str, ttl_hash: Optional[int] = None) -> list[dict[str, Any]]:
+async def get_time_cached_app_answer(web_client: httpx.AsyncClient, ttl_hash: int) -> list[dict[str, Any]]:
     """
     Retrieves cached application answers from the QCrBox server.
 
@@ -53,15 +55,15 @@ def get_time_cached_app_answer(server_url: str, ttl_hash: Optional[int] = None) 
 
     Parameters
     ----------
-    server_url : str
-        The URL of the QCrBox server.
-    ttl_hash : Optional[int]
+    web_client : httpx.AsyncClient
+        The web client to use for connecting to the QCrBox server.
+    ttl_hash : int
         A hash value representing the time-to-live for the cache. This value
         controls the cache's validity period to prevent outdated information.
 
     Returns
     -------
-    Dict[str, str]
+    dict[str, str]
         The response from the QCrBox server, typically a list of application details.
 
     Note
@@ -70,9 +72,8 @@ def get_time_cached_app_answer(server_url: str, ttl_hash: Optional[int] = None) 
     intervals, instead of for a fixed time.
     """
     del ttl_hash
-    with urllib.request.urlopen(f"{server_url}/applications/") as r:
-        answers = json.loads(r.read().decode("UTF-8"))
-    return answers
+    response = await web_client.get("/applications")
+    return response.json()
 
 
 def get_ttl_hash(seconds: int = 20) -> int:
@@ -145,7 +146,7 @@ class QCrBoxWrapper:
         The address/IP of the QCrBox server.
     server_port : int
         The port on which the QCrBox server is running.
-    gui_infos : Optional[Dict[str, Dict[str, Union[int, str]]]] = None
+    gui_infos : Optional[dict[str, dict[str, Union[int, str]]]] = None
         GUI information for applications, including ports and commands that have a GUI.
         For each application containing a GUI command, the Application name should be
         the key, with another dict as the item. This dictionary needs the the entries
@@ -160,24 +161,21 @@ class QCrBoxWrapper:
 
     def __init__(
         self,
-        server_addr: str,
-        server_port: int,
-        gui_infos: Optional[Dict[str, Dict[str, Union[int, str]]]] = None,
+        web_client: httpx.AsyncClient,
+        gui_infos: Optional[dict[str, dict[str, Union[int, str]]]] = None,
     ) -> None:
         """
         Initializes the QCrBoxWrapper instance.
 
         Parameters
         ----------
-        server_addr : str
-            The address/IP of the QCrBox server.
-        server_port : int
-            The port on which the QCrBox server is running.
-        gui_infos : Optional[Dict[str, Dict[str, Union[int, str]]]] = None
+        web_client: httpx.AsyncClient
+            The web client to use for interacting with the QCrBox server.
+        gui_infos : Optional[dict[str, dict[str, Union[int, str]]]] = None
             Dictionary containing the GUI information for applications, including ports
             and commands that have a GUI. For each application containing a GUI command,
             the application name should be the key, with another dict as the item. This
-            dictionary needs the the entries "port" with the port the access the GUI,
+            dictionary needs the entries "port" with the port the access the GUI,
             as well as an entry "commands" that containts a list of all the interactive
             commands.
 
@@ -186,8 +184,8 @@ class QCrBoxWrapper:
         ConnectionError
             If the connection to the QCrBox Registry Server fails.
         """
-        self.server_addr = server_addr
-        self.server_port = server_port
+        self.web_client = web_client
+        self.base_url = web_client.base_url
 
         # TODO Replace with commands reporting the port
         default_gui_infos = {
@@ -201,36 +199,23 @@ class QCrBoxWrapper:
         else:
             self.gui_infos = gui_infos.update(default_gui_infos)
 
-        with urllib.request.urlopen(self.server_url) as r:
-            response = r.read().decode("UTF-8")
-
-        if "QCrBox" not in response:
-            print(response)
-            raise ConnectionError(f"Cannot connect to QCrBox Registry Server at {self.server_url}")
-
-    @property
-    def server_url(self) -> str:
-        """
-        Constructs the full URL of the QCrBox server.
-
-        Returns
-        -------
-        str
-            The server URL.
-        """
-        return f"http://{self.server_addr}:{self.server_port}"
+        # response = await web_client.get("/")
+        #
+        # if "QCrBox" not in response:
+        #     print(response)
+        #     raise ConnectionError(f"Cannot connect to QCrBox Registry Server at {self.server_url}")
 
     @property
-    def applications(self) -> List["QCrBoxApplication"]:
+    async def applications(self) -> list["QCrBoxApplication"]:
         """
         Retrieves a list of applications from the QCrBox server.
 
         Returns
         -------
-        List[qcrbox_wrapper.qcrbox_wrapper_new.QCrBoxApplication]
+        list[qcrbox_wrapper.qcrbox_wrapper_new.QCrBoxApplication]
             A list of QCrBoxApplication namedtuples.
         """
-        response = get_time_cached_app_answer(self.server_url, get_ttl_hash())
+        response = await get_time_cached_app_answer(self.web_client, get_ttl_hash())
         return [
             QCrBoxApplication(application_spec=sql_models.ApplicationSpecWithCommands(**app_spec))
             for app_spec in response
@@ -250,16 +235,16 @@ class QCrBoxWrapper:
         return {application.name: application for application in self.applications}
 
     @property
-    def commands(self) -> List["QCrBoxCommandBase"]:
+    async def commands(self) -> list["QCrBoxCommandBase"]:
         """
         Retrieves a list of commands from the QCrBox server.
 
         Returns
         -------
-        List[QCrBoxCommandBase]
+        list[QCrBoxCommandBase]
             A list of QCrBoxCommand or QCrBoxInteractiveCommand objects.
         """
-        answers = get_time_cached_app_answer(self.server_url, get_ttl_hash())
+        answers = await get_time_cached_app_answer(self.server_url, get_ttl_hash())
 
         # with urllib.request.urlopen(f"{self.server_url}/applications/") as r:
         #    answers = json.loads(r.read().decode("UTF-8"))
@@ -350,7 +335,7 @@ class QCrBoxWrapper:
         return commands
 
     def __repr__(self) -> str:
-        return f"<QCrBoxWrapper(server_addr={self.server_addr}, server_port={self.server_port})>"
+        return f"<QCrBoxWrapper({self.base_url!r}')>"
 
 
 class QCrBoxCommandBase:
@@ -367,8 +352,8 @@ class QCrBoxCommandBase:
         The application which implements the command.
     application_id : int
         ID of the application used by the command.
-    parameters : List[QCrBoxParameter]
-        List of parameters for the command.
+    parameters : list[QCrBoxParameter]
+        list of parameters for the command.
     wrapper_parent : QCrBoxWrapper
         Parent wrapper object that instantiated the command.
     """
@@ -379,7 +364,7 @@ class QCrBoxCommandBase:
         name: str,
         application: QCrBoxApplication,
         application_id: int,
-        parameters: List[QCrBoxParameter],
+        parameters: list[QCrBoxParameter],
         wrapper_parent: QCrBoxWrapper,
     ) -> None:
         """
@@ -395,8 +380,8 @@ class QCrBoxCommandBase:
             The application which implements the command.
         application_id : int
             ID of the application used by the command.
-        parameters : List[QCrBoxParameter]
-            List of parameters for the command.
+        parameters : list[QCrBoxParameter]
+            list of parameters for the command.
         wrapper_parent : QCrBoxWrapper
             Parent wrapper object that instantiated the command.
         """
@@ -409,13 +394,13 @@ class QCrBoxCommandBase:
         self._server_url = wrapper_parent.server_url
 
     @property
-    def par_name_list(self) -> List[str]:
+    def par_name_list(self) -> list[str]:
         """
         Retrieves the names of the parameters for the command.
 
         Returns
         -------
-        List[str]
+        list[str]
             A list containing the names of the parameters.
         """
         return [par.name for par in self.parameters]
@@ -474,8 +459,8 @@ class QCrBoxCommand(QCrBoxCommandBase):
         The application which implements the command.
     application_id : int
         ID of the application used by the command.
-    parameters : List[QCrBoxParameter]
-        List of parameters for the command.
+    parameters : list[QCrBoxParameter]
+        list of parameters for the command.
     wrapper_parent : QCrBoxWrapper
         Parent wrapper object that instantiated the command.
     """
@@ -547,8 +532,8 @@ class QCrBoxInteractiveCommand(QCrBoxCommandBase):
         Name of the command.
     application_id : int
         ID of the application used by the command.
-    parameters : List[QCrBoxParameter]
-        List of parameters for the command.
+    parameters : list[QCrBoxParameter]
+        list of parameters for the command.
     gui_url : str
         URL for the GUI associated with the interactive command.
     wrapper_parent : QCrBoxWrapper
@@ -566,7 +551,7 @@ class QCrBoxInteractiveCommand(QCrBoxCommandBase):
         cmd_id: int,
         name: str,
         application_id: int,
-        parameters: List[QCrBoxParameter],
+        parameters: list[QCrBoxParameter],
         gui_url: str,
         wrapper_parent: QCrBoxWrapper,
         run_cmd: QCrBoxCommand,
@@ -584,8 +569,8 @@ class QCrBoxInteractiveCommand(QCrBoxCommandBase):
             Name of the command.
         application_id : int
             ID of the application used by the command.
-        parameters : List[QCrBoxParameter]
-            List of parameters for the command.
+        parameters : list[QCrBoxParameter]
+            list of parameters for the command.
         gui_url : str
             URL for the GUI associated with the interactive command.
         wrapper_parent : QCrBoxWrapper
@@ -640,7 +625,7 @@ class QCrBoxInteractiveCommand(QCrBoxCommandBase):
                 arguments.update(replace_dict)
         return arguments
 
-    def execute_run(self, arguments: dict) -> Tuple["QCrBoxCalculation", dict]:
+    def execute_run(self, arguments: dict) -> tuple["QCrBoxCalculation", dict]:
         """
         Executes the main run command with the provided arguments.
 
@@ -651,7 +636,7 @@ class QCrBoxInteractiveCommand(QCrBoxCommandBase):
 
         Returns
         -------
-        Tuple[QCrBoxCalculation, dict]
+        tuple[QCrBoxCalculation, dict]
             The resulting calculation object and the updated arguments.
         """
         run_arguments = {key: val for key, val in arguments.items() if key in self.run_cmd.par_name_list}
@@ -948,7 +933,7 @@ class QCrBoxPathHelper:
         """
         return self.path_to_local(path), self.path_to_qcrbox(path)
 
-    def create_next_step_folder(self) -> Tuple[pathlib.Path, str]:
+    def create_next_step_folder(self) -> tuple[pathlib.Path, str]:
         """
         Creates a new folder for the next step in a sequence within the local file system
         and returns its path equivalents in both the local and QCrBox file systems.
@@ -961,7 +946,7 @@ class QCrBoxPathHelper:
 
         Returns
         -------
-        Tuple[pathlib.Path, str]
+        tuple[pathlib.Path, str]
             A tuple containing the newly created folder's path in the local file system
             (as a pathlib.Path object) and its equivalent in the QCrBox file system
             (as a POSIX-style string path).
