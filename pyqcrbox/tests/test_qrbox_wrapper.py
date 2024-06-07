@@ -20,7 +20,7 @@ async def test_qcrbox_wrapper(test_server, test_client):
 
         assert len(app_info.commands) == 1
         cmd = app_info.commands[0]
-        assert cmd.name == "say_hello"
+        assert cmd.name == "greet_and_sleep"
         assert cmd.par_name_list == []
 
 
@@ -30,4 +30,4 @@ async def test_application_dict(test_server, test_client):
         qcrbox = QCrBoxWrapper(web_client)
         dummy_app = qcrbox.application_dict["Dummy Application"]
 
-        assert isinstance(dummy_app.say_hello, QCrBoxCommand)
+        assert isinstance(dummy_app.greet_and_sleep, QCrBoxCommand)

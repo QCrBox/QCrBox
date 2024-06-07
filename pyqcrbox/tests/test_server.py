@@ -125,5 +125,5 @@ async def test_api_endpoint_commands(test_server, create_qcrbox_test_client, sam
             response_data = response.json()
             assert len(response_data) == 1
             response_cmd = response_data[0]
-            assert response_cmd["name"] == "say_hello"
+            assert response_cmd["name"] == "greet_and_sleep"
             assert response_cmd["implemented_as"] == "python_callable"

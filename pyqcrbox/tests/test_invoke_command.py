@@ -15,7 +15,7 @@ async def test_invoke_command(
     application_routing_key = "qcrbox_rk_dummy_application_x.y.z"
     correlation_id = "abcd1234"
 
-    cmd_name = "say_hello"
+    cmd_name = "greet_and_sleep"
     cmd_db = db_helpers.get_one_or_none(sql_models.CommandSpecDB, name=cmd_name)
     assert cmd_db is not None
 

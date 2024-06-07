@@ -4,10 +4,10 @@
 name: "Dummy Application"
 slug: "dummy_application"
 version: "x.y.z"
-description: "This is the greatest program ever"
+description: "Probably the most advanced program ever written"
 url: "https://www.example.com/"
 
 commands:
-  - name: "say_hello"
+  - name: "greet_and_sleep"
     implemented_as: "python_callable"
     import_path: "pyqcrbox.helpers"
