@@ -205,6 +205,28 @@ class QCrBoxWrapper:
         #     print(response)
         #     raise ConnectionError(f"Cannot connect to QCrBox Registry Server at {self.server_url}")
 
+    @classmethod
+    def from_server_addr(
+        cls,
+        server_addr: str,
+        server_port: Optional[int] = None,
+        gui_infos: Optional[dict[str, dict[str, Union[int, str]]]] = None,
+    ) -> "QCrBoxWrapper":
+        server_url = f"http://{server_addr}" + (f":{server_port}" if server_port is not None else "")
+        web_client = httpx.AsyncClient(base_url=server_url)
+
+        with urllib.request.urlopen(f"{server_url}") as r:
+            response = r.read().decode("UTF-8")
+
+        if "QCrBox" not in response:
+            print(response)
+            raise ConnectionError(f"Cannot connect to QCrBox Registry Server at {server_url}")
+
+        return cls(web_client, gui_infos)
+
+    def __repr__(self) -> str:
+        return f"<QCrBoxWrapper({self.base_url!r}')>"
+
     @property
     async def applications(self) -> list["QCrBoxApplication"]:
         """
@@ -333,9 +355,6 @@ class QCrBoxWrapper:
                 )
 
         return commands
-
-    def __repr__(self) -> str:
-        return f"<QCrBoxWrapper({self.base_url!r}')>"
 
 
 class QCrBoxCommandBase:
