@@ -1,5 +1,5 @@
 import pytest
-from qcrbox_wrapper_new.qcrbox_wrapper import QCrBoxWrapper
+from qcrbox_wrapper_new import QCrBoxCommand, QCrBoxWrapper
 
 
 @pytest.mark.anyio
@@ -24,7 +24,10 @@ async def test_qcrbox_wrapper(test_server, test_client):
         assert cmd.par_name_list == []
 
 
-# @pytest.mark.anyio
-# async def test_qcrbox_application(test_server, test_client):
-#     async with test_server.web_client() as web_client:
-#         qcrbox
+@pytest.mark.anyio
+async def test_application_dict(test_server, test_client):
+    with test_server.web_client_sync() as web_client:
+        qcrbox = QCrBoxWrapper(web_client)
+        dummy_app = qcrbox.application_dict["Dummy Application"]
+
+        assert isinstance(dummy_app.say_hello, QCrBoxCommand)
