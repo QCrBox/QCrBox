@@ -1,3 +1,5 @@
+import sys
+from pathlib import Path
 from typing import Optional
 
 from faststream.rabbit import RabbitBroker
@@ -69,8 +71,13 @@ class TestQCrBoxClient(TestQCrBoxServerClientBase, QCrBoxClient):
 
 def main():
     repo_root = get_repo_root(__file__)
-    sample_spec_file = repo_root.joinpath("services/applications/olex2_linux/config_olex2.yaml")
-    application_spec = sql_models.ApplicationSpecCreate.from_yaml_file(sample_spec_file)
+
+    try:
+        application_config_file = Path(sys.argv[1])
+    except IndexError:
+        application_config_file = repo_root.joinpath("services/applications/olex2_linux/config_olex2.yaml")
+
+    application_spec = sql_models.ApplicationSpecCreate.from_yaml_file(application_config_file)
 
     qcrbox_client = QCrBoxClient(application_spec=application_spec)
     qcrbox_client.run(host=settings.registry.client.host, port=settings.registry.client.port)
