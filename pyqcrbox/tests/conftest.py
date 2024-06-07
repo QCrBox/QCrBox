@@ -9,18 +9,24 @@ from faststream.rabbit import RabbitBroker, TestRabbitBroker
 sys._qcrbox_running_inside_tests = True  # noqa
 
 from pyqcrbox import logger, sql_models
+from pyqcrbox.cli.helpers import get_repo_root
 from pyqcrbox.registry.client import TestQCrBoxClient
 from pyqcrbox.registry.server import TestQCrBoxServer
 from pyqcrbox.settings import settings
 
 #
-# Insert the QCrBox repository root at the beginning of `sys.path`.
-# This ensures that `import pyqcrbox` will always import the local
-# version of `pyqcrbox` (even if it is already installed in the
-# current virtual environment) and that the tests are run against
-# this local version.
+# Insert the paths to the `pyqcrbox` and `qcrbox_wrapper` at the
+# beginning of `sys.path`. This ensures that `import pyqcrbox`
+# will always import the local version of `pyqcrbox` (even if it
+# is already installed in the current virtual environment) and
+# that the tests are run against this local version (and similarly
+# for `qcrbox_wrapper`).
 #
-sys.path.insert(0, str(Path(__file__).parent.parent))
+repo_root = get_repo_root()
+path_to_pyqcrbox = repo_root / "pyqcrbox"
+path_to_qcrbox_wrapper = repo_root / "qcrbox_wrapper"
+sys.path.insert(0, path_to_pyqcrbox)
+sys.path.insert(0, path_to_qcrbox_wrapper)
 
 CURRENT_DIRECTORY = Path(__file__).parent
 
