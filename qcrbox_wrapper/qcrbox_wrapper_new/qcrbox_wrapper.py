@@ -45,7 +45,7 @@ from .qcrbox_application import QCrBoxApplication
 
 
 @lru_cache(maxsize=5)
-async def get_time_cached_app_answer(web_client: httpx.AsyncClient, ttl_hash: int) -> list[dict[str, Any]]:
+def get_time_cached_app_answer(web_client: httpx.Client, ttl_hash: int) -> list[dict[str, Any]]:
     """
     Retrieves cached application answers from the QCrBox server.
 
@@ -55,7 +55,7 @@ async def get_time_cached_app_answer(web_client: httpx.AsyncClient, ttl_hash: in
 
     Parameters
     ----------
-    web_client : httpx.AsyncClient
+    web_client : httpx.Client
         The web client to use for connecting to the QCrBox server.
     ttl_hash : int
         A hash value representing the time-to-live for the cache. This value
@@ -72,7 +72,7 @@ async def get_time_cached_app_answer(web_client: httpx.AsyncClient, ttl_hash: in
     intervals, instead of for a fixed time.
     """
     del ttl_hash
-    response = await web_client.get("/applications")
+    response = web_client.get("/applications")
     return response.json()
 
 
@@ -161,7 +161,7 @@ class QCrBoxWrapper:
 
     def __init__(
         self,
-        web_client: httpx.AsyncClient,
+        web_client: httpx.Client,
         gui_infos: Optional[dict[str, dict[str, Union[int, str]]]] = None,
     ) -> None:
         """
@@ -169,7 +169,7 @@ class QCrBoxWrapper:
 
         Parameters
         ----------
-        web_client: httpx.AsyncClient
+        web_client: httpx.Client
             The web client to use for interacting with the QCrBox server.
         gui_infos : Optional[dict[str, dict[str, Union[int, str]]]] = None
             Dictionary containing the GUI information for applications, including ports
@@ -185,7 +185,9 @@ class QCrBoxWrapper:
             If the connection to the QCrBox Registry Server fails.
         """
         self.web_client = web_client
-        self.base_url = web_client.base_url
+        self.server_url = str(web_client.base_url)
+        self.server_host = self.web_client.base_url.host
+        self.server_port = self.web_client.base_url.port
 
         # TODO Replace with commands reporting the port
         default_gui_infos = {
@@ -199,11 +201,11 @@ class QCrBoxWrapper:
         else:
             self.gui_infos = gui_infos.update(default_gui_infos)
 
-        # response = await web_client.get("/")
-        #
-        # if "QCrBox" not in response:
-        #     print(response)
-        #     raise ConnectionError(f"Cannot connect to QCrBox Registry Server at {self.server_url}")
+        response = web_client.get("/")
+
+        if "QCrBox" not in response.text:
+            print(response.text)
+            raise ConnectionError(f"Cannot connect to QCrBox Registry Server at {self.server_url}")
 
     @classmethod
     def from_server_addr(
@@ -213,22 +215,22 @@ class QCrBoxWrapper:
         gui_infos: Optional[dict[str, dict[str, Union[int, str]]]] = None,
     ) -> "QCrBoxWrapper":
         server_url = f"http://{server_addr}" + (f":{server_port}" if server_port is not None else "")
-        web_client = httpx.AsyncClient(base_url=server_url)
+        web_client = httpx.Client(base_url=server_url)
 
-        with urllib.request.urlopen(f"{server_url}") as r:
-            response = r.read().decode("UTF-8")
-
-        if "QCrBox" not in response:
-            print(response)
-            raise ConnectionError(f"Cannot connect to QCrBox Registry Server at {server_url}")
+        # with urllib.request.urlopen(f"{server_url}") as r:
+        #     response = r.read().decode("UTF-8")
+        #
+        # if "QCrBox" not in response:
+        #     print(response)
+        #     raise ConnectionError(f"Cannot connect to QCrBox Registry Server at {server_url}")
 
         return cls(web_client, gui_infos)
 
     def __repr__(self) -> str:
-        return f"<QCrBoxWrapper({self.base_url!r}')>"
+        return f"<QCrBoxWrapper({self.server_url!r}')>"
 
     @property
-    async def applications(self) -> list["QCrBoxApplication"]:
+    def applications(self) -> list["QCrBoxApplication"]:
         """
         Retrieves a list of applications from the QCrBox server.
 
@@ -237,7 +239,7 @@ class QCrBoxWrapper:
         list[qcrbox_wrapper.qcrbox_wrapper_new.QCrBoxApplication]
             A list of QCrBoxApplication namedtuples.
         """
-        response = await get_time_cached_app_answer(self.web_client, get_ttl_hash())
+        response = get_time_cached_app_answer(self.web_client, get_ttl_hash())
         return [
             QCrBoxApplication(application_spec=sql_models.ApplicationSpecWithCommands(**app_spec))
             for app_spec in response
@@ -257,7 +259,7 @@ class QCrBoxWrapper:
         return {application.name: application for application in self.applications}
 
     @property
-    async def commands(self) -> list["QCrBoxCommandBase"]:
+    def commands(self) -> list["QCrBoxCommandBase"]:
         """
         Retrieves a list of commands from the QCrBox server.
 
@@ -266,7 +268,7 @@ class QCrBoxWrapper:
         list[QCrBoxCommandBase]
             A list of QCrBoxCommand or QCrBoxInteractiveCommand objects.
         """
-        answers = await get_time_cached_app_answer(self.server_url, get_ttl_hash())
+        answers = get_time_cached_app_answer(self.web_client, get_ttl_hash())
 
         # with urllib.request.urlopen(f"{self.server_url}/applications/") as r:
         #    answers = json.loads(r.read().decode("UTF-8"))
