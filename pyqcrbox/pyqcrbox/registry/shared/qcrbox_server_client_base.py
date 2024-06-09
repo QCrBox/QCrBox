@@ -6,6 +6,7 @@ from typing import AsyncContextManager, Callable, Optional, assert_never
 import aiormq
 import anyio
 import stamina
+import svcs
 import uvicorn
 from anyio import TASK_STATUS_IGNORED
 from anyio.abc import TaskStatus
@@ -34,8 +35,12 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
         *,
         broker: Optional[RabbitBroker] = None,
         asgi_server: Optional[Litestar] = None,
+        svcs_registry: Optional[svcs.Registry] = None,
     ):
         self.broker = broker or RabbitBroker(settings.rabbitmq.url, graceful_timeout=10)
+        self.svcs_registry = svcs_registry or svcs.Registry()
+
+        self.svcs_registry.register_value(RabbitBroker, self.broker)
 
         # If not passed explicitly, the ASGI server and uvicorn server
         # will be set up when `.serve()` is called.
@@ -101,9 +106,14 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
             yield
             logger.trace("Received control back from ASGI server ...")
         finally:
-            logger.debug("Closing broker.")
-            await self.broker.close()
-            logger.trace("Done (broker is closed).")
+            with contextlib.suppress(KeyError):
+                logger.trace("Closing broker.")
+                await self.broker.close()
+                logger.trace("Done (broker is closed).")
+
+                logger.trace("Closing SVCS registry.")
+                await self.svcs_registry.aclose()
+                logger.trace("Done (SVCS registry is closed).")
 
         logger.trace(f"<== Exiting from {self.clsname} lifespan function.")
 
