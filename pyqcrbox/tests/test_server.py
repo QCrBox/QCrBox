@@ -1,5 +1,5 @@
 import pytest
-from litestar.status_codes import HTTP_200_OK
+from litestar.status_codes import HTTP_200_OK, HTTP_201_CREATED
 
 from pyqcrbox import db_helpers, msg_specs, sql_models
 from pyqcrbox.helpers import ensure_dict
@@ -127,3 +127,23 @@ async def test_api_endpoint_commands(test_server, create_qcrbox_test_client, sam
             response_cmd = response_data[0]
             assert response_cmd["name"] == "greet_and_sleep"
             assert response_cmd["implemented_as"] == "python_callable"
+
+
+@pytest.mark.anyio
+async def test_api_endpoint_invoke_command(test_server, test_client, server_public_queue_name):
+    app = test_client.application_spec
+    cmd = app.commands[0]
+
+    cmd_invocation = sql_models.CommandInvocationCreate(
+        application_slug=app.slug,
+        application_version=app.version,
+        command_name=cmd.name,
+        arguments={},
+    )
+
+    async with test_server.web_client() as web_client:
+        response = await web_client.post("/invoke_command", json=cmd_invocation.model_dump())
+        assert response.status_code == HTTP_201_CREATED
+        assert response.json() == cmd_invocation.model_dump()
+
+        test_server.get_mock_handler(server_public_queue_name).assert_called_once_with(cmd_invocation)
