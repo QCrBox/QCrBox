@@ -15,7 +15,7 @@ from litestar import Litestar
 from litestar.testing import AsyncTestClient, TestClient
 from loguru import logger
 
-from pyqcrbox import settings
+from pyqcrbox import QCRBOX_SVCS_REGISTRY, settings
 
 from ..shared.message_dispatch import declare_rabbitmq_message_handler
 
@@ -38,7 +38,7 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
         svcs_registry: Optional[svcs.Registry] = None,
     ):
         self.broker = broker or RabbitBroker(settings.rabbitmq.url, graceful_timeout=10)
-        self.svcs_registry = svcs_registry or svcs.Registry()
+        self.svcs_registry = svcs_registry or QCRBOX_SVCS_REGISTRY
 
         self.svcs_registry.register_value(RabbitBroker, self.broker)
 
