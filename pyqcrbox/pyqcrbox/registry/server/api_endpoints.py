@@ -73,6 +73,6 @@ def create_server_asgi_server(custom_lifespan) -> Litestar:
         ],
         debug=True,
         lifespan=[custom_lifespan],
-        openapi_config=OpenAPIConfig(title="QCrBox Server API", version="0.0.1"),
+        openapi_config=OpenAPIConfig(title="QCrBox Server API", version="0.1"),
     )
     return app
