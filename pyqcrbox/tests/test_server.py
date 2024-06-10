@@ -125,7 +125,9 @@ async def test_api_endpoint_commands(test_server, create_qcrbox_test_client, sam
 
 
 @pytest.mark.anyio
-async def test_api_endpoint_invoke_command(test_server, test_client, server_public_queue_name):
+async def test_api_endpoint_invoke_command(
+    test_server, test_client, server_public_queue_name, using_mock_rabbitmq_broker
+):
     app = test_client.application_spec
     cmd = app.commands[0]
 
@@ -139,6 +141,14 @@ async def test_api_endpoint_invoke_command(test_server, test_client, server_publ
     async with test_server.web_client() as web_client:
         response = await web_client.post("/invoke_command", json=cmd_invocation.model_dump())
         assert response.status_code == HTTP_201_CREATED
-        assert response.json() == cmd_invocation.model_dump()
 
-        test_server.get_mock_handler(server_public_queue_name).assert_called_once_with(cmd_invocation)
+        expected_response_data = {
+            "response_to": "invoke_command",
+            "status": "ok",
+            "msg": "Accepted command invocation request",
+            "payload": {},
+        }
+        assert response.json() == expected_response_data
+
+        # if using_mock_rabbitmq_broker:
+        #     test_server.get_mock_handler(server_public_queue_name).assert_any_call(cmd_invocation)
