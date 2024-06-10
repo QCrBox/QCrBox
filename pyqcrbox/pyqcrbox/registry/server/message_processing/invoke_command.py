@@ -1,7 +1,7 @@
 from faststream.rabbit import RabbitBroker
 
 from pyqcrbox import msg_specs, sql_models
-from pyqcrbox.helpers import ensure_dict, get_routing_key_for_command_invocation_requests
+from pyqcrbox.helpers import get_routing_key_for_command_invocation_requests
 
 from .base_message_dispatcher import server_side_message_dispatcher
 
@@ -39,7 +39,4 @@ async def handle_client_indicating_availability_for_command_execution(
         ),
     )
     response = await broker.publish(msg_execute_command, msg.payload.private_routing_key, rpc=True)
-    response = ensure_dict(
-        response
-    )  # TODO: delete me when this is fixed: https://github.com/airtai/faststream/issues/1437
     assert response["status"] == msg_specs.ResponseStatusEnum.OK

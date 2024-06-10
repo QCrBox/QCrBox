@@ -2,7 +2,6 @@ import pytest
 from litestar.status_codes import HTTP_200_OK, HTTP_201_CREATED
 
 from pyqcrbox import db_helpers, msg_specs, sql_models
-from pyqcrbox.helpers import ensure_dict
 
 
 @pytest.mark.anyio
@@ -20,7 +19,6 @@ async def test_health_check_via_rabbitmq(
     response = await rabbit_test_broker.publish(msg, server_public_queue_name, rpc=True)
 
     if using_mock_rabbitmq_broker:
-        response = ensure_dict(response)
         test_server.get_mock_handler(server_public_queue_name).assert_called_once_with(msg)
 
     assert response["status"] == "success"
@@ -52,7 +50,6 @@ async def test_register_application(
     rabbit_test_broker,
     server_public_queue_name,
     sample_application_spec,
-    using_mock_rabbitmq_broker,
 ):
     msg = msg_specs.RegisterApplication(
         action="register_application",
@@ -67,8 +64,6 @@ async def test_register_application(
 
     # Send registration message to the server
     response = await rabbit_test_broker.publish(msg, server_public_queue_name, rpc=True)
-    if using_mock_rabbitmq_broker:
-        response = ensure_dict(response)
 
     # Check that we received a successful response
     assert response["status"] == "success"

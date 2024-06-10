@@ -5,8 +5,6 @@ from pathlib import Path
 from typing import Optional
 from uuid import uuid4
 
-import pydantic
-
 from pyqcrbox import logger
 
 __all__ = ["generate_correlation_id", "generate_private_routing_key"]
@@ -68,10 +66,3 @@ def import_all_submodules(parent_dir: Path, parent_package_name: str):
 
 def join_string_reprs(some_strings: list[str]):
     return ", ".join(repr(s) for s in some_strings)
-
-
-def ensure_dict(value: dict | pydantic.BaseModel) -> dict:
-    try:
-        return value.model_dump()
-    except AttributeError:
-        return value
