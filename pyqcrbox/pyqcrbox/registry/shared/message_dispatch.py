@@ -90,7 +90,7 @@ def declare_rabbitmq_message_handler(
             error_msg = "Invalid message structure: message must have an 'action' or 'response_to' field"
             return log_error_msg_and_create_response(error_msg)
 
-        logger.trace(f"Dispatching message: {msg_obj}")
+        logger.trace(f"Processing message: {msg_obj!r}")
         result = msg_dispatcher_func(msg_obj, self=self, broker=broker)
 
         if inspect.iscoroutine(result):
