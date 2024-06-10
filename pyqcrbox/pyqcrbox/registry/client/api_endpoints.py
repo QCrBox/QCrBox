@@ -3,7 +3,7 @@ from litestar import Litestar, MediaType, get
 __all__ = ["create_client_asgi_server"]
 
 
-@get(path="/health-check", media_type=MediaType.TEXT)
+@get(path="/healthcheck", media_type=MediaType.TEXT)
 async def health_check() -> str:
     return "healthy"
 

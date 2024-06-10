@@ -14,7 +14,7 @@ async def hello() -> str:
     return "Hello from QCrBox!"
 
 
-@get(path="/health-check", media_type=MediaType.TEXT)
+@get(path="/healthcheck", media_type=MediaType.TEXT)
 async def health_check() -> str:
     return "healthy"
 
