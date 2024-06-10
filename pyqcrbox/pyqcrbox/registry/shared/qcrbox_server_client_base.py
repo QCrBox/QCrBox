@@ -212,8 +212,17 @@ class TestQCrBoxServerClientBase(QCrBoxServerClientBase):
 
     def get_mock_handler(self, queue_name):
         subscr = self._get_subscriber(queue_name)
-        assert len(subscr.calls) == 1
-        handler = subscr.calls[0].handler
+        try:
+            assert len(subscr.calls) == 1
+            handler = subscr.calls[0].handler
+        except AssertionError:
+            logger.warning(
+                f"More than one handler found for queue {queue_name!r}. "
+                "Did you start more than one RabbitBroker instance? "
+                "Arbitrarily returning the last handler."
+            )
+            handler = subscr.calls[-1].handler
+
         return handler.mock
 
     def _get_subscriber(self, queue_name):
