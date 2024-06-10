@@ -24,7 +24,7 @@ async def handle_command_invocation(msg: msg_specs.InvokeCommand, broker: Rabbit
 
 @server_side_message_dispatcher.register
 async def handle_client_indicating_availability_for_command_execution(
-    msg: msg_specs.ClientIsAvailableToExecuteCommand, broker: RabbitBroker, **kwargs
+    msg: msg_specs.ClientIndicatesAvailabilityToExecuteCommand, broker: RabbitBroker, **kwargs
 ):
     assert msg.action == "client_is_available_to_execute_command"
     msg_execute_command = msg_specs.ExecuteCommand(

@@ -53,7 +53,7 @@ async def test_invoke_command(
         test_client.get_mock_handler(application_routing_key).assert_any_call(expected_msg_command_invocation_request)
 
     # Check that the client sends a reply to accept the command invocation request
-    expected_msg_accept_command_invocation_request = msg_specs.ClientIsAvailableToExecuteCommand(
+    expected_msg_accept_command_invocation_request = msg_specs.ClientIndicatesAvailabilityToExecuteCommand(
         action="client_is_available_to_execute_command",
         payload=msg_specs.PayloadForClientIsAvailableToExecuteCommand(
             cmd_invocation_payload=msg_invoke_cmd["payload"],

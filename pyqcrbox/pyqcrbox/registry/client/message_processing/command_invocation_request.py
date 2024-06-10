@@ -10,7 +10,7 @@ async def handle_command_invocation_request(
     msg: msg_specs.CommandInvocationRequest, *, self, broker: RabbitBroker, **kwargs
 ):
     assert msg.action == "command_invocation_request"
-    msg_indicate_availability = msg_specs.ClientIsAvailableToExecuteCommand(
+    msg_indicate_availability = msg_specs.ClientIndicatesAvailabilityToExecuteCommand(
         action="client_is_available_to_execute_command",
         payload=msg_specs.PayloadForClientIsAvailableToExecuteCommand(
             cmd_invocation_payload=msg.payload,

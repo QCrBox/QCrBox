@@ -3,7 +3,7 @@ from typing import Literal
 from pyqcrbox import sql_models
 from pyqcrbox.msg_specs.base import QCrBoxBaseAction, QCrBoxBasePayload
 
-__all__ = ["ClientIsAvailableToExecuteCommand", "PayloadForClientIsAvailableToExecuteCommand"]
+__all__ = ["ClientIndicatesAvailabilityToExecuteCommand", "PayloadForClientIsAvailableToExecuteCommand"]
 
 
 class PayloadForClientIsAvailableToExecuteCommand(QCrBoxBasePayload):
@@ -11,6 +11,6 @@ class PayloadForClientIsAvailableToExecuteCommand(QCrBoxBasePayload):
     private_routing_key: str
 
 
-class ClientIsAvailableToExecuteCommand(QCrBoxBaseAction):
+class ClientIndicatesAvailabilityToExecuteCommand(QCrBoxBaseAction):
     action: Literal["client_is_available_to_execute_command"] = "client_is_available_to_execute_command"
     payload: PayloadForClientIsAvailableToExecuteCommand
