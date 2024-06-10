@@ -1,12 +1,14 @@
 import sqlalchemy
-from litestar import Litestar, MediaType, Response, get, post
+import svcs
+from faststream.rabbit import RabbitBroker
+from litestar import Litestar, MediaType, Request, Response, get, post
 from litestar.openapi import OpenAPIConfig
 
 __all__ = ["create_server_asgi_server"]
 
 from sqlmodel import select
 
-from pyqcrbox import logger, settings, sql_models
+from pyqcrbox import QCRBOX_SVCS_REGISTRY, logger, msg_specs, settings, sql_models
 
 
 @get("/", media_type=MediaType.TEXT, include_in_schema=False)
@@ -44,15 +46,25 @@ async def retrieve_commands() -> list[sql_models.CommandSpecWithParameters]:
         return commands
 
 
+async def _invoke_command_impl(cmd: sql_models.CommandInvocationCreate, broker: RabbitBroker):
+    msg = msg_specs.InvokeCommand(payload=cmd)
+    await broker.publish(msg, settings.rabbitmq.routing_key_qcrbox_registry)
+
+
 @post(path="/invoke_command", media_type=MediaType.JSON)
-async def invoke_command(data: sql_models.CommandInvocationCreate) -> dict:
+async def invoke_command(data: sql_models.CommandInvocationCreate, request: Request) -> dict:
     logger.info(f"[DDD] Received {data=}")
-    return data.model_dump()
+
+    with svcs.Container(QCRBOX_SVCS_REGISTRY) as con:
+        broker = await con.aget(RabbitBroker)
+        await _invoke_command_impl(data, broker)
+
+    return msg_specs.responses.ok(response_to="invoke_command", msg="Accepted command invocation request")
 
 
 @post(path="/invoke_command/{cmd_id:int}", media_type=MediaType.JSON)
 async def invoke_command_by_id(cmd_id: int) -> dict | Response[str]:
-    logger.info(f"[DDD] Invoking command with id {cmd_id}")
+    logger.info(f"[DDD] Invoking command with command_id={cmd_id}")
     with settings.db.get_session() as session:
         try:
             command = session.get_one(sql_models.CommandSpecDB, cmd_id)
