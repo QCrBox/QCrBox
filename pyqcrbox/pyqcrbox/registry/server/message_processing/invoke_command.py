@@ -18,7 +18,6 @@ async def handle_command_invocation(msg: msg_specs.InvokeCommand, broker: Rabbit
     except sql_models.QCrBoxDBError as exc:
         return msg_specs.InvokeCommandResponse(response_to=msg.action, status="error", msg=exc.message)
 
-    correlation_id = cmd_invocation_db.correlation_id
     new_msg = msg_specs.CommandInvocationRequest(
         action="command_invocation_request",
         payload=msg.payload,
@@ -34,7 +33,10 @@ async def handle_command_invocation(msg: msg_specs.InvokeCommand, broker: Rabbit
 
     return msg_specs.responses.ok(
         response_to=msg.action,
-        payload={"correlation_id": correlation_id},
+        payload={
+            "cmd_id": cmd_invocation_db.id,
+            "correlation_id": cmd_invocation_db.correlation_id,
+        },
     )
 
 
