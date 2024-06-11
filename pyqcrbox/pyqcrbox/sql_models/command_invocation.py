@@ -10,7 +10,7 @@ from pyqcrbox.helpers import generate_correlation_id
 from pyqcrbox.settings import settings
 
 from .command import CommandSpecDB
-from .qcrbox_base_models import QCrBoxBaseSQLModel, QCrBoxPydanticBaseModel
+from .qcrbox_base_models import QCrBoxBaseSQLModel, QCrBoxDBError, QCrBoxPydanticBaseModel
 
 
 class CommandInvocationCreate(QCrBoxPydanticBaseModel):
@@ -24,7 +24,20 @@ class CommandInvocationCreate(QCrBoxPydanticBaseModel):
         return CommandInvocationDB.from_pydantic_model(self)
 
     def save_to_db(self) -> "CommandInvocationDB":
-        return self.to_sql_model().save_to_db()
+        try:
+            return self.to_sql_model().save_to_db()
+        except sqlalchemy.exc.IntegrityError as exc:
+            exception_msg = exc._message()
+
+            if "UNIQUE constraint failed: command_invocation.correlation_id" in exception_msg:
+                error_msg = (
+                    f"correlation_id must be unique for each command invocation, "
+                    f"but found existing value: {self.correlation_id!r}"
+                )
+            else:
+                error_msg = f"Internal server error (original error message: {exception_msg})"
+
+            raise QCrBoxDBError(error_msg)
 
 
 class CommandInvocationDB(QCrBoxBaseSQLModel, table=True):
