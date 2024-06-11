@@ -91,7 +91,11 @@ async def get_calculation_info(calculation_id: int) -> dict | Response[dict]:
     with settings.db.get_session() as session:
         try:
             calc = session.get_one(sql_models.CalculationDB, calculation_id)
-            return calc.model_dump()
+            response_data = {
+                "id": calc.id,
+                "status": calc.status,
+            }
+            return response_data
         except sqlalchemy.orm.exc.NoResultFound:
             return Response({"msg": f"No calculation exists with id={calculation_id}"}, status_code=404)
 
