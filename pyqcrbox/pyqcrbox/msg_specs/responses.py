@@ -10,15 +10,15 @@ class ResponseStatusEnum(StrEnum):
     ERROR = "error"
 
 
-def ok(*, response_to: str, msg: str = "", payload: Optional[QCrBoxBasePayload] = None):
+def ok(*, response_to: str, msg: str = "", payload: Optional[QCrBoxBasePayload | dict] = None):
     return QCrBoxGenericResponse(response_to=response_to, status=ResponseStatusEnum.OK, msg=msg, payload=payload)
 
 
-def success(*, response_to: str, msg: str = "", payload: Optional[QCrBoxBasePayload] = None):
+def success(*, response_to: str, msg: str = "", payload: Optional[QCrBoxBasePayload | dict] = None):
     return QCrBoxGenericResponse(response_to=response_to, status=ResponseStatusEnum.SUCCESS, msg=msg, payload=payload)
 
 
-def error(*, response_to: str, msg: str = "", payload: Optional[QCrBoxBasePayload] = None):
+def error(*, response_to: str, msg: str = "", payload: Optional[QCrBoxBasePayload | dict] = None):
     return QCrBoxGenericResponse(response_to=response_to, status=ResponseStatusEnum.ERROR, msg=msg, payload=payload)
 
 
