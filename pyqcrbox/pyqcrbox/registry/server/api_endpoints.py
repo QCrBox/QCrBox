@@ -1,6 +1,7 @@
+import sqlalchemy
 import svcs
 from faststream.rabbit import RabbitBroker
-from litestar import Litestar, MediaType, Request, get, post
+from litestar import Litestar, MediaType, Request, Response, get, post
 from litestar.openapi import OpenAPIConfig
 
 __all__ = ["create_server_asgi_server"]
@@ -50,6 +51,23 @@ async def _invoke_command_impl(cmd: sql_models.CommandInvocationCreate, broker: 
     return await broker.publish(msg, settings.rabbitmq.routing_key_qcrbox_registry, rpc=True, raise_timeout=True)
 
 
+@post(path="/commands/invoke", media_type=MediaType.JSON)
+async def commands_invoke(data: sql_models.CommandInvocationCreate) -> dict:
+    logger.info(f"[DDD] Received {data=}")
+
+    with svcs.Container(QCRBOX_SVCS_REGISTRY) as con:
+        broker = await con.aget(RabbitBroker)
+        response = await _invoke_command_impl(data, broker)
+
+    return dict(
+        msg="Accepted command invocation request",
+        status="ok",
+        payload={
+            "calculation_id": response["payload"]["calculation_id"],
+        },
+    )
+
+
 @post(path="/invoke_command", media_type=MediaType.JSON)
 async def invoke_command(data: sql_models.CommandInvocationCreate, request: Request) -> dict:
     logger.info(f"[DDD] Received {data=}")
@@ -68,6 +86,16 @@ async def invoke_command(data: sql_models.CommandInvocationCreate, request: Requ
     )
 
 
+@get(path="/calculations/{calculation_id:int}", media_type=MediaType.JSON)
+async def get_calculation_info(calculation_id: int) -> dict | Response[dict]:
+    with settings.db.get_session() as session:
+        try:
+            calc = session.get_one(sql_models.CalculationDB, calculation_id)
+            return calc.model_dump()
+        except sqlalchemy.orm.exc.NoResultFound:
+            return Response({"msg": f"No calculation exists with id={calculation_id}"}, status_code=404)
+
+
 def create_server_asgi_server(custom_lifespan) -> Litestar:
     app = Litestar(
         route_handlers=[
@@ -76,6 +104,8 @@ def create_server_asgi_server(custom_lifespan) -> Litestar:
             retrieve_applications,
             retrieve_commands,
             invoke_command,
+            commands_invoke,
+            get_calculation_info,
         ],
         debug=True,
         lifespan=[custom_lifespan],
