@@ -48,7 +48,7 @@ async def retrieve_commands() -> list[sql_models.CommandSpecWithParameters]:
 
 async def _invoke_command_impl(cmd: sql_models.CommandInvocationCreate, broker: RabbitBroker):
     msg = msg_specs.InvokeCommand(payload=cmd)
-    await broker.publish(msg, settings.rabbitmq.routing_key_qcrbox_registry)
+    return await broker.publish(msg, settings.rabbitmq.routing_key_qcrbox_registry, rpc=True, raise_timeout=True)
 
 
 @post(path="/invoke_command", media_type=MediaType.JSON)
@@ -57,9 +57,13 @@ async def invoke_command(data: sql_models.CommandInvocationCreate, request: Requ
 
     with svcs.Container(QCRBOX_SVCS_REGISTRY) as con:
         broker = await con.aget(RabbitBroker)
-        await _invoke_command_impl(data, broker)
+        response = await _invoke_command_impl(data, broker)
 
-    return msg_specs.responses.ok(response_to="invoke_command", msg="Accepted command invocation request")
+    return msg_specs.responses.ok(
+        response_to="invoke_command",
+        msg="Accepted command invocation request",
+        payload={"correlation_id": response["payload"]["correlation_id"]},
+    )
 
 
 @post(path="/invoke_command/{cmd_id:int}", media_type=MediaType.JSON)

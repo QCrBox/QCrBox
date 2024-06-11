@@ -142,13 +142,11 @@ async def test_api_endpoint_invoke_command(
         response = await web_client.post("/invoke_command", json=cmd_invocation.model_dump())
         assert response.status_code == HTTP_201_CREATED
 
-        expected_response_data = {
-            "response_to": "invoke_command",
-            "status": "ok",
-            "msg": "Accepted command invocation request",
-            "payload": {},
-        }
-        assert response.json() == expected_response_data
+        response_data = response.json()
+        assert response_data["response_to"] == "invoke_command"
+        assert response_data["status"] == "ok"
+        assert response_data["msg"] == "Accepted command invocation request"
+        assert "correlation_id" in response_data["payload"]
 
         # if using_mock_rabbitmq_broker:
         #     test_server.get_mock_handler(server_public_queue_name).assert_any_call(cmd_invocation)
