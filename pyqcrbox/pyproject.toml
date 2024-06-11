@@ -186,9 +186,7 @@ convention = "google"
 
 [tool.importlinter]
 root_package = "pyqcrbox"
-# Optional:
-#include_external_packages = True
-#exclude_type_checking_imports = True
+exclude_type_checking_imports = true
 
 [[tool.importlinter.contracts]]
 name = "Server does not import client modules"

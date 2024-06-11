@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from loguru import logger
 from pydantic import model_validator
@@ -8,6 +8,9 @@ from sqlmodel import Field, Relationship, UniqueConstraint
 
 from .call_pattern import CallPattern
 from .qcrbox_base_models import QCrBoxBaseSQLModel, QCrBoxPydanticBaseModel
+
+if TYPE_CHECKING:
+    from .calculation import CalculationDB
 
 
 class ImplementedAs(str, Enum):
@@ -97,6 +100,7 @@ class CommandSpecDB(CommandSpecBase, QCrBoxBaseSQLModel, table=True):
     application: "ApplicationSpecDB" = Relationship(back_populates="commands")
     parameters: dict = Field(sa_column=Column(JSON), default={})
     command_invocations: list["CommandInvocationDB"] = Relationship(back_populates="command")
+    calculations: list["CalculationDB"] = Relationship(back_populates="command")
 
     # required_cif_entry_sets: list[str] = Field(sa_column=Column(JSON()))
     # optional_cif_entry_sets: list[str] = Field(sa_column=Column(JSON()))

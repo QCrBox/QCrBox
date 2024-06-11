@@ -13,6 +13,7 @@ from pyqcrbox import logger
 from pyqcrbox.settings import settings
 
 from .. import helpers
+from .calculation import CalculationDB
 from .cif_entry_set import CifEntrySetCreate
 from .command import CommandSpecCreate, CommandSpecDB, CommandSpecWithParameters
 from .command_invocation import CommandInvocationDB
@@ -82,6 +83,7 @@ class ApplicationSpecDB(ApplicationSpecBase, QCrBoxBaseSQLModel, table=True):
 
     commands: list[CommandSpecDB] = Relationship(back_populates="application")
     command_invocations: list[CommandInvocationDB] = Relationship(back_populates="application")
+    calculations: list[CalculationDB] = Relationship(back_populates="application")
     # cif_entry_sets: list[str] = Field(sa_column=Column(JSON()))
 
     def model_dump(self, **kwargs):
