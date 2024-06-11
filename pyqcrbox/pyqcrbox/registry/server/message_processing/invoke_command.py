@@ -21,6 +21,13 @@ async def handle_command_invocation(msg: msg_specs.InvokeCommand, broker: Rabbit
     )
     await broker.publish(new_msg, rk_command_invocation_requests)
 
+    # TODO: generate a unique correlation_id here and add it to the response payload
+
+    return msg_specs.responses.ok(
+        response_to=msg.action,
+        payload={"correlation_id": new_msg.payload.correlation_id},
+    )
+
 
 @server_side_message_dispatcher.register
 async def handle_client_indicating_availability_for_command_execution(
