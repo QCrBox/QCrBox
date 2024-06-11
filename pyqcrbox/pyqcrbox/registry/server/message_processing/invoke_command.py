@@ -1,6 +1,6 @@
 from faststream.rabbit import RabbitBroker
 
-from pyqcrbox import msg_specs, sql_models
+from pyqcrbox import logger, msg_specs, sql_models
 from pyqcrbox.helpers import get_routing_key_for_command_invocation_requests
 
 from .base_message_dispatcher import server_side_message_dispatcher
@@ -10,6 +10,15 @@ from .base_message_dispatcher import server_side_message_dispatcher
 async def handle_command_invocation(msg: msg_specs.InvokeCommand, broker: RabbitBroker, **kwargs):
     assert msg.action == "invoke_command"
 
+    logger.warning("TODO: generate correlation_id here instead of accepting it as part of the incoming message")
+
+    cmd_invocation = msg.payload
+    try:
+        cmd_invocation_db = cmd_invocation.save_to_db()
+    except sql_models.QCrBoxDBError as exc:
+        return msg_specs.InvokeCommandResponse(response_to=msg.action, status="error", msg=exc.message)
+
+    correlation_id = cmd_invocation_db.correlation_id
     new_msg = msg_specs.CommandInvocationRequest(
         action="command_invocation_request",
         payload=msg.payload,
@@ -25,7 +34,7 @@ async def handle_command_invocation(msg: msg_specs.InvokeCommand, broker: Rabbit
 
     return msg_specs.responses.ok(
         response_to=msg.action,
-        payload={"correlation_id": new_msg.payload.correlation_id},
+        payload={"correlation_id": correlation_id},
     )
 
 
