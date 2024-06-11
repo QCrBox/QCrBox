@@ -9,4 +9,4 @@ from .cif_entry_set import CifEntrySetCreate
 from .command import CommandSpecCreate, CommandSpecDB, CommandSpecWithParameters
 from .command_execution import CommandExecutionCreate, CommandExecutionDB
 from .command_invocation import CommandInvocationCreate, CommandInvocationDB
-from .qcrbox_base_models import QCrBoxBaseSQLModel
+from .qcrbox_base_models import QCrBoxBaseSQLModel, QCrBoxDBError
