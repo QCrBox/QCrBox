@@ -146,7 +146,7 @@ async def test_api_endpoint_invoke_command(
         assert response_data["response_to"] == "invoke_command"
         assert response_data["status"] == "ok"
         assert response_data["msg"] == "Accepted command invocation request"
-        assert response_data["payload"]["cmd_id"] == 1
+        assert response_data["payload"]["calculation_id"] == 1
         assert "correlation_id" in response_data["payload"]
 
         # if using_mock_rabbitmq_broker:

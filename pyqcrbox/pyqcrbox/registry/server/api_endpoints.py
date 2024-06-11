@@ -63,7 +63,7 @@ async def invoke_command(data: sql_models.CommandInvocationCreate, request: Requ
         response_to="invoke_command",
         msg="Accepted command invocation request",
         payload={
-            "cmd_id": response["payload"]["cmd_id"],
+            "calculation_id": response["payload"]["calculation_id"],
             "correlation_id": response["payload"]["correlation_id"],
         },
     )

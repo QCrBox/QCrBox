@@ -12,9 +12,21 @@ async def handle_command_invocation(msg: msg_specs.InvokeCommand, broker: Rabbit
 
     logger.warning("TODO: generate correlation_id here instead of accepting it as part of the incoming message")
 
-    cmd_invocation = msg.payload
+    calculation_db = sql_models.CalculationDB(
+        application_slug=msg.payload.application_slug,
+        application_version=msg.payload.application_version,
+        command_name=msg.payload.command_name,
+        arguments=msg.payload.arguments,
+        correlation_id=msg.payload.correlation_id,  # FIXME
+    )
     try:
-        cmd_invocation_db = cmd_invocation.save_to_db()
+        calculation_db.save_to_db()
+    except sql_models.QCrBoxDBError as exc:
+        return msg_specs.InvokeCommandResponse(response_to=msg.action, status="error", msg=exc.message)
+
+    try:
+        cmd_invocation = msg.payload
+        _ = cmd_invocation.save_to_db()
     except sql_models.QCrBoxDBError as exc:
         return msg_specs.InvokeCommandResponse(response_to=msg.action, status="error", msg=exc.message)
 
@@ -34,8 +46,8 @@ async def handle_command_invocation(msg: msg_specs.InvokeCommand, broker: Rabbit
     return msg_specs.responses.ok(
         response_to=msg.action,
         payload={
-            "cmd_id": cmd_invocation_db.id,
-            "correlation_id": cmd_invocation_db.correlation_id,
+            "calculation_id": calculation_db.id,
+            "correlation_id": calculation_db.correlation_id,
         },
     )
 
