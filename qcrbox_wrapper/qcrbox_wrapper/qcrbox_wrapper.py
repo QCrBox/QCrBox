@@ -309,6 +309,7 @@ class QCrBoxWrapper:
                 cmd_id=int(ans["id"]),
                 name=ans["name"],
                 application_id=int(ans["application_id"]),
+                application_name=app_id2name[int(ans["application_id"])],
                 parameters=[QCrBoxParameter(key, dtype) for key, dtype in ans["parameters"].items()],
                 wrapper_parent=self,
             )
@@ -321,6 +322,7 @@ class QCrBoxWrapper:
                 cmd_id=int(ans["id"]),
                 name=ans["name"],
                 application_id=int(ans["application_id"]),
+                application_name=app_id2name[int(ans["application_id"])],
                 parameters=[QCrBoxParameter(key, dtype) for key, dtype in ans["parameters"].items()],
                 wrapper_parent=self,
             )
@@ -349,6 +351,7 @@ class QCrBoxWrapper:
                         cmd_id=int(ans["id"]),
                         name=ans["name"],
                         application_id=int(ans["application_id"]),
+                        application_name=app_id2name[int(ans["application_id"])],
                         parameters=parameters,
                         gui_url=to_gui_url(ans["application_id"], ans["name"]),
                         wrapper_parent=self,
@@ -356,6 +359,7 @@ class QCrBoxWrapper:
                             int(ans["id"]),
                             ans["name"],
                             int(ans["application_id"]),
+                            app_id2name[int(ans["application_id"])],
                             [QCrBoxParameter(key, dtype) for key, dtype in ans["parameters"].items()],
                             self,
                         ),
@@ -369,6 +373,7 @@ class QCrBoxWrapper:
                         cmd_id=int(ans["id"]),
                         name=ans["name"],
                         application_id=int(ans["application_id"]),
+                        application_name=app_id2name[int(ans["application_id"])],
                         parameters=[QCrBoxParameter(key, dtype) for key, dtype in ans["parameters"].items()],
                         wrapper_parent=self,
                     )
@@ -480,6 +485,7 @@ class QCrBoxCommandBase:
         cmd_id: int,
         name: str,
         application_id: int,
+        application_name: str,
         parameters: List[QCrBoxParameter],
         wrapper_parent: QCrBoxWrapper,
     ) -> None:
@@ -493,7 +499,9 @@ class QCrBoxCommandBase:
         name : str
             Name of the command.
         application_id : int
-            ID of the application used by the command.
+            ID of the application exposing the command.
+        application_name : str
+            Name of the application exposing the command.
         parameters : List[QCrBoxParameter]
             List of parameters for the command.
         wrapper_parent : QCrBoxWrapper
@@ -502,6 +510,7 @@ class QCrBoxCommandBase:
         self.id = cmd_id
         self.name = name
         self.application_id = application_id
+        self.application_name = application_name
         self.parameters = parameters
         self.wrapper_parent = wrapper_parent
         self._server_url = wrapper_parent.server_url
@@ -655,6 +664,7 @@ class QCrBoxInteractiveCommand(QCrBoxCommandBase):
         cmd_id: int,
         name: str,
         application_id: int,
+        application_name: str,
         parameters: List[QCrBoxParameter],
         gui_url: str,
         wrapper_parent: QCrBoxWrapper,
@@ -672,7 +682,9 @@ class QCrBoxInteractiveCommand(QCrBoxCommandBase):
         name : str
             Name of the command.
         application_id : int
-            ID of the application used by the command.
+            ID of the application exposing the command.
+        application_name : str
+            Name of the application exposing the command.
         parameters : List[QCrBoxParameter]
             List of parameters for the command.
         gui_url : str
@@ -691,6 +703,7 @@ class QCrBoxInteractiveCommand(QCrBoxCommandBase):
             cmd_id=cmd_id,
             name=name,
             application_id=application_id,
+            application_name=application_name,
             parameters=parameters,
             wrapper_parent=wrapper_parent,
         )
