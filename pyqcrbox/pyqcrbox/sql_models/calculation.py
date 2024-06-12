@@ -18,10 +18,11 @@ if TYPE_CHECKING:
 
 class CalculationStatusEnum(StrEnum):
     RECEIVED = "received"
-    SUBMITTED = "submitted"
+    CHECKING_CLIENT_AVAILABILITY = "checking_client_availability"
     RUNNING = "running"
     COMPLETED = "completed"
     FAILED = "failed"
+    CANCELLED = "cancelled"
 
 
 class CalculationDB(QCrBoxBaseSQLModel, table=True):

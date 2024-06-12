@@ -17,16 +17,10 @@ async def handle_command_invocation(msg: msg_specs.InvokeCommand, broker: Rabbit
         application_version=msg.payload.application_version,
         command_name=msg.payload.command_name,
         arguments=msg.payload.arguments,
-        correlation_id=msg.payload.correlation_id,  # FIXME
+        correlation_id=msg.payload.correlation_id,  # FIXME: generate this here (see TODO comment above)
     )
     try:
         calculation_db.save_to_db()
-    except sql_models.QCrBoxDBError as exc:
-        return msg_specs.InvokeCommandResponse(response_to=msg.action, status="error", msg=exc.message)
-
-    try:
-        cmd_invocation = msg.payload
-        _ = cmd_invocation.save_to_db()
     except sql_models.QCrBoxDBError as exc:
         return msg_specs.InvokeCommandResponse(response_to=msg.action, status="error", msg=exc.message)
 
@@ -41,7 +35,11 @@ async def handle_command_invocation(msg: msg_specs.InvokeCommand, broker: Rabbit
     )
     await broker.publish(new_msg, rk_command_invocation_requests)
 
-    # TODO: generate a unique correlation_id here and add it to the response payload
+    try:
+        calculation_db.status = sql_models.CalculationStatusEnum.CHECKING_CLIENT_AVAILABILITY
+        calculation_db.save_to_db()
+    except sql_models.QCrBoxDBError as exc:
+        return msg_specs.InvokeCommandResponse(response_to=msg.action, status="error", msg=exc.message)
 
     return msg_specs.responses.ok(
         response_to=msg.action,
