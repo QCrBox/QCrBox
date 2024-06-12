@@ -36,7 +36,7 @@ async def handle_command_invocation(msg: msg_specs.InvokeCommand, broker: Rabbit
     await broker.publish(new_msg, rk_command_invocation_requests)
 
     try:
-        calculation_db.status = sql_models.CalculationStatusEnum.CHECKING_CLIENT_AVAILABILITY
+        calculation_db.update_status(sql_models.CalculationStatusEnum.CHECKING_CLIENT_AVAILABILITY)
         calculation_db.save_to_db()
     except sql_models.QCrBoxDBError as exc:
         return msg_specs.InvokeCommandResponse(response_to=msg.action, status="error", msg=exc.message)

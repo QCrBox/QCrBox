@@ -62,7 +62,7 @@ async def test_calculation_status_after_invocation(
 
         expected_response = {
             "id": calculation_id,
-            "status": "checking_client_availability",
+            "status": "received",
         }
         assert expected_response == calc_info_response.json()
 
