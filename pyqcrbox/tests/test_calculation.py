@@ -29,4 +29,4 @@ async def test_calculation_status_update(dummy_calculation):
     assert dummy_calculation.status == "running"
 
     with pytest.raises(ValueError):
-        dummy_calculation.update_status("INVALID_STATUS")
+        dummy_calculation.update_status("<THIS_STATUS_IS_INVALID>")

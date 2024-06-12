@@ -28,7 +28,7 @@ class CalculationDB(QCrBoxBaseSQLModel, table=True):
     correlation_id: str
     timestamp: datetime = Field(default_factory=datetime.now)
 
-    status_events: CalculationStatusEventDB | None = Relationship(back_populates="calculation")
+    status_events: list[CalculationStatusEventDB] = Relationship(back_populates="calculation")
 
     id: Optional[int] = Field(default=None, primary_key=True)
 
@@ -48,14 +48,26 @@ class CalculationDB(QCrBoxBaseSQLModel, table=True):
     @property
     def status(self) -> CalculationStatusEnum:
         with settings.db.get_session() as session:
-            latest_status_event = session.exec(
-                select(CalculationStatusEventDB).order_by(desc(CalculationStatusEventDB.timestamp))
-            ).first()
+            event = self._get_latest_or_create_initial_event(session)
+        return event.status
+
+    def _get_latest_or_create_initial_event(self, session):
+        latest_status_event = session.exec(
+            select(CalculationStatusEventDB).order_by(desc(CalculationStatusEventDB.timestamp))
+        ).first()
 
         if latest_status_event is None:
-            return CalculationStatusEnum.RECEIVED
-        else:
-            return latest_status_event.status
+            initial_status_event = CalculationStatusEventDB(
+                calculation_id=self.id,
+                status=CalculationStatusEnum.RECEIVED,
+            )
+            session.add(initial_status_event)
+            session.commit()
+            session.refresh(initial_status_event)
+
+            latest_status_event = initial_status_event
+
+        return latest_status_event
 
     def update_status(self, new_status: CalculationStatusEnum | str, comment: str = ""):
         logger.debug(f"Creating new status event for calculation {self.id}")
@@ -100,10 +112,8 @@ class CalculationDB(QCrBoxBaseSQLModel, table=True):
                     self.command = None
                     logger.debug(f"Warning: could not find command {self.command_name!r}.")
 
-            initial_status = CalculationStatusEventDB(calculation=self, status=CalculationStatusEnum.RECEIVED)
-            session.add(initial_status)
+            _ = self._get_latest_or_create_initial_event(session)
 
             session.commit()
             session.refresh(self)
-            session.refresh(initial_status)
             return self
