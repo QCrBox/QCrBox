@@ -1,28 +1,20 @@
 from datetime import datetime
-from enum import StrEnum
 from typing import TYPE_CHECKING, Any, Optional
 
 import sqlalchemy
-from sqlmodel import JSON, Column, Field, Relationship, UniqueConstraint, select
+from pydantic import computed_field
+from sqlmodel import JSON, Column, Field, Relationship, UniqueConstraint, desc, select
 
 from pyqcrbox import logger, sql_models
 from pyqcrbox.settings import settings
 
+from .calculation_status_event import CalculationStatusEnum, CalculationStatusEventDB
 from .command import CommandSpecDB
 from .qcrbox_base_models import QCrBoxBaseSQLModel
 
 if TYPE_CHECKING:
     from .application import ApplicationSpecDB
     from .command_invocation import CommandInvocationDB
-
-
-class CalculationStatusEnum(StrEnum):
-    RECEIVED = "received"
-    CHECKING_CLIENT_AVAILABILITY = "checking_client_availability"
-    RUNNING = "running"
-    COMPLETED = "completed"
-    FAILED = "failed"
-    CANCELLED = "cancelled"
 
 
 class CalculationDB(QCrBoxBaseSQLModel, table=True):
@@ -35,7 +27,8 @@ class CalculationDB(QCrBoxBaseSQLModel, table=True):
     arguments: dict[str, Any] = Field(sa_column=Column(JSON))
     correlation_id: str
     timestamp: datetime = Field(default_factory=datetime.now)
-    status: CalculationStatusEnum = CalculationStatusEnum.RECEIVED
+
+    status_events: CalculationStatusEventDB | None = Relationship(back_populates="calculation")
 
     id: Optional[int] = Field(default=None, primary_key=True)
 
@@ -50,6 +43,28 @@ class CalculationDB(QCrBoxBaseSQLModel, table=True):
         sa_relationship_kwargs={"uselist": False},
         back_populates="calculation",
     )
+
+    @computed_field
+    @property
+    def status(self) -> CalculationStatusEnum:
+        with settings.db.get_session() as session:
+            latest_status_event = session.exec(
+                select(CalculationStatusEventDB).order_by(desc(CalculationStatusEventDB.timestamp))
+            ).first()
+
+        if latest_status_event is None:
+            return CalculationStatusEnum.RECEIVED
+        else:
+            return latest_status_event.status
+
+    def update_status(self, new_status: CalculationStatusEnum | str, comment: str = ""):
+        logger.debug(f"Creating new status event for calculation {self.id}")
+        new_status = CalculationStatusEnum(new_status)
+
+        with settings.db.get_session() as session:
+            status_event = CalculationStatusEventDB(status=new_status, comment=comment)
+            session.add(status_event)
+            session.commit()
 
     def save_to_db(self):
         with settings.db.get_session() as session:
@@ -85,6 +100,10 @@ class CalculationDB(QCrBoxBaseSQLModel, table=True):
                     self.command = None
                     logger.debug(f"Warning: could not find command {self.command_name!r}.")
 
+            initial_status = CalculationStatusEventDB(calculation=self, status=CalculationStatusEnum.RECEIVED)
+            session.add(initial_status)
+
             session.commit()
             session.refresh(self)
+            session.refresh(initial_status)
             return self
