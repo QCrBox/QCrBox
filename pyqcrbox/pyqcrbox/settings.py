@@ -1,11 +1,11 @@
 import functools
 import sys
-from typing import Annotated, Any, Literal, Optional, Union
+from typing import Any, Optional
 
 import sqlalchemy
 import sqlmodel
 from loguru import logger
-from pydantic import BaseModel, FileUrl, Tag, UrlConstraints, computed_field
+from pydantic import BaseModel, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlmodel import Session, create_engine
 
@@ -13,16 +13,7 @@ __all__ = ["settings"]
 
 IS_RUNNING_INSIDE_TESTS = hasattr(sys, "_qcrbox_running_inside_tests")
 
-SQLiteDsn = Union[
-    Annotated[Literal["sqlite:///:memory:"], Tag("in-memory")],
-    Annotated[
-        FileUrl,
-        UrlConstraints(
-            allowed_schemes=["sqlite", "sqlite+aiosqlite"],
-        ),
-        Tag("file-based"),
-    ],
-]
+SQLiteDsn = str  # alias for readability
 
 
 @functools.lru_cache
