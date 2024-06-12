@@ -15,7 +15,7 @@ __all__ = ["ExecutableCommand"]
 def ExecutableCommand(cmd_spec: "CommandSpecCreate"):
     match cmd_spec.implemented_as:
         case ImplementedAs.python_callable:
-            return PythonCallable(cmd_spec)
+            return PythonCallable.from_command_spec(cmd_spec)
         case ImplementedAs.cli:
             return CLICommand(cmd_spec)
         case ImplementedAs.interactive:
