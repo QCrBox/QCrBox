@@ -51,23 +51,6 @@ async def _invoke_command_impl(cmd: sql_models.CommandInvocationCreate, broker: 
     return await broker.publish(msg, settings.rabbitmq.routing_key_qcrbox_registry, rpc=True, raise_timeout=True)
 
 
-@post(path="/commands/invoke", media_type=MediaType.JSON)
-async def commands_invoke(data: sql_models.CommandInvocationCreate) -> dict:
-    logger.info(f"[DDD] Received {data=}")
-
-    with svcs.Container(QCRBOX_SVCS_REGISTRY) as con:
-        broker = await con.aget(RabbitBroker)
-        response = await _invoke_command_impl(data, broker)
-
-    return dict(
-        msg="Accepted command invocation request",
-        status="ok",
-        payload={
-            "calculation_id": response["payload"]["calculation_id"],
-        },
-    )
-
-
 @post(path="/invoke_command", media_type=MediaType.JSON)
 async def invoke_command(data: sql_models.CommandInvocationCreate, request: Request) -> dict:
     logger.info(f"[DDD] Received {data=}")
@@ -82,6 +65,23 @@ async def invoke_command(data: sql_models.CommandInvocationCreate, request: Requ
         payload={
             "calculation_id": response["payload"]["calculation_id"],
             "correlation_id": response["payload"]["correlation_id"],
+        },
+    )
+
+
+@post(path="/commands/invoke", media_type=MediaType.JSON)
+async def commands_invoke(data: sql_models.CommandInvocationCreate) -> dict:
+    logger.info(f"[DDD] Received {data=}")
+
+    with svcs.Container(QCRBOX_SVCS_REGISTRY) as con:
+        broker = await con.aget(RabbitBroker)
+        response = await _invoke_command_impl(data, broker)
+
+    return dict(
+        msg="Accepted command invocation request",
+        status="ok",
+        payload={
+            "calculation_id": response["payload"]["calculation_id"],
         },
     )
 
