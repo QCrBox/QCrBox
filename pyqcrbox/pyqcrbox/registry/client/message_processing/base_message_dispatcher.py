@@ -1,13 +1,17 @@
 import functools
 import textwrap
+from typing import TYPE_CHECKING
 
 from loguru import logger
 
 from pyqcrbox import msg_specs
 
+if TYPE_CHECKING:
+    from pyqcrbox.registry import QCrBoxClient
+
 
 @functools.singledispatch
-def client_side_message_dispatcher(msg: dict, **kwargs):
+def client_side_message_dispatcher(msg: dict, *, self: "QCrBoxClient", **kwargs):
     """
     Fallback processing definition.
 
