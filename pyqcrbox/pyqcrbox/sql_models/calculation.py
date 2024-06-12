@@ -48,15 +48,27 @@ class CalculationDB(QCrBoxBaseSQLModel, table=True):
     @property
     def status(self) -> CalculationStatusEnum:
         with settings.db.get_session() as session:
-            event = self._get_latest_or_create_initial_event(session)
+            event = self._get_latest_or_create_initial_status_event(session)
         return event.status
 
-    def _get_latest_or_create_initial_event(self, session):
+    def get_status_events(self) -> list[CalculationStatusEventDB]:
+        with settings.db.get_session() as session:
+            events = session.exec(select(CalculationStatusEventDB).order_by(CalculationStatusEventDB.timestamp)).all()
+        return events
+
+    def get_status_values(self) -> list[CalculationStatusEnum]:
+        return [e.status for e in self.get_status_events()]
+
+    def _get_latest_or_create_initial_status_event(self, session):
         latest_status_event = session.exec(
             select(CalculationStatusEventDB).order_by(desc(CalculationStatusEventDB.timestamp))
         ).first()
 
         if latest_status_event is None:
+            session.add(self)
+            session.commit()
+            session.refresh(self)
+
             initial_status_event = CalculationStatusEventDB(
                 calculation_id=self.id,
                 status=CalculationStatusEnum.RECEIVED,
@@ -112,7 +124,7 @@ class CalculationDB(QCrBoxBaseSQLModel, table=True):
                     self.command = None
                     logger.debug(f"Warning: could not find command {self.command_name!r}.")
 
-            _ = self._get_latest_or_create_initial_event(session)
+            _ = self._get_latest_or_create_initial_status_event(session)
 
             session.commit()
             session.refresh(self)

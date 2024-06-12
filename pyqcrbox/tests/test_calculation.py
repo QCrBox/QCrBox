@@ -19,14 +19,21 @@ def dummy_calculation(test_server, test_client):
 
 
 @pytest.mark.anyio
-async def test_calculation_status_update(dummy_calculation):
+async def test_calculation_status_updates(dummy_calculation):
     assert dummy_calculation.status == "received"
+    assert dummy_calculation.get_status_values() == ["received"]
 
     dummy_calculation.save_to_db()
     assert dummy_calculation.status == "received"
+    assert dummy_calculation.get_status_values() == ["received"]
+
+    dummy_calculation.update_status("checking_client_availability")
+    assert dummy_calculation.status == "checking_client_availability"
+    assert dummy_calculation.get_status_values() == ["received", "checking_client_availability"]
 
     dummy_calculation.update_status("running")
     assert dummy_calculation.status == "running"
+    assert dummy_calculation.get_status_values() == ["received", "checking_client_availability", "running"]
 
     with pytest.raises(ValueError):
         dummy_calculation.update_status("<THIS_STATUS_IS_INVALID>")
