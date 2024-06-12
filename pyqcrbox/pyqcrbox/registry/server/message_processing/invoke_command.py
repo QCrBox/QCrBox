@@ -57,6 +57,13 @@ async def handle_client_indicating_availability_for_command_execution(
     msg: msg_specs.ClientIndicatesAvailabilityToExecuteCommand, broker: RabbitBroker, **kwargs
 ):
     assert msg.action == "client_is_available_to_execute_command"
+
+    logger.debug(
+        "Received message from client indicating availability to execute command: "
+        f"correlation_id={msg.payload.cmd_invocation_payload.correlation_id}, "
+        f"{msg.payload.private_routing_key=}"
+    )
+
     msg_execute_command = msg_specs.ExecuteCommand(
         action="execute_command",
         payload=sql_models.CommandExecutionCreate(
