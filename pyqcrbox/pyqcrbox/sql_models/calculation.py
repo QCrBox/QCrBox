@@ -62,7 +62,7 @@ class CalculationDB(QCrBoxBaseSQLModel, table=True):
         new_status = CalculationStatusEnum(new_status)
 
         with settings.db.get_session() as session:
-            status_event = CalculationStatusEventDB(status=new_status, comment=comment)
+            status_event = CalculationStatusEventDB(calculation_id=self.id, status=new_status, comment=comment)
             session.add(status_event)
             session.commit()
 

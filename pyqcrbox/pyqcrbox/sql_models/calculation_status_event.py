@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import StrEnum
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 
 from sqlmodel import Field, Relationship
 
@@ -27,5 +27,5 @@ class CalculationStatusEventDB(QCrBoxBaseSQLModel, table=True):
     status: CalculationStatusEnum = CalculationStatusEnum.RECEIVED
     comment: str = ""
 
-    calculation_id: int | None = Field(default=None, foreign_key="calculation.id")
-    calculation: Union["CalculationDB", None] = Relationship(back_populates="status_events")
+    calculation_id: int = Field(foreign_key="calculation.id")
+    calculation: "CalculationDB" = Relationship(back_populates="status_events")
