@@ -59,6 +59,7 @@ dev = [
     "pytest-asyncio",
     "pytest-cov",
     "pytest-cases",
+    "pytest-hot-reloading",
 ]
 
 docs = [
@@ -123,11 +124,13 @@ only-include = ["pyqcrbox"]
 
 [tool.pytest.ini_options]
 filterwarnings =["ignore::DeprecationWarning"]
+#addopts = "-p pytest_hot_reloading.plugin"
 #addopts = "--cov=pyqcrbox --cov-report=term-missing"
 markers = [
     "requires_mock_rabbitmq_broker",
     "xfail_with_real_rabbitmq_broker",
 ]
+
 [tool.mypy]
 strict = true
 python_version = "3.8"
