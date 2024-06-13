@@ -8,7 +8,9 @@ import multiprocessing
 import traceback
 from typing import Callable
 
-from loguru import logger
+from pydantic._internal._validate_call import ValidateCallWrapper
+
+from pyqcrbox import logger
 
 from .calculation import PythonCallableCalculation
 
@@ -22,6 +24,7 @@ class PythonCallable:
         self.fn = fn
         self.signature = inspect.signature(fn)
         self.parameter_names = list(self.signature.parameters.keys())
+        self._fn_with_call_args_validation = ValidateCallWrapper(self.fn, config=None, validate_return=False)
 
     @classmethod
     def from_command_spec(cls, cmd_spec) -> "PythonCallable":
@@ -51,5 +54,11 @@ class PythonCallable:
             logger.error(f"Error: {exc=} ({multiprocessing.current_process().name})\n\nTraceback:\n\n{traceback_str}")
 
         pool = multiprocessing.Pool(_num_processes)
-        result = pool.apply_async(self.fn, args, kwargs, callback=success_callback, error_callback=error_callback)
+        result = pool.apply_async(
+            self._fn_with_call_args_validation,
+            args,
+            kwargs,
+            callback=success_callback,
+            error_callback=error_callback,
+        )
         return PythonCallableCalculation(result)
