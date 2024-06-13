@@ -38,12 +38,12 @@ async def test_command_invocation(
 @pytest.mark.anyio
 async def test_calculation_status_after_invocation(
     test_server,
-    sample_application_spec,
+    test_client,
 ):
     """
     GET request to /calculations/<id> returns status "received" immediately after command invocation
     """
-    app = sample_application_spec
+    app = test_client.application_spec
     cmd = app.commands[0]
 
     payload = sql_models.CommandInvocationCreate(
