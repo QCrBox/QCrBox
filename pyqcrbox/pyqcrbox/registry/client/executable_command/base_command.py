@@ -1,4 +1,4 @@
-from abc import abstractmethod
+from abc import ABCMeta, abstractmethod
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -7,7 +7,7 @@ if TYPE_CHECKING:
 __all__ = ["BaseCommand"]
 
 
-class BaseCommand:
+class BaseCommand(metaclass=ABCMeta):
     def __init__(self, cmd_spec: "CommandSpecCreate"):
         self.cmd_spec = cmd_spec
 

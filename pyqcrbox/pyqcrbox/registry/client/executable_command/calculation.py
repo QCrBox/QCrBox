@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MPL-2.0
-
+import asyncio
 import multiprocessing.pool
 from abc import ABCMeta, abstractmethod
 from enum import Enum
@@ -98,3 +98,38 @@ class PythonCallableCalculation(BaseCalculation):
         self.pool.terminate()
         self.pool.join()
         logger.trace("Multiprocessing pool terminated.")
+
+
+class CLICmdCalculation(BaseCalculation):
+    def __init__(self, proc: asyncio.subprocess.Process):
+        super().__init__()
+        self.proc = proc
+
+    @property
+    def status(self) -> CalculationStatus:
+        match self.proc.returncode:
+            case None:
+                status = CalculationStatus.RUNNING
+            case 0:
+                status = CalculationStatus.COMPLETED
+            case _:
+                status = CalculationStatus.FAILED
+
+        return status
+
+    @property
+    async def status_details(self):
+        returncode = self.proc.returncode
+        status_details = {
+            "returncode": returncode,
+        }
+        if returncode is not None:
+            stdout, stderr = await self.proc.communicate()
+            status_details["stdout"] = stdout
+            status_details["stderr"] = stderr
+        return status_details
+
+    async def terminate(self):
+        logger.debug("Terminating process running CLI command.")
+        self.proc.terminate()
+        logger.trace("Process terminated.")
