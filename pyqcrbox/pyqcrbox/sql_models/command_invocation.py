@@ -4,8 +4,8 @@ import sqlalchemy
 from pydantic import model_validator
 from sqlmodel import Field, select
 
+from pyqcrbox import logger, settings
 from pyqcrbox.helpers import generate_correlation_id
-from pyqcrbox.settings import settings
 
 from .application import ApplicationSpecDB
 from .command import CommandSpecDB
@@ -33,8 +33,12 @@ class CommandInvocationCreate(QCrBoxPydanticBaseModel):
                     )
                 ).one()
             except sqlalchemy.exc.NoResultFound:
-                raise ValueError(
+                error_msg = (
                     f"Command not registered: {self.command_name} "
                     f"(application: {self.application_slug!r}, "
                     f"version: {self.application_version!r})"
                 )
+                logger.error(error_msg)
+                raise ValueError(error_msg)
+
+        return self

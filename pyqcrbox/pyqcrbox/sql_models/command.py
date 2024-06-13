@@ -10,6 +10,7 @@ from .call_pattern import CallPattern
 from .qcrbox_base_models import QCrBoxBaseSQLModel, QCrBoxPydanticBaseModel
 
 if TYPE_CHECKING:
+    from .application import ApplicationSpecDB
     from .calculation import CalculationDB
 
 
