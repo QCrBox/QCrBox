@@ -9,6 +9,8 @@ import asyncio
 import inspect
 import subprocess
 
+from pyqcrbox import logger
+
 from .base_command import BaseCommand
 from .calculation import CLICmdCalculation
 
@@ -97,3 +99,8 @@ class CLICommand(BaseCommand):
             stderr=_stderr,
         )
         return CLICmdCalculation(proc)
+
+    async def terminate(self):
+        logger.debug("Terminating process running CLI command.")
+        self.proc.terminate()
+        logger.trace("Process terminated.")

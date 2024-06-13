@@ -128,8 +128,3 @@ class CLICmdCalculation(BaseCalculation):
             status_details["stdout"] = stdout
             status_details["stderr"] = stderr
         return status_details
-
-    async def terminate(self):
-        logger.debug("Terminating process running CLI command.")
-        self.proc.terminate()
-        logger.trace("Process terminated.")
