@@ -95,6 +95,6 @@ async def test_calculation_status_after_client_indicates_availability(
 
         expected_response = {
             "id": calculation_id,
-            "status": "running",  # TODO: how can we guarantee that the execution has started?
+            "status": "running",
         }
         assert expected_response == calc_info_response.json()
