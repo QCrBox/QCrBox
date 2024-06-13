@@ -1,8 +1,12 @@
 import textwrap
+from typing import TYPE_CHECKING
 
 from pyqcrbox import sql_models
 
 from .qcrbox_command import QCrBoxCommand
+
+if TYPE_CHECKING:
+    from .qcrbox_wrapper import QCrBoxWrapper
 
 
 class QCrBoxApplication:
@@ -13,6 +17,7 @@ class QCrBoxApplication:
     def __init__(
         self,
         application_spec: sql_models.ApplicationSpecWithCommands,
+        wrapper_parent: "QCrBoxWrapper",
     ) -> None:
         """
         Initializes the QCrBoxApplication instance.
@@ -26,7 +31,15 @@ class QCrBoxApplication:
         self.name = self.application_spec.name
         self.slug = self.application_spec.slug
         self.version = self.application_spec.version
-        self.commands = [QCrBoxCommand(cmd_spec) for cmd_spec in self.application_spec.commands]
+        self.commands = [
+            QCrBoxCommand(
+                application_slug=self.slug,
+                application_version=self.version,
+                cmd_spec=cmd_spec,
+                wrapper_parent=wrapper_parent,
+            )
+            for cmd_spec in self.application_spec.commands
+        ]
         self.__doc__ = self._construct_docstring()
 
     def __repr__(self) -> str:
