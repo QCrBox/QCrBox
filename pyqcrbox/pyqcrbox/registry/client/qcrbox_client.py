@@ -12,7 +12,7 @@ from pyqcrbox.registry.client.message_processing import client_side_message_disp
 
 from ..shared import QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup
 from .api_endpoints import create_client_asgi_server
-from .executable_command import ExecutableCommand
+from .executable_command import BaseCommand, ExecutableCommand
 
 __all__ = ["QCrBoxClient", "TestQCrBoxClient"]
 
@@ -30,6 +30,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         self.application_spec = application_spec
         self.private_routing_key = private_routing_key or generate_private_routing_key()
         self.routing_key_command_invocation = application_spec.routing_key_command_invocation
+        self._calculations: list[BaseCommand] = []
 
     def _set_up_rabbitmq_broker(self) -> None:
         self.declare_rabbitmq_message_handler(
@@ -44,6 +45,12 @@ class QCrBoxClient(QCrBoxServerClientBase):
 
     def _set_up_asgi_server(self) -> None:
         self.asgi_server = create_client_asgi_server(self.lifespan_context)
+
+    async def _run_custom_shutdown_tasks(self):
+        logger.debug("Terminating running calculations...")
+        logger.warning("TODO: actually terminate any running calculations...")
+        for calc in self._calculations:
+            await calc.terminate()
 
     def get_executable_command(self, command_name):
         cmd_spec = self.application_spec.get_command_spec(command_name)

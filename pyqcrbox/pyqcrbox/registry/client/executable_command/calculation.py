@@ -4,6 +4,8 @@ import multiprocessing.pool
 from abc import ABCMeta, abstractmethod
 from enum import Enum
 
+from pyqcrbox import logger
+
 
 class CalculationStatus(str, Enum):
     RUNNING = "running"
@@ -64,9 +66,10 @@ class BaseCalculation(metaclass=ABCMeta):
 
 
 class PythonCallableCalculation(BaseCalculation):
-    def __init__(self, result: multiprocessing.pool.ApplyResult):
+    def __init__(self, result: multiprocessing.pool.ApplyResult, *, pool: multiprocessing.pool.Pool):
         super().__init__()
         self._apply_result = result
+        self.pool = pool
         # self._status_details = None
         self.return_value = None
 
@@ -75,12 +78,23 @@ class PythonCallableCalculation(BaseCalculation):
         if self._apply_result.ready():
             if self._apply_result.successful():
                 self.return_value = self._apply_result.get()
-                return CalculationStatus.COMPLETED
+                calc_status = CalculationStatus.COMPLETED
             else:
-                return CalculationStatus.FAILED
+                calc_status = CalculationStatus.FAILED
+            logger.debug("Calculation finished, closing multiprocessing pool.")
+            self.pool.close()
+            self.pool.join()
         else:
-            return CalculationStatus.RUNNING
+            calc_status = CalculationStatus.RUNNING
+
+        return calc_status
 
     # @property
     # async def status_details(self) -> dict:
     #     return self._status_details
+
+    async def terminate(self):
+        logger.debug("Terminating multiprocessing pool (any running workers will be stopped immediately).")
+        self.pool.terminate()
+        self.pool.join()
+        logger.trace("Multiprocessing pool terminated.")

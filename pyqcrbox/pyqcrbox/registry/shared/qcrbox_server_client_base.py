@@ -78,6 +78,13 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
         )
         self.uvicorn_server = uvicorn.Server(uvicorn_config)
 
+    async def _run_custom_shutdown_tasks(self):
+        """
+        Run custom shutdown tasks. This is a no-op by default but can be used
+        by derived classes to run tasks when the shutdown signal is received.
+        """
+        pass
+
     async def execute_startup_hooks(self, **kwargs):
         for name in dir(self):
             func = getattr(self, name)
@@ -162,6 +169,7 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
         logger.trace("Waiting for shutdown event to be set...")
         await self._shutdown_event.wait()
         logger.info(f"Received shutdown request, shutting down {self.clsname}.")
+        await self._run_custom_shutdown_tasks()
         await self.uvicorn_server.shutdown()
         cancel_scope.cancel()
 

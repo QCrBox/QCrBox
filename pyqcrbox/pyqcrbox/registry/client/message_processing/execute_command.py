@@ -9,6 +9,7 @@ async def handle_execute_command(msg: msg_specs.ExecuteCommand, *, self, **kwarg
 
     cmd = self.get_executable_command(msg.payload.command_name)
     calc = await cmd.execute_in_background(**msg.payload.arguments)
+    self._calculations.append(calc)
 
     response_msg = f"Started execution of command {msg.payload.command_name!r} ({calc=})"
     logger.debug(response_msg)

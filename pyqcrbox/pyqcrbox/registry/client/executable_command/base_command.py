@@ -1,3 +1,4 @@
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -13,3 +14,7 @@ class BaseCommand:
     def __repr__(self):
         clsname = self.__class__.__name__
         return f"<{clsname}: {self.cmd_spec.name!r}>"
+
+    @abstractmethod
+    async def terminate(self):
+        pass

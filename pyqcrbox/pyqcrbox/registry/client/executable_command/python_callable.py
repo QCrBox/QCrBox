@@ -6,7 +6,7 @@ import importlib
 import inspect
 import multiprocessing
 import traceback
-from typing import Callable
+from typing import Callable, Union
 
 from pydantic._internal._validate_call import ValidateCallWrapper
 
@@ -25,6 +25,7 @@ class PythonCallable:
         self.signature = inspect.signature(fn)
         self.parameter_names = list(self.signature.parameters.keys())
         self._fn_with_call_args_validation = ValidateCallWrapper(self.fn, config=None, validate_return=False)
+        self.pool: Union[multiprocessing.pool.Pool, None] = None
 
     @classmethod
     def from_command_spec(cls, cmd_spec) -> "PythonCallable":
@@ -53,12 +54,16 @@ class PythonCallable:
             traceback_str = "\n".join(traceback.format_exception(exc))
             logger.error(f"Error: {exc=} ({multiprocessing.current_process().name})\n\nTraceback:\n\n{traceback_str}")
 
-        pool = multiprocessing.Pool(_num_processes)
-        result = pool.apply_async(
+        self.pool = multiprocessing.Pool(_num_processes)
+        result = self.pool.apply_async(
             self._fn_with_call_args_validation,
             args,
             kwargs,
             callback=success_callback,
             error_callback=error_callback,
         )
-        return PythonCallableCalculation(result)
+        return PythonCallableCalculation(result, pool=self.pool)
+
+    async def terminate(self):
+        logger.debug(f"Terminating {self}")
+        self.pool.terminate()
