@@ -14,7 +14,6 @@ from .qcrbox_base_models import QCrBoxBaseSQLModel
 
 if TYPE_CHECKING:
     from .application import ApplicationSpecDB
-    from .command_invocation import CommandInvocationDB
 
 
 class CalculationDB(QCrBoxBaseSQLModel, table=True):
@@ -37,12 +36,6 @@ class CalculationDB(QCrBoxBaseSQLModel, table=True):
 
     command_id: Optional[int] = Field(default=None, foreign_key="command.id")
     command: Optional["CommandSpecDB"] = Relationship(back_populates="calculations")
-
-    command_invocation_id: Optional[int] = Field(default=None, foreign_key="command_invocation.id")
-    command_invocation: Optional["CommandInvocationDB"] = Relationship(
-        sa_relationship_kwargs={"uselist": False},
-        back_populates="calculation",
-    )
 
     @computed_field
     @property

@@ -99,7 +99,6 @@ class CommandSpecDB(CommandSpecBase, QCrBoxBaseSQLModel, table=True):
     application_id: Optional[int] = Field(default=None, foreign_key="application.id")
     application: "ApplicationSpecDB" = Relationship(back_populates="commands")
     parameters: dict = Field(sa_column=Column(JSON), default={})
-    command_invocations: list["CommandInvocationDB"] = Relationship(back_populates="command")
     calculations: list["CalculationDB"] = Relationship(back_populates="command")
 
     # required_cif_entry_sets: list[str] = Field(sa_column=Column(JSON()))
