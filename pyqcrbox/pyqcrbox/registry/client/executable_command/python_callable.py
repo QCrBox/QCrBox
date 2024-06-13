@@ -5,6 +5,7 @@ __all__ = ["PythonCallable"]
 import importlib
 import inspect
 import multiprocessing
+import traceback
 from typing import Callable
 
 from loguru import logger
@@ -46,7 +47,8 @@ class PythonCallable:
             logger.debug(f"Success: {result=} ({multiprocessing.current_process().name})")
 
         def error_callback(exc):
-            logger.error(f"Error: {exc=} ({multiprocessing.current_process().name})")
+            traceback_str = "\n".join(traceback.format_exception(exc))
+            logger.error(f"Error: {exc=} ({multiprocessing.current_process().name})\n\nTraceback:\n\n{traceback_str}")
 
         pool = multiprocessing.Pool(_num_processes)
         result = pool.apply_async(self.fn, args, kwargs, callback=success_callback, error_callback=error_callback)
