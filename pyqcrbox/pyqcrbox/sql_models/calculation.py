@@ -1,8 +1,8 @@
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Optional, Self
 
 import sqlalchemy
-from pydantic import computed_field
+from pydantic import computed_field, model_validator
 from sqlmodel import JSON, Column, Field, Relationship, UniqueConstraint, desc, select
 
 from pyqcrbox import logger, sql_models
@@ -36,6 +36,30 @@ class CalculationDB(QCrBoxBaseSQLModel, table=True):
 
     command_id: Optional[int] = Field(default=None, foreign_key="command.id")
     command: Optional["CommandSpecDB"] = Relationship(back_populates="calculations")
+
+    @model_validator(mode="after")
+    def check_command_exists(self) -> Self:
+        with settings.db.get_session() as session:
+            try:
+                _ = session.exec(
+                    select(CommandSpecDB)
+                    .join(ApplicationSpecDB)
+                    .where(
+                        ApplicationSpecDB.slug == self.application_slug,
+                        ApplicationSpecDB.version == self.application_version,
+                        CommandSpecDB.name == self.command_name,
+                    )
+                ).one()
+            except sqlalchemy.exc.NoResultFound:
+                error_msg = (
+                    f"Command not registered: {self.command_name} "
+                    f"(application: {self.application_slug!r}, "
+                    f"version: {self.application_version!r})"
+                )
+                logger.error(error_msg)
+                raise ValueError(error_msg)
+
+        return self
 
     @computed_field
     @property
