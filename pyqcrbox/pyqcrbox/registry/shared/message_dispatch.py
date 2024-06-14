@@ -11,6 +11,7 @@ from pyqcrbox.msg_specs import (
     InvalidQCrBoxAction,
     InvalidQCrBoxResponse,
     QCrBoxBaseMessage,
+    QCrBoxGenericResponse,
     look_up_action_class,
     look_up_response_class,
 )
@@ -99,9 +100,31 @@ def declare_rabbitmq_message_handler(
                 # calling `process_message` will return a coroutine, so we need
                 # to await this in order to retrieve the actual result.
                 result = await result
-            return result
         except Exception as exc:
             error_msg = f"Failed to process message. Original error was: {exc}"
             return log_error_msg_and_create_response(error_msg)
+
+        if isinstance(result, dict):
+            try:
+                result = QCrBoxGenericResponse(**result)
+                logger.warning(
+                    "Message processing handler should return an instance of QCrBoxGenericResponse "
+                    "but returned a dictionary - please fix this in the handler implementation."
+                )
+            except pydantic.ValidationError as exc:
+                error_msg = (
+                    f"Result from processing handler cannot be converted to a valid QCrBoxGenericResponse: {result=}\n"
+                    f"Original error was: {exc}"
+                )
+                return log_error_msg_and_create_response(error_msg)
+
+        if result is not None and not isinstance(result, QCrBoxGenericResponse):
+            error_msg = (
+                f"Expected message processing handler to return an instance of QCrBoxGenericResponse, "
+                f"got: {result!r} (type: {type(result)})"
+            )
+            return log_error_msg_and_create_response(error_msg)
+
+        return result
 
     return process_message
