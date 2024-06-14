@@ -70,6 +70,7 @@ class RabbitMQSettings(BaseModel):
     username: str = "guest"
     password: str = "guest"
     management_port: int = 15672
+    rpc_timeout: float = 5.0
     graceful_timeout: Optional[int] = 10
 
     routing_key_qcrbox_registry: str = "qcrbox-registry"
