@@ -68,7 +68,7 @@ async def test_calculation_status_after_invocation(
 
 
 @pytest.mark.anyio
-@pytest.mark.xfail(reason="Status update not implemente yet")
+@pytest.mark.xfail(reason="Status update not implemented yet")
 async def test_calculation_status_after_client_indicates_availability(
     test_server,
     test_client,
