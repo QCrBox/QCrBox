@@ -63,7 +63,11 @@ def _make_cmd_constituent(x):
     elif isinstance(x, str):
         return CmdLiteral(x)
     else:
-        raise TypeError("")
+        raise TypeError(f"Invalid constituent of CLI command: {x!r} (type: {type(x)})")
+
+
+class QCrBoxCmdArgumentMismatch(Exception):
+    pass
 
 
 class CLICommand(BaseCommand):
@@ -74,6 +78,7 @@ class CLICommand(BaseCommand):
         self.cmd_params = [x for x in self.cmd_constituents if isinstance(x, Param)]
         self.parameter_names = [x.name for x in self.cmd_params]
         self.signature = inspect.Signature(parameters=[x._python_param for x in self.cmd_params])
+        self.proc: asyncio.subprocess.Process | None = None
 
     def __repr__(self):
         return f"<{self.__class__.__name__}: '{str(self)}'>"
@@ -89,18 +94,24 @@ class CLICommand(BaseCommand):
     async def execute_in_background(
         self, *args, _stdin=None, _stdout=subprocess.PIPE, _stderr=subprocess.PIPE, **kwargs
     ) -> CLICmdCalculation:
-        bound_args = self.bind(*args, **kwargs)
+        try:
+            bound_args = self.bind(*args, **kwargs)
+        except TypeError as exc:
+            raise QCrBoxCmdArgumentMismatch(exc.args[0])
         # current_workdir = os.getcwd()
         # logger.debug(f"{current_workdir=}")
-        proc = await asyncio.create_subprocess_exec(
+        self.proc = await asyncio.create_subprocess_exec(
             *bound_args,
             stdin=_stdin,
             stdout=_stdout,
             stderr=_stderr,
         )
-        return CLICmdCalculation(proc)
+        return CLICmdCalculation(self.proc)
 
     async def terminate(self):
-        logger.debug("Terminating process running CLI command.")
-        self.proc.terminate()
-        logger.trace("Process terminated.")
+        if self.proc:
+            logger.debug("Terminating process running CLI command.")
+            self.proc.terminate()
+            logger.trace("Process terminated.")
+        else:
+            logger.trace(f"No process running for {self} - nothing to terminate.")
