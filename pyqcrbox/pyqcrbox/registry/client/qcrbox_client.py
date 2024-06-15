@@ -34,11 +34,11 @@ class QCrBoxClient(QCrBoxServerClientBase):
 
     def _set_up_rabbitmq_broker(self) -> None:
         self.attach_message_dispatcher(
-            routing_key=self.private_routing_key,
+            queue_name=self.private_routing_key,
             message_dispatcher=client_side_message_dispatcher,
         )
         self.attach_message_dispatcher(
-            routing_key=self.routing_key_command_invocation,
+            queue_name=self.routing_key_command_invocation,
             # TODO: use separate dispatcher from the one for private routing key
             message_dispatcher=client_side_message_dispatcher,
         )

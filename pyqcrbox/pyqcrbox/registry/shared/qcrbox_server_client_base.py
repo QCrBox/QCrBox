@@ -125,8 +125,8 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
 
         logger.trace(f"<== Exiting from {self.clsname} lifespan function.")
 
-    def attach_message_dispatcher(self, *, routing_key: str, message_dispatcher: Callable):
-        attach_message_dispatcher(self, self.broker, routing_key=routing_key, msg_dispatcher_func=message_dispatcher)
+    def attach_message_dispatcher(self, *, queue_name: str, message_dispatcher: Callable):
+        attach_message_dispatcher(self, self.broker, queue_name=queue_name, msg_dispatcher_func=message_dispatcher)
 
     def run(self, host: Optional[str] = None, port: Optional[int] = None, **kwargs):
         self.host = host or "127.0.0.1"

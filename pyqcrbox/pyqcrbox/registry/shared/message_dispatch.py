@@ -23,7 +23,7 @@ def attach_message_dispatcher(
     self,
     broker: RabbitBroker,
     *,
-    routing_key: str,
+    queue_name: str,
     msg_dispatcher_func: Callable,
 ) -> Callable:
     """
@@ -43,7 +43,7 @@ def attach_message_dispatcher(
 
     """
 
-    @broker.subscriber(routing_key)
+    @broker.subscriber(queue_name)
     async def process_message(msg: dict) -> QCrBoxBaseMessage | None:
         """
         Wrapper function which allows to define both sync and async implementations of `process_message`.
