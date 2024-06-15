@@ -3,7 +3,7 @@ import json
 from typing import Callable
 
 import pydantic
-from faststream.rabbit import RabbitBroker
+from faststream.rabbit import ExchangeType, RabbitBroker, RabbitQueue
 from loguru import logger
 
 from pyqcrbox import msg_specs
@@ -25,6 +25,8 @@ def attach_message_dispatcher(
     *,
     queue_name: str,
     msg_dispatcher_func: Callable,
+    exchange_type: ExchangeType = ExchangeType.DIRECT,
+    routing_key: str = "",
 ) -> Callable:
     """
     This helper function takes the input argument `msg_dispatcher_func`, warps it
@@ -42,8 +44,10 @@ def attach_message_dispatcher(
     Callable
 
     """
+    exch = self.rabbit_exchanges[exchange_type]
+    queue = RabbitQueue(name=queue_name, routing_key=routing_key)
 
-    @broker.subscriber(queue_name)
+    @broker.subscriber(queue, exch)
     async def process_message(msg: dict) -> QCrBoxBaseMessage | None:
         """
         Wrapper function which allows to define both sync and async implementations of `process_message`.

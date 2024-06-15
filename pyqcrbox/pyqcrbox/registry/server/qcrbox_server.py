@@ -1,3 +1,5 @@
+from faststream.rabbit import ExchangeType
+
 from pyqcrbox import logger, settings
 
 from ..shared import QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup
@@ -10,6 +12,8 @@ class QCrBoxServer(QCrBoxServerClientBase):
         self.attach_message_dispatcher(
             queue_name=settings.rabbitmq.routing_key_qcrbox_registry,
             message_dispatcher=server_side_message_dispatcher,
+            exchange_type=ExchangeType.DIRECT,
+            routing_key="",
         )
 
     def _set_up_asgi_server(self) -> None:
