@@ -48,6 +48,7 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
         self.uvicorn_server = None
 
         self._shutdown_event = anyio.Event()
+        self._notification_events = {}
 
     @property
     def clsname(self):
