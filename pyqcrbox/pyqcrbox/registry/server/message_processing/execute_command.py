@@ -1,6 +1,6 @@
 from faststream.rabbit import RabbitBroker
 
-from pyqcrbox import logger, msg_specs, sql_models
+from pyqcrbox import logger, msg_specs, settings, sql_models
 from pyqcrbox.registry.server.message_processing import server_side_message_dispatcher
 
 
@@ -27,8 +27,13 @@ async def handle_client_indicating_availability_for_command_execution(
             private_routing_key=msg.payload.private_routing_key,
         ),
     )
+
     response_dict = await broker.publish(
-        msg_execute_command, msg.payload.private_routing_key, rpc=True, raise_timeout=True
+        msg_execute_command,
+        msg.payload.private_routing_key,
+        rpc=True,
+        raise_timeout=True,
+        rpc_timeout=settings.rabbitmq.rpc_timeout,
     )
     logger.debug(f"Received response from client: {response_dict}")
     response = msg_specs.QCrBoxGenericResponse(**response_dict)
