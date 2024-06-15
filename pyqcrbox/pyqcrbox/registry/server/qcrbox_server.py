@@ -1,6 +1,4 @@
-from loguru import logger
-
-from pyqcrbox.settings import settings
+from pyqcrbox import logger, settings
 
 from ..shared import QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup
 from .api_endpoints import create_server_asgi_server
