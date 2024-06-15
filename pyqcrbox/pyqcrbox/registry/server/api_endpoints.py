@@ -85,7 +85,7 @@ async def commands_invoke(data: sql_models.CommandInvocationCreate) -> dict:
 
 
 @get(path="/calculations/{calculation_id:int}", media_type=MediaType.JSON)
-async def get_calculation_info(calculation_id: int) -> dict | Response[dict]:
+async def get_calculation_info_by_correlation_id(calculation_id: int) -> dict | Response[dict]:
     with settings.db.get_session() as session:
         try:
             calc = session.get_one(sql_models.CalculationDB, calculation_id)
@@ -98,6 +98,22 @@ async def get_calculation_info(calculation_id: int) -> dict | Response[dict]:
             return Response({"msg": f"No calculation exists with id={calculation_id}"}, status_code=404)
 
 
+@get(path="/calculations", media_type=MediaType.JSON)
+async def get_calculation_info(correlation_id: str) -> dict | Response[dict]:
+    with settings.db.get_session() as session:
+        try:
+            calc = session.exec(
+                select(sql_models.CalculationDB).where(sql_models.CalculationDB.correlation_id == correlation_id)
+            ).one()
+            response_data = {
+                "id": calc.id,
+                "status": calc.status,
+            }
+            return response_data
+        except sqlalchemy.orm.exc.NoResultFound:
+            return Response({"msg": f"No calculation exists with correlation_id={correlation_id}"}, status_code=404)
+
+
 def create_server_asgi_server(custom_lifespan) -> Litestar:
     app = Litestar(
         route_handlers=[
@@ -107,6 +123,7 @@ def create_server_asgi_server(custom_lifespan) -> Litestar:
             retrieve_commands,
             commands_invoke,
             get_calculation_info,
+            get_calculation_info_by_correlation_id,
         ],
         debug=True,
         lifespan=[custom_lifespan],
