@@ -1,7 +1,10 @@
+import asyncio
+
 import sqlalchemy
 import svcs
 from faststream.rabbit import RabbitBroker
-from litestar import Litestar, MediaType, Request, Response, get, post
+from litestar import Litestar, MediaType, Response, get, post
+from litestar.exceptions import HTTPException
 from litestar.openapi import OpenAPIConfig
 
 __all__ = ["create_server_asgi_server"]
@@ -48,10 +51,19 @@ async def retrieve_commands() -> list[sql_models.CommandSpecWithParameters]:
 
 async def _invoke_command_impl(cmd: sql_models.CommandInvocationCreate, broker: RabbitBroker):
     msg = msg_specs.InvokeCommand(payload=cmd)
-    return await broker.publish(msg, settings.rabbitmq.routing_key_qcrbox_registry, rpc=True, raise_timeout=True)
 
-
-
+    try:
+        # send command invocation request to any available clients
+        await broker.publish(
+            msg,
+            settings.rabbitmq.routing_key_qcrbox_registry,
+            rpc=False,
+            # raise_timeout=True,
+            # rpc_timeout=settings.rabbitmq.rpc_timeout,
+        )
+    except (TimeoutError, asyncio.exceptions.CancelledError) as exc:
+        # raise TimeoutError(f"{exc}")
+        raise HTTPException(f"{exc}")
 
 
 @post(path="/commands/invoke", media_type=MediaType.JSON)
@@ -60,13 +72,14 @@ async def commands_invoke(data: sql_models.CommandInvocationCreate) -> dict:
 
     with svcs.Container(QCRBOX_SVCS_REGISTRY) as con:
         broker = await con.aget(RabbitBroker)
-        response = await _invoke_command_impl(data, broker)
+
+    await _invoke_command_impl(data, broker)
 
     return dict(
         msg="Accepted command invocation request",
         status="ok",
         payload={
-            "calculation_id": response["payload"]["calculation_id"],
+            "correlation_id": data.correlation_id,
         },
     )
 
