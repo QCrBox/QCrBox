@@ -51,22 +51,7 @@ async def _invoke_command_impl(cmd: sql_models.CommandInvocationCreate, broker: 
     return await broker.publish(msg, settings.rabbitmq.routing_key_qcrbox_registry, rpc=True, raise_timeout=True)
 
 
-@post(path="/invoke_command", media_type=MediaType.JSON)
-async def invoke_command(data: sql_models.CommandInvocationCreate, request: Request) -> dict:
-    logger.info(f"[DDD] Received {data=}")
 
-    with svcs.Container(QCRBOX_SVCS_REGISTRY) as con:
-        broker = await con.aget(RabbitBroker)
-        response = await _invoke_command_impl(data, broker)
-
-    return msg_specs.responses.ok(
-        response_to="invoke_command",
-        msg="Accepted command invocation request",
-        payload={
-            "calculation_id": response["payload"]["calculation_id"],
-            "correlation_id": response["payload"]["correlation_id"],
-        },
-    )
 
 
 @post(path="/commands/invoke", media_type=MediaType.JSON)
@@ -107,7 +92,6 @@ def create_server_asgi_server(custom_lifespan) -> Litestar:
             health_check,
             retrieve_applications,
             retrieve_commands,
-            invoke_command,
             commands_invoke,
             get_calculation_info,
         ],
