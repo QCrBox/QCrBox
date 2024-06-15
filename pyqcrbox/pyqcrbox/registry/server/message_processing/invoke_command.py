@@ -73,6 +73,9 @@ async def handle_client_indicating_availability_for_command_execution(
             private_routing_key=msg.payload.private_routing_key,
         ),
     )
-    response = await broker.publish(msg_execute_command, msg.payload.private_routing_key, rpc=True, raise_timeout=True)
-    logger.debug(f"Received response from client: {response}")
+    response_dict = await broker.publish(
+        msg_execute_command, msg.payload.private_routing_key, rpc=True, raise_timeout=True
+    )
+    logger.debug(f"Received response from client: {response_dict}")
+    response = msg_specs.QCrBoxGenericResponse(**response_dict)
     return response
