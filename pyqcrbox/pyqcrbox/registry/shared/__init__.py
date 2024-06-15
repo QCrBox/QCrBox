@@ -1,2 +1,2 @@
-from .message_dispatch import declare_rabbitmq_message_handler
+from .message_dispatch import attach_message_dispatcher
 from .qcrbox_server_client_base import QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup

@@ -17,7 +17,7 @@ from loguru import logger
 
 from pyqcrbox import QCRBOX_SVCS_REGISTRY, settings
 
-from ..shared.message_dispatch import declare_rabbitmq_message_handler
+from ..shared.message_dispatch import attach_message_dispatcher
 
 __all__ = ["QCrBoxServerClientBase", "TestQCrBoxServerClientBase"]
 
@@ -125,10 +125,8 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
 
         logger.trace(f"<== Exiting from {self.clsname} lifespan function.")
 
-    def declare_rabbitmq_message_handler(self, *, routing_key: str, message_dispatcher: Callable):
-        declare_rabbitmq_message_handler(
-            self, self.broker, routing_key=routing_key, msg_dispatcher_func=message_dispatcher
-        )
+    def attach_message_dispatcher(self, *, routing_key: str, message_dispatcher: Callable):
+        attach_message_dispatcher(self, self.broker, routing_key=routing_key, msg_dispatcher_func=message_dispatcher)
 
     def run(self, host: Optional[str] = None, port: Optional[int] = None, **kwargs):
         self.host = host or "127.0.0.1"
