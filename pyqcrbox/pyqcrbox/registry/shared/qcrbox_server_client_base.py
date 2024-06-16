@@ -10,6 +10,7 @@ import svcs
 import uvicorn
 from anyio import TASK_STATUS_IGNORED
 from anyio.abc import TaskStatus
+from faststream.nats import NatsBroker
 from faststream.rabbit import ExchangeType, RabbitBroker, RabbitExchange
 from litestar import Litestar
 from litestar.testing import AsyncTestClient, TestClient
@@ -34,10 +35,12 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
         self,
         *,
         broker: Optional[RabbitBroker] = None,
+        nats_broker: Optional[NatsBroker] = None,
         asgi_server: Optional[Litestar] = None,
         svcs_registry: Optional[svcs.Registry] = None,
     ):
         self.broker = broker or RabbitBroker(settings.rabbitmq.url, graceful_timeout=10)
+        self.nats_broker = broker or NatsBroker(settings.nats.url, graceful_timeout=10)
         self.rabbit_exchanges = {
             ExchangeType.DIRECT: RabbitExchange("qcrbox.direct", type=ExchangeType.DIRECT),
             ExchangeType.TOPIC: RabbitExchange("qcrbox.topic", type=ExchangeType.TOPIC),
@@ -45,6 +48,7 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
 
         self.svcs_registry = svcs_registry or QCRBOX_SVCS_REGISTRY
         self.svcs_registry.register_value(RabbitBroker, self.broker)
+        self.svcs_registry.register_value(NatsBroker, self.nats_broker)
 
         # If not passed explicitly, the ASGI server and uvicorn server
         # will be set up when `.serve()` is called.
@@ -57,6 +61,10 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
     @property
     def clsname(self):
         return self.__class__.__name__
+
+    @abstractmethod
+    def _set_up_nats_broker(self):
+        assert_never(self)
 
     @abstractmethod
     def _set_up_rabbitmq_broker(self):
@@ -105,6 +113,7 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
     async def lifespan_context(self, _: Litestar) -> AsyncContextManager:
         logger.trace(f"==> Entering {self.clsname} lifespan function...")
 
+        self._set_up_nats_broker()
         self._set_up_rabbitmq_broker()
 
         for attempt in stamina.retry_context(on=aiormq.exceptions.AMQPConnectionError, timeout=60.0, attempts=None):

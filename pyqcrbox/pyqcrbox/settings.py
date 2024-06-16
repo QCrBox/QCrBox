@@ -81,6 +81,17 @@ class RabbitMQSettings(BaseModel):
         return f"amqp://{self.username}:{self.password}@{self.host}:{self.port}/"
 
 
+class NATSSettings(BaseModel):
+    host: str = "127.0.0.1"
+    port: int = 4222
+    graceful_timeout: Optional[int] = 5
+
+    @computed_field  # type: ignore
+    @property
+    def url(self) -> str:
+        return f"nats://{self.host}:{self.port}/"
+
+
 class ServerAPISettings(BaseModel):
     host: str = "127.0.0.1"
     port: int = 8001
