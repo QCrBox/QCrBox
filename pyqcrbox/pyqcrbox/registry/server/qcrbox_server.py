@@ -9,7 +9,7 @@ from .message_processing import server_side_message_dispatcher
 
 class QCrBoxServer(QCrBoxServerClientBase):
     def _set_up_rabbitmq_broker(self) -> None:
-        self.attach_message_dispatcher(
+        self.set_up_message_dispatcher(
             queue_name=settings.rabbitmq.routing_key_qcrbox_registry,
             message_dispatcher=server_side_message_dispatcher,
             exchange_type=ExchangeType.DIRECT,

@@ -16,10 +16,10 @@ from pyqcrbox.msg_specs import (
     look_up_response_class,
 )
 
-__all__ = ["attach_message_dispatcher"]
+__all__ = ["set_up_message_dispatcher"]
 
 
-def attach_message_dispatcher(
+def set_up_message_dispatcher(
     self,
     broker: RabbitBroker,
     *,

@@ -17,7 +17,7 @@ from loguru import logger
 
 from pyqcrbox import QCRBOX_SVCS_REGISTRY, settings
 
-from ..shared.message_dispatch import attach_message_dispatcher
+from ..shared.message_dispatch import set_up_message_dispatcher
 
 __all__ = ["QCrBoxServerClientBase", "TestQCrBoxServerClientBase"]
 
@@ -129,7 +129,7 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
 
         logger.trace(f"<== Exiting from {self.clsname} lifespan function.")
 
-    def attach_message_dispatcher(
+    def set_up_message_dispatcher(
         self,
         *,
         queue_name: str,
@@ -137,7 +137,7 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
         exchange_type: ExchangeType = ExchangeType.DIRECT,
         routing_key: str = "",
     ):
-        attach_message_dispatcher(
+        set_up_message_dispatcher(
             self,
             self.broker,
             queue_name=queue_name,
