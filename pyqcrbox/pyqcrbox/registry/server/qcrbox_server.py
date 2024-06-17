@@ -1,6 +1,6 @@
 from faststream.rabbit import ExchangeType
 
-from pyqcrbox import logger, settings
+from pyqcrbox import logger, msg_specs, settings
 
 from ..shared import QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup
 from .api_endpoints import create_server_asgi_server
@@ -17,7 +17,12 @@ class QCrBoxServer(QCrBoxServerClientBase):
         )
 
     def _set_up_nats_broker(self) -> None:
-        pass
+        @self.nats_broker.subscriber("register-application")
+        async def handle_application_registration(msg: msg_specs.RegisterApplication):
+            logger.info(
+                f"Received registration for application: {msg.payload.application_spec.slug!r} "
+                f"(version: {msg.payload.application_spec.version!r})"
+            )
 
     def _set_up_asgi_server(self) -> None:
         self.asgi_server = create_server_asgi_server(self.lifespan_context)

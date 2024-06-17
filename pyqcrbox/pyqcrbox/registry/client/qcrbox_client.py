@@ -78,7 +78,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
 
         await self.nats_broker.publish(
             msg,
-            settings.rabbitmq.routing_key_qcrbox_registry,
+            "register-application",
         )
 
     async def publish(self, queue, msg):
