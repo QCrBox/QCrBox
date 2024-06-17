@@ -23,6 +23,9 @@ class QCrBoxServer(QCrBoxServerClientBase):
                 f"Received registration for application: {msg.payload.application_spec.slug!r} "
                 f"(version: {msg.payload.application_spec.version!r})"
             )
+            from .message_processing.register_application import handle_application_registration_request
+
+            return handle_application_registration_request(msg)
 
     def _set_up_asgi_server(self) -> None:
         self.asgi_server = create_server_asgi_server(self.lifespan_context)

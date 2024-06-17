@@ -76,10 +76,10 @@ class QCrBoxClient(QCrBoxServerClientBase):
             reply_to=self.private_routing_key,
         )
 
-        await self.nats_broker.publish(
-            msg,
-            "register-application",
+        resp = await self.nats_broker.publish(
+            msg, "register-application", rpc=True, rpc_timeout=settings.nats.rpc_timeout, raise_timeout=True
         )
+        logger.error(f"Received response to registration request: {resp=}")
 
     async def publish(self, queue, msg):
         await self.broker.publish(msg, queue)
