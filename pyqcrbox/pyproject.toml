@@ -16,7 +16,7 @@ dynamic = [
 ]
 dependencies = [
     "doit",
-    "faststream[rabbit]>=0.5.2",
+    "faststream[nats,rabbit]>=0.5.2",
     "gitpython",
     "hatch>=v1.10.0",
     "loguru",
