@@ -16,6 +16,9 @@ class QCrBoxServer(QCrBoxServerClientBase):
             routing_key="",
         )
 
+    def _set_up_nats_broker(self) -> None:
+        pass
+
     def _set_up_asgi_server(self) -> None:
         self.asgi_server = create_server_asgi_server(self.lifespan_context)
 

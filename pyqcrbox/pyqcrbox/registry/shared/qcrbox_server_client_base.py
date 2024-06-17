@@ -40,7 +40,7 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
         svcs_registry: Optional[svcs.Registry] = None,
     ):
         self.broker = broker or RabbitBroker(settings.rabbitmq.url, graceful_timeout=10)
-        self.nats_broker = broker or NatsBroker(settings.nats.url, graceful_timeout=10)
+        self.nats_broker = nats_broker or NatsBroker(settings.nats.url, graceful_timeout=10)
         self.rabbit_exchanges = {
             ExchangeType.DIRECT: RabbitExchange("qcrbox.direct", type=ExchangeType.DIRECT),
             ExchangeType.TOPIC: RabbitExchange("qcrbox.topic", type=ExchangeType.TOPIC),
@@ -116,9 +116,13 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
         self._set_up_nats_broker()
         self._set_up_rabbitmq_broker()
 
+        # for attempt in stamina.retry_context(on=aiormq.exceptions.AMQPConnectionError, timeout=60.0, attempts=None):
+        #     with attempt:
+        #         await self.broker.start()
+
         for attempt in stamina.retry_context(on=aiormq.exceptions.AMQPConnectionError, timeout=60.0, attempts=None):
             with attempt:
-                await self.broker.start()
+                await self.nats_broker.start()
 
         await self.execute_startup_hooks(**self._run_kwargs)
 
@@ -129,7 +133,8 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
         finally:
             with contextlib.suppress(KeyError):
                 logger.trace("Closing broker.")
-                await self.broker.close()
+                # await self.broker.close()
+                await self.nats_broker.close()
                 logger.trace("Done (broker is closed).")
 
                 logger.trace("Closing SVCS registry.")

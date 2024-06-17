@@ -130,6 +130,7 @@ class QCrBoxSettings(BaseSettings):
         env_prefix="QCRBOX__",
     )
 
+    nats: NATSSettings = NATSSettings()
     rabbitmq: RabbitMQSettings = RabbitMQSettings()
     registry: RegistrySettings = RegistrySettings()
     db: DatabaseSettings = DatabaseSettings()
