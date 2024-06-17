@@ -1,20 +1,18 @@
-from faststream.rabbit import ExchangeType
-
 from pyqcrbox import logger, msg_specs, settings
 
 from ..shared import QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup
 from .api_endpoints import create_server_asgi_server
-from .message_processing import server_side_message_dispatcher
 
 
 class QCrBoxServer(QCrBoxServerClientBase):
     def _set_up_rabbitmq_broker(self) -> None:
-        self.set_up_message_dispatcher(
-            queue_name=settings.rabbitmq.routing_key_qcrbox_registry,
-            message_dispatcher=server_side_message_dispatcher,
-            exchange_type=ExchangeType.DIRECT,
-            routing_key="",
-        )
+        # self.set_up_message_dispatcher(
+        #     queue_name=settings.rabbitmq.routing_key_qcrbox_registry,
+        #     message_dispatcher=server_side_message_dispatcher,
+        #     exchange_type=ExchangeType.DIRECT,
+        #     routing_key="",
+        # )
+        pass
 
     def _set_up_nats_broker(self) -> None:
         @self.nats_broker.subscriber("register-application")
