@@ -12,7 +12,7 @@ from pyqcrbox.helpers import generate_private_routing_key
 from ..shared import QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup
 from .api_endpoints import create_client_asgi_server
 from .executable_command import BaseCommand, ExecutableCommand
-from .message_processing.command_invocation_request import handle_command_invocation_request_via_nats
+# from .message_processing.command_invocation_request import handle_command_invocation_request_via_nats
 
 __all__ = ["QCrBoxClient", "TestQCrBoxClient"]
 
@@ -49,7 +49,29 @@ class QCrBoxClient(QCrBoxServerClientBase):
 
         # Subscriber for command invocation requests
         subject = f"cmd-invocation.request.{self.application_spec.nats_subject}"
-        self.nats_broker.subscriber(subject)(handle_command_invocation_request_via_nats)
+        # self.nats_broker.subscriber(subject)(handle_command_invocation_request_via_nats)
+
+        @self.nats_broker.subscriber(subject)
+        async def handle_command_invocation_request_via_nats(msg: msg_specs.CommandInvocationRequest):
+            assert msg.action == "command_invocation_request"
+            logger.debug(f"Received command invocation request: {msg}")
+
+            msg_indicate_availability = msg_specs.ClientIndicatesAvailabilityToExecuteCommand(
+                action="client_is_available_to_execute_command",
+                payload=msg_specs.PayloadForClientIsAvailableToExecuteCommand(
+                    cmd_invocation_payload=msg.payload,
+                    # private_routing_key=self.private_routing_key,
+                ),
+            )
+
+            server_response = await self.nats_broker.publish(
+                msg_indicate_availability,
+                f"cmd-invocation.response.{msg.payload.correlation_id}",
+                rpc=True,
+                rpc_timeout=settings.nats.rpc_timeout,
+                raise_timeout=True,
+            )
+            logger.debug(f"Received response from server: {server_response}")
 
     def _set_up_asgi_server(self) -> None:
         self.asgi_server = create_client_asgi_server(self.lifespan_context)

@@ -1,3 +1,6 @@
+import functools
+
+import anyio
 import sqlalchemy
 import svcs
 from faststream.nats import NatsBroker
@@ -82,23 +85,6 @@ async def retrieve_commands() -> list[sql_models.CommandSpecWithParameters]:
 #         raise ServiceUnavailableException("No clients available to execute command.")
 
 
-async def _send_command_invocation_request_via_nats(cmd: sql_models.CommandInvocationCreate, nats_broker: NatsBroker):
-    msg = msg_specs.CommandInvocationRequest(payload=cmd)
-
-    try:
-        # send command invocation request to any available clients
-        response = await nats_broker.publish(
-            msg,
-            f"cmd-invocation.request.{msg.payload.nats_subject}",
-            rpc=True,
-            raise_timeout=True,
-            rpc_timeout=settings.nats.rpc_timeout,
-        )
-        return response
-    except TimeoutError:
-        raise ServiceUnavailableException("No clients available to execute command.")
-
-
 @post(path="/commands/invoke", media_type=MediaType.JSON)
 async def commands_invoke(data: sql_models.CommandInvocationCreate) -> dict:
     logger.info(f"[DDD] Received {data=}")
@@ -109,16 +95,48 @@ async def commands_invoke(data: sql_models.CommandInvocationCreate) -> dict:
 
     # await _invoke_command_impl(data, broker)
     # await _invoke_command_impl_via_nats(data, broker)
-    response = await _send_command_invocation_request_via_nats(data, nats_broker)
-    logger.debug(f"Response from client: {response}")
+    msg = msg_specs.CommandInvocationRequest(payload=data)
 
-    return dict(
-        msg="Accepted command invocation request",
-        status="ok",
-        payload={
-            "correlation_id": data.correlation_id,
-        },
+    client_response_event = anyio.Event()
+    reply_subject = f"cmd-invocation.response.{msg.payload.correlation_id}"
+
+    await nats_broker.close()
+
+    @nats_broker.subscriber(reply_subject)
+    async def handle_client_response(response_msg: dict):
+        logger.debug(f"Received response from client: {response_msg}")
+        if not client_response_event.is_set():
+            client_response_event.set()
+            return "All systems go!"
+        else:
+            return "Better luck next time."
+
+    await nats_broker.start()
+
+    # send command invocation request to any available clients
+
+    my_publish_func = functools.partial(
+        nats_broker.publish,
+        subject=f"cmd-invocation.request.{msg.payload.nats_subject}",
+        reply_to=reply_subject,
     )
+
+    with anyio.move_on_after(settings.nats.rpc_timeout):
+        async with anyio.create_task_group() as tg:
+            tg.start_soon(my_publish_func, msg)
+            tg.start_soon(client_response_event.wait)
+
+    if client_response_event.is_set():
+        return dict(
+            msg="Accepted command invocation request",
+            status="ok",
+            payload={
+                "correlation_id": data.correlation_id,
+            },
+        )
+    else:
+        logger.debug("No client responded within the timeout.")
+        raise ServiceUnavailableException("No client available to execute command.")
 
 
 @get(path="/calculations/{calculation_id:int}", media_type=MediaType.JSON)

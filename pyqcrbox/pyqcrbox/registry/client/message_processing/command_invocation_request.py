@@ -1,4 +1,5 @@
 # from faststream.rabbit import RabbitBroker
+from faststream import Context, apply_types
 
 from pyqcrbox import logger, msg_specs
 
@@ -20,15 +21,20 @@ from pyqcrbox import logger, msg_specs
 #     await broker.publish(msg_indicate_availability, settings.rabbitmq.routing_key_qcrbox_registry)
 
 
-async def handle_command_invocation_request_via_nats(msg: msg_specs.CommandInvocationRequest):
-    assert msg.action == "command_invocation_request"
-    logger.debug(f"Received command invocation request: {msg}")
-
-    msg_indicate_availability = msg_specs.ClientIndicatesAvailabilityToExecuteCommand(
-        action="client_is_available_to_execute_command",
-        payload=msg_specs.PayloadForClientIsAvailableToExecuteCommand(
-            cmd_invocation_payload=msg.payload,
-            # private_routing_key=self.private_routing_key,
-        ),
-    )
-    return msg_indicate_availability
+# async def handle_command_invocation_request_via_nats(msg: msg_specs.CommandInvocationRequest, nats_broker: Context("broker")):
+#     assert msg.action == "command_invocation_request"
+#     logger.debug(f"Received command invocation request: {msg}")
+#
+#     msg_indicate_availability = msg_specs.ClientIndicatesAvailabilityToExecuteCommand(
+#         action="client_is_available_to_execute_command",
+#         payload=msg_specs.PayloadForClientIsAvailableToExecuteCommand(
+#             cmd_invocation_payload=msg.payload,
+#             # private_routing_key=self.private_routing_key,
+#         ),
+#     )
+#
+#     server_response = await nats_broker.publish(
+#         msg_indicate_availability, f"cmd-invocation.response.{msg.payload.correlation_id}"
+#     )
+#     logger.debug(f"Received response from server: {server_response}")
+#
