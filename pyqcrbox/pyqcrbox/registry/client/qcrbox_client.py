@@ -2,13 +2,12 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-from faststream.rabbit import RabbitBroker
+from faststream.nats import NatsBroker
 from litestar import Litestar
 
 from pyqcrbox import logger, msg_specs, settings, sql_models
 from pyqcrbox.cli.helpers import get_repo_root
 from pyqcrbox.helpers import generate_private_routing_key
-from pyqcrbox.registry.client.message_processing import client_side_message_dispatcher
 
 from ..shared import QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup
 from .api_endpoints import create_client_asgi_server
@@ -23,25 +22,26 @@ class QCrBoxClient(QCrBoxServerClientBase):
         *,
         application_spec: sql_models.ApplicationSpecCreate,
         private_routing_key: Optional[str] = None,
-        broker: Optional[RabbitBroker] = None,
+        # broker: Optional[RabbitBroker] = None,
+        nats_broker: Optional[NatsBroker] = None,
         asgi_server: Optional[Litestar] = None,
     ):
-        super().__init__(broker=broker, asgi_server=asgi_server)
+        super().__init__(nats_broker=nats_broker, asgi_server=asgi_server)
         self.application_spec = application_spec
         self.private_routing_key = private_routing_key or generate_private_routing_key()
-        self.routing_key_command_invocation = application_spec.routing_key_command_invocation
+        # self.routing_key_command_invocation = application_spec.routing_key_command_invocation
         self._calculations: list[BaseCommand] = []
 
-    def _set_up_rabbitmq_broker(self) -> None:
-        self.set_up_message_dispatcher(
-            queue_name=self.private_routing_key,
-            message_dispatcher=client_side_message_dispatcher,
-        )
-        self.set_up_message_dispatcher(
-            queue_name=self.routing_key_command_invocation,
-            # TODO: use separate dispatcher from the one for private routing key
-            message_dispatcher=client_side_message_dispatcher,
-        )
+    # def _set_up_rabbitmq_broker(self) -> None:
+    #     self.set_up_message_dispatcher(
+    #         queue_name=self.private_routing_key,
+    #         message_dispatcher=client_side_message_dispatcher,
+    #     )
+    #     self.set_up_message_dispatcher(
+    #         queue_name=self.routing_key_command_invocation,
+    #         # TODO: use separate dispatcher from the one for private routing key
+    #         message_dispatcher=client_side_message_dispatcher,
+    #     )
 
     def _set_up_nats_broker(self) -> None:
         logger.warning("TODO: set up NATS broker for client")
@@ -59,8 +59,30 @@ class QCrBoxClient(QCrBoxServerClientBase):
         cmd_spec = self.application_spec.get_command_spec(command_name)
         return ExecutableCommand(cmd_spec)
 
+    # @on_qcrbox_startup
+    # async def send_registration_request(self):
+    #     logger.debug("Sending registration request to QCrBox server")
+    #     msg = msg_specs.RegisterApplication(
+    #         action="register_application",
+    #         payload=msg_specs.PayloadForRegisterApplication(
+    #             application_spec=self.application_spec,
+    #             private_routing_key=self.private_routing_key,
+    #         ),
+    #     )
+    #     await self.broker.publish(
+    #         msg,
+    #         settings.rabbitmq.routing_key_qcrbox_registry,
+    #         # rpc=True,
+    #         reply_to=self.private_routing_key,
+    #     )
+    #
+    #     resp = await self.nats_broker.publish(
+    #         msg, "register-application", rpc=True, rpc_timeout=settings.nats.rpc_timeout, raise_timeout=True
+    #     )
+    #     logger.error(f"Received response to registration request: {resp=}")
+
     @on_qcrbox_startup
-    async def send_registration_request(self):
+    async def send_registration_request_via_nats(self):
         logger.debug("Sending registration request to QCrBox server")
         msg = msg_specs.RegisterApplication(
             action="register_application",
@@ -69,20 +91,15 @@ class QCrBoxClient(QCrBoxServerClientBase):
                 private_routing_key=self.private_routing_key,
             ),
         )
-        await self.broker.publish(
-            msg,
-            settings.rabbitmq.routing_key_qcrbox_registry,
-            # rpc=True,
-            reply_to=self.private_routing_key,
-        )
 
         resp = await self.nats_broker.publish(
             msg, "register-application", rpc=True, rpc_timeout=settings.nats.rpc_timeout, raise_timeout=True
         )
-        logger.error(f"Received response to registration request: {resp=}")
+        logger.debug(f"Received response to registration request: {resp=}")
+        logger.warning("TODO: raise error if registration failed!")
 
-    async def publish(self, queue, msg):
-        await self.broker.publish(msg, queue)
+    # async def publish(self, queue, msg):
+    #     await self.broker.publish(msg, queue)
 
 
 class TestQCrBoxClient(TestQCrBoxServerClientBase, QCrBoxClient):

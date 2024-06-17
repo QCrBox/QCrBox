@@ -1,6 +1,4 @@
-from loguru import logger
-
-from pyqcrbox import db_helpers, msg_specs, settings, sql_models
+from pyqcrbox import db_helpers, logger, msg_specs, settings, sql_models
 
 from .base_message_dispatcher import server_side_message_dispatcher
 

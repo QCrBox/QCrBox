@@ -1,10 +1,10 @@
-import asyncio
-
 import sqlalchemy
 import svcs
-from faststream.rabbit import RabbitBroker
+from faststream.nats import NatsBroker
+
+# from faststream.rabbit import RabbitBroker
 from litestar import Litestar, MediaType, Response, get, post
-from litestar.exceptions import HTTPException
+from litestar.exceptions import ServiceUnavailableException
 from litestar.openapi import OpenAPIConfig
 
 __all__ = ["create_server_asgi_server"]
@@ -49,21 +49,37 @@ async def retrieve_commands() -> list[sql_models.CommandSpecWithParameters]:
         return commands
 
 
-async def _invoke_command_impl(cmd: sql_models.CommandInvocationCreate, broker: RabbitBroker):
+# async def _invoke_command_impl(cmd: sql_models.CommandInvocationCreate, broker: RabbitBroker):
+#     msg = msg_specs.InvokeCommand(payload=cmd)
+#
+#     try:
+#         # send command invocation request to any available clients
+#         await broker.publish(
+#             msg,
+#             settings.rabbitmq.routing_key_qcrbox_registry,
+#             rpc=False,
+#             # raise_timeout=True,
+#             # rpc_timeout=settings.rabbitmq.rpc_timeout,
+#         )
+#     except (TimeoutError, asyncio.exceptions.CancelledError) as exc:
+#         # raise TimeoutError(f"{exc}")
+#         raise HTTPException(f"{exc}")
+
+
+async def _invoke_command_impl_via_nats(cmd: sql_models.CommandInvocationCreate, nats_broker: NatsBroker):
     msg = msg_specs.InvokeCommand(payload=cmd)
 
     try:
         # send command invocation request to any available clients
-        await broker.publish(
+        await nats_broker.publish(
             msg,
-            settings.rabbitmq.routing_key_qcrbox_registry,
-            rpc=False,
-            # raise_timeout=True,
-            # rpc_timeout=settings.rabbitmq.rpc_timeout,
+            f"cmd-invocation.request.{msg.payload.nats_subject}",
+            rpc=True,
+            raise_timeout=True,
+            rpc_timeout=settings.nats.rpc_timeout,
         )
-    except (TimeoutError, asyncio.exceptions.CancelledError) as exc:
-        # raise TimeoutError(f"{exc}")
-        raise HTTPException(f"{exc}")
+    except TimeoutError:
+        raise ServiceUnavailableException("No clients available to execute command.")
 
 
 @post(path="/commands/invoke", media_type=MediaType.JSON)
@@ -71,9 +87,11 @@ async def commands_invoke(data: sql_models.CommandInvocationCreate) -> dict:
     logger.info(f"[DDD] Received {data=}")
 
     with svcs.Container(QCRBOX_SVCS_REGISTRY) as con:
-        broker = await con.aget(RabbitBroker)
+        # broker = await con.aget(RabbitBroker)
+        nats_broker = await con.aget(NatsBroker)
 
-    await _invoke_command_impl(data, broker)
+    # await _invoke_command_impl(data, broker)
+    await _invoke_command_impl_via_nats(data, nats_broker)
 
     return dict(
         msg="Accepted command invocation request",

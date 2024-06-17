@@ -1,7 +1,7 @@
 import contextlib
 import inspect
 from abc import ABCMeta, abstractmethod
-from typing import AsyncContextManager, Callable, Optional, assert_never
+from typing import AsyncContextManager, Optional, assert_never
 
 import aiormq
 import anyio
@@ -11,14 +11,15 @@ import uvicorn
 from anyio import TASK_STATUS_IGNORED
 from anyio.abc import TaskStatus
 from faststream.nats import NatsBroker
-from faststream.rabbit import ExchangeType, RabbitBroker, RabbitExchange
+
+# from faststream.rabbit import ExchangeType, RabbitBroker, RabbitExchange
 from litestar import Litestar
 from litestar.testing import AsyncTestClient, TestClient
 from loguru import logger
 
 from pyqcrbox import QCRBOX_SVCS_REGISTRY, settings
 
-from ..shared.message_dispatch import set_up_message_dispatcher
+# from ..shared.message_dispatch import set_up_message_dispatcher
 
 __all__ = ["QCrBoxServerClientBase", "TestQCrBoxServerClientBase"]
 
@@ -34,20 +35,21 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
     def __init__(
         self,
         *,
-        broker: Optional[RabbitBroker] = None,
+        # broker: Optional[RabbitBroker] = None,
         nats_broker: Optional[NatsBroker] = None,
         asgi_server: Optional[Litestar] = None,
         svcs_registry: Optional[svcs.Registry] = None,
     ):
-        self.broker = broker or RabbitBroker(settings.rabbitmq.url, graceful_timeout=10)
+        # self.broker = broker or RabbitBroker(settings.rabbitmq.url, graceful_timeout=10)
         self.nats_broker = nats_broker or NatsBroker(settings.nats.url, graceful_timeout=10)
-        self.rabbit_exchanges = {
-            ExchangeType.DIRECT: RabbitExchange("qcrbox.direct", type=ExchangeType.DIRECT),
-            ExchangeType.TOPIC: RabbitExchange("qcrbox.topic", type=ExchangeType.TOPIC),
-        }
+
+        # self.rabbit_exchanges = {
+        #     ExchangeType.DIRECT: RabbitExchange("qcrbox.direct", type=ExchangeType.DIRECT),
+        #     ExchangeType.TOPIC: RabbitExchange("qcrbox.topic", type=ExchangeType.TOPIC),
+        # }
 
         self.svcs_registry = svcs_registry or QCRBOX_SVCS_REGISTRY
-        self.svcs_registry.register_value(RabbitBroker, self.broker)
+        # self.svcs_registry.register_value(RabbitBroker, self.broker)
         self.svcs_registry.register_value(NatsBroker, self.nats_broker)
 
         # If not passed explicitly, the ASGI server and uvicorn server
@@ -66,9 +68,9 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
     def _set_up_nats_broker(self):
         assert_never(self)
 
-    @abstractmethod
-    def _set_up_rabbitmq_broker(self):
-        assert_never(self)
+    # @abstractmethod
+    # def _set_up_rabbitmq_broker(self):
+    #     assert_never(self)
 
     @abstractmethod
     def _set_up_asgi_server(self) -> None:
@@ -78,7 +80,8 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
         if self.uvicorn_server is not None:
             raise RuntimeError("Uvicorn server has already been set up (unexpectedly).")
 
-        assert self.broker is not None
+        # assert self.broker is not None
+        assert self.nats_broker is not None
         assert self.host is not None
         assert self.port is not None
 
@@ -113,12 +116,12 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
     async def lifespan_context(self, _: Litestar) -> AsyncContextManager:
         logger.trace(f"==> Entering {self.clsname} lifespan function...")
 
+        # self._set_up_rabbitmq_broker()
         self._set_up_nats_broker()
-        self._set_up_rabbitmq_broker()
 
-        for attempt in stamina.retry_context(on=aiormq.exceptions.AMQPConnectionError, timeout=60.0, attempts=None):
-            with attempt:
-                await self.broker.start()
+        # for attempt in stamina.retry_context(on=aiormq.exceptions.AMQPConnectionError, timeout=60.0, attempts=None):
+        #     with attempt:
+        #         await self.broker.start()
 
         for attempt in stamina.retry_context(on=aiormq.exceptions.AMQPConnectionError, timeout=60.0, attempts=None):
             with attempt:
@@ -143,22 +146,22 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
 
         logger.trace(f"<== Exiting from {self.clsname} lifespan function.")
 
-    def set_up_message_dispatcher(
-        self,
-        *,
-        queue_name: str,
-        message_dispatcher: Callable,
-        exchange_type: ExchangeType = ExchangeType.DIRECT,
-        routing_key: str = "",
-    ):
-        set_up_message_dispatcher(
-            self,
-            self.broker,
-            queue_name=queue_name,
-            msg_dispatcher_func=message_dispatcher,
-            exchange_type=exchange_type,
-            routing_key=routing_key,
-        )
+    # def set_up_message_dispatcher(
+    #     self,
+    #     *,
+    #     queue_name: str,
+    #     message_dispatcher: Callable,
+    #     exchange_type: ExchangeType = ExchangeType.DIRECT,
+    #     routing_key: str = "",
+    # ):
+    #     set_up_message_dispatcher(
+    #         self,
+    #         self.broker,
+    #         queue_name=queue_name,
+    #         msg_dispatcher_func=message_dispatcher,
+    #         exchange_type=exchange_type,
+    #         routing_key=routing_key,
+    #     )
 
     def run(self, host: Optional[str] = None, port: Optional[int] = None, **kwargs):
         self.host = host or "127.0.0.1"

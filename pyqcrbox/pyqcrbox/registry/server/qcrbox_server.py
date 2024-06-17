@@ -5,14 +5,14 @@ from .api_endpoints import create_server_asgi_server
 
 
 class QCrBoxServer(QCrBoxServerClientBase):
-    def _set_up_rabbitmq_broker(self) -> None:
-        # self.set_up_message_dispatcher(
-        #     queue_name=settings.rabbitmq.routing_key_qcrbox_registry,
-        #     message_dispatcher=server_side_message_dispatcher,
-        #     exchange_type=ExchangeType.DIRECT,
-        #     routing_key="",
-        # )
-        pass
+    # def _set_up_rabbitmq_broker(self) -> None:
+    #     # self.set_up_message_dispatcher(
+    #     #     queue_name=settings.rabbitmq.routing_key_qcrbox_registry,
+    #     #     message_dispatcher=server_side_message_dispatcher,
+    #     #     exchange_type=ExchangeType.DIRECT,
+    #     #     routing_key="",
+    #     # )
+    #     pass
 
     def _set_up_nats_broker(self) -> None:
         @self.nats_broker.subscriber("register-application")
@@ -35,8 +35,9 @@ class QCrBoxServer(QCrBoxServerClientBase):
         settings.db.create_db_and_tables(purge_existing_tables=purge_existing_db_tables)
         logger.info("Finished initialising database...")
 
-    async def publish(self, queue, msg):
-        await self.broker.publish(msg, queue)
+    #
+    # async def publish(self, queue, msg):
+    #     await self.broker.publish(msg, queue)
 
 
 class TestQCrBoxServer(TestQCrBoxServerClientBase, QCrBoxServer):

@@ -44,12 +44,18 @@ class ApplicationSpecCreate(ApplicationSpecBase):
     def from_yaml_file(cls, path: str | Path):
         return cls(**yaml.safe_load(Path(path).open()))
 
+    # @property
+    # def routing_key_command_invocation(self):
+    #     return helpers.get_routing_key_for_command_invocation_requests(
+    #         application_slug=self.slug,
+    #         application_version=self.version,
+    #     )
+    #
     @property
-    def routing_key_command_invocation(self):
-        return helpers.get_routing_key_for_command_invocation_requests(
-            application_slug=self.slug,
-            application_version=self.version,
-        )
+    def nats_subject(self):
+        slug_sanitized = helpers.sanitize_for_nats_subject(self.slug)
+        version_sanitized = helpers.sanitize_for_nats_subject(self.version)
+        return f"{slug_sanitized}.{version_sanitized}"
 
     def get_command_spec(self, command_name: str) -> CommandSpecCreate:
         cmds = [c for c in self.commands if c.name == command_name]
@@ -78,7 +84,6 @@ class ApplicationSpecDB(ApplicationSpecBase, QCrBoxBaseSQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     registered_at: datetime = Field(default_factory=datetime.now)
     private_routing_key: str
-    routing_key_command_invocation: str
 
     commands: list[CommandSpecDB] = Relationship(back_populates="application")
     calculations: list[CalculationDB] = Relationship(back_populates="application")
@@ -96,7 +101,6 @@ class ApplicationSpecDB(ApplicationSpecBase, QCrBoxBaseSQLModel, table=True):
         data = application.model_dump(exclude={"commands"})
         data["commands"] = [CommandSpecDB.from_pydantic_model(cmd) for cmd in application.commands]
         data["private_routing_key"] = private_routing_key or "super-secret-private-routing-key-001"
-        data["routing_key_command_invocation"] = application.routing_key_command_invocation
         # logger.debug(f"{command.name=}: {data=}")
         return cls(**data)
 

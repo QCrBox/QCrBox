@@ -1,4 +1,5 @@
 import os
+import re
 import time
 from importlib import import_module
 from pathlib import Path
@@ -44,8 +45,13 @@ def get_qcrbox_registry_api_connection_url(
     return url
 
 
-def get_routing_key_for_command_invocation_requests(*, application_slug: str, application_version: str):
-    return f"qcrbox_rk_{application_slug}_{application_version}"
+# def get_routing_key_for_command_invocation_requests(*, application_slug: str, application_version: str):
+#     return f"qcrbox_rk_{application_slug}_{application_version}"
+
+
+def sanitize_for_nats_subject(s: str):
+    disallowed_chars = "[.]"
+    return re.sub(disallowed_chars, "_", s)
 
 
 def import_all_submodules(parent_dir: Path, parent_package_name: str):
