@@ -84,8 +84,8 @@ class RabbitMQSettings(BaseModel):
 class NATSSettings(BaseModel):
     host: str = "127.0.0.1"
     port: int = 4222
-    rpc_timeout: float = 5.0
-    graceful_timeout: Optional[int] = 5
+    rpc_timeout: float = 3  # seconds
+    graceful_timeout: Optional[int] = 5  # seconds
 
     @computed_field  # type: ignore
     @property
