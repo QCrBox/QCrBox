@@ -79,4 +79,4 @@ docs/tutorials/examples/input_files/eval_input.zip
 services/applications/xharpy_gpaw/XHARPy
 
 #MoProSuite
-services/applications/mopro/MoProSuite_linux_2022_06.zip
+services/applications/mopro/MoProSuite_*.zip

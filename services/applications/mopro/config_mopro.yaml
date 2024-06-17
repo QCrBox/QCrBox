@@ -3,41 +3,89 @@
 #
 name: "MoProSuite"
 slug: "mopro"
-version: "2022.06"
+version: "2022.07"
 description: "Software for charge density refinement and modelling of molecules"
 url: "https://crm2.univ-lorraine.fr/de/die-software/mopro/download-mopro/"
 doi: TODO
 
 commands:
-  - name: "sample_cmd"
-    implemented_as: "CLI"  # other options: "python_callable"
+  - name: "interactive"
+    implemented_as: "interactive"  # other options: "python_callable"
     parameters:
       - name: "input_cif_path"
         type: "QCrBox.input_cif"
-        required_entries: ["_cif_category.ddlm_entry"]
-        optional_entries: ["_cif_category_ddl1_entry"]
-        required_entry_sets: ["example_entry_set"]
+        required_entry_sets: ["interactive_input"]
+        merge_su: True
       - name: "output_cif_path"
         type: "QCrBox.output_cif"
-        required_entries: ["_cif_category.ddlm_entry"]
-        optional_entries: ["_cif_category_ddl1_entry"]
-        required_entry_sets: ["example_entry_set"]
-        invalidated_entries: ["_processing_category\..*"]
+        required_entries: ["To be added..."]
+        optional_entries: []
+        required_entry_sets: []
+        invalidated_entries: []
+    interactive_lifecycle:
+      prepare:
+        implemented_as: "python_callable"
+        module: "configure_mopro"
+        function: "prepare__interactive"
+        used_basecommand_parameters: ["input_cif_path"]
+      run:
+        implemented_as: "CLI"
+        command: "wine /opt/wine_installations/wine_win64/drive_c/MoProSuite-win-July2022/MoProGUI_Qt_win64/MoProGUI_win64.exe"
+      finalise:
+        implemented_as: "python_callable"
+        module: "configure_mopro"
+        function: "finalise__interactive"
+        used_basecommand_parameters: ["output_cif_path"]
 
-  - name: "sample_cmd_v2"
-    implemented_as: "CLI"  # other options: "python_callable"
-    parameters:
-      - name: "msg"
-        type: str
-        default_value: null
-      - name: "some_number"
-        type: int
-        default_value: 42
-        required: False
 
 cif_entry_sets:
-  - name: "example_entry_set"
-    required: ["_cif_category.another_ddlm_entry"]
-    optional: ["_cif_category.another_ddl1_entry"]
+  - name: "interactive_input"
+    required: [
+      "_symmetry_cell_setting",
+      "_space_group_IT_number",
+      "_space_group_name_H-M_alt",
+      "_symmetry_space_group_name_Hall",
+      "_symmetry_equiv_pos_as_xyz",
+      "_cell_length_a",
+      "_cell_length_b",
+      "_cell_length_c",
+      "_cell_angle_alpha",
+      "_cell_angle_beta",
+      "_cell_angle_gamma",
+      "_diffrn_radiation_wavelength",
+      "_diffrn_radiation_type",
+      "_atom_site_type_symbol",
+      "_atom_site_label",
+      "_atom_site_fract_x",
+      "_atom_site_fract_y",
+      "_atom_site_fract_z",
+      "_atom_site_U_iso_or_equiv",
+      "_atom_site_adp_type",
+      "_atom_site_occupancy",
+      "_atom_site_aniso_label",
+      "_atom_site_aniso_U_11",
+      "_atom_site_aniso_U_22",
+      "_atom_site_aniso_U_33",
+      "_atom_site_aniso_U_12",
+      "_atom_site_aniso_U_13",
+      "_atom_site_aniso_U_23",
+      "_diffrn_refln_index_h",
+      "_diffrn_refln_index_k",
+      "_diffrn_refln_index_l",
+      "_diffrn_refln_intensity_net",
+      "_diffrn_refln_intensity_u"
+    ]
+    optional: [
+      "_atom_type_symbol",
+      "_atom_type_description",
+      "_atom_type_scat_dispersion_real",
+      "_atom_type_scat_dispersion_imag",
+      "_atom_type_scat_source",
+      "_atom_site_calc_flag",
+      "_atom_site_refinement_flags_posn",
+      "_atom_site_refinement_flags_adp",
+      "_atom_site_disorder_assembly",
+      "_atom_site_disorder_group"
+    ]
 
 qcrbox_yaml_spec_version: "0.1"
