@@ -12,6 +12,7 @@ from pyqcrbox.helpers import generate_private_routing_key
 from ..shared import QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup
 from .api_endpoints import create_client_asgi_server
 from .executable_command import BaseCommand, ExecutableCommand
+from .message_processing.command_invocation_request import handle_command_invocation_request_via_nats
 
 __all__ = ["QCrBoxClient", "TestQCrBoxClient"]
 
@@ -45,6 +46,10 @@ class QCrBoxClient(QCrBoxServerClientBase):
 
     def _set_up_nats_broker(self) -> None:
         logger.warning("TODO: set up NATS broker for client")
+
+        # Subscriber for command invocation requests
+        subject = f"cmd-invocation.request.{self.application_spec.nats_subject}"
+        self.nats_broker.subscriber(subject)(handle_command_invocation_request_via_nats)
 
     def _set_up_asgi_server(self) -> None:
         self.asgi_server = create_client_asgi_server(self.lifespan_context)

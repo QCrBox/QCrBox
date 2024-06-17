@@ -66,18 +66,35 @@ async def retrieve_commands() -> list[sql_models.CommandSpecWithParameters]:
 #         raise HTTPException(f"{exc}")
 
 
-async def _invoke_command_impl_via_nats(cmd: sql_models.CommandInvocationCreate, nats_broker: NatsBroker):
-    msg = msg_specs.InvokeCommand(payload=cmd)
+# async def _invoke_command_impl_via_nats(cmd: sql_models.CommandInvocationCreate, nats_broker: NatsBroker):
+#     msg = msg_specs.InvokeCommand(payload=cmd)
+#
+#     try:
+#         # send command invocation request to any available clients
+#         await nats_broker.publish(
+#             msg,
+#             f"cmd-invocation.request.{msg.payload.nats_subject}",
+#             rpc=True,
+#             raise_timeout=True,
+#             rpc_timeout=settings.nats.rpc_timeout,
+#         )
+#     except TimeoutError:
+#         raise ServiceUnavailableException("No clients available to execute command.")
+
+
+async def _send_command_invocation_request_via_nats(cmd: sql_models.CommandInvocationCreate, nats_broker: NatsBroker):
+    msg = msg_specs.CommandInvocationRequest(payload=cmd)
 
     try:
         # send command invocation request to any available clients
-        await nats_broker.publish(
+        response = await nats_broker.publish(
             msg,
             f"cmd-invocation.request.{msg.payload.nats_subject}",
             rpc=True,
             raise_timeout=True,
             rpc_timeout=settings.nats.rpc_timeout,
         )
+        return response
     except TimeoutError:
         raise ServiceUnavailableException("No clients available to execute command.")
 
@@ -91,7 +108,9 @@ async def commands_invoke(data: sql_models.CommandInvocationCreate) -> dict:
         nats_broker = await con.aget(NatsBroker)
 
     # await _invoke_command_impl(data, broker)
-    await _invoke_command_impl_via_nats(data, nats_broker)
+    # await _invoke_command_impl_via_nats(data, broker)
+    response = await _send_command_invocation_request_via_nats(data, nats_broker)
+    logger.debug(f"Response from client: {response}")
 
     return dict(
         msg="Accepted command invocation request",

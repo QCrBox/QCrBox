@@ -8,7 +8,7 @@ __all__ = ["ClientIndicatesAvailabilityToExecuteCommand", "PayloadForClientIsAva
 
 class PayloadForClientIsAvailableToExecuteCommand(QCrBoxBasePayload):
     cmd_invocation_payload: sql_models.CommandInvocationCreate
-    private_routing_key: str
+    # private_routing_key: str
 
 
 class ClientIndicatesAvailabilityToExecuteCommand(QCrBoxBaseAction):
