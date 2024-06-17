@@ -116,9 +116,9 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
         self._set_up_nats_broker()
         self._set_up_rabbitmq_broker()
 
-        # for attempt in stamina.retry_context(on=aiormq.exceptions.AMQPConnectionError, timeout=60.0, attempts=None):
-        #     with attempt:
-        #         await self.broker.start()
+        for attempt in stamina.retry_context(on=aiormq.exceptions.AMQPConnectionError, timeout=60.0, attempts=None):
+            with attempt:
+                await self.broker.start()
 
         for attempt in stamina.retry_context(on=aiormq.exceptions.AMQPConnectionError, timeout=60.0, attempts=None):
             with attempt:

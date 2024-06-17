@@ -43,6 +43,9 @@ class QCrBoxClient(QCrBoxServerClientBase):
             message_dispatcher=client_side_message_dispatcher,
         )
 
+    def _set_up_nats_broker(self) -> None:
+        logger.warning("TODO: set up NATS broker for client")
+
     def _set_up_asgi_server(self) -> None:
         self.asgi_server = create_client_asgi_server(self.lifespan_context)
 
@@ -71,6 +74,11 @@ class QCrBoxClient(QCrBoxServerClientBase):
             settings.rabbitmq.routing_key_qcrbox_registry,
             # rpc=True,
             reply_to=self.private_routing_key,
+        )
+
+        await self.nats_broker.publish(
+            msg,
+            settings.rabbitmq.routing_key_qcrbox_registry,
         )
 
     async def publish(self, queue, msg):
