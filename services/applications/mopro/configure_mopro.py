@@ -1,8 +1,5 @@
 import os
 from pathlib import Path, PureWindowsPath
-from textwrap import dedent
-import shlex
-import subprocess
 
 from qcrboxtools.cif.cif2cif import cif_file_merge_to_unified_by_yml, cif_file_to_specific_by_yml
 from qcrboxtools.cif.file_converter.hkl import cif2hkl4
@@ -76,16 +73,23 @@ def finalise__interactive(input_cif_path, output_cif_path):
     input_cif_path = Path(input_cif_path)
     work_folder = input_cif_path.parent
     try:
+        excluded_cif = ("output.cif", "work.cif", "input.cif")
         newest_cif_path = next(
             reversed(
                 sorted(
-                    (file_path for file_path in work_folder.glob("*.cif") if file_path.name != "output.cif"),
+                    (file_path for file_path in work_folder.glob("*.cif") if file_path.name not in excluded_cif),
                     key=os.path.getmtime,
                 )
             )
         )
+
+        # MoPro might output invalid characters
+        content = newest_cif_path.read_text(errors='replace')
+        cleaned_cif_path = newest_cif_path.with_name("cleaned.cif")
+        cleaned_cif_path.write_text(content, errors='replace')
+
         cif_file_merge_to_unified_by_yml(
-            newest_cif_path, output_cif_path, input_cif_path, YAML_PATH, "interactive", "output_cif_path"
+            cleaned_cif_path, output_cif_path, input_cif_path, YAML_PATH, "interactive", "output_cif_path"
         )
     except StopIteration:
         pass
