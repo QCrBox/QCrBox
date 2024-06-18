@@ -102,7 +102,14 @@ async def commands_invoke(data: sql_models.CommandInvocationCreate) -> dict:
 
     await nats_broker.close()
 
-    @nats_broker.subscriber(reply_subject)
+    @nats_broker.subscriber(reply_subject, filter=lambda msg: msg.content_type == "")
+    async def discard_spurious_empty_messages(msg: bytes):
+        logger.warning(
+            f"Discarding spurious empty message: {msg} (this seems to be "
+            f"a FastStream bug, but it should not cause any issues)."
+        )
+
+    @nats_broker.subscriber(reply_subject, filter=lambda msg: msg.content_type != "")
     async def handle_client_response(response_msg: dict):
         logger.debug(f"Received response from client: {response_msg}")
         if not client_response_event.is_set():
@@ -121,10 +128,11 @@ async def commands_invoke(data: sql_models.CommandInvocationCreate) -> dict:
         reply_to=reply_subject,
     )
 
-    with anyio.move_on_after(settings.nats.rpc_timeout):
-        async with anyio.create_task_group() as tg:
+    async with anyio.create_task_group() as tg:
+        with anyio.move_on_after(settings.nats.rpc_timeout):
             tg.start_soon(my_publish_func, msg)
-            tg.start_soon(client_response_event.wait)
+            # tg.start_soon(client_response_event.wait)
+            await client_response_event.wait()
 
     if client_response_event.is_set():
         return dict(
