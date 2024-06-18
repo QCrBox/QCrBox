@@ -1,0 +1,208 @@
+#
+# Configuration for the application 'mopro'
+#
+name: "MoProSuite"
+slug: "mopro"
+version: "2022.07"
+description: "Software for charge density refinement and modelling of molecules"
+url: "https://crm2.univ-lorraine.fr/de/die-software/mopro/download-mopro/"
+doi: "10.1107/S0108767306053748"
+
+commands:
+  - name: "interactive"
+    implemented_as: "interactive"  # other options: "python_callable"
+    parameters:
+      - name: "input_cif_path"
+        type: "QCrBox.input_cif"
+        required_entry_sets: ["interactive_input"]
+        merge_su: True
+      - name: "output_cif_path"
+        type: "QCrBox.output_cif"
+        required_entries: []
+        optional_entries: []
+        required_entry_sets: ["interactive_output"]
+        invalidated_entries: ["_refine_.*", "_computing_.*", "_geom_.*", "_atom_rho_.*", "_atom_local_axes_.*"]
+    interactive_lifecycle:
+      prepare:
+        implemented_as: "python_callable"
+        module: "configure_mopro"
+        function: "prepare__interactive"
+        used_basecommand_parameters: ["input_cif_path"]
+      run:
+        implemented_as: "CLI"
+        command: "wine /opt/wine_installations/wine_win64/drive_c/MoProSuite-win-July2022/MoProGUI_Qt_win64/MoProGUI_win64.exe"
+      finalise:
+        implemented_as: "python_callable"
+        module: "configure_mopro"
+        function: "finalise__interactive"
+        used_basecommand_parameters: ["output_cif_path"]
+
+
+cif_entry_sets:
+  - name: "interactive_input"
+    required: [
+      "_symmetry_cell_setting",
+      "_space_group_IT_number",
+      "_space_group_name_H-M_alt",
+      "_symmetry_space_group_name_Hall",
+      "_symmetry_equiv_pos_as_xyz",
+      "_cell_length_a",
+      "_cell_length_b",
+      "_cell_length_c",
+      "_cell_angle_alpha",
+      "_cell_angle_beta",
+      "_cell_angle_gamma",
+      "_diffrn_radiation_wavelength",
+      "_diffrn_radiation_type",
+      "_atom_site_type_symbol",
+      "_atom_site_label",
+      "_atom_site_fract_x",
+      "_atom_site_fract_y",
+      "_atom_site_fract_z",
+      "_atom_site_U_iso_or_equiv",
+      "_atom_site_adp_type",
+      "_atom_site_occupancy",
+      "_atom_site_aniso_label",
+      "_atom_site_aniso_U_11",
+      "_atom_site_aniso_U_22",
+      "_atom_site_aniso_U_33",
+      "_atom_site_aniso_U_12",
+      "_atom_site_aniso_U_13",
+      "_atom_site_aniso_U_23",
+      "_diffrn_refln_index_h",
+      "_diffrn_refln_index_k",
+      "_diffrn_refln_index_l",
+      "_diffrn_refln_intensity_net",
+      "_diffrn_refln_intensity_u"
+    ]
+    optional: [
+      "_atom_type_symbol",
+      "_atom_type_description",
+      "_atom_type_scat_dispersion_real",
+      "_atom_type_scat_dispersion_imag",
+      "_atom_type_scat_source",
+      "_atom_site_calc_flag",
+      "_atom_site_refinement_flags_posn",
+      "_atom_site_refinement_flags_adp",
+      "_atom_site_disorder_assembly",
+      "_atom_site_disorder_group"
+    ]
+
+  - name: "interactive_output"
+    required: [
+      "_atom_site_label",
+      "_atom_site_fract_x",
+      "_atom_site_fract_y",
+      "_atom_site_fract_z",
+      "_atom_site_U_iso_or_equiv",
+      "_atom_site_adp_type",
+      "_atom_site_occupancy",
+      "_atom_site_aniso_label",
+      "_atom_site_aniso_U_11",
+      "_atom_site_aniso_U_22",
+      "_atom_site_aniso_U_33",
+      "_atom_site_aniso_U_12",
+      "_atom_site_aniso_U_13",
+      "_atom_site_aniso_U_23",
+      "_computing_structure_refinement",
+      "_refine_special_details",
+      "_refine_ls_structure_factor_coef",
+      "_refine_ls_matrix_type",
+      "_refine_ls_hydrogen_treatment",
+      "_refine_ls_number_reflns",
+      "_refine_ls_number_parameters",
+      "_refine_ls_number_restraints",
+      "_refine_ls_R_factor_all",
+      "_refine_ls_R_factor_gt",
+      "_refine_ls_wR_factor_ref",
+      "_refine_ls_wR_factor_gt",
+      "_refine_ls_goodness_of_fit_ref",
+      "_refine_ls_restrained_S_all",
+      "_refine_ls_shift/su_max",
+      "_refine_ls_shift/su_mean"
+    ]
+    optional: [
+      "_atom_type_symbol",
+      "_atom_type_description",
+      "_atom_type_scat_dispersion_real",
+      "_atom_type_scat_dispersion_imag",
+      "_atom_type_scat_source",
+      "_atom_site_calc_flag",
+      "_atom_site_refinement_flags_posn",
+      "_atom_site_refinement_flags_adp",
+      "_atom_site_disorder_assembly",
+      "_atom_site_disorder_group",
+      "_chemical_formula_moiety",
+      "_iucr_refine_instructions_details",
+      "_refine_ls_weighting_scheme",
+      "_refine_ls_weighting_details",
+      "_geom_bond_atom_site_label_1",
+      "_geom_bond_atom_site_label_2",
+      "_geom_bond_distance",
+      "_geom_bond_site_symmetry_2",
+      "_geom_bond_publ_flag",
+      "_geom_angle_atom_site_label_1",
+      "_geom_angle_atom_site_label_2",
+      "_geom_angle_atom_site_label_3",
+      "_geom_angle",
+      "_geom_angle_site_symmetry_1",
+      "_geom_angle_site_symmetry_2",
+      "_geom_angle_site_symmetry_3",
+      "_geom_angle_publ_flag",
+      "_geom_torsion_atom_site_label_1",
+      "_geom_torsion_atom_site_label_2",
+      "_geom_torsion_atom_site_label_3",
+      "_geom_torsion_atom_site_label_4",
+      "_geom_torsion_site_symmetry_1",
+      "_geom_torsion_site_symmetry_2",
+      "_geom_torsion_site_symmetry_3",
+      "_geom_torsion_site_symmetry_4",
+      "_geom_torsion",
+      "_geom_torsion_publ_flag",
+      "_geom_hbond_atom_site_label_D",
+      "_geom_hbond_atom_site_label_H",
+      "_geom_hbond_atom_site_label_A",
+      "_geom_hbond_distance_DH",
+      "_geom_hbond_distance_HA",
+      "_geom_hbond_distance_DA",
+      "_geom_hbond_angle_DHA",
+      "_geom_hbond_site_symmetry_A",
+      "_atom_rho_multipole_atom_label",
+      "_atom_rho_multipole_coeff_Pv",
+      "_atom_rho_multipole_coeff_P00",
+      "_atom_rho_multipole_coeff_P11",
+      "_atom_rho_multipole_coeff_P1-1",
+      "_atom_rho_multipole_coeff_P10",
+      "_atom_rho_multipole_coeff_P20",
+      "_atom_rho_multipole_coeff_P21",
+      "_atom_rho_multipole_coeff_P2-1",
+      "_atom_rho_multipole_coeff_P22",
+      "_atom_rho_multipole_coeff_P2-2",
+      "_atom_rho_multipole_coeff_P30",
+      "_atom_rho_multipole_coeff_P31",
+      "_atom_rho_multipole_coeff_P3-1",
+      "_atom_rho_multipole_coeff_P32",
+      "_atom_rho_multipole_coeff_P3-2",
+      "_atom_rho_multipole_coeff_P33",
+      "_atom_rho_multipole_coeff_P3-3",
+      "_atom_rho_multipole_kappa",
+      "_atom_rho_multipole_kappa_prime1",
+      "_atom_rho_multipole_radial_slater_n0",
+      "_atom_rho_multipole_radial_slater_zeta0",
+      "_atom_rho_multipole_radial_slater_n1",
+      "_atom_rho_multipole_radial_slater_zeta1",
+      "_atom_rho_multipole_radial_slater_n2",
+      "_atom_rho_multipole_radial_slater_zeta2",
+      "_atom_rho_multipole_radial_slater_n3",
+      "_atom_rho_multipole_radial_slater_zeta3",
+      "_atom_rho_multipole_radial_slater_n4",
+      "_atom_rho_multipole_radial_slater_zeta4",
+      "_atom_local_axes_atom_label",
+      "_atom_local_axes_atom0",
+      "_atom_local_axes_ax1",
+      "_atom_local_axes_ax2",
+      "_atom_local_axes_atom1",
+      "_atom_local_axes_atom2"
+    ]
+
+qcrbox_yaml_spec_version: "0.1"
