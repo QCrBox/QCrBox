@@ -77,7 +77,7 @@ def click_btn_cod_merge():
     cod_merge_structure.execute(
         input_cif_path=cod_merge_structure.qcrbox_app_dir / "input.cif",
         output_cif_path=cod_merge_structure.qcrbox_app_dir / "output.cif",
-        listed_elements_only= not tgl_cod_additional_elements.value,
+        listed_elements_only=not tgl_cod_additional_elements.value,
         cellpar_deviation_perc=sdr_cod_cell_deviation.value,
     )
 

@@ -1,12 +1,15 @@
-from mock_can_run_wrapper import MockWrapper as QCrBoxWrapper
-from qcrbox_wrapper import QCrBoxPathHelper
-from nicegui import ui
-from textwrap import dedent
 import json
-import webbrowser
-from pathlib import Path
 import shutil
-#import time
+import webbrowser
+from textwrap import dedent
+
+from mock_can_run_wrapper import MockWrapper as QCrBoxWrapper
+
+from nicegui import ui
+from qcrbox_wrapper import QCrBoxPathHelper
+
+# import time
+
 
 def load_textbox_values(command):
     try:
@@ -25,8 +28,9 @@ def load_textbox_values(command):
 
     return other_arguments
 
+
 def create_cif_paths(input_cif_path, command):
-    #raw_path = pathhelper.path_to_qcrbox(f"{input_cif_path}")
+    # raw_path = pathhelper.path_to_qcrbox(f"{input_cif_path}")
     blank_path = input_cif_path.with_suffix("")
     arguments = {}
     if "input_cif_path" in command.par_name_list:
@@ -36,6 +40,7 @@ def create_cif_paths(input_cif_path, command):
     if "work_cif_path" in command.par_name_list:
         arguments["work_cif_path"] = input_cif_path.with_name(blank_path.name + "_work.cif")
     return arguments
+
 
 class BaseCommandGuiRepresentation:
     def __init__(self, command):
@@ -53,8 +58,8 @@ class BaseCommandGuiRepresentation:
         template += "}"
         textarea_settings.value = template
 
-    def execute_on_click(self):
-        ...
+    def execute_on_click(self): ...
+
 
 class CommandGuiRepresentation(BaseCommandGuiRepresentation):
     def execute_on_click(self):
@@ -74,6 +79,7 @@ class CommandGuiRepresentation(BaseCommandGuiRepresentation):
             return
         ui.notify("Calculation finished")
         load_cif_file()
+
 
 class InteractiveCommandGuiRepresentation(BaseCommandGuiRepresentation):
     started_run = False
@@ -130,13 +136,10 @@ def repopulate_grid():
             if not command.can_run(path_storage["local_path"]):
                 continue
             if hasattr(command, "gui_url"):
-                representation = InteractiveCommandGuiRepresentation(command)
+                _ = InteractiveCommandGuiRepresentation(command)
             else:
-                representation = CommandGuiRepresentation(command)
-            representation.name_label
-            representation.application_label
-            representation.settings_template_button
-            representation.execute_button
+                _ = CommandGuiRepresentation(command)
+
 
 def load_cif_file():
     original_input = path_storage["local_path"]
@@ -170,9 +173,10 @@ def upload_cif_file(uploader_event):
 
     location_label.set_text(f"The current input cif is at `{local_path}` from file upload")
 
-#pathhelper = QCrBoxPathHelper.from_dotenv(".env.dev", "gui_folder/prototype3")
 
-pathhelper = QCrBoxPathHelper(Path(__file__).parents[1] / "shared_files", base_dir="gui_folder/prototype3")
+pathhelper = QCrBoxPathHelper.from_dotenv(".env.dev", "gui_folder/prototype3")
+
+# pathhelper = QCrBoxPathHelper(Path(__file__).parents[1] / "shared_files", base_dir="gui_folder/prototype3")
 
 path_storage = {"local_path": None, "qcrbox_path": None}
 qcrbox = QCrBoxWrapper("127.0.0.1", 11000)
@@ -189,7 +193,6 @@ ui.markdown(
     ).strip()
 )
 location_label = ui.label("Currently no cif file is loaded")
-#location_label = ui.label("The work directory is `{pathhelper.local_path}`")
 
 ui.markdown("## Upload a dataset")
 
@@ -202,7 +205,5 @@ textarea_settings = ui.textarea()
 ui.markdown("## Available commands")
 
 grid = ui.grid(columns=4)
-
-#select_dataset_changed(select_dataset)
 
 ui.run()
