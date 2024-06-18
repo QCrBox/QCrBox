@@ -26,6 +26,7 @@ done
 
 xdotool search --name "MoPro" windowfocus
 xdotool key Alt+F4
+xdotool key Enter
 
 unset DISPLAY
 killall Xvfb

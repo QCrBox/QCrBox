@@ -1,5 +1,6 @@
 import os
 from pathlib import Path, PureWindowsPath
+import re
 
 from qcrboxtools.cif.cif2cif import cif_file_merge_to_unified_by_yml, cif_file_to_specific_by_yml
 from qcrboxtools.cif.file_converter.hkl import cif2hkl4
@@ -84,9 +85,12 @@ def finalise__interactive(input_cif_path, output_cif_path):
         )
 
         # MoPro might output invalid characters
-        content = newest_cif_path.read_text(errors='replace')
+
+        text = newest_cif_path.read_text(encoding='utf-8', errors='replace')
+        non_character_pattern = re.compile(r'[^\w\s\.,!?;:\'\"\-()\[\]{}<>|/\\@#%&*+=`~]')
+        cleaned_text = non_character_pattern.sub('?', text)
         cleaned_cif_path = newest_cif_path.with_name("cleaned.cif")
-        cleaned_cif_path.write_text(content, errors='replace')
+        cleaned_cif_path.write_text(cleaned_text, encoding='utf-8')
 
         cif_file_merge_to_unified_by_yml(
             cleaned_cif_path, output_cif_path, input_cif_path, YAML_PATH, "interactive", "output_cif_path"
