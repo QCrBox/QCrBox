@@ -21,11 +21,9 @@ ENV QCRBOX_ROOT_DIR=${QCRBOX_ROOT_DIR}
 COPY configure_mopro.py ./
 COPY config_mopro.yaml ./
 COPY templates ./templates
+COPY run_once.sh ./
 
-COPY run_once.sh .
-RUN bash ./run_once.sh && \
-    rm run_once.sh
+COPY supervisord.mopro_sh.conf ${QCRBOX_SUPERVISORD_CONF_DIR}
 
-#ENV PATH="$PATH:/opt/mopro-win"
 USER ${QCRBOX_USER}
 
