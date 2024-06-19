@@ -154,6 +154,10 @@ class InteractiveExecutionError(Exception):
     pass
 
 
+class TimeoutError(Exception):
+    pass
+
+
 class QCrBoxWrapper:
     """
     Provides an interface to interact with the QCrBox server.
@@ -622,8 +626,7 @@ class QCrBoxCommand(QCrBoxCommandBase):
         r = urllib.request.urlopen(req, data=data)
         answer = json.loads(r.read())
         if not answer["status"] == "success":
-            print(answer)
-            raise ConnectionError("Command not successfully send")
+            raise TimeoutError(f"Command not successfully send. Answer was {answer}")
 
         return QCrBoxCalculation(answer["payload"]["calculation_id"], self)
 
@@ -755,7 +758,7 @@ class QCrBoxInteractiveCommand(QCrBoxCommandBase):
         run_arguments = {key: val for key, val in arguments.items() if key in self.run_cmd.par_name_list}
         run_calculation = self.run_cmd(**run_arguments)
         if run_calculation.status.status not in ("running", "completed"):
-            raise UnsuccessfulCalculationError(run_calculation, f"Run command of {self.name} failed")
+            raise UnsuccessfulCalculationError(run_calculation.status)
         return run_calculation
 
     def execute_finalise(self, arguments: dict) -> dict:
@@ -806,10 +809,10 @@ class QCrBoxInteractiveCommand(QCrBoxCommandBase):
         arguments = self.args_to_kwargs(*args, **kwargs)
 
         self.execute_prepare(arguments)
-        run_calculation = self.execute_run(arguments)
         if self.gui_url is not None:
             webbrowser.open(self.gui_url)
-
+        run_calculation = self.execute_run(arguments)
+        if self.gui_url is not None:
             input("Press enter when you have finished your interactive session")
 
         self.execute_finalise(arguments)
