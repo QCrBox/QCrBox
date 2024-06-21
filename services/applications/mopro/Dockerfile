@@ -27,3 +27,4 @@ COPY supervisord.mopro_sh.conf ${QCRBOX_SUPERVISORD_CONF_DIR}
 
 USER ${QCRBOX_USER}
 
+COPY --chown=${QCRBOX_USER}:${QCRBOX_GROUP} ./.idesktop ${QCRBOX_HOME}/.idesktop
