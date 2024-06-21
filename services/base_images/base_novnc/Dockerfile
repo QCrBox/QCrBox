@@ -23,6 +23,12 @@ COPY menu.xml /etc/xdg/openbox/
 
 USER ${QCRBOX_USER}
 
+# Copy background image
+COPY --chown=${QCRBOX_USER}:${QCRBOX_GROUP} ./.idesktop ${QCRBOX_HOME}/.idesktop
+COPY --chown=${QCRBOX_USER}:${QCRBOX_GROUP} ./.ideskrc ${QCRBOX_HOME}/.ideskrc
+
 COPY supervisord.base_novnc.conf ${QCRBOX_SUPERVISORD_CONF_DIR}/
 ENV DISPLAY=":0"
 EXPOSE 8080
+
+

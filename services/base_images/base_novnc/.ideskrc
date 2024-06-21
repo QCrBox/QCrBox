@@ -1,0 +1,9 @@
+table Config
+  Background.File: /opt/qcrbox/.idesktop/bg.png
+  Background.Mode: Stretch
+  Background.Color: #FFFFFF
+end
+
+table Actions
+  Reload: middle doubleClk
+end
