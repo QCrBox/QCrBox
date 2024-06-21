@@ -452,6 +452,7 @@ def create_new_olex2_zip_file():
     r2 = requests.get(url_exe, timeout=600)
     zip_file.writestr("olex2/olex2c-linux64", r2.content)
     zip_file.close()
+    output_path.parent.mkdir(parents=True, exist_ok=True)
     with open(output_path, "wb") as fobj:
         fobj.write(zip_io.getbuffer())
 

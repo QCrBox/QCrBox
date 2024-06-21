@@ -20,7 +20,6 @@ def prepare__interactive(input_cif_path, work_cif_path):
     cif_file_to_specific_by_yml(input_cif_path, work_cif_path, YAML_PATH, "interactive", "input_cif_path")
 
 
-
 def finalise__interactive(input_cif_path, output_cif_path):
     input_cif_path = Path(input_cif_path)
     output_cif_path = Path(output_cif_path)
