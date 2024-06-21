@@ -1,14 +1,143 @@
+from pathlib import Path, PurePosixPath
 import json
 import shutil
 import webbrowser
 from textwrap import dedent
+from zipfile import ZipFile
 
 from mock_can_run_wrapper import MockWrapper as QCrBoxWrapper
+from mock_can_run_wrapper import MockCommand as QCrBoxCommand
 
-from nicegui import ui
+from nicegui import ui, events
 from qcrbox_wrapper import QCrBoxPathHelper
 
 # import time
+
+def upload_cif(event_fobj, local_folder_path, base_name="input.cif"):
+    local_path = local_folder_path / base_name
+    local_path.write_bytes(event_fobj.read())
+
+def upload_zip(event_fobj, local_folder_path):
+    with ZipFile(event_fobj) as zip_file:
+        zip_file.extractall(local_folder_path)
+
+
+
+class GuiState:
+    local_output_cif_path = None
+
+    def __init__(self, local_save_path: Path, qcrbox_save_path: PurePosixPath):
+        ...
+
+    def populate_parameters(self, command: QCrBoxCommand):
+        ...
+
+#####            GUI states for different types of loaded files            #####
+
+class CifLoadedGuiState(GuiState):
+    def __init__(self, local_save_path: Path, qcrbox_save_path: PurePosixPath):
+
+        self.local_save_path = local_save_path
+        self.qcrbox_save_path = qcrbox_save_path
+        self.local_output_cif_path = self.local_save_path.with_name("output.cif")
+
+    def populate_parameters(self, command: QCrBoxCommand):
+
+        parameters = command.par_name_list
+
+        filled_values = {}
+
+        if "input_cif_path" in parameters:
+            filled_values["input_cif_path"] = self.qcrbox_save_path
+        if "output_cif_path" in parameters:
+            filled_values["output_cif_path"] = self.qcrbox_save_path.with_name("output.cif")
+        if "work_cif_path" in parameters:
+            filled_values["work_cif_path"] = self.qcrbox_save_path.with_name("work.cif")
+
+        remaining_parameters = set(parameters) - set(filled_values.keys())
+
+        return filled_values, tuple(remaining_parameters)
+
+    def description(self):
+        return f"Current input cif is at {self.local_save_path}"
+
+class CAPNoParException(Exception):
+    pass
+
+class CAPLoadedGuiState(GuiState):
+    def __init__(self, local_save_path: Path, qcrbox_save_path: PurePosixPath):
+
+        self.local_save_path = Path(local_save_path)
+        self.qcrbox_save_path = qcrbox_save_path
+
+        self.par_file = self._find_par_file()
+        self.work_folder = self.par_file.parent
+
+        self.local_output_cif_path = self.local_save_path / "output.cif"
+    def _find_par_file(self):
+        par_files = list(self.local_save_path.glob("**/*.par"))
+        if len(par_files) == 0:
+            raise CAPNoParException("No .par file found in the folder")
+
+        # backups might be in subfolders so we need to find the shortest path
+        min_depth = min(par_files, key=lambda x: len(x.parts))
+        candidates = (par_file for par_file in par_files if len(par_file.parts) == len(min_depth.parts))
+
+        # routines will attach names so we use the shortest name
+        local_path = min(candidates, key=lambda x: len(x.name))
+        return self.qcrbox_save_path / local_path.relative_to(self.local_save_path)
+
+    def populate_parameters(self, command: QCrBoxCommand):
+        parameters = command.par_name_list
+
+        filled_values = {}
+
+        if "work_folder" in parameters:
+            filled_values["work_folder"] = self.work_folder
+        if "par_path" in parameters:
+            filled_values["par_path"] = self.par_file
+        if "output_cif_path" in parameters:
+            filled_values["output_cif_path"] = self.qcrbox_save_path / "output.cif"
+
+        remaining_parameters = set(parameters) - set(filled_values.keys())
+        return filled_values, tuple(remaining_parameters)
+
+    def description(self):
+        return f"Current input is a CrysalisProFolder at {self.local_save_path}"
+
+class GenericFolderGuiState(GuiState):
+    def __init__(self, local_save_path: Path, qcrbox_save_path: PurePosixPath):
+
+        self.local_save_path = local_save_path
+        self.qcrbox_save_path = qcrbox_save_path
+        self.local_output_cif_path = self.local_save_path / "output.cif"
+
+    def populate_parameters(self, command: QCrBoxCommand):
+        parameters = command.par_name_list
+
+        filled_values = {}
+
+        if "work_folder" in parameters:
+            filled_values["work_folder"] = self.qcrbox_save_path
+        if "output_cif_path" in parameters:
+            filled_values["output_cif_path"] = self.qcrbox_save_path / "output.cif"
+
+        return filled_values, tuple(parameters)
+
+    def description(self):
+        return f"Current input is a folder at {self.local_save_path}"
+
+class StartGuiState(GuiState):
+    def __init__(self):
+        self.local_save_path = None
+        self.qcrbox_save_path = None
+        self.local_output_cif_path = None
+
+    def populate_parameters(self, command: QCrBoxCommand):
+        return {}, command.par_name_list
+
+    def description(self):
+        return "No file loaded"
 
 
 def load_textbox_values(command):
@@ -17,7 +146,7 @@ def load_textbox_values(command):
     except json.JSONDecodeError:
         ui.notify("Invalid JSON")
         return None
-    handled = set(("input_cif_path", "output_cif_path", "work_cif_path"))
+    handled = set(states[-1].populate_parameters(command)[0].keys())
     present = set(other_arguments.keys())
 
     needed = set(command.par_name_list) - handled - present
@@ -27,20 +156,6 @@ def load_textbox_values(command):
         return None
 
     return other_arguments
-
-
-def create_cif_paths(input_cif_path, command):
-    # raw_path = pathhelper.path_to_qcrbox(f"{input_cif_path}")
-    blank_path = input_cif_path.with_suffix("")
-    arguments = {}
-    if "input_cif_path" in command.par_name_list:
-        arguments["input_cif_path"] = input_cif_path
-    if "output_cif_path" in command.par_name_list:
-        arguments["output_cif_path"] = input_cif_path.with_name(blank_path.name + "_output.cif")
-    if "work_cif_path" in command.par_name_list:
-        arguments["work_cif_path"] = input_cif_path.with_name(blank_path.name + "_work.cif")
-    return arguments
-
 
 class BaseCommandGuiRepresentation:
     def __init__(self, command):
@@ -52,10 +167,9 @@ class BaseCommandGuiRepresentation:
 
     def settings_template_on_click(self):
         template = "{\n"
-        for parameter in self.command.parameters:
-            if parameter.name not in ("input_cif_path", "output_cif_path", "work_cif_path"):
-                template += f'  "{parameter.name}" : ,\n'
-        template += "}"
+        _, remaining_parameters = states[-1].populate_parameters(self.command)
+        template += ',\n'.join(remaining_parameters)
+        template +=  "\n}"
         textarea_settings.value = template
 
     def execute_on_click(self): ...
@@ -63,7 +177,7 @@ class BaseCommandGuiRepresentation:
 
 class CommandGuiRepresentation(BaseCommandGuiRepresentation):
     def execute_on_click(self):
-        arguments = create_cif_paths(path_storage["qcrbox_path"], self.command)
+        arguments, _ = states[-1].populate_parameters(self.command)
 
         other_arguments = load_textbox_values(self.command)
 
@@ -95,7 +209,7 @@ class InteractiveCommandGuiRepresentation(BaseCommandGuiRepresentation):
             self.execute_button.set_text("Execute")
 
     def run(self):
-        arguments = create_cif_paths(path_storage["qcrbox_path"], self.command)
+        arguments, _ = states[-1].populate_parameters(self.command)
 
         other_arguments = load_textbox_values(self.command)
 
@@ -132,8 +246,18 @@ def repopulate_grid():
     with grid:
         for command in qcrbox.commands:
             if any(command.name.startswith(val) for val in steering_commands):
-                continue
-            if not command.can_run(path_storage["local_path"]):
+                    continue
+            if isinstance(states[-1], CifLoadedGuiState):
+                ## TODO later this cannot be a local path
+                if not command.can_run(states[-1].local_save_path):
+                    continue
+            else:
+                if "input_cif_path" in command.par_name_list:
+                    continue
+                if hasattr(command, "gui_url"):
+                    _ = InteractiveCommandGuiRepresentation(command)
+                else:
+                    _ = CommandGuiRepresentation(command)
                 continue
             if hasattr(command, "gui_url"):
                 _ = InteractiveCommandGuiRepresentation(command)
@@ -142,46 +266,59 @@ def repopulate_grid():
 
 
 def load_cif_file():
-    original_input = path_storage["local_path"]
-    blank_path = original_input.with_suffix("")
-    copy_cif_path = original_input.with_name(blank_path.name + "_output.cif")
+    last_state = states[-1]
     local_folder_path, qcrbox_folder_path = pathhelper.create_next_step_folder()
     local_path = local_folder_path / "input.cif"
     qcrbox_path = qcrbox_folder_path / "input.cif"
 
-    shutil.copy(copy_cif_path, local_path)
+    shutil.copy(last_state.local_output_cif_path, local_path)
 
-    path_storage["local_path"] = local_path
-    path_storage["qcrbox_path"] = qcrbox_path
+    states.append(CifLoadedGuiState(local_path, qcrbox_path))
 
     repopulate_grid()
 
-    location_label.set_text(f"The current input cif is at `{local_path}` from previous calculation")
+    location_label.set_text(states[-1].description())
 
 
-def upload_cif_file(uploader_event):
+def upload_file(uploader_event_args: events.UploadEventArguments):
     local_folder_path, qcrbox_folder_path = pathhelper.create_next_step_folder()
-    local_path = local_folder_path / "input.cif"
-    qcrbox_path = qcrbox_folder_path / "input.cif"
+    local_path = local_folder_path / uploader_event_args.name
+    qcrbox_path = qcrbox_folder_path / uploader_event_args.name
 
-    local_path.write_bytes(uploader_event.content.read())
+    if uploader_event_args.name.lower().endswith(".cif"):
+        upload_cif(uploader_event_args.content, local_folder_path, "input.cif")
+        local_path = local_folder_path / "input.cif"
+        qcrbox_path = qcrbox_folder_path / "input.cif"
+        states.append(CifLoadedGuiState(local_path, qcrbox_path))
 
-    path_storage["local_path"] = local_path
-    path_storage["qcrbox_path"] = qcrbox_path
+    elif uploader_event_args.name.lower().endswith(".zip"):
+        upload_zip(uploader_event_args.content, local_folder_path)
+        try:
+            states.append(CAPLoadedGuiState(local_folder_path, qcrbox_folder_path))
+        except CAPNoParException:
+            states.append(GenericFolderGuiState(local_folder_path, qcrbox_folder_path))
 
     repopulate_grid()
 
-    location_label.set_text(f"The current input cif is at `{local_path}` from file upload")
+    location_label.set_text(states[-1].description())
+
+def click_btn_setup():
+    work_folder_empty = not any(pathhelper.local_path.iterdir())
+
+    if not work_folder_empty:
+        shutil.rmtree(pathhelper.local_path)
+        pathhelper.local_path.mkdir()
+    states.clear()
+    states.append(StartGuiState())
+    repopulate_grid()
+    location_label.set_text(states[-1].description())
 
 
 pathhelper = QCrBoxPathHelper.from_dotenv(".env.dev", "gui_folder/prototype3")
 
-# pathhelper = QCrBoxPathHelper(Path(__file__).parents[1] / "shared_files", base_dir="gui_folder/prototype3")
+states = [StartGuiState()]
 
-path_storage = {"local_path": None, "qcrbox_path": None}
 qcrbox = QCrBoxWrapper("127.0.0.1", 11000)
-
-cif_names = ["01_reduced.cif", "02_converged.cif", "03_notconverged.cif"]
 
 ui.markdown(
     dedent(
@@ -192,18 +329,24 @@ ui.markdown(
         """
     ).strip()
 )
+
+btn_setup = ui.button("Delete data in and freshly setup work folder", on_click=click_btn_setup)
+
 location_label = ui.label("Currently no cif file is loaded")
 
 ui.markdown("## Upload a dataset")
 
-ui.upload(on_upload=upload_cif_file, auto_upload=True)
+ui.upload(on_upload=upload_file, auto_upload=True)
 
 ui.markdown("## Input settings in JSON format")
 
 textarea_settings = ui.textarea()
+textarea_settings.style("width: min(95ch, 100%)")
 
 ui.markdown("## Available commands")
 
 grid = ui.grid(columns=4)
+
+repopulate_grid()
 
 ui.run()

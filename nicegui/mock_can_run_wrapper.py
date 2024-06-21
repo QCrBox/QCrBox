@@ -42,7 +42,6 @@ class MockInteractiveCommand(QCrBoxInteractiveCommand):
 
 
 def get_mock_command(base_command: QCrBoxCommand) -> QCrBoxCommand:
-    print(base_command.application_name, base_command.name, type(base_command))
     if isinstance(base_command, QCrBoxCommand):
         return MockCommand(
             cmd_id=base_command.id,
