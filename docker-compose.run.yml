@@ -8,8 +8,8 @@ services:
       - qcrbox-net
     hostname: "qcrbox-nats"
     ports:
-      - 4222:4222
-      - 8222:8222
+      - "${QCRBOX_BIND_ADDRESS:?Must set env var QCRBOX_BIND_ADDRESS}:${QCRBOX__NATS__PORT:?Must set env var QCRBOX__NATS__PORT}:4222"
+      - "${QCRBOX_BIND_ADDRESS:?Must set env var QCRBOX_BIND_ADDRESS}:${QCRBOX__NATS__MANAGEMENT_PORT:?Must set env var QCRBOX__NATS__MANAGEMENT_PORT}:8222"
     restart: unless-stopped
 
   qcrbox-message-bus:
