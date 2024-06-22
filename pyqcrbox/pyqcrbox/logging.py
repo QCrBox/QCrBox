@@ -1,35 +1,57 @@
 # SPDX-License-Identifier: MPL-2.0
 
-import sys
+from typing import assert_never
 
-from loguru import logger
+import structlog
+from faststream import context
 
-from pyqcrbox.settings import settings
-
-
-class Formatter:
-    def __init__(self):
-        self.fmt_default = "<green>{time:YYYY-mm-dd HH:MM:SS}</green> | {level: <8} | <level>{message}</level>\n"
-        self.fmt_dry_run = "<magenta><bold>DRY-RUN</bold></magenta> | {level: <8} | <level>{message}</level>\n"
-        # self.fmt_debug = (
-        #     "<green>{time:YYYY-mm-dd HH:MM:SS}</green> | {process} | "
-        #     "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>\n"
-        # )
-
-    def format(self, record):
-        is_dry_run = record.get("extra", {}).get("dry_run", False)
-        if is_dry_run:
-            return self.fmt_dry_run
-        else:
-            return self.fmt_default
+from pyqcrbox.settings import StructlogRendererEnum, settings
 
 
-formatter = Formatter()
+def merge_faststream_contextvars(
+    logger: structlog.types.WrappedLogger,
+    method_name: str,
+    event_dict: structlog.types.EventDict,
+) -> structlog.types.EventDict:
+    event_dict["extra"] = event_dict.get(
+        "extra",
+        context.get_local("log_context") or {},
+    )
+    return event_dict
 
 
-def set_log_level(level: str | int):
-    logger.remove()
-    logger.add(sys.stderr, level=level, format=formatter.format)
+shared_processors = [
+    merge_faststream_contextvars,
+    structlog.processors.add_log_level,
+    structlog.processors.StackInfoRenderer(),
+    structlog.dev.set_exc_info,
+    structlog.processors.TimeStamper(fmt="iso"),
+]
+
+match settings.logging.renderer:
+    case StructlogRendererEnum.CONSOLE:
+        # E.g. terminal session
+        processors = [
+            *shared_processors,
+            structlog.dev.ConsoleRenderer(),
+        ]
+    case StructlogRendererEnum.JSON:
+        print("[DDD] Case 2: Docker container session")
+        # E.g. docker container session
+        processors = [
+            *shared_processors,
+            structlog.processors.dict_tracebacks,
+            structlog.processors.JSONRenderer(),
+        ]
+    case _:
+        processors = []
+        assert_never(settings.logging.renderer)
 
 
-set_log_level(settings.log_level)
+structlog.configure(
+    processors=processors,
+    logger_factory=structlog.PrintLoggerFactory(),
+    cache_logger_on_first_use=False,
+)
+
+logger = structlog.get_logger()

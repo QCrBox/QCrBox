@@ -1,5 +1,6 @@
 import functools
 import sys
+from enum import Enum
 from typing import Any, Optional
 
 import sqlalchemy
@@ -123,6 +124,16 @@ class CLISettings(BaseModel):
     disable_rich: bool = False
 
 
+class StructlogRendererEnum(Enum):
+    CONSOLE = "console"
+    JSON = "json"
+
+
+class LoggingSettings(BaseModel):
+    log_level: str = "INFO" if not IS_RUNNING_INSIDE_TESTS else "DEBUG"
+    renderer: StructlogRendererEnum = StructlogRendererEnum.CONSOLE
+
+
 class QCrBoxSettings(BaseSettings):
     model_config = SettingsConfigDict(
         case_sensitive=False,
@@ -137,7 +148,7 @@ class QCrBoxSettings(BaseSettings):
     db: DatabaseSettings = DatabaseSettings()
     testing: TestingSettings = TestingSettings()
     cli: CLISettings = CLISettings()
-    log_level: str = "INFO" if not IS_RUNNING_INSIDE_TESTS else "DEBUG"
+    logging: LoggingSettings = LoggingSettings()
 
 
 settings = QCrBoxSettings()
