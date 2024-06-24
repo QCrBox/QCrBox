@@ -4,6 +4,8 @@ import shutil
 import webbrowser
 from textwrap import dedent
 from zipfile import ZipFile
+import os
+import stat
 
 from mock_can_run_wrapper import MockWrapper as QCrBoxWrapper
 from mock_can_run_wrapper import MockCommand as QCrBoxCommand
@@ -74,6 +76,7 @@ class CAPLoadedGuiState(GuiState):
         self.work_folder = self.par_file.parent
 
         self.local_output_cif_path = self.local_save_path / "output.cif"
+
     def _find_par_file(self):
         par_files = list(self.local_save_path.glob("**/*.par"))
         if len(par_files) == 0:
@@ -103,7 +106,7 @@ class CAPLoadedGuiState(GuiState):
         return filled_values, tuple(remaining_parameters)
 
     def description(self):
-        return f"Current input is a CrysalisProFolder at {self.local_save_path}"
+        return f"Current input is a CrysalisPro folder at {self.local_save_path}"
 
 class GenericFolderGuiState(GuiState):
     def __init__(self, local_save_path: Path, qcrbox_save_path: PurePosixPath):
@@ -239,7 +242,6 @@ class InteractiveCommandGuiRepresentation(BaseCommandGuiRepresentation):
         self.finalised_run = True
         load_cif_file()
 
-
 def repopulate_grid():
     grid.clear()
     steering_commands = ("finalise__", "prepare__", "run__", "redo__", "toparams__")
@@ -254,11 +256,6 @@ def repopulate_grid():
             else:
                 if "input_cif_path" in command.par_name_list:
                     continue
-                if hasattr(command, "gui_url"):
-                    _ = InteractiveCommandGuiRepresentation(command)
-                else:
-                    _ = CommandGuiRepresentation(command)
-                continue
             if hasattr(command, "gui_url"):
                 _ = InteractiveCommandGuiRepresentation(command)
             else:
@@ -278,7 +275,6 @@ def load_cif_file():
     repopulate_grid()
 
     location_label.set_text(states[-1].description())
-
 
 def upload_file(uploader_event_args: events.UploadEventArguments):
     local_folder_path, qcrbox_folder_path = pathhelper.create_next_step_folder()
@@ -302,11 +298,18 @@ def upload_file(uploader_event_args: events.UploadEventArguments):
 
     location_label.set_text(states[-1].description())
 
+
 def click_btn_setup():
     work_folder_empty = not any(pathhelper.local_path.iterdir())
-
     if not work_folder_empty:
-        shutil.rmtree(pathhelper.local_path)
+        def remove_readonly(func, path, _):
+            "Clear the readonly bit and reattempt the removal"
+            os.chmod(path, stat.S_IWRITE)
+            func(path)
+        try:
+            shutil.rmtree(pathhelper.local_path, onerror=remove_readonly)
+        except TypeError:
+            shutil.rmtree(pathhelper.local_path, onerror=remove_readonly)
         pathhelper.local_path.mkdir()
     states.clear()
     states.append(StartGuiState())
@@ -350,3 +353,4 @@ grid = ui.grid(columns=4)
 repopulate_grid()
 
 ui.run()
+
