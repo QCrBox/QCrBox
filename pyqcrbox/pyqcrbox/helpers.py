@@ -23,6 +23,12 @@ def generate_correlation_id():
     return result
 
 
+def generate_calculation_id():
+    result = create_unique_id(prefix="qcrbox_calc_")
+    logger.debug(f"Generated calculation id: {result}")
+    return result
+
+
 def create_unique_id(*, prefix=""):
     return f"{prefix}0x{uuid4().hex}"
 

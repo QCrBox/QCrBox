@@ -60,6 +60,8 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
         self._shutdown_event = anyio.Event()
         self._notification_events = {}
 
+        self.calculations = {}
+
     @property
     def clsname(self):
         return self.__class__.__name__
