@@ -1,4 +1,5 @@
 import functools
+import logging
 import sys
 from enum import Enum
 from typing import Any, Optional
@@ -15,6 +16,11 @@ __all__ = ["settings"]
 IS_RUNNING_INSIDE_TESTS = hasattr(sys, "_qcrbox_running_inside_tests")
 
 SQLiteDsn = str  # alias for readability
+
+
+def get_log_level_as_int(level: str):
+    mapping = logging.getLevelNamesMapping()
+    return mapping[level]
 
 
 @functools.lru_cache
@@ -132,6 +138,10 @@ class StructlogRendererEnum(Enum):
 class LoggingSettings(BaseModel):
     log_level: str = "INFO" if not IS_RUNNING_INSIDE_TESTS else "DEBUG"
     renderer: StructlogRendererEnum = StructlogRendererEnum.CONSOLE
+
+    @property
+    def log_level_as_int(self):
+        return get_log_level_as_int(self.log_level)
 
 
 class QCrBoxSettings(BaseSettings):

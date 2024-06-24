@@ -1,16 +1,28 @@
 # SPDX-License-Identifier: MPL-2.0
-
 from typing import assert_never
 
 import structlog
 from faststream import context
 
-from pyqcrbox.settings import StructlogRendererEnum, settings
+from pyqcrbox.settings import StructlogRendererEnum, get_log_level_as_int, settings
+
+
+def set_log_level(level):
+    if isinstance(level, str):
+        level_as_int = get_log_level_as_int(level)
+    elif isinstance(level, int):
+        level_as_int = level
+    else:
+        raise TypeError(
+            f"Argument 'level' must be a string or integer representing a valid logging level, got: {level!r}"
+        )
+
+    structlog.configure(wrapper_class=structlog.make_filtering_bound_logger(level_as_int))
 
 
 def merge_faststream_contextvars(
-    logger: structlog.types.WrappedLogger,
-    method_name: str,
+    _logger: structlog.types.WrappedLogger,
+    _method_name: str,
     event_dict: structlog.types.EventDict,
 ) -> structlog.types.EventDict:
     event_dict["extra"] = event_dict.get(
@@ -54,4 +66,6 @@ structlog.configure(
     cache_logger_on_first_use=False,
 )
 
+# set_log_level(settings.logging.log_level_as_int)
+#
 logger = structlog.get_logger()
