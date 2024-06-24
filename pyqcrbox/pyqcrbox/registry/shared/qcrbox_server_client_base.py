@@ -61,6 +61,7 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
         self._notification_events = {}
 
         self.calculations = {}
+        self.kv_calculations = None
 
     @property
     def clsname(self):
@@ -95,6 +96,10 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
             port=self.port,
         )
         self.uvicorn_server = uvicorn.Server(uvicorn_config)
+
+    @on_qcrbox_startup
+    async def set_up_key_value_store(self):
+        self.kv_calculations = await self.nats_broker.key_value(bucket="calculations")
 
     async def _run_custom_shutdown_tasks(self):
         """

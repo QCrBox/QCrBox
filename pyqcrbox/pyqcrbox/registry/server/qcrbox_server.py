@@ -37,6 +37,9 @@ class QCrBoxServer(QCrBoxServerClientBase):
         self.nats_broker.subscriber("server.cmd.handle_command_invocation_by_user")(
             self.handle_command_invocation_by_user
         )
+        self.nats_broker.subscriber("server.cmd.handle_command_invocation_client_response")(
+            self.handle_command_invocation_client_response
+        )
 
     async def handle_application_registration(self, msg: msg_specs.RegisterApplication):
         logger.info(
@@ -73,6 +76,46 @@ class QCrBoxServer(QCrBoxServerClientBase):
             reply_to="server.cmd.handle_command_invocation_client_response",
         )
         return {"calculation_id": calculation_id}
+
+    async def handle_command_invocation_client_response(self, msg: msg_specs.CommandInvocationClientResponseNATS):
+        logger.info(f"Received client response: {msg!r}")
+
+        logger.debug(f"[DDD] Attempting to retrieve details for {msg.calculation_id=}")
+        try:
+            calc = self.calculations[msg.calculation_id]
+            await self.kv_calculations.put(f"status.{msg.calculation_id}", b"CREATED_BY_SERVER")
+        except KeyError:
+            error_msg = f"[EEE] Cannot find calculation with {msg.calculation_id=}"
+            logger.error(error_msg)
+            raise RuntimeError(error_msg)
+
+        if calc.executing_client is None:
+            response_to_client = msg_specs.CommandExecutionRequestNATS(
+                application_slug=calc.application_slug,
+                application_version=calc.application_version,
+                command_name=calc.command_name,
+                arguments=calc.arguments,
+                calculation_id=msg.calculation_id,
+            )
+            subject = f"{msg.private_inbox_prefix}.cmd.execute"
+            await self.nats_broker.publish(response_to_client, subject=subject)
+
+            logger.debug(
+                f"Sending command execution request to client {msg.client_id!r} "
+                f"(private inbox prefix: {msg.private_inbox_prefix!r})"
+            )
+            calc.executing_client = ExecutingClientDetails(
+                client_id=msg.client_id,
+                private_inbox_prefix=msg.private_inbox_prefix,
+            )
+        else:
+            subject = f"{msg.private_inbox_prefix}.cmd.discard"
+            response_to_client = msg_specs.DiscardCommandInvocationNATS(calculation_id=msg.calculation_id)
+            logger.debug(
+                f"Telling client {msg.client_id!r} to discard the invocation request "
+                f"(private inbox prefix: {msg.private_inbox_prefix!r})"
+            )
+            await self.nats_broker.publish(response_to_client, subject=subject)
 
     def _set_up_asgi_server(self) -> None:
         self.asgi_server = create_server_asgi_server(self.lifespan_context)
