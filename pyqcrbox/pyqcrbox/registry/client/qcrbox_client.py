@@ -5,13 +5,15 @@ from typing import Optional
 from faststream.nats import NatsBroker
 from litestar import Litestar
 
-from pyqcrbox import logger, msg_specs, settings, sql_models
+from pyqcrbox import helpers, logger, msg_specs, settings, sql_models
 from pyqcrbox.cli.helpers import get_repo_root
 from pyqcrbox.helpers import generate_private_routing_key
 
 from ..shared import QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup
 from .api_endpoints import create_client_asgi_server
+from .client_status import ClientStatus, ClientStatusEnum
 from .executable_command import BaseCommand, ExecutableCommand
+
 # from .message_processing.command_invocation_request import handle_command_invocation_request_via_nats
 
 __all__ = ["QCrBoxClient", "TestQCrBoxClient"]
@@ -22,6 +24,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         self,
         *,
         application_spec: sql_models.ApplicationSpecCreate,
+        client_id: str = "anonymous_client",
         private_routing_key: Optional[str] = None,
         # broker: Optional[RabbitBroker] = None,
         nats_broker: Optional[NatsBroker] = None,
@@ -29,9 +32,12 @@ class QCrBoxClient(QCrBoxServerClientBase):
     ):
         super().__init__(nats_broker=nats_broker, asgi_server=asgi_server)
         self.application_spec = application_spec
+        self.client_id = client_id
         self.private_routing_key = private_routing_key or generate_private_routing_key()
         # self.routing_key_command_invocation = application_spec.routing_key_command_invocation
+        self.private_inbox = None  # will be created after NATS broker startup
         self._calculations: list[BaseCommand] = []
+        self.status = ClientStatus(ClientStatusEnum.IDLE)
 
     # def _set_up_rabbitmq_broker(self) -> None:
     #     self.set_up_message_dispatcher(
@@ -47,31 +53,56 @@ class QCrBoxClient(QCrBoxServerClientBase):
     def _set_up_nats_broker(self) -> None:
         logger.warning("TODO: set up NATS broker for client")
 
-        # Subscriber for command invocation requests
-        subject = f"cmd-invocation.request.{self.application_spec.nats_subject}"
-        # self.nats_broker.subscriber(subject)(handle_command_invocation_request_via_nats)
+        slug_sanitized = helpers.sanitize_for_nats_subject(self.application_spec.slug)
+        version_sanitized = helpers.sanitize_for_nats_subject(self.application_spec.version)
 
-        @self.nats_broker.subscriber(subject)
-        async def handle_command_invocation_request_via_nats(msg: msg_specs.CommandInvocationRequest):
-            assert msg.action == "command_invocation_request"
-            logger.debug(f"Received command invocation request: {msg}")
+        self.nats_broker.subscriber(f"client.cmd.handle_invocation_request.{slug_sanitized}.{version_sanitized}")(
+            self.handle_command_invocation_request_from_server
+        )
 
-            msg_indicate_availability = msg_specs.ClientIndicatesAvailabilityToExecuteCommand(
-                action="client_is_available_to_execute_command",
-                payload=msg_specs.PayloadForClientIsAvailableToExecuteCommand(
-                    cmd_invocation_payload=msg.payload,
-                    # private_routing_key=self.private_routing_key,
-                ),
-            )
+        # # Subscriber for command invocation requests
+        # subject = f"cmd-invocation.request.{self.application_spec.nats_subject}"
+        # # self.nats_broker.subscriber(subject)(handle_command_invocation_request_via_nats)
+        #
+        # @self.nats_broker.subscriber(subject)
+        # async def handle_command_invocation_request_via_nats(msg: msg_specs.CommandInvocationRequest):
+        #     assert msg.action == "command_invocation_request"
+        #     logger.debug(f"Received command invocation request: {msg}")
+        #
+        #     msg_indicate_availability = msg_specs.ClientIndicatesAvailabilityToExecuteCommand(
+        #         action="client_is_available_to_execute_command",
+        #         payload=msg_specs.PayloadForClientIsAvailableToExecuteCommand(
+        #             cmd_invocation_payload=msg.payload,
+        #             # private_routing_key=self.private_routing_key,
+        #         ),
+        #     )
+        #
+        #     server_response = await self.nats_broker.publish(
+        #         msg_indicate_availability,
+        #         f"cmd-invocation.response.{msg.payload.correlation_id}",
+        #         rpc=True,
+        #         rpc_timeout=settings.nats.rpc_timeout,
+        #         raise_timeout=True,
+        #     )
+        #     logger.debug(f"Received response from server: {server_response}")
 
-            server_response = await self.nats_broker.publish(
-                msg_indicate_availability,
-                f"cmd-invocation.response.{msg.payload.correlation_id}",
-                rpc=True,
-                rpc_timeout=settings.nats.rpc_timeout,
-                raise_timeout=True,
-            )
-            logger.debug(f"Received response from server: {server_response}")
+    async def handle_command_invocation_request_from_server(self, msg: msg_specs.CommandInvocationRequestNATS):
+        # logger.info(f"Received command invocation request: {msg!r} (current client status: {self.status})")
+        logger.info(f"Received command invocation request: {msg!r} (current client status: TODO)")
+
+        response_msg = msg_specs.CommandInvocationClientResponseNATS(
+            application_slug=msg.application_slug,
+            application_version=msg.application_version,
+            client_id=self.client_id,
+            client_is_available=self.status.is_available,
+            calculation_id=msg.calculation_id,
+            private_inbox_prefix=self.private_inbox,
+        )
+
+        if self.status.is_available:
+            self.status.set_pending()
+
+        return response_msg
 
     def _set_up_asgi_server(self) -> None:
         self.asgi_server = create_client_asgi_server(self.lifespan_context)
@@ -107,6 +138,11 @@ class QCrBoxClient(QCrBoxServerClientBase):
     #         msg, "register-application", rpc=True, rpc_timeout=settings.nats.rpc_timeout, raise_timeout=True
     #     )
     #     logger.error(f"Received response to registration request: {resp=}")
+
+    @on_qcrbox_startup
+    async def create_private_nats_inbox(self):
+        self.private_inbox = await self.nats_broker.new_inbox()
+        logger.debug(f"[DDD] {self.private_inbox=}")
 
     @on_qcrbox_startup
     async def send_registration_request_via_nats(self):
