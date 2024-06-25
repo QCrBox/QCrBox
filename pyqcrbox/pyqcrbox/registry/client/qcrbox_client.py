@@ -59,6 +59,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
             self.handle_command_invocation_request_from_server
         )
         self.nats_broker.subscriber(f"{self.private_inbox}.cmd.execute")(self.handle_command_execution)
+        self.nats_broker.subscriber(f"{self.private_inbox}.calc.status")(self.get_calculation_status)
 
         # # Subscriber for command invocation requests
         # subject = f"cmd-invocation.request.{self.application_spec.nats_subject}"
@@ -119,6 +120,16 @@ class QCrBoxClient(QCrBoxServerClientBase):
         key = f"status.{msg.calculation_id}"
         logger.debug(f"Storing KV value for {key=}")
         await self.kv_calculations.put(key, b"RUNNING")
+
+    async def get_calculation_status(
+        self, msg: msg_specs.GetCalculationStatusNATS
+    ) -> msg_specs.CalculationStatusResponseNATS:
+        logger.debug(f"Current contents of self.calculations: {self.calculations.items()!r}")
+        logger.debug(f"Retrieving calculation details for calculation_id={msg.calculation_id!r}")
+        status = self.calculations[msg.calculation_id].status
+        logger.debug(f"Current calculation status: {status!r}")
+        response = msg_specs.CalculationStatusResponseNATS(calculation_id=msg.calculation_id, status=status)
+        return response
 
     def _set_up_asgi_server(self) -> None:
         self.asgi_server = create_client_asgi_server(self.lifespan_context)

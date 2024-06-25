@@ -122,7 +122,6 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
             "to retrieve a unique inbox name from NATS server)."
         )
 
-    @on_qcrbox_startup
     async def set_up_key_value_store(self):
         self.kv_calculations = await self.nats_broker.key_value(bucket="calculations")
 
@@ -156,6 +155,7 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
         # self._set_up_rabbitmq_broker()
         self._set_up_nats_broker()
         await self.start_broker()
+        await self.set_up_key_value_store()
         await self.execute_startup_hooks(**self._run_kwargs)
 
         try:

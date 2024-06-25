@@ -40,6 +40,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
         self.nats_broker.subscriber("server.cmd.handle_command_invocation_client_response")(
             self.handle_command_invocation_client_response
         )
+        self.nats_broker.subscriber("server.calc.get_status")(self.get_calculation_status)
 
     async def handle_application_registration(self, msg: msg_specs.RegisterApplication):
         logger.info(
@@ -116,6 +117,18 @@ class QCrBoxServer(QCrBoxServerClientBase):
                 f"(private inbox prefix: {msg.private_inbox_prefix!r})"
             )
             await self.nats_broker.publish(response_to_client, subject=subject)
+
+    async def get_calculation_status(self, msg: msg_specs.GetCalculationStatusNATS):
+        logger.debug(f"Retrieving status for {msg.calculation_id!r}")
+        executing_client = self.calculations[msg.calculation_id].executing_client
+        client_inbox_prefix = executing_client.private_inbox_prefix
+        subject = f"{client_inbox_prefix}.calc.status"
+        response = await self.nats_broker.publish(msg, subject, rpc=True)
+        logger.debug(f"{executing_client.client_id} responded with {response=!r}")
+        status = response["status"]
+        status_nats_kv = (await self.kv_calculations.get(f"status.{msg.calculation_id}")).value
+        logger.debug(f"Calculation status in nats KV store is: {status_nats_kv!r}")
+        return status
 
     def _set_up_asgi_server(self) -> None:
         self.asgi_server = create_server_asgi_server(self.lifespan_context)
