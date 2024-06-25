@@ -22,6 +22,17 @@ services:
 #      #      https://github.com/docker/compose/releases/tag/v2.24.0
 #      #start_interval: 1s
 
+  qcrbox-nui:
+    image: "ghcr.io/nats-nui/nui:latest"
+    volumes:
+      - qcrbox-nui-db:/db
+    ports:
+      - 31311:31311
+    networks:
+      - qcrbox-net
+    restart: unless-stopped
+
+
   qcrbox-message-bus:
     image: "qcrbox/message-bus:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
     volumes:
@@ -91,3 +102,4 @@ volumes:
   qcrbox-registry-db:
   qcrbox-nextflow-home:
   qcrbox-nats-storage:
+  qcrbox-nui-db:
