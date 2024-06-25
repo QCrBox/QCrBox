@@ -10,7 +10,7 @@ import stat
 from mock_can_run_wrapper import MockWrapper as QCrBoxWrapper
 from mock_can_run_wrapper import MockCommand as QCrBoxCommand
 
-from nicegui import ui, events
+from nicegui import ui, events, run
 from qcrbox_wrapper import QCrBoxPathHelper
 
 # import time
@@ -276,7 +276,7 @@ def load_cif_file():
 
     location_label.set_text(states[-1].description())
 
-def upload_file(uploader_event_args: events.UploadEventArguments):
+async def upload_file(uploader_event_args: events.UploadEventArguments):
     local_folder_path, qcrbox_folder_path = pathhelper.create_next_step_folder()
     local_path = local_folder_path / uploader_event_args.name
     qcrbox_path = qcrbox_folder_path / uploader_event_args.name
@@ -288,7 +288,7 @@ def upload_file(uploader_event_args: events.UploadEventArguments):
         states.append(CifLoadedGuiState(local_path, qcrbox_path))
 
     elif uploader_event_args.name.lower().endswith(".zip"):
-        upload_zip(uploader_event_args.content, local_folder_path)
+        await run.io_bound(upload_zip, uploader_event_args.content, local_folder_path)
         try:
             states.append(CAPLoadedGuiState(local_folder_path, qcrbox_folder_path))
         except CAPNoParException:
