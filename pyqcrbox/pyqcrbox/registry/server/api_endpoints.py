@@ -1,13 +1,9 @@
-import functools
-
-import anyio
 import sqlalchemy
 import svcs
 from faststream.nats import NatsBroker
 
 # from faststream.rabbit import RabbitBroker
 from litestar import Litestar, MediaType, Response, get, post
-from litestar.exceptions import ServiceUnavailableException
 from litestar.openapi import OpenAPIConfig
 from litestar.plugins.structlog import StructlogPlugin
 
@@ -96,56 +92,79 @@ async def commands_invoke(data: sql_models.CommandInvocationCreate) -> dict:
 
     # await _invoke_command_impl(data, broker)
     # await _invoke_command_impl_via_nats(data, broker)
-    msg = msg_specs.CommandInvocationRequest(payload=data)
+    msg = msg_specs.InvokeCommandNATS(**data.model_dump())
 
-    client_response_event = anyio.Event()
-    reply_subject = f"cmd-invocation.response.{msg.payload.correlation_id}"
+    response = await nats_broker.publish(msg, "server.cmd.handle_command_invocation_by_user", rpc=True)
 
-    await nats_broker.close()
-
-    @nats_broker.subscriber(reply_subject, filter=lambda msg: msg.content_type == "")
-    async def discard_spurious_empty_messages(msg: bytes):
-        logger.warning(
-            f"Discarding spurious empty message: {msg} (this seems to be "
-            f"a FastStream bug, but it should not cause any issues)."
-        )
-
-    @nats_broker.subscriber(reply_subject, filter=lambda msg: msg.content_type != "")
-    async def handle_client_response(response_msg: dict):
-        logger.debug(f"Received response from client: {response_msg}")
-        if not client_response_event.is_set():
-            client_response_event.set()
-            return "All systems go!"
-        else:
-            return "Better luck next time."
-
-    await nats_broker.start()
-
-    # send command invocation request to any available clients
-
-    my_publish_func = functools.partial(
-        nats_broker.publish,
-        subject=f"cmd-invocation.request.{msg.payload.nats_subject}",
-        reply_to=reply_subject,
+    return dict(
+        msg="Accepted command invocation request",
+        status="ok",
+        payload={
+            "calculation_id": response["calculation_id"],
+        },
     )
 
-    async with anyio.create_task_group() as tg:
-        with anyio.move_on_after(settings.nats.rpc_timeout):
-            tg.start_soon(my_publish_func, msg)
-            # tg.start_soon(client_response_event.wait)
-            await client_response_event.wait()
 
-    if client_response_event.is_set():
-        return dict(
-            msg="Accepted command invocation request",
-            status="ok",
-            payload={
-                "correlation_id": data.correlation_id,
-            },
-        )
-    else:
-        logger.debug("No client responded within the timeout.")
-        raise ServiceUnavailableException("No client available to execute command.")
+# @post(path="/commands/invoke_OLD", media_type=MediaType.JSON)
+# async def commands_invoke_OLD(data: sql_models.CommandInvocationCreate) -> dict:
+#     logger.info(f"[DDD] Received {data=}")
+#
+#     with svcs.Container(QCRBOX_SVCS_REGISTRY) as con:
+#         # broker = await con.aget(RabbitBroker)
+#         nats_broker = await con.aget(NatsBroker)
+#
+#     # await _invoke_command_impl(data, broker)
+#     # await _invoke_command_impl_via_nats(data, broker)
+#     msg = msg_specs.CommandInvocationRequest(payload=data)
+#
+#     client_response_event = anyio.Event()
+#     reply_subject = f"cmd-invocation.response.{msg.payload.correlation_id}"
+#
+#     await nats_broker.close()
+#
+#     @nats_broker.subscriber(reply_subject, filter=lambda msg: msg.content_type == "")
+#     async def discard_spurious_empty_messages(msg: bytes):
+#         logger.warning(
+#             f"Discarding spurious empty message: {msg} (this seems to be "
+#             f"a FastStream bug, but it should not cause any issues)."
+#         )
+#
+#     @nats_broker.subscriber(reply_subject, filter=lambda msg: msg.content_type != "")
+#     async def handle_client_response(response_msg: dict):
+#         logger.debug(f"Received response from client: {response_msg}")
+#         if not client_response_event.is_set():
+#             client_response_event.set()
+#             return "All systems go!"
+#         else:
+#             return "Better luck next time."
+#
+#     await nats_broker.start()
+#
+#     # send command invocation request to any available clients
+#
+#     my_publish_func = functools.partial(
+#         nats_broker.publish,
+#         subject=f"cmd-invocation.request.{msg.payload.nats_subject}",
+#         reply_to=reply_subject,
+#     )
+#
+#     async with anyio.create_task_group() as tg:
+#         with anyio.move_on_after(settings.nats.rpc_timeout):
+#             tg.start_soon(my_publish_func, msg)
+#             # tg.start_soon(client_response_event.wait)
+#             await client_response_event.wait()
+#
+#     if not client_response_event.is_set():
+#         logger.debug("No client responded within the timeout.")
+#         raise ServiceUnavailableException("No client available to execute command.")
+#
+#     return dict(
+#         msg="Accepted command invocation request",
+#         status="ok",
+#         payload={
+#             "correlation_id": data.correlation_id,
+#         },
+#     )
 
 
 @get(path="/calculations/{calculation_id:int}", media_type=MediaType.JSON)
@@ -163,19 +182,10 @@ async def get_calculation_info_by_correlation_id(calculation_id: int) -> dict | 
 
 
 @get(path="/calculations", media_type=MediaType.JSON)
-async def get_calculation_info(correlation_id: str) -> dict | Response[dict]:
+async def get_calculation_info() -> list[dict]:
     with settings.db.get_session() as session:
-        try:
-            calc = session.exec(
-                select(sql_models.CalculationDB).where(sql_models.CalculationDB.correlation_id == correlation_id)
-            ).one()
-            response_data = {
-                "id": calc.id,
-                "status": calc.status,
-            }
-            return response_data
-        except sqlalchemy.orm.exc.NoResultFound:
-            return Response({"msg": f"No calculation exists with correlation_id={correlation_id}"}, status_code=404)
+        calculations = session.exec(select(sql_models.CalculationDB)).all()
+        return calculations
 
 
 def create_server_asgi_server(custom_lifespan) -> Litestar:

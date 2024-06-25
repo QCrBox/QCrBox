@@ -2,7 +2,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from pyqcrbox import helpers, logger, msg_specs, settings
+from pyqcrbox import helpers, logger, msg_specs, settings, sql_models
 
 from ..shared import QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup
 from .api_endpoints import create_server_asgi_server
@@ -59,9 +59,19 @@ class QCrBoxServer(QCrBoxServerClientBase):
             calculation_id=calculation_id,
             **msg.model_dump(),
         )
-        logger.debug(f"[DDD] {calculation_id=}")
-        logger.debug(f"[DDD] {calculation_details=}")
         self.calculations[calculation_id] = calculation_details
+
+        calculation_db = sql_models.CalculationDB(
+            application_slug=msg.application_slug,
+            application_version=msg.application_version,
+            command_name=msg.command_name,
+            arguments=msg.arguments,
+            calculation_id=calculation_id,
+        )
+        try:
+            calculation_db.save_to_db()
+        except sql_models.QCrBoxDBError as exc:
+            return msg_specs.InvokeCommandResponse(response_to=msg.action, status="error", msg=exc.message)
 
         msg_to_client = msg_specs.CommandInvocationRequestNATS(
             application_slug=msg.application_slug,

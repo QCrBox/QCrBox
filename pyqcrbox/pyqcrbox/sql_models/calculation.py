@@ -18,13 +18,13 @@ if TYPE_CHECKING:
 
 class CalculationDB(QCrBoxBaseSQLModel, table=True):
     __tablename__ = "calculation"
-    __table_args__ = (UniqueConstraint("correlation_id"),)
+    __table_args__ = (UniqueConstraint("calculation_id"),)
 
     application_slug: str
     application_version: str
     command_name: str
     arguments: dict[str, Any] = Field(sa_column=Column(JSON))
-    correlation_id: str
+    calculation_id: str
     timestamp: datetime = Field(default_factory=datetime.now)
 
     status_events: list[CalculationStatusEventDB] = Relationship(back_populates="calculation")
