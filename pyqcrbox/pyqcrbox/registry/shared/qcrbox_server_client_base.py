@@ -3,8 +3,8 @@ import inspect
 from abc import ABCMeta, abstractmethod
 from typing import AsyncContextManager, Optional, assert_never
 
-import aiormq
 import anyio
+import nats.errors
 import stamina
 import svcs
 import uvicorn
@@ -41,7 +41,7 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
         svcs_registry: Optional[svcs.Registry] = None,
     ):
         # self.broker = broker or RabbitBroker(settings.rabbitmq.url, graceful_timeout=10)
-        self.nats_broker = nats_broker or NatsBroker(settings.nats.url, graceful_timeout=10)
+        self.nats_broker = nats_broker or NatsBroker(settings.nats.url, graceful_timeout=10, max_reconnect_attempts=1)
 
         # self.rabbit_exchanges = {
         #     ExchangeType.DIRECT: RabbitExchange("qcrbox.direct", type=ExchangeType.DIRECT),
@@ -57,6 +57,7 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
         self.asgi_server = asgi_server
         self.uvicorn_server = None
 
+        self._private_inbox = None  # will be created after NATS broker startup
         self._shutdown_event = anyio.Event()
         self._notification_events = {}
 
@@ -97,6 +98,30 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
         )
         self.uvicorn_server = uvicorn.Server(uvicorn_config)
 
+    async def start_broker(self):
+        for attempt in stamina.retry_context(on=nats.errors.NoServersError, timeout=30.0, attempts=None):
+            with attempt:
+                await self.nats_broker.start()
+
+    async def close_broker(self):
+        await self.nats_broker.close()
+
+    async def _create_private_nats_inbox(self):
+        await self.start_broker()
+        self._private_inbox = await self.nats_broker.new_inbox()
+        logger.debug(f"Created private NATS inbox: {self._private_inbox}")
+        await self.close_broker()
+
+    @property
+    def private_inbox(self):
+        if self._private_inbox is not None:
+            return self._private_inbox
+
+        raise RuntimeError(
+            "Private inbox has not been set up yet (broker must have been started "
+            "to retrieve a unique inbox name from NATS server)."
+        )
+
     @on_qcrbox_startup
     async def set_up_key_value_store(self):
         self.kv_calculations = await self.nats_broker.key_value(bucket="calculations")
@@ -123,17 +148,14 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
     async def lifespan_context(self, _: Litestar) -> AsyncContextManager:
         logger.trace(f"==> Entering {self.clsname} lifespan function...")
 
-        # self._set_up_rabbitmq_broker()
-        self._set_up_nats_broker()
-
         # for attempt in stamina.retry_context(on=aiormq.exceptions.AMQPConnectionError, timeout=60.0, attempts=None):
         #     with attempt:
         #         await self.broker.start()
 
-        for attempt in stamina.retry_context(on=aiormq.exceptions.AMQPConnectionError, timeout=60.0, attempts=None):
-            with attempt:
-                await self.nats_broker.start()
-
+        await self._create_private_nats_inbox()
+        # self._set_up_rabbitmq_broker()
+        self._set_up_nats_broker()
+        await self.start_broker()
         await self.execute_startup_hooks(**self._run_kwargs)
 
         try:

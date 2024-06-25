@@ -35,7 +35,6 @@ class QCrBoxClient(QCrBoxServerClientBase):
         self.client_id = client_id
         self.private_routing_key = private_routing_key or generate_private_routing_key()
         # self.routing_key_command_invocation = application_spec.routing_key_command_invocation
-        self.private_inbox = None  # will be created after NATS broker startup
         self._calculations: list[BaseCommand] = []
         self.status = ClientStatus(ClientStatusEnum.IDLE)
 
@@ -138,11 +137,6 @@ class QCrBoxClient(QCrBoxServerClientBase):
     #         msg, "register-application", rpc=True, rpc_timeout=settings.nats.rpc_timeout, raise_timeout=True
     #     )
     #     logger.error(f"Received response to registration request: {resp=}")
-
-    @on_qcrbox_startup
-    async def create_private_nats_inbox(self):
-        self.private_inbox = await self.nats_broker.new_inbox()
-        logger.debug(f"[DDD] {self.private_inbox=}")
 
     @on_qcrbox_startup
     async def send_registration_request_via_nats(self):
