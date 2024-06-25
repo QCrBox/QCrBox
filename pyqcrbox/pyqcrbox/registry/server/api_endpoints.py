@@ -167,14 +167,24 @@ async def commands_invoke(data: sql_models.CommandInvocationCreate) -> dict:
 #     )
 
 
-@get(path="/calculations/{calculation_id:int}", media_type=MediaType.JSON)
-async def get_calculation_info_by_correlation_id(calculation_id: int) -> dict | Response[dict]:
+@get(path="/calculations/{calculation_id:str}", media_type=MediaType.JSON)
+async def get_calculation_info_by_calculation_id(calculation_id: str) -> dict | Response[dict]:
+    with svcs.Container(QCRBOX_SVCS_REGISTRY) as con:
+        nats_broker = await con.aget(NatsBroker)
+        kv_calculation_status = await nats_broker.key_value(bucket="calculation_status")
+
     with settings.db.get_session() as session:
         try:
-            calc = session.get_one(sql_models.CalculationDB, calculation_id)
+            calc = session.exec(
+                select(sql_models.CalculationDB).where(sql_models.CalculationDB.calculation_id == calculation_id)
+            ).one()
+            calc_status_info = await kv_calculation_status.get(calc.calculation_id)
+            logger.debug(f"[DDD] {calc_status_info=}")
+            logger.debug(f"[DDD] {calc_status_info.value=} ({type(calc_status_info.value)})")
             response_data = {
                 "id": calc.id,
-                "status": calc.status,
+                "calculation_id": calc.calculation_id,
+                "status": calc_status_info.value.decode(),
             }
             return response_data
         except sqlalchemy.orm.exc.NoResultFound:
@@ -197,7 +207,7 @@ def create_server_asgi_server(custom_lifespan) -> Litestar:
             retrieve_commands,
             commands_invoke,
             get_calculation_info,
-            get_calculation_info_by_correlation_id,
+            get_calculation_info_by_calculation_id,
         ],
         lifespan=[custom_lifespan],
         debug=True,

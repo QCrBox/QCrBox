@@ -117,9 +117,8 @@ class QCrBoxClient(QCrBoxServerClientBase):
         calc = await cmd.execute_in_background(name="Alice", duration=15)
         logger.debug(f"Storing calculation details: {calc!r}")
         self.calculations[msg.calculation_id] = calc
-        key = f"status.{msg.calculation_id}"
-        logger.debug(f"Storing KV value for {key=}")
-        await self.kv_calculations.put(key, b"RUNNING")
+        logger.debug(f"Storing KV value for {msg.calculation_id=}")
+        await self.kv_calculation_status.put(msg.calculation_id, b"RUNNING")
 
     async def get_calculation_status(
         self, msg: msg_specs.GetCalculationStatusNATS

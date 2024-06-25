@@ -62,7 +62,7 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
         self._notification_events = {}
 
         self.calculations = {}
-        self.kv_calculations = None
+        self.kv_calculation_status = None
 
     @property
     def clsname(self):
@@ -123,7 +123,7 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
         )
 
     async def set_up_key_value_store(self):
-        self.kv_calculations = await self.nats_broker.key_value(bucket="calculations")
+        self.kv_calculation_status = await self.nats_broker.key_value(bucket="calculation_status")
 
     async def _run_custom_shutdown_tasks(self):
         """

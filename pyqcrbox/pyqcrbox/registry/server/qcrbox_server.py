@@ -94,7 +94,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
         logger.debug(f"[DDD] Attempting to retrieve details for {msg.calculation_id=}")
         try:
             calc = self.calculations[msg.calculation_id]
-            await self.kv_calculations.put(f"status.{msg.calculation_id}", b"CREATED_BY_SERVER")
+            await self.kv_calculation_status.put(msg.calculation_id, b"CREATED_BY_SERVER")
         except KeyError:
             error_msg = f"[EEE] Cannot find calculation with {msg.calculation_id=}"
             logger.error(error_msg)
@@ -135,10 +135,10 @@ class QCrBoxServer(QCrBoxServerClientBase):
         subject = f"{client_inbox_prefix}.calc.status"
         response = await self.nats_broker.publish(msg, subject, rpc=True)
         logger.debug(f"{executing_client.client_id} responded with {response=!r}")
-        status = response["status"]
-        status_nats_kv = (await self.kv_calculations.get(f"status.{msg.calculation_id}")).value
+        # status = response["status"]
+        status_nats_kv = (await self.kv_calculation_status.get(msg.calculation_id)).value
         logger.debug(f"Calculation status in nats KV store is: {status_nats_kv!r}")
-        return status
+        return response
 
     def _set_up_asgi_server(self) -> None:
         self.asgi_server = create_server_asgi_server(self.lifespan_context)
