@@ -195,14 +195,17 @@ class CommandGuiRepresentation(BaseCommandGuiRepresentation):
         arguments.update(other_arguments)
         try:
             execute_overlay.show()
-            calculation = await run.io_bound(self.command, **arguments)
+            await run.io_bound(self.execute_command, **arguments)
             execute_overlay.hide()
-            calculation.wait_while_running(0.5)
         except Exception as e:
             ui.notify(f"Error: {e}")
             return
         ui.notify("Calculation finished")
         load_cif_file()
+
+    def execute_command(self, **arguments):
+        calculation = self.command(**arguments)
+        calculation.wait_while_running(0.5)
 
 
 class InteractiveCommandGuiRepresentation(BaseCommandGuiRepresentation):
