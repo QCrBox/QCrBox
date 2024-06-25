@@ -1,50 +1,49 @@
-from pathlib import Path, PurePosixPath
 import json
+import os
 import shutil
+import stat
 import webbrowser
+from pathlib import Path, PurePosixPath
 from textwrap import dedent
 from zipfile import ZipFile
-import os
-import stat
 
-from mock_can_run_wrapper import MockWrapper as QCrBoxWrapper
 from mock_can_run_wrapper import MockCommand as QCrBoxCommand
+from mock_can_run_wrapper import MockWrapper as QCrBoxWrapper
 
-from nicegui import ui, events, run
+from nicegui import events, run, ui
 from qcrbox_wrapper import QCrBoxPathHelper
 
 # import time
 
+
 def upload_cif(event_fobj, local_folder_path, base_name="input.cif"):
     local_path = local_folder_path / base_name
     local_path.write_bytes(event_fobj.read())
+
 
 def upload_zip(event_fobj, local_folder_path):
     with ZipFile(event_fobj) as zip_file:
         zip_file.extractall(local_folder_path)
 
 
-
 class GuiState:
     local_output_cif_path = None
 
-    def __init__(self, local_save_path: Path, qcrbox_save_path: PurePosixPath):
-        ...
+    def __init__(self, local_save_path: Path, qcrbox_save_path: PurePosixPath): ...
 
-    def populate_parameters(self, command: QCrBoxCommand):
-        ...
+    def populate_parameters(self, command: QCrBoxCommand): ...
+
 
 #####            GUI states for different types of loaded files            #####
 
+
 class CifLoadedGuiState(GuiState):
     def __init__(self, local_save_path: Path, qcrbox_save_path: PurePosixPath):
-
         self.local_save_path = local_save_path
         self.qcrbox_save_path = qcrbox_save_path
         self.local_output_cif_path = self.local_save_path.with_name("output.cif")
 
     def populate_parameters(self, command: QCrBoxCommand):
-
         parameters = command.par_name_list
 
         filled_values = {}
@@ -63,12 +62,13 @@ class CifLoadedGuiState(GuiState):
     def description(self):
         return f"Current input cif is at {self.local_save_path}"
 
+
 class CAPNoParException(Exception):
     pass
 
+
 class CAPLoadedGuiState(GuiState):
     def __init__(self, local_save_path: Path, qcrbox_save_path: PurePosixPath):
-
         self.local_save_path = Path(local_save_path)
         self.qcrbox_save_path = qcrbox_save_path
 
@@ -108,9 +108,9 @@ class CAPLoadedGuiState(GuiState):
     def description(self):
         return f"Current input is a CrysalisPro folder at {self.local_save_path}"
 
+
 class GenericFolderGuiState(GuiState):
     def __init__(self, local_save_path: Path, qcrbox_save_path: PurePosixPath):
-
         self.local_save_path = local_save_path
         self.qcrbox_save_path = qcrbox_save_path
         self.local_output_cif_path = self.local_save_path / "output.cif"
@@ -129,6 +129,7 @@ class GenericFolderGuiState(GuiState):
 
     def description(self):
         return f"Current input is a folder at {self.local_save_path}"
+
 
 class StartGuiState(GuiState):
     def __init__(self):
@@ -160,6 +161,7 @@ def load_textbox_values(command):
 
     return other_arguments
 
+
 class BaseCommandGuiRepresentation:
     def __init__(self, command):
         self.command = command
@@ -171,8 +173,8 @@ class BaseCommandGuiRepresentation:
     def settings_template_on_click(self):
         template = "{\n"
         _, remaining_parameters = states[-1].populate_parameters(self.command)
-        template += ',\n'.join(remaining_parameters)
-        template +=  "\n}"
+        template += ",\n".join(remaining_parameters)
+        template += "\n}"
         textarea_settings.value = template
 
     def execute_on_click(self): ...
@@ -242,13 +244,14 @@ class InteractiveCommandGuiRepresentation(BaseCommandGuiRepresentation):
         self.finalised_run = True
         load_cif_file()
 
+
 def repopulate_grid():
     grid.clear()
     steering_commands = ("finalise__", "prepare__", "run__", "redo__", "toparams__")
     with grid:
         for command in qcrbox.commands:
             if any(command.name.startswith(val) for val in steering_commands):
-                    continue
+                continue
             if isinstance(states[-1], CifLoadedGuiState):
                 ## TODO later this cannot be a local path
                 if not command.can_run(states[-1].local_save_path):
@@ -276,6 +279,7 @@ def load_cif_file():
 
     location_label.set_text(states[-1].description())
 
+
 async def upload_file(uploader_event_args: events.UploadEventArguments):
     local_folder_path, qcrbox_folder_path = pathhelper.create_next_step_folder()
     local_path = local_folder_path / uploader_event_args.name
@@ -288,33 +292,68 @@ async def upload_file(uploader_event_args: events.UploadEventArguments):
         states.append(CifLoadedGuiState(local_path, qcrbox_path))
 
     elif uploader_event_args.name.lower().endswith(".zip"):
+        unzip_overlay = Overlay("Unzipping the file")
+        unzip_overlay.show()
         await run.io_bound(upload_zip, uploader_event_args.content, local_folder_path)
         try:
             states.append(CAPLoadedGuiState(local_folder_path, qcrbox_folder_path))
         except CAPNoParException:
             states.append(GenericFolderGuiState(local_folder_path, qcrbox_folder_path))
+        unzip_overlay.hide()
 
     repopulate_grid()
 
     location_label.set_text(states[-1].description())
 
 
-def click_btn_setup():
+def delete_workfolder_data():
     work_folder_empty = not any(pathhelper.local_path.iterdir())
     if not work_folder_empty:
+
         def remove_readonly(func, path, _):
             "Clear the readonly bit and reattempt the removal"
             os.chmod(path, stat.S_IWRITE)
             func(path)
+
         try:
             shutil.rmtree(pathhelper.local_path, onerror=remove_readonly)
         except TypeError:
             shutil.rmtree(pathhelper.local_path, onerror=remove_readonly)
         pathhelper.local_path.mkdir()
+
+
+async def click_btn_setup():
+    workfolder_overlay = Overlay("Mercilessly deleting all data in the work folder")
+    workfolder_overlay.show()
+    await run.io_bound(delete_workfolder_data)
     states.clear()
     states.append(StartGuiState())
+    workfolder_overlay.hide()
     repopulate_grid()
     location_label.set_text(states[-1].description())
+
+
+class Overlay(ui.element):
+    """Copied from https://github.com/zauberzeug/nicegui/discussions/2994"""
+
+    def __init__(self, message, bg_color=(0, 0, 0, 0.5)):
+        super().__init__(tag="div")
+        self.message = message
+        self.style(
+            "position: fixed; display: block; width: 100%; height: 100%;"
+            "top: 0; left: 0; right: 0; bottom: 0; z-index: 2; cursor: pointer;"
+            "background-color:" + f"rgba{bg_color};"
+        )
+        with self:
+            with ui.element("div").classes("h-screen flex items-center justify-center"):
+                ui.label(self.message).style("font-size: 50px; color: white;")
+        self.hide()
+
+    def show(self):
+        self.set_visibility(True)
+
+    def hide(self):
+        self.set_visibility(False)
 
 
 pathhelper = QCrBoxPathHelper.from_dotenv(".env.dev", "gui_folder/prototype3")
@@ -353,4 +392,3 @@ grid = ui.grid(columns=4)
 repopulate_grid()
 
 ui.run()
-
