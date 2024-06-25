@@ -12,7 +12,7 @@ from pyqcrbox.helpers import generate_private_routing_key
 from ..shared import QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup
 from .api_endpoints import create_client_asgi_server
 from .client_status import ClientStatus, ClientStatusEnum
-from .executable_command import BaseCommand, ExecutableCommand
+from .executable_command import BaseCommand, ExecutableCommand, PythonCallable
 
 # from .message_processing.command_invocation_request import handle_command_invocation_request_via_nats
 
@@ -58,6 +58,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         self.nats_broker.subscriber(f"client.cmd.handle_invocation_request.{slug_sanitized}.{version_sanitized}")(
             self.handle_command_invocation_request_from_server
         )
+        self.nats_broker.subscriber(f"{self.private_inbox}.cmd.execute")(self.handle_command_execution)
 
         # # Subscriber for command invocation requests
         # subject = f"cmd-invocation.request.{self.application_spec.nats_subject}"
@@ -102,6 +103,22 @@ class QCrBoxClient(QCrBoxServerClientBase):
             self.status.set_pending()
 
         return response_msg
+
+    async def handle_discard_command_invocation(self, msg: msg_specs.DiscardCommandInvocationNATS):
+        logger.info(f"Received request to discard command invocation: {msg!r} (current status: {self.status}")
+        self.status.set_idle()
+
+    async def handle_command_execution(self, msg: msg_specs.CommandExecutionRequestNATS):
+        logger.info(f"Received command execution request: {msg!r} (current status: {self.status}")
+        self.status.set_busy()
+
+        cmd = PythonCallable(helpers.greet_and_sleep)
+        calc = await cmd.execute_in_background(name="Alice", duration=15)
+        logger.debug(f"Storing calculation details: {calc!r}")
+        self.calculations[msg.calculation_id] = calc
+        key = f"status.{msg.calculation_id}"
+        logger.debug(f"Storing KV value for {key=}")
+        await self.kv_calculations.put(key, b"RUNNING")
 
     def _set_up_asgi_server(self) -> None:
         self.asgi_server = create_client_asgi_server(self.lifespan_context)
