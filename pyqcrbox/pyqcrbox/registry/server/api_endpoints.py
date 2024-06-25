@@ -9,6 +9,7 @@ from faststream.nats import NatsBroker
 from litestar import Litestar, MediaType, Response, get, post
 from litestar.exceptions import ServiceUnavailableException
 from litestar.openapi import OpenAPIConfig
+from litestar.plugins.structlog import StructlogPlugin
 
 __all__ = ["create_server_asgi_server"]
 
@@ -188,8 +189,9 @@ def create_server_asgi_server(custom_lifespan) -> Litestar:
             get_calculation_info,
             get_calculation_info_by_correlation_id,
         ],
-        debug=True,
         lifespan=[custom_lifespan],
+        debug=True,
+        plugins=[StructlogPlugin()],
         openapi_config=OpenAPIConfig(title="QCrBox Server API", version="0.1"),
     )
     return app
