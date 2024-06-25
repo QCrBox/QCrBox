@@ -171,17 +171,20 @@ class BaseCommandGuiRepresentation:
         self.execute_button = ui.button("Execute", on_click=self.execute_on_click)
 
     def settings_template_on_click(self):
-        template = "{\n"
         _, remaining_parameters = states[-1].populate_parameters(self.command)
-        template += ",\n".join(remaining_parameters)
-        template += "\n}"
-        textarea_settings.value = template
+        if len(remaining_parameters) == 0:
+            textarea_settings.value = "{}"
+        else:
+            template = '{\n"'
+            template += '": ,\n"'.join(remaining_parameters)
+            template += '": \n}'
+            textarea_settings.value = template
 
-    def execute_on_click(self): ...
+    async def execute_on_click(self): ...
 
 
 class CommandGuiRepresentation(BaseCommandGuiRepresentation):
-    def execute_on_click(self):
+    async def execute_on_click(self):
         arguments, _ = states[-1].populate_parameters(self.command)
 
         other_arguments = load_textbox_values(self.command)
@@ -191,7 +194,9 @@ class CommandGuiRepresentation(BaseCommandGuiRepresentation):
 
         arguments.update(other_arguments)
         try:
-            calculation = self.command(**arguments)
+            execute_overlay.show()
+            calculation = await run.io_bound(self.command, **arguments)
+            execute_overlay.hide()
             calculation.wait_while_running(0.5)
         except Exception as e:
             ui.notify(f"Error: {e}")
@@ -205,7 +210,7 @@ class InteractiveCommandGuiRepresentation(BaseCommandGuiRepresentation):
     finalised_run = False
     current_arguments = None
 
-    def execute_on_click(self):
+    async def execute_on_click(self):
         if not self.started_run or self.finalised_run:
             self.run()
             self.execute_button.set_text("Get Results")
@@ -292,7 +297,6 @@ async def upload_file(uploader_event_args: events.UploadEventArguments):
         states.append(CifLoadedGuiState(local_path, qcrbox_path))
 
     elif uploader_event_args.name.lower().endswith(".zip"):
-        unzip_overlay = Overlay("Unzipping the file")
         unzip_overlay.show()
         await run.io_bound(upload_zip, uploader_event_args.content, local_folder_path)
         try:
@@ -323,7 +327,6 @@ def delete_workfolder_data():
 
 
 async def click_btn_setup():
-    workfolder_overlay = Overlay("Mercilessly deleting all data in the work folder")
     workfolder_overlay.show()
     await run.io_bound(delete_workfolder_data)
     states.clear()
@@ -355,6 +358,11 @@ class Overlay(ui.element):
     def hide(self):
         self.set_visibility(False)
 
+
+# Overlays (to not add a new one to DOM for each execution)
+workfolder_overlay = Overlay("Mercilessly deleting all data in the work folder")
+unzip_overlay = Overlay("Unzipping the file")
+execute_overlay = Overlay("Executing the command")
 
 pathhelper = QCrBoxPathHelper.from_dotenv(".env.dev", "gui_folder/prototype3")
 
