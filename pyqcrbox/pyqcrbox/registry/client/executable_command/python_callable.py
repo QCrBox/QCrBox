@@ -18,7 +18,7 @@ from .calculation import CalculationStatus, PythonCallableCalculation
 
 
 class PythonCallable:
-    def __init__(self, fn: Callable):
+    def __init__(self, fn: Callable, callbacks: list[Callable] | None = None):
         assert inspect.isfunction(fn)
         if inspect.iscoroutinefunction(fn):
             raise TypeError("At present PythonCallable can only handle regular functions, not coroutine functions.")
@@ -28,6 +28,7 @@ class PythonCallable:
         self.parameter_names = list(self.signature.parameters.keys())
         self._fn_with_call_args_validation = ValidateCallWrapper(self.fn, config=None, validate_return=False)
         self.pool: Union[multiprocessing.pool.Pool, None] = None
+        self.callbacks = callbacks or []
 
     @classmethod
     def from_command_spec(cls, cmd_spec) -> "PythonCallable":
@@ -50,31 +51,27 @@ class PythonCallable:
         _num_processes=1,
         **kwargs,
     ):
-        async def update_status_in_nats_kv(status: str):
+        async def update_status_in_nats_kv(calculation_id: str, status: str):
             kv = await get_nats_key_value(bucket="calculation_status")
-            await kv.put(_calculation_id, status.encode())
+            await kv.put(calculation_id, status.encode())
             return f"Successfully updated status in NATS key-value store to {status!r}"
 
-        def success_callback(result):
-            logger.debug(f"Success: {result=} ({multiprocessing.current_process().name})")
-
+        def update_calculation_status(calculation_id: str, status: CalculationStatus):
             with start_blocking_portal() as portal:
                 logger.debug(f"[DDD] started blocking portal: {portal=}")
-                future = portal.start_task_soon(update_status_in_nats_kv, CalculationStatus.COMPLETED)
+                future = portal.start_task_soon(update_status_in_nats_kv, calculation_id, status)
                 logger.debug("[DDD] Waiting for task to complete...")
                 result = future.result()
                 logger.debug(f"[DDD] Task finished with result: {result!r}")
+
+        def success_callback(result):
+            logger.debug(f"Success: {result=} ({multiprocessing.current_process().name})")
+            update_calculation_status(_calculation_id, CalculationStatus.COMPLETED)
 
         def error_callback(exc):
             traceback_str = "\n".join(traceback.format_exception(exc))
             logger.error(f"Error: {exc=} ({multiprocessing.current_process().name})\n\nTraceback:\n\n{traceback_str}")
-
-            with start_blocking_portal() as portal:
-                logger.debug(f"[DDD] started blocking portal: {portal=}")
-                future = portal.start_task_soon(update_status_in_nats_kv, CalculationStatus.FAILED)
-                logger.debug("[DDD] Waiting for task to complete...")
-                result = future.result()
-                logger.debug(f"[DDD] Task finished with result: {result!r}")
+            update_calculation_status(_calculation_id, CalculationStatus.FAILED)
 
         self.pool = multiprocessing.Pool(_num_processes)
         pending_result = self.pool.apply_async(
