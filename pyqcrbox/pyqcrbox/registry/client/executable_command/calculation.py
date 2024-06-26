@@ -2,16 +2,10 @@
 import asyncio
 import multiprocessing.pool
 from abc import ABCMeta, abstractmethod
-from enum import Enum
 
 from pyqcrbox import logger
 
-
-class CalculationStatus(str, Enum):
-    RUNNING = "running"
-    COMPLETED = "completed"
-    FAILED = "failed"
-    UNKNOWN = "unknown"
+from ...shared.calculation_status import CalculationStatus
 
 
 class BaseCalculation(metaclass=ABCMeta):
@@ -66,12 +60,19 @@ class BaseCalculation(metaclass=ABCMeta):
 
 
 class PythonCallableCalculation(BaseCalculation):
-    def __init__(self, result: multiprocessing.pool.ApplyResult, *, pool: multiprocessing.pool.Pool):
+    def __init__(
+        self, result: multiprocessing.pool.ApplyResult, *, pool: multiprocessing.pool.Pool, calculation_id: str
+    ):
         super().__init__()
         self._apply_result = result
         self.pool = pool
+        self.calculaton_id = calculation_id
         # self._status_details = None
         self.return_value = None
+
+    def __repr__(self):
+        clsname = self.__class__.__name__
+        return f"<{clsname}: calculation_id={self.calculaton_id}>"
 
     @property
     def status(self) -> CalculationStatus:

@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 from pyqcrbox import helpers, logger, msg_specs, settings, sql_models
 
-from ..shared import QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup
+from ..shared import CalculationStatus, QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup
 from .api_endpoints import create_server_asgi_server
 
 
@@ -94,7 +94,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
         logger.debug(f"[DDD] Attempting to retrieve details for {msg.calculation_id=}")
         try:
             calc = self.calculations[msg.calculation_id]
-            await self.kv_calculation_status.put(msg.calculation_id, b"CREATED_BY_SERVER")
+            await self.kv_calculation_status.put(msg.calculation_id, CalculationStatus.SUBMITTED.encode())
         except KeyError:
             error_msg = f"[EEE] Cannot find calculation with {msg.calculation_id=}"
             logger.error(error_msg)

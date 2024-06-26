@@ -8,11 +8,13 @@ import multiprocessing
 import traceback
 from typing import Callable, Union
 
+from anyio.from_thread import start_blocking_portal
 from pydantic._internal._validate_call import ValidateCallWrapper
 
 from pyqcrbox import logger
+from pyqcrbox.svcs import get_nats_key_value
 
-from .calculation import PythonCallableCalculation
+from .calculation import CalculationStatus, PythonCallableCalculation
 
 
 class PythonCallable:
@@ -41,28 +43,48 @@ class PythonCallable:
     async def execute_in_background(
         self,
         *args,
+        _calculation_id: str,
         # _stdin=None,
         # _stdout=subprocess.PIPE,
         # _stderr=subprocess.PIPE,
         _num_processes=1,
         **kwargs,
     ):
+        async def update_status_in_nats_kv(status: str):
+            kv = await get_nats_key_value(bucket="calculation_status")
+            await kv.put(_calculation_id, status.encode())
+            return f"Successfully updated status in NATS key-value store to {status!r}"
+
         def success_callback(result):
             logger.debug(f"Success: {result=} ({multiprocessing.current_process().name})")
+
+            with start_blocking_portal() as portal:
+                logger.debug(f"[DDD] started blocking portal: {portal=}")
+                future = portal.start_task_soon(update_status_in_nats_kv, CalculationStatus.COMPLETED)
+                logger.debug("[DDD] Waiting for task to complete...")
+                result = future.result()
+                logger.debug(f"[DDD] Task finished with result: {result!r}")
 
         def error_callback(exc):
             traceback_str = "\n".join(traceback.format_exception(exc))
             logger.error(f"Error: {exc=} ({multiprocessing.current_process().name})\n\nTraceback:\n\n{traceback_str}")
 
+            with start_blocking_portal() as portal:
+                logger.debug(f"[DDD] started blocking portal: {portal=}")
+                future = portal.start_task_soon(update_status_in_nats_kv, CalculationStatus.FAILED)
+                logger.debug("[DDD] Waiting for task to complete...")
+                result = future.result()
+                logger.debug(f"[DDD] Task finished with result: {result!r}")
+
         self.pool = multiprocessing.Pool(_num_processes)
-        result = self.pool.apply_async(
+        pending_result = self.pool.apply_async(
             self._fn_with_call_args_validation,
             args,
             kwargs,
             callback=success_callback,
             error_callback=error_callback,
         )
-        return PythonCallableCalculation(result, pool=self.pool)
+        return PythonCallableCalculation(pending_result, pool=self.pool, calculation_id=_calculation_id)
 
     async def terminate(self):
         logger.debug(f"Terminating {self}")
