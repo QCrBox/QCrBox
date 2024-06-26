@@ -114,7 +114,11 @@ class QCrBoxClient(QCrBoxServerClientBase):
         self.status.set_busy()
 
         cmd = PythonCallable(helpers.greet_and_sleep)
-        calc = await cmd.execute_in_background(name="Alice", duration=15, _calculation_id=msg.calculation_id)
+        calc = await cmd.execute_in_background(
+            **msg.arguments,
+            _calculation_id=msg.calculation_id,
+            _callbacks=[self.status.set_idle],
+        )
         logger.debug(f"Storing calculation details: {calc!r}")
         self.calculations[msg.calculation_id] = calc
         logger.debug(f"Storing KV value for {msg.calculation_id=}")

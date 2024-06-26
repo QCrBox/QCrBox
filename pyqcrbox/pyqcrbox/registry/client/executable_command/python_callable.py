@@ -8,12 +8,11 @@ import multiprocessing
 import traceback
 from typing import Callable, Union
 
-from anyio.from_thread import start_blocking_portal
 from pydantic._internal._validate_call import ValidateCallWrapper
 
 from pyqcrbox import logger
-from pyqcrbox.svcs import get_nats_key_value
 
+from ...shared.calculation_status import update_calculation_status
 from .calculation import CalculationStatus, PythonCallableCalculation
 
 
@@ -28,7 +27,6 @@ class PythonCallable:
         self.parameter_names = list(self.signature.parameters.keys())
         self._fn_with_call_args_validation = ValidateCallWrapper(self.fn, config=None, validate_return=False)
         self.pool: Union[multiprocessing.pool.Pool, None] = None
-        self.callbacks = callbacks or []
 
     @classmethod
     def from_command_spec(cls, cmd_spec) -> "PythonCallable":
@@ -48,30 +46,22 @@ class PythonCallable:
         # _stdin=None,
         # _stdout=subprocess.PIPE,
         # _stderr=subprocess.PIPE,
+        _callbacks: list[Callable] | None = None,
         _num_processes=1,
         **kwargs,
     ):
-        async def update_status_in_nats_kv(calculation_id: str, status: str):
-            kv = await get_nats_key_value(bucket="calculation_status")
-            await kv.put(calculation_id, status.encode())
-            return f"Successfully updated status in NATS key-value store to {status!r}"
-
-        def update_calculation_status(calculation_id: str, status: CalculationStatus):
-            with start_blocking_portal() as portal:
-                logger.debug(f"[DDD] started blocking portal: {portal=}")
-                future = portal.start_task_soon(update_status_in_nats_kv, calculation_id, status)
-                logger.debug("[DDD] Waiting for task to complete...")
-                result = future.result()
-                logger.debug(f"[DDD] Task finished with result: {result!r}")
-
         def success_callback(result):
             logger.debug(f"Success: {result=} ({multiprocessing.current_process().name})")
             update_calculation_status(_calculation_id, CalculationStatus.COMPLETED)
+            for callback in _callbacks:
+                callback()
 
         def error_callback(exc):
             traceback_str = "\n".join(traceback.format_exception(exc))
             logger.error(f"Error: {exc=} ({multiprocessing.current_process().name})\n\nTraceback:\n\n{traceback_str}")
             update_calculation_status(_calculation_id, CalculationStatus.FAILED)
+            for callback in _callbacks:
+                callback()
 
         self.pool = multiprocessing.Pool(_num_processes)
         pending_result = self.pool.apply_async(
