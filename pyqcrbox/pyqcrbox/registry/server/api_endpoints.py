@@ -12,6 +12,7 @@ __all__ = ["create_server_asgi_server"]
 from sqlmodel import select
 
 from pyqcrbox import QCRBOX_SVCS_REGISTRY, logger, msg_specs, settings, sql_models
+from pyqcrbox.svcs import get_nats_key_value
 
 
 @get("/", media_type=MediaType.TEXT, include_in_schema=False)
@@ -169,15 +170,12 @@ async def commands_invoke(data: sql_models.CommandInvocationCreate) -> dict:
 
 @get(path="/calculations/{calculation_id:str}", media_type=MediaType.JSON)
 async def get_calculation_info_by_calculation_id(calculation_id: str) -> dict | Response[dict]:
-    with svcs.Container(QCRBOX_SVCS_REGISTRY) as con:
-        nats_broker = await con.aget(NatsBroker)
-        kv_calculation_status = await nats_broker.key_value(bucket="calculation_status")
-
     with settings.db.get_session() as session:
         try:
             calc = session.exec(
                 select(sql_models.CalculationDB).where(sql_models.CalculationDB.calculation_id == calculation_id)
             ).one()
+            kv_calculation_status = await get_nats_key_value(bucket="calculation_status")
             calc_status_info = await kv_calculation_status.get(calc.calculation_id)
             logger.debug(f"[DDD] {calc_status_info=}")
             logger.debug(f"[DDD] {calc_status_info.value=} ({type(calc_status_info.value)})")
