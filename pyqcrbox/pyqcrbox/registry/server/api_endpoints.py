@@ -192,8 +192,8 @@ async def get_calculation_info_by_calculation_id(calculation_id: str) -> dict | 
 @get(path="/calculations", media_type=MediaType.JSON)
 async def get_calculation_info() -> list[dict]:
     with settings.db.get_session() as session:
-        calculations = session.exec(select(sql_models.CalculationDB)).all()
-        return calculations
+        calculations_db = session.exec(select(sql_models.CalculationDB)).all()
+        return [c.to_response_model() for c in calculations_db]
 
 
 def create_server_asgi_server(custom_lifespan) -> Litestar:

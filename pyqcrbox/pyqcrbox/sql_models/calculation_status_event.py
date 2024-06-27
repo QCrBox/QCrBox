@@ -17,7 +17,7 @@ class CalculationStatusEnum(StrEnum):
     COMPLETED = "completed"
     FAILED = "failed"
     CANCELLED = "cancelled"
-    # UNKNOWN = "unknown"
+    UNKNOWN = "unknown"
 
 
 class CalculationStatusEventDB(QCrBoxBaseSQLModel, table=True):

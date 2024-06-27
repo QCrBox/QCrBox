@@ -16,19 +16,25 @@ if TYPE_CHECKING:
     from .application import ApplicationSpecDB
 
 
-class CalculationDB(QCrBoxBaseSQLModel, table=True):
-    __tablename__ = "calculation"
-    __table_args__ = (UniqueConstraint("calculation_id"),)
-
+class CalculationBase(QCrBoxBaseSQLModel):
+    calculation_id: str
     application_slug: str
     application_version: str
     command_name: str
     arguments: dict[str, Any] = Field(sa_column=Column(JSON))
-    calculation_id: str
+
+
+class CalculationResponseModel(CalculationBase):
+    id: int
+    status: str
+
+
+class CalculationDB(CalculationBase, table=True):
+    __tablename__ = "calculation"
+    __table_args__ = (UniqueConstraint("calculation_id"),)
+
     timestamp: datetime = Field(default_factory=datetime.now)
-
     status_events: list[CalculationStatusEventDB] = Relationship(back_populates="calculation")
-
     id: Optional[int] = Field(default=None, primary_key=True)
 
     application_id: Optional[int] = Field(default=None, foreign_key="application.id")
@@ -65,8 +71,14 @@ class CalculationDB(QCrBoxBaseSQLModel, table=True):
     @property
     def status(self) -> CalculationStatusEnum:
         with settings.db.get_session() as session:
-            event = self._get_latest_or_create_initial_status_event(session)
-        return event.status
+            # event = self._get_latest_status_event(session)
+            event = self._get_latest_status_event(session, create_if_not_exists=False)
+            if event:
+                status = event.status
+            else:
+                logger.warning(f"Unknown calculation status: {self.calculation_id!r}")
+                status = CalculationStatusEnum.UNKNOWN
+        return status
 
     def get_status_events(self) -> list[CalculationStatusEventDB]:
         with settings.db.get_session() as session:
@@ -76,12 +88,12 @@ class CalculationDB(QCrBoxBaseSQLModel, table=True):
     def get_status_values(self) -> list[CalculationStatusEnum]:
         return [e.status for e in self.get_status_events()]
 
-    def _get_latest_or_create_initial_status_event(self, session):
+    def _get_latest_status_event(self, session, create_if_not_exists: bool = False):
         latest_status_event = session.exec(
             select(CalculationStatusEventDB).order_by(desc(CalculationStatusEventDB.timestamp))
         ).first()
 
-        if latest_status_event is None:
+        if latest_status_event is None and create_if_not_exists:
             session.add(self)
             session.commit()
             session.refresh(self)
@@ -99,7 +111,7 @@ class CalculationDB(QCrBoxBaseSQLModel, table=True):
         return latest_status_event
 
     def update_status(self, new_status: CalculationStatusEnum | str, comment: str = ""):
-        logger.debug(f"Creating new status event for calculation {self.id}")
+        logger.debug(f"Creating new status event for calculation {self.calculation_id}")
         new_status = CalculationStatusEnum(new_status)
 
         with settings.db.get_session() as session:
@@ -141,8 +153,11 @@ class CalculationDB(QCrBoxBaseSQLModel, table=True):
                     self.command = None
                     logger.debug(f"Warning: could not find command {self.command_name!r}.")
 
-            _ = self._get_latest_or_create_initial_status_event(session)
+            # _ = self._get_latest_status_event(session)
 
             session.commit()
             session.refresh(self)
             return self
+
+    def to_response_model(self) -> CalculationResponseModel:
+        return CalculationResponseModel(**self.model_dump())
