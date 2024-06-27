@@ -90,7 +90,9 @@ class CalculationDB(CalculationBase, table=True):
 
     def _get_latest_status_event(self, session, create_if_not_exists: bool = False):
         latest_status_event = session.exec(
-            select(CalculationStatusEventDB).order_by(desc(CalculationStatusEventDB.timestamp))
+            select(CalculationStatusEventDB)
+            .where(CalculationStatusEventDB.calculation_id == self.id)
+            .order_by(desc(CalculationStatusEventDB.timestamp))
         ).first()
 
         if latest_status_event is None and create_if_not_exists:
