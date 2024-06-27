@@ -84,6 +84,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
             calculation_id=calculation_id,
         )
 
+        await self.kv_calculation_status.put(calculation_id, CalculationStatusEnum.SUBMITTED.encode())
         await self.nats_broker.publish(
             msg_to_client,
             subject=f"client.cmd.handle_invocation_request.{msg_to_client.nats_subject_parts}",
@@ -97,7 +98,6 @@ class QCrBoxServer(QCrBoxServerClientBase):
         logger.debug(f"[DDD] Attempting to retrieve details for {msg.calculation_id=}")
         try:
             calc = self.calculations[msg.calculation_id]
-            await self.kv_calculation_status.put(msg.calculation_id, CalculationStatusEnum.SUBMITTED.encode())
         except KeyError:
             error_msg = f"[EEE] Cannot find calculation with {msg.calculation_id=}"
             logger.error(error_msg)
