@@ -98,11 +98,11 @@ class QCrBoxServer(QCrBoxServerClientBase):
             logger.debug(f"Client is not available: {msg.client_id}")
             return
 
-        logger.debug(f"[DDD] Attempting to retrieve details for {msg.calculation_id=}")
+        logger.debug(f"Retrieving details for calculation: {msg.calculation_id!r}")
         try:
             calc = self.calculations[msg.calculation_id]
         except KeyError:
-            error_msg = f"[EEE] Cannot find calculation with {msg.calculation_id=}"
+            error_msg = f"Calculation not found: {msg.calculation_id!r}"
             logger.error(error_msg)
             raise RuntimeError(error_msg)
 

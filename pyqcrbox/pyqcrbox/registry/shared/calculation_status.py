@@ -26,8 +26,7 @@ async def _update_status_in_nats_kv(calculation_id: str, status: str):
 
 def update_calculation_status_in_nats_kv(calculation_id: str, status: CalculationStatusEnum):
     with start_blocking_portal() as portal:
-        logger.debug(f"[DDD] started blocking portal: {portal=}")
+        logger.debug("Updating calculation status in NATS KV...")
         future = portal.start_task_soon(_update_status_in_nats_kv, calculation_id, status)
-        logger.debug("[DDD] Waiting for task to complete...")
-        result = future.result()
-        logger.debug(f"[DDD] Task finished with result: {result!r}")
+        _ = future.result()
+        logger.debug("Done (calculation status updated in NATS KV).")

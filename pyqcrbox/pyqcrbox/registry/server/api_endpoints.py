@@ -85,7 +85,7 @@ async def retrieve_commands() -> list[sql_models.CommandSpecWithParameters]:
 
 @post(path="/commands/invoke", media_type=MediaType.JSON)
 async def commands_invoke(data: sql_models.CommandInvocationCreate) -> dict:
-    logger.info(f"[DDD] Received {data=}")
+    logger.info(f"Received command invocation via API: {data=}")
 
     with svcs.Container(QCRBOX_SVCS_REGISTRY) as con:
         # broker = await con.aget(RabbitBroker)
@@ -177,8 +177,6 @@ async def get_calculation_info_by_calculation_id(calculation_id: str) -> dict | 
             ).one()
             kv_calculation_status = await get_nats_key_value(bucket="calculation_status")
             calc_status_info = await kv_calculation_status.get(calc.calculation_id)
-            logger.debug(f"[DDD] {calc_status_info=}")
-            logger.debug(f"[DDD] {calc_status_info.value=} ({type(calc_status_info.value)})")
             response_data = {
                 "id": calc.id,
                 "calculation_id": calc.calculation_id,
