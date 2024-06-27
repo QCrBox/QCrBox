@@ -12,7 +12,7 @@ from pyqcrbox.helpers import generate_private_routing_key
 from ..shared import CalculationStatusEnum, QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup
 from .api_endpoints import create_client_asgi_server
 from .client_status import ClientStatus, ClientStatusEnum
-from .executable_command import BaseCommand, ExecutableCommand, PythonCallable
+from .executable_command import BaseCommand, ExecutableCommand
 
 # from .message_processing.command_invocation_request import handle_command_invocation_request_via_nats
 
@@ -113,7 +113,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         logger.info(f"Received command execution request: {msg!r} (current status: {self.status}")
         self.status.set_busy()
 
-        cmd = PythonCallable(helpers.greet_and_sleep)
+        cmd = self.get_executable_command(msg.command_name)
         calc = await cmd.execute_in_background(
             **msg.arguments,
             _calculation_id=msg.calculation_id,
