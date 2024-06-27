@@ -5,13 +5,13 @@ from abc import ABCMeta, abstractmethod
 
 from pyqcrbox import logger
 
-from ...shared.calculation_status import CalculationStatus
+from ...shared.calculation_status import CalculationStatusEnum
 
 
 class BaseCalculation(metaclass=ABCMeta):
     @property
     @abstractmethod
-    def status(self) -> CalculationStatus:
+    def status(self) -> CalculationStatusEnum:
         pass
 
     @property
@@ -25,14 +25,14 @@ class BaseCalculation(metaclass=ABCMeta):
 #         self.proc = proc
 #
 #     @property
-#     def status(self) -> CalculationStatus:
+#     def status(self) -> CalculationStatusEnum:
 #         match self.proc.returncode:
 #             case None:
-#                 status = CalculationStatus.RUNNING
+#                 status = CalculationStatusEnum.RUNNING
 #             case 0:
-#                 status = CalculationStatus.COMPLETED
+#                 status = CalculationStatusEnum.COMPLETED
 #             case _:
-#                 status = CalculationStatus.FAILED
+#                 status = CalculationStatusEnum.FAILED
 #
 #         return status
 #
@@ -75,18 +75,18 @@ class PythonCallableCalculation(BaseCalculation):
         return f"<{clsname}: calculation_id={self.calculaton_id}>"
 
     @property
-    def status(self) -> CalculationStatus:
+    def status(self) -> CalculationStatusEnum:
         if self._apply_result.ready():
             if self._apply_result.successful():
                 self.return_value = self._apply_result.get()
-                calc_status = CalculationStatus.COMPLETED
+                calc_status = CalculationStatusEnum.COMPLETED
             else:
-                calc_status = CalculationStatus.FAILED
+                calc_status = CalculationStatusEnum.FAILED
             logger.debug("Calculation finished, closing multiprocessing pool.")
             self.pool.close()
             self.pool.join()
         else:
-            calc_status = CalculationStatus.RUNNING
+            calc_status = CalculationStatusEnum.RUNNING
 
         return calc_status
 
@@ -107,14 +107,14 @@ class CLICmdCalculation(BaseCalculation):
         self.proc = proc
 
     @property
-    def status(self) -> CalculationStatus:
+    def status(self) -> CalculationStatusEnum:
         match self.proc.returncode:
             case None:
-                status = CalculationStatus.RUNNING
+                status = CalculationStatusEnum.RUNNING
             case 0:
-                status = CalculationStatus.COMPLETED
+                status = CalculationStatusEnum.COMPLETED
             case _:
-                status = CalculationStatus.FAILED
+                status = CalculationStatusEnum.FAILED
 
         return status
 

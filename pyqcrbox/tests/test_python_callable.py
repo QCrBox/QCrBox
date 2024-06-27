@@ -1,7 +1,7 @@
 import pytest
 
 from pyqcrbox.registry.client.executable_command import PythonCallable
-from pyqcrbox.registry.client.executable_command.calculation import CalculationStatus
+from pyqcrbox.registry.client.executable_command.calculation import CalculationStatusEnum
 
 
 @pytest.mark.anyio
@@ -12,4 +12,4 @@ async def test_python_callable(sample_application_spec):
 
     cmd = PythonCallable.from_command_spec(cmd_spec)
     calc = await cmd.execute_in_background(name="Alice", duration="0.0")
-    assert calc.status == CalculationStatus.COMPLETED
+    assert calc.status == CalculationStatusEnum.COMPLETED

@@ -11,12 +11,13 @@ if TYPE_CHECKING:
 
 
 class CalculationStatusEnum(StrEnum):
-    RECEIVED = "received"
-    CHECKING_CLIENT_AVAILABILITY = "checking_client_availability"
+    SUBMITTED = "submitted"
+    # CHECKING_CLIENT_AVAILABILITY = "checking_client_availability"
     RUNNING = "running"
     COMPLETED = "completed"
     FAILED = "failed"
     CANCELLED = "cancelled"
+    # UNKNOWN = "unknown"
 
 
 class CalculationStatusEventDB(QCrBoxBaseSQLModel, table=True):
@@ -24,7 +25,7 @@ class CalculationStatusEventDB(QCrBoxBaseSQLModel, table=True):
 
     id: int | None = Field(default=None, primary_key=True)
     timestamp: datetime = Field(default_factory=datetime.now)
-    status: CalculationStatusEnum = CalculationStatusEnum.RECEIVED
+    status: CalculationStatusEnum
     comment: str = ""
 
     calculation_id: int = Field(foreign_key="calculation.id")

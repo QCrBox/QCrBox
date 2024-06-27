@@ -1,10 +1,12 @@
 from typing import Any
 
+from faststream import Context
 from pydantic import BaseModel
+from sqlmodel import select
 
 from pyqcrbox import helpers, logger, msg_specs, settings, sql_models
 
-from ..shared import CalculationStatus, QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup
+from ..shared import CalculationStatusEnum, QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup
 from .api_endpoints import create_server_asgi_server
 
 
@@ -41,6 +43,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
             self.handle_command_invocation_client_response
         )
         self.nats_broker.subscriber("server.calc.get_status")(self.get_calculation_status)
+        self.nats_broker.subscriber("*", kv_watch="calculation_status")(self.update_calculation_status_in_db)
 
     async def handle_application_registration(self, msg: msg_specs.RegisterApplication):
         logger.info(
@@ -94,7 +97,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
         logger.debug(f"[DDD] Attempting to retrieve details for {msg.calculation_id=}")
         try:
             calc = self.calculations[msg.calculation_id]
-            await self.kv_calculation_status.put(msg.calculation_id, CalculationStatus.SUBMITTED.encode())
+            await self.kv_calculation_status.put(msg.calculation_id, CalculationStatusEnum.SUBMITTED.encode())
         except KeyError:
             error_msg = f"[EEE] Cannot find calculation with {msg.calculation_id=}"
             logger.error(error_msg)
@@ -139,6 +142,17 @@ class QCrBoxServer(QCrBoxServerClientBase):
         status_nats_kv = (await self.kv_calculation_status.get(msg.calculation_id)).value
         logger.debug(f"Calculation status in nats KV store is: {status_nats_kv!r}")
         return response
+
+    async def update_calculation_status_in_db(
+        self, status: CalculationStatusEnum, calculation_id: str = Context("message.raw_message.key")
+    ):
+        logger.debug(f"Received NATS notification about calculation status update: {status!r} ({calculation_id=!r})")
+        with settings.db.get_session() as session:
+            calculation_db: sql_models.CalculationDB = session.exec(
+                select(sql_models.CalculationDB).where(sql_models.CalculationDB.calculation_id == calculation_id)
+            ).one()
+            calculation_db.update_status(status, comment="NATS notification")
+            logger.debug("Updated calculation status in the database.")
 
     def _set_up_asgi_server(self) -> None:
         self.asgi_server = create_server_asgi_server(self.lifespan_context)

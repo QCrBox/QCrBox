@@ -88,7 +88,7 @@ class CalculationDB(QCrBoxBaseSQLModel, table=True):
 
             initial_status_event = CalculationStatusEventDB(
                 calculation_id=self.id,
-                status=CalculationStatusEnum.RECEIVED,
+                status=CalculationStatusEnum.SUBMITTED,
             )
             session.add(initial_status_event)
             session.commit()

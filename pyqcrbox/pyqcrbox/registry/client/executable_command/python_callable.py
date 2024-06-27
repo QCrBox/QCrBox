@@ -12,8 +12,8 @@ from pydantic._internal._validate_call import ValidateCallWrapper
 
 from pyqcrbox import logger
 
-from ...shared.calculation_status import update_calculation_status
-from .calculation import CalculationStatus, PythonCallableCalculation
+from ...shared.calculation_status import update_calculation_status_in_nats_kv
+from .calculation import CalculationStatusEnum, PythonCallableCalculation
 
 
 class PythonCallable:
@@ -52,14 +52,14 @@ class PythonCallable:
     ):
         def success_callback(result):
             logger.debug(f"Success: {result=} ({multiprocessing.current_process().name})")
-            update_calculation_status(_calculation_id, CalculationStatus.COMPLETED)
+            update_calculation_status_in_nats_kv(_calculation_id, CalculationStatusEnum.COMPLETED)
             for callback in _callbacks:
                 callback()
 
         def error_callback(exc):
             traceback_str = "\n".join(traceback.format_exception(exc))
             logger.error(f"Error: {exc=} ({multiprocessing.current_process().name})\n\nTraceback:\n\n{traceback_str}")
-            update_calculation_status(_calculation_id, CalculationStatus.FAILED)
+            update_calculation_status_in_nats_kv(_calculation_id, CalculationStatusEnum.FAILED)
             for callback in _callbacks:
                 callback()
 

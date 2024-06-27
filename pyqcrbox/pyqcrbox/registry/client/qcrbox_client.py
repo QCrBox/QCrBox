@@ -9,7 +9,7 @@ from pyqcrbox import helpers, logger, msg_specs, settings, sql_models
 from pyqcrbox.cli.helpers import get_repo_root
 from pyqcrbox.helpers import generate_private_routing_key
 
-from ..shared import CalculationStatus, QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup
+from ..shared import CalculationStatusEnum, QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup
 from .api_endpoints import create_client_asgi_server
 from .client_status import ClientStatus, ClientStatusEnum
 from .executable_command import BaseCommand, ExecutableCommand, PythonCallable
@@ -122,7 +122,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         logger.debug(f"Storing calculation details: {calc!r}")
         self.calculations[msg.calculation_id] = calc
         logger.debug(f"Storing KV value for {msg.calculation_id=}")
-        await self.kv_calculation_status.put(msg.calculation_id, CalculationStatus.RUNNING.encode())
+        await self.kv_calculation_status.put(msg.calculation_id, CalculationStatusEnum.RUNNING.encode())
 
     async def get_calculation_status(
         self, msg: msg_specs.GetCalculationStatusNATS
