@@ -94,6 +94,9 @@ class QCrBoxServer(QCrBoxServerClientBase):
 
     async def handle_command_invocation_client_response(self, msg: msg_specs.CommandInvocationClientResponseNATS):
         logger.info(f"Received client response: {msg!r}")
+        if not msg.client_is_available:
+            logger.debug(f"Client is not available: {msg.client_id}")
+            return
 
         logger.debug(f"[DDD] Attempting to retrieve details for {msg.calculation_id=}")
         try:
