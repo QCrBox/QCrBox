@@ -115,7 +115,14 @@ class QCrBoxClient(QCrBoxServerClientBase):
         self.status.set_busy()
 
         cmd = self.get_executable_command(msg.command_name)
-        calc = await cmd.execute_in_background(**msg.arguments, _calculation_id=msg.calculation_id)
+        try:
+            calc = await cmd.execute_in_background(**msg.arguments, _calculation_id=msg.calculation_id)
+        except Exception as exc:
+            logger.error(f"Command execution failed: {exc!r}")
+            await update_calculation_status_in_nats_kv(msg.calculation_id, CalculationStatusEnum.FAILED)
+            self.status.set_idle()
+            return
+
         # logger.debug(f"Storing calculation details: {calc!r}")
         self.calculations[msg.calculation_id] = calc
         # logger.debug(f"Storing KV value for {msg.calculation_id=}")
