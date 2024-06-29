@@ -11,3 +11,15 @@ commands:
   - name: "greet_and_sleep"
     implemented_as: "python_callable"
     import_path: "pyqcrbox.helpers"
+
+  - name: "echo_and_snooze"
+    implemented_as: "CLI"
+    call_pattern: |
+      echo 'Greetings, {name}! Going to snooze for {duration} seconds.' && sleep {duration} && echo 'KTHXBYE > /tmp/lala_output_foo.txt'
+    parameters:
+      - name: "name"
+        dtype: str
+      - name: "duration"
+        dtype: float
+        default_value: 5
+        description: "Sleep duration (in seconds)."
