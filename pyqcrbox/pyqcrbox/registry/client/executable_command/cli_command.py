@@ -1,3 +1,7 @@
+import re
+
+import anyio
+
 from pyqcrbox import sql_models
 
 __all__ = ["CLICommand"]
@@ -73,40 +77,43 @@ class QCrBoxCmdArgumentMismatch(Exception):
 class CLICommand(BaseCommand):
     def __init__(self, cmd_spec: sql_models.CommandSpecCreate):
         super().__init__(cmd_spec)
-        call_pattern_parts = self.cmd_spec.call_pattern.split()
-        self.cmd_constituents = [_make_cmd_constituent(x) for x in call_pattern_parts]
-        self.cmd_params = [x for x in self.cmd_constituents if isinstance(x, Param)]
-        self.parameter_names = [x.name for x in self.cmd_params]
-        self.signature = inspect.Signature(parameters=[x._python_param for x in self.cmd_params])
+        self.call_pattern = cmd_spec.call_pattern
+        self.parameter_names = list(set(re.findall("{(.*?)}", self.call_pattern)))
+
         self.proc: asyncio.subprocess.Process | None = None
 
     def __repr__(self):
         return f"<{self.__class__.__name__}: '{str(self)}'>"
 
     def __str__(self):
-        cmd_str = " ".join(str(x) for x in self.cmd_constituents)
-        return cmd_str
+        return self.call_pattern
 
-    def bind(self, *args, **kwargs):
-        bound_args = self.signature.bind(*args, **kwargs)
-        return [str(x.bind(bound_args)) for x in self.cmd_constituents]
+    def bind(self, **kwargs):
+        return self.call_pattern.format(**kwargs)
 
     async def execute_in_background(
-        self, *args, _stdin=None, _stdout=subprocess.PIPE, _stderr=subprocess.PIPE, **kwargs
+        self,
+        _calculation_id: str,
+        _stdin=None,
+        _stdout=subprocess.PIPE,
+        _stderr=subprocess.PIPE,
+        **kwargs,
     ) -> CLICmdCalculation:
+        calc_finished_event = anyio.Event()
+
         try:
-            bound_args = self.bind(*args, **kwargs)
-        except TypeError as exc:
+            cmd_with_bound_args = self.bind(**kwargs)
+        except KeyError as exc:
             raise QCrBoxCmdArgumentMismatch(exc.args[0])
-        # current_workdir = os.getcwd()
-        # logger.debug(f"{current_workdir=}")
-        self.proc = await asyncio.create_subprocess_exec(
-            *bound_args,
+
+        self.proc = await asyncio.create_subprocess_shell(
+            cmd_with_bound_args,
             stdin=_stdin,
             stdout=_stdout,
             stderr=_stderr,
         )
-        return CLICmdCalculation(self.proc)
+
+        return CLICmdCalculation(self.proc, calculation_id=_calculation_id, calc_finished_event=calc_finished_event)
 
     async def terminate(self):
         if self.proc:

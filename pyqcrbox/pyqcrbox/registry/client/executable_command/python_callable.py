@@ -8,16 +8,20 @@ import multiprocessing
 import traceback
 from typing import Callable, Union
 
+import anyio
 from pydantic._internal._validate_call import ValidateCallWrapper
 
 from pyqcrbox import logger
 
-from ...shared.calculation_status import update_calculation_status_in_nats_kv
-from .calculation import CalculationStatusEnum, PythonCallableCalculation
+from .calculation import PythonCallableCalculation
+
+
+class CalculationNotRunning(Exception):
+    pass
 
 
 class PythonCallable:
-    def __init__(self, fn: Callable, callbacks: list[Callable] | None = None):
+    def __init__(self, fn: Callable):
         assert inspect.isfunction(fn)
         if inspect.iscoroutinefunction(fn):
             raise TypeError("At present PythonCallable can only handle regular functions, not coroutine functions.")
@@ -27,6 +31,7 @@ class PythonCallable:
         self.parameter_names = list(self.signature.parameters.keys())
         self._fn_with_call_args_validation = ValidateCallWrapper(self.fn, config=None, validate_return=False)
         self.pool: Union[multiprocessing.pool.Pool, None] = None
+        self.calc_finished_event = None
 
     @classmethod
     def from_command_spec(cls, cmd_spec) -> "PythonCallable":
@@ -46,22 +51,23 @@ class PythonCallable:
         # _stdin=None,
         # _stdout=subprocess.PIPE,
         # _stderr=subprocess.PIPE,
-        _callbacks: list[Callable] | None = None,
         _num_processes=1,
         **kwargs,
     ):
+        calc_finished_event = anyio.Event()
+
         def success_callback(result):
+            nonlocal calc_finished_event
             logger.debug(f"Success: {result=} ({multiprocessing.current_process().name})")
-            update_calculation_status_in_nats_kv(_calculation_id, CalculationStatusEnum.COMPLETED)
-            for callback in _callbacks:
-                callback()
+            calc_finished_event.set()
+            calc_finished_event = None
 
         def error_callback(exc):
+            nonlocal calc_finished_event
             traceback_str = "\n".join(traceback.format_exception(exc))
             logger.error(f"Error: {exc=} ({multiprocessing.current_process().name})\n\nTraceback:\n\n{traceback_str}")
-            update_calculation_status_in_nats_kv(_calculation_id, CalculationStatusEnum.FAILED)
-            for callback in _callbacks:
-                callback()
+            calc_finished_event.set()
+            calc_finished_event = None
 
         self.pool = multiprocessing.Pool(_num_processes)
         pending_result = self.pool.apply_async(
@@ -71,7 +77,13 @@ class PythonCallable:
             callback=success_callback,
             error_callback=error_callback,
         )
-        return PythonCallableCalculation(pending_result, pool=self.pool, calculation_id=_calculation_id)
+
+        return PythonCallableCalculation(
+            pending_result,
+            pool=self.pool,
+            calculation_id=_calculation_id,
+            calc_finished_event=calc_finished_event,
+        )
 
     async def terminate(self):
         logger.debug(f"Terminating {self}")

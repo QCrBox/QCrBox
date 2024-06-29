@@ -8,6 +8,7 @@ from litestar import Litestar
 from pyqcrbox import helpers, logger, msg_specs, settings, sql_models
 from pyqcrbox.cli.helpers import get_repo_root
 from pyqcrbox.helpers import generate_private_routing_key
+from pyqcrbox.registry.shared.calculation_status import update_calculation_status_in_nats_kv
 
 from ..shared import CalculationStatusEnum, QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup
 from .api_endpoints import create_client_asgi_server
@@ -114,15 +115,16 @@ class QCrBoxClient(QCrBoxServerClientBase):
         self.status.set_busy()
 
         cmd = self.get_executable_command(msg.command_name)
-        calc = await cmd.execute_in_background(
-            **msg.arguments,
-            _calculation_id=msg.calculation_id,
-            _callbacks=[self.status.set_idle],
-        )
-        logger.debug(f"Storing calculation details: {calc!r}")
+        calc = await cmd.execute_in_background(**msg.arguments, _calculation_id=msg.calculation_id)
+        # logger.debug(f"Storing calculation details: {calc!r}")
         self.calculations[msg.calculation_id] = calc
-        logger.debug(f"Storing KV value for {msg.calculation_id=}")
-        await self.kv_calculation_status.put(msg.calculation_id, CalculationStatusEnum.RUNNING.encode())
+        # logger.debug(f"Storing KV value for {msg.calculation_id=}")
+        await update_calculation_status_in_nats_kv(msg.calculation_id, CalculationStatusEnum.RUNNING)
+
+        await calc.wait_until_finished()
+        await update_calculation_status_in_nats_kv(msg.calculation_id, calc.status)
+
+        self.status.set_idle()
 
     async def get_calculation_status(
         self, msg: msg_specs.GetCalculationStatusNATS

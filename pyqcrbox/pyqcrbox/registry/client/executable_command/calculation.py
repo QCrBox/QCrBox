@@ -3,6 +3,8 @@ import asyncio
 import multiprocessing.pool
 from abc import ABCMeta, abstractmethod
 
+import anyio
+
 from pyqcrbox import logger
 
 from ...shared.calculation_status import CalculationStatusEnum
@@ -19,60 +21,31 @@ class BaseCalculation(metaclass=ABCMeta):
         return {}
 
 
-# class ExternalCmdCalculation(BaseCalculation):
-#     def __init__(self, proc: anyio.abc.Process):
-#         super().__init__()
-#         self.proc = proc
-#
-#     @property
-#     def status(self) -> CalculationStatusEnum:
-#         match self.proc.returncode:
-#             case None:
-#                 status = CalculationStatusEnum.RUNNING
-#             case 0:
-#                 status = CalculationStatusEnum.COMPLETED
-#             case _:
-#                 status = CalculationStatusEnum.FAILED
-#
-#         return status
-#
-#     async def get_status_details(self) -> msg_specs.CalculationStatusDetails:
-#         returncode = self.proc.returncode
-#         status_details = msg_specs.CalculationStatusDetails(
-#             returncode=returncode,
-#             stdout="",
-#             stderr="",
-#         )
-#
-#         if returncode is not None:
-#             async with self.proc as process:
-#                 try:
-#                     status_details.stdout = await TextReceiveStream(process.stdout).receive()
-#                 except EndOfStream:
-#                     status_details.stdout = ""
-#
-#                 try:
-#                     status_details.stderr = await TextReceiveStream(process.stderr).receive()
-#                 except EndOfStream:
-#                     status_details.stderr = ""
-#
-#         return status_details
-
-
 class PythonCallableCalculation(BaseCalculation):
     def __init__(
-        self, result: multiprocessing.pool.ApplyResult, *, pool: multiprocessing.pool.Pool, calculation_id: str
+        self,
+        result: multiprocessing.pool.ApplyResult,
+        *,
+        pool: multiprocessing.pool.Pool,
+        calculation_id: str,
+        calc_finished_event: anyio.Event,
     ):
         super().__init__()
         self._apply_result = result
         self.pool = pool
-        self.calculaton_id = calculation_id
+        self.calculation_id = calculation_id
+        self.calc_finished_event = calc_finished_event
         # self._status_details = None
         self.return_value = None
 
     def __repr__(self):
         clsname = self.__class__.__name__
-        return f"<{clsname}: calculation_id={self.calculaton_id}>"
+        return f"<{clsname}: calculation_id={self.calculation_id}>"
+
+    async def wait_until_finished(self):
+        logger.debug(f"Waiting for calculation to finish: {self.calculation_id!r}")
+        await self.calc_finished_event.wait()
+        logger.debug(f"Calculation finished: {self.calculation_id!r}")
 
     @property
     def status(self) -> CalculationStatusEnum:
@@ -102,9 +75,22 @@ class PythonCallableCalculation(BaseCalculation):
 
 
 class CLICmdCalculation(BaseCalculation):
-    def __init__(self, proc: asyncio.subprocess.Process):
+    def __init__(self, proc: asyncio.subprocess.Process, calculation_id: str, calc_finished_event: anyio.Event):
         super().__init__()
         self.proc = proc
+        self.calculation_id = calculation_id
+        self._stdout = None
+        self._stderr = None
+        self.retrieved_stdout_stderr = False
+        self.calc_finished_event = calc_finished_event
+
+    async def wait_until_finished(self):
+        logger.debug(f"Waiting for calculation to finish: {self.calculation_id!r}")
+        # logger.debug("Waiting for process to exit...")
+        await self.proc.wait()
+        # logger.debug("Process finished.")
+        self.calc_finished_event.set()
+        logger.debug(f"Calculation finished: {self.calculation_id!r}")
 
     @property
     def status(self) -> CalculationStatusEnum:
@@ -119,13 +105,18 @@ class CLICmdCalculation(BaseCalculation):
         return status
 
     @property
-    async def status_details(self):
-        returncode = self.proc.returncode
-        status_details = {
-            "returncode": returncode,
-        }
-        if returncode is not None:
+    async def stdout(self) -> str:
+        await self.retrieve_stdout_stderr()
+        return self._stdout
+
+    @property
+    async def stderr(self) -> str:
+        await self.retrieve_stdout_stderr()
+        return self._stderr
+
+    async def retrieve_stdout_stderr(self):
+        if self.status != CalculationStatusEnum.RUNNING and not self.retrieved_stdout_stderr:
             stdout, stderr = await self.proc.communicate()
-            status_details["stdout"] = stdout
-            status_details["stderr"] = stderr
-        return status_details
+            self._stdout = stdout.decode()
+            self._stderr = stderr.decode()
+            self.retrieved_stdout_stderr = True
