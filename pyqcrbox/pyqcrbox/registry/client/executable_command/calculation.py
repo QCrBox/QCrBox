@@ -90,7 +90,9 @@ class CLICmdCalculation(BaseCalculation):
         await self.proc.wait()
         # logger.debug("Process finished.")
         self.calc_finished_event.set()
-        logger.debug(f"Calculation finished: {self.calculation_id!r}")
+        logger.debug(f"Calculation finished: {self.calculation_id!r} (status: {self.status!r})")
+        if self.status == CalculationStatusEnum.FAILED:
+            logger.debug(f"\nStdout:\n\n{await self.stdout}\n\nStderr:\n\n{await self.stderr}")
 
     @property
     def status(self) -> CalculationStatusEnum:
