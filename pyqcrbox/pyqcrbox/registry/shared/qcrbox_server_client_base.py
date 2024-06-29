@@ -164,6 +164,7 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
             logger.trace("Received control back from ASGI server ...")
         finally:
             with contextlib.suppress(KeyError):
+                # with anyio.CancelScope(shield=True):
                 logger.trace("Closing broker.")
                 # await self.broker.close()
                 await self.nats_broker.close()
@@ -233,7 +234,8 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
         await self._shutdown_event.wait()
         logger.info(f"Received shutdown request, shutting down {self.clsname}.")
         await self._run_custom_shutdown_tasks()
-        await self.uvicorn_server.shutdown()
+        if self.uvicorn_server.started:
+            await self.uvicorn_server.shutdown()
         cancel_scope.cancel()
 
 

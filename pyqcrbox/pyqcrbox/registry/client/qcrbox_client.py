@@ -182,11 +182,14 @@ class QCrBoxClient(QCrBoxServerClientBase):
             ),
         )
 
-        resp = await self.nats_broker.publish(
-            msg, "register-application", rpc=True, rpc_timeout=settings.nats.rpc_timeout, raise_timeout=True
-        )
-        logger.debug(f"Received response to registration request: {resp=}")
-        logger.warning("TODO: raise error if registration failed!")
+        try:
+            resp = await self.nats_broker.publish(
+                msg, "register-application", rpc=True, rpc_timeout=settings.nats.rpc_timeout, raise_timeout=True
+            )
+            logger.debug(f"Received response to registration request: {resp=}")
+        except TimeoutError:
+            logger.error("Application registration failed (no response from server)")
+            self.shutdown()
 
     # async def publish(self, queue, msg):
     #     await self.broker.publish(msg, queue)
