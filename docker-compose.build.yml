@@ -57,6 +57,10 @@ services:
     #  - "${QCRBOX_BIND_ADDRESS}:${QCRBOX_PORT_BASE_IMAGE_WINE:?Must set env var QCRBOX_PORT_BASE_IMAGE_WINE}:8080"
     #restart: "unless-stopped"
 
+  qcrbox-nats:
+    build:
+      context: services/core/qcrbox_nats/
+
   qcrbox-message-bus:
     build:
       context: services/core/qcrbox_message_bus/
