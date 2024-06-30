@@ -11,7 +11,11 @@ anyio==4.4.0
     #   fast-depends
     #   faststream
     #   httpx
-certifi==2024.2.2
+attrs==23.2.0
+    # via svcs
+backports-tarfile==1.2.0
+    # via jaraco-context
+certifi==2024.6.2
     # via
     #   httpcore
     #   httpx
@@ -26,11 +30,11 @@ distlib==0.3.8
     # via virtualenv
 doit==0.36.0
     # via pyqcrbox (pyproject.toml)
-fast-depends==2.4.3
+fast-depends==2.4.4
     # via faststream
-faststream==0.5.10
+faststream==0.5.14
     # via pyqcrbox (pyproject.toml)
-filelock==3.14.0
+filelock==3.15.4
     # via virtualenv
 gitdb==4.0.11
     # via gitpython
@@ -42,7 +46,7 @@ h11==0.14.0
     # via httpcore
 hatch==1.12.0
     # via pyqcrbox (pyproject.toml)
-hatchling==1.24.2
+hatchling==1.25.0
     # via hatch
 httpcore==1.0.5
     # via httpx
@@ -56,8 +60,10 @@ idna==3.7
     #   httpx
     #   hyperlink
     #   yarl
-importlib-metadata==7.1.0
-    # via doit
+importlib-metadata==8.0.0
+    # via
+    #   doit
+    #   keyring
 jaraco-classes==3.4.0
     # via keyring
 jaraco-context==5.3.0
@@ -72,13 +78,15 @@ markdown-it-py==3.0.0
     # via rich
 mdurl==0.1.2
     # via markdown-it-py
-more-itertools==10.2.0
+more-itertools==10.3.0
     # via
     #   jaraco-classes
     #   jaraco-functools
 multidict==6.0.5
     # via yarl
-packaging==24.0
+nats-py==2.8.0
+    # via faststream
+packaging==24.1
     # via
     #   hatch
     #   hatchling
@@ -96,15 +104,15 @@ pluggy==1.5.0
     # via hatchling
 ptyprocess==0.7.0
     # via pexpect
-pydantic==2.7.2
+pydantic==2.7.4
     # via
     #   pyqcrbox (pyproject.toml)
     #   fast-depends
     #   pydantic-settings
     #   sqlmodel
-pydantic-core==2.18.3
+pydantic-core==2.18.4
     # via pydantic
-pydantic-settings==2.2.1
+pydantic-settings==2.3.4
     # via pyqcrbox (pyproject.toml)
 pygments==2.18.0
     # via rich
@@ -125,12 +133,20 @@ sniffio==1.3.1
     # via
     #   anyio
     #   httpx
-sqlalchemy==2.0.30
+sqlalchemy==2.0.31
     # via sqlmodel
-sqlmodel==0.0.18
+sqlmodel==0.0.19
+    # via pyqcrbox (pyproject.toml)
+stamina==24.2.0
+    # via pyqcrbox (pyproject.toml)
+structlog==24.2.0
+    # via pyqcrbox (pyproject.toml)
+svcs==24.1.0
     # via pyqcrbox (pyproject.toml)
 tabulate==0.9.0
     # via pyqcrbox (pyproject.toml)
+tenacity==8.4.2
+    # via stamina
 tomli-w==1.0.0
     # via hatch
 tomlkit==0.12.5
@@ -139,7 +155,7 @@ trove-classifiers==2024.5.22
     # via hatchling
 typer==0.12.3
     # via faststream
-typing-extensions==4.12.0
+typing-extensions==4.12.2
     # via
     #   faststream
     #   pydantic
@@ -148,15 +164,15 @@ typing-extensions==4.12.0
     #   typer
 userpath==1.9.2
     # via hatch
-uv==0.2.5
+uv==0.2.18
     # via hatch
-virtualenv==20.26.2
+virtualenv==20.26.3
     # via hatch
 yarl==1.9.4
     # via
     #   aio-pika
     #   aiormq
-zipp==3.19.0
+zipp==3.19.2
     # via importlib-metadata
 zstandard==0.22.0
     # via hatch
