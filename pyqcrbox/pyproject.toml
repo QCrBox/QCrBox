@@ -26,6 +26,7 @@ dependencies = [
     "sqlmodel",
     "svcs",
     "stamina",
+    "structlog",
     "tabulate",
 ]
 
