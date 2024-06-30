@@ -12,7 +12,7 @@ services:
     restart: unless-stopped
     environment:
       QCRBOX_APPLICATION_DISPLAY_NAME: "Olex2"
-      QCRBOX_RABBITMQ_QUEUE_NAME: "olex2"
-      QCRBOX_REGISTRY_HOST: "qcrbox-registry"
-      QCRBOX_REGISTRY_PORT: "8000"
+      QCRBOX__NATS__HOST: "qcrbox-nats"
+      QCRBOX__REGISTRY__SERVER__HOST: "qcrbox-registry"
+      QCRBOX__REGISTRY__SERVER__PORT: "8000"
 
