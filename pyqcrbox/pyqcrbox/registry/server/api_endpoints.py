@@ -20,9 +20,9 @@ async def hello() -> str:
     return "Hello from QCrBox!"
 
 
-@get(path="/healthcheck", media_type=MediaType.TEXT)
-async def health_check() -> str:
-    return "healthy"
+@get(path="/healthcheck", media_type=MediaType.JSON)
+async def health_check() -> dict:
+    return {"status": "ok"}
 
 
 # @get(path="/applications", media_type=MediaType.JSON, return_dto=sql_models.ApplicationReadDTO)
