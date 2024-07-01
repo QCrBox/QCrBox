@@ -4,15 +4,15 @@ from faststream.nats import NatsBroker
 
 # from faststream.rabbit import RabbitBroker
 from litestar import Litestar, MediaType, Response, get, post
+from litestar.middleware.logging import LoggingMiddlewareConfig
 from litestar.openapi import OpenAPIConfig
 from litestar.plugins.structlog import StructlogPlugin
-
-__all__ = ["create_server_asgi_server"]
-
 from sqlmodel import select
 
 from pyqcrbox import QCRBOX_SVCS_REGISTRY, logger, msg_specs, settings, sql_models
 from pyqcrbox.svcs import get_nats_key_value
+
+__all__ = ["create_server_asgi_server"]
 
 
 @get("/", media_type=MediaType.TEXT, include_in_schema=False)
@@ -20,7 +20,7 @@ async def hello() -> str:
     return "Hello from QCrBox!"
 
 
-@get(path="/healthcheck", media_type=MediaType.TEXT)
+@get(path="/healthcheck", media_type=MediaType.TEXT, exclude_from_logs=True)
 async def health_check() -> str:
     return "healthy"
 
@@ -194,6 +194,9 @@ async def get_calculation_info() -> list[dict]:
         return [c.to_response_model() for c in calculations_db]
 
 
+logging_middleware_config = LoggingMiddlewareConfig(exclude_opt_key="exclude_from_logs")
+
+
 def create_server_asgi_server(custom_lifespan) -> Litestar:
     app = Litestar(
         route_handlers=[
@@ -208,6 +211,7 @@ def create_server_asgi_server(custom_lifespan) -> Litestar:
         lifespan=[custom_lifespan],
         debug=True,
         plugins=[StructlogPlugin()],
+        middleware=[logging_middleware_config.middleware],
         openapi_config=OpenAPIConfig(title="QCrBox Server API", version="0.1"),
     )
     return app
