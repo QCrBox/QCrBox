@@ -102,7 +102,7 @@ commands:
         default_value: null
         description: "Path to the CIF file to refine."
         required_entry_sets: ["cell_data", "diffraction_data", "atom_data"]
-        merge_su: No
+        merge_su: Yes
         custom_categories: ["iucr", "shelx"]
       - name: "output_cif_path"
         dtype: QCrBox.output_cif
@@ -139,7 +139,7 @@ commands:
         default_value: null
         description: "Path to the CIF file to refine."
         required_entry_sets: ["cell_data", "diffraction_data", "atom_data"]
-        merge_su: No
+        merge_su: Yes
         custom_categories: ["iucr", "shelx"]
       - name: "output_cif_path"
         dtype: "QCrBox.output_cif"
