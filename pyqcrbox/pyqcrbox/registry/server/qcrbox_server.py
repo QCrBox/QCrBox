@@ -6,6 +6,10 @@ from pydantic import BaseModel
 from sqlmodel import select
 
 from pyqcrbox import helpers, logger, msg_specs, settings, sql_models
+from pyqcrbox.registry.shared.calculation_status import (
+    CalculationStatusDetails,
+    update_calculation_status_in_nats_kv_NEW,
+)
 
 from ..shared import CalculationStatusEnum, QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup
 from .api_endpoints import create_server_asgi_server
@@ -85,7 +89,16 @@ class QCrBoxServer(QCrBoxServerClientBase):
             calculation_id=calculation_id,
         )
 
-        await self.kv_calculation_status.put(calculation_id, CalculationStatusEnum.SUBMITTED.encode())
+        status_details = CalculationStatusDetails(
+            calculation_id=calculation_id,
+            status=CalculationStatusEnum.SUBMITTED,
+            msg="",
+            stdout="",
+            stderr="",
+            extra={},
+        )
+        await update_calculation_status_in_nats_kv_NEW(status_details)
+        # await self.kv_calculation_status.put(calculation_id, CalculationStatusEnum.SUBMITTED.encode())
         await self.nats_broker.publish(
             msg_to_client,
             subject=f"client.cmd.handle_invocation_request.{msg_to_client.nats_subject_parts}",

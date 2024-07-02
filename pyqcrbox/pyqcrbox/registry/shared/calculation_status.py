@@ -8,7 +8,7 @@ from pyqcrbox import logger
 from pyqcrbox.svcs import get_nats_key_value
 
 if TYPE_CHECKING:
-    from pyqcrbox.registry.client.executable_command.calculation import BaseCalculation
+    pass
 
 
 __all__ = ["CalculationStatusEnum", "update_calculation_status_in_nats_kv_NEW"]
@@ -27,10 +27,9 @@ class CalculationStatusEnum(StrEnum):
 class CalculationStatusDetails(BaseModel):
     calculation_id: str
     status: CalculationStatusEnum
-    msg: str
-    stdout: str
-    stderr: str
-    extra: dict
+    stdout: str | None
+    stderr: str | None
+    extra_info: dict
 
 
 # async def update_calculation_status_in_nats_kv(
@@ -49,17 +48,7 @@ class CalculationStatusDetails(BaseModel):
 #     logger.debug(f"Updated status in NATS key-value store to {status!r} ({calculation_id=!r}")
 
 
-async def update_calculation_status_in_nats_kv_NEW(calc: "BaseCalculation", msg: str = ""):
-    stdout = await calc.stdout
-    stderr = await calc.stderr
-    status_details = CalculationStatusDetails(
-        calculation_id=calc.calculation_id,
-        status=calc.status,
-        msg=msg,
-        stdout=stdout,
-        stderr=stderr,
-        extra={},
-    )
+async def update_calculation_status_in_nats_kv_NEW(status_details: CalculationStatusDetails):
     kv = await get_nats_key_value(bucket="calculation_status")
-    await kv.put(calc.calculation_id, json.dumps(status_details.model_dump()).encode())
+    await kv.put(status_details.calculation_id, json.dumps(status_details.model_dump()).encode())
     logger.debug(f"Updated calculation status details in NATS key-value store: {status_details!r}")

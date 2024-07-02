@@ -8,7 +8,11 @@ from litestar import Litestar
 from pyqcrbox import helpers, logger, msg_specs, settings, sql_models
 from pyqcrbox.cli.helpers import get_repo_root
 from pyqcrbox.helpers import generate_private_routing_key
-from pyqcrbox.registry.shared.calculation_status import update_calculation_status_in_nats_kv_NEW
+from pyqcrbox.registry.shared.calculation_status import (
+    CalculationStatusDetails,
+    CalculationStatusEnum,
+    update_calculation_status_in_nats_kv_NEW,
+)
 
 from ..shared import QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup
 from .api_endpoints import create_client_asgi_server
@@ -121,17 +125,25 @@ class QCrBoxClient(QCrBoxServerClientBase):
             error_msg = f"Command execution failed: {exc!r}"
             logger.error(error_msg)
             # await update_calculation_status_in_nats_kv(msg.calculation_id, CalculationStatusEnum.FAILED)
-            await update_calculation_status_in_nats_kv_NEW(calc)
+            status_details = CalculationStatusDetails(
+                calculation_id=msg.calculation_id,
+                status=CalculationStatusEnum.FAILED,
+                msg=error_msg,
+                stdout="",
+                stderr="",
+                extra={},
+            )
+            await update_calculation_status_in_nats_kv_NEW(status_details)
             self.status.set_idle()
             return
 
         # logger.debug(f"Storing calculation details: {calc!r}")
         self.calculations[msg.calculation_id] = calc
         # logger.debug(f"Storing KV value for {msg.calculation_id=}")
-        await update_calculation_status_in_nats_kv_NEW(calc)
+        await update_calculation_status_in_nats_kv_NEW(await calc.get_status_details())
 
         await calc.wait_until_finished()
-        await update_calculation_status_in_nats_kv_NEW(calc)
+        await update_calculation_status_in_nats_kv_NEW(await calc.get_status_details())
 
         self.status.set_idle()
 

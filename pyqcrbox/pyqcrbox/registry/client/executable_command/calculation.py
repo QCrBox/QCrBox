@@ -7,7 +7,7 @@ import anyio
 
 from pyqcrbox import logger
 
-from ...shared.calculation_status import CalculationStatusEnum
+from ...shared.calculation_status import CalculationStatusDetails, CalculationStatusEnum
 
 
 class BaseCalculation(metaclass=ABCMeta):
@@ -76,9 +76,28 @@ class PythonCallableCalculation(BaseCalculation):
 
         return calc_status
 
-    # @property
-    # async def status_details(self) -> dict:
-    #     return self._status_details
+    async def get_status_details(self) -> CalculationStatusDetails:
+        return CalculationStatusDetails(
+            calculation_id=self.calculation_id,
+            status=self.status,
+            stdout=await self.stdout,
+            stderr=await self.stderr,
+            extra_info={},
+        )
+
+    @property
+    async def stdout(self) -> str | None:
+        if self.status == CalculationStatusEnum.RUNNING:
+            return None
+        else:
+            return "Retrieval of STDOUT not implemented yet for PythonCallableCalculation"
+
+    @property
+    async def stderr(self) -> str | None:
+        if self.status == CalculationStatusEnum.RUNNING:
+            return None
+        else:
+            return "Retrieval of STDERR not implemented yet for PythonCallableCalculation"
 
     async def terminate(self):
         logger.debug("Terminating multiprocessing pool (any running workers will be stopped immediately).")
@@ -118,6 +137,16 @@ class CLICmdCalculation(BaseCalculation):
                 status = CalculationStatusEnum.FAILED
 
         return status
+
+    async def get_status_details(self) -> CalculationStatusDetails:
+        return CalculationStatusDetails(
+            calculation_id=self.calculation_id,
+            status=self.status,
+            msg="",
+            stdout=await self.stdout,
+            stderr=await self.stderr,
+            extra=dict(returncode=self.returncode),
+        )
 
     @property
     def returncode(self) -> int:
