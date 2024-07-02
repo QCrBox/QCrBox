@@ -15,7 +15,7 @@ commands:
   - name: "echo_and_snooze"
     implemented_as: "CLI"
     call_pattern: |
-      echo 'Greetings, {name}! Going to snooze for {duration} seconds.' && sleep {duration} && echo 'KTHXBYE > /tmp/lala_output_foo.txt'
+      echo 'Greetings, {name}! Going to snooze for {duration} seconds.' && sleep {duration} && echo 'KTHXBYE' > /tmp/lala_output_foo.txt
     parameters:
       - name: "name"
         dtype: str

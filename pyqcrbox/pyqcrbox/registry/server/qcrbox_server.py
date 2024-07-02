@@ -1,3 +1,4 @@
+import json
 from typing import Any
 
 from faststream import Context
@@ -142,7 +143,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
         response = await self.nats_broker.publish(msg, subject, rpc=True)
         logger.debug(f"{executing_client.client_id} responded with {response=!r}")
         # status = response["status"]
-        status_nats_kv = (await self.kv_calculation_status.get(msg.calculation_id)).value
+        status_nats_kv = json.loads((await self.kv_calculation_status.get(msg.calculation_id)).value)
         logger.debug(f"Calculation status in nats KV store is: {status_nats_kv!r}")
         return response
 

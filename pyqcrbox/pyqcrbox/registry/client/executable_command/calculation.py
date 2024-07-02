@@ -11,6 +11,9 @@ from ...shared.calculation_status import CalculationStatusEnum
 
 
 class BaseCalculation(metaclass=ABCMeta):
+    def __init__(self):
+        self.calculation_id = None
+
     @property
     @abstractmethod
     def status(self) -> CalculationStatusEnum:
@@ -19,6 +22,16 @@ class BaseCalculation(metaclass=ABCMeta):
     @property
     async def status_details(self) -> dict:
         return {}
+
+    @property
+    @abstractmethod
+    async def stdout(self) -> str:
+        pass
+
+    @property
+    @abstractmethod
+    async def stderr(self) -> str:
+        pass
 
 
 class PythonCallableCalculation(BaseCalculation):
@@ -79,8 +92,8 @@ class CLICmdCalculation(BaseCalculation):
         super().__init__()
         self.proc = proc
         self.calculation_id = calculation_id
-        self._stdout = None
-        self._stderr = None
+        self._stdout = ""
+        self._stderr = ""
         self.retrieved_stdout_stderr = False
         self.calc_finished_event = calc_finished_event
 
@@ -105,6 +118,10 @@ class CLICmdCalculation(BaseCalculation):
                 status = CalculationStatusEnum.FAILED
 
         return status
+
+    @property
+    def returncode(self) -> int:
+        return self.proc.returncode
 
     @property
     async def stdout(self) -> str:

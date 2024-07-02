@@ -8,9 +8,9 @@ from litestar import Litestar
 from pyqcrbox import helpers, logger, msg_specs, settings, sql_models
 from pyqcrbox.cli.helpers import get_repo_root
 from pyqcrbox.helpers import generate_private_routing_key
-from pyqcrbox.registry.shared.calculation_status import update_calculation_status_in_nats_kv
+from pyqcrbox.registry.shared.calculation_status import update_calculation_status_in_nats_kv_NEW
 
-from ..shared import CalculationStatusEnum, QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup
+from ..shared import QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup
 from .api_endpoints import create_client_asgi_server
 from .client_status import ClientStatus, ClientStatusEnum
 from .executable_command import BaseCommand, ExecutableCommand
@@ -118,18 +118,20 @@ class QCrBoxClient(QCrBoxServerClientBase):
         try:
             calc = await cmd.execute_in_background(**msg.arguments, _calculation_id=msg.calculation_id)
         except Exception as exc:
-            logger.error(f"Command execution failed: {exc!r}")
-            await update_calculation_status_in_nats_kv(msg.calculation_id, CalculationStatusEnum.FAILED)
+            error_msg = f"Command execution failed: {exc!r}"
+            logger.error(error_msg)
+            # await update_calculation_status_in_nats_kv(msg.calculation_id, CalculationStatusEnum.FAILED)
+            await update_calculation_status_in_nats_kv_NEW(calc)
             self.status.set_idle()
             return
 
         # logger.debug(f"Storing calculation details: {calc!r}")
         self.calculations[msg.calculation_id] = calc
         # logger.debug(f"Storing KV value for {msg.calculation_id=}")
-        await update_calculation_status_in_nats_kv(msg.calculation_id, CalculationStatusEnum.RUNNING)
+        await update_calculation_status_in_nats_kv_NEW(calc)
 
         await calc.wait_until_finished()
-        await update_calculation_status_in_nats_kv(msg.calculation_id, calc.status)
+        await update_calculation_status_in_nats_kv_NEW(calc)
 
         self.status.set_idle()
 

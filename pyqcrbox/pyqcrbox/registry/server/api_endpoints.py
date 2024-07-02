@@ -1,4 +1,6 @@
-import sqlalchemy
+import json
+
+import nats.js.errors
 import svcs
 from faststream.nats import NatsBroker
 
@@ -170,21 +172,23 @@ async def commands_invoke(data: sql_models.CommandInvocationCreate) -> dict:
 
 @get(path="/calculations/{calculation_id:str}", media_type=MediaType.JSON)
 async def get_calculation_info_by_calculation_id(calculation_id: str) -> dict | Response[dict]:
-    with settings.db.get_session() as session:
-        try:
-            calc = session.exec(
-                select(sql_models.CalculationDB).where(sql_models.CalculationDB.calculation_id == calculation_id)
-            ).one()
-            kv_calculation_status = await get_nats_key_value(bucket="calculation_status")
-            calc_status_info = await kv_calculation_status.get(calc.calculation_id)
-            response_data = {
-                "id": calc.id,
-                "calculation_id": calc.calculation_id,
-                "status": calc_status_info.value.decode(),
-            }
-            return response_data
-        except sqlalchemy.orm.exc.NoResultFound:
-            return Response({"msg": f"No calculation exists with id={calculation_id}"}, status_code=404)
+    # with settings.db.get_session() as session:
+    #     try:
+    #         calc = session.exec(
+    #             select(sql_models.CalculationDB).where(sql_models.CalculationDB.calculation_id == calculation_id)
+    #         ).one()
+    #         pass
+    #     except sqlalchemy.orm.exc.NoResultFound:
+    #         return Response(
+    #             {"msg": f"No calculation exists with id={calculation_id}"},
+    #             status_code=404)
+
+    try:
+        kv_calculation_status = await get_nats_key_value(bucket="calculation_status")
+        calc_status_info = (await kv_calculation_status.get(calculation_id)).value
+        return json.loads(calc_status_info)
+    except nats.js.errors.KeyNotFoundError:
+        return Response({"status": "error", "msg": f"Calculation not found: {calculation_id!r}"}, status_code=404)
 
 
 @get(path="/calculations", media_type=MediaType.JSON)
