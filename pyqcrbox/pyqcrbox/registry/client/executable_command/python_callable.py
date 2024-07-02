@@ -4,7 +4,7 @@ __all__ = ["PythonCallable"]
 # SPDX-License-Identifier: MPL-2.0
 import importlib
 import inspect
-import multiprocessing
+import multiprocessing.pool
 import traceback
 from typing import Callable, Union
 
@@ -29,7 +29,12 @@ class PythonCallable:
         self.fn = fn
         self.signature = inspect.signature(fn)
         self.parameter_names = list(self.signature.parameters.keys())
-        self._fn_with_call_args_validation = ValidateCallWrapper(self.fn, config=None, validate_return=False)
+        self._fn_with_call_args_validation = ValidateCallWrapper(
+            self.fn,
+            config=None,
+            validate_return=False,
+            namespace=None,
+        )
         self.pool: Union[multiprocessing.pool.Pool, None] = None
         self.calc_finished_event = None
 
