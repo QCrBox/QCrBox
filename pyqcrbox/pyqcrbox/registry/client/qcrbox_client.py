@@ -128,10 +128,9 @@ class QCrBoxClient(QCrBoxServerClientBase):
             status_details = CalculationStatusDetails(
                 calculation_id=msg.calculation_id,
                 status=CalculationStatusEnum.FAILED,
-                msg=error_msg,
                 stdout="",
                 stderr="",
-                extra={},
+                extra_info={},
             )
             await update_calculation_status_in_nats_kv_NEW(status_details)
             self.status.set_idle()

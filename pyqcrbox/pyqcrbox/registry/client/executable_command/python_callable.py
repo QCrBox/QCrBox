@@ -5,6 +5,7 @@ __all__ = ["PythonCallable"]
 import importlib
 import inspect
 import multiprocessing.pool
+import multiprocessing.process
 import traceback
 from typing import Callable, Union
 
@@ -28,7 +29,8 @@ class PythonCallable:
 
         self.fn = fn
         self.signature = inspect.signature(fn)
-        self.parameter_names = list(self.signature.parameters.keys())
+        self.parameters = self._extract_parameters_from_callable_signature()
+        self.parameter_names = list(self.parameters.keys())
         self._fn_with_call_args_validation = ValidateCallWrapper(
             self.fn,
             config=None,
@@ -45,6 +47,9 @@ class PythonCallable:
         module = importlib.import_module(cmd_spec.import_path)
         fn = getattr(module, cmd_spec.name)
         return cls(fn)
+
+    def _extract_parameters_from_callable_signature(self) -> dict:
+        return {name: p.annotation.__name__ for (name, p) in self.signature.parameters.items()}
 
     def __repr__(self):
         return f"<{self.__class__.__name__}: {self.fn.__name__}{self.signature!s}>"
@@ -63,18 +68,20 @@ class PythonCallable:
 
         def success_callback(result):
             nonlocal calc_finished_event
-            logger.debug(f"Success: {result=} ({multiprocessing.current_process().name})")
+            logger.debug(f"Success: {result=} ({multiprocessing.process.current_process().name})")
             calc_finished_event.set()
             calc_finished_event = None
 
         def error_callback(exc):
             nonlocal calc_finished_event
             traceback_str = "\n".join(traceback.format_exception(exc))
-            logger.error(f"Error: {exc=} ({multiprocessing.current_process().name})\n\nTraceback:\n\n{traceback_str}")
+            logger.error(
+                f"Error: {exc=} ({multiprocessing.process.current_process().name})\n\nTraceback:\n\n{traceback_str}"
+            )
             calc_finished_event.set()
             calc_finished_event = None
 
-        self.pool = multiprocessing.Pool(_num_processes)
+        self.pool = multiprocessing.pool.Pool(_num_processes)
         pending_result = self.pool.apply_async(
             self._fn_with_call_args_validation,
             args,
