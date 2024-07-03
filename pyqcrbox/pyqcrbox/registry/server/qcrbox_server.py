@@ -103,7 +103,11 @@ class QCrBoxServer(QCrBoxServerClientBase):
             subject=f"client.cmd.handle_invocation_request.{msg_to_client.nats_subject_parts}",
             reply_to="server.cmd.handle_command_invocation_client_response",
         )
-        return {"calculation_id": calculation_id}
+        return msg_specs.QCrBoxGenericResponse(
+            response_to="server.cmd.handle_command_invocation_by_user",
+            status=CalculationStatusEnum.SUBMITTED,
+            payload={"calculation_id": calculation_id},
+        )
 
     async def handle_command_invocation_client_response(self, msg: msg_specs.CommandInvocationClientResponseNATS):
         logger.info(f"Received client response: {msg!r}")
@@ -160,14 +164,16 @@ class QCrBoxServer(QCrBoxServerClientBase):
         return response
 
     async def update_calculation_status_in_db(
-        self, status: CalculationStatusEnum, calculation_id: str = Context("message.raw_message.key")
+        self, status_details: CalculationStatusDetails, calculation_id: str = Context("message.raw_message.key")
     ):
-        logger.debug(f"Received NATS notification about calculation status update: {status!r} ({calculation_id=!r})")
+        logger.debug(
+            f"Received NATS notification about calculation status update: {status_details!r} ({calculation_id=!r})"
+        )
         with settings.db.get_session() as session:
             calculation_db: sql_models.CalculationDB = session.exec(
                 select(sql_models.CalculationDB).where(sql_models.CalculationDB.calculation_id == calculation_id)
             ).one()
-            calculation_db.update_status(status, comment="NATS notification")
+            calculation_db.update_status(status_details.status, comment="NATS notification")
             logger.debug("Updated calculation status in the database.")
 
     def _set_up_asgi_server(self) -> None:

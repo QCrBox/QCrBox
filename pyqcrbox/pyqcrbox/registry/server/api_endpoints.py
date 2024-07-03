@@ -120,19 +120,23 @@ async def commands_invoke(data: sql_models.CommandInvocationCreate) -> dict:
         # broker = await con.aget(RabbitBroker)
         nats_broker = await con.aget(NatsBroker)
 
-    verify_command_exists(data.application_slug, data.application_version, data.command_name)
+    _ = verify_command_exists(data.application_slug, data.application_version, data.command_name)
+    # validate_arguments_against_command_parameters(cmd_spec_db, payload.arguments)
 
     # await _invoke_command_impl(data, broker)
     # await _invoke_command_impl_via_nats(data, broker)
     msg = msg_specs.InvokeCommandNATS(**data.model_dump())
 
-    response = await nats_broker.publish(msg, "server.cmd.handle_command_invocation_by_user", rpc=True)
+    response_json = await nats_broker.publish(msg, "server.cmd.handle_command_invocation_by_user", rpc=True)
+    response = msg_specs.QCrBoxGenericResponse(**response_json)
+    if response.status == msg_specs.ResponseStatusEnum.ERROR:
+        raise ClientException(detail=response.msg, extra=response.payload)
 
     return dict(
         msg="Accepted command invocation request",
         status="ok",
         payload={
-            "calculation_id": response["calculation_id"],
+            "calculation_id": response.payload.calculation_id,
         },
     )
 
