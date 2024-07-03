@@ -33,7 +33,7 @@ def create_unique_id(*, prefix=""):
     return f"{prefix}0x{uuid4().hex}"
 
 
-def greet_and_sleep(name: str = "World", duration: float = 1.0):
+def greet_and_sleep(name: str, duration: float = 1.0):
     print(f"Hello {name}!")
     print(f"Going to sleep for {duration:.1f} seconds...")
     time.sleep(duration)
