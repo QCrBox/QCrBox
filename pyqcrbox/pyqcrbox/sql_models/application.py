@@ -34,7 +34,7 @@ class ApplicationSpecCreate(ApplicationSpecBase):
 
     @field_validator("commands")
     @classmethod
-    def validate_command_names_are_unique(cls, value: list[CommandSpecCreate]) -> list[CommandSpecCreate]:
+    def verify_command_names_are_unique(cls, value: list[CommandSpecCreate]) -> list[CommandSpecCreate]:
         command_names = [c.name for c in value]
         if len(command_names) != len(set(command_names)):
             raise ValueError("Command names must be unique")

@@ -112,6 +112,27 @@ def verify_command_exists(application_slug: str, application_version: str, comma
     return cmd_spec_db
 
 
+def validate_arguments_against_command_parameters(cmd_spec_db: sql_models.CommandSpecDB, arguments: dict):
+    params = list(cmd_spec_db.parameters.values())
+    required_param_names = set(p["name"] for p in params if p["required"] is True)
+    all_param_names = set(cmd_spec_db.parameters.keys())
+    arg_names = set(arguments.keys())
+
+    if not required_param_names.issubset(arg_names):
+        params_not_supplied = required_param_names.difference(arg_names)
+        missing_args = ", ".join(repr(name) for name in params_not_supplied)
+        error_msg = f"The following required arguments are missing: {missing_args}"
+        logger.error(error_msg)
+        raise ClientException(error_msg)
+
+    if not arg_names.issubset(all_param_names):
+        invalid_args = arg_names.difference(all_param_names)
+        invalid_args_str = ", ".join(repr(name) for name in invalid_args)
+        error_msg = f"Invalid arguments: {invalid_args_str}"
+        logger.error(error_msg)
+        raise ClientException(error_msg)
+
+
 @post(path="/commands/invoke", media_type=MediaType.JSON)
 async def commands_invoke(data: sql_models.CommandInvocationCreate) -> dict:
     logger.info(f"Received command invocation via API: {data=}")
@@ -120,8 +141,8 @@ async def commands_invoke(data: sql_models.CommandInvocationCreate) -> dict:
         # broker = await con.aget(RabbitBroker)
         nats_broker = await con.aget(NatsBroker)
 
-    _ = verify_command_exists(data.application_slug, data.application_version, data.command_name)
-    # validate_arguments_against_command_parameters(cmd_spec_db, payload.arguments)
+    cmd_spec_db = verify_command_exists(data.application_slug, data.application_version, data.command_name)
+    validate_arguments_against_command_parameters(cmd_spec_db, data.arguments)
 
     # await _invoke_command_impl(data, broker)
     # await _invoke_command_impl_via_nats(data, broker)
