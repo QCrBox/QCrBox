@@ -92,10 +92,9 @@ class QCrBoxServer(QCrBoxServerClientBase):
         status_details = CalculationStatusDetails(
             calculation_id=calculation_id,
             status=CalculationStatusEnum.SUBMITTED,
-            msg="",
             stdout="",
             stderr="",
-            extra={},
+            extra_info={},
         )
         await update_calculation_status_in_nats_kv_NEW(status_details)
         # await self.kv_calculation_status.put(calculation_id, CalculationStatusEnum.SUBMITTED.encode())

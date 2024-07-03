@@ -1,9 +1,6 @@
 from pyqcrbox import db_helpers, logger, msg_specs, settings, sql_models
 
-from .base_message_dispatcher import server_side_message_dispatcher
 
-
-@server_side_message_dispatcher.register
 def handle_application_registration_request(msg: msg_specs.RegisterApplication, **kwargs):
     assert msg.action == "register_application"
 

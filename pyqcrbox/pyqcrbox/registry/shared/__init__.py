@@ -1,3 +1,2 @@
 from .calculation_status import CalculationStatusEnum
-from .message_dispatch import set_up_message_dispatcher
 from .qcrbox_server_client_base import QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup

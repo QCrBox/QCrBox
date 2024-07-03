@@ -11,15 +11,11 @@ import uvicorn
 from anyio import TASK_STATUS_IGNORED
 from anyio.abc import TaskStatus
 from faststream.nats import NatsBroker
-
-# from faststream.rabbit import ExchangeType, RabbitBroker, RabbitExchange
 from litestar import Litestar
 from litestar.testing import AsyncTestClient, TestClient
 from loguru import logger
 
 from pyqcrbox import QCRBOX_SVCS_REGISTRY, settings
-
-# from ..shared.message_dispatch import set_up_message_dispatcher
 
 __all__ = ["QCrBoxServerClientBase", "TestQCrBoxServerClientBase"]
 
@@ -175,23 +171,6 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
                 logger.trace("Done (SVCS registry is closed).")
 
         logger.trace(f"<== Exiting from {self.clsname} lifespan function.")
-
-    # def set_up_message_dispatcher(
-    #     self,
-    #     *,
-    #     queue_name: str,
-    #     message_dispatcher: Callable,
-    #     exchange_type: ExchangeType = ExchangeType.DIRECT,
-    #     routing_key: str = "",
-    # ):
-    #     set_up_message_dispatcher(
-    #         self,
-    #         self.broker,
-    #         queue_name=queue_name,
-    #         msg_dispatcher_func=message_dispatcher,
-    #         exchange_type=exchange_type,
-    #         routing_key=routing_key,
-    #     )
 
     def run(self, host: Optional[str] = None, port: Optional[int] = None, **kwargs):
         self.host = host or "127.0.0.1"
