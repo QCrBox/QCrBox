@@ -1,6 +1,7 @@
 import json
 
 import nats.js.errors
+import sqlalchemy
 import svcs
 from faststream.nats import NatsBroker
 
@@ -11,6 +12,8 @@ from litestar.plugins.structlog import StructlogPlugin
 
 __all__ = ["create_server_asgi_server"]
 
+
+from litestar.exceptions import ClientException
 from sqlmodel import select
 
 from pyqcrbox import QCRBOX_SVCS_REGISTRY, logger, msg_specs, settings, sql_models
@@ -85,6 +88,30 @@ async def retrieve_commands() -> list[sql_models.CommandSpecWithParameters]:
 #         raise ServiceUnavailableException("No clients available to execute command.")
 
 
+def verify_command_exists(application_slug: str, application_version: str, command_name: str):
+    with settings.db.get_session() as session:
+        try:
+            cmd_spec_db = session.exec(
+                select(sql_models.CommandSpecDB)
+                .join(sql_models.ApplicationSpecDB)
+                .where(
+                    sql_models.ApplicationSpecDB.slug == application_slug,
+                    sql_models.ApplicationSpecDB.version == application_version,
+                    sql_models.CommandSpecDB.name == command_name,
+                )
+            ).one()
+        except sqlalchemy.exc.NoResultFound:
+            error_msg = (
+                f"Command not found: {command_name} "
+                f"(application: {application_slug!r}, "
+                f"version: {application_version!r})"
+            )
+            logger.error(error_msg)
+            raise ClientException(error_msg)
+
+    return cmd_spec_db
+
+
 @post(path="/commands/invoke", media_type=MediaType.JSON)
 async def commands_invoke(data: sql_models.CommandInvocationCreate) -> dict:
     logger.info(f"Received command invocation via API: {data=}")
@@ -92,6 +119,8 @@ async def commands_invoke(data: sql_models.CommandInvocationCreate) -> dict:
     with svcs.Container(QCRBOX_SVCS_REGISTRY) as con:
         # broker = await con.aget(RabbitBroker)
         nats_broker = await con.aget(NatsBroker)
+
+    verify_command_exists(data.application_slug, data.application_version, data.command_name)
 
     # await _invoke_command_impl(data, broker)
     # await _invoke_command_impl_via_nats(data, broker)
