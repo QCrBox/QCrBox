@@ -58,7 +58,7 @@ class CalculationDB(CalculationBase, table=True):
                 ).one()
             except sqlalchemy.exc.NoResultFound:
                 error_msg = (
-                    f"Command not registered: {self.command_name} "
+                    f"Command not found: {self.command_name} "
                     f"(application: {self.application_slug!r}, "
                     f"version: {self.application_version!r})"
                 )
