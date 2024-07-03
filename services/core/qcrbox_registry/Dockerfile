@@ -8,7 +8,7 @@ ENV QCRBOX__REGISTRY__SERVER__PORT="8000"
 HEALTHCHECK \
     --interval=60s \
     --start-period=60s \
-    --start-interval=5s \
+    #--start-interval=5s \
     CMD curl --fail http://127.0.0.1:${QCRBOX__REGISTRY__SERVER__PORT}/healthcheck || exit 1
 
 
