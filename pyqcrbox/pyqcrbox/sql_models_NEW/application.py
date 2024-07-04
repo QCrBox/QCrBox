@@ -1,15 +1,16 @@
 from pathlib import Path
 
 import yaml
-from pydantic import BaseModel, field_validator
+from pydantic import field_validator
 
+from .base import QCrBoxPydanticBaseModel
 from .cif_entry_set import CifEntrySetCreate
 from .command import CommandSpecCreate
 
 __all__ = ["ApplicationSpecCreate"]
 
 
-class ApplicationSpecBase(BaseModel):
+class ApplicationSpecBase(QCrBoxPydanticBaseModel):
     name: str
     slug: str
     version: str

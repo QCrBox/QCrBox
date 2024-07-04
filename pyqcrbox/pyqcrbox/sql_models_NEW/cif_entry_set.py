@@ -1,7 +1,7 @@
-from pydantic import BaseModel
+from .base import QCrBoxPydanticBaseModel
 
 __all__ = ["CifEntrySetCreate"]
 
 
-class CifEntrySetCreate(BaseModel):
+class CifEntrySetCreate(QCrBoxPydanticBaseModel):
     pass

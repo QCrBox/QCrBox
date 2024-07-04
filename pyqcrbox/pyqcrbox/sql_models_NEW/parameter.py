@@ -1,23 +1,19 @@
-from pydantic import BaseModel, field_serializer, field_validator, model_validator
+from pydantic import field_serializer, field_validator, model_validator
 
 __all__ = ["ParameterSpecCreate"]
 
 import inspect
 from typing import Any, Self
 
-from pyqcrbox.sql_models_NEW.parameter_types import get_parameter_type_class
-
-
-class DefaultValue(BaseModel):
-    default_provided: bool
-    value: Any
+from .base import QCrBoxPydanticBaseModel
+from .parameter_types import get_parameter_type_class
 
 
 class NoDefaultValue(Exception):
     pass
 
 
-class ParameterSpecCreate(BaseModel):
+class ParameterSpecCreate(QCrBoxPydanticBaseModel):
     name: str
     dtype: type
     description: str = ""

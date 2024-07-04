@@ -3,8 +3,9 @@ import inspect
 from enum import Enum
 from typing import Annotated, Literal, Self, Union
 
-from pydantic import BaseModel, Field, Tag, model_validator
+from pydantic import Field, Tag, model_validator
 
+from .base import QCrBoxPydanticBaseModel
 from .call_pattern import CallPattern
 from .parameter import ParameterSpecCreate
 
@@ -17,7 +18,7 @@ class ImplementedAs(str, Enum):
     interactive = "interactive"
 
 
-class CommandSpecCreateBase(BaseModel):
+class CommandSpecCreateBase(QCrBoxPydanticBaseModel):
     name: str
     description: str = ""
     merge_cif_su: bool = False
