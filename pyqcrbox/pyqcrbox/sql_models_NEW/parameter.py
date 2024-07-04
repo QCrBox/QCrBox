@@ -1,11 +1,11 @@
-import builtins
-
 from pydantic import BaseModel, field_serializer, field_validator, model_validator
 
 __all__ = ["ParameterSpecCreate"]
 
 import inspect
 from typing import Any, Self
+
+from pyqcrbox.sql_models_NEW.parameter_types import get_parameter_type_class
 
 
 class DefaultValue(BaseModel):
@@ -39,18 +39,8 @@ class ParameterSpecCreate(BaseModel):
     def convert_dtype_str_to_actual_type(cls, dtype: str | type) -> type:
         if isinstance(dtype, type):
             return type
-
-        error_msg = "dtype must be a string representing a valid Python type (examples: 'str', 'int', 'float', 'bool')"
-
-        if not isinstance(dtype, str):
-            raise ValueError(error_msg)
-
-        try:
-            dtype_cls = getattr(builtins, dtype)
-        except AttributeError:
-            raise ValueError(error_msg)
-
-        return dtype_cls
+        else:
+            return get_parameter_type_class(dtype)
 
     @field_serializer("dtype")
     def serialize_dtype_to_its_string_representation(self, dtype: type) -> str:
