@@ -7,9 +7,9 @@ from pydantic import Field, Tag, model_validator
 
 from .base import QCrBoxPydanticBaseModel
 from .call_pattern import CallPattern
-from .parameter import ParameterSpecCreate
+from .parameter import ParameterSpec
 
-__all__ = ["CommandSpecCreate"]
+__all__ = ["CommandSpec"]
 
 
 class ImplementedAs(str, Enum):
@@ -18,7 +18,7 @@ class ImplementedAs(str, Enum):
     interactive = "interactive"
 
 
-class CommandSpecCreateBase(QCrBoxPydanticBaseModel):
+class CommandSpecBase(QCrBoxPydanticBaseModel):
     name: str
     description: str = ""
     merge_cif_su: bool = False
@@ -33,24 +33,24 @@ class CommandSpecCreateBase(QCrBoxPydanticBaseModel):
         return self.implementation.implemented_as == ImplementedAs.cli_command
 
 
-class CLICommandSpecCreate(CommandSpecCreateBase):
+class CLICommandSpec(CommandSpecBase):
     implemented_as: Literal["cli_command"]
     call_pattern: CallPattern
-    parameters: list[ParameterSpecCreate]
+    parameters: list[ParameterSpec]
 
 
-class PythonCallableSpecCreate(CommandSpecCreateBase):
+class PythonCallableSpec(CommandSpecBase):
     implemented_as: Literal["python_callable"]
     import_path: str
     callable_name: str | None = None
-    parameters: list[ParameterSpecCreate]
+    parameters: list[ParameterSpec]
 
     @model_validator(mode="before")
     def validate_parameters_against_function_signature(model_data):
         module = importlib.import_module(model_data["import_path"])
         fn = getattr(module, model_data["callable_name"])
         signature = inspect.signature(fn)
-        parameters = [ParameterSpecCreate.from_function_signature_param(*p) for p in signature.parameters.items()]
+        parameters = [ParameterSpec.from_function_signature_param(*p) for p in signature.parameters.items()]
 
         if "parameters" not in model_data:
             model_data["parameters"] = parameters
@@ -73,15 +73,15 @@ class PythonCallableSpecCreate(CommandSpecCreateBase):
         return model_data
 
 
-class InteractiveCommandSpecCreate(CommandSpecCreateBase):
+class InteractiveCommandSpec(CommandSpecBase):
     implemented_as: Literal["interactive"]
 
 
-CommandSpecCreate = Annotated[
+CommandSpec = Annotated[
     Union[
-        Annotated[CLICommandSpecCreate, Tag("cli_command")],
-        Annotated[PythonCallableSpecCreate, Tag("python_callable")],
-        Annotated[InteractiveCommandSpecCreate, Tag("interactive")],
+        Annotated[CLICommandSpec, Tag("cli_command")],
+        Annotated[PythonCallableSpec, Tag("python_callable")],
+        Annotated[InteractiveCommandSpec, Tag("interactive")],
     ],
     Field(discriminator="implemented_as"),
 ]

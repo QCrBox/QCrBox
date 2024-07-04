@@ -4,10 +4,10 @@ import yaml
 from pydantic import field_validator
 
 from .base import QCrBoxPydanticBaseModel
-from .cif_entry_set import CifEntrySetCreate
-from .command import CommandSpecCreate
+from .cif_entry_set import CifEntrySet
+from .command import CommandSpec
 
-__all__ = ["ApplicationSpecCreate"]
+__all__ = ["ApplicationSpec"]
 
 
 class ApplicationSpecBase(QCrBoxPydanticBaseModel):
@@ -19,13 +19,13 @@ class ApplicationSpecBase(QCrBoxPydanticBaseModel):
     email: str | None = None
 
 
-class ApplicationSpecCreate(ApplicationSpecBase):
-    commands: list[CommandSpecCreate] = []
-    cif_entry_sets: list[CifEntrySetCreate] = []
+class ApplicationSpec(ApplicationSpecBase):
+    commands: list[CommandSpec] = []
+    cif_entry_sets: list[CifEntrySet] = []
 
     @field_validator("commands")
     @classmethod
-    def verify_command_names_are_unique(cls, value: list[CommandSpecCreate]) -> list[CommandSpecCreate]:
+    def verify_command_names_are_unique(cls, value: list[CommandSpec]) -> list[CommandSpec]:
         command_names = [c.name for c in value]
         if len(command_names) != len(set(command_names)):
             raise ValueError("Command names must be unique")

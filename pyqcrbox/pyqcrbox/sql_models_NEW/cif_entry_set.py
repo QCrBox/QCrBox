@@ -1,7 +1,7 @@
 from .base import QCrBoxPydanticBaseModel
 
-__all__ = ["CifEntrySetCreate"]
+__all__ = ["CifEntrySet"]
 
 
-class CifEntrySetCreate(QCrBoxPydanticBaseModel):
+class CifEntrySet(QCrBoxPydanticBaseModel):
     pass

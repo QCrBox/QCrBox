@@ -1,1 +1,1 @@
-from .application import ApplicationSpecCreate
+from .application import ApplicationSpec

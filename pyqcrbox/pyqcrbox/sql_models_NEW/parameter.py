@@ -1,6 +1,6 @@
 from pydantic import field_serializer, field_validator, model_validator
 
-__all__ = ["ParameterSpecCreate"]
+__all__ = ["ParameterSpec"]
 
 import inspect
 from typing import Any, Self
@@ -13,7 +13,7 @@ class NoDefaultValue(Exception):
     pass
 
 
-class ParameterSpecCreate(QCrBoxPydanticBaseModel):
+class ParameterSpec(QCrBoxPydanticBaseModel):
     name: str
     dtype: type
     description: str = ""
@@ -21,7 +21,7 @@ class ParameterSpecCreate(QCrBoxPydanticBaseModel):
     default_value: Any
 
     @classmethod
-    def from_function_signature_param(cls, name: str, inspected_param: inspect.Parameter) -> "ParameterSpecCreate":
+    def from_function_signature_param(cls, name: str, inspected_param: inspect.Parameter) -> "ParameterSpec":
         assert isinstance(name, str)
         assert isinstance(inspected_param, inspect.Parameter)
 
