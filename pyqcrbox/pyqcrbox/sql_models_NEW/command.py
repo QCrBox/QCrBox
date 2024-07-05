@@ -1,7 +1,7 @@
 import importlib
 import inspect
 from enum import Enum
-from typing import Annotated, Literal, Self, Union
+from typing import Annotated, Any, Literal, Self, Union
 
 from pydantic import Field, Tag, model_validator
 
@@ -23,6 +23,7 @@ class CommandSpecBase(QCrBoxPydanticBaseModel):
     description: str = ""
     merge_cif_su: bool = False
     implemented_as: ImplementedAs
+    doi: str | None = None
 
     @property
     def is_python_callable(self):
@@ -73,8 +74,28 @@ class PythonCallableSpec(CommandSpecBase):
         return model_data
 
 
+class InteractiveLifecycleSteps(QCrBoxPydanticBaseModel):
+    prepare: Any
+    run: Any
+    finalise: Any
+    toparams: Any
+
+
+NonInteractiveCommandSpec = Annotated[
+    Union[
+        Annotated[CLICommandSpec, Tag("cli_command")],
+        Annotated[PythonCallableSpec, Tag("python_callable")],
+    ],
+    Field(discriminator="implemented_as"),
+    Field(title="name", default="foo")
+]
+
+
 class InteractiveCommandSpec(CommandSpecBase):
     implemented_as: Literal["interactive"]
+    parameters: list[ParameterSpec]
+    interactive_lifecycle: InteractiveLifecycleSteps
+    non_interactive_equivalent: NonInteractiveCommandSpec
 
 
 CommandSpec = Annotated[

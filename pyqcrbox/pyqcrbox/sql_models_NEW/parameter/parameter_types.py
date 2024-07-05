@@ -1,4 +1,4 @@
-__all__ = ["get_parameter_type_class"]
+__all__ = ["retrieve_parameter_type"]
 
 
 class QCrBoxInputCif:
@@ -13,7 +13,7 @@ class QCrBoxOutputCif:
     pass
 
 
-def get_parameter_type_class(dtype_name):
+def retrieve_parameter_type(dtype_name):
     match dtype_name:
         case "QCrBox.input_cif":
             return QCrBoxInputCif

@@ -3,23 +3,40 @@ from pydantic import field_serializer, field_validator, model_validator
 __all__ = ["ParameterSpec"]
 
 import inspect
-from typing import Any, Self
+from typing import Any, Literal, Self
 
-from .base import QCrBoxPydanticBaseModel
-from .parameter_types import get_parameter_type_class
+from ..base import QCrBoxPydanticBaseModel
+from .parameter_types import retrieve_parameter_type
 
 
 class NoDefaultValue(Exception):
     pass
 
 
-class ParameterSpec(QCrBoxPydanticBaseModel):
+class ParameterSpecBase(QCrBoxPydanticBaseModel):
     name: str
     dtype: type
     description: str = ""
     required: bool
     default_value: Any
 
+
+class CifFileParameterBase(ParameterSpecBase):
+    name: str
+    dtype: type
+    description: str = ""
+    required: Literal[True]
+    default_value: str
+    required_entry_sets: list[str]
+    optional_entry_sets: list[str]
+    merge_su: bool
+
+
+class ParameterSpecInputCif(CifFileParameterBase):
+    dtype: Literal["QCrBox.input_cif"]
+
+
+class ParameterSpec(ParameterSpecBase):
     @classmethod
     def from_function_signature_param(cls, name: str, inspected_param: inspect.Parameter) -> "ParameterSpec":
         assert isinstance(name, str)
@@ -36,7 +53,7 @@ class ParameterSpec(QCrBoxPydanticBaseModel):
         if isinstance(dtype, type):
             return type
         else:
-            return get_parameter_type_class(dtype)
+            return retrieve_parameter_type(dtype)
 
     @field_serializer("dtype")
     def serialize_dtype_to_its_string_representation(self, dtype: type) -> str:
