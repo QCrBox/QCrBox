@@ -11,6 +11,7 @@ Make sure you have the necessary prerequisites installed.
     on GitHub if you experience any problems.
 
 ```
+
 $ python --version
 Python 3.11.5
 
@@ -141,7 +142,8 @@ $ qcb list components --all
 ## Build a container to test the installation
 
 Try building a component by typing:
-```
+
+```console exec="1" source="console"
 $ qcb build qcrboxtools
 ```
 
@@ -152,3 +154,44 @@ $ qcb build qcrboxtools
       2. Get a new installer from [python.org](https://www.python.org/)
       3. Install. Activate support for long paths and add Python to path
       4. Delete the venv folder and create a new one with the new Python version
+
+## Improving File Access Speed on Windows
+
+When using Docker on Windows with WSL2 (Windows Subsystem for Linux 2), file access in shared folders can be slow, which can cause problems for processes like data reduction. By default, the shared files are stored in `<project_folder>/shared_files/` on your Windows drive. You should move the shared files to your WSL2 partition for faster access.
+
+### Steps
+
+1. Open WSL2:
+   - Open a Windows command prompt
+   - Type `wsl` and press Enter
+
+2. Create a new folder in your WSL2 home directory using the `mkdir` command:
+   - Use lowercase letters only for the folder name.
+   - Example: `mkdir qcrbox_shared_files`
+
+3. Locate your Linux username:
+   - Look at the command prompt; your username is before the @ symbol
+   - Example: If you see `john@DESKTOP-123:~$`, your username is "john"
+
+4. Update your qcrbox's `.env.dev` file in the qcrbox base directory:
+   - Find the line starting with `QCRBOX_SHARED_FILES_DIR_HOST_PATH`
+   - Replace it with one of these options:
+     - For Windows 10:
+
+       ```text
+       QCRBOX_SHARED_FILES_DIR_HOST_PATH='\\wsl$\Ubuntu\home\<your_linux_username>\<folder_name>'
+       ```
+
+     - For Windows 11:
+
+       ```text
+       QCRBOX_SHARED_FILES_DIR_HOST_PATH='\\wsl.localhost\Ubuntu\home\<your_linux_username>\<folder_name>'
+       ```
+
+   - Example:
+
+     ```text
+     QCRBOX_SHARED_FILES_DIR_HOST_PATH='\\wsl$\Ubuntu\home\john\qcrbox_shared_files'
+     ```
+
+   - Make sure to use single quotes around the path
