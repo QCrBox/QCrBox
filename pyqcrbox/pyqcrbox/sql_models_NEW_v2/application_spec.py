@@ -1,7 +1,9 @@
+from collections import UserDict
 from pathlib import Path
+from typing import Self
 
 import yaml
-from pydantic import PrivateAttr, field_validator
+from pydantic import ConfigDict, field_validator, model_validator
 
 from .base import QCrBoxPydanticBaseModel
 from .cif_entry_set import CifEntrySet
@@ -20,23 +22,29 @@ class ApplicationSpecBase(QCrBoxPydanticBaseModel):
     doi: str | None = None
 
 
+class Namespace(UserDict):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        for name in kwargs:
+            setattr(self, name, kwargs[name])
+        self._names = sorted(kwargs.keys())
+
+    def __dir__(self):
+        return self._names
+
+
 class ApplicationSpec(ApplicationSpecBase):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     commands: list[CommandSpec] = []
     cif_entry_sets: list[CifEntrySet] = []
+    cmds_by_name: Namespace = Namespace()
 
-    _commands_by_name: dict[str, CommandSpec] = PrivateAttr(default_factory=dict)
-
-    def __init__(self, **data):
-        super().__init__(**data)
-        self._commands_by_name = {cmd.name: cmd for cmd in self.commands}
-
-    # @property
-    # def cmds_by_name(self) -> Namespace:
-    #     return Namespace(**self._commands_by_name)
-
-    @property
-    def command_names(self) -> list[str]:
-        return list(self._commands_by_name.keys())
+    @model_validator(mode="after")
+    def populate_cmds_by_name(self) -> Self:
+        data = {cmd.name: cmd for cmd in self.commands}
+        self.cmds_by_name = Namespace(**data)
+        return self
 
     @field_validator("commands")
     @classmethod
@@ -51,5 +59,9 @@ class ApplicationSpec(ApplicationSpecBase):
         file_path = Path(file_path)
         return cls(**yaml.safe_load(file_path.open()))
 
+    @property
+    def command_names(self) -> list[str]:
+        return list(self.cmds_by_name.keys())
+
     def get_command_by_name(self, cmd_name: str) -> CommandSpec:
-        return self._commands_by_name[cmd_name]
+        return self.cmds_by_name[cmd_name]
