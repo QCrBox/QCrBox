@@ -1,1 +1,1 @@
-from .parameter_spec import ParameterSpec, get_param_spec_from_function_signature_param, get_param_spec_from_json
+from .parameter_spec import ParameterSpec, get_param_spec_from_json, get_param_spec_from_signature_param

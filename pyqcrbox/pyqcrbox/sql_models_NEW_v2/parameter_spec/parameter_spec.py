@@ -25,7 +25,7 @@ def get_param_spec_from_json(param_spec_json: dict) -> ParameterSpec:
     return parameter_spec_adapter.validate_python(param_spec_json)
 
 
-def get_param_spec_from_function_signature_param(p: inspect.Parameter) -> ParameterSpec:
+def get_param_spec_from_signature_param(p: inspect.Parameter) -> ParameterSpec:
     dtype = p.annotation.__name__
     is_required = p.default == inspect._empty
     default_value = SENTINEL_UNDEFINED if is_required else p.default
