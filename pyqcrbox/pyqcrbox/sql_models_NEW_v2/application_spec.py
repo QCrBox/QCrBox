@@ -11,6 +11,8 @@ from .command_spec import CommandSpec
 
 __all__ = ["ApplicationSpec"]
 
+from .. import helpers
+
 
 class ApplicationSpecBase(QCrBoxPydanticBaseModel):
     name: str
@@ -70,3 +72,9 @@ class ApplicationSpec(ApplicationSpecBase, extra=Extra.allow):
 
     def get_command_by_name(self, cmd_name: str) -> CommandSpec:
         return self.cmds_by_name[cmd_name]
+
+    @property
+    def nats_key(self):
+        slug_sanitized = helpers.sanitize_for_nats_subject(self.slug)
+        version_sanitized = helpers.sanitize_for_nats_subject(self.version)
+        return f"{slug_sanitized}.{version_sanitized}"

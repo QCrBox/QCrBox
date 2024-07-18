@@ -62,20 +62,15 @@ class QCrBoxServer(QCrBoxServerClientBase):
         # return handle_application_registration_request(msg)
 
         kv_applications = await get_nats_key_value(bucket="applications")
-        key = json.dumps(
-            {
-                "application_slug": msg.payload.application_spec.slug,
-                "version": msg.payload.application_spec.version,
-            }
-        )
+        nats_key = msg.payload.application_spec.nats_key
         try:
-            existing_application_spec = await kv_applications.get(key)
+            existing_application_spec = await kv_applications.get(nats_key)
             logger.warning(
                 "TODO: an application with the same slug and version was registered before. "
                 f"Verify that the new spec is consistent with the existing one: {existing_application_spec=}"
             )
         except nats.js.errors.KeyNotFoundError:
-            await kv_applications.put(key, msg.payload.application_spec.model_dump_json())
+            await kv_applications.put(nats_key, msg.payload.application_spec.model_dump_json().encode())
 
     async def handle_command_invocation_by_user(self, msg: msg_specs.InvokeCommandNATS):
         logger.info(f"Received command invocation from user: {msg!r}")
