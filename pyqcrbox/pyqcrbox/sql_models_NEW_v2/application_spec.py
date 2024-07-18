@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Self
 
 import yaml
-from pydantic import ConfigDict, field_validator, model_validator
+from pydantic import Extra, PrivateAttr, field_validator, model_validator
 
 from .base import QCrBoxPydanticBaseModel
 from .cif_entry_set import CifEntrySet
@@ -33,19 +33,23 @@ class Namespace(UserDict):
         return self._names
 
 
-class ApplicationSpec(ApplicationSpecBase):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+class ApplicationSpec(ApplicationSpecBase, extra=Extra.allow):
+    # model_config = ConfigDict(arbitrary_types_allowed=True)
 
     qcrbox_yaml_spec_version: str
     commands: list[CommandSpec] = []
     cif_entry_sets: list[CifEntrySet] = []
-    cmds_by_name: Namespace = Namespace()
+    _cmds_by_name: Namespace = PrivateAttr
 
     @model_validator(mode="after")
     def populate_cmds_by_name(self) -> Self:
         data = {cmd.name: cmd for cmd in self.commands}
-        self.cmds_by_name = Namespace(**data)
+        self._cmds_by_name = Namespace(**data)
         return self
+
+    @property
+    def cmds_by_name(self):
+        return self._cmds_by_name
 
     @field_validator("commands")
     @classmethod

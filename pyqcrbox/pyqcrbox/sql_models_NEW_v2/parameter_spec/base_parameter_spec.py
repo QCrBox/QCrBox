@@ -21,7 +21,7 @@ class BaseParameterSpec(QCrBoxPydanticBaseModel):
 
         if "default_value" not in model_data or model_data["default_value"] == SENTINEL_UNDEFINED:
             model_data["required"] = True
-            model_data["default_value"] = Ellipsis
+            model_data["default_value"] = SENTINEL_UNDEFINED
         else:
             model_data["required"] = False
 
