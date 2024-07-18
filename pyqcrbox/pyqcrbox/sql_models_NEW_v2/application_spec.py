@@ -36,6 +36,7 @@ class Namespace(UserDict):
 class ApplicationSpec(ApplicationSpecBase):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
+    qcrbox_yaml_spec_version: str
     commands: list[CommandSpec] = []
     cif_entry_sets: list[CifEntrySet] = []
     cmds_by_name: Namespace = Namespace()
