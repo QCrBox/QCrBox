@@ -5,7 +5,7 @@ from typing import Optional
 from faststream.nats import NatsBroker
 from litestar import Litestar
 
-from pyqcrbox import helpers, logger, msg_specs, settings, sql_models
+from pyqcrbox import helpers, logger, msg_specs, settings, sql_models_NEW_v2
 from pyqcrbox.cli.helpers import get_repo_root
 from pyqcrbox.helpers import generate_private_routing_key
 from pyqcrbox.registry.shared.calculation_status import (
@@ -28,7 +28,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
     def __init__(
         self,
         *,
-        application_spec: sql_models.ApplicationSpecCreate,
+        application_spec: sql_models_NEW_v2.ApplicationSpec,
         client_id: str = "anonymous_client",
         private_routing_key: Optional[str] = None,
         # broker: Optional[RabbitBroker] = None,
@@ -227,7 +227,7 @@ def main():
     except IndexError:
         application_config_file = repo_root.joinpath("services/applications/olex2_linux/config_olex2.yaml")
 
-    application_spec = sql_models.ApplicationSpecCreate.from_yaml_file(application_config_file)
+    application_spec = sql_models_NEW_v2.ApplicationSpec.from_yaml_file(application_config_file)
 
     qcrbox_client = QCrBoxClient(application_spec=application_spec)
     qcrbox_client.run(host=settings.registry.client.host, port=settings.registry.client.port)
