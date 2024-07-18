@@ -5,15 +5,35 @@ from pydantic import Field, Tag, TypeAdapter
 
 from .base_parameter_spec import SENTINEL_UNDEFINED
 from .builtin_parameter_types import BoolParameterSpec, FloatParameterSpec, IntParameterSpec, StrParameterSpec
+from .filesystem_path_parameters import (
+    FolderPathParameterSpec,
+    GenericInputFileParameterSpec,
+    GenericOutputFileParameterSpec,
+    InputCifParameterSpec,
+    OutputCifParameterSpec,
+    WorkCifParameterSpec,
+)
 
 __all__ = ["ParameterSpec"]
 
 
 ParameterSpecBase = Union[
+    #
+    # Builtin types
+    #
     Annotated[StrParameterSpec, Tag("str")],
     Annotated[IntParameterSpec, Tag("int")],
     Annotated[FloatParameterSpec, Tag("float")],
     Annotated[BoolParameterSpec, Tag("bool")],
+    #
+    # File/directory types with QCrBox-specific logic
+    #
+    Annotated[InputCifParameterSpec, Tag("QCrBox.input_cif")],
+    Annotated[GenericInputFileParameterSpec, Tag("QCrBox.input_file")],
+    Annotated[OutputCifParameterSpec, Tag("QCrBox.output_cif")],
+    Annotated[GenericOutputFileParameterSpec, Tag("QCrBox.output_file")],
+    Annotated[WorkCifParameterSpec, Tag("QCrBox.work_cif")],
+    Annotated[FolderPathParameterSpec, Tag("QCrBox.folder_path")],
 ]
 ParameterSpec = Annotated[ParameterSpecBase, Field(discriminator="dtype")]
 
