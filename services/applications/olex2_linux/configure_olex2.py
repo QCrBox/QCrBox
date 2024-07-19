@@ -110,17 +110,19 @@ def redo__interactive(redo_input_cif_path, redo_output_path, par_json, par_folde
 
     cif_file_merge_to_unified_by_yml(work_cif, redo_output_path, redo_input_cif_path, YAML_PATH, "interactive")
 
-application_spec = sql_models.ApplicationSpecCreate.from_yaml_file("config_olex2.yaml")
 
-client = QCrBoxClient(application_spec=application_spec)
-#application = client.register_application("Olex2 (Linux)", version="1.5")
-# application.register_external_command(
-#     "interactive",
-#     ExternalCommand("/bin/bash", "/opt/olex2/start", Param("input_cif_path")),
-# )
+if __name__ == "__main__":
+    application_spec = sql_models.ApplicationSpecCreate.from_yaml_file("config_olex2.yaml")
 
-# application.register_python_callable("prepare__interactive", prepare__interactive)
-# application.register_python_callable("finalise__interactive", finalise__interactive)
-# application.register_python_callable("toparams__interactive", toparams__interactive)
-# application.register_python_callable("redo__interactive", redo__interactive)
-client.run()
+    client = QCrBoxClient(application_spec=application_spec)
+    #application = client.register_application("Olex2 (Linux)", version="1.5")
+    # application.register_external_command(
+    #     "interactive",
+    #     ExternalCommand("/bin/bash", "/opt/olex2/start", Param("input_cif_path")),
+    # )
+
+    # application.register_python_callable("prepare__interactive", prepare__interactive)
+    # application.register_python_callable("finalise__interactive", finalise__interactive)
+    # application.register_python_callable("toparams__interactive", toparams__interactive)
+    # application.register_python_callable("redo__interactive", redo__interactive)
+    client.run()
