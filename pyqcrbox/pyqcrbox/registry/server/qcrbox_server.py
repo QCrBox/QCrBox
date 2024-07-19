@@ -1,7 +1,6 @@
 import json
 from typing import Any
 
-import nats.js.errors
 from faststream import Context
 from pydantic import BaseModel
 from sqlmodel import select
@@ -11,7 +10,6 @@ from pyqcrbox.registry.shared.calculation_status import (
     CalculationStatusDetails,
     update_calculation_status_in_nats_kv_NEW,
 )
-from pyqcrbox.svcs import get_nats_key_value
 
 from ..shared import CalculationStatusEnum, QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup
 from .api_endpoints import create_server_asgi_server
@@ -57,20 +55,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
             f"Received registration for application: {msg.payload.application_spec.slug!r} "
             f"(version: {msg.payload.application_spec.version!r})"
         )
-        # from .message_processing.register_application import handle_application_registration_request
-        #
-        # return handle_application_registration_request(msg)
-
-        kv_applications = await get_nats_key_value(bucket="applications")
-        nats_key = msg.payload.application_spec.nats_key
-        try:
-            existing_application_spec = await kv_applications.get(nats_key)
-            logger.warning(
-                "TODO: an application with the same slug and version was registered before. "
-                f"Verify that the new spec is consistent with the existing one: {existing_application_spec=}"
-            )
-        except nats.js.errors.KeyNotFoundError:
-            await kv_applications.put(nats_key, msg.payload.application_spec.model_dump_json().encode())
+        await self.nats_persistence_adapter.save_application_spec(msg.payload.application_spec)
 
     async def handle_command_invocation_by_user(self, msg: msg_specs.InvokeCommandNATS):
         logger.info(f"Received command invocation from user: {msg!r}")

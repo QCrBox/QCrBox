@@ -16,6 +16,7 @@ from litestar.testing import AsyncTestClient, TestClient
 from loguru import logger
 
 from pyqcrbox import QCRBOX_SVCS_REGISTRY, settings
+from pyqcrbox.svcs import NatsPersistenceAdapter
 
 __all__ = ["QCrBoxServerClientBase", "TestQCrBoxServerClientBase"]
 
@@ -38,6 +39,7 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
     ):
         # self.broker = broker or RabbitBroker(settings.rabbitmq.url, graceful_timeout=10)
         self.nats_broker = nats_broker or NatsBroker(settings.nats.url, graceful_timeout=10, max_reconnect_attempts=1)
+        self.nats_persistence_adapter = NatsPersistenceAdapter()
 
         # self.rabbit_exchanges = {
         #     ExchangeType.DIRECT: RabbitExchange("qcrbox.direct", type=ExchangeType.DIRECT),
