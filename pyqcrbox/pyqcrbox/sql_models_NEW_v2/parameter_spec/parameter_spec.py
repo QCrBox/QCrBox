@@ -14,7 +14,7 @@ from .filesystem_path_parameters import (
     WorkCifParameterSpec,
 )
 
-__all__ = ["ParameterSpec"]
+__all__ = ["ParameterSpecDiscriminatedUnion"]
 
 
 ParameterSpecBase = Union[
@@ -35,20 +35,30 @@ ParameterSpecBase = Union[
     Annotated[WorkCifParameterSpec, Tag("QCrBox.work_cif")],
     Annotated[FolderPathParameterSpec, Tag("QCrBox.folder_path")],
 ]
-ParameterSpec = Annotated[ParameterSpecBase, Field(discriminator="dtype")]
+ParameterSpecDiscriminatedUnion = Annotated[ParameterSpecBase, Field(discriminator="dtype")]
 
-parameter_spec_adapter: TypeAdapter[ParameterSpecBase] = TypeAdapter(ParameterSpec)
-parameter_specs_adapter: TypeAdapter[list[ParameterSpecBase]] = TypeAdapter(list[ParameterSpec])
+parameter_spec_adapter: TypeAdapter[ParameterSpecBase] = TypeAdapter(ParameterSpecDiscriminatedUnion)
+parameter_specs_adapter: TypeAdapter[list[ParameterSpecBase]] = TypeAdapter(list[ParameterSpecDiscriminatedUnion])
 
 
-def get_param_spec_from_json(param_spec_json: dict) -> ParameterSpec:
+def get_param_spec_from_json(param_spec_json: dict) -> ParameterSpecDiscriminatedUnion:
     return parameter_spec_adapter.validate_python(param_spec_json)
 
 
-def get_param_spec_from_signature_param(p: inspect.Parameter) -> ParameterSpec:
+def get_param_spec_from_signature_param(p: inspect.Parameter) -> ParameterSpecDiscriminatedUnion:
     dtype = p.annotation.__name__
     is_required = p.default == inspect._empty
     default_value = SENTINEL_UNDEFINED if is_required else p.default
 
     param_spec_json = {"name": p.name, "dtype": dtype, "required": is_required, "default_value": default_value}
     return get_param_spec_from_json(param_spec_json)
+
+
+def ParameterSpec(**kwargs):
+    return get_param_spec_from_json(kwargs)
+    # if isinstance(data, dict):
+    #     return get_param_spec_from_json(data)
+    # elif isinstance(data, inspect.Parameter):
+    #     return get_param_spec_from_signature_param(data)
+    # else:
+    #     raise TypeError(f"Cannot instantiate ParameterSpec from input data: {data}")

@@ -6,7 +6,7 @@ from pydantic import model_validator
 
 from pyqcrbox import logger
 
-from ..parameter_spec import ParameterSpec, get_param_spec_from_signature_param
+from ..parameter_spec import ParameterSpecDiscriminatedUnion, get_param_spec_from_signature_param
 from ..parameter_spec.parameter_spec import parameter_spec_adapter
 from .base_command_spec import BaseCommandSpec
 
@@ -18,7 +18,7 @@ class ParameterValidator:
         self.fn_signature = fn_signature
         self.fn_params = {p.name: get_param_spec_from_signature_param(p) for p in self.fn_signature.parameters.values()}
 
-    def validate(self, param_spec: dict | ParameterSpec):
+    def validate(self, param_spec: dict | ParameterSpecDiscriminatedUnion):
         param_spec = parameter_spec_adapter.validate_python(param_spec)
 
         if param_spec.name not in self.fn_params:
@@ -39,7 +39,7 @@ class PythonCallableSpec(BaseCommandSpec):
     implemented_as: Literal["python_callable"] = "python_callable"
     import_path: str
     callable_name: str | None = None
-    parameters: list[ParameterSpec]
+    parameters: list[ParameterSpecDiscriminatedUnion]
 
     # @model_validator(mode="before")
     # def validate_parameters_against_function_signature(model_data):
