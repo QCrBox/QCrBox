@@ -1,5 +1,6 @@
 from typing import Annotated, Any
-from pyqcrbox.logging import logger
+
+# from pyqcrbox.logging import logger
 from pydantic import BeforeValidator, field_validator, model_validator
 
 from ..base import QCrBoxPydanticBaseModel
@@ -20,19 +21,26 @@ _known_dtypes = {
 }
 
 
+def verify_dtype_is_a_known_type(v: str) -> str:
+    if v not in _known_dtypes:
+        raise ValueError(f"Unsupported dtype: {v!r}")
+    return v
+
+
 def parse_parameter_default_value_as_string(v: Any) -> str:
     # logger.debug(f"[DDD] convert_default_value_to_string_representation({v=!r})")
     return repr(v)
 
 
-DefaultValue = Annotated[str, BeforeValidator(parse_parameter_default_value_as_string)]
+DTypeAsStr = Annotated[str, BeforeValidator(verify_dtype_is_a_known_type)]
+DefaultValueAsStr = Annotated[str, BeforeValidator(parse_parameter_default_value_as_string)]
 
 
 class BaseParameterSpec(QCrBoxPydanticBaseModel):
     name: str
-    dtype: str
+    dtype: DTypeAsStr
     required: bool = True
-    default_value: DefaultValue | None
+    default_value: DefaultValueAsStr | None = None
     description: str = ""
 
     merge_su: bool = False
@@ -48,35 +56,48 @@ class BaseParameterSpec(QCrBoxPydanticBaseModel):
             raise ValueError(f"Unsupported dtype: {value!r}")
         return value
 
+    @model_validator(mode="before")
+    @classmethod
+    def set_field_required(cls, model_data: dict) -> dict:
+        model_data = model_data.copy()
+
+        if "default_value" not in model_data or model_data["default_value"] is None:
+            model_data["required"] = True
+            # model_data["default_value"] = SENTINEL_UNDEFINED
+        else:
+            model_data["required"] = False
+
+        return model_data
+
     # @field_validator("default_value")
     # @classmethod
     # def convert_default_value_to_string_representation(cls, value: Any) -> str:
     #     logger.debug(f"[DDD] convert_default_value_to_string_representation({value})")
     #     return repr(value)
 
-    @model_validator(mode="before")
-    @classmethod
-    def set_required_and_default_value(cls, model_data: dict) -> dict:
-        from pyqcrbox.logging import logger
-
-        # logger.debug(f"[DDD] Hi there from model_validator")
-        model_data = model_data.copy()
-
-        if "default_value" not in model_data or model_data["default_value"] == SENTINEL_UNDEFINED:
-            model_data["required"] = True
-            model_data["default_value"] = SENTINEL_UNDEFINED
-        else:
-            model_data["required"] = False
-
-        # dtype_val = model_data["dtype"]
-        # try:
-        #     actual_dtype = _known_dtypes[dtype_val]
-        # except KeyError:
-        #     logger.warning(f"Unrecognised dtype: {dtype_val}")
-        #
-        # if isinstance(model_data["dtype"], type):
-        #     model_data["default_value"] = model_data["dtype"](model_data["default_value"])
-        # else:
-        #     logger.warning(f"Could not convert default value to its declared type- leaving as string.")
-
-        return model_data
+    # @model_validator(mode="before")
+    # @classmethod
+    # def set_required_and_default_value(cls, model_data: dict) -> dict:
+    #     from pyqcrbox.logging import logger
+    #
+    #     # logger.debug(f"[DDD] Hi there from model_validator")
+    #     model_data = model_data.copy()
+    #
+    #     if "default_value" not in model_data or model_data["default_value"] == SENTINEL_UNDEFINED:
+    #         model_data["required"] = True
+    #         model_data["default_value"] = SENTINEL_UNDEFINED
+    #     else:
+    #         model_data["required"] = False
+    #
+    #     # dtype_val = model_data["dtype"]
+    #     # try:
+    #     #     actual_dtype = _known_dtypes[dtype_val]
+    #     # except KeyError:
+    #     #     logger.warning(f"Unrecognised dtype: {dtype_val}")
+    #     #
+    #     # if isinstance(model_data["dtype"], type):
+    #     #     model_data["default_value"] = model_data["dtype"](model_data["default_value"])
+    #     # else:
+    #     #     logger.warning(f"Could not convert default value to its declared type- leaving as string.")
+    #
+    #     return model_data

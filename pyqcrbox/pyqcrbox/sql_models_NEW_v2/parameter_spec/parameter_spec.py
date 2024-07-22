@@ -3,7 +3,7 @@ from typing import Annotated, Union
 
 from pydantic import Field, Tag, TypeAdapter
 
-from .base_parameter_spec import SENTINEL_UNDEFINED
+# from .base_parameter_spec import SENTINEL_UNDEFINED
 from .builtin_parameter_types import BoolParameterSpec, FloatParameterSpec, IntParameterSpec, StrParameterSpec
 from .filesystem_path_parameters import (
     FolderPathParameterSpec,
@@ -17,7 +17,7 @@ from .filesystem_path_parameters import (
 __all__ = ["ParameterSpecDiscriminatedUnion"]
 
 
-ParameterSpecBase = Union[
+ParameterSpecTaggedUnion = Union[
     #
     # Builtin types
     #
@@ -35,10 +35,9 @@ ParameterSpecBase = Union[
     Annotated[WorkCifParameterSpec, Tag("QCrBox.work_cif")],
     Annotated[FolderPathParameterSpec, Tag("QCrBox.folder_path")],
 ]
-ParameterSpecDiscriminatedUnion = Annotated[ParameterSpecBase, Field(discriminator="dtype")]
+ParameterSpecDiscriminatedUnion = Annotated[ParameterSpecTaggedUnion, Field(discriminator="dtype")]
 
-parameter_spec_adapter: TypeAdapter[ParameterSpecBase] = TypeAdapter(ParameterSpecDiscriminatedUnion)
-parameter_specs_adapter: TypeAdapter[list[ParameterSpecBase]] = TypeAdapter(list[ParameterSpecDiscriminatedUnion])
+parameter_spec_adapter: TypeAdapter[ParameterSpecTaggedUnion] = TypeAdapter(ParameterSpecDiscriminatedUnion)
 
 
 def get_param_spec_from_json(param_spec_json: dict) -> ParameterSpecDiscriminatedUnion:
@@ -48,7 +47,7 @@ def get_param_spec_from_json(param_spec_json: dict) -> ParameterSpecDiscriminate
 def get_param_spec_from_signature_param(p: inspect.Parameter) -> ParameterSpecDiscriminatedUnion:
     dtype = p.annotation.__name__
     is_required = p.default == inspect._empty
-    default_value = SENTINEL_UNDEFINED if is_required else p.default
+    default_value = None if is_required else repr(p.default)
 
     param_spec_json = {"name": p.name, "dtype": dtype, "required": is_required, "default_value": default_value}
     return get_param_spec_from_json(param_spec_json)
