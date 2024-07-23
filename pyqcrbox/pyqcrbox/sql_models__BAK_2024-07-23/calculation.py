@@ -9,7 +9,7 @@ from pyqcrbox import logger, sql_models
 from pyqcrbox.settings import settings
 
 from .calculation_status_event import CalculationStatusEnum, CalculationStatusEventDB
-from .command import CommandSpecDB
+# from .command import CommandSpecDB
 from .qcrbox_base_models import QCrBoxBaseSQLModel
 
 if TYPE_CHECKING:

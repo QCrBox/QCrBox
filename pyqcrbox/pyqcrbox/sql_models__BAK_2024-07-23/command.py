@@ -110,40 +110,40 @@ class CommandSpecCreate(CommandSpecBase):
         return CommandSpecDB.from_pydantic_model(self)
 
 
-class CommandSpecDB(CommandSpecBase, QCrBoxBaseSQLModel, table=True):
-    __tablename__ = "command"
-    __table_args__ = (UniqueConstraint("name", "application_id"),)
-    __pydantic_model_cls__ = CommandSpecCreate
-
-    id: Optional[int] = Field(default=None, primary_key=True)
-
-    application_id: Optional[int] = Field(default=None, foreign_key="application.id")
-    application: "ApplicationSpecDB" = Relationship(back_populates="commands")
-    parameters: dict = Field(sa_column=Column(JSON), default={})
-    calculations: list["CalculationDB"] = Relationship(back_populates="command")
-
-    # required_cif_entry_sets: list[str] = Field(sa_column=Column(JSON()))
-    # optional_cif_entry_sets: list[str] = Field(sa_column=Column(JSON()))
-    # custom_cif_categories: list[str] = Field(sa_column=Column(JSON()))
-
-    # def model_dump(self, **kwargs):
-    #     data = super().model_dump(**kwargs)
-    #     data["parameters"] = [param.model_dump(**kwargs) for param in self.parameters]
-    #     return data
-
-    @classmethod
-    def from_pydantic_model(cls, command):
-        pydantic_model_cls = getattr(cls, "__pydantic_model_cls__")
-        assert isinstance(command, pydantic_model_cls)
-        # breakpoint()
-        data = command.model_dump(exclude={"parameters"})
-        # data["parameters"] = [ParameterSpecDB.from_pydantic_model(param) for param in command.parameters]
-        data["parameters"] = {param["name"]: param for param in command.parameters}
-        # logger.debug(f"{command.name=}: {data=}")
-        return cls(**data)
-
-    def to_read_model(self):
-        return CommandSpecWithParameters(**self.model_dump())
+# class CommandSpecDB(CommandSpecBase, QCrBoxBaseSQLModel, table=True):
+#     __tablename__ = "command"
+#     __table_args__ = (UniqueConstraint("name", "application_id"),)
+#     __pydantic_model_cls__ = CommandSpecCreate
+#
+#     id: Optional[int] = Field(default=None, primary_key=True)
+#
+#     application_id: Optional[int] = Field(default=None, foreign_key="application.id")
+#     application: "ApplicationSpecDB" = Relationship(back_populates="commands")
+#     parameters: dict = Field(sa_column=Column(JSON), default={})
+#     calculations: list["CalculationDB"] = Relationship(back_populates="command")
+#
+#     # required_cif_entry_sets: list[str] = Field(sa_column=Column(JSON()))
+#     # optional_cif_entry_sets: list[str] = Field(sa_column=Column(JSON()))
+#     # custom_cif_categories: list[str] = Field(sa_column=Column(JSON()))
+#
+#     # def model_dump(self, **kwargs):
+#     #     data = super().model_dump(**kwargs)
+#     #     data["parameters"] = [param.model_dump(**kwargs) for param in self.parameters]
+#     #     return data
+#
+#     @classmethod
+#     def from_pydantic_model(cls, command):
+#         pydantic_model_cls = getattr(cls, "__pydantic_model_cls__")
+#         assert isinstance(command, pydantic_model_cls)
+#         # breakpoint()
+#         data = command.model_dump(exclude={"parameters"})
+#         # data["parameters"] = [ParameterSpecDB.from_pydantic_model(param) for param in command.parameters]
+#         data["parameters"] = {param["name"]: param for param in command.parameters}
+#         # logger.debug(f"{command.name=}: {data=}")
+#         return cls(**data)
+#
+#     def to_read_model(self):
+#         return CommandSpecWithParameters(**self.model_dump())
 
 
 class CommandSpecWithParameters(CommandSpecBase):
