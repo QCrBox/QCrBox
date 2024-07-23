@@ -30,3 +30,5 @@ commands:
         dtype: float
         default_value: 5.0
         description: "Sleep duration (in seconds)."
+
+qcrbox_yaml_spec_version: "0.1"
