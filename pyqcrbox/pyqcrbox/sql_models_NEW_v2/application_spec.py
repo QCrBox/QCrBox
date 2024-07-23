@@ -1,17 +1,18 @@
 from collections import UserDict
+from datetime import datetime
 from pathlib import Path
 from typing import Self
 
 import yaml
 from pydantic import Extra, PrivateAttr, field_validator, model_validator
 
+from .. import helpers
 from .base import QCrBoxPydanticBaseModel
 from .cif_entry_set import CifEntrySet
 from .command_spec import CommandSpec
+from .command_spec.command_spec import CommandSpecWithParameters
 
 __all__ = ["ApplicationSpec"]
-
-from .. import helpers
 
 
 class ApplicationSpecBase(QCrBoxPydanticBaseModel):
@@ -78,3 +79,10 @@ class ApplicationSpec(ApplicationSpecBase, extra=Extra.allow):
         slug_sanitized = helpers.sanitize_for_nats_subject(self.slug)
         version_sanitized = helpers.sanitize_for_nats_subject(self.version)
         return f"{slug_sanitized}.{version_sanitized}"
+
+
+class ApplicationSpecWithCommands(ApplicationSpecBase):
+    id: int
+    registered_at: datetime
+    commands: list[CommandSpecWithParameters]
+    # cif_entry_sets: list[CifEntrySetRead] = []

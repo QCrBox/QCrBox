@@ -5,7 +5,7 @@ from faststream import Context
 from pydantic import BaseModel
 from sqlmodel import select
 
-from pyqcrbox import helpers, logger, msg_specs, settings, sql_models
+from pyqcrbox import helpers, logger, msg_specs, settings, sql_models_NEW_v2
 from pyqcrbox.registry.shared.calculation_status import (
     CalculationStatusDetails,
     update_calculation_status_in_nats_kv_NEW,
@@ -67,7 +67,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
         )
         self.calculations[calculation_id] = calculation_details
 
-        calculation_db = sql_models.CalculationDB(
+        calculation_db = sql_models_NEW_v2.CalculationDB(
             application_slug=msg.application_slug,
             application_version=msg.application_version,
             command_name=msg.command_name,
@@ -76,7 +76,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
         )
         try:
             calculation_db.save_to_db()
-        except sql_models.QCrBoxDBError as exc:
+        except sql_models_NEW_v2.QCrBoxDBError as exc:
             return msg_specs.InvokeCommandResponse(response_to=msg.action, status="error", msg=exc.message)
 
         msg_to_client = msg_specs.CommandInvocationRequestNATS(
@@ -168,8 +168,10 @@ class QCrBoxServer(QCrBoxServerClientBase):
             f"Received NATS notification about calculation status update: {status_details!r} ({calculation_id=!r})"
         )
         with settings.db.get_session() as session:
-            calculation_db: sql_models.CalculationDB = session.exec(
-                select(sql_models.CalculationDB).where(sql_models.CalculationDB.calculation_id == calculation_id)
+            calculation_db: sql_models_NEW_v2.CalculationDB = session.exec(
+                select(sql_models_NEW_v2.CalculationDB).where(
+                    sql_models_NEW_v2.CalculationDB.calculation_id == calculation_id
+                )
             ).one()
             calculation_db.update_status(status_details.status, comment="NATS notification")
             logger.debug("Updated calculation status in the database.")

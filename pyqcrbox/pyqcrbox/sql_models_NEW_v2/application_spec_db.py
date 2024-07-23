@@ -6,6 +6,7 @@ from sqlmodel import Field, Relationship, SQLModel, select
 from pyqcrbox.settings import settings
 
 from .application_spec import ApplicationSpec, ApplicationSpecBase
+from .calculation import CalculationDB
 from .command_spec import CommandSpecDB
 
 
@@ -18,6 +19,7 @@ class ApplicationSpecDB(ApplicationSpecBase, SQLModel, table=True):
     private_routing_key: str
 
     commands: list[CommandSpecDB] = Relationship(back_populates="application")
+    calculations: list[CalculationDB] = Relationship(back_populates="application")
 
     def model_dump(self, **kwargs):
         data = super().model_dump(**kwargs)

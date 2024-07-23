@@ -9,7 +9,7 @@ from .command_spec import CommandSpec
 # from .interactive_command_spec import InteractiveLifecycleSteps, NonInteractiveCommandSpec
 
 if TYPE_CHECKING:
-    from pyqcrbox.sql_models_NEW_v2.application_spec_db import ApplicationSpecDB
+    from pyqcrbox.sql_models_NEW_v2 import ApplicationSpecDB, CalculationDB
 
 
 class CommandSpecDB(QCrBoxBaseSQLModel, table=True):
@@ -38,6 +38,8 @@ class CommandSpecDB(QCrBoxBaseSQLModel, table=True):
 
     application_id: int | None = Field(default=None, foreign_key="application.id")
     application: "ApplicationSpecDB" = Relationship(back_populates="commands")
+
+    calculations: list["CalculationDB"] = Relationship(back_populates="command")
 
     @classmethod
     def from_pydantic_model(cls, command):
