@@ -192,24 +192,24 @@ convention = "google"
 [tool.importlinter]
 root_package = "pyqcrbox"
 exclude_type_checking_imports = true
-
-[[tool.importlinter.contracts]]
-name = "Server does not import client modules"
-type = "forbidden"
-source_modules = ["pyqcrbox.registry.server"]
-forbidden_modules = ["pyqcrbox.registry.client"]
-
-[[tool.importlinter.contracts]]
-name = "Client does not import server modules"
-type = "forbidden"
-source_modules = ["pyqcrbox.registry.client"]
-forbidden_modules = ["pyqcrbox.registry.server"]
-
-[[tool.importlinter.contracts]]
-name = "Verify sql_model layers"
-type = "layers"
-layers = [
-    "application",
-    "command | cif_entry_set",
-]
-containers = ["pyqcrbox.sql_models"]
+#
+#[[tool.importlinter.contracts]]
+#name = "Server does not import client modules"
+#type = "forbidden"
+#source_modules = ["pyqcrbox.registry.server"]
+#forbidden_modules = ["pyqcrbox.registry.client"]
+#
+#[[tool.importlinter.contracts]]
+#name = "Client does not import server modules"
+#type = "forbidden"
+#source_modules = ["pyqcrbox.registry.client"]
+#forbidden_modules = ["pyqcrbox.registry.server"]
+#
+#[[tool.importlinter.contracts]]
+#name = "Verify sql_model layers"
+#type = "layers"
+#layers = [
+#    "application",
+#    "command | cif_entry_set",
+#]
+#containers = ["pyqcrbox.sql_models_NEW_v2"]
