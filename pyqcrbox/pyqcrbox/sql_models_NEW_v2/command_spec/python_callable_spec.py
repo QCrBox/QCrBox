@@ -4,7 +4,7 @@ from typing import Literal
 
 from pydantic import model_validator
 
-from pyqcrbox import logger
+from pyqcrbox.logging import logger
 
 from ..parameter_spec import ParameterSpecDiscriminatedUnion, get_param_spec_from_signature_param
 from ..parameter_spec.parameter_spec import parameter_spec_adapter

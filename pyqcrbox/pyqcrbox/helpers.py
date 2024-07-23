@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Optional
 from uuid import uuid4
 
-from pyqcrbox import logger
+from pyqcrbox.logging import logger
 
 __all__ = ["generate_correlation_id", "generate_private_routing_key"]
 
