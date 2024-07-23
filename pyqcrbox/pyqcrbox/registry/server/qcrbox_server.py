@@ -56,6 +56,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
             f"(version: {msg.payload.application_spec.version!r})"
         )
         await self.nats_persistence_adapter.save_application_spec(msg.payload.application_spec)
+        await self.sqlite_persistence_adapter.save_application_spec(msg.payload.application_spec)
 
     async def handle_command_invocation_by_user(self, msg: msg_specs.InvokeCommandNATS):
         logger.info(f"Received command invocation from user: {msg!r}")
