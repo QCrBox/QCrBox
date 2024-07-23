@@ -1,6 +1,9 @@
 from datetime import datetime
 
-from sqlmodel import Field, Relationship, SQLModel
+import sqlalchemy
+from sqlmodel import Field, Relationship, SQLModel, select
+
+from pyqcrbox.settings import settings
 
 from .application_spec import ApplicationSpec, ApplicationSpecBase
 from .command_spec import CommandSpecDB
@@ -30,3 +33,26 @@ class ApplicationSpecDB(ApplicationSpecBase, SQLModel, table=True):
         data["private_routing_key"] = private_routing_key or "super-secret-private-routing-key-001"
         # logger.debug(f"{command.name=}: {data=}")
         return cls(**data)
+
+    def save_to_db(self, init_db: bool = False):
+        from pyqcrbox.logging import logger
+
+        cls = self.__class__
+
+        with settings.db.get_session(init_db=init_db) as session:
+            try:
+                result = session.exec(select(cls).where(cls.name == self.name and cls.version == self.version)).one()
+                logger.debug(
+                    f"An application was registered before with name={self.name!r}, version={self.version!r}. "
+                    "Loading details from the previously stored data."
+                )
+                logger.debug(
+                    "TODO: check that the commands specified in this application spec "
+                    "are consistent with the previously stored ones!"
+                )
+                return result
+            except sqlalchemy.exc.NoResultFound:
+                session.add(self)
+                session.commit()
+                session.refresh(self)
+                return self

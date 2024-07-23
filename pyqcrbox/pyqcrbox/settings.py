@@ -30,7 +30,7 @@ def create_sqlmodel_engine(url: Optional[SQLiteDsn], echo: bool, connect_args: t
 
 @functools.lru_cache
 def _create_db_tables(engine, purge_existing: bool):
-    from pyqcrbox.sql_models import QCrBoxBaseSQLModel  # import here to avoid a circular import
+    from pyqcrbox.sql_models_NEW_v2 import QCrBoxBaseSQLModel  # import here to avoid a circular import
 
     logger.debug(f"Initialising the database for engine: {engine}")
     if purge_existing:

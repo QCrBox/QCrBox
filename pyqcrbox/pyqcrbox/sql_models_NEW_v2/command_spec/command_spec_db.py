@@ -34,7 +34,7 @@ class CommandSpecDB(QCrBoxBaseSQLModel, table=True):
     # interactive_lifecycle: InteractiveLifecycleSteps
     # non_interactive_equivalent: NonInteractiveCommandSpec
 
-    id: int | None = Field(primary_key=True, nullable=True)
+    id: int | None = Field(default=None, primary_key=True)
 
     application_id: int | None = Field(default=None, foreign_key="application.id")
     application: "ApplicationSpecDB" = Relationship(back_populates="commands")
