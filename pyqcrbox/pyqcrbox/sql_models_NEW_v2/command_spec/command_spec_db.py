@@ -7,7 +7,7 @@ from ..parameter_spec import ParameterSpecDiscriminatedUnion
 # from .interactive_command_spec import InteractiveLifecycleSteps, NonInteractiveCommandSpec
 
 
-class CommandSpecDBNEW(QCrBoxBaseSQLModel, table=True):
+class CommandSpecDB(QCrBoxBaseSQLModel, table=True):
     name: str
     description: str = ""
     merge_cif_su: bool = False
