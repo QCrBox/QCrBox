@@ -51,3 +51,8 @@ class CommandSpecDB(QCrBoxBaseSQLModel, table=True):
         data["parameters"] = {param.name: param.model_dump() for param in command.parameters}
         # logger.debug(f"{command.name=}: {data=}")
         return cls(**data)
+
+    def to_read_model(self):
+        from .command_spec import CommandSpecWithParameters
+
+        return CommandSpecWithParameters(**self.model_dump(exclude=["call_pattern", "callable_name", "import_path"]))

@@ -58,3 +58,8 @@ class ApplicationSpecDB(ApplicationSpecBase, SQLModel, table=True):
                 session.commit()
                 session.refresh(self)
                 return self
+
+    def to_read_model(self):
+        from .application_spec import ApplicationSpecWithCommands
+
+        return ApplicationSpecWithCommands(**self.model_dump(exclude="private_routing_key"))
