@@ -4,7 +4,7 @@ from litestar.plugins.structlog import StructlogPlugin
 __all__ = ["create_client_asgi_server"]
 
 
-@get(path="/healthcheck", media_type=MediaType.JSON)
+@get(path="/healthz", media_type=MediaType.JSON)
 async def health_check() -> dict:
     return {"status": "ok"}
 

@@ -39,7 +39,7 @@ async def test_hello(test_server):
 @pytest.mark.xfail_with_real_rabbitmq_broker
 async def test_health_check_via_web_api(test_server):
     async with test_server.web_client() as web_client:
-        response = await web_client.get("/healthcheck")
+        response = await web_client.get("/healthz")
         assert response.status_code == HTTP_200_OK
         assert response.text == "healthy"
 

@@ -25,7 +25,7 @@ async def hello() -> str:
     return "Hello from QCrBox!"
 
 
-@get(path="/healthcheck", media_type=MediaType.JSON)
+@get(path="/healthz", media_type=MediaType.JSON)
 async def health_check() -> dict:
     return {"status": "ok"}
 
