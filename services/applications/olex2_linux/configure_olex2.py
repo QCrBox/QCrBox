@@ -7,7 +7,7 @@ from qcrboxtools.cif.cif2cif import cif_file_merge_to_unified_by_yml, cif_file_t
 from qcrboxtools.cif.merge import replace_structure_from_cif
 from qcrboxtools.robots.olex2 import Olex2Socket
 
-from pyqcrbox import sql_models
+from pyqcrbox import sql_models_NEW_v2
 
 #from pyqcrbox.registry.client import ExternalCommand, Param, QCrBoxRegistryClient
 from pyqcrbox.registry.client import QCrBoxClient
@@ -112,7 +112,7 @@ def redo__interactive(redo_input_cif_path, redo_output_path, par_json, par_folde
 
 
 if __name__ == "__main__":
-    application_spec = sql_models.ApplicationSpecCreate.from_yaml_file("config_olex2.yaml")
+    application_spec = sql_models_NEW_v2.ApplicationSpec.from_yaml_file("config_olex2.yaml")
 
     client = QCrBoxClient(application_spec=application_spec)
     #application = client.register_application("Olex2 (Linux)", version="1.5")
