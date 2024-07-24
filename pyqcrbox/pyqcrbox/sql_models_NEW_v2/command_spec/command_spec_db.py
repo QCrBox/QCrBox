@@ -41,6 +41,13 @@ class CommandSpecDB(QCrBoxBaseSQLModel, table=True):
 
     calculations: list["CalculationDB"] = Relationship(back_populates="command")
 
+    def model_dump(self, as_read_model=False, **kwargs):
+        if as_read_model:
+            assert "exclude" not in kwargs
+            kwargs["exclude"] = ["call_pattern", "callable_name", "import_path"]
+
+        return super().model_dump(**kwargs)
+
     @classmethod
     def from_pydantic_model(cls, command):
         # pydantic_model_cls = getattr(cls, "__pydantic_model_cls__")
@@ -55,4 +62,5 @@ class CommandSpecDB(QCrBoxBaseSQLModel, table=True):
     def to_read_model(self):
         from .command_spec import CommandSpecWithParameters
 
-        return CommandSpecWithParameters(**self.model_dump(exclude=["call_pattern", "callable_name", "import_path"]))
+        data = self.model_dump(as_read_model=True)
+        return CommandSpecWithParameters(**data)
