@@ -142,10 +142,9 @@ class CLICmdCalculation(BaseCalculation):
         return CalculationStatusDetails(
             calculation_id=self.calculation_id,
             status=self.status,
-            msg="",
             stdout=await self.stdout,
             stderr=await self.stderr,
-            extra=dict(returncode=self.returncode),
+            extra_info=dict(returncode=self.returncode),
         )
 
     @property

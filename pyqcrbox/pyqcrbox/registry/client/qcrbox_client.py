@@ -166,7 +166,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
             await calc.terminate()
 
     def get_executable_command(self, command_name):
-        cmd_spec = self.application_spec.get_command_spec(command_name)
+        cmd_spec = self.application_spec.get_command_by_name(command_name)
         return ExecutableCommand(cmd_spec)
 
     # @on_qcrbox_startup
