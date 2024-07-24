@@ -31,17 +31,16 @@ import pathlib
 import time
 import urllib
 import urllib.request
-from collections import namedtuple
 from functools import lru_cache
 from itertools import count
 from typing import Any, Optional, Union
 
 import httpx
 
-from pyqcrbox import sql_models
+from pyqcrbox import sql_models_NEW_v2
 
 from .qcrbox_application import QCrBoxApplication
-from .qcrbox_command import QCrBoxCommand, QCrBoxCommandBase, QCrBoxInteractiveCommand
+from .qcrbox_command import QCrBoxCommand, QCrBoxCommandBase, QCrBoxInteractiveCommand, QCrBoxParameter
 
 
 @lru_cache(maxsize=5)
@@ -100,40 +99,6 @@ def get_ttl_hash(seconds: int = 20) -> int:
     time.
     """
     return round(time.time() / seconds)
-
-
-QCrBoxParameter = namedtuple("QCrBoxParameter", ["name", "dtype"])
-QCrBoxParameter.__doc__ = """
-Represents a parameter for a QCrBoxCommand in QCrBox.
-
-Attributes
-----------
-name : str
-    Name of the parameter.
-dtype : str
-    Data type of the parameter.
-"""
-
-QCrBoxCalculationStatus = namedtuple(
-    "QCrBoxCalculationStatus",
-    ["calculation_id", "command_id", "started_at", "status", "status_details"],
-)
-QCrBoxCalculationStatus.__doc__ = """
-Represents the status of a calculation in QCrBox.
-
-Attributes
-----------
-calculation_id : int
-    Unique identifier for the calculation.
-command_id : int
-    ID of the command that initiated the calculation.
-started_at : str
-    Timestamp when the calculation started.
-status : str
-    Status of the calculation (e.g., 'running', 'completed').
-status_details : dict
-    Detailed status information of the calculation.
-"""
 
 
 class QCrBoxWrapper:
@@ -241,7 +206,9 @@ class QCrBoxWrapper:
         """
         response = get_time_cached_app_answer(self.web_client, get_ttl_hash())
         return [
-            QCrBoxApplication(application_spec=sql_models.ApplicationSpecWithCommands(**app_spec), wrapper_parent=self)
+            QCrBoxApplication(
+                application_spec=sql_models_NEW_v2.ApplicationSpecWithCommands(**app_spec), wrapper_parent=self
+            )
             for app_spec in response
         ]
 

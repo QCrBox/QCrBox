@@ -1,7 +1,7 @@
 import textwrap
 from typing import TYPE_CHECKING
 
-from pyqcrbox import sql_models
+from pyqcrbox import sql_models_NEW_v2
 
 from .qcrbox_command import QCrBoxCommand
 
@@ -16,7 +16,7 @@ class QCrBoxApplication:
 
     def __init__(
         self,
-        application_spec: sql_models.ApplicationSpecWithCommands,
+        application_spec: sql_models_NEW_v2.ApplicationSpecWithCommands,
         wrapper_parent: "QCrBoxWrapper",
     ) -> None:
         """
@@ -24,7 +24,7 @@ class QCrBoxApplication:
 
         Parameters
         ----------
-        application_spec: sql_models.ApplicationSpecWithCommands
+        application_spec: sql_models_NEW_v2.ApplicationSpecWithCommands
             The application spec as returned by the API endpoint `/applications`.
         """
         self.application_spec = application_spec

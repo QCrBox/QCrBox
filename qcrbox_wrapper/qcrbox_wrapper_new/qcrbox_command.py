@@ -1,9 +1,13 @@
 import json
+import textwrap
+import time
 import urllib.request
 from collections import namedtuple
 from typing import TYPE_CHECKING, Union
 
-from pyqcrbox import sql_models
+from pyqcrbox import sql_models_NEW_v2
+from pyqcrbox.registry.shared.calculation_status import CalculationStatusDetails
+from pyqcrbox.sql_models_NEW_v2.calculation_status_event import CalculationStatusEnum
 
 if TYPE_CHECKING:
     from .qcrbox_wrapper import QCrBoxWrapper
@@ -19,6 +23,53 @@ name : str
 dtype : str
     Data type of the parameter.
 """
+
+
+QCrBoxCalculationStatus = namedtuple(
+    "QCrBoxCalculationStatus",
+    ["calculation_id", "command_id", "started_at", "status", "status_details"],
+)
+QCrBoxCalculationStatus.__doc__ = """
+Represents the status of a calculation in QCrBox.
+
+Attributes
+----------
+calculation_id : int
+    Unique identifier for the calculation.
+command_id : int
+    ID of the command that initiated the calculation.
+started_at : str
+    Timestamp when the calculation started.
+status : str
+    Status of the calculation (e.g., 'running', 'completed').
+status_details : dict
+    Detailed status information of the calculation.
+"""
+
+
+class UnsuccessfulCalculationError(Exception):
+    def __init__(self, status: "CalculationStatusDetails"):
+        try:
+            error_message = status.extra_info["msg"]
+        except KeyError:
+            error_message = "No error message available"
+
+        msg = textwrap.dedent(
+            f"""\
+            Calculation with id {status.calculation_id} does not have the status completed but {status.status}.
+
+            Potential error message:
+            {error_message}
+            
+            Command stdout:
+            {status.stdout}
+
+            Command stderr:
+            {status.stderr}
+        """
+        ).strip()
+
+        super().__init__(msg)
 
 
 class QCrBoxCalculation:
@@ -41,6 +92,48 @@ class QCrBoxCalculation:
         self.calculation_parent = calculation_parent
         self._server_url = calculation_parent._server_url
 
+    @property
+    def status(self) -> QCrBoxCalculationStatus:
+        """
+        Fetches and returns the current status of the calculation from the server.
+
+        Returns
+        -------
+        QCrBoxCalculationStatus
+            A namedtuple containing detailed status information of the calculation.
+        """
+        with urllib.request.urlopen(f"{self._server_url}/calculations/{self.id}") as r:
+            response_data = json.loads(r.read().decode("UTF-8"))
+
+        return CalculationStatusDetails(**response_data)
+        #
+        # return QCrBoxCalculationStatus(
+        #     int(response["id"]),
+        #     int(response["command_id"]),
+        #     response["started_at"],
+        #     response["status_details"]["status"],
+        #     response["status_details"],
+        # )
+
+    def wait_while_running(self, sleep_time: float) -> None:
+        """
+        Periodically checks the calculation's status and blocks until it is no longer 'running'.
+
+        Parameters
+        ----------
+        sleep_time : float
+            The interval, in seconds, between status checks.
+
+        Raises
+        ------
+        RuntimeError
+            If the calculation finishes with a status other than 'completed'.
+        """
+        while self.status.status == CalculationStatusEnum.RUNNING:
+            time.sleep(sleep_time)
+        if self.status.status != CalculationStatusEnum.COMPLETED:
+            raise UnsuccessfulCalculationError(self.status)
+
 
 class QCrBoxCommandBase:
     """
@@ -52,7 +145,7 @@ class QCrBoxCommandBase:
         *,
         application_slug: str,
         application_version: str,
-        cmd_spec: sql_models.CommandSpecWithParameters,
+        cmd_spec: sql_models_NEW_v2.CommandSpecWithParameters,
         wrapper_parent: "QCrBoxWrapper",
     ) -> None:
         """
@@ -60,7 +153,7 @@ class QCrBoxCommandBase:
 
         Parameters
         ----------
-        cmd_spec : pyqcrbox.sql_models.CommandSpecWithParameters
+        cmd_spec : pyqcrbox.sql_models_NEW_v2.CommandSpecWithParameters
             Pydantic model representing the command specification.
         server_url : str
             URL of the QCrBox server
@@ -157,7 +250,7 @@ class QCrBoxCommand(QCrBoxCommandBase):
         """
         arguments = self.args_to_kwargs(*args, **kwargs)
 
-        data_dict = sql_models.CommandInvocationCreate(
+        data_dict = sql_models_NEW_v2.CommandInvocationCreate(
             application_slug=self.application_slug,
             application_version=self.application_version,
             command_name=self.name,
