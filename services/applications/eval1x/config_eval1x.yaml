@@ -39,6 +39,7 @@ commands:
   - name: "integrate"
     implemented_as: "python_callable"
     description: "Run the Eval Software Suite programs automatically one after the other"
+    import_path: "configure_eval1x"
     parameters:
       - name: "work_folder"
         type: "QCrBox.input_folder"

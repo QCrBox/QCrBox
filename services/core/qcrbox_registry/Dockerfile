@@ -2,15 +2,19 @@ ARG QCRBOX_DOCKER_TAG
 FROM qcrbox/base-ancestor:${QCRBOX_DOCKER_TAG}
 SHELL ["/bin/bash", "-c"]
 
+ENV QCRBOX__REGISTRY__SERVER__HOST="0.0.0.0"
+ENV QCRBOX__REGISTRY__SERVER__PORT="8000"
+
 HEALTHCHECK \
-    --interval=10s \
-    #--start-period=${STARTUP_TIME}s \
-    #--start-interval=${STARTUP_TIME}s \
-    CMD curl --fail http://localhost:8000/ping || exit 1
+    --interval=60s \
+    --start-period=60s \
+    #--start-interval=5s \
+    CMD curl --fail http://127.0.0.1:${QCRBOX__REGISTRY__SERVER__PORT}/healthz || exit 1
 
 
 ARG QCRBOX_REGISTRY_DB_DIR=${QCRBOX_REGISTRY_DB_DIR}
-ENV QCRBOX_REGISTRY_DB_DIR=${QCRBOX_REGISTRY_DB_DIR}
+#ENV QCRBOX_REGISTRY_DB_DIR=${QCRBOX_REGISTRY_DB_DIR}
+ENV QCRBOX_DB_URL="sqlite:///${QCRBOX_REGISTRY_DB_DIR}/pyqcrbox_registry_db.sqlite"
 RUN mkdir -p ${QCRBOX_REGISTRY_DB_DIR}
 RUN chown ${QCRBOX_USER}:${QCRBOX_GROUP} ${QCRBOX_REGISTRY_DB_DIR}
 VOLUME ${QCRBOX_REGISTRY_DB_DIR}

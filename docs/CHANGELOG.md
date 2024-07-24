@@ -18,6 +18,8 @@ However, there will be an initial period of stabilisation where this is not adhe
 
 ### Enhancements
 
+- CLI command outputs now use rich text formatting by default (this can be disabled by setting `QCRBOX__CLI__DISABLE_RICH=true`).
+
 ### Issues Fixed
 
 ### Development

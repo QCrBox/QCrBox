@@ -1,0 +1,215 @@
+[project]
+name = "pyqcrbox"
+authors = [
+  { name="Maximilian Albert", email="maximilian.albert@gmail.com" },
+]
+description = "Quantum Crystallography Toolbox"
+readme = "README.md"
+requires-python = ">=3.11"
+classifiers = [
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+]
+dynamic = [
+    "version",
+]
+dependencies = [
+    "doit",
+    "faststream[nats]>=0.5.2",
+    "gitpython",
+    "hatch>=v1.10.0",
+    "loguru",
+    "pydantic",
+    "pydantic-settings",
+    "rich",
+    "sqlmodel",
+    "svcs",
+    "stamina",
+    "structlog",
+    "tabulate",
+]
+
+[project.optional-dependencies]
+dev = [
+    #
+    # dev tools
+    "ipdb",
+    "ipython",
+    "jupyterlab",
+    "pre-commit",
+    "requests",
+    "reuse",
+    "ruff",
+    "setuptools_scm",
+    "uv",
+    #
+    # linting
+    "import-linter",
+    #"pyupgrade-directories",
+    "ruff>=0.2.2",
+    #
+    # static analysis
+    "types-PyYAML",
+    "types-setuptools",
+    "types-ujson",
+    "mypy",
+    #
+    # testing
+    "aioresult",
+    "pytest",
+    "pytest-asyncio",
+    "pytest-cov",
+    "pytest-cases",
+    "pytest-hot-reloading",
+]
+
+docs = [
+    "markdown-exec",
+    "mkdocs",
+    "mkdocs-awesome-pages-plugin",
+    "mkdocs-jupyter",
+    "mkdocs-material",
+    "pymdown-extensions",
+]
+
+client = [
+    "faststream[nats]>=0.5.2",
+    "litestar",
+    "tenacity",
+    "uvicorn[standard]",
+]
+
+server = [
+    "faststream[nats]>=0.5.2",
+    "litestar",
+    "tenacity",
+    "uvicorn[standard]",
+]
+
+all = [
+    "pyqcrbox[dev,docs,client,server]",
+]
+
+[project.urls]
+"Repository" = "https://github.com/QCrBox/QCrBox/"
+"Issue Tracker" = "https://github.com/QCrBox/QCrBox/issues"
+
+[project.scripts]
+qcb = "pyqcrbox.cli:entry_point"
+pyqcrbox-run-registry-server = "pyqcrbox.registry.server.qcrbox_server:main"
+pyqcrbox-run-registry-client = "pyqcrbox.registry.client.qcrbox_client:main"
+
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[tool.hatch.envs.default]
+installer = "uv"
+
+[tool.hatch.version]
+source = "vcs"
+raw-options = { root = ".." }
+
+[tool.setuptools_scm]
+version_file = "pyqcrbox/_version.py"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "pyqcrbox/_version.py"
+
+[tool.hatch.build.targets.sdist]
+only-include = ["pyqcrbox"]
+
+[tool.hatch.build.targets.wheel]
+only-include = ["pyqcrbox"]
+
+
+[tool.pytest.ini_options]
+filterwarnings =["ignore::DeprecationWarning"]
+#addopts = "-p pytest_hot_reloading.plugin"
+#addopts = "--cov=pyqcrbox --cov-report=term-missing"
+markers = [
+    "requires_mock_rabbitmq_broker",
+    "xfail_with_real_rabbitmq_broker",
+]
+
+[tool.mypy]
+strict = true
+python_version = "3.8"
+ignore_missing_imports = true
+install_types = true
+non_interactive = true
+
+# from https://blog.wolt.com/engineering/2021/09/30/professional-grade-mypy-configuration/
+disallow_untyped_defs = true
+no_implicit_optional = true
+check_untyped_defs = true
+warn_return_any = true
+show_error_codes = true
+warn_unused_ignores = true
+
+disallow_incomplete_defs = true
+disallow_untyped_decorators = true
+disallow_any_unimported = false
+
+[tool.ruff]
+line-length = 120
+exclude = ["_version.py"]
+
+[tool.ruff.lint]
+select = [
+    # pycodestyle
+    "E",
+    # Pyflakes
+    "F",
+#    # pyupgrade
+#    "UP",
+#    # flake8-bugbear
+#    "B",
+#    # flake8-simplify
+#    "SIM",
+    # isort
+    "I",
+]
+
+# Ignore `F401`, `F403` (unused imports and * imports) in all `__init__.py` files
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401", "F403"]
+"**/pyqcrbox/sql_models*/*.py" = ["F821"]
+"pyqcrbox/tests/conftest.py" = ["E402"]
+"qcrbox/qcrbox/common/msg_specs/sql_models/**.py" = ["F821"]
+"qcrbox/qcrbox/registry/client/registered_application_client_side.py" = ["F821"]
+"services/applications/olex2_linux/prebuild__01_create_olex2_headless.py" = ["E501"]
+"services/applications/qcrboxtools/qcrbtls_check_convergence_glue.py" = ["E501"]
+
+[tool.ruff.format]
+exclude = ["services/applications/*/configure_*.py"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+
+[tool.importlinter]
+root_package = "pyqcrbox"
+exclude_type_checking_imports = true
+#
+#[[tool.importlinter.contracts]]
+#name = "Server does not import client modules"
+#type = "forbidden"
+#source_modules = ["pyqcrbox.registry.server"]
+#forbidden_modules = ["pyqcrbox.registry.client"]
+#
+#[[tool.importlinter.contracts]]
+#name = "Client does not import server modules"
+#type = "forbidden"
+#source_modules = ["pyqcrbox.registry.client"]
+#forbidden_modules = ["pyqcrbox.registry.server"]
+#
+#[[tool.importlinter.contracts]]
+#name = "Verify sql_model layers"
+#type = "layers"
+#layers = [
+#    "application",
+#    "command | cif_entry_set",
+#]
+#containers = ["pyqcrbox.sql_models_NEW_v2"]

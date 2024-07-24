@@ -4,7 +4,7 @@ import zipfile
 
 import requests
 
-from qcrbox.logging import logger
+from pyqcrbox import logger
 
 url_zip = "https://secure.olex2.org/olex2-distro/1.5-alpha/olex2-linux64.zip"
 url_exe = "https://github.com/QCrBox/QCrBoxExamples/raw/main/container/olex2c-linux64"

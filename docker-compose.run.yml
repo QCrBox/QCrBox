@@ -1,4 +1,26 @@
 services:
+  qcrbox-nats:
+    image: "nats:2.10.16-alpine"
+    volumes:
+      - qcrbox-nats-storage:/mnt/nats/
+    networks:
+      - qcrbox-net
+    hostname: "qcrbox-nats"
+    ports:
+      - "${QCRBOX_BIND_ADDRESS:?Must set env var QCRBOX_BIND_ADDRESS}:${QCRBOX__NATS__PORT:?Must set env var QCRBOX__NATS__PORT}:4222"
+      - "${QCRBOX_BIND_ADDRESS:?Must set env var QCRBOX_BIND_ADDRESS}:${QCRBOX__NATS__MANAGEMENT_PORT:?Must set env var QCRBOX__NATS__MANAGEMENT_PORT}:8222"
+    restart: unless-stopped
+
+  qcrbox-nui:
+    image: "ghcr.io/nats-nui/nui:latest"
+    volumes:
+      - qcrbox-nui-db:/db
+    ports:
+      - 31311:31311
+    networks:
+      - qcrbox-net
+    restart: unless-stopped
+
   qcrbox-message-bus:
     image: "qcrbox/message-bus:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
     volumes:
@@ -7,8 +29,8 @@ services:
       - qcrbox-net
     hostname: "qcrbox-message-bus"
     ports:
-      - "${QCRBOX_BIND_ADDRESS:?Must set env var QCRBOX_BIND_ADDRESS}:${QCRBOX_RABBITMQ_PORT:?Must set env var QCRBOX_RABBITMQ_PORT}:5672"
-      - "${QCRBOX_BIND_ADDRESS:?Must set env var QCRBOX_BIND_ADDRESS}:${QCRBOX_RABBITMQ_MANAGEMENT_PORT:?Must set env var QCRBOX_RABBITMQ_MANAGEMENT_PORT}:15672"
+      - "${QCRBOX_BIND_ADDRESS:?Must set env var QCRBOX_BIND_ADDRESS}:${QCRBOX__RABBITMQ__PORT:?Must set env var QCRBOX__RABBITMQ__PORT}:5672"
+      - "${QCRBOX_BIND_ADDRESS:?Must set env var QCRBOX_BIND_ADDRESS}:${QCRBOX__RABBITMQ__MANAGEMENT_PORT:?Must set env var QCRBOX__RABBITMQ__MANAGEMENT_PORT}:15672"
 #      - "${QCRBOX_BIND_ADDRESS:?Must set env var QCRBOX_BIND_ADDRESS}:${QCRBOX_PORT_WEBSOCKET:?Must set env var QCRBOX_PORT_WEBSOCKET}:4000"
     restart: unless-stopped
     healthcheck:
@@ -29,11 +51,10 @@ services:
     ports:
       - "${QCRBOX_BIND_ADDRESS}:${QCRBOX_REGISTRY_PORT:?Must set env var QCRBOX_REGISTRY_PORT}:8000"
     depends_on:
-      qcrbox-message-bus:
+      qcrbox-nats:
         condition: service_healthy
     environment:
-      QCRBOX_RABBITMQ_QUEUE_NAME: "qcrbox_registry"
-      QCRBOX_REGISTRY_DB_DIR: "${QCRBOX_REGISTRY_DB_DIR:?Must set env var QCRBOX_REGISTRY_DB_DIR}"
+      QCRBOX__NATS__HOST: "qcrbox-nats"
     networks:
       - qcrbox-net
     restart: "unless-stopped"
@@ -67,3 +88,5 @@ volumes:
   qcrbox-rabbitmq-data:
   qcrbox-registry-db:
   qcrbox-nextflow-home:
+  qcrbox-nats-storage:
+  qcrbox-nui-db:

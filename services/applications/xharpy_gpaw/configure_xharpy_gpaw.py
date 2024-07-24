@@ -8,7 +8,7 @@ from qcrboxtools.cif.file_converter.hkl import cif2hkl4
 
 from qcrbox.registry.client import QCrBoxRegistryClient
 
-YAML_PATH = "/opt/qcrbox/config_xharpy-gpaw.yaml"
+YAML_PATH = "/opt/qcrbox/config_xharpy_gpaw.yaml"
 
 client = QCrBoxRegistryClient()
 application = client.register_application(
