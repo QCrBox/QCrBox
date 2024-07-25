@@ -14,20 +14,30 @@ commands:
     parameters:
       - name: "input_cif_path"
         type: "QCrBox.input_cif"
-        required_entry_sets: ["interactive_input"]
+        required_entry_sets: ["input"]
         merge_su: True
+        custom_categories: ["iucr", "mopro"]
       - name: "output_cif_path"
         type: "QCrBox.output_cif"
         required_entries: []
         optional_entries: []
-        required_entry_sets: ["interactive_output"]
+        required_entry_sets: ["output"]
         invalidated_entries: ["_refine_.*", "_computing_.*", "_geom_.*", "_atom_rho_.*", "_atom_local_axes_.*"]
+        custom_categories: ["iucr", "mopro"]
+      - name: "table_type"
+        type: "str"
+        default: "MoPro v20"
+        description: "to be added"
+      - name: "wavefunction_type"
+        type: "str"
+        default: "Su Coppens"
+        description: "to be added"
     interactive_lifecycle:
       prepare:
         implemented_as: "python_callable"
         module: "configure_mopro"
         function: "prepare__interactive"
-        used_basecommand_parameters: ["input_cif_path"]
+        used_basecommand_parameters: ["input_cif_path", "table_type", "wavefunction_type"]
       run:
         implemented_as: "CLI"
         command: "wine /opt/wine_installations/wine_win64/drive_c/MoProSuite-win-July2022/MoProGUI_Qt_win64/MoProGUI_win64.exe"
@@ -37,9 +47,42 @@ commands:
         function: "finalise__interactive"
         used_basecommand_parameters: ["output_cif_path"]
 
+  - name: "run_inp_file"
+    implemented_as: "python_callable"
+    module: "configure_mopro"
+    function: "run_inp_file"
+    parameters:
+      - name: "input_cif_path"
+        type: "QCrBox.input_cif"
+        required_entry_sets: ["input"]
+        merge_su: True
+      - name: "output_cif_path"
+        type: "QCrBox.output_cif"
+        required_entries: []
+        optional_entries: []
+        required_entry_sets: ["output"]
+        invalidated_entries: ["_refine_.*", "_computing_.*", "_geom_.*", "_atom_rho_.*", "_atom_local_axes_.*"]
+      - name: "inp_file_path"
+        type: "QCrBox.input_file"
+        description: "path to the MoPro input file"
+      - name: "contraint_file_path"
+        type: "QCrBox.input_file"
+        description: "path to the MoPro constraints file"
+      - name: "restraint_file_path"
+        type: "QCrBox.input_file"
+        description: "path to the MoPro restraints file"
+      - name: "table_type"
+        type: "str"
+        default: "MoPro v20"
+        description: "to be added"
+      - name: "wavefunction_type"
+        type: "str"
+        default: "Su Coppens"
+        description: "to be added"
+
 
 cif_entry_sets:
-  - name: "interactive_input"
+  - name: "input"
     required: [
       "_symmetry_cell_setting",
       "_space_group_IT_number",
@@ -85,10 +128,46 @@ cif_entry_sets:
       "_atom_site_refinement_flags_posn",
       "_atom_site_refinement_flags_adp",
       "_atom_site_disorder_assembly",
-      "_atom_site_disorder_group"
+      "_atom_site_disorder_group",
+      "_atom_rho_multipole_atom_label",
+      "_atom_rho_multipole_coeff_Pv",
+      "_atom_rho_multipole_coeff_P00",
+      "_atom_rho_multipole_coeff_P11",
+      "_atom_rho_multipole_coeff_P1-1",
+      "_atom_rho_multipole_coeff_P10",
+      "_atom_rho_multipole_coeff_P20",
+      "_atom_rho_multipole_coeff_P21",
+      "_atom_rho_multipole_coeff_P2-1",
+      "_atom_rho_multipole_coeff_P22",
+      "_atom_rho_multipole_coeff_P2-2",
+      "_atom_rho_multipole_coeff_P30",
+      "_atom_rho_multipole_coeff_P31",
+      "_atom_rho_multipole_coeff_P3-1",
+      "_atom_rho_multipole_coeff_P32",
+      "_atom_rho_multipole_coeff_P3-2",
+      "_atom_rho_multipole_coeff_P33",
+      "_atom_rho_multipole_coeff_P3-3",
+      "_atom_rho_multipole_kappa",
+      "_atom_rho_multipole_kappa_prime1",
+      "_atom_rho_multipole_radial_slater_n0",
+      "_atom_rho_multipole_radial_slater_zeta0",
+      "_atom_rho_multipole_radial_slater_n1",
+      "_atom_rho_multipole_radial_slater_zeta1",
+      "_atom_rho_multipole_radial_slater_n2",
+      "_atom_rho_multipole_radial_slater_zeta2",
+      "_atom_rho_multipole_radial_slater_n3",
+      "_atom_rho_multipole_radial_slater_zeta3",
+      "_atom_rho_multipole_radial_slater_n4",
+      "_atom_rho_multipole_radial_slater_zeta4",
+      "_atom_local_axes_atom_label",
+      "_atom_local_axes_atom0",
+      "_atom_local_axes_ax1",
+      "_atom_local_axes_ax2",
+      "_atom_local_axes_atom1",
+      "_atom_local_axes_atom2"
     ]
 
-  - name: "interactive_output"
+  - name: "output"
     required: [
       "_atom_site_label",
       "_atom_site_fract_x",

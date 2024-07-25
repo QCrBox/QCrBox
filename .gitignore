@@ -80,3 +80,4 @@ services/applications/xharpy_gpaw/XHARPy
 
 #MoProSuite
 services/applications/mopro/MoProSuite_*.zip
+services/applications/mopro/Import2MoPro*.zip
