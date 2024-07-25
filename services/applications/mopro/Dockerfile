@@ -23,7 +23,6 @@ ENV VMOPRO_PATH='C:\MoProSuite-win-July2022\bin-win\VMoPro-2022-06.exe'
 ENV IMOPRO_PATH='C:\MoProSuite-win-July2022\bin-win\Import2MoPro-2024-07.exe'
 ENV MOPRO_VIEWER_PATH='C:\MoProSuite-win-July2022\MoProViewer\MoProViewer_win64.exe'
 
-
 ARG QUBOX_WINE_INSTALLATIONS_DIR
 ENV WINEPREFIX="/opt/wine_installations/wine_win64"
 ARG WINEARCH="win64"

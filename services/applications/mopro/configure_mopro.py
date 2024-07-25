@@ -7,7 +7,7 @@ from qcrboxtools.cif.cif2cif import (
     cif_file_to_specific_by_yml,
 )
 from qcrboxtools.cif.file_converter.hkl import cif2hkl4
-from qcrboxtools.robots.mopro import MoProImportRobot, MoProInpFile, WinePathHelper
+from qcrboxtools.robots.mopro import MoProImportRobot, MoProInpFile, WinePathHelper, MoProRobot
 
 from qcrbox.registry.client import ExternalCommand, QCrBoxRegistryClient
 
@@ -21,6 +21,14 @@ YAML_PATH = "./config_mopro.yaml"
 lib_path = PureWindowsPath(os.environ["MOPRO_LIB_PATH"])
 mopro_exe = PureWindowsPath(os.environ["MOPRO_PATH"])
 import_mopro_exe = PureWindowsPath(os.environ["IMOPRO_PATH"])
+
+def clean_cif(cif_path, cleaned_cif_path):
+    text = cif_path.read_text(encoding="utf-8", errors="replace")
+    non_character_pattern = re.compile(
+        r"[^\w\s\.,!?;:\'\"\-()\[\]{}<>|/\\@#%&*+=`~\^]"
+    )
+    cleaned_text = non_character_pattern.sub("?", text)
+    cleaned_cif_path.write_text(cleaned_text, encoding="utf-8")
 
 
 def table_path(table_type):
@@ -59,25 +67,80 @@ def add_files_mopro_inp(inp_file: MoProInpFile, table_type: str, wave_function_t
     inp_file.files["TABL"] = table_path(table_type)
     inp_file.files["WAVE"] = wave_function_path(wave_function_type)
     inp_file.files["ANOM"] = anom_path()
-    inp_file.files["DENS"] = density_path()
     return inp_file
 
-def run_inp_file(input_cif_path, inp_file_path: str, table_type: str, wave_function_type: str):
+def run_inp_file(
+    input_cif_path,
+    output_cif_path,
+    inp_file_path: str,
+    constraint_file_path: str,
+    restraint_file_path: str,
+    table_type: str,
+    wave_function_type: str
+):
     work_folder = Path(input_cif_path).parent
     work_cif_path = work_folder / "work.cif"
     cif_file_to_specific_by_yml(
         input_cif_path, work_cif_path, YAML_PATH, "run_inp_file", "input_cif_path"
     )
+    cif2hkl4(input_cif_path, 0, work_cif_path.with_suffix(".hkl"))
 
-    imopro = MoProImportRobot(executable_path=import_mopro_exe)
+    path_helper = WinePathHelper()
+    imopro_unix_path = path_helper.get_unix_path(Path(os.environ["IMOPRO_PATH"]))
+
+    imopro = MoProImportRobot(executable_path=imopro_unix_path)
     imopro.cif2par(work_cif_path)
 
     path_helper = WinePathHelper()
     inp_file_path = Path(inp_file_path)
-    inp_file = MoProInpFile(inp_file_path)
+    inp_file = MoProInpFile.from_file(inp_file_path)
     add_files_mopro_inp(inp_file, table_type, wave_function_type)
-    inp_file.files["PARA"] = path_helper.get_windows_path(work_cif_path.with_suffix(".par"))
-    inp_file.write(inp_file_path.with_name("mopro.inp"))
+    para_path = work_cif_path.with_name(work_cif_path.stem + "_00.par")
+    inp_file.files["PARA"] = path_helper.get_windows_path(para_path)
+    inp_file.files["DATA"] = path_helper.get_windows_path(work_cif_path.with_suffix(".hkl"))
+    if constraint_file_path.lower() != "none":
+        inp_file.files["CONS"] = path_helper.get_windows_path(Path(constraint_file_path))
+    else:
+        inp_file.files.pop("CONS", None)
+    if restraint_file_path.lower() != "none":
+        inp_file.files["REST"] = path_helper.get_windows_path(Path(restraint_file_path))
+    else:
+        inp_file.files.pop("REST", None)
+    inp_file.body += '\nWRIT CIFM\n'
+    inp_file.write(work_folder / "mopro.inp")
+
+    mopro_unix_path = path_helper.get_unix_path(Path(os.environ["MOPRO_PATH"]))
+    mopro = MoProRobot(executable_path=mopro_unix_path)
+    mopro.run_file(work_folder / "mopro.inp")
+
+    excluded_cif = ("output.cif", "work.cif", "input.cif")
+    newest_cif_path = next(
+        reversed(
+            sorted(
+                (
+                    file_path
+                    for file_path in work_folder.glob("*.cif")
+                    if file_path.name not in excluded_cif
+                ),
+                key=os.path.getmtime,
+            )
+        )
+    )
+
+    # MoPro might output invalid characters
+    cleaned_cif_path = newest_cif_path.with_name("cleaned.cif")
+    clean_cif(newest_cif_path, cleaned_cif_path)
+
+    cif_file_merge_to_unified_by_yml(
+        cleaned_cif_path,
+        output_cif_path,
+        input_cif_path,
+        YAML_PATH,
+        "run_inp_file",
+        "output_cif_path",
+    )
+
+
 
 
 def prepare__interactive(input_cif_path, table_type, wave_function_type):
@@ -119,7 +182,7 @@ def prepare__interactive(input_cif_path, table_type, wave_function_type):
     cif2hkl4(input_cif_path, 0, input_cif_path.with_suffix(".hkl"))
 
     path_helper = WinePathHelper()
-    imopro_unix_path = path_helper.get_wine_path(Path(os.environ["IMOPRO_PATH"]))
+    imopro_unix_path = path_helper.get_unix_path(Path(os.environ["IMOPRO_PATH"]))
 
     imopro = MoProImportRobot(executable_path=imopro_unix_path)
     imopro.cif2par(work_cif_path)
@@ -145,14 +208,8 @@ def finalise__interactive(input_cif_path, output_cif_path):
         )
 
         # MoPro might output invalid characters
-
-        text = newest_cif_path.read_text(encoding="utf-8", errors="replace")
-        non_character_pattern = re.compile(
-            r"[^\w\s\.,!?;:\'\"\-()\[\]{}<>|/\\@#%&*+=`~]"
-        )
-        cleaned_text = non_character_pattern.sub("?", text)
         cleaned_cif_path = newest_cif_path.with_name("cleaned.cif")
-        cleaned_cif_path.write_text(cleaned_text, encoding="utf-8")
+        clean_cif(newest_cif_path, cleaned_cif_path)
 
         cif_file_merge_to_unified_by_yml(
             cleaned_cif_path,
@@ -165,10 +222,20 @@ def finalise__interactive(input_cif_path, output_cif_path):
     except StopIteration:
         pass
 
+def toparams__interactive(input_cif_path):
+    work_dir = Path(input_cif_path).parent
+    work_cif_path = work_dir / "work.cif"
+
+
 
 cmd_interactive = ExternalCommand(
     "wine",
     "/opt/wine_installations/wine_win64/drive_c/MoProSuite-win-July2022/MoProGUI_Qt_win64/MoProGUI_win64.exe",
+)
+
+application.register_python_callable(
+    "run_inp_file",
+    run_inp_file,
 )
 
 application.register_external_command(
