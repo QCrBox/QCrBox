@@ -45,6 +45,9 @@ def get_param_spec_from_json(param_spec_json: dict) -> ParameterSpecDiscriminate
 
 
 def get_param_spec_from_signature_param(p: inspect.Parameter) -> ParameterSpecDiscriminatedUnion:
+    if p.annotation == inspect._empty:
+        return None
+
     dtype = p.annotation.__name__
     is_required = p.default == inspect._empty
     default_value = None if is_required else repr(p.default)
