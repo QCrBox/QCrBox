@@ -13,6 +13,11 @@ from .base_command_spec import BaseCommandSpec
 __all__ = ["PythonCallableSpec"]
 
 
+
+class MissingTypeAnnotation(Exception):
+    pass
+
+
 class ParameterValidator:
     def __init__(self, fn_signature: inspect.Signature):
         self.fn_signature = fn_signature
@@ -25,6 +30,8 @@ class ParameterValidator:
             raise ValueError(f"Parameter {param_spec.name!r} not present in function signature")
 
         fn_param = self.fn_params[param_spec.name]
+        if fn_param is None:
+            raise MissingTypeAnnotation(f"Missing type annotation for parameter: {param_spec.name!r}")
         if param_spec.dtype != fn_param.dtype:
             raise ValueError(f"Parameter dtype mismatch: {param_spec.dtype} != {fn_param.dtype}")
 
@@ -73,7 +80,10 @@ class PythonCallableSpec(BaseCommandSpec):
 
         fn_validator = ParameterValidator(fn_signature)
         for p in model_data.parameters:
-            fn_validator.validate(p)
+            try:
+                fn_validator.validate(p)
+            except MissingTypeAnnotation:
+                logger.warning(f"No type annotation present for parameter {p.name!r} - skipping validation.")
 
         return model_data
 

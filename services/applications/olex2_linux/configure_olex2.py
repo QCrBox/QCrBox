@@ -45,10 +45,10 @@ def finalise__interactive(input_cif_path, output_cif_path):
     )
 
 
-def toparams__interactive(input_cif_path, par_json, par_folder):
+def toparams__interactive(input_cif_path, parameter_json_path, parameter_folder):
     input_cif_path = Path(input_cif_path)
     work_folder = input_cif_path.parent
-    par_folder = Path(par_folder)
+    parameter_folder = Path(parameter_folder)
 
     newest_cif_path = next(
         reversed(
@@ -60,36 +60,36 @@ def toparams__interactive(input_cif_path, par_json, par_folder):
     )
 
     cif_file_merge_to_unified_by_yml(
-        newest_cif_path, par_folder / "combine.cif", input_cif_path, YAML_PATH, "interactive", "output_cif_path"
+        newest_cif_path, parameter_folder / "combine.cif", input_cif_path, YAML_PATH, "interactive", "output_cif_path"
     )
 
     tojson = {"structure_cif": "$par_folder/combine.cif"}
-    cif_text = (par_folder / "combine.cif").read_text().lower()
+    cif_text = (parameter_folder / "combine.cif").read_text().lower()
     if "hirshfeld" in cif_text or "aspheric" in cif_text:
         try:
             newest_tsc_path = next(reversed(sorted(work_folder.glob("*.ts*"), key=os.path.getmtime)))
             shutil.copy(
                 newest_tsc_path,
-                (par_folder / "work").with_suffix(newest_tsc_path.suffix),
+                (parameter_folder / "work").with_suffix(newest_tsc_path.suffix),
             )
             tojson["tsc"] = "$par_folder/work" + newest_tsc_path.suffix
         except StopIteration:
             pass
 
-    json_path = Path(par_json)
+    json_path = Path(parameter_json_path)
     with json_path.open("w", encoding="UTF-8") as fobj:
         json.dump(tojson, fobj, indent=4)
 
 
-def redo__interactive(redo_input_cif_path, redo_output_path, par_json, par_folder):
+def redo__interactive(redo_input_cif_path, redo_output_cif_path, parameter_json_path, parameter_folder):
     redo_input_cif_path = Path(redo_input_cif_path)
     work_folder = redo_input_cif_path.parent
-    par_folder = Path(par_folder)
-    with open(par_json, "r", encoding="UTF-8") as fobj:
+    parameter_folder = Path(parameter_folder)
+    with open(parameter_json_path, "r", encoding="UTF-8") as fobj:
         par_dict = json.load(fobj)
     for key in par_dict:
         if isinstance(par_dict[key], str):
-            par_dict[key] = par_dict[key].replace("$par_folder", str(par_folder))
+            par_dict[key] = par_dict[key].replace("$par_folder", str(parameter_folder))
 
     merge_cif = work_folder / "merge.cif"
 
@@ -108,7 +108,7 @@ def redo__interactive(redo_input_cif_path, redo_output_path, par_json, par_folde
 
     _ = olex2_socket.refine(n_cycles=10, refine_starts=5)
 
-    cif_file_merge_to_unified_by_yml(work_cif, redo_output_path, redo_input_cif_path, YAML_PATH, "interactive")
+    cif_file_merge_to_unified_by_yml(work_cif, redo_output_cif_path, redo_input_cif_path, YAML_PATH, "interactive")
 
 
 if __name__ == "__main__":
