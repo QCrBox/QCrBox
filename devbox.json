@@ -13,7 +13,8 @@
     "lazydocker@latest",
     "micromamba@latest",
     "bashInteractive@latest",
-    "fzf@latest"
+    "fzf@latest",
+    "python@3.12"
   ],
   "env": {
     "MAMBA_ROOT_PREFIX":     "${PWD}/.devbox/virtenv/python/.conda",
@@ -21,6 +22,8 @@
   },
   "shell": {
     "init_hook": [
+      ". $VENV_DIR/bin/activate",
+      "",
       "#bash scripts/create_mamba_env.sh",
       "#alias conda=micromamba",
       "#alias sw_vers=/usr/bin/sw_vers",
