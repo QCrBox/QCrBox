@@ -1,0 +1,6 @@
+services:
+  tonto_lamagoet:
+    build:
+      context: services/applications/tonto_lamagoet/
+      args:
+        QCRBOX_DOCKER_TAG: ${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}

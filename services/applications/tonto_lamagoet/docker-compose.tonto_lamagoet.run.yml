@@ -1,0 +1,19 @@
+services:
+  tonto_lamagoet:
+    image: "qcrbox/tonto_lamagoet:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
+    build:
+      context: services/applications/tonto_lamagoet/
+      args:
+        QCRBOX_DOCKER_TAG: ${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}
+    environment:
+      QCRBOX_RABBITMQ_QUEUE_NAME: "tonto_lamagoet"
+      QCRBOX_REGISTRY_HOST: "qcrbox-registry"
+      QCRBOX_REGISTRY_PORT: "8000"
+    volumes:
+      - ${QCRBOX_SHARED_FILES_DIR_HOST_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_HOST_PATH}:${QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH}
+    depends_on:
+      qcrbox-registry:
+        condition: service_healthy
+    networks:
+      - qcrbox-net
+    restart: unless-stopped
