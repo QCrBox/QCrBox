@@ -193,6 +193,13 @@ def task_build_qcrboxtools_python_package(dry_run: bool):
 def task_build_docker_image(service: str, docker_project: DockerProject, with_deps: bool, dry_run: bool):
     actions = []
 
+    task_deps = []
+    if with_deps:
+        dependent_services = docker_project.get_direct_dependencies(service, include_build_deps=True)
+        task_deps = [f"task_build_service:{dep}" for dep in dependent_services]
+        if service == "base-ancestor":
+            task_deps.append("task_build_python_package:pyqcrbox")
+
     try:
         build_context = docker_project.get_build_context(service)
 
@@ -205,13 +212,6 @@ def task_build_docker_image(service: str, docker_project: DockerProject, with_de
         actions.append((docker_project.build_single_docker_image, (service, dry_run)))
     except QCrBoxNoBuildContextError:
         logger.debug(f"No local build context found for service {service!r}, nothing to do.")
-
-    task_deps = []
-    if with_deps:
-        dependent_services = docker_project.get_direct_dependencies(service, include_build_deps=True)
-        task_deps = [f"task_build_service:{dep}" for dep in dependent_services]
-        if service == "base-ancestor":
-            task_deps.append("task_build_python_package:pyqcrbox")
 
     return {
         "name": f"task_build_service:{service}",
