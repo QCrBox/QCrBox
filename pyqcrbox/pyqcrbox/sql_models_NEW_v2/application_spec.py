@@ -10,7 +10,7 @@ from .. import helpers
 from .base import QCrBoxPydanticBaseModel
 from .cif_entry_set import CifEntrySet
 from .command_spec import CommandSpec
-from .command_spec.command_spec import CommandSpecWithParameters
+from .command_spec.command_spec import CommandSpecWithParameters, BaseCommandSpec
 
 __all__ = ["ApplicationSpec"]
 
@@ -40,7 +40,7 @@ class ApplicationSpec(ApplicationSpecBase, extra=Extra.allow):
     # model_config = ConfigDict(arbitrary_types_allowed=True)
 
     qcrbox_yaml_spec_version: str
-    commands: list[CommandSpec] = []
+    commands: list[BaseCommandSpec] = []
     cif_entry_sets: list[CifEntrySet] = []
     _cmds_by_name: Namespace = PrivateAttr
 
@@ -56,7 +56,7 @@ class ApplicationSpec(ApplicationSpecBase, extra=Extra.allow):
 
     @field_validator("commands")
     @classmethod
-    def verify_command_names_are_unique(cls, value: list[CommandSpec]) -> list[CommandSpec]:
+    def verify_command_names_are_unique(cls, value: list[BaseCommandSpec]) -> list[BaseCommandSpec]:
         command_names = [c.name for c in value]
         if len(command_names) != len(set(command_names)):
             raise ValueError("Command names must be unique")
@@ -71,7 +71,11 @@ class ApplicationSpec(ApplicationSpecBase, extra=Extra.allow):
     def command_names(self) -> list[str]:
         return list(self.cmds_by_name.keys())
 
-    def get_command_by_name(self, cmd_name: str) -> CommandSpec:
+    @property
+    def non_interactive_commands(self) -> list[BaseCommandSpec]:
+        return [cmd for cmd in self.commands if not cmd.is_interactive]
+
+    def get_command_by_name(self, cmd_name: str) -> BaseCommandSpec:
         return self.cmds_by_name[cmd_name]
 
     @property

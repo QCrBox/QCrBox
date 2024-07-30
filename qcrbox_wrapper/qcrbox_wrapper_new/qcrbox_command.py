@@ -169,6 +169,10 @@ class QCrBoxCommandBase:
         ]
 
     @property
+    def is_interactive(self) -> bool:
+        return self.cmd_spec.is_interactive
+
+    @property
     def par_name_list(self) -> list[str]:
         """
         Retrieves the names of the parameters for the command.

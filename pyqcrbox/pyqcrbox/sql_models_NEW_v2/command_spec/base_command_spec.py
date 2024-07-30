@@ -19,9 +19,13 @@ class BaseCommandSpec(QCrBoxPydanticBaseModel):
     doi: str | None = None
 
     @property
-    def is_python_callable(self):
-        return self.implementation.implemented_as == ImplementedAs.python_callable
+    def is_python_callable(self) -> bool:
+        return self.implemented_as == ImplementedAs.python_callable
 
     @property
-    def is_cli_command(self):
-        return self.implementation.implemented_as == ImplementedAs.cli_command
+    def is_cli_command(self) -> bool:
+        return self.implemented_as == ImplementedAs.cli_command
+
+    @property
+    def is_interactive(self) -> bool:
+        return self.implemented_as == ImplementedAs.interactive
