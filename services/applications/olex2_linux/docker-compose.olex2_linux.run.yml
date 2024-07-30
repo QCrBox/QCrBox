@@ -24,7 +24,7 @@ services:
       traefik.http.services.olex2-service.loadbalancer.server.scheme: http
       traefik.http.services.olex2-service.loadbalancer.server.port: 8080
     depends_on:
-      qcrbox-nats:
+      qcrbox-registry:
         condition: service_healthy
     restart: unless-stopped
     environment:
