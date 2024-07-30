@@ -9,7 +9,7 @@ url: "https://www.rigaku.com/de/products/smc/crysalis"
 
 commands:
   - name: "interactive"
-    implemented_as: "interactive"  # other options: "python_callable"
+    implemented_as: "interactive"
     description: "Run CrysalisPro interactively"
     parameters:
       - name: "par_path"
@@ -29,8 +29,8 @@ commands:
         used_basecommand_parameters: ["work_folder"]
       finalise:
         implemented_as: "python_callable"
-        module: "configure_crysalis-pro"
-        function: "finalise__interactive"
+        import_path: "configure_crysalis-pro"
+        callable_name: "finalise__interactive"
         used_basecommand_parameters: ["work_folder", "output_cif_path"]
 
 cif_entry_sets:

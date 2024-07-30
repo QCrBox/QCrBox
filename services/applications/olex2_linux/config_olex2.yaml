@@ -40,7 +40,7 @@ commands:
       prepare:
         implemented_as: "python_callable"
         import_path: "configure_olex2"
-        function: "prepare__interactive"
+        callable_name: "prepare__interactive"
         used_basecommand_parameters: ["input_cif_path", "work_cif_path"]
       run:
         implemented_as: "cli_command"
@@ -49,12 +49,12 @@ commands:
       finalise:
         implemented_as: "python_callable"
         import_path: "configure_olex2"
-        function: "finalise__interactive"
+        callable_name: "finalise__interactive"
         used_basecommand_parameters: ["input_cif_path", "output_cif_path"]
       toparams:
         implemented_as: "python_callable"
         import_path: "configure_olex2"
-        function: "toparams__interactive"
+        callable_name: "toparams__interactive"
         used_basecommand_parameters: ["input_cif_path", "output_cif_path", "parameter_json_path", "parameter_folder"]
     non_interactive_equivalent:
       name: "redo__interactive"

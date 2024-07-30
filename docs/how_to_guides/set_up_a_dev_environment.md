@@ -62,11 +62,11 @@ standard `pip` installer).
 (venv) $ python -m pip install --upgrade pip uv
 ```
 
-## Install the `qcrbox` Python package
+## Install the `pyqcrbox` Python package
 
-Next, install the `qcrbox` package itself.
+Next, install the `pyqcrbox` package itself.
 ```
-$ uv pip install -e ./qcrbox[all]
+$ uv pip install -e ./pyqcrbox[all]
 ```
 This command installs the `qcb` command line tool, which acts as the command line interface for the
 Quantum Crystallography Toolbox, together with all extra dependencies needed for  development. These
@@ -74,36 +74,36 @@ extra dependencies include developer tools for testing, code formatting and lint
 to run the QCrBox server & client locally, and packages needed to build and serve the documentation.
 
 !!! note
-    The above command uses the `-e` switch to install `qcrbox` in [editable mode](https://setuptools.pypa.io/en/latest/userguide/development_mode.html).
+    The above command uses the `-e` switch to install `pyqcrbox` in [editable mode](https://setuptools.pypa.io/en/latest/userguide/development_mode.html).
     This means that any changes we make to the code during development are automatically picked up in our local installation
-    without having to reinstall/upgrade the `qcrbox` package.
+    without having to reinstall/upgrade the `pyqcrbox` package.
 
 
 ### Alternative: installation with minimal dependencies
 
 If you only care about being able to run the `qcb` command line tool (which is needed in order to build and run the
-QCrBox docker containers) but not about any other development capabilities, you can choose to install `qcrbox` with
+QCrBox docker containers) but not about any other development capabilities, you can choose to install `pyqcrbox` with
 only a minimal set of dependencies as follows.
 ```
-(venv) $ uv pip install -e ./qcrbox
+(venv) $ uv pip install -e ./pyqcrbox
 ```
 
 ### Alternative: installation with targeted sets of extra dependencies
 
-QCrBox comes with several other sets of additional dependencies which can be specified in square brackets after `qcrbox`.
+QCrBox comes with several other sets of additional dependencies which can be specified in square brackets after `pyqcrbox`.
 
 If you only want to be able to build the documentation, for example, run the following command.
 ```
-(venv) $ uv pip install -e ./qcrbox[docs]
+(venv) $ uv pip install -e ./pyqcrbox[docs]
 ```
 
 If you plan on developing QCrBox, making modifications to the code and/or submitting merge requests,
 you most likely want to install the `dev` dependencies, too.
 ```
-(venv) $ uv pip install -e ./qcrbox[dev]
+(venv) $ uv pip install -e ./pyqcrbox[dev]
 ```
 
-Two other sets of additional dependencies are `qcrbox[client]` and `qcrbox[server]`, but these are mostly relevant
+Two other sets of additional dependencies are `pyqcrbox[client]` and `pyqcrbox[server]`, but these are mostly relevant
 for targeted installation inside the Docker containers.
 
 
@@ -148,7 +148,7 @@ $ qcb build qcrboxtools
 ```
 
 !!! warning
-    There were issues with running hatchling under Windows 11, especially when using a Python version from the Windows Store. If ``qcb build`` fails during ``Building Python package: qcrbox`` with a code 106 error (or silently when running without ``-v``), try the following remedy:
+    There were issues with running hatchling under Windows 11, especially when using a Python version from the Windows Store. If ``qcb build`` fails during ``Building Python package: pyqcrbox`` with a code 106 error (or silently when running without ``-v``), try the following remedy:
 
       1. Uninstall the Windows Store Python version using the app uninstall of Windows
       2. Get a new installer from [python.org](https://www.python.org/)
@@ -166,14 +166,14 @@ When using Docker on Windows with WSL2 (Windows Subsystem for Linux 2), file acc
    - Type `wsl` and press Enter
 
 2. Create a new folder in your WSL2 home directory using the `mkdir` command:
-   - Use lowercase letters only for the folder name.
+   - **Important**: Use lowercase letters only for the folder name!
    - Example: `mkdir qcrbox_shared_files`
 
 3. Locate your Linux username:
    - Look at the command prompt; your username is before the @ symbol
    - Example: If you see `john@DESKTOP-123:~$`, your username is "john"
 
-4. Update your qcrbox's `.env.dev` file in the qcrbox base directory:
+4. Update your QCrBox's `.env.dev` file in the QCrBox base directory:
    - Find the line starting with `QCRBOX_SHARED_FILES_DIR_HOST_PATH`
    - Replace it with one of these options:
      - For Windows 10:

@@ -15,7 +15,7 @@ commands:
 
 
   - name: "refine_iam"
-    implemented_as: "CLI"  # other options: "python_callable"
+    implemented_as: "CLI"
     call_pattern: |
       python /opt/qcrbox/olex2_glue_cli.py refine \
          --structure_path {cif_path} \

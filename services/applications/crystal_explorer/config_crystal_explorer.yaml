@@ -10,7 +10,7 @@ doi: 10.1107/S1600576721002910
 
 commands:
   - name: "interactive"
-    implemented_as: "interactive"  # other options: "python_callable"
+    implemented_as: "interactive"
     description: "Run Crystal Explorer interactively"
     parameters:
       - name: "input_cif_path"
@@ -26,8 +26,8 @@ commands:
     interactive_lifecycle:
       prepare:
         implemented_as: "python_callable"
-        module: "config_crystal_explorer"
-        function: "prepare__interactive"
+        import_path: "config_crystal_explorer"
+        callable_name: "prepare__interactive"
         used_basecommand_parameters: ["input_cif_path", "work_cif_path"]
 
       run:
