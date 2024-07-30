@@ -10,7 +10,7 @@ doi: 10.1107/S1600576721002910
 
 commands:
   - name: "interactive"
-    implemented_as: "interactive"  # other options: "python_callable"
+    implemented_as: "interactive"
     description: "Run Crystal Explorer interactively"
     parameters:
       - name: "input_cif_path"

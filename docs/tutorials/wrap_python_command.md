@@ -251,7 +251,7 @@ Our goal is to incorporate atomic parameters from the most compatible structure 
 
 ```YAML
   - name: "merge_closest_cod_entry"
-    implemented_as: "python_callable"  # other options: "python_callable"
+    implemented_as: "python_callable"
     module: "configure_cod_check_tutorial"
     function: "merge_closest_cod_entry"
     parameters:
@@ -291,7 +291,7 @@ Instead of writing the entries into the individual functions we now replace the 
 
 ```YAML
   - name: "merge_closest_cod_entry"
-    implemented_as: "python_callable"  # other options: "python_callable"
+    implemented_as: "python_callable"
     parameters:
       - name: "input_cif_path"
         dtype: "QCrBox.input_cif"

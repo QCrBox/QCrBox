@@ -10,7 +10,7 @@ doi: ["10.1107/S0021889802022628", "10.1107/S0021889809043234"]
 
 commands:
   - name: "interactive"
-    implemented_as: "interactive"  # other options: "python_callable"
+    implemented_as: "interactive"
     description: "Run the Eval Software Suite interactively"
     parameters:
       - name: "work_folder"

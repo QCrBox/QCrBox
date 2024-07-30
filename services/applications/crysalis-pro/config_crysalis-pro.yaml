@@ -9,7 +9,7 @@ url: "https://www.rigaku.com/de/products/smc/crysalis"
 
 commands:
   - name: "interactive"
-    implemented_as: "interactive"  # other options: "python_callable"
+    implemented_as: "interactive"
     description: "Run CrysalisPro interactively"
     parameters:
       - name: "par_path"

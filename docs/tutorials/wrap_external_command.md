@@ -59,7 +59,7 @@ Here is how you should structure the command in the YAML file:
 ```yaml
 commands:
   - name: "cell_check_csd"
-    implemented_as: "cli_command"  # other options: "python_callable"
+    implemented_as: "cli_command"
     call_pattern: cif2cellcheckcsd.sh {input_cif_path} {dimension_tolerace} {angle_tolerance} { maximum_hits}
     description: "Look up the number of entries with a similar cell within the CSD"
     parameters:
