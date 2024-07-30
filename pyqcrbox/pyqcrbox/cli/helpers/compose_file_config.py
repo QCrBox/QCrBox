@@ -12,6 +12,10 @@ from pydantic.v1.utils import deep_update
 from .qcrbox_helpers import PathLike, find_common_repo_root, get_repo_root
 
 
+class QCrBoxNoBuildContextError(Exception):
+    pass
+
+
 @functools.lru_cache(maxsize=1)
 def find_docker_compose_build_files(root: Path):
     candidate_paths = sorted(root.rglob("docker-compose*.build.yml"))
@@ -32,10 +36,6 @@ def load_docker_compose_data(*compose_files: PathLike):
         with Path(compose_file).open() as f:
             docker_compose_data = deep_update(docker_compose_data, yaml.safe_load(f))
     return docker_compose_data
-
-
-class QCrBoxNoBuildContext(Exception):
-    pass
 
 
 class ComposeFileConfig:
@@ -97,7 +97,7 @@ class ComposeFileConfig:
         try:
             return service_metadata["build"]["context"]
         except KeyError:
-            raise QCrBoxNoBuildContext()
+            raise QCrBoxNoBuildContextError()
 
     def get_dockerfile_for_service(self, service_name):
         build_context = self.get_build_context(service_name)
@@ -111,7 +111,7 @@ class ComposeFileConfig:
             dependency_names = [
                 re.match("^FROM qcrbox/(?P<image_name>.*):", line).group("image_name") for line in dependency_lines
             ]
-        except QCrBoxNoBuildContext:
+        except QCrBoxNoBuildContextError:
             dependency_names = []
 
         return dependency_names

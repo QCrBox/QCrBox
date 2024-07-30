@@ -19,7 +19,7 @@ from ..helpers import (
     prettyprint_called_process_error,
     run_tasks,
 )
-from ..helpers.compose_file_config import QCrBoxNoBuildContext
+from ..helpers.compose_file_config import QCrBoxNoBuildContextError
 
 
 @click.command(name="build", cls=ClickCommandCls)
@@ -203,7 +203,7 @@ def task_build_docker_image(service: str, docker_project: DockerProject, with_de
                 actions += [f"cd {build_context} && python {script.absolute()}" for script in prebuild_scripts]
 
         actions.append((docker_project.build_single_docker_image, (service, dry_run)))
-    except QCrBoxNoBuildContext:
+    except QCrBoxNoBuildContextError:
         logger.debug(f"No local build context found for service {service!r}, nothing to do.")
 
     task_deps = []
