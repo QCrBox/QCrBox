@@ -7,6 +7,22 @@ services:
       - qcrbox-net
     ports:
       - "${QCRBOX_BIND_ADDRESS}:${QCRBOX_OLEX2_LINUX_PORT:?Must set env var QCRBOX_OLEX2_LINUX_PORT}:8080"
+    labels:
+      traefik.enable: true
+      traefik.http.routers.to-olex2-path-prefix.rule: Path(`/gui/olex2`)
+      traefik.http.routers.to-olex2-path-prefix.middlewares: redirect-gui-olex2-path
+      traefik.http.routers.to-olex2-path-prefix.service: olex2-service
+      traefik.http.middlewares.redirect-gui-olex2-path.redirectregex.regex: ^http://(.+)/gui/olex2(/?)$$
+      traefik.http.middlewares.redirect-gui-olex2-path.redirectregex.replacement: http://olex2.gui.$$1/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true
+
+      traefik.http.routers.to-olex2-subdomain.rule: HostRegexp(`^olex2\.gui\..+$$`)
+      traefik.http.routers.to-olex2-subdomain.middlewares: redirect-gui-olex2-subdomain
+      traefik.http.routers.to-olex2-subdomain.service: olex2-service
+      traefik.http.middlewares.redirect-gui-olex2-subdomain.redirectregex.regex: ^http://olex2\.gui\.([^/]+)(/?)$$
+      traefik.http.middlewares.redirect-gui-olex2-subdomain.redirectregex.replacement: http://olex2.gui.$$1/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true
+
+      traefik.http.services.olex2-service.loadbalancer.server.scheme: http
+      traefik.http.services.olex2-service.loadbalancer.server.port: 8080
     depends_on:
       qcrbox-nats:
         condition: service_healthy
