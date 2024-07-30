@@ -98,7 +98,7 @@ Let us go through the options of this input parameter line by line:
 
     - **`description`**: A description of the parameter. Will be used for reference in the GUI. Aim for someone who is not an expert in your crystallographic specialisation.
 
-    - **`required_entries`**: List of specific CIF entries to include (see [Nomenclature](#nomenclature-in-this-howto)). If the packaged program has more than one possibility to calculate an essential value, you can use the `one_of:` keyword demonstrated in the second line. Here we need either the entry `_some_other_entry` or all the entries within the second list, in which case `_set_entry_one` and `_set_entry_two` have to be present.
+    - **`required_entries`**: List of specific CIF entries to include (see [Nomenclature](#nomenclature-in-this-howto)). If the packaged program has more than one possibility to calculate an essential value, you can use the `one_of:` keyword demonstrated in the second line. Here we need either the entry `_some_other_entry` or all the entries within the second list, in which case `_set_entry_one` and `_set_entry_two` both have to be present.
 
     - **`optional_entries`**: List of specific CIF entries to include when present (see [Nomenclature](#nomenclature-in-this-howto)). Can also include `one_of` to only include the first option that can be found.
 
@@ -131,7 +131,7 @@ QCrBox assumes that each command will only update part of the available informat
 
 The `invalidated_entries` section is a list of [python re](https://docs.python.org/3/library/re.html) Regular Expressions that can be used to filter out values from the original cif file. For example a change in any of the parameters might invalidate the contained quality indicators within the `input_cif` file. We can filter them out using `"_refine.*"`. Invalidated entries only work on the `input_cif`.
 
-The entries transferred from the cif file created during command execution can be chosen using `required` and `optional` cif entries. `required` in this context means that a missing value indicates that the calculation has failed (and therefore no part of result should not be used). Optional entries are copied but do not indicate a failure.
+The entries transferred from the cif file created during command execution can be chosen using `required` and `optional` cif entries. `required` in this context means that a missing value indicates that the calculation has failed (and therefore no part of the result should be used). Optional entries are copied but do not indicate a failure when missing.
 
 In future `required` entries will also be used to check whether a command can be run given its precesing commands.
 

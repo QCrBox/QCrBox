@@ -1,6 +1,6 @@
 Getting licensed components needed to build some containers
 ===========================================================
-Some of the dependencies of containers are not freely available. As such you need to add the necessary components yourself after an initial registering steps. Here are the instruction for the currently supported components.
+Some container dependencies are not freely available. As such, you need to add the necessary components yourself after an initial registering steps. Here are the instruction for the currently supported components.
 
 ## CrysAlisPro
 Register in the CrysAlisPro forum [here](https://www.rigakuxrayforum.com/). Then get the executable here: TBD.
