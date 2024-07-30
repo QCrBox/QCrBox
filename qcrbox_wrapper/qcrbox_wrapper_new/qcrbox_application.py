@@ -1,9 +1,10 @@
 import textwrap
 from typing import TYPE_CHECKING
 
-from pyqcrbox import sql_models_NEW_v2
+from pyqcrbox import logger, sql_models_NEW_v2
 
 from .qcrbox_command import QCrBoxCommand
+from .qcrbox_interactive_session import QCrBoxInteractiveSession
 
 if TYPE_CHECKING:
     from .qcrbox_wrapper import QCrBoxWrapper
@@ -27,6 +28,7 @@ class QCrBoxApplication:
         application_spec: sql_models_NEW_v2.ApplicationSpecWithCommands
             The application spec as returned by the API endpoint `/applications`.
         """
+        self.wrapper_parent = wrapper_parent
         self.application_spec = application_spec
         self.name = self.application_spec.name
         self.slug = self.application_spec.slug
@@ -40,6 +42,10 @@ class QCrBoxApplication:
             )
             for cmd_spec in self.application_spec.commands
         ]
+        self.non_interactive_commands = [cmd for cmd in self.commands if not cmd.is_interactive]
+        self.interactive_commands = [cmd for cmd in self.commands if cmd.is_interactive]
+        logger.debug(f"TODO: implement proper construction and validation of gui_url")
+        self.gui_url = f"http://{self.wrapper_parent.server_host}/gui/{self.slug}"
         self.__doc__ = self._construct_docstring()
 
     def __repr__(self) -> str:
@@ -64,3 +70,13 @@ class QCrBoxApplication:
                 {separator.join(method_strings)}
             """
         )
+
+    def interactive_session(self, *args, **kwargs):
+        assert (
+            len(self.interactive_commands) == 1
+        ), "interactive_session currently assumes that the application exposes exactly one interactive command"
+
+        cmd_interactive = self.interactive_commands[0]
+
+        session = QCrBoxInteractiveSession(cmd_interactive, self.gui_url, args, kwargs)
+        session.start_and_wait_for_user_input()
