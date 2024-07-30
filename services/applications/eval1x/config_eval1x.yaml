@@ -32,8 +32,8 @@ commands:
         used_basecommand_parameters: ["work_folder"]
       finalise:
         implemented_as: "python_callable"
-        module: "configure_eval1x"
-        function: "finalise__interactive"
+        import_path: "configure_eval1x"
+        callable_name: "finalise__interactive"
         used_basecommand_parameters: ["work_folder", "output_cif_path"]
 
   - name: "integrate"
