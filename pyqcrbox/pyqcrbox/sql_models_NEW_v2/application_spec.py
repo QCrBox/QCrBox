@@ -15,16 +15,6 @@ from .command_spec.command_spec import CommandSpecWithParameters, BaseCommandSpe
 __all__ = ["ApplicationSpec"]
 
 
-class ApplicationSpecBase(QCrBoxPydanticBaseModel):
-    name: str
-    slug: str
-    version: str
-    description: str | None = None
-    url: str | None = None
-    email: str | None = None
-    doi: str | None = None
-
-
 class Namespace(UserDict):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -36,13 +26,28 @@ class Namespace(UserDict):
         return self._names
 
 
-class ApplicationSpec(ApplicationSpecBase, extra=Extra.allow):
-    # model_config = ConfigDict(arbitrary_types_allowed=True)
+class ApplicationSpecBase(QCrBoxPydanticBaseModel, extra=Extra.allow):
+    name: str
+    slug: str
+    version: str
+    description: str | None = None
+    url: str | None = None
+    email: str | None = None
+    doi: str | None = None
 
-    qcrbox_yaml_spec_version: str
-    commands: list[BaseCommandSpec] = []
-    cif_entry_sets: list[CifEntrySet] = []
     _cmds_by_name: Namespace = PrivateAttr
+
+    @property
+    def non_interactive_commands(self) -> list[BaseCommandSpec]:
+        return [cmd for cmd in self.commands if not cmd.is_interactive]
+
+    @property
+    def interactive_commands(self) -> list[BaseCommandSpec]:
+        return [cmd for cmd in self.commands if cmd.is_interactive]
+
+    @property
+    def cmds_by_name(self):
+        return self._cmds_by_name
 
     @model_validator(mode="after")
     def populate_cmds_by_name(self) -> Self:
@@ -51,8 +56,24 @@ class ApplicationSpec(ApplicationSpecBase, extra=Extra.allow):
         return self
 
     @property
-    def cmds_by_name(self):
-        return self._cmds_by_name
+    def command_names(self) -> list[str]:
+        return list(self.cmds_by_name.keys())
+
+    def get_command_by_name(self, cmd_name: str) -> BaseCommandSpec:
+        return self.cmds_by_name[cmd_name]
+
+
+class ApplicationSpec(ApplicationSpecBase):
+    # model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    qcrbox_yaml_spec_version: str
+    commands: list[BaseCommandSpec] = []
+    cif_entry_sets: list[CifEntrySet] = []
+
+    @classmethod
+    def from_yaml_file(cls, file_path: str | Path):
+        file_path = Path(file_path)
+        return cls(**yaml.safe_load(file_path.open()))
 
     @field_validator("commands")
     @classmethod
@@ -62,21 +83,6 @@ class ApplicationSpec(ApplicationSpecBase, extra=Extra.allow):
             raise ValueError("Command names must be unique")
         return value
 
-    @classmethod
-    def from_yaml_file(cls, file_path: str | Path):
-        file_path = Path(file_path)
-        return cls(**yaml.safe_load(file_path.open()))
-
-    @property
-    def command_names(self) -> list[str]:
-        return list(self.cmds_by_name.keys())
-
-    @property
-    def non_interactive_commands(self) -> list[BaseCommandSpec]:
-        return [cmd for cmd in self.commands if not cmd.is_interactive]
-
-    def get_command_by_name(self, cmd_name: str) -> BaseCommandSpec:
-        return self.cmds_by_name[cmd_name]
 
     @property
     def nats_key(self):
