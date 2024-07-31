@@ -21,6 +21,10 @@ class InteractiveLifecycleSteps(QCrBoxPydanticBaseModel):
             cmd_data.setdefault("name", f"{key}__interactive")
         return model_data
 
+    @property
+    def commands(self):
+        return [getattr(self, name) for name in self.model_fields.keys()]
+
 
 class InteractiveCommandSpec(BaseCommandSpec):
     implemented_as: Literal["interactive"] = "interactive"
@@ -30,7 +34,7 @@ class InteractiveCommandSpec(BaseCommandSpec):
 
     @model_validator(mode="before")
     @classmethod
-    def set_paramters_for_interactive_lifecycle_commands(cls, model_data: dict) -> dict:
+    def set_parameters_for_interactive_lifecycle_commands(cls, model_data: dict) -> dict:
         if "interactive_lifecycle" not in model_data:
             raise ValueError("Field required: 'interactive_lifecycle'")
 

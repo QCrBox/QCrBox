@@ -75,6 +75,10 @@ class ApplicationSpec(ApplicationSpecBase):
         file_path = Path(file_path)
         return cls(**yaml.safe_load(file_path.open()))
 
+    @property
+    def interactive_commands(self) -> list[CommandSpecDiscriminatedUnion]:
+        return [cmd for cmd in self.commands if cmd.is_interactive]
+
     @field_validator("commands")
     @classmethod
     def verify_command_names_are_unique(
@@ -84,6 +88,11 @@ class ApplicationSpec(ApplicationSpecBase):
         if len(command_names) != len(set(command_names)):
             raise ValueError("Command names must be unique")
         return value
+
+    @model_validator(mode="after")
+    def add_interactive_lifecycle_commands(self):
+        for cmd in self.interactive_commands:
+            self.commands += cmd.interactive_lifecycle.commands
 
     @property
     def nats_key(self):
