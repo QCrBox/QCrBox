@@ -18,11 +18,6 @@ QCrBoxApplication : Represents an application within QCrBox.
 QCrBoxCommand : Represents a command for execution on the QCrBox server.
 QCrBoxCalculation : Represents a calculation performed on the QCrBox server.
 QCrBoxPathHelper : Manages file paths within QCrBox Docker containers.
-
-Namedtuples
------------
-QCrBoxParameter : Represents a parameter for QCrBoxCommand.
-QCrBoxCalculationStatus : Represents the status of a calculation in QCrBox.
 """
 
 import json

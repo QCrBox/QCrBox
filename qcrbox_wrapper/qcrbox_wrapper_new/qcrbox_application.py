@@ -33,6 +33,9 @@ class QCrBoxApplication:
         self.name = self.application_spec.name
         self.slug = self.application_spec.slug
         self.version = self.application_spec.version
+        self.gui_url = f"http://{self.wrapper_parent.server_host}/gui/{self.slug}"
+        logger.debug(f"TODO: implement proper construction and validation of gui_url")
+
         self.commands = [
             QCrBoxCommand(
                 application_slug=self.slug,
@@ -42,14 +45,16 @@ class QCrBoxApplication:
             )
             for cmd_spec in self.application_spec.commands
         ]
-        self.non_interactive_commands = [cmd for cmd in self.commands if not cmd.is_interactive]
-        self.interactive_commands = [cmd for cmd in self.commands if cmd.is_interactive]
-        logger.debug(f"TODO: implement proper construction and validation of gui_url")
-        self.gui_url = f"http://{self.wrapper_parent.server_host}/gui/{self.slug}"
-        self.__doc__ = self._construct_docstring()
 
     def __repr__(self) -> str:
         return f"<{self.name}>"
+
+    @property
+    def non_interactive_commands(self) -> list[QCrBoxCommand]:
+        return [cmd for cmd in self.commands if not cmd.is_interactive]
+    @property
+    def interactive_commands(self) -> list[QCrBoxCommand]:
+        return [cmd for cmd in self.commands if cmd.is_interactive]
 
     def _construct_docstring(self):
         method_strings = []
@@ -78,5 +83,6 @@ class QCrBoxApplication:
 
         cmd_interactive = self.interactive_commands[0]
 
-        session = QCrBoxInteractiveSession(cmd_interactive, self.gui_url, args, kwargs)
-        session.start_and_wait_for_user_input()
+        session = QCrBoxInteractiveSession(application_slug=self.slug, gui_url=self.gui_url, run_cmd=cmd_interactive)
+        # session.start_and_wait_for_user_input()
+        return session
