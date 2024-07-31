@@ -89,12 +89,19 @@ class PythonCallableSpec(BaseCommandSpec):
 
     @model_validator(mode="before")
     @classmethod
-    def set_callable_name_if_not_provided(cls, model_data: dict) -> dict:
+    def set_name_and_callable_name_if_missing(cls, model_data: dict) -> dict:
         """
-        If `callable_name` is not explicitly provided, assume it is the same as the command name.
+        If `callable_name` is not explicitly provided, assume it is the same as the command name and vice versa.
         """
-        if "callable_name" not in model_data:
-            model_data["callable_name"] = model_data["name"]
+        match model_data.get("name"), model_data.get("callable_name"):
+            case None, None:
+                raise ValueError("The fields 'name' and 'callable_name' cannot both be missing")
+            case _, None:
+                model_data["callable_name"] = model_data["name"]
+            case None, _:
+                model_data["name"] = model_data["callable_name"]
+            case _:
+                pass
 
         if "." in model_data["callable_name"]:
             raise ValueError("Qualified names (containing dots) are not supported yet")
