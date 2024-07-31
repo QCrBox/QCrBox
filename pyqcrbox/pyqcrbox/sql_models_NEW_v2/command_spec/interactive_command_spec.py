@@ -1,4 +1,6 @@
-from typing import Any, Literal
+from typing import Literal
+
+from pydantic import model_validator
 
 from ..base import QCrBoxPydanticBaseModel
 from ..parameter_spec import ParameterSpecDiscriminatedUnion
@@ -11,6 +13,13 @@ class InteractiveLifecycleSteps(QCrBoxPydanticBaseModel):
     run: NonInteractiveCommandSpec
     finalise: NonInteractiveCommandSpec
     toparams: NonInteractiveCommandSpec
+
+    @model_validator(mode="before")
+    @classmethod
+    def set_missing_names_for_lifecycle_step_commands(cls, model_data: dict) -> dict:
+        for key, cmd_data in model_data.items():
+            cmd_data.setdefault("name", f"{key}__interactive")
+        return model_data
 
 
 class InteractiveCommandSpec(BaseCommandSpec):
