@@ -1,0 +1,35 @@
+{
+  "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/0.12.0/.schema/devbox.schema.json",
+  "packages": [
+    "gfortran@latest",
+    "gcc@latest",
+    "git@latest",
+    "lapack@latest",
+    "cmake@latest",
+    "neovim@latest",
+    "python3@latest",
+    "perl@latest",
+    "which@latest"
+  ],
+  "shell": {
+    "init_hook": [
+      ". $VENV_DIR/bin/activate"
+    ],
+    "scripts": {
+      "clone-tonto-repo": [
+        "[ -e ./tonto ] || git clone --recurse-submodules https://github.com/dylan-jayatilaka/tonto.git"
+      ],
+      "checkout-release-branch": [
+        "cd tonto && git checkout release-no-ptr"
+      ],
+      "build": [
+        "mkdir -p tonto/build && cd tonto/build && cmake .. -DCMAKE_Fortran_COMPILER=gfortran -DCOMPILE_LAPACK=ON && make -j"
+      ],
+      "clone-and-build": [
+        "devbox run clone-tonto-repo",
+        "devbox run checkout-release-branch",
+        "devbox run build"
+      ]
+    }
+  }
+}
