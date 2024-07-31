@@ -6,7 +6,7 @@ USER root
 
 # Add dependencies that need installing as root here
 
-USER qcrbox
+USER ${QCRBOX_USER}
 
 # files can be added via yml to the mamba environment as such
 # RUN micromamba install -n qcrbox --file conda_packages.yml --yes && \
