@@ -7,10 +7,10 @@ from .non_interactive_command_spec import NonInteractiveCommandSpec
 
 
 class InteractiveLifecycleSteps(QCrBoxPydanticBaseModel):
-    prepare: Any
-    run: Any
-    finalise: Any
-    toparams: Any
+    prepare: NonInteractiveCommandSpec
+    run: NonInteractiveCommandSpec
+    finalise: NonInteractiveCommandSpec
+    toparams: NonInteractiveCommandSpec
 
 
 class InteractiveCommandSpec(BaseCommandSpec):
