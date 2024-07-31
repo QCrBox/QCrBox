@@ -11,7 +11,7 @@ doi: "10.1107/S0021889808042726"
 commands:
   - name: "interactive"
     implemented_as: "interactive"
-    description: "Start Olex2 in interactive mode, this can be used to solve, refine and finish small-molecule crystal structures."
+    description: "Start Olex2 in interactive mode; this can be used to solve, refine and finish small-molecule crystal structures."
     parameters:
       - name: "input_cif_path"
         dtype: "QCrBox.input_cif"
@@ -44,7 +44,7 @@ commands:
         used_basecommand_parameters: ["input_cif_path", "work_cif_path"]
       run:
         implemented_as: "cli_command"
-        command: "/bin/bash /opt/olex2/start {work_cif_path}"
+        call_pattern: "/bin/bash /opt/olex2/start {work_cif_path}"
         used_basecommand_parameters: ["work_cif_path"]
       finalise:
         implemented_as: "python_callable"
