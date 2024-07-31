@@ -81,6 +81,7 @@ codefind==0.1.6
     # via jurigged
 colorama==0.4.6
     # via mkdocs-material
+cookiecutter==2.6.0
 comm==0.2.2
     # via ipykernel
 coverage==7.6.0

@@ -20,6 +20,7 @@ click==8.1.7
     #   userpath
 cloudpickle==3.0.0
     # via doit
+cookiecutter==2.6.0
 distlib==0.3.8
     # via virtualenv
 doit==0.36.0

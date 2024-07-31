@@ -69,6 +69,7 @@ cloudpickle==3.0.0
     # via doit
 codefind==0.1.6
     # via jurigged
+cookiecutter==2.6.0
 comm==0.2.2
     # via ipykernel
 coverage==7.6.0
