@@ -27,3 +27,16 @@ class InteractiveCommandSpec(BaseCommandSpec):
     parameters: list[ParameterSpecDiscriminatedUnion]
     interactive_lifecycle: InteractiveLifecycleSteps
     non_interactive_equivalent: NonInteractiveCommandSpec
+
+    @model_validator(mode="before")
+    @classmethod
+    def set_paramters_for_interactive_lifecycle_commands(cls, model_data: dict) -> dict:
+        if "interactive_lifecycle" not in model_data:
+            raise ValueError("Field required: 'interactive_lifecycle'")
+
+        params_lookup_by_name = {param["name"]: param for param in model_data["parameters"]}
+        for cmd_data in model_data["interactive_lifecycle"].values():
+            used_basecommand_parameters = cmd_data.pop("used_basecommand_parameters", [])
+            cmd_data["parameters"] = [params_lookup_by_name[name] for name in used_basecommand_parameters]
+
+        return model_data
