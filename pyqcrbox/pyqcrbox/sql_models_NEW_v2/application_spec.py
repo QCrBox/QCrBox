@@ -10,7 +10,7 @@ from .. import helpers
 from .base import QCrBoxPydanticBaseModel
 from .cif_entry_set import CifEntrySet
 from .command_spec import CommandSpec
-from .command_spec.command_spec import CommandSpecWithParameters, BaseCommandSpec
+from .command_spec.command_spec import CommandSpecWithParameters, CommandSpecDiscriminatedUnion
 
 __all__ = ["ApplicationSpec"]
 
@@ -26,7 +26,7 @@ class Namespace(UserDict):
         return self._names
 
 
-class ApplicationSpecBase(QCrBoxPydanticBaseModel, extra=Extra.allow):
+class ApplicationSpecBase(QCrBoxPydanticBaseModel):
     name: str
     slug: str
     version: str
@@ -38,11 +38,11 @@ class ApplicationSpecBase(QCrBoxPydanticBaseModel, extra=Extra.allow):
     _cmds_by_name: Namespace = PrivateAttr
 
     @property
-    def non_interactive_commands(self) -> list[BaseCommandSpec]:
+    def non_interactive_commands(self) -> list[CommandSpecDiscriminatedUnion]:
         return [cmd for cmd in self.commands if not cmd.is_interactive]
 
     @property
-    def interactive_commands(self) -> list[BaseCommandSpec]:
+    def interactive_commands(self) -> list[CommandSpecDiscriminatedUnion]:
         return [cmd for cmd in self.commands if cmd.is_interactive]
 
     @property
@@ -59,7 +59,7 @@ class ApplicationSpecBase(QCrBoxPydanticBaseModel, extra=Extra.allow):
     def command_names(self) -> list[str]:
         return list(self.cmds_by_name.keys())
 
-    def get_command_by_name(self, cmd_name: str) -> BaseCommandSpec:
+    def get_command_by_name(self, cmd_name: str) -> CommandSpecDiscriminatedUnion:
         return self.cmds_by_name[cmd_name]
 
 
@@ -67,7 +67,7 @@ class ApplicationSpec(ApplicationSpecBase):
     # model_config = ConfigDict(arbitrary_types_allowed=True)
 
     qcrbox_yaml_spec_version: str
-    commands: list[BaseCommandSpec] = []
+    commands: list[CommandSpecDiscriminatedUnion] = []
     cif_entry_sets: list[CifEntrySet] = []
 
     @classmethod
@@ -77,12 +77,13 @@ class ApplicationSpec(ApplicationSpecBase):
 
     @field_validator("commands")
     @classmethod
-    def verify_command_names_are_unique(cls, value: list[BaseCommandSpec]) -> list[BaseCommandSpec]:
+    def verify_command_names_are_unique(
+        cls, value: list[CommandSpecDiscriminatedUnion]
+    ) -> list[CommandSpecDiscriminatedUnion]:
         command_names = [c.name for c in value]
         if len(command_names) != len(set(command_names)):
             raise ValueError("Command names must be unique")
         return value
-
 
     @property
     def nats_key(self):
