@@ -39,7 +39,7 @@ async def retrieve_applications() -> list[sql_models_NEW_v2.ApplicationSpecWithC
     with settings.db.get_session() as session:
         # applications = session.scalars(select(model_cls).where(*filter_clauses)).all()
         applications = session.scalars(select(model_cls)).all()
-        applications = [app.to_read_model() for app in applications]
+        applications = [app.to_response_model() for app in applications]
         return applications
 
 
@@ -51,7 +51,7 @@ async def retrieve_commands() -> list[sql_models_NEW_v2.CommandSpecWithParameter
     with settings.db.get_session() as session:
         # commands = session.scalars(select(model_cls).where(*filter_clauses)).all()
         commands = session.scalars(select(model_cls)).all()
-        commands = [cmd.to_read_model() for cmd in commands]
+        commands = [cmd.to_response_model() for cmd in commands]
         return commands
 
 

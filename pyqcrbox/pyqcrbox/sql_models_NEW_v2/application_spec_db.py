@@ -21,13 +21,13 @@ class ApplicationSpecDB(ApplicationSpecBase, SQLModel, table=True):
     commands: list[CommandSpecDB] = Relationship(back_populates="application")
     calculations: list[CalculationDB] = Relationship(back_populates="application")
 
-    def model_dump(self, as_read_model=False, **kwargs):
-        if as_read_model:
+    def model_dump(self, as_response_model=False, **kwargs):
+        if as_response_model:
             assert "exclude" not in kwargs
             kwargs["exclude"] = {"private_routing_key"}
 
         data = super().model_dump(**kwargs)
-        data["commands"] = [cmd.model_dump(as_read_model=as_read_model) for cmd in self.commands]
+        data["commands"] = [cmd.model_dump(as_response_model=as_response_model) for cmd in self.commands]
         return data
 
     @classmethod
@@ -63,7 +63,8 @@ class ApplicationSpecDB(ApplicationSpecBase, SQLModel, table=True):
                 session.refresh(self)
                 return self
 
-    def to_read_model(self):
+    def to_response_model(self):
         from .application_spec import ApplicationSpecWithCommands
 
-        return ApplicationSpecWithCommands(**self.model_dump(as_read_model=True))
+        return ApplicationSpecWithCommands(**self.model_dump(
+            as_response_model=True))
