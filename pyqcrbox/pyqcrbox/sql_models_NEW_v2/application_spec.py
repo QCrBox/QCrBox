@@ -86,7 +86,7 @@ class ApplicationSpec(ApplicationSpecBase):
     ) -> list[CommandSpecDiscriminatedUnion]:
         command_names = [c.name for c in value]
         if len(command_names) != len(set(command_names)):
-            raise ValueError("Command names must be unique")
+            raise ValueError(f"Command names must be unique, got: {command_names!r}")
         return value
 
     @model_validator(mode="after")
