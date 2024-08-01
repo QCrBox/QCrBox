@@ -26,10 +26,16 @@ services:
     command:
       - "--log.level=DEBUG"
       - "--accesslog=true"
+      - "--ping=true"
       - "--api.insecure=true"  # enable the web UI
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--entryPoints.web.address=:80"
+    healthcheck:
+      test: ["traefik", "healthcheck", "--ping"]
+      interval: 60s
+      start_period: 30s
+      start_interval: 1s
     networks:
       - qcrbox-net
     ports:
