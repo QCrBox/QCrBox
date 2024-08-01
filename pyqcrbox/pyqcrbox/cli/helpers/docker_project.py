@@ -62,7 +62,7 @@ class DockerProject:
 
         return cmd
 
-    def run_docker_compose_command(self, cmd: str, *cmd_args: str, dry_run: bool = False, capture_output: bool = False):
+    def run_docker_compose_command(self, cmd: str, *cmd_args: str, dry_run: bool = False, capture_output: bool = True):
         full_cmd = self._construct_docker_compose_command(cmd, *cmd_args)
         action_descr = "Running" if not dry_run else "Would run"
         logger.debug(f"{action_descr} docker compose command: {' '.join(full_cmd)!r}", dry_run=dry_run)
