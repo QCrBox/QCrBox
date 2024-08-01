@@ -45,6 +45,7 @@ class QCrBoxApplication:
             )
             for cmd_spec in self.application_spec.commands
         ]
+        self._cmds_by_name = {cmd.name: cmd for cmd in self.commands}
 
     def __repr__(self) -> str:
         return f"<{self.name}>"
@@ -76,13 +77,23 @@ class QCrBoxApplication:
             """
         )
 
-    def interactive_session(self, *args, **kwargs):
+    def interactive_session(self, **kwargs):
         assert (
             len(self.interactive_commands) == 1
         ), "interactive_session currently assumes that the application exposes exactly one interactive command"
 
-        cmd_interactive = self.interactive_commands[0]
+        #cmd_interactive = self.interactive_commands[0]
+        # run_cmd = self.application_spec.cmds_by_name["__interactive_run"]
+        # prepare_cmd = self.application_spec.cmds_by_name["__interactive_prepare"]
+        prepare_cmd = self._cmds_by_name["__interactive_prepare"]
+        run_cmd = self._cmds_by_name["__interactive_run"]
 
-        session = QCrBoxInteractiveSession(application_slug=self.slug, gui_url=self.gui_url, run_cmd=cmd_interactive)
+        session = QCrBoxInteractiveSession(
+            application_slug=self.slug,
+            gui_url=self.gui_url,
+            run_cmd=run_cmd,
+            prepare_cmd=prepare_cmd,
+            kwargs=kwargs,
+        )
         # session.start_and_wait_for_user_input()
         return session
