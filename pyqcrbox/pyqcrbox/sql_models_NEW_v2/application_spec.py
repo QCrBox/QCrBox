@@ -92,7 +92,10 @@ class ApplicationSpec(ApplicationSpecBase):
     @model_validator(mode="after")
     def add_interactive_lifecycle_commands(self):
         for cmd in self.interactive_commands:
-            self.commands += cmd.interactive_lifecycle.commands
+            for subcmd in cmd.interactive_lifecycle.commands:
+                if subcmd.name not in self.cmds_by_name:
+                    self.commands.append(subcmd)
+                    self.cmds_by_name[subcmd.name] = subcmd
         return self
 
     @property
