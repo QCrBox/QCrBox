@@ -84,3 +84,6 @@ services/applications/xharpy_gpaw/XHARPy
 
 #MoProSuite
 services/applications/mopro/MoProSuite_*.zip
+
+# Tonto
+services/applications/tonto_lamagoet/tonto
