@@ -93,6 +93,7 @@ class ApplicationSpec(ApplicationSpecBase):
     def add_interactive_lifecycle_commands(self):
         for cmd in self.interactive_commands:
             self.commands += cmd.interactive_lifecycle.commands
+        return self
 
     @property
     def nats_key(self):
