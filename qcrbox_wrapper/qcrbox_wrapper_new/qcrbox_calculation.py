@@ -56,6 +56,10 @@ class QCrBoxCalculation:
         self.calculation_parent = calculation_parent
         self._server_url = calculation_parent._server_url
 
+    def __repr__(self):
+        clsname = self.__class__.__name__
+        return f"<{clsname}: {self.id!r}>"
+
     @property
     def status(self) -> CalculationStatusDetails:
         """
