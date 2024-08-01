@@ -67,10 +67,11 @@ class PythonCallableSpec(BaseCommandSpec):
     def validate_parameters_against_function_signature(model_data):
         try:
             module = importlib.import_module(model_data.import_path)
-        except ImportError:
+        except ImportError as exc:
             logger.warning(
                 f"Failed to import module: {model_data.import_path!r}. "
-                f"Skipping validation of parameters against function signature."
+                f"Skipping validation of parameters against function signature. "
+                f"The original error was: {exc}"
             )
             return model_data
 
