@@ -55,7 +55,7 @@ commands:
         implemented_as: "python_callable"
         import_path: "configure_olex2"
         callable_name: "toparams__interactive"
-        used_basecommand_parameters: ["input_cif_path", "output_cif_path", "parameter_json_path", "parameter_folder"]
+        used_basecommand_parameters: ["input_cif_path", "parameter_json_path", "parameter_folder"]
     non_interactive_equivalent:
       name: "redo__interactive"
       implemented_as: "python_callable"
