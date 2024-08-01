@@ -21,6 +21,26 @@ services:
       - qcrbox-net
     restart: unless-stopped
 
+  qcrbox-reverse-proxy:
+    image: traefik:v3.1.0
+    command:
+      - "--log.level=DEBUG"
+      - "--accesslog=true"
+      - "--api.insecure=true"  # enable the web UI
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entryPoints.web.address=:80"
+    networks:
+      - qcrbox-net
+    ports:
+      # The HTTP port
+      - "${QCRBOX_BIND_ADDRESS:?Must set env var QCRBOX_BIND_ADDRESS}:${QCRBOX__REVERSE_PROXY__PORT:?Must set env var QCRBOX__REVERSE_PROXY__PORT}:80"
+      # The Web UI (enabled by --api.insecure=true above)
+      - "${QCRBOX_BIND_ADDRESS:?Must set env var QCRBOX_BIND_ADDRESS}:${QCRBOX__REVERSE_PROXY__WEBUI_PORT:?Must set env var QCRBOX__REVERSE_PROXY__WEBUI_PORT}:8080"
+    volumes:
+      # So that Traefik can listen to the Docker events
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
   qcrbox-message-bus:
     image: "qcrbox/message-bus:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
     volumes:
@@ -32,6 +52,8 @@ services:
       - "${QCRBOX_BIND_ADDRESS:?Must set env var QCRBOX_BIND_ADDRESS}:${QCRBOX__RABBITMQ__PORT:?Must set env var QCRBOX__RABBITMQ__PORT}:5672"
       - "${QCRBOX_BIND_ADDRESS:?Must set env var QCRBOX_BIND_ADDRESS}:${QCRBOX__RABBITMQ__MANAGEMENT_PORT:?Must set env var QCRBOX__RABBITMQ__MANAGEMENT_PORT}:15672"
 #      - "${QCRBOX_BIND_ADDRESS:?Must set env var QCRBOX_BIND_ADDRESS}:${QCRBOX_PORT_WEBSOCKET:?Must set env var QCRBOX_PORT_WEBSOCKET}:4000"
+    depends_on:
+      - qcrbox-reverse-proxy
     restart: unless-stopped
     healthcheck:
       test: rabbitmq-diagnostics -q is_running

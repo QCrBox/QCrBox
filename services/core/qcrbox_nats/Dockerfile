@@ -5,7 +5,7 @@ RUN apk add --update bash curl
 HEALTHCHECK \
     --interval=60s \
     --start-period=30s \
-    #--start-interval=1s \
+    --start-interval=1s \
     CMD curl --fail http://127.0.0.1:8222/healthz || exit 1
 
 SHELL ["/bin/bash", "-c"]
