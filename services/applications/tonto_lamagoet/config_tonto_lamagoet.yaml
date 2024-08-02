@@ -8,18 +8,32 @@ description: "Tonto is the original software for Hirshfeld atom refinement and w
 url: "https://github.com/dylan-jayatilaka/tonto"
 
 commands:
-  - name: "run_hirshfeld"
+  - name: "run_hirshfeld_hf"
     implemented_as: "python_callable"
     import_path: "configure_tonto_lamagoet"
     callable_name: "run_hirshfeld"
     parameters:
       - name: "input_cif_path"
-        type: "QCrBox.input_cif"
+        dtype: "QCrBox.input_cif"
+        description: "Path to the input CIF file"
         required_entry_sets: ["cell_data", "diffraction_data", "atom_data"]
       - name: "output_cif_path"
-        type: "QCrBox.output_cif"
+        dtype: "QCrBox.output_cif"
+        description: "Path to the output CIF file"
         required_entry_sets: ["atom_data"]
         invalidated_entries: ["_refine_.*", "_computing_.*", "_geom_.*"]
+      - name: "multiplicity"
+        dtype: "int"
+        description: "Multiplicity of the molecule (2S+1)"
+        default_value: 1
+      - name: "charge"
+        dtype: "int"
+        description: "Charge of the molecule"
+        default_value: 0
+      - name: "basis_set"
+        dtype: "str"
+        description: "Basis set to use for the calculation"
+
 
 cif_entry_sets:
   - name: "cell_data"
@@ -48,7 +62,8 @@ cif_entry_sets:
     optional : [
       "_chemical_formula_moiety",
       "_chemical_formula_sum",
-      "_shelx_hkl_file"
+      "_shelx_hkl_file",
+      "_refine_ls.extinction_coef"
     ]
   - name: "atom_data"
     required : [

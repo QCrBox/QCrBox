@@ -10,12 +10,9 @@ RUN apt-get update -y && \
     git clone --recurse-submodules https://github.com/dylan-jayatilaka/tonto.git && \
     cd tonto && \
     git checkout release-no-ptr && \
-    ln -s /opt/qcrbox/tonto/basis_sets  /usr/local/bin && \
     mkdir build && cd build && \
     cmake .. -DCMAKE_Fortran_COMPILER=gfortran -DCOMPILE_LAPACK=ON && \
     make -j && \
-    ln -s /opt/qcrbox/tonto/build/tonto /usr/local/bin && \
-    chmod -X /opt/qcrbox/tonto/build/tonto && \
     chown -R ${QCRBOX_USER}:${QCRBOX_GROUP} /opt/qcrbox/tonto/
 
 COPY configure_tonto_lamagoet.py ./
@@ -23,4 +20,4 @@ COPY config_tonto_lamagoet.yaml ./
 
 USER qcrbox
 
-ENV PATH="$PATH:/opt/tonto_lamagoet/bin/"
+ENV PATH="$PATH:/opt/qcrbox/tonto/build"
