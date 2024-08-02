@@ -26,13 +26,13 @@ commands:
     parameters:
       - name: "input_cif_path"
         dtype: "QCrBox.input_cif"
-#        required_entries: ["_cif_category.ddlm_entry"]
-#        optional_entries: ["_cif_category_ddl1_entry"]
+        required_entries: ["_cif_category.ddlm_entry"]
+        optional_entries: ["_cif_category_ddl1_entry"]
         required_entry_sets: ["example_entry_set"]
       - name: "output_cif_path"
         dtype: "QCrBox.output_cif"
-#        required_entries: ["_cif_category.ddlm_entry"]
-#        optional_entries: ["_cif_category_ddl1_entry"]
+        required_entries: ["_cif_category.ddlm_entry"]
+        optional_entries: ["_cif_category_ddl1_entry"]
         required_entry_sets: ["example_entry_set"]
         invalidated_entries: ["_processing_category\..*"]
 
