@@ -8,6 +8,18 @@ description: "{{ cookiecutter.description }}"
 url: "{{ cookiecutter.url }}"
 
 commands:
+  - name: "greet_and_sleep"
+    description: "Print a greeting message, then wait for a given duration before returning."
+    implemented_as: "python_callable"
+    import_path: "pyqcrbox.helpers"
+    parameters:
+      - name: "name"
+        dtype: str
+      - name: "duration"
+        dtype: float
+        default_value: 5.0
+        description: "Sleep duration (in seconds)"
+
   - name: "sample_cmd"
     implemented_as: "CLI"
     parameters:

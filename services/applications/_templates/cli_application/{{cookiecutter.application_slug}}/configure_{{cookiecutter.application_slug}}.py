@@ -1,18 +1,8 @@
-from qcrbox.registry.client import ExternalCommand, QCrBoxRegistryClient
+from pyqcrbox.sql_models_NEW_v2 import ApplicationSpec
+from pyqcrbox.registry.client import QCrBoxClient
 
-client = QCrBoxRegistryClient()
-application = client.register_application(
-    "{{ cookiecutter.application_name }}",
-    version="{{ cookiecutter.application_version }}",
-)
 
-cmd_run_sample_script = ExternalCommand(
-    "/bin/bash",
-    "/opt/{{ cookiecutter.application_slug }}/sample_cmd.sh",
-)
-application.register_external_command(
-    "sample_cmd",
-    cmd_run_sample_script,
-)
-
-client.run()
+if __name__ == "__main__":
+    application_spec = ApplicationSpec.from_yaml_file("config_{{ cookiecutter.application_slug }}.yaml")
+    client = QCrBoxClient(application_spec=application_spec)
+    client.run()
