@@ -34,7 +34,7 @@ commands:
         required_entries: ["_cif_category.ddlm_entry"]
         optional_entries: ["_cif_category_ddl1_entry"]
         required_entry_sets: ["example_entry_set"]
-        invalidated_entries: ["_processing_category\..*"]
+        invalidated_entries: ["_processing_category\\..*"]
 
   - name: "sample_cmd_v2"
     implemented_as: "CLI"
