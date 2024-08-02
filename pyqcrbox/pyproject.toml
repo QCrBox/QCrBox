@@ -34,6 +34,7 @@ dependencies = [
 dev = [
     #
     # dev tools
+    "cookiecutter",
     "ipdb",
     "ipython",
     "jupyterlab",
