@@ -68,7 +68,7 @@ def create_application_template(application_type, overwrite_if_exists, dry_run, 
 
     click.echo("Please provide some basic information about your application.")
     click.echo("The following dialog will guide you through the relevant settings.")
-    click.echo("You can press Ctrl+C at any time to abort.")
+    click.echo("At any time you can press Ctrl+C to abort.")
     click.echo()
     # click.echo("At the end you will be able to confirm your choices or abort the ")
     # click.echo("process before any files are created.")
