@@ -39,10 +39,10 @@ class DockerProject:
     def get_dependency_chain(self, service_name, include_build_deps=False):
         return self.compose_file_config.get_dependency_chain(service_name, include_build_deps=include_build_deps)
 
-    def build_single_docker_image(self, target_image: str, dry_run: bool = False, capture_output: bool = False):
+    def build_single_docker_image(self, target_image: str, dry_run: bool = False):
         action_descr = "Building" if not dry_run else "Would build"
         logger.info(f"{action_descr} docker image: {target_image}", dry_run=dry_run)
-        self.run_docker_compose_command("build", target_image, dry_run=dry_run, capture_output=capture_output)
+        self.run_docker_compose_command("build", target_image, dry_run=dry_run)
 
     def _construct_docker_compose_command(self, cmd: str, *cmd_args: str):
         env_dev_file = self.repo_root.joinpath(".env.dev")
@@ -62,7 +62,7 @@ class DockerProject:
 
         return cmd
 
-    def run_docker_compose_command(self, cmd: str, *cmd_args: str, dry_run: bool = False, capture_output: bool = False):
+    def run_docker_compose_command(self, cmd: str, *cmd_args: str, dry_run: bool = False):
         full_cmd = self._construct_docker_compose_command(cmd, *cmd_args)
         action_descr = "Running" if not dry_run else "Would run"
         logger.debug(f"{action_descr} docker compose command: {' '.join(full_cmd)!r}", dry_run=dry_run)
@@ -73,7 +73,7 @@ class DockerProject:
 
         if not dry_run:
             try:
-                proc = subprocess.run(full_cmd, env=custom_env, shell=False, check=False, capture_output=capture_output)
+                proc = subprocess.run(full_cmd, env=custom_env, shell=False, check=False, capture_output=True)
             except Exception as exc:
                 raise QCrBoxSubprocessError(f"Error when trying to run docker compose command: {exc}")
 
@@ -90,11 +90,11 @@ class DockerProject:
         if not dry_run:
             self.run_docker_compose_command("up", "-d", *target_containers, dry_run=dry_run)
 
-    def spin_down_docker_containers(self, target_containers, dry_run: bool = False, capture_output: bool = False):
+    def spin_down_docker_containers(self, target_containers, dry_run: bool = False):
         if target_containers == ():
             msg = f"Stopping and removing all QCrBox docker containers ({', '.join(target_containers)}"
             logger.info(msg, dry_run=dry_run)
-            self.run_docker_compose_command("down", dry_run=dry_run, capture_output=capture_output)
+            self.run_docker_compose_command("down", dry_run=dry_run)
 
         else:
             for target_container in target_containers:
@@ -107,5 +107,4 @@ class DockerProject:
                     "--force",
                     *target_container_incl_deps,
                     dry_run=dry_run,
-                    capture_output=capture_output,
                 )
