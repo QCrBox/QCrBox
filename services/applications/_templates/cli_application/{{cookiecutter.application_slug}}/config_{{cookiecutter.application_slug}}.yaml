@@ -21,7 +21,7 @@ commands:
         description: "Sleep duration (in seconds)"
 
   - name: "sample_cmd"
-    implemented_as: "CLI"
+    implemented_as: "cli_command"
     call_pattern: "sample_cmd.sh {input_cif_path} {output_cif_path}"
     parameters:
       - name: "input_cif_path"
@@ -37,7 +37,7 @@ commands:
         invalidated_entries: ["_processing_category\\..*"]
 
   - name: "sample_cmd_v2"
-    implemented_as: "CLI"
+    implemented_as: "cli_command"
     call_pattern: "sample_cmd.sh {msg} {some_number}"
     parameters:
       - name: "msg"
