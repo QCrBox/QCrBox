@@ -22,27 +22,29 @@ commands:
 
   - name: "sample_cmd"
     implemented_as: "CLI"
+    call_pattern: "sample_cmd.sh {input_cif_path} {output_cif_path}"
     parameters:
       - name: "input_cif_path"
-        type: "QCrBox.input_cif"
-        required_entries: ["_cif_category.ddlm_entry"]
-        optional_entries: ["_cif_category_ddl1_entry"]
+        dtype: "QCrBox.input_cif"
+#        required_entries: ["_cif_category.ddlm_entry"]
+#        optional_entries: ["_cif_category_ddl1_entry"]
         required_entry_sets: ["example_entry_set"]
       - name: "output_cif_path"
-        type: "QCrBox.output_cif"
-        required_entries: ["_cif_category.ddlm_entry"]
-        optional_entries: ["_cif_category_ddl1_entry"]
+        dtype: "QCrBox.output_cif"
+#        required_entries: ["_cif_category.ddlm_entry"]
+#        optional_entries: ["_cif_category_ddl1_entry"]
         required_entry_sets: ["example_entry_set"]
         invalidated_entries: ["_processing_category\..*"]
 
   - name: "sample_cmd_v2"
     implemented_as: "CLI"
+    call_pattern: "sample_cmd.sh {msg} {some_number}"
     parameters:
       - name: "msg"
-        type: str
+        dtype: str
         default_value: null
       - name: "some_number"
-        type: int
+        dtype: int
         default_value: 42
         required: False
 
