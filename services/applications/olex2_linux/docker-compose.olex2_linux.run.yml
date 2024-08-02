@@ -7,6 +7,15 @@ services:
       - qcrbox-net
     ports:
       - "${QCRBOX_BIND_ADDRESS}:${QCRBOX_OLEX2_LINUX_PORT:?Must set env var QCRBOX_OLEX2_LINUX_PORT}:8080"
+    depends_on:
+      qcrbox-registry:
+        condition: service_healthy
+    restart: unless-stopped
+    environment:
+      QCRBOX_APPLICATION_DISPLAY_NAME: "Olex2"
+      QCRBOX__NATS__HOST: "qcrbox-nats"
+      QCRBOX__REGISTRY__SERVER__HOST: "qcrbox-registry"
+      QCRBOX__REGISTRY__SERVER__PORT: "8000"
     labels:
       traefik.enable: true
       traefik.http.routers.to-olex2-path-prefix.rule: Path(`/gui/olex2`)
@@ -23,13 +32,3 @@ services:
 
       traefik.http.services.olex2-service.loadbalancer.server.scheme: http
       traefik.http.services.olex2-service.loadbalancer.server.port: 8080
-    depends_on:
-      qcrbox-registry:
-        condition: service_healthy
-    restart: unless-stopped
-    environment:
-      QCRBOX_APPLICATION_DISPLAY_NAME: "Olex2"
-      QCRBOX__NATS__HOST: "qcrbox-nats"
-      QCRBOX__REGISTRY__SERVER__HOST: "qcrbox-registry"
-      QCRBOX__REGISTRY__SERVER__PORT: "8000"
-
