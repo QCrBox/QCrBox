@@ -6,8 +6,10 @@ services:
       args:
         QCRBOX_DOCKER_TAG: ${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}
     environment:
-      QCRBOX_REGISTRY_HOST: "qcrbox-registry"
-      QCRBOX_REGISTRY_PORT: "8000"
+    environment:
+      QCRBOX__NATS__HOST: "qcrbox-nats"
+      QCRBOX__REGISTRY__SERVER__HOST: "qcrbox-registry"
+      QCRBOX__REGISTRY__SERVER__PORT: "8000"
     depends_on:
       qcrbox-registry:
         condition: service_healthy
