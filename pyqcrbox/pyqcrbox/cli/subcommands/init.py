@@ -3,7 +3,6 @@ import sys
 from pathlib import Path
 
 import click
-from cookiecutter.main import cookiecutter as run_cookiecutter
 
 from ..helpers import get_repo_root
 
@@ -57,6 +56,8 @@ def create_application_template(application_type, overwrite_if_exists, dry_run, 
     This will create the new directory 'services/applications/my_software/' and
     populate it with boilerplate files to integrate `my_software` into QCrBox.
     """
+    from cookiecutter.main import cookiecutter as run_cookiecutter
+
     repo_root = get_repo_root()
     template_dir = str(repo_root.joinpath("services", "applications", "_templates", "cli_application"))
     target_dir = repo_root.joinpath("services", "applications", application_slug)
