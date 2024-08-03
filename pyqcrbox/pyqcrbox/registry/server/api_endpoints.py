@@ -95,8 +95,8 @@ def verify_command_exists(application_slug: str, application_version: str, comma
                 select(sql_models_NEW_v2.CommandSpecDB)
                 .join(sql_models_NEW_v2.ApplicationSpecDB)
                 .where(
-                    sql_models_NEW_v2.ApplicationSpecDB.slug == application_slug,
-                    sql_models_NEW_v2.ApplicationSpecDB.version == application_version,
+                    (application_slug is None) or (sql_models_NEW_v2.ApplicationSpecDB.slug == application_slug),
+                    (application_version is None) or (sql_models_NEW_v2.ApplicationSpecDB.version == application_version),
                     sql_models_NEW_v2.CommandSpecDB.name == command_name,
                 )
             ).one()
@@ -105,6 +105,14 @@ def verify_command_exists(application_slug: str, application_version: str, comma
                 f"Command not found: {command_name} "
                 f"(application: {application_slug!r}, "
                 f"version: {application_version!r})"
+            )
+            logger.error(error_msg)
+            raise ClientException(error_msg)
+        except sqlalchemy.exc.MultipleResultsFound:
+            error_msg = (
+                f"Found multiple candidates for command: {command_name}. "
+                f"Please supply the application's slug (and version if needed) "
+                f"to disambiguate between the matching commands."
             )
             logger.error(error_msg)
             raise ClientException(error_msg)

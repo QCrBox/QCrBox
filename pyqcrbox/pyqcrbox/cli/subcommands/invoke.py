@@ -42,9 +42,6 @@ def invoke_command(command_name: str, command_args: list[str]):
     Invoke a registered command with given arguments.
     """
     logger.debug(f"[DDD] {command_name=!r} {command_args=!r}")
-    logger.warning(
-        "FIXME: provide feedback on whether the arguments were provided correctly "
-    )
     app_slug, app_version, cmd_name = extract_app_slug_and_version_if_present(command_name)
 
     cmd_args_dict = dict(extract_arg_name_and_value(arg_str) for arg_str in command_args)
