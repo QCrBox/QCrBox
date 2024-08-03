@@ -87,20 +87,20 @@ def list_available_componens(include_all_components):
 
 @list_qcrbox_resources.command(name="applications")
 @click.option(
-    "--name",
+    "--slug",
     default=None,
-    help="Filter applications by name (must match exactly)",
+    help="Filter applications by slug (must match exactly)",
 )
 @click.option(
     "--version",
     default=None,
     help="Filter applications by version (must match exactly)",
 )
-def list_applications(name: Optional[str], version: Optional[str]):
+def list_applications(slug: Optional[str], version: Optional[str]):
     """
     List registered applications.
     """
-    r = run_request_against_registry_api("/applications", params={"name": name, "version": version})
+    r = run_request_against_registry_api("/applications", params={"slug": slug, "version": version})
 
     cols_to_print = (
         "id",

@@ -32,13 +32,20 @@ async def health_check() -> dict:
 
 # @get(path="/applications", media_type=MediaType.JSON, return_dto=sql_models.ApplicationReadDTO)
 @get(path="/applications", media_type=MediaType.JSON)
-async def retrieve_applications() -> list[sql_models_NEW_v2.ApplicationSpecWithCommands]:
+async def retrieve_applications(
+    slug: str | None = None, version: str | None = None
+) -> list[sql_models_NEW_v2.ApplicationSpecWithCommands]:
     model_cls = sql_models_NEW_v2.ApplicationSpecDB
     # filter_clauses = construct_filter_clauses(model_cls, name=name, version=version)
 
     with settings.db.get_session() as session:
         # applications = session.scalars(select(model_cls).where(*filter_clauses)).all()
-        applications = session.scalars(select(model_cls)).all()
+        applications = session.scalars(
+            select(model_cls).where(
+                (slug is None) or (model_cls.slug == slug),
+                (version is None) or (model_cls.version == version),
+            )
+        ).all()
         applications = [app.to_read_model() for app in applications]
         return applications
 
@@ -96,7 +103,8 @@ def verify_command_exists(application_slug: str, application_version: str, comma
                 .join(sql_models_NEW_v2.ApplicationSpecDB)
                 .where(
                     (application_slug is None) or (sql_models_NEW_v2.ApplicationSpecDB.slug == application_slug),
-                    (application_version is None) or (sql_models_NEW_v2.ApplicationSpecDB.version == application_version),
+                    (application_version is None)
+                    or (sql_models_NEW_v2.ApplicationSpecDB.version == application_version),
                     sql_models_NEW_v2.CommandSpecDB.name == command_name,
                 )
             ).one()
