@@ -20,6 +20,14 @@ from pyqcrbox import QCRBOX_SVCS_REGISTRY, logger, msg_specs, settings, sql_mode
 from pyqcrbox.svcs import get_nats_key_value
 
 
+def construct_filter_clauses(model_cls, **kwargs):
+    filter_clauses = []
+    for name, value in kwargs.items():
+        if value is not None:
+            filter_clauses.append((name is None) or (getattr(model_cls, name) == value))
+    return filter_clauses
+
+
 @get("/", media_type=MediaType.TEXT, include_in_schema=False)
 async def hello() -> str:
     return "Hello from QCrBox!"
@@ -36,28 +44,29 @@ async def retrieve_applications(
     slug: str | None = None, version: str | None = None
 ) -> list[sql_models_NEW_v2.ApplicationSpecWithCommands]:
     model_cls = sql_models_NEW_v2.ApplicationSpecDB
-    # filter_clauses = construct_filter_clauses(model_cls, name=name, version=version)
+    filter_clauses = construct_filter_clauses(model_cls, slug=slug, version=version)
 
     with settings.db.get_session() as session:
-        # applications = session.scalars(select(model_cls).where(*filter_clauses)).all()
-        applications = session.scalars(
-            select(model_cls).where(
-                (slug is None) or (model_cls.slug == slug),
-                (version is None) or (model_cls.version == version),
-            )
-        ).all()
+        applications = session.scalars(select(model_cls).where(*filter_clauses)).all()
         applications = [app.to_read_model() for app in applications]
         return applications
 
 
 @get(path="/commands", media_type=MediaType.JSON)
-async def retrieve_commands() -> list[sql_models_NEW_v2.CommandSpecWithParameters]:
+async def retrieve_commands(
+    name: str | None, application_slug: str | None, application_version: str | None
+) -> list[sql_models_NEW_v2.CommandSpecWithParameters]:
     model_cls = sql_models_NEW_v2.CommandSpecDB
-    # filter_clauses = construct_filter_clauses(model_cls, name=name, version=version)
+    filter_clauses = [
+        (name is None) or (model_cls.name == name),
+        (application_slug is None) or (sql_models_NEW_v2.ApplicationSpecDB.slug == application_slug),
+        (application_version is None) or (sql_models_NEW_v2.ApplicationSpecDB.version == application_version),
+    ]
 
     with settings.db.get_session() as session:
-        # commands = session.scalars(select(model_cls).where(*filter_clauses)).all()
-        commands = session.scalars(select(model_cls)).all()
+        commands = session.scalars(
+            select(model_cls).join(sql_models_NEW_v2.ApplicationSpecDB).where(*filter_clauses)
+        ).all()
         commands = [cmd.to_read_model() for cmd in commands]
         return commands
 
