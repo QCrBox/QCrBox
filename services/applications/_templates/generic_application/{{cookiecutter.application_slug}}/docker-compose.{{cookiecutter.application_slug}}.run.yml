@@ -1,0 +1,20 @@
+services:
+  {{ cookiecutter.application_slug }}:
+    image: "qcrbox/{{ cookiecutter.application_slug }}:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
+    build:
+      context: services/applications/{{ cookiecutter.application_slug }}/
+      args:
+        QCRBOX_DOCKER_TAG: ${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}
+    environment:
+      QCRBOX_APPLICATION_DISPLAY_NAME: "{{ cookiecutter.application_name }}"
+      QCRBOX__NATS__HOST: "qcrbox-nats"
+      QCRBOX__REGISTRY__SERVER__HOST: "qcrbox-registry"
+      QCRBOX__REGISTRY__SERVER__PORT: "8000"
+    depends_on:
+      qcrbox-registry:
+        condition: service_healthy
+    volumes:
+      - ${QCRBOX_SHARED_FILES_DIR_HOST_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_HOST_PATH}:${QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH}
+    networks:
+      - qcrbox-net
+    restart: unless-stopped

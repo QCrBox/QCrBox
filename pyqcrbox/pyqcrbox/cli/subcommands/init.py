@@ -9,13 +9,6 @@ from ..helpers import get_repo_root
 
 @click.command(name="init")
 @click.option(
-    "-t",
-    "--application-type",
-    required=False,
-    default="cli",
-    help="Which type of application template should be used. Valid options: 'cli', 'gui-linux', 'gui-windows'",
-)
-@click.option(
     "-f",
     "--overwrite-if-exists",
     is_flag=True,
@@ -38,7 +31,7 @@ from ..helpers import get_repo_root
     #     "identifier in other contexts."
     # ),
 )
-def create_application_template(application_type, overwrite_if_exists, dry_run, application_slug):
+def create_application_template(overwrite_if_exists, dry_run, application_slug):
     """
     Create boilerplate template for a new application.
 
@@ -59,7 +52,7 @@ def create_application_template(application_type, overwrite_if_exists, dry_run, 
     from cookiecutter.main import cookiecutter as run_cookiecutter
 
     repo_root = get_repo_root()
-    template_dir = str(repo_root.joinpath("services", "applications", "_templates", "cli_application"))
+    template_dir = str(repo_root.joinpath("services", "applications", "_templates", "generic_application"))
     target_dir = repo_root.joinpath("services", "applications", application_slug)
     if target_dir.exists() and any(target_dir.iterdir()) and not overwrite_if_exists:
         click.echo(f"The directory {target_dir} exists and is not empty.")
