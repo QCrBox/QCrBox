@@ -81,6 +81,8 @@ services:
     depends_on:
       qcrbox-nats:
         condition: service_healthy
+      qcrbox-reverse-proxy:
+        condition: service_healthy
     environment:
       QCRBOX__NATS__HOST: "qcrbox-nats"
       #QCRBOX__DB__URL: "sqlite:///${QCRBOX_REGISTRY_DB_DIR}/db.sqlite"
