@@ -5,11 +5,6 @@ services:
       context: services/applications/{{ cookiecutter.application_slug }}/
       args:
         QCRBOX_DOCKER_TAG: ${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}
-    environment:
-      QCRBOX_APPLICATION_DISPLAY_NAME: "{{ cookiecutter.application_name }}"
-      QCRBOX__NATS__HOST: "qcrbox-nats"
-      QCRBOX__REGISTRY__SERVER__HOST: "qcrbox-registry"
-      QCRBOX__REGISTRY__SERVER__PORT: "8000"
     depends_on:
       qcrbox-registry:
         condition: service_healthy
@@ -18,3 +13,24 @@ services:
     networks:
       - qcrbox-net
     restart: unless-stopped
+    environment:
+      QCRBOX_APPLICATION_DISPLAY_NAME: "{{ cookiecutter.application_name }}"
+      QCRBOX__NATS__HOST: "qcrbox-nats"
+      QCRBOX__REGISTRY__SERVER__HOST: "qcrbox-registry"
+      QCRBOX__REGISTRY__SERVER__PORT: "8000"
+    labels:
+      traefik.enable: true
+      traefik.http.routers.to-path-prefix.rule: Path(`/gui/{{ cookiecutter.application_slug }}`)
+      traefik.http.routers.to-path-prefix.middlewares: redirect-gui-path
+      traefik.http.routers.to-path-prefix.service: {{ cookiecutter.application_slug }}-service
+      traefik.http.middlewares.redirect-gui-path.redirectregex.regex: ^http://(.+)/gui/{{ cookiecutter.application_slug }}(/?)$$
+      traefik.http.middlewares.redirect-gui-path.redirectregex.replacement: http://{{ cookiecutter.application_slug }}.gui.$$1/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true
+
+      traefik.http.routers.to-subdomain.rule: HostRegexp(`^{{ cookiecutter.application_slug }}\.gui\..+$$`)
+      traefik.http.routers.to-subdomain.middlewares: redirect-gui-{{ cookiecutter.application_slug }}-subdomain
+      traefik.http.routers.to-subdomain.service: {{ cookiecutter.application_slug }}-service
+      traefik.http.middlewares.redirect-gui-subdomain.redirectregex.regex: ^http://{{ cookiecutter.application_slug }}\.gui\.([^/]+)(/?)$$
+      traefik.http.middlewares.redirect-gui-subdomain.redirectregex.replacement: http://{{ cookiecutter.application_slug }}.gui.$$1/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true
+
+      traefik.http.services.{{ cookiecutter.application_slug }}-service.loadbalancer.server.scheme: http
+      traefik.http.services.{{ cookiecutter.application_slug }}-service.loadbalancer.server.port: 8080
