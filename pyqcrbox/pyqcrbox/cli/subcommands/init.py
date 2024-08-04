@@ -52,7 +52,7 @@ def create_application_template(overwrite_if_exists, dry_run, application_slug):
     from cookiecutter.main import cookiecutter as run_cookiecutter
 
     repo_root = get_repo_root()
-    template_dir = str(repo_root.joinpath("services", "applications", "_templates", "generic_application"))
+    template_dir = str(repo_root.joinpath("services", "applications", "_template"))
     target_dir = repo_root.joinpath("services", "applications", application_slug)
     if target_dir.exists() and any(target_dir.iterdir()) and not overwrite_if_exists:
         click.echo(f"The directory {target_dir} exists and is not empty.")

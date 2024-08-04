@@ -1,6 +1,0 @@
-services:
-  {{ cookiecutter.application_slug }}:
-    build:
-      context: services/applications/{{ cookiecutter.application_slug }}/
-      args:
-        QCRBOX_DOCKER_TAG: ${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}
