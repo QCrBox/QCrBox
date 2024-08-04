@@ -25,11 +25,17 @@ services:
     image: traefik:v3.1.0
     command:
       - "--log.level=DEBUG"
+      - "--ping=true"
       - "--accesslog=true"
       - "--api.insecure=true"  # enable the web UI
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--entryPoints.web.address=:80"
+    healthcheck:
+      test: "traefik healthcheck --ping"
+      interval: 60s
+      start_period: 30s
+      start_interval: 1s
     networks:
       - qcrbox-net
     ports:
