@@ -8,8 +8,8 @@ from pyqcrbox.sql_models_NEW_v2 import QCrBoxPydanticBaseModel
 
 
 class InvokeCommandNATS(QCrBoxPydanticBaseModel):
-    application_slug: str
-    application_version: str
+    application_slug: str | None
+    application_version: str | None
     command_name: str
     arguments: dict[str, Any]
 
