@@ -6,7 +6,7 @@ import svcs
 from faststream.nats import NatsBroker
 
 # from faststream.rabbit import RabbitBroker
-from litestar import Litestar, MediaType, Response, get, post
+from litestar import Litestar, MediaType, Request, Response, get, post
 from litestar.openapi import OpenAPIConfig
 from litestar.plugins.structlog import StructlogPlugin
 
@@ -110,6 +110,7 @@ def verify_command_exists(application_slug: str, application_version: str, comma
             cmd_spec_db = session.exec(
                 select(sql_models_NEW_v2.CommandSpecDB)
                 .join(sql_models_NEW_v2.ApplicationSpecDB)
+                .options(sqlalchemy.orm.joinedload(sql_models_NEW_v2.CommandSpecDB.application))
                 .where(
                     (application_slug is None) or (sql_models_NEW_v2.ApplicationSpecDB.slug == application_slug),
                     (application_version is None)
@@ -159,7 +160,7 @@ def validate_arguments_against_command_parameters(cmd_spec_db: sql_models_NEW_v2
 
 
 @post(path="/commands/invoke", media_type=MediaType.JSON)
-async def commands_invoke(data: sql_models_NEW_v2.CommandInvocationCreate) -> dict:
+async def commands_invoke(data: sql_models_NEW_v2.CommandInvocationCreate, request: Request) -> dict:
     logger.info(f"Received command invocation via API: {data=}")
 
     with svcs.Container(QCRBOX_SVCS_REGISTRY) as con:
@@ -171,7 +172,10 @@ async def commands_invoke(data: sql_models_NEW_v2.CommandInvocationCreate) -> di
 
     # await _invoke_command_impl(data, broker)
     # await _invoke_command_impl_via_nats(data, broker)
-    msg = msg_specs.InvokeCommandNATS(**data.model_dump())
+    invocation_payload = data.model_dump()
+    invocation_payload["application_slug"] = cmd_spec_db.application.slug
+    invocation_payload["application_version"] = cmd_spec_db.application.version
+    msg = msg_specs.InvokeCommandNATS(**invocation_payload)
 
     response_json = await nats_broker.publish(msg, "server.cmd.handle_command_invocation_by_user", rpc=True)
     response = msg_specs.QCrBoxGenericResponse(**response_json)
@@ -183,6 +187,7 @@ async def commands_invoke(data: sql_models_NEW_v2.CommandInvocationCreate) -> di
         status="ok",
         payload={
             "calculation_id": response.payload.calculation_id,
+            "href": request.url_for("get_calculation_details", calculation_id=response.payload.calculation_id)
         },
     )
 
@@ -249,7 +254,7 @@ async def commands_invoke(data: sql_models_NEW_v2.CommandInvocationCreate) -> di
 #     )
 
 
-@get(path="/calculations/{calculation_id:str}", media_type=MediaType.JSON)
+@get(path="/calculations/{calculation_id:str}", media_type=MediaType.JSON, name="get_calculation_details")
 async def get_calculation_info_by_calculation_id(calculation_id: str) -> dict | Response[dict]:
     # with settings.db.get_session() as session:
     #     try:
