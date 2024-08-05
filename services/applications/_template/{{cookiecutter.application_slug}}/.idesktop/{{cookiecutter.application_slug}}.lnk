@@ -1,7 +1,7 @@
 table Icon
   Caption: {{ cookiecutter.application_name }}
   Command: /opt/{{ cookiecutter.application_slug }}/start
-  Icon: /opt/qcrbox/.idesktop/{{ cookiecutter.application_name }}_logo.png
+  Icon: /opt/qcrbox/.idesktop/{{ cookiecutter.application_slug }}_logo.png
   Width: 48
   Height: 48
   X: 70
