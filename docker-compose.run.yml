@@ -22,7 +22,7 @@ services:
     restart: unless-stopped
 
   qcrbox-reverse-proxy:
-    image: traefik:v3.1.0
+    image: traefik:v3.1.1
     command:
       - "--log.level=DEBUG"
       - "--ping=true"
