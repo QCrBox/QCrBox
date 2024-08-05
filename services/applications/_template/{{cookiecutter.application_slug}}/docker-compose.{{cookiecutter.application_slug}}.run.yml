@@ -27,7 +27,7 @@ services:
       traefik.http.middlewares.redirect-gui-path.redirectregex.replacement: http://{{ cookiecutter.application_slug }}.gui.$$1/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true
 
       traefik.http.routers.to-subdomain.rule: HostRegexp(`^{{ cookiecutter.application_slug }}\.gui\..+$$`)
-      traefik.http.routers.to-subdomain.middlewares: redirect-gui-{{ cookiecutter.application_slug }}-subdomain
+      traefik.http.routers.to-subdomain.middlewares: redirect-gui-subdomain
       traefik.http.routers.to-subdomain.service: {{ cookiecutter.application_slug }}-service
       traefik.http.middlewares.redirect-gui-subdomain.redirectregex.regex: ^http://{{ cookiecutter.application_slug }}\.gui\.([^/]+)(/?)$$
       traefik.http.middlewares.redirect-gui-subdomain.redirectregex.replacement: http://{{ cookiecutter.application_slug }}.gui.$$1/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true
