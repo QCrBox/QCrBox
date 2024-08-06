@@ -1,6 +1,6 @@
 table Icon
   Caption: {{ cookiecutter.application_name }}
-  Command: /opt/{{ cookiecutter.application_slug }}/start
+  Command: /opt/{{ cookiecutter.application_slug }}/dummy_gui.py
   Icon: /opt/qcrbox/.idesktop/{{ cookiecutter.application_slug }}_logo.png
   Width: 48
   Height: 48
