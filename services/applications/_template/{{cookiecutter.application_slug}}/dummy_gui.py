@@ -18,7 +18,7 @@ def main():
 
     root = tk.Tk()
     frm = ttk.Frame(root, padding=10)
-    frm.master.title("{{ cookiecutter.application_name }}")
+    frm.master.title("{{ cookiecutter.application_name }} (version: {{ cookiecutter.application_version }})")
     frm.master.minsize(400, 200)
     frm.grid()
     ttk.Label(frm, text=label_text).grid(column=0, row=0)

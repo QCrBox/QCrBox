@@ -11,8 +11,14 @@ FROM qcrbox/INVALID-INVALID-INVALID
 
 SHELL ["/bin/bash", "-c"]
 
-COPY sample_cmd.sh /opt/{{ cookiecutter.application_slug }}/bin/
-COPY configure_{{ cookiecutter.application_slug }}.py ./
-COPY config_{{ cookiecutter.application_slug }}.yaml ./
+RUN rm -f /opt/qcrbox/.idesktop/default.lnk
+COPY --chown=qcrbox:qcrbox .idesktop/* /opt/qcrbox/.idesktop/
+COPY --chown=qcrbox:qcrbox config_{{ cookiecutter.application_slug }}.yaml \
+     configure_{{ cookiecutter.application_slug }}.py \
+     ./
+COPY --chown=qcrbox:qcrbox dummy_gui.py sample_cmd.sh /opt/{{ cookiecutter.application_slug }}/bin/
+
+USER ${QCRBOX_USER}
+WORKDIR /opt/{{ cookiecutter.application_slug }}
 
 ENV PATH="$PATH:/opt/{{ cookiecutter.application_slug }}/bin/"
