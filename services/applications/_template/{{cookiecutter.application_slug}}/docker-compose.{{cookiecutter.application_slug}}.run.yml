@@ -13,11 +13,6 @@ services:
     networks:
       - qcrbox-net
     restart: unless-stopped
-    environment:
-      QCRBOX_APPLICATION_DISPLAY_NAME: "{{ cookiecutter.application_name }}"
-      QCRBOX__NATS__HOST: "qcrbox-nats"
-      QCRBOX__REGISTRY__SERVER__HOST: "qcrbox-registry"
-      QCRBOX__REGISTRY__SERVER__PORT: "8000"
     labels:
       traefik.enable: true
       traefik.http.routers.to-path-prefix.rule: Path(`/gui/{{ cookiecutter.application_slug }}`)

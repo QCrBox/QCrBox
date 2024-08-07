@@ -11,8 +11,13 @@ FROM qcrbox/INVALID-INVALID-INVALID
 
 SHELL ["/bin/bash", "-c"]
 
+ENV QCRBOX__NATS__HOST="qcrbox-nats"
+ENV QCRBOX__REGISTRY__SERVER__HOST="qcrbox-registry"
+ENV QCRBOX__REGISTRY__SERVER__PORT="8000"
+
 ARG QCRBOX_APPLICATION_HOME="/opt/{{ cookiecutter.application_slug }}/"
 ENV QCRBOX_APPLICATION_HOME=${QCRBOX_APPLICATION_HOME}
+ENV QCRBOX_APPLICATION_DISPLAY_NAME="{{ cookiecutter.application_name }}"
 
 RUN rm -f /opt/qcrbox/.idesktop/default.lnk
 COPY --chown=qcrbox:qcrbox .idesktop/* /opt/qcrbox/.idesktop/
