@@ -14,7 +14,8 @@
     "micromamba@latest",
     "bashInteractive@latest",
     "fzf@latest",
-    "python@3.12"
+    "python@3.12",
+    "python312Packages.tkinter@latest"
   ],
   "env": {
     "MAMBA_ROOT_PREFIX":     "${PWD}/.devbox/virtenv/python/.conda",
