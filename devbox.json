@@ -15,7 +15,8 @@
     "bashInteractive@latest",
     "fzf@latest",
     "python@3.12",
-    "python312Packages.tkinter@latest"
+    "python312Packages.tkinter@latest",
+    "uv@latest"
   ],
   "env": {
     "MAMBA_ROOT_PREFIX":     "${PWD}/.devbox/virtenv/python/.conda",
@@ -24,6 +25,7 @@
   "shell": {
     "init_hook": [
       ". $VENV_DIR/bin/activate",
+      "uv pip install -e ./pyqcrbox[all]",
       "",
       "#bash scripts/create_mamba_env.sh",
       "#alias conda=micromamba",
