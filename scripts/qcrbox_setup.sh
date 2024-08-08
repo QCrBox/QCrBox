@@ -85,9 +85,9 @@ print_docker_installation_hint() {
 
 	   Warning: Docker could not be found.
 
-	   This script can proceed without it, but you will need docker
-	   in order to actually build and run the QCrBox containers once
-	   the development environment has been set up.
+	   This script can proceed without it, but docker is required
+	   in order to build and run the QCrBox containers once the
+	   development environment has been set up.
 
 	   Please install Docker Desktop by following the instructions
 	   for your operating system here:
@@ -216,21 +216,54 @@ prompt_for_confirmation() {
     esac
 }
 
+install_nix_if_needed() {
+    if [[ "${_FOUND_NIX}" == "true" ]]; then
+        return
+    fi
 
-preflight_check() {
-    clear_screen
-    print_heading
-    abort_if_qcrbox_repo_exists
-    check_prerequisites
-    print_planned_actions
-    quit_if_dry_run
-    prompt_for_confirmation
-#
-#    echo "- Target path: ${target_dir}"
-#    echo "  This is the directory where the QCrBox repo will be cloned."
-#    echo
-#    echo "- Dry run: ${dry_run}"
+    echo
+    echo "We recommend installing Nix using the Determinate Systems Nix Installer."
+    echo "I can do this automatically for you, or you can follow the instructions"
+    echo "here: https://github.com/DeterminateSystems/nix-installer"
+    echo
+    read -p "Would you like me to install Nix for you now? [y/n] " answer
+    case ${answer:0:1} in
+        y|Y )
+            echo Yes
+            curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
+	    echo
+        ;;
+        * )
+            echo "Exiting installation."
+	    exit 0
+        ;;
+    esac
 }
+
+
+install_devbox_if_needed() {
+    if [[ "${_FOUND_DEVBOX}" == "true" ]]; then
+        return
+    fi
+
+    echo
+    echo "You can install Devbox by following the instructions here: https://www.jetify.com/devbox/docs/installing_devbox/"
+    echo "Alternatively, I can do this for you automatically."
+    echo
+    read -p "Would you like me to install Devbox for you now? [y/n] " answer
+    case ${answer:0:1} in
+        y|Y )
+            echo Yes
+            curl -fsSL https://get.jetify.com/devbox | bash
+	    echo
+        ;;
+        * )
+            echo "Exiting installation."
+	    exit 0
+        ;;
+    esac
+}
+
 
 
 cmdline() {
@@ -287,7 +320,18 @@ cmdline() {
     local qcrbox_repo_path=${_TARGET_DIR}
     local git_revision="dev"
 
-    preflight_check
+    # Pre-flight check
+    clear_screen
+    print_heading
+    abort_if_qcrbox_repo_exists
+    check_prerequisites
+    print_planned_actions
+    quit_if_dry_run
+    prompt_for_confirmation
+
+    # Run installation
+    install_nix_if_needed
+    install_devbox_if_needed
     install_git_and_clone_qcrbox_repo ${qcrbox_repo_path} ${git_revision}
     install_qcrbox_devbox_environment ${qcrbox_repo_path}
 }
