@@ -226,9 +226,9 @@ install_nix_if_needed() {
     echo "I can do this automatically for you, or you can follow the instructions"
     echo "here: https://github.com/DeterminateSystems/nix-installer"
     echo
-    read -p "Would you like me to install Nix for you now? [y/n] " answer
+    read -p "Would you like me to install Nix for you now? [Y/n] " answer
     case ${answer:0:1} in
-        y|Y )
+        y|Y|"" )
             echo Yes
             curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
 	    echo
@@ -250,9 +250,9 @@ install_devbox_if_needed() {
     echo "You can install Devbox by following the instructions here: https://www.jetify.com/devbox/docs/installing_devbox/"
     echo "Alternatively, I can do this for you automatically."
     echo
-    read -p "Would you like me to install Devbox for you now? [y/n] " answer
+    read -p "Would you like me to install Devbox for you now? [Y/n] " answer
     case ${answer:0:1} in
-        y|Y )
+        y|Y|"" )
             echo Yes
             curl -fsSL https://get.jetify.com/devbox | bash
 	    echo
