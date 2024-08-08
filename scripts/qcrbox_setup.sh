@@ -229,7 +229,6 @@ install_nix_if_needed() {
     read -p "Would you like me to install Nix for you now? [Y/n] " answer
     case ${answer:0:1} in
         y|Y|"" )
-            echo Yes
             curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
 	    echo
         ;;
@@ -253,7 +252,6 @@ install_devbox_if_needed() {
     read -p "Would you like me to install Devbox for you now? [Y/n] " answer
     case ${answer:0:1} in
         y|Y|"" )
-            echo Yes
             curl -fsSL https://get.jetify.com/devbox | bash
 	    echo
         ;;
