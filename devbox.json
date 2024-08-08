@@ -1,0 +1,41 @@
+{
+  "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/0.12.0/.schema/devbox.schema.json",
+  "packages": [
+    "readline@latest",
+    "which@latest",
+    "less@latest",
+    "ncdu@latest",
+    "git@latest",
+    "neovim@latest",
+    "docker@latest",
+    "curl@latest",
+    "lazygit@latest",
+    "lazydocker@latest",
+    "micromamba@latest",
+    "bashInteractive@latest",
+    "fzf@latest",
+    "python@3.12",
+    "python312Packages.tkinter@latest"
+  ],
+  "env": {
+    "MAMBA_ROOT_PREFIX":     "${PWD}/.devbox/virtenv/python/.conda",
+    "QCRBOX_MAMBA_ENV_PATH": "${PWD}/.devbox/virtenv/python/.conda/envs/qcrbox/"
+  },
+  "shell": {
+    "init_hook": [
+      ". $VENV_DIR/bin/activate",
+      "",
+      "#bash scripts/create_mamba_env.sh",
+      "#alias conda=micromamba",
+      "#alias sw_vers=/usr/bin/sw_vers",
+      "#eval \"$(micromamba shell hook --shell bash)\"",
+      "#micromamba activate qcrbox",
+      "#echo \"✓ Activated qcrbox mamba environment.\""
+    ],
+    "scripts": {
+      "example-notebooks": [
+        "jupyter lab --notebook-dir=${PWD}/docs/tutorials/examples/ $*"
+      ]
+    }
+  }
+}
