@@ -146,7 +146,8 @@ async def commands_invoke(data: sql_models_NEW_v2.CommandInvocationCreate) -> di
 
     # await _invoke_command_impl(data, broker)
     # await _invoke_command_impl_via_nats(data, broker)
-    msg = msg_specs.InvokeCommandNATS(**data.model_dump())
+    #msg = msg_specs.InvokeCommandNATS(**data.model_dump())
+    msg = msg_specs.InvokeCommandNATS(**cmd_spec_db.model_dump())
 
     response_json = await nats_broker.publish(msg, "server.cmd.handle_command_invocation_by_user", rpc=True)
     response = msg_specs.QCrBoxGenericResponse(**response_json)
