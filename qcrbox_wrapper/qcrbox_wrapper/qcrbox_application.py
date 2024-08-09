@@ -46,6 +46,8 @@ class QCrBoxApplication:
             for cmd_spec in self.application_spec.commands
         ]
         self._cmds_by_name = {cmd.name: cmd for cmd in self.commands}
+        for cmd in self.commands:
+            setattr(self, cmd.name, cmd)
 
     def __repr__(self) -> str:
         return f"<{self.name}>"
