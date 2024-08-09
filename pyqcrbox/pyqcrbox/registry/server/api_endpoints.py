@@ -88,15 +88,17 @@ async def retrieve_commands() -> list[sql_models_NEW_v2.CommandSpecWithParameter
 #         raise ServiceUnavailableException("No clients available to execute command.")
 
 
-def verify_command_exists(application_slug: str, application_version: str, command_name: str):
+def verify_command_exists(
+    application_slug: str, application_version: str | None, command_name: str | None
+) -> sql_models_NEW_v2.CommandSpecDB:
     with settings.db.get_session() as session:
         try:
             cmd_spec_db = session.exec(
                 select(sql_models_NEW_v2.CommandSpecDB)
                 .join(sql_models_NEW_v2.ApplicationSpecDB)
                 .where(
-                    sql_models_NEW_v2.ApplicationSpecDB.slug == application_slug,
-                    sql_models_NEW_v2.ApplicationSpecDB.version == application_version,
+                    application_slug is None or (sql_models_NEW_v2.ApplicationSpecDB.slug == application_slug),
+                    application_version is None or (sql_models_NEW_v2.ApplicationSpecDB.version == application_version),
                     sql_models_NEW_v2.CommandSpecDB.name == command_name,
                 )
             ).one()
@@ -112,7 +114,9 @@ def verify_command_exists(application_slug: str, application_version: str, comma
     return cmd_spec_db
 
 
-def validate_arguments_against_command_parameters(cmd_spec_db: sql_models_NEW_v2.CommandSpecDB, arguments: dict):
+def validate_arguments_against_command_parameters(
+    cmd_spec_db: sql_models_NEW_v2.CommandSpecDB, arguments: dict
+) -> None:
     params = list(cmd_spec_db.parameters.values())
     required_param_names = set(p["name"] for p in params if p["required"] is True)
     all_param_names = set(cmd_spec_db.parameters.keys())
@@ -138,16 +142,17 @@ async def commands_invoke(data: sql_models_NEW_v2.CommandInvocationCreate) -> di
     logger.info(f"Received command invocation via API: {data=}")
 
     with svcs.Container(QCRBOX_SVCS_REGISTRY) as con:
-        # broker = await con.aget(RabbitBroker)
         nats_broker = await con.aget(NatsBroker)
 
     cmd_spec_db = verify_command_exists(data.application_slug, data.application_version, data.command_name)
     validate_arguments_against_command_parameters(cmd_spec_db, data.arguments)
 
-    # await _invoke_command_impl(data, broker)
-    # await _invoke_command_impl_via_nats(data, broker)
-    #msg = msg_specs.InvokeCommandNATS(**data.model_dump())
-    msg = msg_specs.InvokeCommandNATS(**cmd_spec_db.model_dump())
+    msg = msg_specs.InvokeCommandNATS(
+        application_slug=cmd_spec_db.application.slug,
+        application_version=cmd_spec_db.application.version,
+        command_name=cmd_spec_db.name,
+        arguments=data.arguments,
+    )
 
     response_json = await nats_broker.publish(msg, "server.cmd.handle_command_invocation_by_user", rpc=True)
     response = msg_specs.QCrBoxGenericResponse(**response_json)
