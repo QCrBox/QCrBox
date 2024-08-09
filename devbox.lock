@@ -297,6 +297,54 @@
         }
       }
     },
+    "fd@latest": {
+      "last_modified": "2024-07-21T11:05:48Z",
+      "resolved": "github:NixOS/nixpkgs/c19d62ad2265b16e2199c5feb4650fe459ca1c46#fd",
+      "source": "devbox-search",
+      "version": "10.1.0",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/f2i8frh2913dhprmvy7nknh80lv2fhhd-fd-10.1.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/f2i8frh2913dhprmvy7nknh80lv2fhhd-fd-10.1.0"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/h1cvqq3zqc9k1imgvfgni6a5rlw5cv8l-fd-10.1.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/h1cvqq3zqc9k1imgvfgni6a5rlw5cv8l-fd-10.1.0"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/xavnb5p9gr5ywvpkdsaaay7ipgr9pgpg-fd-10.1.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/xavnb5p9gr5ywvpkdsaaay7ipgr9pgpg-fd-10.1.0"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/0rpg4l6284x0c3db1qln1rxlb5k62qd2-fd-10.1.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/0rpg4l6284x0c3db1qln1rxlb5k62qd2-fd-10.1.0"
+        }
+      }
+    },
     "fzf@latest": {
       "last_modified": "2024-07-19T15:40:08Z",
       "resolved": "github:NixOS/nixpkgs/ad0111043c09f7d0f6b9f039882cbf350d4f7d49#fzf",
@@ -745,6 +793,54 @@
         }
       }
     },
+    "python312Packages.tkinter@latest": {
+      "last_modified": "2024-07-07T07:43:47Z",
+      "resolved": "github:NixOS/nixpkgs/b60793b86201040d9dee019a05089a9150d08b5b#python312Packages.tkinter",
+      "source": "devbox-search",
+      "version": "3.12.4",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/lmcsy3ibdhj72j0da4cx185mffdwi7ak-python3.12-tkinter-3.12.4",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/lmcsy3ibdhj72j0da4cx185mffdwi7ak-python3.12-tkinter-3.12.4"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/7rcnmr5j43jqv8fyjf8yhld8s056ca8c-python3.12-tkinter-3.12.4",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/7rcnmr5j43jqv8fyjf8yhld8s056ca8c-python3.12-tkinter-3.12.4"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/k17sbr85smnylgjiia32k4mjv8v20s2f-python3.12-tkinter-3.12.4",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/k17sbr85smnylgjiia32k4mjv8v20s2f-python3.12-tkinter-3.12.4"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/6b2slqwpdwhs20gw628fh77fy7hvw8mv-python3.12-tkinter-3.12.4",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/6b2slqwpdwhs20gw628fh77fy7hvw8mv-python3.12-tkinter-3.12.4"
+        }
+      }
+    },
     "python@3.12": {
       "last_modified": "2024-07-07T07:43:47Z",
       "plugin_version": "0.0.3",
@@ -915,6 +1011,74 @@
             }
           ],
           "store_path": "/nix/store/zbrzpn46fkhk61c84w7kd65idrj3pxqp-readline-8.2p10"
+        }
+      }
+    },
+    "stdenv.cc.cc.lib": {
+      "resolved": "github:NixOS/nixpkgs/75a52265bda7fd25e06e3a67dee3f0354e73243c#stdenv.cc.cc.lib",
+      "source": "nixpkg"
+    },
+    "uv@latest": {
+      "last_modified": "2024-07-21T11:05:48Z",
+      "resolved": "github:NixOS/nixpkgs/c19d62ad2265b16e2199c5feb4650fe459ca1c46#uv",
+      "source": "devbox-search",
+      "version": "0.2.27",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/sha362kr7k37lfwwli1yyi7y9qzi92wm-uv-0.2.27",
+              "default": true
+            },
+            {
+              "name": "dist",
+              "path": "/nix/store/fnsshmcq6k6amxrhryn1zhxgvpxdm2wh-uv-0.2.27-dist"
+            }
+          ],
+          "store_path": "/nix/store/sha362kr7k37lfwwli1yyi7y9qzi92wm-uv-0.2.27"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/633h63s0lqjfrzh7cpy4yamx72igy5w1-uv-0.2.27",
+              "default": true
+            },
+            {
+              "name": "dist",
+              "path": "/nix/store/s3d2vr586a9zjd01fqkcpd6s0zyqb79k-uv-0.2.27-dist"
+            }
+          ],
+          "store_path": "/nix/store/633h63s0lqjfrzh7cpy4yamx72igy5w1-uv-0.2.27"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/qy1wprwa6a0rinbrj3f7zvfyb7w33avg-uv-0.2.27",
+              "default": true
+            },
+            {
+              "name": "dist",
+              "path": "/nix/store/042izhgs7jwlkv3npg9kljz0wir6lka5-uv-0.2.27-dist"
+            }
+          ],
+          "store_path": "/nix/store/qy1wprwa6a0rinbrj3f7zvfyb7w33avg-uv-0.2.27"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/cpp5a9p06n83ix8wsis1dbr0zw1hww41-uv-0.2.27",
+              "default": true
+            },
+            {
+              "name": "dist",
+              "path": "/nix/store/hhfhnqw030azpv78dmz8dykhsrm4lc3b-uv-0.2.27-dist"
+            }
+          ],
+          "store_path": "/nix/store/cpp5a9p06n83ix8wsis1dbr0zw1hww41-uv-0.2.27"
         }
       }
     },
