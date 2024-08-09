@@ -9,6 +9,7 @@ from faststream.nats import NatsBroker
 from litestar import Litestar, MediaType, Response, get, post
 from litestar.openapi import OpenAPIConfig
 from litestar.plugins.structlog import StructlogPlugin
+from sqlalchemy.orm import joinedload
 
 __all__ = ["create_server_asgi_server"]
 
@@ -96,6 +97,7 @@ def verify_command_exists(
             cmd_spec_db = session.exec(
                 select(sql_models_NEW_v2.CommandSpecDB)
                 .join(sql_models_NEW_v2.ApplicationSpecDB)
+                .options(joinedload(sql_models_NEW_v2.CommandSpecDB.application))
                 .where(
                     application_slug is None or (sql_models_NEW_v2.ApplicationSpecDB.slug == application_slug),
                     application_version is None or (sql_models_NEW_v2.ApplicationSpecDB.version == application_version),
