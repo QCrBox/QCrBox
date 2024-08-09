@@ -16,7 +16,9 @@
     "fzf@latest",
     "python@3.12",
     "python312Packages.tkinter@latest",
-    "uv@latest"
+    "uv@latest",
+    "stdenv.cc.cc.lib",
+    "fd@latest"
   ],
   "env": {
     "MAMBA_ROOT_PREFIX":     "${PWD}/.devbox/virtenv/python/.conda",
@@ -25,7 +27,10 @@
   "shell": {
     "init_hook": [
       ". $VENV_DIR/bin/activate",
+      "export LD_LIBRARY_PATH=./.devbox/nix/profile/default/lib:$LD_LIBRARY_PATH",
       "uv pip install -e ./pyqcrbox[all]",
+      "alias vi=nvim",
+      "alias vim=nvim",
       "",
       "#bash scripts/create_mamba_env.sh",
       "#alias conda=micromamba",

@@ -297,6 +297,54 @@
         }
       }
     },
+    "fd@latest": {
+      "last_modified": "2024-07-21T11:05:48Z",
+      "resolved": "github:NixOS/nixpkgs/c19d62ad2265b16e2199c5feb4650fe459ca1c46#fd",
+      "source": "devbox-search",
+      "version": "10.1.0",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/f2i8frh2913dhprmvy7nknh80lv2fhhd-fd-10.1.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/f2i8frh2913dhprmvy7nknh80lv2fhhd-fd-10.1.0"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/h1cvqq3zqc9k1imgvfgni6a5rlw5cv8l-fd-10.1.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/h1cvqq3zqc9k1imgvfgni6a5rlw5cv8l-fd-10.1.0"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/xavnb5p9gr5ywvpkdsaaay7ipgr9pgpg-fd-10.1.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/xavnb5p9gr5ywvpkdsaaay7ipgr9pgpg-fd-10.1.0"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/0rpg4l6284x0c3db1qln1rxlb5k62qd2-fd-10.1.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/0rpg4l6284x0c3db1qln1rxlb5k62qd2-fd-10.1.0"
+        }
+      }
+    },
     "fzf@latest": {
       "last_modified": "2024-07-19T15:40:08Z",
       "resolved": "github:NixOS/nixpkgs/ad0111043c09f7d0f6b9f039882cbf350d4f7d49#fzf",
@@ -965,6 +1013,10 @@
           "store_path": "/nix/store/zbrzpn46fkhk61c84w7kd65idrj3pxqp-readline-8.2p10"
         }
       }
+    },
+    "stdenv.cc.cc.lib": {
+      "resolved": "github:NixOS/nixpkgs/75a52265bda7fd25e06e3a67dee3f0354e73243c#stdenv.cc.cc.lib",
+      "source": "nixpkg"
     },
     "uv@latest": {
       "last_modified": "2024-07-21T11:05:48Z",
