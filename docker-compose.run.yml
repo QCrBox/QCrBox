@@ -32,7 +32,7 @@ services:
       - "--providers.docker.exposedbydefault=false"
       - "--entryPoints.web.address=:80"
     healthcheck:
-      test: ["traefik", "healthcheck", "--ping"]
+      test: traefik healthcheck --ping
       interval: 60s
       start_period: 30s
       start_interval: 1s
