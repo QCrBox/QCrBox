@@ -38,4 +38,8 @@ def invoke_command(command_name: str, command_args: list[str], application_slug:
         settings.registry.server.api_url + "commands/invoke",
         cmd.model_dump_json().encode(),
     )
-    click.echo(response)
+    if not response.ok:
+        data = response.json()
+        click.echo("Error: command invocation failed.")
+        click.echo(f"Details: {data['detail']}")
+    click.echo(response.json())
