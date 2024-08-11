@@ -19,7 +19,8 @@
     "uv@latest",
     "stdenv.cc.cc.lib",
     "fd@latest",
-    "ripgrep@latest"
+    "ripgrep@latest",
+    "delta@latest"
   ],
   "env": {
     "MAMBA_ROOT_PREFIX":     "${PWD}/.devbox/virtenv/python/.conda",
