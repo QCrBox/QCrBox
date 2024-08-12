@@ -46,7 +46,6 @@ class PythonCallableSpec(BaseCommandSpec):
     implemented_as: Literal["python_callable"] = "python_callable"
     import_path: str
     callable_name: str | None = None
-    parameters: list[ParameterSpecDiscriminatedUnion]
 
     # @model_validator(mode="before")
     # def validate_parameters_against_function_signature(model_data):

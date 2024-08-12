@@ -1,6 +1,7 @@
 from enum import Enum
 
-from pyqcrbox.sql_models_NEW_v2.base import QCrBoxPydanticBaseModel
+from ..base import QCrBoxPydanticBaseModel
+from ..parameter_spec import ParameterSpecDiscriminatedUnion
 
 __all__ = []
 
@@ -14,8 +15,9 @@ class ImplementedAs(str, Enum):
 class BaseCommandSpec(QCrBoxPydanticBaseModel):
     name: str
     description: str = ""
-    merge_cif_su: bool = False
     implemented_as: ImplementedAs
+    parameters: list[ParameterSpecDiscriminatedUnion]
+    merge_cif_su: bool = False
     doi: str | None = None
 
     @property
@@ -29,3 +31,7 @@ class BaseCommandSpec(QCrBoxPydanticBaseModel):
     @property
     def is_interactive(self) -> bool:
         return self.implemented_as == ImplementedAs.interactive
+
+    @property
+    def parameter_default_values(self):
+        return {param.name: param.default_value for param in self.parameters if not param.required}
