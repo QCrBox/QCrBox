@@ -93,9 +93,8 @@ class CLICommand(BaseCommand):
         return self.call_pattern
 
     def bind(self, **kwargs):
-        logger.debug(f"[DDD] {self.call_pattern=!r}")
-        logger.debug(f"[DDD] {kwargs=!r}")
-        return self.call_pattern.format(**kwargs)
+        param_values = self.cmd_spec.parameter_default_values | kwargs
+        return self.call_pattern.format(**param_values)
 
     async def execute_in_background(
         self,
