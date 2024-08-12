@@ -2,6 +2,7 @@ from datetime import datetime
 from enum import StrEnum
 from typing import TYPE_CHECKING
 
+from pydantic import BaseModel
 from sqlmodel import Field, Relationship
 
 from .base import QCrBoxBaseSQLModel
@@ -18,6 +19,14 @@ class CalculationStatusEnum(StrEnum):
     FAILED = "failed"
     CANCELLED = "cancelled"
     UNKNOWN = "unknown"
+
+
+class CalculationStatusDetails(BaseModel):
+    calculation_id: str
+    status: CalculationStatusEnum
+    stdout: str | None
+    stderr: str | None
+    extra_info: dict
 
 
 class CalculationStatusEventDB(QCrBoxBaseSQLModel, table=True):

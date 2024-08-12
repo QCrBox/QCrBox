@@ -3,8 +3,7 @@ import time
 import json
 import textwrap
 import urllib.request
-from pyqcrbox.registry.shared.calculation_status import CalculationStatusDetails
-from pyqcrbox.sql_models_NEW_v2.calculation_status_event import CalculationStatusEnum
+from pyqcrbox.sql_models_NEW_v2 import CalculationStatusEnum, CalculationStatusDetails
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:

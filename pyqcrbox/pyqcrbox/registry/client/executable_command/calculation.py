@@ -7,7 +7,7 @@ import anyio
 
 from pyqcrbox import logger
 
-from ...shared.calculation_status import CalculationStatusDetails, CalculationStatusEnum
+from pyqcrbox.sql_models_NEW_v2 import CalculationStatusDetails, CalculationStatusEnum
 
 
 class BaseCalculation(metaclass=ABCMeta):

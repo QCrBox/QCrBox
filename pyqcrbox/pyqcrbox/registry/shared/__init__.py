@@ -1,2 +1,1 @@
-from .calculation_status import CalculationStatusEnum
 from .qcrbox_server_client_base import QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup

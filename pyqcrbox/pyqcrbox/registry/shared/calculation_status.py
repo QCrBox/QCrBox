@@ -1,35 +1,25 @@
 import json
-from enum import StrEnum
 from typing import TYPE_CHECKING
 
-from pydantic import BaseModel
-
 from pyqcrbox import logger
+from pyqcrbox.sql_models_NEW_v2.calculation_status_event import CalculationStatusDetails
 from pyqcrbox.svcs import get_nats_key_value
 
 if TYPE_CHECKING:
     pass
 
 
-__all__ = ["CalculationStatusEnum", "update_calculation_status_in_nats_kv_NEW"]
+__all__ = ["update_calculation_status_in_nats_kv_NEW"]
 
 
-class CalculationStatusEnum(StrEnum):
-    SUBMITTED = "submitted"
-    # CHECKING_CLIENT_AVAILABILITY = "checking_client_availability"
-    RUNNING = "running"
-    COMPLETED = "completed"
-    FAILED = "failed"
-    CANCELLED = "cancelled"
-    # UNKNOWN = "unknown"
-
-
-class CalculationStatusDetails(BaseModel):
-    calculation_id: str
-    status: CalculationStatusEnum
-    stdout: str | None
-    stderr: str | None
-    extra_info: dict
+# class CalculationStatusEnum(StrEnum):
+#     SUBMITTED = "submitted"
+#     # CHECKING_CLIENT_AVAILABILITY = "checking_client_availability"
+#     RUNNING = "running"
+#     COMPLETED = "completed"
+#     FAILED = "failed"
+#     CANCELLED = "cancelled"
+#     # UNKNOWN = "unknown"
 
 
 # async def update_calculation_status_in_nats_kv(

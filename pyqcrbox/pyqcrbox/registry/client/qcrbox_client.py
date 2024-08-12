@@ -10,11 +10,8 @@ from litestar import Litestar
 from pyqcrbox import helpers, logger, msg_specs, settings, sql_models_NEW_v2
 from pyqcrbox.cli.helpers import get_repo_root
 from pyqcrbox.helpers import generate_private_routing_key
-from pyqcrbox.registry.shared.calculation_status import (
-    CalculationStatusDetails,
-    CalculationStatusEnum,
-    update_calculation_status_in_nats_kv_NEW,
-)
+from pyqcrbox.sql_models_NEW_v2 import CalculationStatusDetails, CalculationStatusEnum
+from pyqcrbox.registry.shared.calculation_status import update_calculation_status_in_nats_kv_NEW
 
 from ..shared import QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup
 from .api_endpoints import create_client_asgi_server
