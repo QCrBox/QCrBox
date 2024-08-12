@@ -1,4 +1,6 @@
 import sys
+
+import os
 from pathlib import Path
 from typing import Optional
 
@@ -228,6 +230,10 @@ def main():
         application_config_file = repo_root.joinpath("services/applications/olex2_linux/config_olex2.yaml")
 
     application_spec = sql_models_NEW_v2.ApplicationSpec.from_yaml_file(application_config_file)
+
+    # Add the directory containing the application config file to PATH so that any scripts
+    # present there are available during command execution.
+    os.environ["PATH"] = f"{application_config_file.parent.absolute()}:{os.environ['PATH']}"
 
     qcrbox_client = QCrBoxClient(application_spec=application_spec)
     qcrbox_client.run(host=settings.registry.client.host, port=settings.registry.client.port)
