@@ -200,7 +200,9 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
                 task_status.started()
             logger.trace("Exited task group that served uvicorn...")
         except ExceptionGroup as e:  # pragma: no cover
+            logger.error(f"[EEE] Exception group: {e}")
             for ex in e.exceptions:
+                logger.error(f"      Exception: {ex}")
                 raise ex from None
 
     def shutdown(self):

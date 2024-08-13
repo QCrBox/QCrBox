@@ -2,7 +2,7 @@ import re
 
 import anyio
 
-from pyqcrbox import sql_models_NEW_v2
+from pyqcrbox.sql_models_NEW_v2 import CommandSpecDiscriminatedUnion
 
 __all__ = ["CLICommand"]
 
@@ -75,7 +75,7 @@ class QCrBoxCmdArgumentMismatch(Exception):
 
 
 class CLICommand(BaseCommand):
-    def __init__(self, cmd_spec: sql_models_NEW_v2.command_spec.command_spec.CommandSpecDiscriminatedUnion):
+    def __init__(self, cmd_spec: CommandSpecDiscriminatedUnion):
         super().__init__(cmd_spec)
         self.call_pattern = cmd_spec.call_pattern
         self.call_pattern_parameter_names = list(set(re.findall("{(.*?)}", self.call_pattern)))

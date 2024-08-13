@@ -1,7 +1,8 @@
-from .base_command import BaseCommand
+from pyqcrbox.registry.client.executable_command import BaseCommand
 
 __all__ = ["InteractiveCommand"]
 
 
 class InteractiveCommand(BaseCommand):
-    pass
+    def terminate(self):
+        raise NotImplementedError("TODO: implement terminate() for interactive commands")

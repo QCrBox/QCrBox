@@ -117,8 +117,8 @@ class QCrBoxClient(QCrBoxServerClientBase):
         logger.info(f"Received command execution request: {msg!r} (current status: {self.status}")
         self.status.set_busy()
 
-        cmd = self.get_executable_command(msg.command_name)
         try:
+            cmd = self.get_executable_command(msg.command_name)
             calc = await cmd.execute_in_background(**msg.arguments, _calculation_id=msg.calculation_id)
         except Exception as exc:
             error_msg = f"Command execution failed: {exc!r}"

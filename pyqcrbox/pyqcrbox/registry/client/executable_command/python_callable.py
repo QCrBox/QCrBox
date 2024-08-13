@@ -7,13 +7,15 @@ import inspect
 import multiprocessing.pool
 import multiprocessing.process
 import traceback
-from typing import Callable, Union
+from typing import Union
 
 import anyio
 from pydantic._internal._validate_call import ValidateCallWrapper
 
 from pyqcrbox import logger
+from pyqcrbox.sql_models_NEW_v2 import CommandSpecDiscriminatedUnion
 
+from . import BaseCommand
 from .calculation import PythonCallableCalculation
 
 
@@ -21,8 +23,14 @@ class CalculationNotRunning(Exception):
     pass
 
 
-class PythonCallable:
-    def __init__(self, fn: Callable):
+class PythonCallable(BaseCommand):
+    def __init__(self, cmd_spec: CommandSpecDiscriminatedUnion):
+        assert cmd_spec.implemented_as == "python_callable"
+        assert cmd_spec.import_path is not None
+        super().__init__(cmd_spec)
+
+        module = importlib.import_module(cmd_spec.import_path)
+        fn = getattr(module, cmd_spec.name)
         assert inspect.isfunction(fn)
         if inspect.iscoroutinefunction(fn):
             raise TypeError("At present PythonCallable can only handle regular functions, not coroutine functions.")
@@ -39,14 +47,6 @@ class PythonCallable:
         )
         self.pool: Union[multiprocessing.pool.Pool, None] = None
         self.calc_finished_event = None
-
-    @classmethod
-    def from_command_spec(cls, cmd_spec) -> "PythonCallable":
-        assert cmd_spec.implemented_as == "python_callable"
-        assert cmd_spec.import_path is not None
-        module = importlib.import_module(cmd_spec.import_path)
-        fn = getattr(module, cmd_spec.name)
-        return cls(fn)
 
     def _extract_parameters_from_callable_signature(self) -> dict:
         return {name: p.annotation.__name__ for (name, p) in self.signature.parameters.items()}
