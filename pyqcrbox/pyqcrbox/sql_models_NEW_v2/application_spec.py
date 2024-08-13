@@ -1,3 +1,5 @@
+import sys
+
 from collections import UserDict
 from datetime import datetime
 from pathlib import Path
@@ -73,6 +75,7 @@ class ApplicationSpec(ApplicationSpecBase):
     @classmethod
     def from_yaml_file(cls, file_path: str | Path):
         file_path = Path(file_path)
+        sys.path.insert(0, file_path.parent.absolute())
         return cls(**yaml.safe_load(file_path.open()))
 
     @property
