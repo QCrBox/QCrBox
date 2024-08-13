@@ -40,7 +40,7 @@ class QCrBoxCalculation:
     Represents a calculation performed on the QCrBox server.
     """
 
-    def __init__(self, calc_id: int, calculation_parent: "QCrBoxCommand") -> None:
+    def __init__(self, calc_id: int, parent_command: "QCrBoxCommand") -> None:
         """
         Initializes the QCrBoxCalculation instance.
 
@@ -48,19 +48,19 @@ class QCrBoxCalculation:
         ----------
         calc_id : int
             Unique identifier for the calculation.
-        calculation_parent : QCrBoxCommand
+        parent_command : QCrBoxCommand
             Parent command object that instantiated the calculation.
         """
         self.id = calc_id
-        self.calculation_parent = calculation_parent
-        self._server_url = calculation_parent._server_url
+        self.parent_command = parent_command
+        self._server_url = parent_command._server_url
 
     def __repr__(self):
         clsname = self.__class__.__name__
         return f"<{clsname}: {self.id!r}>"
 
     @property
-    def status(self) -> CalculationStatusEnum:
+    def status_details(self) -> CalculationStatusDetails:
         """
         Fetches and returns the current status of the calculation from the server.
 
@@ -72,8 +72,11 @@ class QCrBoxCalculation:
         with urllib.request.urlopen(f"{self._server_url}/calculations/{self.id}") as r:
             response_data = json.loads(r.read().decode("UTF-8"))
 
-        status_details = CalculationStatusDetails(**response_data)
-        return status_details.status
+        return CalculationStatusDetails(**response_data)
+
+    @property
+    def status(self) -> CalculationStatusEnum:
+        return self.status_details.status
 
     def is_running(self) -> bool:
         return self.status in [CalculationStatusEnum.SUBMITTED, CalculationStatusEnum.RUNNING]
