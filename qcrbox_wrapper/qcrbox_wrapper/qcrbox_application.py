@@ -45,7 +45,7 @@ class QCrBoxApplication:
             )
             for cmd_spec in self.application_spec.commands
         ]
-        self._cmds_by_name = {cmd.name: cmd for cmd in self.commands}
+        self._cmds_by_name: dict[str, QCrBoxCommand] = {cmd.name: cmd for cmd in self.commands}
         for cmd in self.commands:
             setattr(self, cmd.name, cmd)
 
@@ -89,12 +89,14 @@ class QCrBoxApplication:
         # prepare_cmd = self.application_spec.cmds_by_name["__interactive_prepare"]
         prepare_cmd = self._cmds_by_name["__interactive_prepare"]
         run_cmd = self._cmds_by_name["__interactive_run"]
+        finalise_cmd = self._cmds_by_name["__interactive_finalise"]
 
         session = QCrBoxInteractiveSession(
             application_slug=self.slug,
             gui_url=self.gui_url,
             run_cmd=run_cmd,
             prepare_cmd=prepare_cmd,
+            finalise_cmd=finalise_cmd,
             kwargs=kwargs,
         )
         # session.start_and_wait_for_user_input()

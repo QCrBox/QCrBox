@@ -16,8 +16,9 @@ class QCrBoxInteractiveSession:
         *,
         application_slug: str,
         gui_url: str,
-        prepare_cmd: str,
-        run_cmd: str,
+        run_cmd: QCrBoxCommand,
+        prepare_cmd: QCrBoxCommand | None = None,
+        finalise_cmd: QCrBoxCommand | None = None,
         kwargs: dict,
     ):
         self.application_slug = application_slug
@@ -25,7 +26,11 @@ class QCrBoxInteractiveSession:
         self.prepare_cmd = prepare_cmd
         self.run_cmd = run_cmd
         self.kwargs = kwargs
-        # self.finalise_cmd = finalise_cmd
+        self.finalise_cmd = finalise_cmd
+
+        self.prepare_calculation = None
+        self.run_calculation = None
+        self.finalise_calculation = None
 
     def start(self):
         logger.debug(f"Starting interactive session for {self.application_slug!r}")
@@ -36,14 +41,17 @@ class QCrBoxInteractiveSession:
         webbrowser.open(self.gui_url)
 
     def close(self):
-        logger.debug("TODO: close session")
+        logger.debug("Closing session")
+        self.finalise_calculation = self.execute_finalise()
+        logger.debug(f"{self.finalise_calculation=!r}")
+        logger.debug("Done.")
 
     def start_and_wait_for_user_input(self):
         self.start()
         input("Press enter when you have finished your interactive session")
         self.close()
 
-    def execute_prepare(self, **kwargs):
+    def execute_prepare(self):
         """
         Executes the preparation command with the provided arguments.
 
@@ -57,17 +65,19 @@ class QCrBoxInteractiveSession:
         dict
             Updated arguments after preparation command execution.
         """
-        # all_arguments = self.prepare_cmd.args_to_kwargs(**kwargs)
-        prepare_arguments = {key: val for key, val in self.kwargs.items() if key in self.prepare_cmd.parameter_names}
+        if self.prepare_cmd:
+            # all_arguments = self.prepare_cmd.args_to_kwargs(**kwargs)
+            prepare_arguments = {key: val for key, val in self.kwargs.items() if key in self.prepare_cmd.parameter_names}
 
-        missing_arguments = set(self.prepare_cmd.parameter_names).difference(prepare_arguments.keys())
-        if missing_arguments:
-            raise ValueError(f"Missing arguments for 'prepare' command: {missing_arguments!r}")
+            missing_arguments = set(self.prepare_cmd.parameter_names).difference(prepare_arguments.keys())
+            if missing_arguments:
+                raise ValueError(f"Missing arguments for 'prepare' command: {missing_arguments!r}")
 
-        prepare_calculation = self.prepare_cmd(**prepare_arguments)
-        return prepare_calculation
+            prepare_calculation = self.prepare_cmd(**prepare_arguments)
+            prepare_calculation.wait_while_running(0.1)
+            return prepare_calculation
 
-    def execute_run(self, **kwargs) -> "QCrBoxCalculation":
+    def execute_run(self) -> "QCrBoxCalculation":
         """
         Executes the main run command with the provided arguments.
 
@@ -91,3 +101,15 @@ class QCrBoxInteractiveSession:
         # if run_calculation.status.status not in ("running", "completed"):
         #     raise UnsuccessfulCalculationError(run_calculation.status)
         return run_calculation
+
+    def execute_finalise(self):
+        if self.finalise_cmd:
+            # all_arguments = self.prepare_cmd.args_to_kwargs(**kwargs)
+            finalise_arguments = {key: val for key, val in self.kwargs.items() if key in self.finalise_cmd.parameter_names}
+
+            missing_arguments = set(self.finalise_cmd.parameter_names).difference(finalise_arguments.keys())
+            if missing_arguments:
+                raise ValueError(f"Missing arguments for 'prepare' command: {missing_arguments!r}")
+
+            finalise_calculation = self.finalise_cmd(**finalise_arguments)
+            return finalise_calculation

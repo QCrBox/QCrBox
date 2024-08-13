@@ -37,6 +37,7 @@ class QCrBoxCommandError(Exception):
     def __str__(self):
         return f"status_code={self.status_code}, detail={self.detail!r}"
 
+
 class QCrBoxCommandBase:
     """
     Base class for representing a command to be executed on the QCrBox server.
