@@ -12,4 +12,4 @@ async def test_python_callable(sample_application_spec):
 
     cmd = PythonCallable.from_command_spec(cmd_spec)
     calc = await cmd.execute_in_background(name="Alice", duration="0.0")
-    assert calc.status == CalculationStatusEnum.COMPLETED
+    assert calc.status == CalculationStatusEnum.SUCCESSFUL

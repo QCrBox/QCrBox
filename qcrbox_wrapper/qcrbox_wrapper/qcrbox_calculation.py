@@ -7,7 +7,7 @@ from pyqcrbox.sql_models_NEW_v2 import CalculationStatusEnum, CalculationStatusD
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from qcrbox_wrapper.qcrbox_wrapper_new import QCrBoxCommand
+    from qcrbox_wrapper.qcrbox_wrapper import QCrBoxCommand
 
 
 class UnsuccessfulCalculationError(Exception):
@@ -60,7 +60,7 @@ class QCrBoxCalculation:
         return f"<{clsname}: {self.id!r}>"
 
     @property
-    def status(self) -> CalculationStatusDetails:
+    def status(self) -> CalculationStatusEnum:
         """
         Fetches and returns the current status of the calculation from the server.
 
@@ -72,11 +72,15 @@ class QCrBoxCalculation:
         with urllib.request.urlopen(f"{self._server_url}/calculations/{self.id}") as r:
             response_data = json.loads(r.read().decode("UTF-8"))
 
-        return CalculationStatusDetails(**response_data)
+        status_details = CalculationStatusDetails(**response_data)
+        return status_details.status
+
+    def is_running(self) -> bool:
+        return self.status in [CalculationStatusEnum.SUBMITTED, CalculationStatusEnum.RUNNING]
 
     def wait_while_running(self, sleep_time: float) -> None:
         """
-        Periodically checks the calculation's status and blocks until it is no longer 'running'.
+        Periodically checks the calculation's status and blocks until it is no longer running.
 
         Parameters
         ----------
@@ -88,7 +92,7 @@ class QCrBoxCalculation:
         RuntimeError
             If the calculation finishes with a status other than 'completed'.
         """
-        while self.status.status == CalculationStatusEnum.RUNNING:
+        while self.is_running():
             time.sleep(sleep_time)
-        if self.status.status != CalculationStatusEnum.COMPLETED:
+        if self.status != CalculationStatusEnum.SUCCESSFUL:
             raise UnsuccessfulCalculationError(self.status)

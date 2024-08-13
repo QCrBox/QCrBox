@@ -65,7 +65,7 @@ class PythonCallableCalculation(BaseCalculation):
         if self._apply_result.ready():
             if self._apply_result.successful():
                 self.return_value = self._apply_result.get()
-                calc_status = CalculationStatusEnum.COMPLETED
+                calc_status = CalculationStatusEnum.SUCCESSFUL
             else:
                 calc_status = CalculationStatusEnum.FAILED
             logger.debug("Calculation finished, closing multiprocessing pool.")
@@ -132,7 +132,7 @@ class CLICmdCalculation(BaseCalculation):
             case None:
                 status = CalculationStatusEnum.RUNNING
             case 0:
-                status = CalculationStatusEnum.COMPLETED
+                status = CalculationStatusEnum.SUCCESSFUL
             case _:
                 status = CalculationStatusEnum.FAILED
 

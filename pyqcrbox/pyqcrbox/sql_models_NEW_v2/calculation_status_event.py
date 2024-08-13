@@ -15,7 +15,7 @@ class CalculationStatusEnum(StrEnum):
     SUBMITTED = "submitted"
     # CHECKING_CLIENT_AVAILABILITY = "checking_client_availability"
     RUNNING = "running"
-    COMPLETED = "completed"
+    SUCCESSFUL = "successful"
     FAILED = "failed"
     CANCELLED = "cancelled"
     UNKNOWN = "unknown"
