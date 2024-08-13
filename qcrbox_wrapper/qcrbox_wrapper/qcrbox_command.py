@@ -1,5 +1,4 @@
-import json
-import urllib.request
+import requests
 from collections import namedtuple
 from typing import TYPE_CHECKING
 
@@ -21,6 +20,22 @@ dtype : str
     Data type of the parameter.
 """
 
+
+class QCrBoxCommandError(Exception):
+    def __init__(self, status_code: int, detail: str):
+        self.status_code = status_code
+        self.detail = detail
+
+    @classmethod
+    def from_http_response(cls, http_response: requests.Response):
+        status_code = http_response.status_code
+        detail = http_response.json()["detail"]
+        obj = QCrBoxCommandError(status_code, detail)
+        obj._http_response = http_response
+        return obj
+
+    def __str__(self):
+        return f"status_code={self.status_code}, detail={self.detail!r}"
 
 class QCrBoxCommandBase:
     """
@@ -151,17 +166,12 @@ class QCrBoxCommand(QCrBoxCommandBase):
             command_name=self.name,
             arguments=arguments,
         ).model_dump()
-        req = urllib.request.Request(f"{self._server_url}/commands/invoke", method="POST")
-        req.add_header("Content-Type", "application/json")
-        data = json.dumps(data_dict)
-        data = data.encode("UTF-8")
-        r = urllib.request.urlopen(req, data=data)
-        response = json.loads(r.read())
-        if not response["status"] == "ok":
-            print(response)
-            raise ConnectionError("Command not successfully sent")
+        response = requests.post(f"{self._server_url}/commands/invoke", json=data_dict)
+        if not response.ok:
+            raise QCrBoxCommandError.from_http_response(response)
+        response_data = response.json()
 
-        return QCrBoxCalculation(response["payload"]["calculation_id"], self)
+        return QCrBoxCalculation(response_data["payload"]["calculation_id"], self)
 
 
 class QCrBoxInteractiveCommand(QCrBoxCommandBase):
