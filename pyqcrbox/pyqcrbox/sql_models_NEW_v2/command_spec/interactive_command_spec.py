@@ -17,7 +17,7 @@ class InteractiveLifecycleSteps(QCrBoxPydanticBaseModel):
     @classmethod
     def set_missing_names_for_lifecycle_step_commands(cls, model_data: dict) -> dict:
         for key, cmd_data in model_data.items():
-            cmd_data.setdefault("name", f"__interactive_{key}")
+            cmd_data["name"] = f"__interactive_{key}"
         return model_data
 
     @property
