@@ -1,12 +1,14 @@
 # SPDX-License-Identifier: MPL-2.0
+import re
+import sys
 
 import click
 import requests
 
-import re
-from ..helpers import ClickCommandCls
 from pyqcrbox.sql_models_NEW_v2 import CommandInvocationCreate
+
 from ... import settings
+from ..helpers import ClickCommandCls
 
 
 @click.command(name="invoke", cls=ClickCommandCls)
@@ -42,4 +44,5 @@ def invoke_command(command_name: str, command_args: list[str], application_slug:
         data = response.json()
         click.echo("Error: command invocation failed.")
         click.echo(f"Details: {data['detail']}")
+        sys.exit(1)
     click.echo(response.json())
