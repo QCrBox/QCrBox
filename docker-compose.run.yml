@@ -17,16 +17,6 @@ services:
       - "${QCRBOX_BIND_ADDRESS:?Must set env var QCRBOX_BIND_ADDRESS}:${QCRBOX__NATS__MANAGEMENT_PORT:?Must set env var QCRBOX__NATS__MANAGEMENT_PORT}:8222"
     restart: unless-stopped
 
-  qcrbox-nui:
-    image: "ghcr.io/nats-nui/nui:latest"
-    volumes:
-      - qcrbox-nui-db:/db
-    ports:
-      - 31311:31311
-    networks:
-      - qcrbox-net
-    restart: unless-stopped
-
   qcrbox-reverse-proxy:
     image: traefik:v3.1.0
     command:
