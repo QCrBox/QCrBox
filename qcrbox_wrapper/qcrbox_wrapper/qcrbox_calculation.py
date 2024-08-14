@@ -11,24 +11,24 @@ if TYPE_CHECKING:
 
 
 class UnsuccessfulCalculationError(Exception):
-    def __init__(self, status: "CalculationStatusDetails"):
+    def __init__(self, status_details: "CalculationStatusDetails"):
         try:
-            error_message = status.extra_info["msg"]
+            error_message = status_details.extra_info["msg"]
         except KeyError:
             error_message = "No error message available"
 
         msg = textwrap.dedent(
             f"""\
-            Calculation with id {status.calculation_id} does not have the status completed but {status.status}.
+            Calculation with id {status_details.calculation_id} does has status '{status_details.status}'.
 
             Potential error message:
             {error_message}
 
             Command stdout:
-            {status.stdout}
+            {status_details.stdout}
 
             Command stderr:
-            {status.stderr}
+            {status_details.stderr}
         """
         ).strip()
 
@@ -98,4 +98,4 @@ class QCrBoxCalculation:
         while self.is_running():
             time.sleep(sleep_time)
         if self.status != CalculationStatusEnum.SUCCESSFUL:
-            raise UnsuccessfulCalculationError(self.status)
+            raise UnsuccessfulCalculationError(self.status_details)
