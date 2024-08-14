@@ -1,1 +1,2 @@
 from .qcrbox_server_client_base import QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup
+from .structlog_config import structlog_plugin

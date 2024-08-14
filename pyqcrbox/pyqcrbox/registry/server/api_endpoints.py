@@ -18,6 +18,7 @@ from litestar.exceptions import ClientException
 from sqlmodel import select
 
 from pyqcrbox import QCRBOX_SVCS_REGISTRY, logger, msg_specs, settings, sql_models_NEW_v2
+from pyqcrbox.registry.shared import structlog_plugin
 from pyqcrbox.svcs import get_nats_key_value
 
 
@@ -26,7 +27,7 @@ async def hello() -> str:
     return "Hello from QCrBox!"
 
 
-@get(path="/healthz", media_type=MediaType.JSON)
+@get(path="/healthz", media_type=MediaType.JSON, skip_logging=False)
 async def health_check() -> dict:
     return {"status": "ok"}
 
@@ -273,7 +274,7 @@ def create_server_asgi_server(custom_lifespan) -> Litestar:
         ],
         lifespan=[custom_lifespan],
         debug=True,
-        plugins=[StructlogPlugin()],
+        plugins=[structlog_plugin],
         openapi_config=OpenAPIConfig(title="QCrBox Server API", version="0.1"),
     )
     return app
