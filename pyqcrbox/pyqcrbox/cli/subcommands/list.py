@@ -131,7 +131,7 @@ def list_applications(slug: Optional[str], version: Optional[str]):
     type=str,
     help="Filter commands by application_version (run 'qcb list applications' to get the version)",
 )
-click.option(
+@click.option(
     "-a",
     "--all",
     "include_interactive_lifecycle_steps",
