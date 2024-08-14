@@ -68,11 +68,11 @@ def run_request_against_registry_api(endpoint, params):
     is_flag=True,
     help="List all components (including base images that are only used during the build process)",
 )
-def list_available_componens(include_all_components):
+def list_available_components(include_all_components):
     """
     List available QCrBox components.
 
-    These can be used as arguments in the commands `qcb build/up/down`.
+    These can be used as arguments in `qcb build/up/down`.
     """
     docker_project = DockerProject()
 
@@ -125,7 +125,15 @@ def list_applications(name: Optional[str], version: Optional[str]):
     type=int,
     help="Filter commands by application_id (run 'qcb list applications' to get the id)",
 )
-def list_commands(name: Optional[str], application_id: Optional[int]):
+@click.option(
+    "-a",
+    "--all",
+    "include_interactive_lifecycle_steps",
+    is_flag=True,
+    default=False,
+    help="List all commands (including interactive lifecycle steps)",
+)
+def list_commands(name: Optional[str], application_id: Optional[int], include_interactive_lifecycle_steps: bool):
     """
     List registered commands.
     """
@@ -136,7 +144,11 @@ def list_commands(name: Optional[str], application_id: Optional[int]):
         "name",
         "parameters",
     )
-    data = [extract_columns(cols_to_print)(row) for row in r.json()]
+    data = [
+        extract_columns(cols_to_print)(row)
+        for row in r.json()
+        if not row["name"].startswith("__interactive_") or include_interactive_lifecycle_steps
+    ]
     for row in data:
         row["parameters"] = list(row["parameters"].keys())
     click.echo(tabulate(data, headers="keys", tablefmt="simple"))
