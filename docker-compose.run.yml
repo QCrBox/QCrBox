@@ -18,9 +18,10 @@ services:
     restart: unless-stopped
 
   qcrbox-reverse-proxy:
-    image: traefik:v3.1.0
+    image: traefik:v3.1.1
     command:
       - "--log.level=DEBUG"
+      - "--ping=true"
       - "--accesslog=true"
       - "--ping=true"
       - "--api.insecure=true"  # enable the web UI
@@ -28,10 +29,10 @@ services:
       - "--providers.docker.exposedbydefault=false"
       - "--entryPoints.web.address=:80"
     healthcheck:
-      test: traefik healthcheck --ping
-      interval: 10s
+      test: "traefik healthcheck --ping"
+      interval: 60s
       start_period: 30s
-      #start_interval: 1s
+      start_interval: 1s
     networks:
       - qcrbox-net
     ports:
@@ -57,6 +58,7 @@ services:
         condition: service_healthy
     environment:
       QCRBOX__NATS__HOST: "qcrbox-nats"
+      #QCRBOX__DB__URL: "sqlite:///${QCRBOX_REGISTRY_DB_DIR}/db.sqlite"
     networks:
       - qcrbox-net
     restart: "unless-stopped"

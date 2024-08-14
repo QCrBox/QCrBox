@@ -8,7 +8,7 @@ from pyqcrbox.cli.helpers import get_repo_root
 def find_application_yaml_config_files():
     repo_root = get_repo_root(__file__)
     config_files = sorted(repo_root.joinpath("services").rglob("config_*.yaml"))
-    config_files = [f for f in config_files if "_templates" not in f.parts]  # exclude cookiecutter template
+    config_files = [f for f in config_files if "_template" not in f.parts]  # exclude cookiecutter template
     return config_files
 
 

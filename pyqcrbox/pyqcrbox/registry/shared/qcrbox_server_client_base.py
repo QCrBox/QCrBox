@@ -98,7 +98,7 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
         self.uvicorn_server = uvicorn.Server(uvicorn_config)
 
     async def start_broker(self):
-        for attempt in stamina.retry_context(on=nats.errors.NoServersError, timeout=30.0, attempts=None):
+        for attempt in stamina.retry_context(on=nats.errors.NoServersError, timeout=10.0, attempts=None):
             with attempt:
                 await self.nats_broker.start()
 

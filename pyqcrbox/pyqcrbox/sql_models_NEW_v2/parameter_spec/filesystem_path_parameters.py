@@ -28,6 +28,8 @@ class FolderPathParameterSpec(BaseFilesystemPathParameterSpec):
 
 
 class BaseCifFileParameterSpec(BaseFilesystemPathParameterSpec):
+    required_entries: list[str] = []
+    optional_entries: list[str] = []
     required_entry_sets: list[str] = []
     optional_entry_sets: list[str] = []
     merge_su: bool = False
