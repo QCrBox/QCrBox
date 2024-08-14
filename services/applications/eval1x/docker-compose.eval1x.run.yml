@@ -7,7 +7,6 @@ services:
         QCRBOX_DOCKER_TAG: ${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}
     environment:
       QCRBOX_APPLICATION_DISPLAY_NAME: "Eval14/15"
-      QCRBOX_RABBITMQ_QUEUE_NAME: "eval1x"
       QCRBOX_REGISTRY_HOST: "qcrbox-registry"
       QCRBOX_REGISTRY_PORT: "8000"
     ports:

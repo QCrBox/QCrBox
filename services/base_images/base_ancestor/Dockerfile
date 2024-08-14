@@ -14,8 +14,6 @@ RUN apt-get update -y && \
 
 ARG QCRBOX_ROOT_DIR
 ARG QCRBOX_VOLUMES_ROOT_DIR
-ARG QCRBOX__RABBITMQ__HOST
-ARG QCRBOX__RABBITMQ__PORT
 
 ##
 ## Create user 'qcrbox'
@@ -32,8 +30,6 @@ RUN groupadd --gid ${QCRBOX_USER_GID} ${QCRBOX_GROUP} && \
 
 ENV QCRBOX_USER=${QCRBOX_USER}
 ENV QCRBOX_HOME=${QCRBOX_HOME}
-ENV QCRBOX__RABBITMQ__HOST=${QCRBOX__RABBITMQ__HOST}
-ENV QCRBOX__RABBITMQ__PORT=${QCRBOX__RABBITMQ__PORT}
 
 ##
 ## Create 'global' file /etc/supervisord.conf. Among other things, this includes any config files
@@ -92,7 +88,5 @@ RUN micromamba shell init --shell bash --root-prefix=${MAMBA_ROOT_PREFIX} && \
     echo "alias conda=${MAMBA_EXE}" >> ${QCRBOX_HOME}/.bashrc
 
 COPY --chown=${QCRBOX_USER}:${QCRBOX_GROUP} entrypoint.sh execute_startup_cmd.sh ./
-
-ENV QCRBOX__RABBITMQ__HOST="qcrbox-message-bus"
 
 ENTRYPOINT ["/opt/qcrbox/entrypoint.sh"]

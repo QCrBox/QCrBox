@@ -57,23 +57,6 @@ async def retrieve_commands() -> list[sql_models_NEW_v2.CommandSpecWithParameter
         return commands
 
 
-# async def _invoke_command_impl(cmd: sql_models.CommandInvocationCreate, broker: RabbitBroker):
-#     msg = msg_specs.InvokeCommand(payload=cmd)
-#
-#     try:
-#         # send command invocation request to any available clients
-#         await broker.publish(
-#             msg,
-#             settings.rabbitmq.routing_key_qcrbox_registry,
-#             rpc=False,
-#             # raise_timeout=True,
-#             # rpc_timeout=settings.rabbitmq.rpc_timeout,
-#         )
-#     except (TimeoutError, asyncio.exceptions.CancelledError) as exc:
-#         # raise TimeoutError(f"{exc}")
-#         raise HTTPException(f"{exc}")
-
-
 # async def _invoke_command_impl_via_nats(cmd: sql_models.CommandInvocationCreate, nats_broker: NatsBroker):
 #     msg = msg_specs.InvokeCommand(payload=cmd)
 #

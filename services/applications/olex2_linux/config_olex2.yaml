@@ -61,12 +61,12 @@ commands:
       implemented_as: "python_callable"
       import_path: "configure_olex2"
       parameters:
-        - name: "redo_input_cif_path"  # consider renaming to "redo_input_cif_path"
+        - name: "redo_input_cif_path"
           dtype: "QCrBox.input_cif"
           description: "Path to the CIF file to recreate the interactive result for."
           required_entry_sets: ["cell_data", "diffraction_data"]
           optional_entry_sets: ["atom_data"]
-        - name: "redo_output_cif_path" # consider renaming to "redo_output_cif_path"
+        - name: "redo_output_cif_path"
           dtype: "QCrBox.output_cif"
           description: "Path to save the CIF file to after finishing the interactive session."
           required_entry_sets: ["olex_structure_output", "olex2_only_interactive_output"]
