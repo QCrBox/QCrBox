@@ -11,7 +11,6 @@ from pydantic import Extra, PrivateAttr, field_validator, model_validator
 from .. import helpers
 from .base import QCrBoxPydanticBaseModel
 from .cif_entry_set import CifEntrySet
-from .command_spec import CommandSpec
 from .command_spec.command_spec import CommandSpecWithParameters, CommandSpecDiscriminatedUnion
 
 __all__ = ["ApplicationSpec"]
@@ -76,7 +75,8 @@ class ApplicationSpec(ApplicationSpecBase):
     def from_yaml_file(cls, file_path: str | Path):
         file_path = Path(file_path)
         sys.path.insert(0, file_path.parent.absolute())
-        return cls(**yaml.safe_load(file_path.open()))
+        yaml_data = yaml.safe_load(file_path.open())
+        return cls(**yaml_data)
 
     @property
     def interactive_commands(self) -> list[CommandSpecDiscriminatedUnion]:
