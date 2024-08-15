@@ -5,5 +5,13 @@ from .calculation import CalculationDB
 from .calculation_status_event import CalculationStatusDetails, CalculationStatusEnum
 from .command_execution import CommandExecutionCreate
 from .command_invocation import CommandInvocationCreate
-from .command_spec import CommandSpec, CommandSpecDB, CommandSpecDiscriminatedUnion, CommandSpecWithParameters
+from .command_spec import (
+    CommandSpec,
+    CommandSpecDB,
+    CommandSpecDiscriminatedUnion,
+    CommandSpecWithParameters,
+    InteractiveCommandSpec,
+    PythonCallableSpec,
+    CLICommandSpec,
+)
 from .parameter_spec import ParameterSpec, ParameterSpecDiscriminatedUnion
