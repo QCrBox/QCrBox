@@ -22,14 +22,21 @@ def retrieve_status(calculation_id: str, use_json_output: bool = False):
 
     response = requests.get(settings.registry.server.api_url + f"calculations/{calculation_id}")
     if not response.ok:
+        if response.status_code == 404:
+            click.echo(f"Calculation not found: {calculation_id!r}")
+            exit(1)
         data = response.json()
         click.echo("Error: could not retrieve calculation status.")
-        click.echo(f"Details: {data['detail']}")
+        details = data.get("detail", {"status_code": data.get("status_code", "unknown")})
+        click.echo(f"Details: {details}")
+        sys.exit(1)
 
     data = response.json()
     if use_json_output:
         click.echo(data)
     else:
+        from pyqcrbox import logger
+        logger.debug(data)
         click.echo(f"Calculation id: {data['calculation_id']}")
         click.echo(f"Status: {data['status']}")
         if data["extra_info"] != {}:
