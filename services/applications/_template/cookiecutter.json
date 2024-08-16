@@ -1,5 +1,5 @@
 {
-  "application_type": ["CLI", "GUI (Linux)", "GUI (Windows)"],
+  "application_type": ["CLI", "GUI (Linux)"],
   "application_slug": "<will_be_provided_by_run_cookiecutter>",
   "application_name": "{{ cookiecutter.application_slug.replace('_', ' ').title() }}",
   "application_version": "x.y.z",
