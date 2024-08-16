@@ -1,8 +1,11 @@
+from sqlalchemy import UniqueConstraint
+
 from datetime import datetime
 
 import sqlalchemy
 from sqlmodel import Field, Relationship, SQLModel, select
 
+from pyqcrbox.logging import logger
 from pyqcrbox.settings import settings
 
 from .application_spec import ApplicationSpec, ApplicationSpecBase
@@ -12,6 +15,7 @@ from .command_spec import CommandSpecDB
 
 class ApplicationSpecDB(ApplicationSpecBase, SQLModel, table=True):
     __tablename__ = "application"
+    __table_args__ = (UniqueConstraint("slug", "version"),)
     __pydantic_model_cls__ = ApplicationSpec
 
     id: int | None = Field(default=None, primary_key=True)
@@ -21,13 +25,13 @@ class ApplicationSpecDB(ApplicationSpecBase, SQLModel, table=True):
     commands: list[CommandSpecDB] = Relationship(back_populates="application")
     calculations: list[CalculationDB] = Relationship(back_populates="application")
 
-    def model_dump(self, as_read_model=False, **kwargs):
-        if as_read_model:
+    def model_dump(self, as_response_model=False, **kwargs):
+        if as_response_model:
             assert "exclude" not in kwargs
             kwargs["exclude"] = {"private_routing_key"}
 
         data = super().model_dump(**kwargs)
-        data["commands"] = [cmd.model_dump(as_read_model=as_read_model) for cmd in self.commands]
+        data["commands"] = [cmd.model_dump(as_response_model=as_response_model) for cmd in self.commands]
         return data
 
     @classmethod
@@ -41,15 +45,13 @@ class ApplicationSpecDB(ApplicationSpecBase, SQLModel, table=True):
         return cls(**data)
 
     def save_to_db(self, init_db: bool = False):
-        from pyqcrbox.logging import logger
-
         cls = self.__class__
 
         with settings.db.get_session(init_db=init_db) as session:
             try:
-                result = session.exec(select(cls).where(cls.name == self.name and cls.version == self.version)).one()
+                result = session.exec(select(cls).where(cls.slug == self.slug, cls.version == self.version)).one()
                 logger.debug(
-                    f"An application was registered before with name={self.name!r}, version={self.version!r}. "
+                    f"An application was registered before with slug={self.slug!r}, version={self.version!r}. "
                     "Loading details from the previously stored data."
                 )
                 logger.debug(
@@ -63,7 +65,8 @@ class ApplicationSpecDB(ApplicationSpecBase, SQLModel, table=True):
                 session.refresh(self)
                 return self
 
-    def to_read_model(self):
+    def to_response_model(self):
         from .application_spec import ApplicationSpecWithCommands
 
-        return ApplicationSpecWithCommands(**self.model_dump(as_read_model=True))
+        return ApplicationSpecWithCommands(**self.model_dump(
+            as_response_model=True))

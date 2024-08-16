@@ -7,7 +7,7 @@ from .cli_command_spec import CLICommandSpec
 from .interactive_command_spec import InteractiveCommandSpec
 from .python_callable_spec import PythonCallableSpec
 
-__all__ = ["CommandSpecDiscriminatedUnion"]
+__all__ = ["CommandSpecDiscriminatedUnion", "CommandSpec", "CommandSpecWithParameters"]
 
 
 CommandSpecTaggedUnion = Union[

@@ -2,7 +2,7 @@ import re
 
 import anyio
 
-from pyqcrbox import sql_models_NEW_v2
+from pyqcrbox.sql_models_NEW_v2 import CLICommandSpec
 
 __all__ = ["CLICommand"]
 
@@ -75,10 +75,15 @@ class QCrBoxCmdArgumentMismatch(Exception):
 
 
 class CLICommand(BaseCommand):
-    def __init__(self, cmd_spec: sql_models_NEW_v2.command_spec.command_spec.CommandSpecDiscriminatedUnion):
+    def __init__(self, cmd_spec: CLICommandSpec):
+        assert cmd_spec.implemented_as == "cli_command"
         super().__init__(cmd_spec)
         self.call_pattern = cmd_spec.call_pattern
-        self.parameter_names = list(set(re.findall("{(.*?)}", self.call_pattern)))
+        self.call_pattern_parameter_names = list(set(re.findall("{(.*?)}", self.call_pattern)))
+        self.parameter_names = [p.name for p in cmd_spec.parameters]
+        logger.warning(
+            f"TODO: validate that the call_pattern_parameter_names are a subset(?) of the yaml spec parameters"
+        )
 
         self.proc: asyncio.subprocess.Process | None = None
 
@@ -89,7 +94,8 @@ class CLICommand(BaseCommand):
         return self.call_pattern
 
     def bind(self, **kwargs):
-        return self.call_pattern.format(**kwargs)
+        param_values = self.cmd_spec.parameter_default_values | kwargs
+        return self.call_pattern.format(**param_values)
 
     async def execute_in_background(
         self,
@@ -97,6 +103,7 @@ class CLICommand(BaseCommand):
         _stdin=None,
         _stdout=subprocess.PIPE,
         _stderr=subprocess.PIPE,
+        _cwd=None,
         **kwargs,
     ) -> CLICmdCalculation:
         calc_finished_event = anyio.Event()
@@ -111,6 +118,7 @@ class CLICommand(BaseCommand):
             stdin=_stdin,
             stdout=_stdout,
             stderr=_stderr,
+            cwd=_cwd,
         )
 
         return CLICmdCalculation(self.proc, calculation_id=_calculation_id, calc_finished_event=calc_finished_event)

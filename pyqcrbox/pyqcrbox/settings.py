@@ -71,23 +71,6 @@ class DatabaseSettings(BaseModel):
         return Session(engine)
 
 
-class RabbitMQSettings(BaseModel):
-    host: str = "127.0.0.1"
-    port: int = 5672
-    username: str = "guest"
-    password: str = "guest"
-    management_port: int = 15672
-    rpc_timeout: float = 5.0
-    graceful_timeout: Optional[int] = 5
-
-    routing_key_qcrbox_registry: str = "qcrbox-registry"
-
-    @computed_field  # type: ignore
-    @property
-    def url(self) -> str:
-        return f"amqp://{self.username}:{self.password}@{self.host}:{self.port}/"
-
-
 class NATSSettings(BaseModel):
     host: str = "127.0.0.1"
     port: int = 4222
@@ -153,7 +136,6 @@ class QCrBoxSettings(BaseSettings):
     )
 
     nats: NATSSettings = NATSSettings()
-    rabbitmq: RabbitMQSettings = RabbitMQSettings()
     registry: RegistrySettings = RegistrySettings()
     db: DatabaseSettings = DatabaseSettings()
     testing: TestingSettings = TestingSettings()

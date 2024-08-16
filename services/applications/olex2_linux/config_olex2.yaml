@@ -11,7 +11,7 @@ doi: "10.1107/S0021889808042726"
 commands:
   - name: "interactive"
     implemented_as: "interactive"
-    description: "Start Olex2 in interactive mode, this can be used to solve, refine and finish small-molecule crystal structures."
+    description: "Start Olex2 in interactive mode; this can be used to solve, refine and finish small-molecule crystal structures."
     parameters:
       - name: "input_cif_path"
         dtype: "QCrBox.input_cif"
@@ -44,7 +44,7 @@ commands:
         used_basecommand_parameters: ["input_cif_path", "work_cif_path"]
       run:
         implemented_as: "cli_command"
-        command: "/bin/bash /opt/olex2/start {work_cif_path}"
+        call_pattern: "/bin/bash /opt/olex2/start {work_cif_path}"
         used_basecommand_parameters: ["work_cif_path"]
       finalise:
         implemented_as: "python_callable"
@@ -55,18 +55,18 @@ commands:
         implemented_as: "python_callable"
         import_path: "configure_olex2"
         callable_name: "toparams__interactive"
-        used_basecommand_parameters: ["input_cif_path", "output_cif_path", "parameter_json_path", "parameter_folder"]
+        used_basecommand_parameters: ["input_cif_path", "parameter_json_path", "parameter_folder"]
     non_interactive_equivalent:
       name: "redo__interactive"
       implemented_as: "python_callable"
       import_path: "configure_olex2"
       parameters:
-        - name: "redo_input_cif_path"  # consider renaming to "redo_input_cif_path"
+        - name: "redo_input_cif_path"
           dtype: "QCrBox.input_cif"
           description: "Path to the CIF file to recreate the interactive result for."
           required_entry_sets: ["cell_data", "diffraction_data"]
           optional_entry_sets: ["atom_data"]
-        - name: "redo_output_cif_path" # consider renaming to "redo_output_cif_path"
+        - name: "redo_output_cif_path"
           dtype: "QCrBox.output_cif"
           description: "Path to save the CIF file to after finishing the interactive session."
           required_entry_sets: ["olex_structure_output", "olex2_only_interactive_output"]

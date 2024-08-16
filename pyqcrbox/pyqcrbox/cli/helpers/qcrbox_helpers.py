@@ -79,8 +79,8 @@ class QCrBoxSubprocessError(Exception):
 def prettyprint_called_process_error(exc: subprocess.CalledProcessError):
     cmd = " ".join(exc.cmd)
     prefix = " " * 24
-    captured_stdout = textwrap.indent(f"\n\n{exc.stdout.decode()}\n" if exc.stdout else "(not captured)", prefix=prefix)
-    captured_stderr = textwrap.indent(f"\n\n{exc.stderr.decode()}\n" if exc.stderr else "(not captured)", prefix=prefix)
+    captured_stdout = textwrap.indent(f"\n\n{exc.stdout.decode()}\n" if exc.stdout else "(no output)", prefix=prefix)
+    captured_stderr = textwrap.indent(f"\n\n{exc.stderr.decode()}\n" if exc.stderr else "(no output)", prefix=prefix)
     msg = textwrap.dedent(
         f"""\
         An error occurred when executing the following command:

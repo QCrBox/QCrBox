@@ -1,6 +1,12 @@
 services:
   qcrbox-nats:
     image: "nats:2.10.16-alpine"
+    command: ["nats-server", "--jetstream", "-m", "8222", "--store_dir", "/mnt/nats/", "--server_name", "qcrbox-nats"]
+    healthcheck:
+      test: curl --fail http://localhost:8222/healthz
+      interval: 60s
+      start_period: 30s
+      start_interval: 1s
     volumes:
       - qcrbox-nats-storage:/mnt/nats/
     networks:
@@ -11,25 +17,22 @@ services:
       - "${QCRBOX_BIND_ADDRESS:?Must set env var QCRBOX_BIND_ADDRESS}:${QCRBOX__NATS__MANAGEMENT_PORT:?Must set env var QCRBOX__NATS__MANAGEMENT_PORT}:8222"
     restart: unless-stopped
 
-  qcrbox-nui:
-    image: "ghcr.io/nats-nui/nui:latest"
-    volumes:
-      - qcrbox-nui-db:/db
-    ports:
-      - 31311:31311
-    networks:
-      - qcrbox-net
-    restart: unless-stopped
-
   qcrbox-reverse-proxy:
-    image: traefik:v3.1.0
+    image: traefik:v3.1.1
     command:
       - "--log.level=DEBUG"
+      - "--ping=true"
       - "--accesslog=true"
+      - "--ping=true"
       - "--api.insecure=true"  # enable the web UI
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--entryPoints.web.address=:80"
+    healthcheck:
+      test: "traefik healthcheck --ping"
+      interval: 60s
+      start_period: 30s
+      start_interval: 1s
     networks:
       - qcrbox-net
     ports:
@@ -41,30 +44,6 @@ services:
       # So that Traefik can listen to the Docker events
       - /var/run/docker.sock:/var/run/docker.sock:ro
 
-  qcrbox-message-bus:
-    image: "qcrbox/message-bus:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
-    volumes:
-      - qcrbox-rabbitmq-data:/var/lib/rabbitmq
-    networks:
-      - qcrbox-net
-    hostname: "qcrbox-message-bus"
-    ports:
-      - "${QCRBOX_BIND_ADDRESS:?Must set env var QCRBOX_BIND_ADDRESS}:${QCRBOX__RABBITMQ__PORT:?Must set env var QCRBOX__RABBITMQ__PORT}:5672"
-      - "${QCRBOX_BIND_ADDRESS:?Must set env var QCRBOX_BIND_ADDRESS}:${QCRBOX__RABBITMQ__MANAGEMENT_PORT:?Must set env var QCRBOX__RABBITMQ__MANAGEMENT_PORT}:15672"
-#      - "${QCRBOX_BIND_ADDRESS:?Must set env var QCRBOX_BIND_ADDRESS}:${QCRBOX_PORT_WEBSOCKET:?Must set env var QCRBOX_PORT_WEBSOCKET}:4000"
-    depends_on:
-      - qcrbox-reverse-proxy
-    restart: unless-stopped
-    healthcheck:
-      test: rabbitmq-diagnostics -q is_running
-      interval: 5s
-      timeout: 30s
-      start_period: 30s
-      # Note: the 'start_interval' option is not supported yet
-      # (see https://github.com/docker/compose/issues/10830#issuecomment-1722514100)
-      #start_interval: 1s
-      retries: 5
-
   qcrbox-registry:
     image: "qcrbox/registry:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
     volumes:
@@ -75,8 +54,11 @@ services:
     depends_on:
       qcrbox-nats:
         condition: service_healthy
+      qcrbox-reverse-proxy:
+        condition: service_healthy
     environment:
       QCRBOX__NATS__HOST: "qcrbox-nats"
+      #QCRBOX__DB__URL: "sqlite:///${QCRBOX_REGISTRY_DB_DIR}/db.sqlite"
     networks:
       - qcrbox-net
     restart: "unless-stopped"
@@ -95,7 +77,6 @@ services:
       qcrbox-message-bus:
         condition: service_healthy
     environment:
-      QCRBOX_RABBITMQ_QUEUE_NAME: "qcrbox_nextflow"
       QCRBOX_REGISTRY_HOST: "qcrbox-registry"
       QCRBOX_REGISTRY_PORT: "8000"
       QCRBOX_NEXTFLOW_HOME: "${QCRBOX_NEXTFLOW_HOME:?Must set env var QCRBOX_NEXTFLOW_HOME}"
@@ -107,8 +88,6 @@ networks:
   qcrbox-net:
 
 volumes:
-  qcrbox-rabbitmq-data:
   qcrbox-registry-db:
-  qcrbox-nextflow-home:
   qcrbox-nats-storage:
-  qcrbox-nui-db:
+  qcrbox-nextflow-home:

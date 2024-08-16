@@ -1,3 +1,4 @@
+import os
 import sys
 from pathlib import Path
 from typing import Optional
@@ -8,11 +9,9 @@ from litestar import Litestar
 from pyqcrbox import helpers, logger, msg_specs, settings, sql_models_NEW_v2
 from pyqcrbox.cli.helpers import get_repo_root
 from pyqcrbox.helpers import generate_private_routing_key
-from pyqcrbox.registry.shared.calculation_status import (
-    CalculationStatusDetails,
-    CalculationStatusEnum,
-    update_calculation_status_in_nats_kv_NEW,
-)
+from pyqcrbox.registry.client.executable_command.calculation import BaseCalculation
+from pyqcrbox.registry.shared.calculation_status import update_calculation_status_in_nats_kv_NEW
+from pyqcrbox.sql_models_NEW_v2 import CalculationStatusDetails, CalculationStatusEnum
 
 from ..shared import QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup
 from .api_endpoints import create_client_asgi_server
@@ -42,6 +41,10 @@ class QCrBoxClient(QCrBoxServerClientBase):
         # self.routing_key_command_invocation = application_spec.routing_key_command_invocation
         self._calculations: list[BaseCommand] = []
         self.status = ClientStatus(ClientStatusEnum.IDLE)
+
+    @property
+    def working_dir(self) -> Path:
+        return self.application_spec.yaml_file_dir or Path.cwd()
 
     # def _set_up_rabbitmq_broker(self) -> None:
     #     self.set_up_message_dispatcher(
@@ -118,9 +121,12 @@ class QCrBoxClient(QCrBoxServerClientBase):
         logger.info(f"Received command execution request: {msg!r} (current status: {self.status}")
         self.status.set_busy()
 
-        cmd = self.get_executable_command(msg.command_name)
         try:
-            calc = await cmd.execute_in_background(**msg.arguments, _calculation_id=msg.calculation_id)
+            cmd = self.get_executable_command(msg.command_name)
+            logger.debug(f"Executing command in working dir cwd={self.working_dir!r}")
+            calc = await cmd.execute_in_background(**msg.arguments, _calculation_id=msg.calculation_id, _cwd=self.working_dir)
+            if not isinstance(calc, BaseCalculation):
+                raise RuntimeError("Command execution did not return a calculation object.")
         except Exception as exc:
             error_msg = f"Command execution failed: {exc!r}"
             logger.error(error_msg)
@@ -128,9 +134,9 @@ class QCrBoxClient(QCrBoxServerClientBase):
             status_details = CalculationStatusDetails(
                 calculation_id=msg.calculation_id,
                 status=CalculationStatusEnum.FAILED,
-                stdout="",
-                stderr="",
-                extra_info={},
+                stdout=None,
+                stderr=None,
+                extra_info={"error_msg": error_msg},
             )
             await update_calculation_status_in_nats_kv_NEW(status_details)
             self.status.set_idle()
@@ -228,6 +234,10 @@ def main():
         application_config_file = repo_root.joinpath("services/applications/olex2_linux/config_olex2.yaml")
 
     application_spec = sql_models_NEW_v2.ApplicationSpec.from_yaml_file(application_config_file)
+
+    # Add the directory containing the application config file to PATH so that any scripts
+    # present there are available during command execution.
+    os.environ["PATH"] = f"{application_config_file.parent.absolute()}:{os.environ['PATH']}"
 
     qcrbox_client = QCrBoxClient(application_spec=application_spec)
     qcrbox_client.run(host=settings.registry.client.host, port=settings.registry.client.port)

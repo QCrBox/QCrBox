@@ -6,12 +6,10 @@ from pydantic import BaseModel
 from sqlmodel import select
 
 from pyqcrbox import helpers, logger, msg_specs, settings, sql_models_NEW_v2
-from pyqcrbox.registry.shared.calculation_status import (
-    CalculationStatusDetails,
-    update_calculation_status_in_nats_kv_NEW,
-)
+from pyqcrbox.registry.shared.calculation_status import update_calculation_status_in_nats_kv_NEW
+from pyqcrbox.sql_models_NEW_v2 import CalculationStatusDetails, CalculationStatusEnum
 
-from ..shared import CalculationStatusEnum, QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup
+from ..shared import QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup
 from .api_endpoints import create_server_asgi_server
 
 

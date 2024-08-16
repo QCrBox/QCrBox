@@ -1,9 +1,10 @@
 import textwrap
 from typing import TYPE_CHECKING
 
-from pyqcrbox import sql_models_NEW_v2
+from pyqcrbox import logger, sql_models_NEW_v2
 
 from .qcrbox_command import QCrBoxCommand
+from .qcrbox_interactive_session import QCrBoxInteractiveSession
 
 if TYPE_CHECKING:
     from .qcrbox_wrapper import QCrBoxWrapper
@@ -27,10 +28,14 @@ class QCrBoxApplication:
         application_spec: sql_models_NEW_v2.ApplicationSpecWithCommands
             The application spec as returned by the API endpoint `/applications`.
         """
+        self.wrapper_parent = wrapper_parent
         self.application_spec = application_spec
         self.name = self.application_spec.name
         self.slug = self.application_spec.slug
         self.version = self.application_spec.version
+        self.gui_url = f"http://{self.wrapper_parent.server_host}/gui/{self.slug}"
+        logger.debug(f"TODO: implement proper construction and validation of gui_url")
+
         self.commands = [
             QCrBoxCommand(
                 application_slug=self.slug,
@@ -40,10 +45,19 @@ class QCrBoxApplication:
             )
             for cmd_spec in self.application_spec.commands
         ]
-        self.__doc__ = self._construct_docstring()
+        self._cmds_by_name: dict[str, QCrBoxCommand] = {cmd.name: cmd for cmd in self.commands}
+        for cmd in self.commands:
+            setattr(self, cmd.name, cmd)
 
     def __repr__(self) -> str:
         return f"<{self.name}>"
+
+    @property
+    def non_interactive_commands(self) -> list[QCrBoxCommand]:
+        return [cmd for cmd in self.commands if not cmd.is_interactive]
+    @property
+    def interactive_commands(self) -> list[QCrBoxCommand]:
+        return [cmd for cmd in self.commands if cmd.is_interactive]
 
     def _construct_docstring(self):
         method_strings = []
@@ -64,3 +78,26 @@ class QCrBoxApplication:
                 {separator.join(method_strings)}
             """
         )
+
+    def interactive_session(self, **kwargs):
+        assert (
+            len(self.interactive_commands) == 1
+        ), "interactive_session currently assumes that the application exposes exactly one interactive command"
+
+        #cmd_interactive = self.interactive_commands[0]
+        # run_cmd = self.application_spec.cmds_by_name["__interactive_run"]
+        # prepare_cmd = self.application_spec.cmds_by_name["__interactive_prepare"]
+        prepare_cmd = self._cmds_by_name["__interactive_prepare"]
+        run_cmd = self._cmds_by_name["__interactive_run"]
+        finalise_cmd = self._cmds_by_name["__interactive_finalise"]
+
+        session = QCrBoxInteractiveSession(
+            application_slug=self.slug,
+            gui_url=self.gui_url,
+            run_cmd=run_cmd,
+            prepare_cmd=prepare_cmd,
+            finalise_cmd=finalise_cmd,
+            kwargs=kwargs,
+        )
+        # session.start_and_wait_for_user_input()
+        return session

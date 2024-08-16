@@ -12,7 +12,6 @@ services:
     restart: unless-stopped
     environment:
       QCRBOX_APPLICATION_DISPLAY_NAME: "CrystalExplorer"
-      QCRBOX_RABBITMQ_QUEUE_NAME: "crystal-explorer"
       QCRBOX_REGISTRY_HOST: "qcrbox-registry"
       QCRBOX_REGISTRY_PORT: "8000"
 

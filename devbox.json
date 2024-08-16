@@ -18,7 +18,9 @@
     "python312Packages.tkinter@latest",
     "uv@latest",
     "stdenv.cc.cc.lib",
-    "fd@latest"
+    "fd@latest",
+    "ripgrep@latest",
+    "delta@latest"
   ],
   "env": {
     "MAMBA_ROOT_PREFIX":     "${PWD}/.devbox/virtenv/python/.conda",

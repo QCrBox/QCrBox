@@ -1,13 +1,9 @@
-import json
-import textwrap
-import time
-import urllib.request
+import requests
 from collections import namedtuple
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 
 from pyqcrbox import sql_models_NEW_v2
-from pyqcrbox.registry.shared.calculation_status import CalculationStatusDetails
-from pyqcrbox.sql_models_NEW_v2.calculation_status_event import CalculationStatusEnum
+from .qcrbox_calculation import QCrBoxCalculation
 
 if TYPE_CHECKING:
     from .qcrbox_wrapper import QCrBoxWrapper
@@ -25,114 +21,21 @@ dtype : str
 """
 
 
-QCrBoxCalculationStatus = namedtuple(
-    "QCrBoxCalculationStatus",
-    ["calculation_id", "command_id", "started_at", "status", "status_details"],
-)
-QCrBoxCalculationStatus.__doc__ = """
-Represents the status of a calculation in QCrBox.
+class QCrBoxCommandError(Exception):
+    def __init__(self, status_code: int, detail: str):
+        self.status_code = status_code
+        self.detail = detail
 
-Attributes
-----------
-calculation_id : int
-    Unique identifier for the calculation.
-command_id : int
-    ID of the command that initiated the calculation.
-started_at : str
-    Timestamp when the calculation started.
-status : str
-    Status of the calculation (e.g., 'running', 'completed').
-status_details : dict
-    Detailed status information of the calculation.
-"""
+    @classmethod
+    def from_http_response(cls, http_response: requests.Response):
+        status_code = http_response.status_code
+        detail = http_response.json()["detail"]
+        obj = QCrBoxCommandError(status_code, detail)
+        obj._http_response = http_response
+        return obj
 
-
-class UnsuccessfulCalculationError(Exception):
-    def __init__(self, status: "CalculationStatusDetails"):
-        try:
-            error_message = status.extra_info["msg"]
-        except KeyError:
-            error_message = "No error message available"
-
-        msg = textwrap.dedent(
-            f"""\
-            Calculation with id {status.calculation_id} does not have the status completed but {status.status}.
-
-            Potential error message:
-            {error_message}
-            
-            Command stdout:
-            {status.stdout}
-
-            Command stderr:
-            {status.stderr}
-        """
-        ).strip()
-
-        super().__init__(msg)
-
-
-class QCrBoxCalculation:
-    """
-    Represents a calculation performed on the QCrBox server.
-    """
-
-    def __init__(self, calc_id: int, calculation_parent: "QCrBoxCommand") -> None:
-        """
-        Initializes the QCrBoxCalculation instance.
-
-        Parameters
-        ----------
-        calc_id : int
-            Unique identifier for the calculation.
-        calculation_parent : QCrBoxCommand
-            Parent command object that instantiated the calculation.
-        """
-        self.id = calc_id
-        self.calculation_parent = calculation_parent
-        self._server_url = calculation_parent._server_url
-
-    @property
-    def status(self) -> QCrBoxCalculationStatus:
-        """
-        Fetches and returns the current status of the calculation from the server.
-
-        Returns
-        -------
-        QCrBoxCalculationStatus
-            A namedtuple containing detailed status information of the calculation.
-        """
-        with urllib.request.urlopen(f"{self._server_url}/calculations/{self.id}") as r:
-            response_data = json.loads(r.read().decode("UTF-8"))
-
-        return CalculationStatusDetails(**response_data)
-        #
-        # return QCrBoxCalculationStatus(
-        #     int(response["id"]),
-        #     int(response["command_id"]),
-        #     response["started_at"],
-        #     response["status_details"]["status"],
-        #     response["status_details"],
-        # )
-
-    def wait_while_running(self, sleep_time: float) -> None:
-        """
-        Periodically checks the calculation's status and blocks until it is no longer 'running'.
-
-        Parameters
-        ----------
-        sleep_time : float
-            The interval, in seconds, between status checks.
-
-        Raises
-        ------
-        RuntimeError
-            If the calculation finishes with a status other than 'completed'.
-        """
-        while self.status.status == CalculationStatusEnum.RUNNING:
-            time.sleep(sleep_time)
-        if self.status.status != CalculationStatusEnum.COMPLETED:
-            raise UnsuccessfulCalculationError(self.status)
+    def __str__(self):
+        return f"status_code={self.status_code}, detail={self.detail!r}"
 
 
 class QCrBoxCommandBase:
@@ -168,8 +71,16 @@ class QCrBoxCommandBase:
             QCrBoxParameter(param_dict["name"], param_dict["dtype"]) for param_dict in self.cmd_spec.parameters.values()
         ]
 
+    def __repr__(self) -> str:
+        clsname = self.__class__.__name__
+        return f"{clsname}({self.name!r})"
+
     @property
-    def par_name_list(self) -> list[str]:
+    def is_interactive(self) -> bool:
+        return self.cmd_spec.is_interactive
+
+    @property
+    def parameter_names(self) -> list[str]:
         """
         Retrieves the names of the parameters for the command.
 
@@ -205,9 +116,9 @@ class QCrBoxCommandBase:
         NameError
             If invalid or duplicate keyword arguments are provided.
         """
-        arguments = {key: str(val) for key, val in zip(self.par_name_list, args)}
+        arguments = {key: str(val) for key, val in zip(self.parameter_names, args)}
 
-        invalid_args = [arg for arg in kwargs if arg not in self.par_name_list]
+        invalid_args = [arg for arg in kwargs if arg not in self.parameter_names]
         if len(invalid_args) > 0:
             raise NameError(f'This method got one or more invalid keywords: {", ".join(invalid_args)}')
 
@@ -238,7 +149,7 @@ class QCrBoxCommand(QCrBoxCommandBase):
 
         Returns
         -------
-        QCrBoxCalculation
+        qcrbox_wrapper.qcrbox_wrapper_new.qcrbox_calculation.QCrBoxCalculation
             The resulting calculation object from executing the command.
 
         Raises
@@ -256,20 +167,12 @@ class QCrBoxCommand(QCrBoxCommandBase):
             command_name=self.name,
             arguments=arguments,
         ).model_dump()
-        req = urllib.request.Request(f"{self._server_url}/commands/invoke", method="POST")
-        req.add_header("Content-Type", "application/json")
-        data = json.dumps(data_dict)
-        data = data.encode("UTF-8")
-        r = urllib.request.urlopen(req, data=data)
-        response = json.loads(r.read())
-        if not response["status"] == "ok":
-            print(response)
-            raise ConnectionError("Command not successfully sent")
+        response = requests.post(f"{self._server_url}/commands/invoke", json=data_dict)
+        if not response.ok:
+            raise QCrBoxCommandError.from_http_response(response)
+        response_data = response.json()
 
-        return QCrBoxCalculation(response["payload"]["calculation_id"], self)
-
-    def __repr__(self) -> str:
-        return f"QCrBoxCommand({self.name!r})"
+        return QCrBoxCalculation(response_data["payload"]["calculation_id"], self)
 
 
 class QCrBoxInteractiveCommand(QCrBoxCommandBase):
@@ -282,15 +185,15 @@ class QCrBoxInteractiveCommand(QCrBoxCommandBase):
 
     def __init__(
         self,
-        cmd_id: int,
-        name: str,
-        application_id: int,
-        parameters: list[QCrBoxParameter],
-        gui_url: str,
+        application_slug: str,
+        application_version: str,
+        cmd_spec: sql_models_NEW_v2.CommandSpecWithParameters,
         wrapper_parent: "QCrBoxWrapper",
+        # parameters: list[QCrBoxParameter],
+        gui_url: str,
         run_cmd: QCrBoxCommand,
-        prepare_cmd: Union[QCrBoxCommand, None] = None,
-        finalise_cmd: Union[QCrBoxCommand, None] = None,
+        # prepare_cmd: Union[QCrBoxCommand, None] = None,
+        # finalise_cmd: Union[QCrBoxCommand, None] = None,
     ) -> None:
         """
         Initializes the QCrBoxInteractiveCommand instance.
@@ -317,19 +220,17 @@ class QCrBoxInteractiveCommand(QCrBoxCommandBase):
             Command to be executed as the finalization command (after trigger after run),
             by default None.
         """
-        # super().__init__(
-        #     cmd_id=cmd_id,
-        #     name=name,
-        #     application_id=application_id,
-        #     parameters=parameters,
-        #     wrapper_parent=wrapper_parent,
-        # )
-        # self.gui_url = gui_url
+        super().__init__(
+            application_slug=application_slug,
+            application_version=application_version,
+            cmd_spec=cmd_spec,
+            wrapper_parent=wrapper_parent,
+        )
+        self.gui_url = gui_url
         # self._server_url = wrapper_parent.server_url
-        # self.run_cmd = run_cmd
+        self.run_cmd = run_cmd
         # self.prepare_cmd = prepare_cmd
         # self.finalise_cmd = finalise_cmd
-        pass
 
     # def execute_prepare(self, arguments: dict):
     #     """

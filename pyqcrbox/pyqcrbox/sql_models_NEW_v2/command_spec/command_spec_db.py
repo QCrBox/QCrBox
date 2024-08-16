@@ -41,8 +41,8 @@ class CommandSpecDB(QCrBoxBaseSQLModel, table=True):
 
     calculations: list["CalculationDB"] = Relationship(back_populates="command")
 
-    def model_dump(self, as_read_model=False, **kwargs):
-        if as_read_model:
+    def model_dump(self, as_response_model=False, **kwargs):
+        if as_response_model:
             assert "exclude" not in kwargs
             kwargs["exclude"] = ["call_pattern", "callable_name", "import_path"]
 
@@ -59,8 +59,8 @@ class CommandSpecDB(QCrBoxBaseSQLModel, table=True):
         # logger.debug(f"{command.name=}: {data=}")
         return cls(**data)
 
-    def to_read_model(self):
+    def to_response_model(self):
         from .command_spec import CommandSpecWithParameters
 
-        data = self.model_dump(as_read_model=True)
+        data = self.model_dump(as_response_model=True)
         return CommandSpecWithParameters(**data)

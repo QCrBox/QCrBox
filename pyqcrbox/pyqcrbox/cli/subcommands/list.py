@@ -68,11 +68,11 @@ def run_request_against_registry_api(endpoint, params):
     is_flag=True,
     help="List all components (including base images that are only used during the build process)",
 )
-def list_available_componens(include_all_components):
+def list_available_components(include_all_components):
     """
     List available QCrBox components.
 
-    These can be used as arguments in the commands `qcb build/up/down`.
+    These can be used as arguments in `qcb build/up/down`.
     """
     docker_project = DockerProject()
 
@@ -87,20 +87,20 @@ def list_available_componens(include_all_components):
 
 @list_qcrbox_resources.command(name="applications")
 @click.option(
-    "--name",
+    "--slug",
     default=None,
-    help="Filter applications by name (must match exactly)",
+    help="Filter applications by slug (must match exactly)",
 )
 @click.option(
     "--version",
     default=None,
     help="Filter applications by version (must match exactly)",
 )
-def list_applications(name: Optional[str], version: Optional[str]):
+def list_applications(slug: Optional[str], version: Optional[str]):
     """
     List registered applications.
     """
-    r = run_request_against_registry_api("/applications", params={"name": name, "version": version})
+    r = run_request_against_registry_api("/applications", params={"slug": slug, "version": version})
 
     cols_to_print = (
         "id",
@@ -120,23 +120,44 @@ def list_applications(name: Optional[str], version: Optional[str]):
     help="Filter commands by name (must match exactly)",
 )
 @click.option(
-    "--application-id",
+    "--application-slug",
     default=None,
-    type=int,
-    help="Filter commands by application_id (run 'qcb list applications' to get the id)",
+    type=str,
+    help="Filter commands by application_slug (run 'qcb list applications' to get the slug)",
 )
-def list_commands(name: Optional[str], application_id: Optional[int]):
+@click.option(
+    "--application-version",
+    default=None,
+    type=str,
+    help="Filter commands by application_version (run 'qcb list applications' to get the version)",
+)
+@click.option(
+    "-a",
+    "--all",
+    "include_interactive_lifecycle_steps",
+    is_flag=True,
+    default=False,
+    help="List all commands (including interactive lifecycle steps)",
+)
+def list_commands(name: str | None, application_slug: str | None, application_version: str | None, include_interactive_lifecycle_steps: bool):
     """
     List registered commands.
     """
-    r = run_request_against_registry_api("/commands", params={"name": name, "application_id": application_id})
+    r = run_request_against_registry_api(
+        "/commands",
+        params={"name": name, "application_slug": application_slug, "application_version": application_version},
+    )
     cols_to_print = (
         "id",
         "application_id",
         "name",
         "parameters",
     )
-    data = [extract_columns(cols_to_print)(row) for row in r.json()]
+    data = [
+        extract_columns(cols_to_print)(row)
+        for row in r.json()
+        if not row["name"].startswith("__interactive_") or include_interactive_lifecycle_steps
+    ]
     for row in data:
         row["parameters"] = list(row["parameters"].keys())
     click.echo(tabulate(data, headers="keys", tablefmt="simple"))

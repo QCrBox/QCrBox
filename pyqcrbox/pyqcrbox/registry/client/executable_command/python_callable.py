@@ -7,13 +7,15 @@ import inspect
 import multiprocessing.pool
 import multiprocessing.process
 import traceback
-from typing import Callable, Union
+from typing import Union
 
 import anyio
 from pydantic._internal._validate_call import ValidateCallWrapper
 
 from pyqcrbox import logger
+from pyqcrbox.sql_models_NEW_v2 import PythonCallableSpec
 
+from . import BaseCommand
 from .calculation import PythonCallableCalculation
 
 
@@ -21,8 +23,15 @@ class CalculationNotRunning(Exception):
     pass
 
 
-class PythonCallable:
-    def __init__(self, fn: Callable):
+class PythonCallable(BaseCommand):
+    def __init__(self, cmd_spec: PythonCallableSpec):
+        assert cmd_spec.implemented_as == "python_callable"
+        assert cmd_spec.import_path is not None
+        assert cmd_spec.callable_name is not None
+        super().__init__(cmd_spec)
+
+        module = importlib.import_module(cmd_spec.import_path)
+        fn = getattr(module, cmd_spec.callable_name)
         assert inspect.isfunction(fn)
         if inspect.iscoroutinefunction(fn):
             raise TypeError("At present PythonCallable can only handle regular functions, not coroutine functions.")
@@ -40,14 +49,6 @@ class PythonCallable:
         self.pool: Union[multiprocessing.pool.Pool, None] = None
         self.calc_finished_event = None
 
-    @classmethod
-    def from_command_spec(cls, cmd_spec) -> "PythonCallable":
-        assert cmd_spec.implemented_as == "python_callable"
-        assert cmd_spec.import_path is not None
-        module = importlib.import_module(cmd_spec.import_path)
-        fn = getattr(module, cmd_spec.name)
-        return cls(fn)
-
     def _extract_parameters_from_callable_signature(self) -> dict:
         return {name: p.annotation.__name__ for (name, p) in self.signature.parameters.items()}
 
@@ -62,6 +63,7 @@ class PythonCallable:
         # _stdout=subprocess.PIPE,
         # _stderr=subprocess.PIPE,
         _num_processes=1,
+        _cwd=None,
         **kwargs,
     ):
         calc_finished_event = anyio.Event()
@@ -82,6 +84,11 @@ class PythonCallable:
             calc_finished_event = None
 
         self.pool = multiprocessing.pool.Pool(_num_processes)
+        if _cwd:
+            logger.warning(
+                f"TODO: Change into working directory before executing "
+                f"the python callable (and switch back afterwards)!"
+            )
         pending_result = self.pool.apply_async(
             self._fn_with_call_args_validation,
             args,

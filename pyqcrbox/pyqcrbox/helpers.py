@@ -41,6 +41,14 @@ def greet_and_sleep(name: str, duration: float = 1.0):
     return f"Successfully slept for {duration:.1f} seconds"
 
 
+def generic_dummy_command(msg: str, sleep_duration: float = 5.0):
+    print(f"[DUMMY_COMMAND] {msg=!r}")
+    print(f"[DUMMY_COMMAND] Going to sleep for {sleep_duration:.1f} seconds...")
+    time.sleep(sleep_duration)
+    print("[DUMMY_COMMAND] Waking up.")
+    return f"[DUMMY_COMMAND] Successfully slept for {sleep_duration:.1f} seconds"
+
+
 def get_qcrbox_registry_api_connection_url(
     *,
     host: Optional[str] = None,
