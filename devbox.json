@@ -17,11 +17,12 @@
     "python@3.12",
     "python312Packages.tkinter@latest",
     "uv@latest",
-    "stdenv.cc.cc.lib",
     "fd@latest",
     "ripgrep@latest",
     "delta@latest",
-    "python312Packages.jupyterlab@latest"
+    "stdenv.cc.cc.lib",
+    "lesspipe@latest",
+    "nix-ld@latest"
   ],
   "env": {
     "MAMBA_ROOT_PREFIX":     "${PWD}/.devbox/virtenv/python/.conda",
@@ -30,7 +31,8 @@
   "shell": {
     "init_hook": [
       ". $VENV_DIR/bin/activate",
-      "export LD_LIBRARY_PATH=./.devbox/nix/profile/default/lib:$LD_LIBRARY_PATH",
+      "export NIX_LD_LIBRARY_PATH=${PWD}/.devbox/nix/profile/default/lib/:$NIX_LD_LIBRARY_PATH",
+      "export LD_LIBRARY_PATH=${PWD}/.devbox/nix/profile/default/lib/:$LD_LIBRARY_PATH",
       "uv pip install -e ./pyqcrbox[all]",
       "uv pip install -e ./qcrbox_wrapper[env-file]",
       "alias vi=nvim",
