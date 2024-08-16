@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Self
 
 import yaml
-from pydantic import Extra, PrivateAttr, field_validator, model_validator
+from pydantic import Extra, Field, PrivateAttr, field_validator, model_validator
 
 from .. import helpers
 from .base import QCrBoxPydanticBaseModel
@@ -35,8 +35,25 @@ class ApplicationSpecBase(QCrBoxPydanticBaseModel):
     url: str | None = None
     email: str | None = None
     doi: str | None = None
+    yaml_file_path: str | None = Field(exclude=True, default=None)
 
     _cmds_by_name: Namespace = PrivateAttr
+
+    @field_validator("yaml_file_path", mode="before")
+    @classmethod
+    def convert_yaml_file_path_to_str(cls, value: str | Path | None):
+        if not value:
+            return None
+        else:
+            full_path = Path(value).resolve()
+            return str(full_path)
+
+    @property
+    def yaml_file_dir(self) -> Path | None:
+        if self.yaml_file_path:
+            return Path(self.yaml_file_path).parent
+        else:
+            return None
 
     @property
     def non_interactive_commands(self) -> list[CommandSpecDiscriminatedUnion]:
@@ -73,10 +90,10 @@ class ApplicationSpec(ApplicationSpecBase):
 
     @classmethod
     def from_yaml_file(cls, file_path: str | Path):
-        file_path = Path(file_path)
-        sys.path.insert(0, file_path.parent.absolute())
-        yaml_data = yaml.safe_load(file_path.open())
-        return cls(**yaml_data)
+        yaml_file_path = Path(file_path)
+        sys.path.insert(0, yaml_file_path.parent.absolute())
+        yaml_data = yaml.safe_load(yaml_file_path.open())
+        return cls(**yaml_data, yaml_file_path=yaml_file_path)
 
     @property
     def interactive_commands(self) -> list[CommandSpecDiscriminatedUnion]:

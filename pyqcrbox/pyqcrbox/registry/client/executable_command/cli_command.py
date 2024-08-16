@@ -2,7 +2,7 @@ import re
 
 import anyio
 
-from pyqcrbox.sql_models_NEW_v2 import CommandSpecDiscriminatedUnion
+from pyqcrbox.sql_models_NEW_v2 import CLICommandSpec
 
 __all__ = ["CLICommand"]
 
@@ -75,7 +75,8 @@ class QCrBoxCmdArgumentMismatch(Exception):
 
 
 class CLICommand(BaseCommand):
-    def __init__(self, cmd_spec: CommandSpecDiscriminatedUnion):
+    def __init__(self, cmd_spec: CLICommandSpec):
+        assert cmd_spec.implemented_as == "cli_command"
         super().__init__(cmd_spec)
         self.call_pattern = cmd_spec.call_pattern
         self.call_pattern_parameter_names = list(set(re.findall("{(.*?)}", self.call_pattern)))
@@ -102,6 +103,7 @@ class CLICommand(BaseCommand):
         _stdin=None,
         _stdout=subprocess.PIPE,
         _stderr=subprocess.PIPE,
+        _cwd=None,
         **kwargs,
     ) -> CLICmdCalculation:
         calc_finished_event = anyio.Event()
@@ -116,6 +118,7 @@ class CLICommand(BaseCommand):
             stdin=_stdin,
             stdout=_stdout,
             stderr=_stderr,
+            cwd=_cwd,
         )
 
         return CLICmdCalculation(self.proc, calculation_id=_calculation_id, calc_finished_event=calc_finished_event)

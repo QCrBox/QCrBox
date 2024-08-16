@@ -13,7 +13,7 @@ import anyio
 from pydantic._internal._validate_call import ValidateCallWrapper
 
 from pyqcrbox import logger
-from pyqcrbox.sql_models_NEW_v2 import CommandSpecDiscriminatedUnion
+from pyqcrbox.sql_models_NEW_v2 import PythonCallableSpec
 
 from . import BaseCommand
 from .calculation import PythonCallableCalculation
@@ -24,7 +24,7 @@ class CalculationNotRunning(Exception):
 
 
 class PythonCallable(BaseCommand):
-    def __init__(self, cmd_spec: CommandSpecDiscriminatedUnion):
+    def __init__(self, cmd_spec: PythonCallableSpec):
         assert cmd_spec.implemented_as == "python_callable"
         assert cmd_spec.import_path is not None
         super().__init__(cmd_spec)
@@ -62,6 +62,7 @@ class PythonCallable(BaseCommand):
         # _stdout=subprocess.PIPE,
         # _stderr=subprocess.PIPE,
         _num_processes=1,
+        _cwd=None,
         **kwargs,
     ):
         calc_finished_event = anyio.Event()
@@ -82,6 +83,11 @@ class PythonCallable(BaseCommand):
             calc_finished_event = None
 
         self.pool = multiprocessing.pool.Pool(_num_processes)
+        if _cwd:
+            logger.error(
+                f"TODO: Change into working directory before executing "
+                f"the python callable (and switch back afterwards)!"
+            )
         pending_result = self.pool.apply_async(
             self._fn_with_call_args_validation,
             args,

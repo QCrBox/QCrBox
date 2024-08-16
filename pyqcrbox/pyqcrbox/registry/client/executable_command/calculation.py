@@ -11,26 +11,39 @@ from pyqcrbox.sql_models_NEW_v2 import CalculationStatusDetails, CalculationStat
 
 
 class BaseCalculation(metaclass=ABCMeta):
-    def __init__(self):
-        self.calculation_id = None
+    def __init__(self, *, calculation_id: str, calc_finished_event: anyio.Event):
+        self.calculation_id = calculation_id
+        self.calc_finished_event = calc_finished_event
+
+    @abstractmethod
+    async def wait_until_finished(self):
+        pass
 
     @property
     @abstractmethod
     def status(self) -> CalculationStatusEnum:
         pass
 
-    @property
-    async def status_details(self) -> dict:
+    async def get_status_details(self) -> CalculationStatusDetails:
+        return CalculationStatusDetails(
+            calculation_id=self.calculation_id,
+            status=self.status,
+            stdout=await self.stdout,
+            stderr=await self.stderr,
+            extra_info=self._get_status_details_extra_info(),
+        )
+
+    def _get_status_details_extra_info(self):
         return {}
 
     @property
     @abstractmethod
-    async def stdout(self) -> str:
+    async def stdout(self) -> str | None:
         pass
 
     @property
     @abstractmethod
-    async def stderr(self) -> str:
+    async def stderr(self) -> str | None:
         pass
 
 
@@ -43,11 +56,9 @@ class PythonCallableCalculation(BaseCalculation):
         calculation_id: str,
         calc_finished_event: anyio.Event,
     ):
-        super().__init__()
+        super().__init__(calculation_id=calculation_id, calc_finished_event=calc_finished_event)
         self._apply_result = result
         self.pool = pool
-        self.calculation_id = calculation_id
-        self.calc_finished_event = calc_finished_event
         # self._status_details = None
         self.return_value = None
 
@@ -76,15 +87,6 @@ class PythonCallableCalculation(BaseCalculation):
 
         return calc_status
 
-    async def get_status_details(self) -> CalculationStatusDetails:
-        return CalculationStatusDetails(
-            calculation_id=self.calculation_id,
-            status=self.status,
-            stdout=await self.stdout,
-            stderr=await self.stderr,
-            extra_info={},
-        )
-
     @property
     async def stdout(self) -> str | None:
         if self.status == CalculationStatusEnum.RUNNING:
@@ -108,7 +110,7 @@ class PythonCallableCalculation(BaseCalculation):
 
 class CLICmdCalculation(BaseCalculation):
     def __init__(self, proc: asyncio.subprocess.Process, calculation_id: str, calc_finished_event: anyio.Event):
-        super().__init__()
+        super().__init__(calculation_id=calculation_id, calc_finished_event=calc_finished_event)
         self.proc = proc
         self.calculation_id = calculation_id
         self._stdout = ""
@@ -138,14 +140,8 @@ class CLICmdCalculation(BaseCalculation):
 
         return status
 
-    async def get_status_details(self) -> CalculationStatusDetails:
-        return CalculationStatusDetails(
-            calculation_id=self.calculation_id,
-            status=self.status,
-            stdout=await self.stdout,
-            stderr=await self.stderr,
-            extra_info=dict(returncode=self.returncode),
-        )
+    def _get_status_details_extra_info(self):
+        return {"returncode": self.returncode}
 
     @property
     def returncode(self) -> int:

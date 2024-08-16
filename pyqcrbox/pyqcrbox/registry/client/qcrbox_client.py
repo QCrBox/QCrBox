@@ -1,6 +1,5 @@
-import sys
-
 import os
+import sys
 from pathlib import Path
 from typing import Optional
 
@@ -10,8 +9,9 @@ from litestar import Litestar
 from pyqcrbox import helpers, logger, msg_specs, settings, sql_models_NEW_v2
 from pyqcrbox.cli.helpers import get_repo_root
 from pyqcrbox.helpers import generate_private_routing_key
-from pyqcrbox.sql_models_NEW_v2 import CalculationStatusDetails, CalculationStatusEnum
+from pyqcrbox.registry.client.executable_command.calculation import BaseCalculation
 from pyqcrbox.registry.shared.calculation_status import update_calculation_status_in_nats_kv_NEW
+from pyqcrbox.sql_models_NEW_v2 import CalculationStatusDetails, CalculationStatusEnum
 
 from ..shared import QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup
 from .api_endpoints import create_client_asgi_server
@@ -41,6 +41,10 @@ class QCrBoxClient(QCrBoxServerClientBase):
         # self.routing_key_command_invocation = application_spec.routing_key_command_invocation
         self._calculations: list[BaseCommand] = []
         self.status = ClientStatus(ClientStatusEnum.IDLE)
+
+    @property
+    def working_dir(self) -> Path:
+        return self.application_spec.yaml_file_dir or Path.cwd()
 
     # def _set_up_rabbitmq_broker(self) -> None:
     #     self.set_up_message_dispatcher(
@@ -119,7 +123,10 @@ class QCrBoxClient(QCrBoxServerClientBase):
 
         try:
             cmd = self.get_executable_command(msg.command_name)
-            calc = await cmd.execute_in_background(**msg.arguments, _calculation_id=msg.calculation_id)
+            logger.debug(f"Executing command in working dir cwd={self.working_dir!r}")
+            calc = await cmd.execute_in_background(**msg.arguments, _calculation_id=msg.calculation_id, _cwd=self.working_dir)
+            if not isinstance(calc, BaseCalculation):
+                raise RuntimeError("Command execution did not return a calculation object.")
         except Exception as exc:
             error_msg = f"Command execution failed: {exc!r}"
             logger.error(error_msg)
