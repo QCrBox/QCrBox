@@ -85,7 +85,7 @@ class PythonCallable(BaseCommand):
 
         self.pool = multiprocessing.pool.Pool(_num_processes)
         if _cwd:
-            logger.error(
+            logger.warning(
                 f"TODO: Change into working directory before executing "
                 f"the python callable (and switch back afterwards)!"
             )
