@@ -841,6 +841,70 @@
         }
       }
     },
+    "python312Packages.jupyterlab@latest": {
+      "last_modified": "2024-07-26T16:03:07Z",
+      "resolved": "github:NixOS/nixpkgs/9014875e6f995a84dd72072e5ef73313e5665faa#python312Packages.jupyterlab",
+      "source": "devbox-search",
+      "version": "4.2.4",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/nyfjp2n8z56fzchikkkzd2bwi72pamh6-python3.12-jupyterlab-4.2.4",
+              "default": true
+            },
+            {
+              "name": "dist",
+              "path": "/nix/store/knw6ag4fhvrn05260p6fsmn5201xbidb-python3.12-jupyterlab-4.2.4-dist"
+            }
+          ],
+          "store_path": "/nix/store/nyfjp2n8z56fzchikkkzd2bwi72pamh6-python3.12-jupyterlab-4.2.4"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/4hgw2msiafisizi8wwvkbx12dnszi4j0-python3.12-jupyterlab-4.2.4",
+              "default": true
+            },
+            {
+              "name": "dist",
+              "path": "/nix/store/37zi95ywcgkxjzhhfqxh9zwjb4dxihlp-python3.12-jupyterlab-4.2.4-dist"
+            }
+          ],
+          "store_path": "/nix/store/4hgw2msiafisizi8wwvkbx12dnszi4j0-python3.12-jupyterlab-4.2.4"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/1xpzr13f09b55yx5522mkzasbin53kmx-python3.12-jupyterlab-4.2.4",
+              "default": true
+            },
+            {
+              "name": "dist",
+              "path": "/nix/store/c0zzrj47x6963baw7nc3i02pxlkp7nr1-python3.12-jupyterlab-4.2.4-dist"
+            }
+          ],
+          "store_path": "/nix/store/1xpzr13f09b55yx5522mkzasbin53kmx-python3.12-jupyterlab-4.2.4"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/5mdvrcn4gbhkp902m1p1si8cbsax7mka-python3.12-jupyterlab-4.2.4",
+              "default": true
+            },
+            {
+              "name": "dist",
+              "path": "/nix/store/fdgklm6j0rsrwqgbn1nbyxbsdaxxn5j6-python3.12-jupyterlab-4.2.4-dist"
+            }
+          ],
+          "store_path": "/nix/store/5mdvrcn4gbhkp902m1p1si8cbsax7mka-python3.12-jupyterlab-4.2.4"
+        }
+      }
+    },
     "python312Packages.tkinter@latest": {
       "last_modified": "2024-07-07T07:43:47Z",
       "resolved": "github:NixOS/nixpkgs/b60793b86201040d9dee019a05089a9150d08b5b#python312Packages.tkinter",

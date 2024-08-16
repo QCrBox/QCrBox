@@ -20,7 +20,8 @@
     "stdenv.cc.cc.lib",
     "fd@latest",
     "ripgrep@latest",
-    "delta@latest"
+    "delta@latest",
+    "python312Packages.jupyterlab@latest"
   ],
   "env": {
     "MAMBA_ROOT_PREFIX":     "${PWD}/.devbox/virtenv/python/.conda",
