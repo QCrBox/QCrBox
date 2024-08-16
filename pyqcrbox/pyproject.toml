@@ -37,7 +37,7 @@ dev = [
     "cookiecutter",
     "ipdb",
     "ipython",
-    "jupyterlab",
+#    "jupyterlab",
     "pre-commit",
     "requests",
     "reuse",
