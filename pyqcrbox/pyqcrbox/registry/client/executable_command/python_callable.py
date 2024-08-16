@@ -27,10 +27,11 @@ class PythonCallable(BaseCommand):
     def __init__(self, cmd_spec: PythonCallableSpec):
         assert cmd_spec.implemented_as == "python_callable"
         assert cmd_spec.import_path is not None
+        assert cmd_spec.callable_name is not None
         super().__init__(cmd_spec)
 
         module = importlib.import_module(cmd_spec.import_path)
-        fn = getattr(module, cmd_spec.name)
+        fn = getattr(module, cmd_spec.callable_name)
         assert inspect.isfunction(fn)
         if inspect.iscoroutinefunction(fn):
             raise TypeError("At present PythonCallable can only handle regular functions, not coroutine functions.")
