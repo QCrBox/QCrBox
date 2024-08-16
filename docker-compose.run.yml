@@ -74,7 +74,7 @@ services:
       # `qcrbox-nextflow` container.
       - ${QCRBOX_SHARED_FILES_DIR_HOST_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_HOST_PATH}:${QCRBOX_SHARED_FILES_DIR_HOST_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_HOST_PATH}
     depends_on:
-      qcrbox-message-bus:
+      qcrbox-nats:
         condition: service_healthy
     environment:
       QCRBOX_REGISTRY_HOST: "qcrbox-registry"
