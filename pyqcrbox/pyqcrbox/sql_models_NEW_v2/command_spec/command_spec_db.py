@@ -49,6 +49,7 @@ class CommandSpecDB(QCrBoxBaseSQLModel, table=True):
         data = super().model_dump(**kwargs)
         data["application"] = self.application.slug
         data["version"] = self.application.version
+        data["cmd_name"] = data["name"]  # alias
         return data
 
     @classmethod

@@ -152,7 +152,7 @@ def list_commands(name: str | None, application_slug: str | None, application_ve
         #"id",
         "application",
         "version",
-        "name",
+        "cmd_name",
         "parameters",
     )
     data = [
