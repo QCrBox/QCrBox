@@ -47,8 +47,8 @@ class CommandSpecDB(QCrBoxBaseSQLModel, table=True):
             kwargs["exclude"] = ["call_pattern", "callable_name", "import_path"]
 
         data = super().model_dump(**kwargs)
-        data["application_slug"] = self.application.slug
-        data["application_version"] = self.application.version
+        data["application"] = self.application.slug
+        data["version"] = self.application.version
         return data
 
     @classmethod
