@@ -46,7 +46,10 @@ class CommandSpecDB(QCrBoxBaseSQLModel, table=True):
             assert "exclude" not in kwargs
             kwargs["exclude"] = ["call_pattern", "callable_name", "import_path"]
 
-        return super().model_dump(**kwargs)
+        data = super().model_dump(**kwargs)
+        data["application_slug"] = self.application.slug
+        data["application_version"] = self.application.version
+        return data
 
     @classmethod
     def from_pydantic_model(cls, command):

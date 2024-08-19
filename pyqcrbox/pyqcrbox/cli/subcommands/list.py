@@ -149,7 +149,8 @@ def list_commands(name: str | None, application_slug: str | None, application_ve
     )
     cols_to_print = (
         "id",
-        "application_id",
+        "application_slug",
+        "application_version",
         "name",
         "parameters",
     )
