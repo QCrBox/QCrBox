@@ -185,7 +185,23 @@ class QCrBoxServer(QCrBoxServerClientBase):
         settings.db.create_db_and_tables(purge_existing_tables=purge_existing_db_tables)
         logger.info("Finished initialising database...")
 
-    #
+    @on_qcrbox_startup
+    async def restore_previously_registered_applications(self) -> None:
+        # TODO: cross-check NATS KV entries with the database
+        #       (check for consistency and add any missing applications)
+        application_slugs = await self.kv_applications.keys()
+        for app_slug in application_slugs:
+            logger.info(f"Restoring previously registered application: {app_slug!r}")
+            kv_entry = await self.kv_applications.get(app_slug)
+            app_spec = json.loads(kv_entry.value)
+            msg = msg_specs.RegisterApplication(
+                payload=msg_specs.PayloadForRegisterApplication(
+                    application_spec=app_spec,
+                    private_routing_key="N/A",
+                )
+            )
+            await self.handle_application_registration(msg)
+
     # async def publish(self, queue, msg):
     #     await self.broker.publish(msg, queue)
 
