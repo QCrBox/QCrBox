@@ -87,9 +87,9 @@ class QCrBoxApplication:
         #cmd_interactive = self.interactive_commands[0]
         # run_cmd = self.application_spec.cmds_by_name["__interactive_run"]
         # prepare_cmd = self.application_spec.cmds_by_name["__interactive_prepare"]
-        prepare_cmd = self._cmds_by_name["__interactive_prepare"]
+        prepare_cmd = self._cmds_by_name.get("__interactive_prepare", None)
         run_cmd = self._cmds_by_name["__interactive_run"]
-        finalise_cmd = self._cmds_by_name["__interactive_finalise"]
+        finalise_cmd = self._cmds_by_name.get("__interactive_finalise", None)
 
         session = QCrBoxInteractiveSession(
             application_slug=self.slug,
