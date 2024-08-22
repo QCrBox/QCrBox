@@ -3,7 +3,6 @@ from pathlib import Path
 from qcrboxtools.cif.cif2cif import cif_file_to_specific_by_yml
 
 from pyqcrbox import sql_models_NEW_v2
-
 from pyqcrbox.registry.client import QCrBoxClient
 
 YAML_PATH = "./config_crystal_explorer.yaml"

@@ -38,7 +38,9 @@ class ParameterSpecInputCif(CifFileParameterBase):
 
 class ParameterSpec(ParameterSpecBase):
     @classmethod
-    def from_function_signature_param(cls, name: str, inspected_param: inspect.Parameter) -> "ParameterSpecDiscriminatedUnion":
+    def from_function_signature_param(
+        cls, name: str, inspected_param: inspect.Parameter
+    ) -> "ParameterSpecDiscriminatedUnion":
         assert isinstance(name, str)
         assert isinstance(inspected_param, inspect.Parameter)
 

@@ -6,12 +6,12 @@ from .calculation_status_event import CalculationStatusDetails, CalculationStatu
 from .command_execution import CommandExecutionCreate
 from .command_invocation import CommandInvocationCreate
 from .command_spec import (
+    CLICommandSpec,
     CommandSpec,
     CommandSpecDB,
     CommandSpecDiscriminatedUnion,
     CommandSpecWithParameters,
     InteractiveCommandSpec,
     PythonCallableSpec,
-    CLICommandSpec,
 )
 from .parameter_spec import ParameterSpec, ParameterSpecDiscriminatedUnion

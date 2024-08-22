@@ -1,10 +1,10 @@
-import time
-
 import json
 import textwrap
+import time
 import urllib.request
-from pyqcrbox.sql_models_NEW_v2 import CalculationStatusEnum, CalculationStatusDetails
 from typing import TYPE_CHECKING
+
+from pyqcrbox.sql_models_NEW_v2 import CalculationStatusDetails, CalculationStatusEnum
 
 if TYPE_CHECKING:
     from qcrbox_wrapper.qcrbox_wrapper import QCrBoxCommand

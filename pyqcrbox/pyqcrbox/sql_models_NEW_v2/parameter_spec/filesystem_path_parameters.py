@@ -1,9 +1,9 @@
 from typing import Literal
 
 from pydantic import validator
-from .base_parameter_spec import BaseParameterSpec
-from ..base import QCrBoxPydanticBaseModel
+
 from ..cif_entry_set import OneOfCifEntrySpec
+from .base_parameter_spec import BaseParameterSpec
 
 __all__ = [
     "FolderPathParameterSpec",
@@ -12,6 +12,7 @@ __all__ = [
     "OutputCifParameterSpec",
     "WorkCifParameterSpec",
 ]
+
 
 class BaseFilesystemPathParameterSpec(BaseParameterSpec):
     pass
@@ -28,20 +29,25 @@ class GenericOutputFileParameterSpec(BaseFilesystemPathParameterSpec):
 class FolderPathParameterSpec(BaseFilesystemPathParameterSpec):
     dtype: Literal["QCrBox.folder_path"]
 
+
 class BaseCifFileParameterSpec(BaseFilesystemPathParameterSpec):
-    required_entries: list[str|OneOfCifEntrySpec] = []
-    optional_entries: list[str|OneOfCifEntrySpec] = []
+    required_entries: list[str | OneOfCifEntrySpec] = []
+    optional_entries: list[str | OneOfCifEntrySpec] = []
     required_entry_sets: list[str] = []
     optional_entry_sets: list[str] = []
     merge_su: bool = False
     custom_categories: list[str] = []
 
-    #TODO: Check this and add tests
-    @validator('required_entries', 'optional_entries', pre=True)
+    # TODO: Check this and add tests
+    @validator("required_entries", "optional_entries", pre=True)
     def parse_entries(cls, v):
         if isinstance(v, list):
-            return [OneOfCifEntrySpec(one_of=item['one_of']) if isinstance(item, dict) and 'one_of' in item else item for item in v]
+            return [
+                OneOfCifEntrySpec(one_of=item["one_of"]) if isinstance(item, dict) and "one_of" in item else item
+                for item in v
+            ]
         return v
+
 
 class InputCifParameterSpec(BaseCifFileParameterSpec):
     dtype: Literal["QCrBox.input_cif"]

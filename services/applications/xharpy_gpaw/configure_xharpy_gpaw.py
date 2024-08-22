@@ -7,7 +7,6 @@ from qcrboxtools.cif.cif2cif import cif_file_merge_to_unified_by_yml, cif_file_t
 from qcrboxtools.cif.file_converter.hkl import cif2hkl4
 
 from pyqcrbox import sql_models_NEW_v2
-
 from pyqcrbox.registry.client import QCrBoxClient
 
 YAML_PATH = "/opt/qcrbox/config_xharpy_gpaw.yaml"

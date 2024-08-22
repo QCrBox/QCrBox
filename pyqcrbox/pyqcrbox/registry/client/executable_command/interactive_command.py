@@ -3,7 +3,7 @@ import anyio
 from pyqcrbox import helpers, logger
 from pyqcrbox.registry.client.executable_command import BaseCommand
 from pyqcrbox.registry.client.executable_command.calculation import BaseCalculation
-from pyqcrbox.sql_models_NEW_v2 import CalculationStatusEnum, CommandSpecDiscriminatedUnion, InteractiveCommandSpec
+from pyqcrbox.sql_models_NEW_v2 import CalculationStatusEnum, InteractiveCommandSpec
 
 __all__ = ["InteractiveCommand"]
 
@@ -83,7 +83,9 @@ class InteractiveCommand(BaseCommand):
         if self.finalise_cmd_spec:
             finalise_cmd = ExecutableCommand(self.finalise_cmd_spec)
             finalise_calc_id = helpers.generate_calculation_id()
-            finalise_calc = await finalise_cmd.execute_in_background(_calculation_id=finalise_calc_id, _cwd=_cwd, **kwargs)
+            finalise_calc = await finalise_cmd.execute_in_background(
+                _calculation_id=finalise_calc_id, _cwd=_cwd, **kwargs
+            )
         else:
             finalise_calc = None
 

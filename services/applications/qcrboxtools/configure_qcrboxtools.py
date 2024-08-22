@@ -1,6 +1,5 @@
 
 from pyqcrbox import sql_models_NEW_v2
-
 from pyqcrbox.registry.client import QCrBoxClient
 
 YAML_PATH = "./config_qcrboxtools.yaml"

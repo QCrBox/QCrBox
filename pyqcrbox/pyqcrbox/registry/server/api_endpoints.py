@@ -8,7 +8,6 @@ from faststream.nats import NatsBroker
 # from faststream.rabbit import RabbitBroker
 from litestar import Litestar, MediaType, Request, Response, get, post
 from litestar.openapi import OpenAPIConfig
-from litestar.plugins.structlog import StructlogPlugin
 from sqlalchemy.orm import joinedload
 
 __all__ = ["create_server_asgi_server"]
@@ -174,7 +173,7 @@ async def commands_invoke(data: sql_models_NEW_v2.CommandInvocationCreate, reque
         status="ok",
         payload={
             "calculation_id": response.payload.calculation_id,
-            "href": request.url_for("get_calculation_details", calculation_id=response.payload.calculation_id)
+            "href": request.url_for("get_calculation_details", calculation_id=response.payload.calculation_id),
         },
     )
 

@@ -2,21 +2,15 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-import sqlalchemy
 import yaml
 from litestar.contrib.pydantic import PydanticDTO
 from litestar.dto import DTOConfig
 from pydantic import field_validator
-from sqlmodel import Field, Relationship, UniqueConstraint, select
-
-from pyqcrbox import logger
-from pyqcrbox.settings import settings
 
 from .. import helpers
-from .calculation import CalculationDB
 from .cif_entry_set import CifEntrySetCreate
-from .command import CommandSpecCreate, CommandSpecWithParameters#, CommandSpecDB
-from .qcrbox_base_models import QCrBoxBaseSQLModel, QCrBoxPydanticBaseModel
+from .command import CommandSpecCreate, CommandSpecWithParameters  # , CommandSpecDB
+from .qcrbox_base_models import QCrBoxPydanticBaseModel
 
 
 class ApplicationSpecBase(QCrBoxPydanticBaseModel):

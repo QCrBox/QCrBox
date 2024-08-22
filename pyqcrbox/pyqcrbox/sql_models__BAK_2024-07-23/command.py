@@ -5,15 +5,12 @@ from typing import TYPE_CHECKING, Optional
 
 from loguru import logger
 from pydantic import model_validator
-from sqlalchemy import JSON, Column
-from sqlmodel import Field, Relationship, UniqueConstraint
 
 from .call_pattern import CallPattern
-from .qcrbox_base_models import QCrBoxBaseSQLModel, QCrBoxPydanticBaseModel
+from .qcrbox_base_models import QCrBoxPydanticBaseModel
 
 if TYPE_CHECKING:
-    from .application import ApplicationSpecDB
-    from .calculation import CalculationDB
+    pass
 
 
 class ImplementedAs(str, Enum):

@@ -87,7 +87,7 @@ NonInteractiveCommandSpec = Annotated[
         Annotated[PythonCallableSpec, Tag("python_callable")],
     ],
     Field(discriminator="implemented_as"),
-    Field(title="name", default="foo")
+    Field(title="name", default="foo"),
 ]
 
 

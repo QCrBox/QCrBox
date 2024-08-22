@@ -2,7 +2,6 @@ from litestar.logging import StructLoggingConfig
 from litestar.middleware.logging import LoggingMiddlewareConfig
 from litestar.plugins.structlog import StructlogConfig, StructlogPlugin
 
-
 structlog_plugin = StructlogPlugin(
     config=StructlogConfig(
         structlog_logging_config=StructLoggingConfig(),

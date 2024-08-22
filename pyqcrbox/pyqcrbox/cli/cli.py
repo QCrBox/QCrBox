@@ -3,7 +3,7 @@
 import click
 
 from . import subcommands
-from .helpers import ClickGroupCls, NaturalOrderGroup, add_verbose_option
+from .helpers import NaturalOrderGroup, add_verbose_option
 
 CONTEXT_SETTINGS = {
     "help_option_names": ["-h", "--help"],

@@ -13,7 +13,6 @@ from .base_command_spec import BaseCommandSpec
 __all__ = ["PythonCallableSpec"]
 
 
-
 class MissingTypeAnnotation(Exception):
     pass
 

@@ -1,11 +1,10 @@
 import uvicorn
-from fastapi import Depends, FastAPI
+from fastapi import Depends
 from faststream.rabbit.fastapi import Logger, RabbitRouter
 from loguru import logger
 from pydantic import BaseModel
 
 from pyqcrbox import settings
-
 
 # class QCrBoxFastStream:
 #     pass

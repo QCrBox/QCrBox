@@ -6,7 +6,6 @@ from abc import ABCMeta, abstractmethod
 import anyio
 
 from pyqcrbox import logger
-
 from pyqcrbox.sql_models_NEW_v2 import CalculationStatusDetails, CalculationStatusEnum
 
 

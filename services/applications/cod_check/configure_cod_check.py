@@ -11,8 +11,8 @@ from simple_cod_module import (
     get_fitting_cod_entries,
     get_number_fitting_cod_entries,
 )
-from pyqcrbox import sql_models_NEW_v2
 
+from pyqcrbox import sql_models_NEW_v2
 from pyqcrbox.registry.client import QCrBoxClient
 
 YAML_PATH = "./config_cod_check.yaml"

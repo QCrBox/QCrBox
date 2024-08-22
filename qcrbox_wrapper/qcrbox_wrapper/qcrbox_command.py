@@ -1,8 +1,10 @@
-import requests
 from collections import namedtuple
 from typing import TYPE_CHECKING
 
+import requests
+
 from pyqcrbox import sql_models_NEW_v2
+
 from .qcrbox_calculation import QCrBoxCalculation
 
 if TYPE_CHECKING:
