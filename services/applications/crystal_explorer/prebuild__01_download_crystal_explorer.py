@@ -6,7 +6,7 @@ from urllib.parse import urlparse
 
 import requests
 
-from qcrbox.logging import logger
+from pyqcrbox.logging import logger
 
 
 def calculate_hash(path):

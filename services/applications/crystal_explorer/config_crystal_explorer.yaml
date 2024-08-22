@@ -14,25 +14,24 @@ commands:
     description: "Run Crystal Explorer interactively"
     parameters:
       - name: "input_cif_path"
-        type: "QCrBox.cif_path"
+        dtype: "QCrBox.input_cif"
         default_value: None
         description: "Path to the CIF file to be analyzed"
         required_entry_sets: ["cif_structure_ddl1"]
         merge_su: Yes
         custom_categories: ["iucr", "shelx"]
       - name: "work_cif_path"
-        type: "QCrBox.work_cif"
+        dtype: "QCrBox.work_cif"
         description: "Path used for creating the specific cif file in Crystal Explorer compatible format."
     interactive_lifecycle:
       prepare:
         implemented_as: "python_callable"
-        import_path: "config_crystal_explorer"
+        import_path: "configure_crystal_explorer"
         callable_name: "prepare__interactive"
         used_basecommand_parameters: ["input_cif_path", "work_cif_path"]
-
       run:
-        implemented_as: "CLI"
-        command: "/usr/bin/CrystalExplorer --open {work_cif_path}"
+        implemented_as: "cli_command"
+        call_pattern: "/usr/bin/CrystalExplorer --open {work_cif_path}"
         used_basecommand_parameters: ["work_cif_path"]
 
 cif_entry_sets:
