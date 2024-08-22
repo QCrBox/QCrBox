@@ -6,15 +6,11 @@ from pathlib import Path
 from qcrboxtools.cif.cif2cif import cif_file_merge_to_unified_by_yml, cif_file_to_specific_by_yml
 from qcrboxtools.cif.file_converter.hkl import cif2hkl4
 
-from qcrbox.registry.client import QCrBoxRegistryClient
+from pyqcrbox import sql_models_NEW_v2
+
+from pyqcrbox.registry.client import QCrBoxClient
 
 YAML_PATH = "/opt/qcrbox/config_xharpy_gpaw.yaml"
-
-client = QCrBoxRegistryClient()
-application = client.register_application(
-    "XHARPy-GPAW",
-    version="0.2.0",
-)
 
 
 def atom_form_fact_gpaw(input_cif_path, output_tsc_path, functional, gridspacing):
@@ -39,10 +35,7 @@ def atom_form_fact_gpaw(input_cif_path, output_tsc_path, functional, gridspacing
     )
 
 
-application.register_python_callable("atom_form_fact_gpaw", atom_form_fact_gpaw)
-
-
-def ha_refine(input_cif_path: str, output_cif_path: str, functional: str, gridspacing: float):
+def ha_refine(input_cif_path, output_cif_path, functional, gridspacing):
     input_cif_path = Path(input_cif_path)
     output_dir = Path("./xharpy_output")
     if output_dir.exists():
@@ -98,7 +91,8 @@ def ha_refine(input_cif_path: str, output_cif_path: str, functional: str, gridsp
     shutil.rmtree(output_dir)
     os.remove("shelx.hkl")
 
+if __name__ == "__main__":
+    application_spec = sql_models_NEW_v2.ApplicationSpec.from_yaml_file(YAML_PATH)
 
-application.register_python_callable("ha_refine", ha_refine)
-
-client.run()
+    client = QCrBoxClient(application_spec=application_spec)
+    client.run()

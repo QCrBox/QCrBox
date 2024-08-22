@@ -15,22 +15,22 @@ commands:
     import_path: "configure_xharpy_gpaw"
     parameters:
       - name: "input_cif_path"
-        type: "QCrBox.input_cif"
+        dtype: "QCrBox.input_cif"
         default_value: None
         description: "Path to the CIF file containing the structure to calculate the atomic form factors for"
         required_entry_sets: ["cell", "structure", "resolution"]
         required_entries: ["_space_group_symop_operation_xyz"]
         merge_su: True
       - name: "output_tsc_path"
-        type: "QCrBox.output_file"
+        dtype: "QCrBox.output_file"
         default_value: None
         description: "Path to save the TSC file to after calculating the atomic form factors"
       - name: "functional"
-        type: "str"
+        dtype: "str"
         default_value: None
         description: "The DFT functional to use for the GPAW calculation"
       - name: "gridspacing"
-        type: "float"
+        dtype: "float"
         default_value: 0.16
         required: False
         description: "The grid spacing in Angstrom to use for the GPAW calculation"
@@ -41,7 +41,7 @@ commands:
     import_path: "configure_xharpy_gpaw"
     parameters:
       - name: "input_cif_path"
-        type: "str"
+        dtype: "QCrBox.input_cif"
         default_value: None
         description: "Path to the CIF file containing the structure to refine"
         required_entry_sets: ["cell", "structure", "diffraction_intensities", "atomic_information"]
@@ -50,18 +50,23 @@ commands:
         merge_su: True
         custom_categories: ["shelx"]
       - name: "output_cif_path"
-        type: "QCrBox.output_cif"
+        dtype: "QCrBox.output_cif"
         default_value: None
         description: "Path to save the CIF file to after refining the structure"
         required_entry_sets: ["structure", "atomic_information"]
         optional_entry_sets: ["geometry_lookup"]
+        invalidated_entries: [
+          "_geom.*", "_refln.*calc.*", "_shelx.*", "_iucr.refine_instructions_details",
+          '_refine(?!_ls\.weighting|_ls\.extinction).+', "_atom_site_aniso.u_.._su",
+          "_atom_site.*"
+        ]
         custom_categories: ["shelx"]
       - name: "functional"
-        type: "str"
+        dtype: "str"
         default_value: None
         description: "The DFT functional to use for the GPAW calculation"
       - name: "gridspacing"
-        type: "float"
+        dtype: "float"
         default_value: 0.16
         required: False
         description: "The grid spacing in Angstrom to use for the GPAW calculation"

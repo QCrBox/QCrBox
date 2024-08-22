@@ -3,6 +3,7 @@ from typing import Literal
 from pydantic import validator
 from .base_parameter_spec import BaseParameterSpec
 from ..base import QCrBoxPydanticBaseModel
+from ..cif_entry_set import OneOfCifEntrySpec
 
 __all__ = [
     "FolderPathParameterSpec",
@@ -11,7 +12,6 @@ __all__ = [
     "OutputCifParameterSpec",
     "WorkCifParameterSpec",
 ]
-
 
 class BaseFilesystemPathParameterSpec(BaseParameterSpec):
     pass
@@ -28,9 +28,6 @@ class GenericOutputFileParameterSpec(BaseFilesystemPathParameterSpec):
 class FolderPathParameterSpec(BaseFilesystemPathParameterSpec):
     dtype: Literal["QCrBox.folder_path"]
 
-class OneOfCifEntrySpec(QCrBoxPydanticBaseModel):
-    one_of: list[str|list[str]]
-
 class BaseCifFileParameterSpec(BaseFilesystemPathParameterSpec):
     required_entries: list[str|OneOfCifEntrySpec] = []
     optional_entries: list[str|OneOfCifEntrySpec] = []
@@ -39,7 +36,7 @@ class BaseCifFileParameterSpec(BaseFilesystemPathParameterSpec):
     merge_su: bool = False
     custom_categories: list[str] = []
 
-    #TODO: Check this and add tests, add oneOfCifEntrySpec to entry sets?
+    #TODO: Check this and add tests
     @validator('required_entries', 'optional_entries', pre=True)
     def parse_entries(cls, v):
         if isinstance(v, list):
