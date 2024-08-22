@@ -1,3 +1,5 @@
+import nats.js.errors
+
 import json
 from typing import Any
 
@@ -187,9 +189,13 @@ class QCrBoxServer(QCrBoxServerClientBase):
 
     @on_qcrbox_startup
     async def restore_previously_registered_applications(self) -> None:
-        # TODO: cross-check NATS KV entries with the database
-        #       (check for consistency and add any missing applications)
-        application_slugs = await self.kv_applications.keys()
+        try:
+            # TODO: cross-check NATS KV entries with the database
+            #       (check for consistency and add any missing applications)
+            application_slugs = await self.kv_applications.keys()
+        except nats.js.errors.NoKeysError:
+            application_slugs = []
+
         for app_slug in application_slugs:
             logger.info(f"Restoring previously registered application: {app_slug!r}")
             kv_entry = await self.kv_applications.get(app_slug)
