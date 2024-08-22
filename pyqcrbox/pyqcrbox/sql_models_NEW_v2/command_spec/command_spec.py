@@ -29,4 +29,7 @@ class CommandSpecWithParameters(BaseCommandSpec):
     id: int
     application_id: int
     parameters: dict
+    application: str
+    version: str
+    cmd_name: str
     # cif_entry_sets: list[CifEntrySetRead] = []

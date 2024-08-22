@@ -1,6 +1,3 @@
-__all__ = ["PythonCallable"]
-
-
 # SPDX-License-Identifier: MPL-2.0
 import importlib
 import inspect
@@ -16,7 +13,9 @@ from pyqcrbox import logger
 from pyqcrbox.sql_models_NEW_v2 import PythonCallableSpec
 
 from . import BaseCommand
-from .calculation import PythonCallableCalculation
+from .python_callable_calculation import PythonCallableCalculation
+
+__all__ = ["PythonCallable"]
 
 
 class CalculationNotRunning(Exception):

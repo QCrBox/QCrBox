@@ -1188,7 +1188,18 @@
     },
     "stdenv.cc.cc.lib": {
       "resolved": "github:NixOS/nixpkgs/75a52265bda7fd25e06e3a67dee3f0354e73243c#stdenv.cc.cc.lib",
-      "source": "nixpkg"
+      "source": "nixpkg",
+      "systems": {
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "lib",
+              "path": "/nix/store/93lkm2jx7545ghi9wwydxwigqb27zvkv-clang-11.1.0-lib",
+              "default": true
+            }
+          ]
+        }
+      }
     },
     "uv@latest": {
       "last_modified": "2024-07-31T08:48:38Z",
