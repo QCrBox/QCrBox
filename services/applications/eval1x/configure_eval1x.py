@@ -17,23 +17,25 @@ from qcrboxtools.robots.eval import (
     TextFile,
 )
 
-from qcrbox.registry.client import ExternalCommand, FormattedParam, QCrBoxRegistryClient
+from pyqcrbox import sql_models_NEW_v2
+
+from pyqcrbox.registry.client import QCrBoxClient
 
 YAML_PATH = "./config_eval1x.yaml"
 
 def integrate(
-    work_folder: str,
-    output_cif_path: str,
-    rmat_file_path: str,
-    beamstop_file_path: str,
-    detalign_file_path: str,
-    maximum_res: float,
-    minimum_res: float,
-    box_size: float,
-    box_depth: int,
-    maximum_duration: float,
-    min_refln_in_box: int,
-    pic_dir: str,
+    work_folder,
+    output_cif_path,
+    rmat_file_path,
+    beamstop_file_path,
+    detalign_file_path,
+    maximum_res,
+    minimum_res,
+    box_size,
+    box_depth,
+    maximum_duration,
+    min_refln_in_box,
+    pic_dir,
 ):
     work_folder = Path(work_folder)
     rmat_file = Path(rmat_file_path)
@@ -301,19 +303,9 @@ def redo__interactive(work_folder, par_json, par_folder):
     integrate(work_folder=work_folder, **par_dict)
 
 
-client = QCrBoxRegistryClient()
-application = client.register_application("Eval1X", version="20230913")
+if __name__ == "__main__":
+    application_spec = sql_models_NEW_v2.ApplicationSpec.from_yaml_file(YAML_PATH)
 
-application.register_external_command(
-    "interactive",
-    ExternalCommand(
-        "lxterminal",
-        FormattedParam("work_folder", format_string="--working-directory={}"),
-    ),
-)
+    client = QCrBoxClient(application_spec=application_spec)
+    client.run()
 
-application.register_python_callable("integrate", integrate)
-application.register_python_callable("finalise__interactive", finalise__interactive)
-application.register_python_callable("toparams__interactive", toparams__interactive)
-application.register_python_callable("redo__interactive", redo__interactive)
-client.run()
