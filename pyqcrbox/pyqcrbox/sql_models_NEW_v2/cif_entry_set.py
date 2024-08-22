@@ -12,8 +12,8 @@ class OneOfCifEntrySpec(QCrBoxPydanticBaseModel):
 
 class CifEntrySet(QCrBoxPydanticBaseModel):
     name: str
-    required: list[str] | None = []
-    optional: list[str] | None = []
+    required: list[str|OneOfCifEntrySpec] | None = []
+    optional: list[str|OneOfCifEntrySpec] | None = []
 
     @model_validator(mode="after")
     def ensure_required_and_optional_entries_are_not_both_missing(self) -> Self:
