@@ -45,7 +45,6 @@ commands:
           '_refine(?!_ls\.weighting|_ls\.extinction).+', "_atom_site_aniso.u_.._su",
           "_atom_site.*"
         ]
-        invalidated_entry_sets: ["molecular_structure"]
 
   - name: "check_structure_convergence"
     description: "Check the convergence of a structure, to be used for refinement with changing atomic form factors"
@@ -168,6 +167,7 @@ commands:
         default_value: None
         description: "Path to save the CIF file to after converting"
         optional_entries: ["all_unified"]
+        invalidated_entries: []
       - name: "custom_category_list"
         dtype: "str"
         description: "Comma separated list of custom categories (such as iucr, shelx ...) to include in the unified CIF"

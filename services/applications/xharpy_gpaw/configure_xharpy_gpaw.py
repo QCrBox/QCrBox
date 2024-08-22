@@ -88,7 +88,6 @@ def ha_refine(input_cif_path, output_cif_path, functional, gridspacing):
     )
 
     shutil.rmtree(output_dir)
-    os.remove("shelx.hkl")
 
 if __name__ == "__main__":
     application_spec = sql_models_NEW_v2.ApplicationSpec.from_yaml_file(YAML_PATH)
