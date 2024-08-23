@@ -1,5 +1,6 @@
 from typing import Literal
 
+from ..cif_entry_set import CifEntry, CifEntrySet
 from .base_parameter_spec import BaseParameterSpec
 
 __all__ = [
@@ -28,10 +29,10 @@ class FolderPathParameterSpec(BaseFilesystemPathParameterSpec):
 
 
 class BaseCifFileParameterSpec(BaseFilesystemPathParameterSpec):
-    required_entries: list[str] = []
-    optional_entries: list[str] = []
-    required_entry_sets: list[str] = []
-    optional_entry_sets: list[str] = []
+    required_entries: list[CifEntry] = []
+    optional_entries: list[CifEntry] = []
+    required_entry_sets: list[CifEntrySet] = []
+    optional_entry_sets: list[CifEntrySet] = []
     merge_su: bool = False
     custom_categories: list[str] = []
 
