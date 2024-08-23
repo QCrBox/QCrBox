@@ -6,7 +6,7 @@ services:
     networks:
       - qcrbox-net
     ports:
-      - "${QCRBOX_BIND_ADDRESS}:${QCRBOX_CRYSTAL_EXPLORER_PORT:?Must set env var QCRBOX_CRYSTAL_EXPLORER_PORT}:8080"
+      - "${QCRBOX_BIND_ADDRESS}:${QCRBOX_MOPRO_PORT:?Must set env var QCRBOX_MOPRO_PORT}:8080"
     depends_on:
       qcrbox-registry:
         condition: service_healthy
