@@ -33,7 +33,10 @@ class QCrBoxApplication:
         self.name = self.application_spec.name
         self.slug = self.application_spec.slug
         self.version = self.application_spec.version
-        self.gui_url = f"http://{self.wrapper_parent.server_host}/gui/{self.slug}"
+        if self.wrapper_parent.server_host == "127.0.0.1":
+            self.gui_url = f"http://localhost/gui/{self.slug}"
+        else:
+            self.gui_url = f"http://{self.wrapper_parent.server_host}/gui/{self.slug}"
         logger.debug("TODO: implement proper construction and validation of gui_url")
 
         self.commands = [
