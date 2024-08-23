@@ -85,8 +85,8 @@ class PythonCallable(BaseCommand):
         self.pool = multiprocessing.pool.Pool(_num_processes)
         if _cwd:
             logger.warning(
-                "TODO: Change into working directory before executing "
-                "the python callable (and switch back afterwards)!"
+                f"TODO: Change into working directory before executing "
+                f"the python callable (and switch back afterwards)!"
             )
         pending_result = self.pool.apply_async(
             self._fn_with_call_args_validation,

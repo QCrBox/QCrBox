@@ -82,7 +82,7 @@ class CLICommand(BaseCommand):
         self.call_pattern_parameter_names = list(set(re.findall("{(.*?)}", self.call_pattern)))
         self.parameter_names = [p.name for p in cmd_spec.parameters]
         logger.warning(
-            "TODO: validate that the call_pattern_parameter_names are a subset(?) of the yaml spec parameters"
+            f"TODO: validate that the call_pattern_parameter_names are a subset(?) of the yaml spec parameters"
         )
 
         self.proc: asyncio.subprocess.Process | None = None
