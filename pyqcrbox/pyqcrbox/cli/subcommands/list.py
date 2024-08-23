@@ -139,7 +139,12 @@ def list_applications(slug: Optional[str], version: Optional[str]):
     default=False,
     help="List all commands (including interactive lifecycle steps)",
 )
-def list_commands(name: str | None, application_slug: str | None, application_version: str | None, include_interactive_lifecycle_steps: bool):
+def list_commands(
+    name: str | None,
+    application_slug: str | None,
+    application_version: str | None,
+    include_interactive_lifecycle_steps: bool,
+):
     """
     List registered commands.
     """

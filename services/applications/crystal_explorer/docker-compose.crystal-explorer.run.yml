@@ -8,10 +8,28 @@ services:
     ports:
       - "${QCRBOX_BIND_ADDRESS}:${QCRBOX_CRYSTAL_EXPLORER_PORT:?Must set env var QCRBOX_CRYSTAL_EXPLORER_PORT}:8080"
     depends_on:
-      - qcrbox-registry
+      qcrbox-registry:
+        condition: service_healthy
     restart: unless-stopped
     environment:
       QCRBOX_APPLICATION_DISPLAY_NAME: "CrystalExplorer"
-      QCRBOX_REGISTRY_HOST: "qcrbox-registry"
-      QCRBOX_REGISTRY_PORT: "8000"
+      QCRBOX__NATS__HOST: "qcrbox-nats"
+      QCRBOX__REGISTRY__SERVER__HOST: "qcrbox-registry"
+      QCRBOX__REGISTRY__SERVER__PORT: "8000"
+    labels:
+      traefik.enable: true
+      traefik.http.routers.to-crystal-explorer-path-prefix.rule: Path(`/gui/crystal-explorer`)
+      traefik.http.routers.to-crystal-explorer-path-prefix.middlewares: redirect-gui-crystal-explorer-path
+      traefik.http.routers.to-crystal-explorer-path-prefix.service: crystal-explorer-service
+      traefik.http.middlewares.redirect-gui-crystal-explorer-path.redirectregex.regex: ^http://(.+)/gui/crystal-explorer(/?)$$
+      traefik.http.middlewares.redirect-gui-crystal-explorer-path.redirectregex.replacement: http://crystal-explorer.gui.$$1/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true
+
+      traefik.http.routers.to-crystal-explorer-subdomain.rule: HostRegexp(`^crystal-explorer\.gui\..+$$`)
+      traefik.http.routers.to-crystal-explorer-subdomain.middlewares: redirect-gui-crystal-explorer-subdomain
+      traefik.http.routers.to-crystal-explorer-subdomain.service: crystal-explorer-service
+      traefik.http.middlewares.redirect-gui-crystal-explorer-subdomain.redirectregex.regex: ^http://crystal-explorer\.gui\.([^/]+)(/?)$$
+      traefik.http.middlewares.redirect-gui-crystal-explorer-subdomain.redirectregex.replacement: http://crystal-explorer.gui.$$1/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true
+
+      traefik.http.services.crystal-explorer-service.loadbalancer.server.scheme: http
+      traefik.http.services.crystal-explorer-service.loadbalancer.server.port: 8080
 

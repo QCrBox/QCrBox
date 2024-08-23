@@ -1,6 +1,5 @@
-from pyqcrbox.sql_models_NEW_v2 import ApplicationSpec
 from pyqcrbox.registry.client import QCrBoxClient
-
+from pyqcrbox.sql_models_NEW_v2 import ApplicationSpec
 
 if __name__ == "__main__":
     application_spec = ApplicationSpec.from_yaml_file("config_{{ cookiecutter.application_slug }}.yaml")

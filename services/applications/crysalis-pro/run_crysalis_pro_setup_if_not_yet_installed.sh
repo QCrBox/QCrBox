@@ -49,9 +49,7 @@ do
 done
 
 # Close the opened Crysalis Pro window
-xdotool search --name "Open*" windowfocus
-xdotool key Alt+F4
-# xdotool selectwindow windowkill
+xdotool search --name "Open*" key --window %@ Alt+F4
 
 unset DISPLAY
 echo "CrysAlis Pro setup script finished. Killing Xvfb..."

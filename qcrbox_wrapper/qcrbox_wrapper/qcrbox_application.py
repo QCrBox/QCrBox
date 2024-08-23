@@ -33,8 +33,11 @@ class QCrBoxApplication:
         self.name = self.application_spec.name
         self.slug = self.application_spec.slug
         self.version = self.application_spec.version
-        self.gui_url = f"http://{self.wrapper_parent.server_host}/gui/{self.slug}"
-        logger.debug(f"TODO: implement proper construction and validation of gui_url")
+        if self.wrapper_parent.server_host == "127.0.0.1":
+            self.gui_url = f"http://localhost/gui/{self.slug}"
+        else:
+            self.gui_url = f"http://{self.wrapper_parent.server_host}/gui/{self.slug}"
+        logger.debug("TODO: implement proper construction and validation of gui_url")
 
         self.commands = [
             QCrBoxCommand(
@@ -55,6 +58,7 @@ class QCrBoxApplication:
     @property
     def non_interactive_commands(self) -> list[QCrBoxCommand]:
         return [cmd for cmd in self.commands if not cmd.is_interactive]
+
     @property
     def interactive_commands(self) -> list[QCrBoxCommand]:
         return [cmd for cmd in self.commands if cmd.is_interactive]
@@ -84,12 +88,12 @@ class QCrBoxApplication:
             len(self.interactive_commands) == 1
         ), "interactive_session currently assumes that the application exposes exactly one interactive command"
 
-        #cmd_interactive = self.interactive_commands[0]
+        # cmd_interactive = self.interactive_commands[0]
         # run_cmd = self.application_spec.cmds_by_name["__interactive_run"]
         # prepare_cmd = self.application_spec.cmds_by_name["__interactive_prepare"]
-        prepare_cmd = self._cmds_by_name["__interactive_prepare"]
+        prepare_cmd = self._cmds_by_name.get("__interactive_prepare", None)
         run_cmd = self._cmds_by_name["__interactive_run"]
-        finalise_cmd = self._cmds_by_name["__interactive_finalise"]
+        finalise_cmd = self._cmds_by_name.get("__interactive_finalise", None)
 
         session = QCrBoxInteractiveSession(
             application_slug=self.slug,

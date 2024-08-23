@@ -10,7 +10,7 @@ url: "https://github.com/QCrBox/QCrBoxTools"
 commands:
   - name: "replace_structure_from_cif"
     description: "Replace the structure (atoms/adps) in a CIF file with the structure from another CIF file"
-    implemented_as: "CLI"
+    implemented_as: "cli_command"
     call_pattern: |
       python /opt/qcrbox/qcrbtls_replace_structure_glue.py \
         {input_cif_path} 0 \
@@ -18,7 +18,7 @@ commands:
         --output_cif_path {output_cif_path}
     parameters:
       - name: "input_cif_path"
-        type: "QCrBox.input_cif"
+        dtype: "QCrBox.input_cif"
         default_value: None
         description: "Path to the CIF file where the structure should be replaced"
         required_entries: [
@@ -27,28 +27,28 @@ commands:
         ]
         merge_su: No
       - name: "structure_cif_path"
-        type: "QCrBox.additional_input_cif" # not cif as it should not be cut to input_cif entries
+        dtype: "QCrBox.input_file" # not cif as it should not be cut to input_cif entries
         default_value: None
         description: "Path to the CIF file containing the structure to be inserted"
-        required_entries: [
-          "_space_group.crystal_system",
-          one_of: ["_space_group.centring_type", "_space_group.name_h-m_alt", "_space_group.name_hall"]
-        ]
-        required_entry_sets: ["molecular_structure"]
+        #required_entries: [
+        #  "_space_group.crystal_system",
+        #  one_of: ["_space_group.centring_type", "_space_group.name_h-m_alt", "_space_group.name_hall"]
+        #]
+        #required_entry_sets: ["molecular_structure"]
       - name: "output_cif_path"
-        type: "QCrBox.output_cif"
+        dtype: "QCrBox.output_cif"
         default_value: None
         description: "Path to save the CIF file to after replacing the structure"
         required_entry_sets: ["molecular_structure"]
         invalidated_entries: [
           "_geom.*", "_refln.*calc.*", "_shelx.*", "_iucr.refine_instructions_details",
-          '_refine(?!_ls\.weighting|_ls\.extinction).+', "_atom_site_aniso.u_.._su"
+          '_refine(?!_ls\.weighting|_ls\.extinction).+', "_atom_site_aniso.u_.._su",
+          "_atom_site.*"
         ]
-        invalidated_entry_sets: ["molecular_structure"]
 
   - name: "check_structure_convergence"
     description: "Check the convergence of a structure, to be used for refinement with changing atomic form factors"
-    implemented_as: "CLI"
+    implemented_as: "cli_command"
     call_pattern: |
       python /opt/qcrbox/qcrbtls_check_convergence_glue.py \
         {cif1_path} 0 \
@@ -60,41 +60,41 @@ commands:
         --output {output_json_path}
     parameters:
       - name: "cif1_path"
-        type: "QCrBox.input_cif"
+        dtype: "QCrBox.input_cif"
         default_value: None
         description: "Path to the first CIF file to be compared"
         required_entry_sets: ["comparison"]
         merge_su: False
       - name: "cif2_path"
-        type: "QCrBox.input_cif"
+        dtype: "QCrBox.input_cif"
         default_value: None
         description: "Path to the second CIF file to be compared"
         required_entry_sets: ["comparison"]
         merge_su: False
       - name: "max_abs_position"
-        type: "float"
+        dtype: "float"
         default_value: None
         description: "Maximum absolute difference in position in Angstrom"
       - name: "max_position_su"
-        type: "float"
+        dtype: "float"
         default_value: None
         description: "Maximum absolute difference in position / standard uncertainties"
       - name: "max_abs_uij"
-        type: "float"
+        dtype: "float"
         default_value: None
         description: "Maximum absolute difference in U(cif) in Angstrom^2"
       - name: "max_uij_su"
-        type: "float"
+        dtype: "float"
         default_value: None
         description: "Maximum absolute difference in U(cif) / standard uncertainties"
       - name: "output_json_path"
-        type: "QCrBox.output_file"
+        dtype: "QCrBox.output_file"
         default_value: None
         description: "Path to save the result as JSON file to after comparing the CIF files"
 
   - name: "iso2aniso"
     description: "Convert isotropic ADPs to anisotropic ADPs in a CIF file"
-    implemented_as: "CLI"
+    implemented_as: "cli_command"
     call_pattern: |
       python /opt/qcrbox/qcrbtls_iso2aniso_glue.py \
         {input_cif_path} \
@@ -104,7 +104,7 @@ commands:
         --select_regexes {select_regexes}
     parameters:
       - name: "input_cif_path"
-        type: "QCrBox.input_cif"
+        dtype: "QCrBox.input_cif"
         default_value: null
         description: "Path to the CIF file to be converted"
         required_entries: [
@@ -119,7 +119,7 @@ commands:
         ]
         merge_su: False
       - name: "output_cif_path"
-        type: "QCrBox.output_cif"
+        dtype: "QCrBox.output_cif"
         default_value: null
         description: "Path to save the CIF file to after converting"
         required_entries: [
@@ -132,24 +132,24 @@ commands:
           '_refine(?!_ls\.weighting|_ls\.extinction)'
         ]
       - name: "select_names"
-        type: str
+        dtype: str
         default_value: null
         required: False
         description: "Comma separated list of atom names to include in the conversion"
       - name: "select_elements"
-        type: str
+        dtype: str
         default_value: null
         required: False
         description: "Comma separated list of element symbols to include in the conversion"
       - name: "select_regexes"
-        type: str
+        dtype: str
         default_value: null
         required: False
         description: "Comma separated list of python re regexes to match atom names against"
 
   - name: "to_unified_cif"
     description: "Convert a CIF file to a unified CIF file"
-    implemented_as: "CLI"
+    implemented_as: "cli_command"
     call_pattern: |
       python /opt/qcrbox/qcrbtls_to_unified_cif_glue.py \
         {input_cif_path} \
@@ -157,18 +157,19 @@ commands:
         --custom_categories {custom_category_list}
     parameters:
       - name: "input_cif_path"
-        type: "QCrBox.input_cif"
+        dtype: "QCrBox.input_cif"
         default_value: None
         description: "Path to the CIF file to be converted"
         optional_entries: ["all_unified"]
         merge_su: False
       - name: "output_cif_path"
-        type: "QCrBox.output_cif"
+        dtype: "QCrBox.output_cif"
         default_value: None
         description: "Path to save the CIF file to after converting"
         optional_entries: ["all_unified"]
+        invalidated_entries: []
       - name: "custom_category_list"
-        type: "str"
+        dtype: "str"
         description: "Comma separated list of custom categories (such as iucr, shelx ...) to include in the unified CIF"
         default_value: None
         required: False

@@ -1,17 +1,16 @@
 import sys
-
 from collections import UserDict
 from datetime import datetime
 from pathlib import Path
 from typing import Self
 
 import yaml
-from pydantic import Extra, Field, PrivateAttr, field_validator, model_validator
+from pydantic import Field, PrivateAttr, field_validator, model_validator
 
 from .. import helpers
 from .base import QCrBoxPydanticBaseModel
 from .cif_entry_set import CifEntrySet
-from .command_spec.command_spec import CommandSpecWithParameters, CommandSpecDiscriminatedUnion
+from .command_spec.command_spec import CommandSpecDiscriminatedUnion, CommandSpecWithParameters
 
 __all__ = ["ApplicationSpec"]
 

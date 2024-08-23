@@ -2,7 +2,7 @@
 
 import asyncio
 from abc import ABCMeta, abstractmethod
-from enum import Enum
+
 from pyqcrbox.sql_models_NEW_v2 import CalculationStatusEnum
 
 

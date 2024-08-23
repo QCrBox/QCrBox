@@ -43,11 +43,6 @@ class BaseParameterSpec(QCrBoxPydanticBaseModel):
     default_value: DefaultValueAsStr | None = None
     description: str = ""
 
-    merge_su: bool = False
-    required_entry_sets: list[str] = []
-    optional_entry_sets: list[str] = []
-    custom_categories: list[str] = []
-
     @field_validator("dtype")
     @classmethod
     def verify_dtype_is_a_known_type(cls, value: str) -> str:

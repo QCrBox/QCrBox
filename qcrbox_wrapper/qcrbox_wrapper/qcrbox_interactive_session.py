@@ -1,9 +1,10 @@
 __all__ = ["QCrBoxInteractiveSession"]
 
 import webbrowser
-from typing import Any, Sequence, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from pyqcrbox import logger
+
 from .qcrbox_command import QCrBoxCommand
 
 if TYPE_CHECKING:
@@ -67,7 +68,9 @@ class QCrBoxInteractiveSession:
         """
         if self.prepare_cmd:
             # all_arguments = self.prepare_cmd.args_to_kwargs(**kwargs)
-            prepare_arguments = {key: val for key, val in self.kwargs.items() if key in self.prepare_cmd.parameter_names}
+            prepare_arguments = {
+                key: val for key, val in self.kwargs.items() if key in self.prepare_cmd.parameter_names
+            }
 
             missing_arguments = set(self.prepare_cmd.parameter_names).difference(prepare_arguments.keys())
             if missing_arguments:
@@ -105,7 +108,9 @@ class QCrBoxInteractiveSession:
     def execute_finalise(self):
         if self.finalise_cmd:
             # all_arguments = self.prepare_cmd.args_to_kwargs(**kwargs)
-            finalise_arguments = {key: val for key, val in self.kwargs.items() if key in self.finalise_cmd.parameter_names}
+            finalise_arguments = {
+                key: val for key, val in self.kwargs.items() if key in self.finalise_cmd.parameter_names
+            }
 
             missing_arguments = set(self.finalise_cmd.parameter_names).difference(finalise_arguments.keys())
             if missing_arguments:

@@ -1,6 +1,5 @@
-import sys
-
 import importlib.util
+import sys
 from pathlib import Path
 
 import yaml
@@ -40,7 +39,7 @@ class ApplicationSpec(ApplicationSpecBase):
         file_path = Path(file_path)
 
         # Dynamically import the
-        #module_name = file_path.stem
+        # module_name = file_path.stem
         module_file_path = file_path.parent / "configure_olex2.py"
         module_name = module_file_path.stem
         spec = importlib.util.spec_from_file_location(module_name, module_file_path)

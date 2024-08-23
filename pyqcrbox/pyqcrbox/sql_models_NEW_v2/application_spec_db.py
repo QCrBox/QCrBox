@@ -1,8 +1,7 @@
-from sqlalchemy import UniqueConstraint
-
 from datetime import datetime
 
 import sqlalchemy
+from sqlalchemy import UniqueConstraint
 from sqlmodel import Field, Relationship, SQLModel, select
 
 from pyqcrbox.logging import logger
@@ -68,5 +67,4 @@ class ApplicationSpecDB(ApplicationSpecBase, SQLModel, table=True):
     def to_response_model(self):
         from .application_spec import ApplicationSpecWithCommands
 
-        return ApplicationSpecWithCommands(**self.model_dump(
-            as_response_model=True))
+        return ApplicationSpecWithCommands(**self.model_dump(as_response_model=True))

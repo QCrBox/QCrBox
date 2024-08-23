@@ -21,5 +21,3 @@ class BaseParameterSpec(QCrBoxPydanticBaseModel):
             model_data["required"] = False
 
         return model_data
-
-
