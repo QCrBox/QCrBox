@@ -1,6 +1,9 @@
 from typing import Literal
 
 from .base_parameter_spec import BaseParameterSpec
+from ..cif_entry_set import OneOfCifEntrySpec
+from pydantic import validator
+
 
 __all__ = [
     "FolderPathParameterSpec",

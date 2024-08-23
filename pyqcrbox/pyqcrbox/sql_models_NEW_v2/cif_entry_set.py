@@ -1,6 +1,7 @@
 from typing import Literal, Self, Union
 
 from pydantic import model_validator, validator
+from typing_extensions import TypeAliasType
 
 from .base import QCrBoxPydanticBaseModel
 
