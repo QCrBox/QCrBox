@@ -16,7 +16,7 @@ import subprocess
 from pyqcrbox import logger
 
 from .base_command import BaseCommand
-from .calculation import CLICmdCalculation
+from .cli_command_calculation import CLICmdCalculation
 
 
 class Param:

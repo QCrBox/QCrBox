@@ -1,10 +1,15 @@
-from typing import Self
+from typing import Literal, Self, Union
 
 from pydantic import model_validator, validator
 
 from .base import QCrBoxPydanticBaseModel
 
 __all__ = ["CifEntrySet"]
+
+
+CifEntryLiteral = TypeAliasType("CifEntryLiteral", str)
+CifEntryOneOf = TypeAliasType("CifEntryOneOf", dict[Literal["one_of"], list["CifEntryLiteral"]])
+CifEntry = TypeAliasType("CifEntry", Union[CifEntryLiteral, CifEntryOneOf])
 
 
 class OneOfCifEntrySpec(QCrBoxPydanticBaseModel):

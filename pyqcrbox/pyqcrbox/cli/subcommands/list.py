@@ -152,10 +152,12 @@ def list_commands(
         "/commands",
         params={"name": name, "application_slug": application_slug, "application_version": application_version},
     )
+    assert r.status_code == 200, "Error retrieving commands from server"
     cols_to_print = (
-        "id",
-        "application_id",
-        "name",
+        #"id",
+        "application",
+        "version",
+        "cmd_name",
         "parameters",
     )
     data = [

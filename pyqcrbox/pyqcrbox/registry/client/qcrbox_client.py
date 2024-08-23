@@ -9,7 +9,7 @@ from litestar import Litestar
 from pyqcrbox import helpers, logger, msg_specs, settings, sql_models_NEW_v2
 from pyqcrbox.cli.helpers import get_repo_root
 from pyqcrbox.helpers import generate_private_routing_key
-from pyqcrbox.registry.client.executable_command.calculation import BaseCalculation
+from pyqcrbox.registry.client.executable_command.base_calculation import BaseCalculation
 from pyqcrbox.registry.shared.calculation_status import update_calculation_status_in_nats_kv_NEW
 from pyqcrbox.sql_models_NEW_v2 import CalculationStatusDetails, CalculationStatusEnum
 
@@ -114,11 +114,11 @@ class QCrBoxClient(QCrBoxServerClientBase):
         return response_msg
 
     async def handle_discard_command_invocation(self, msg: msg_specs.DiscardCommandInvocationNATS):
-        logger.info(f"Received request to discard command invocation: {msg!r} (current status: {self.status}")
+        logger.info(f"Received request to discard command invocation: {msg!r} (current status: {self.status})")
         self.status.set_idle()
 
     async def handle_command_execution(self, msg: msg_specs.CommandExecutionRequestNATS):
-        logger.info(f"Received command execution request: {msg!r} (current status: {self.status}")
+        logger.info(f"Received command execution request: {msg!r} (current status: {self.status})")
         self.status.set_busy()
 
         try:
