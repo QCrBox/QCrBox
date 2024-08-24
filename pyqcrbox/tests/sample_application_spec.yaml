@@ -1,0 +1,34 @@
+#
+# Configuration for a dummy application used in tests
+#
+name: "Dummy Application"
+slug: "dummy_application"
+version: "x.y.z"
+description: "Probably the most advanced program ever written"
+url: "https://www.example.com/"
+
+commands:
+  - name: "greet_and_sleep"
+    implemented_as: "python_callable"
+    import_path: "pyqcrbox.helpers"
+    parameters:
+      - name: "name"
+        dtype: str
+      - name: "duration"
+        dtype: float
+        default_value: 5.0
+        description: "Sleep duration (in seconds)"
+
+  - name: "echo_and_snooze"
+    implemented_as: "cli_command"
+    call_pattern: |
+      echo 'Greetings, {name}! Going to snooze for {duration} seconds.' && sleep {duration} && echo 'KTHXBYE' > /tmp/lala_output_foo.txt
+    parameters:
+      - name: "name"
+        dtype: str
+      - name: "duration"
+        dtype: float
+        default_value: 5.0
+        description: "Sleep duration (in seconds)."
+
+qcrbox_yaml_spec_version: "0.1"

@@ -1,18 +1,35 @@
 services:
   crysalis-pro:
     image: "qcrbox/crysalis-pro:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
-    environment:
-      QCRBOX_APPLICATION_DISPLAY_NAME: "CrysalisPro"
-      QCRBOX_RABBITMQ_QUEUE_NAME: "crysalis-pro"
-      QCRBOX_REGISTRY_HOST: "qcrbox-registry"
-      QCRBOX_REGISTRY_PORT: "8000"
-    ports:
-      - "${QCRBOX_BIND_ADDRESS}:${QCRBOX_CRYSALIS_PRO_PORT:?Must set env var QCRBOX_CRYSALIS_PRO_PORT}:8080"
     volumes:
       - ${QCRBOX_SHARED_FILES_DIR_HOST_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_HOST_PATH}:${QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH}
+    networks:
+      - qcrbox-net
+    ports:
+      - "${QCRBOX_BIND_ADDRESS}:${QCRBOX_CRYSALIS_PRO_PORT:?Must set env var QCRBOX_CRYSALIS_PRO_PORT}:8080"
     depends_on:
       qcrbox-registry:
         condition: service_healthy
-    networks:
-      - qcrbox-net
     restart: unless-stopped
+    environment:
+      QCRBOX_APPLICATION_DISPLAY_NAME: "CrysAlisPro"
+      QCRBOX__NATS__HOST: "qcrbox-nats"
+      QCRBOX__REGISTRY__SERVER__HOST: "qcrbox-registry"
+      QCRBOX__REGISTRY__SERVER__PORT: "8000"
+    labels:
+      traefik.enable: true
+      traefik.http.routers.to-crysalis-pro-path-prefix.rule: Path(`/gui/crysalis-pro`)
+      traefik.http.routers.to-crysalis-pro-path-prefix.middlewares: redirect-gui-crysalis-pro-path
+      traefik.http.routers.to-crysalis-pro-path-prefix.service: crysalis-pro-service
+      traefik.http.middlewares.redirect-gui-crysalis-pro-path.redirectregex.regex: ^http://(.+)/gui/crysalis-pro(/?)$$
+      traefik.http.middlewares.redirect-gui-crysalis-pro-path.redirectregex.replacement: http://crysalis-pro.gui.$$1/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true
+
+      traefik.http.routers.to-crysalis-pro-subdomain.rule: HostRegexp(`^crysalis-pro\.gui\..+$$`)
+      traefik.http.routers.to-crysalis-pro-subdomain.middlewares: redirect-gui-crysalis-pro-subdomain
+      traefik.http.routers.to-crysalis-pro-subdomain.service: crysalis-pro-service
+      traefik.http.middlewares.redirect-gui-crysalis-pro-subdomain.redirectregex.regex: ^http://crysalis-pro\.gui\.([^/]+)(/?)$$
+      traefik.http.middlewares.redirect-gui-crysalis-pro-subdomain.redirectregex.replacement: http://crysalis-pro.gui.$$1/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true
+
+      traefik.http.services.crysalis-pro-service.loadbalancer.server.scheme: http
+      traefik.http.services.crysalis-pro-service.loadbalancer.server.port: 8080
+

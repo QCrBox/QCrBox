@@ -1,22 +1,35 @@
 services:
   eval1x:
     image: "qcrbox/eval1x:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
-    build:
-      context: services/applications/eval1x/
-      args:
-        QCRBOX_DOCKER_TAG: ${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}
-    environment:
-      QCRBOX_APPLICATION_DISPLAY_NAME: "Eval14/15"
-      QCRBOX_RABBITMQ_QUEUE_NAME: "eval1x"
-      QCRBOX_REGISTRY_HOST: "qcrbox-registry"
-      QCRBOX_REGISTRY_PORT: "8000"
-    ports:
-      - "${QCRBOX_BIND_ADDRESS}:${QCRBOX_EVAL1X_PORT:?Must set env var QCRBOX_EVAL1X_PORT}:8080"
     volumes:
       - ${QCRBOX_SHARED_FILES_DIR_HOST_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_HOST_PATH}:${QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH}
+    networks:
+      - qcrbox-net
+    ports:
+      - "${QCRBOX_BIND_ADDRESS}:${QCRBOX_EVAL1X_PORT:?Must set env var QCRBOX_EVAL1X_PORT}:8080"
     depends_on:
       qcrbox-registry:
         condition: service_healthy
-    networks:
-      - qcrbox-net
     restart: unless-stopped
+    environment:
+      QCRBOX_APPLICATION_DISPLAY_NAME: "Eval14/15"
+      QCRBOX__NATS__HOST: "qcrbox-nats"
+      QCRBOX__REGISTRY__SERVER__HOST: "qcrbox-registry"
+      QCRBOX__REGISTRY__SERVER__PORT: "8000"
+    labels:
+      traefik.enable: true
+      traefik.http.routers.to-eval1x-path-prefix.rule: Path(`/gui/eval1x`)
+      traefik.http.routers.to-eval1x-path-prefix.middlewares: redirect-gui-eval1x-path
+      traefik.http.routers.to-eval1x-path-prefix.service: eval1x-service
+      traefik.http.middlewares.redirect-gui-eval1x-path.redirectregex.regex: ^http://(.+)/gui/eval1x(/?)$$
+      traefik.http.middlewares.redirect-gui-eval1x-path.redirectregex.replacement: http://eval1x.gui.$$1/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true
+
+      traefik.http.routers.to-eval1x-subdomain.rule: HostRegexp(`^eval1x\.gui\..+$$`)
+      traefik.http.routers.to-eval1x-subdomain.middlewares: redirect-gui-eval1x-subdomain
+      traefik.http.routers.to-eval1x-subdomain.service: eval1x-service
+      traefik.http.middlewares.redirect-gui-eval1x-subdomain.redirectregex.regex: ^http://eval1x\.gui\.([^/]+)(/?)$$
+      traefik.http.middlewares.redirect-gui-eval1x-subdomain.redirectregex.replacement: http://eval1x.gui.$$1/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true
+
+      traefik.http.services.eval1x-service.loadbalancer.server.scheme: http
+      traefik.http.services.eval1x-service.loadbalancer.server.port: 8080
+

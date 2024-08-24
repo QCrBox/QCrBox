@@ -59,22 +59,28 @@ Here is how you should structure the command in the YAML file:
 ```yaml
 commands:
   - name: "cell_check_csd"
-    implemented_as: "CLI"  # other options: "python_callable"
+    implemented_as: "cli_command"
+    call_pattern: cif2cellcheckcsd.sh {input_cif_path} {dimension_tolerace} {angle_tolerance} { maximum_hits}
+    description: "Look up the number of entries with a similar cell within the CSD"
     parameters:
       - name: "input_cif_path"
-        type: "QCrBox.input_cif"
+        dtype: "QCrBox.input_cif"
+        description: "Path to CIF file to refine"
         required_entries: [...]
         required: True
       - name: "dimension_tolerace"
-        type: "float"
+        dtype: "float"
+        description: "Maximum deviation in cell length parameters (a, b, c) in %"
         default_value: 1.5
         required: true
       - name: "angle_tolerance"
-        type: "float"
+        dtype: "float"
+        description: "Maximum deviation in cell angles in %"
         default_value: 1.5
         required: true
       - name: "maximum_hits"
-        type: "int"
+        dtype: "int"
+        description: "Maximum number of saved hits"
         default_value: 200
         required: true
 ```
@@ -87,7 +93,8 @@ Therefore, we add the cell parameters to the required entries. The first paramet
 
 ```yaml
       - name: "input_cif_path"
-        type: "QCrBox.input_cif"
+        dtype: "QCrBox.input_cif"
+        description: "Path to CIF file to refine"
         required_entries: [
           "_cell.length_a", "_cell.length_b", "_cell.length_c", "_cell.angle_alpha",
           "_cell.angle_beta", "_cell.angle_gamma"
@@ -99,7 +106,8 @@ We can also use two possibilities to derive the lattice centring. If we have pro
 
 ```yaml
       - name: "input_cif_path"
-        type: "QCrBox.input_cif"
+        dtype: "QCrBox.input_cif"
+        description: "Path to CIF file to refine"
         required_entries: [
           "_cell.length_a", "_cell.length_b", "_cell.length_c", "_cell.angle_alpha",
           "_cell.angle_beta", "_cell.angle_gamma"
@@ -110,28 +118,6 @@ We can also use two possibilities to derive the lattice centring. If we have pro
 
 
 For further information about cif entry handling consult the yaml section from the [CIF HowTo](../how_to_guides/handle_cifs.md). We add the required unit cell entries and the optional lattice centring entries to our yaml file. Take care that `required_entries` and `optional_entries` are aligned with the parameters `name`/`type`:
-
-## Adding the Command to `configure_cellcheckcsd.py`
-
-> **Important Note:**
-> Some functionality that will eventually be automated—specifically, the registration of our application and commands in Python. At the moment this step is still necessary.
-
-Next, we want to add a new command to our application's configuration file by replacing the dummy commands in  `configure_cellcheckcsd.py` with:
-
-```python
-cmd_cell_check_csd = ExternalCommand(
-    "cif2cellcheckcsd.sh",
-    Param("input_cif_path"),
-    Param("dimension_tolerace"),
-    Param("angle_tolerance"),
-    Param("maximum_hits")
-)
-
-application.register_external_command(
-    "cell_check_csd",
-    cmd_cell_check_csd,
-)
-```
 
 ## Adapting the Dockerfile for CellCheckCSD Integration
 We will now define the container's environment and ensuring all necessary components are included for our application by editing the Dockerfile. Let us go through the file line by line. You need to add missing lines.

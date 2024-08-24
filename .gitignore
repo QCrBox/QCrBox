@@ -4,6 +4,7 @@
 
 # Misc
 .ackrc
+.tool-versions
 
 # Python
 .venv/
@@ -29,8 +30,11 @@ shared_files/**
 # qcrbox Python package
 qcrbox/dist/
 qcrbox/qcrbox/_version.py
-services/base_images/base_ancestor/qcrbox_dist/qcrbox-*.whl
-services/base_images/base_ancestor/qcrbox_dist/requirements*.txt
+services/base_images/base_ancestor/pyqcrbox_dist/*
+services/base_images/base_ancestor/qcrbox_dist/*
+
+# pyqcrbox Python package
+pyqcrbox/pyqcrbox/_version.py
 
 #qcrbox_wrapper Python package
 qcrbox_wrapper/qcrbox_wrapper/_version.py
@@ -80,3 +84,4 @@ services/applications/xharpy_gpaw/XHARPy
 
 #MoProSuite
 services/applications/mopro/MoProSuite_*.zip
+services/applications/mopro/Import2MoPro-2024-07.zip

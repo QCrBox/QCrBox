@@ -9,30 +9,35 @@ url: "https://my.official.module.url"
 
 commands:
   - name: "get_number_fitting_cod_entries"
+    description: "Get the number of fitting COD that fit the unit cell parameters and elements."
     implemented_as: "python_callable"
+    import_path: "configure_cod_check"
+    callable_name: "qcb_get_number_fitting_cod_entries"
     parameters:
       - name: "input_cif_path"
-        type: "QCrBox.input_cif"
+        description: "Path to the input CIF file."
+        dtype: "QCrBox.input_cif"
         required_entries: [
           "_cell_length_a", "_cell_length_b", "_cell_length_c",
           "_cell_angle_alpha", "_cell_angle_beta", "_cell_angle_gamma",
           "_chemical_formula_sum"
         ]
-        required: True
       - name: "cellpar_deviation_perc"
-        type: "float"
+        description: "The percentage deviation allowed for the unit cell parameters."
+        dtype: "float"
         default_value: 2.0
-        required: false
       - name: "listed_elements_only"
-        type: "bool"
+        description: "If True, only the elements listed in the CIF file can be present, otherwise given elements must be present but additional elements are possible."
+        dtype: "bool"
         default_value: false
-        required: false
 
   - name: "merge_closest_cod_entry"
-    implemented_as: "python_callable"  # other options: "python_callable"
+    implemented_as: "python_callable"
+    import_path: "configure_cod_check"
     parameters:
       - name: "input_cif_path"
-        type: "QCrBox.input_cif"
+        description: "Path to the input CIF file."
+        dtype: "QCrBox.input_cif"
         required_entries: [
           "_cell_length_a", "_cell_length_b", "_cell_length_c",
           "_cell_angle_alpha", "_cell_angle_beta", "_cell_angle_gamma",
@@ -40,7 +45,8 @@ commands:
         ]
         default_value: None
       - name: "output_cif_path"
-        type: "QCrBox.output_cif"
+        description: "Path to the output CIF file."
+        dtype: "QCrBox.output_cif"
         required_entries: [
           "_atom_site_label", "_atom_site_fract_x", "_atom_site_fract_y", "_atom_site_fract_z",
           "_atom_site_occupancy", "_atom_site_U_iso_or_equiv", "_atom_site_type_symbol",
@@ -55,15 +61,14 @@ commands:
         invalidated_entries: [
           "_atom_site.*", "_geom.*", ".*refine.*", "_iucr.*", "_shelx.*"
         ]
-        required: True
       - name: "cellpar_deviation_perc"
-        type: "float"
+        description: "The percentage deviation allowed for the unit cell parameters."
+        dtype: "float"
         default_value: 2.0
-        required: false
       - name: "listed_elements_only"
-        type: "bool"
+        description: "If True, only the elements listed in the CIF file can be present, otherwise given elements must be present but additional elements are possible."
+        dtype: "bool"
         default_value: false
-        required: false
 
 cif_entry_sets:
   - name: "cell_elements"
@@ -71,3 +76,5 @@ cif_entry_sets:
       "_cell_length_a", "_cell_length_b", "_cell_length_c", "_cell_angle_alpha",
       "_cell_angle_beta", "_cell_angle_gamma", "_chemical_formula_sum"
     ]
+
+qcrbox_yaml_spec_version: "0.1"
