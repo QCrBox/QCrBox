@@ -212,6 +212,7 @@ class InteractiveCommandGuiRepresentation(BaseCommandGuiRepresentation):
     started_run = False
     finalised_run = False
     current_arguments = None
+    session = None
 
     async def execute_on_click(self):
         if not self.started_run or self.finalised_run:
@@ -230,7 +231,7 @@ class InteractiveCommandGuiRepresentation(BaseCommandGuiRepresentation):
             return
 
         try:
-            self.command.execute_prepare(arguments)
+            self.session 
         except Exception as e:
             ui.notify(f"Error: {e}")
             return None
@@ -371,7 +372,7 @@ pathhelper = QCrBoxPathHelper.from_dotenv(".env.dev", "gui_folder/prototype3")
 
 states = [StartGuiState()]
 
-qcrbox = QCrBoxWrapper("127.0.0.1", 11000)
+qcrbox = QCrBoxWrapper.from_server_addr("127.0.0.1", 11000)
 
 ui.markdown(
     dedent(

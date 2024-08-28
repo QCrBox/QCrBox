@@ -18,11 +18,15 @@ class QCrBoxInteractiveHelper:
     def __init__(
         self, wrapper: QCrBoxWrapper, application_name: str, helper: QCrBoxPathHelper, application_dir: pathlib.Path
     ):
+        print(f"Application: {application_name}")
         self.wrapper = wrapper
-        application = wrapper.application_dict[application_name]
-        self.command = application.interactive
+        self.application = wrapper.application_dict[application_name]
+        #self.command = application.interactive
         self.pathhelper = helper
         self.application_dir = application_dir
+        print(f"Application: {self.application}")
+        self.session = None
+
 
     @property
     def local_app_dir(self):
@@ -34,24 +38,24 @@ class QCrBoxInteractiveHelper:
 
     def start_interactive(self, *args, **kwargs):
         self.finalised_run = False
-        arguments = self.command.args_to_kwargs(*args, **kwargs)
+        #arguments = self.command.args_to_kwargs(*args, **kwargs)
+
         try:
-            self.command.execute_prepare(arguments)
+            self.session = self.application.interactive_session(*args, **kwargs)
         except Exception as e:
             ui.notify(f"Error: {e}")
             return None
         try:
-            _ = self.command.execute_run(arguments)
+            self.session.start()
         except Exception as e:
             ui.notify(f"Error: {e}")
             return None
-        self.current_arguments = arguments
         self.started_run = True
-        webbrowser.open(self.command.gui_url)
+        #webbrowser.open(self.command.gui_url)
 
     def finalise(self):
         try:
-            self.command.execute_finalise(self.current_arguments)
+            self.session.close()
         except Exception as e:
             ui.notify(f"Error: {e}")
             return None
@@ -60,13 +64,15 @@ class QCrBoxInteractiveHelper:
 
 pathhelper = QCrBoxPathHelper.from_dotenv(".env.dev", "gui_folder/prototype1")
 
-qcrbox = QCrBoxWrapper("127.0.0.1", 11000)
+#pathhelper.local_path.mkdir(exist_ok=True, parents=True)
+
+qcrbox = QCrBoxWrapper.from_server_addr("127.0.0.1", 11000)
 
 cryspro = QCrBoxInteractiveHelper(qcrbox, "CrysalisPro", pathhelper, "step1_cryspro")
 
 olex2 = QCrBoxInteractiveHelper(qcrbox, "Olex2 (Linux)", pathhelper, "step2_olex2")
 
-crystal_explorer = QCrBoxInteractiveHelper(qcrbox, "CrystalExplorer", pathhelper, "step3_crystal_explorer")
+crystal_explorer = QCrBoxInteractiveHelper(qcrbox, "Crystal Explorer", pathhelper, "step3_crystal_explorer")
 
 
 def click_btn_cap_start():
@@ -159,5 +165,5 @@ with ui.grid(columns=2):
 
     btn_cryst_exp_start = ui.button("Start interactive CrystalExplorer", on_click=click_btn_cryst_exp_start)
     btn_cryst_exp_start.bind_enabled_from(olex2, "finalised_run")
-
-ui.run()
+print("blablabla")
+ui.run(port=9191)

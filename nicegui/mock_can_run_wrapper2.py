@@ -1,0 +1,3303 @@
+import re
+from collections import namedtuple
+from collections.abc import Mapping
+from copy import deepcopy
+from pathlib import Path
+from typing import Any, Dict, List, Tuple, Union
+
+import yaml
+
+from qcrbox_wrapper.qcrbox_wrapper import QCrBoxWrapper, get_time_cached_app_answer, get_ttl_hash
+from qcrbox_wrapper.qcrbox_wrapper.qcrbox_application import QCrBoxApplication
+from qcrbox_wrapper.qcrbox_wrapper.qcrbox_command import QCrBoxCommand
+from pyqcrbox import sql_models_NEW_v2
+
+def get_yaml_locations():
+    translation = {
+        "Crystal Explorer": "CrystalExplorer",
+        "Eval14/15": "Eval1X",
+    }
+    basedir = Path(__file__).parents[1] / "services" / "applications"
+    yml_location_dict = {}
+    yml_pathes = list(basedir.glob("*/*.yaml"))
+    for yml_path in yml_pathes:
+        with yml_path.open() as fobj:
+            config = yaml.safe_load(fobj)
+        app_name = translation.get(config["name"], config["name"])
+        yml_location_dict[app_name] = yml_path
+
+    return yml_location_dict
+
+
+yml_location_dict = get_yaml_locations()
+
+class MockCommand(QCrBoxCommand):
+    def __init__(
+        self,
+        *,
+        application_slug: str,
+        application_version: str,
+        cmd_spec: sql_models_NEW_v2.CommandSpecWithParameters,
+        wrapper_parent: "QCrBoxWrapper",
+        application_name: str,
+    ) -> None:
+        super().__init__(application_slug, application_version, cmd_spec, wrapper_parent)
+        self.application_name = application_name
+
+    def can_run(self, input_cif_path) -> bool:
+        return can_run_command(yml_location_dict[self.application_name], self.name, input_cif_path)
+
+class MockApplication(QCrBoxApplication):
+    def __init__(self, application_spec: Dict[str, Any], wrapper_parent: QCrBoxWrapper):
+        super().__init__(application_spec, wrapper_parent)
+
+        self.commands = [
+            MockCommand(
+                application_slug=self.slug,
+                application_version=self.version,
+                cmd_spec=cmd_spec,
+                wrapper_parent=wrapper_parent,
+                application_name=self.name,
+            )
+            for cmd_spec in self.application_spec.commands
+        ]
+        self._cmds_by_name: dict[str, QCrBoxCommand] = {cmd.name: cmd for cmd in self.commands}
+        for cmd in self.commands:
+            setattr(self, cmd.name, cmd)
+
+class MockWrapper(QCrBoxWrapper):
+    @property
+    def applications(self) -> List[QCrBoxApplication]:
+        response = get_time_cached_app_answer(self.web_client, get_ttl_hash())
+        return [
+            MockApplication(
+                application_spec=sql_models_NEW_v2.ApplicationSpecWithCommands(**app_spec), wrapper_parent=self
+            )
+            for app_spec in response
+        ]
+
+
+
+####################################################################################################
+###           A cctbx-free version of can_run_command, for use in prototyping.                   ###
+####################################################################################################
+
+
+def list_cif_items(cif_path: Union[str, Path]) -> List[str]:
+    """
+    Extract and return a list of CIF (Crystallographic Information File) item
+    names from a given CIF file.
+
+    Parameters
+    ----------
+    cif_path : Union[str, Path]
+        The path to the CIF file from which to extract item names.
+
+    Returns
+    -------
+    List[str]
+        A list containing the names of CIF items found in the file.
+
+    """
+    cif_content = Path(cif_path).read_text()
+    # Remove multiline strings that are denoted between two semicolons
+    cif_content = "\n".join(cif_content.split("\n;")[::2])
+
+    return re.findall(r"\n\s*(\_[A-Za-z0-9/._\-]+)", cif_content)
+
+
+def entry_to_unified_keyword(old_name: str, custom_categories: List[str]) -> str:
+    """
+    Convert a cif entry to one common name for all aliases and some deprecated values
+    where possible. With custom categories user defined categories (e.g. 'iucr', 'olex2'
+    or 'shelx') can be taken into account where an entry _category_example would be
+    converted into _category.example.
+
+    Parameters
+    ----------
+    old_name : str
+        The original name of the entry to be converted.
+    custom_categories : List[str]
+        A list of custom categories to check against the `old_name`.
+
+    Returns
+    -------
+    str
+        The converted name with the underscore prefix.
+    """
+    aliases = load_aliases()
+    cut_name = old_name[1:]
+    for category in custom_categories:
+        if cut_name.startswith(category):
+            return f"_{category}.{cut_name[len(category)+1:]}"
+    return "_" + aliases.get(cut_name, cut_name)
+
+
+class NoKeywordsError(BaseException):
+    """
+    Exception raised when no keywords are found for a given command in the YAML configuration.
+
+    Attributes
+    ----------
+    message : str
+        Explanation of the error
+    """
+
+
+class UnnamedCommandError(BaseException):
+    """
+    Exception raised when a command in the YAML configuration is missing a name entry.
+
+    Attributes
+    ----------
+    message : str
+        Explanation of the error
+    """
+
+
+class UnknownCommandError(BaseException):
+    """
+    Exception raised when a command is not found in the YAML configuration.
+
+    Attributes
+    ----------
+    message : str
+        Explanation of the error
+    """
+
+
+class EmptyCommandError(BaseException):
+    """
+    Exception raised when a command is found in the YAML configuration but has no content.
+
+    Attributes
+    ----------
+    message : str
+        Explanation of the error
+    """
+
+
+class UnnamedParameterError(BaseException):
+    """
+    Exception raised when a parameter in a command in the YAML configuration is missing a name entry.
+
+    Attributes
+    ----------
+    message : str
+        Explanation of the error
+    """
+
+
+class UnknownParameterError(BaseException):
+    """
+    Exception raised when a parameter is not found in a command in the YAML configuration.
+
+    Attributes
+    ----------
+    message : str
+        Explanation of the error
+    """
+
+
+class EmptyParameterError(BaseException):
+    """
+    Exception raised when a parameter is found in a command in the YAML configuration but has no content.
+
+    Attributes
+    ----------
+    message : str
+        Explanation of the error
+    """
+
+
+class NonExistentEntrySetError(BaseException):
+    """
+    Exception raised when a keyword set is referenced in the YAML configuration but does not exist.
+
+    Attributes
+    ----------
+    message : str
+        Explanation of the error
+    """
+
+
+class InvalidEntrySetError(BaseException):
+    """
+    Exception raised when an entry set in the YAML configuration contains an entry that is not 'name',
+    'required', or 'optional' or an entry set does not have a 'name' entry.
+
+    Attributes
+    ----------
+    message : str
+        Explanation of the error
+    """
+
+
+def command_parameter_dict_from_yml(yml_dict: Dict[str, Any], command: str, parameter: str) -> Dict[str, Any]:
+    """
+    Returns the parameter dictionary for a given command parameter from a YAML configuration dictionary.
+
+    Parameters
+    ----------
+    yml_dict : dict
+        The dictionary obtained from parsing the YAML configuration file.
+    command : str
+        The command name to look up in the YAML dictionary for extracting the command dictionary.
+    parameter : str
+        The parameter name to look up in the YAML dictionary for extracting the parameter dictionary.
+
+    Returns
+    -------
+    dict
+        The command dictionary for the specified command parameter.
+
+    Raises
+    ------
+    UnknownCommandError
+        If the command is not found in the YAML configuration.
+    EmptyCommandError
+        If the command is found in the YAML configuration but has no content.
+    UnnamedCommandError
+        If a command in the YAML configuration is missing a name entry.
+    UnknownParameterError
+        If the parameter is not found in the command in the YAML configuration.
+    EmptyParameterError
+        If the parameter is found in the command in the YAML configuration but has no content.
+    UnnamedParameterError
+        If a parameter in a command in the YAML configuration is missing a name entry.
+    """
+    try:
+        selected_command = next(cmd for cmd in yml_dict["commands"] if cmd["name"] == command)
+        if len(selected_command) == 1:
+            raise EmptyCommandError(f"Command {command} has no content.")
+    except StopIteration as exc:
+        raise UnknownCommandError(f"Command {command} not found in yml_dict.") from exc
+    except KeyError as exc:
+        raise UnnamedCommandError("One or more commands are missing a name entry in the yml_dict.") from exc
+    try:
+        selected_parameter = next(par for par in selected_command["parameters"] if par["name"] == parameter).copy()
+        selected_parameter.pop("name")
+        if len(selected_parameter) == 0:
+            raise EmptyParameterError(f"Parameter {parameter} of command {command} has no content.")
+        return selected_parameter
+    except StopIteration as exc:
+        raise UnknownParameterError(f"Parameter {parameter} not found in command {command}.") from exc
+    except KeyError as exc:
+        raise UnnamedParameterError("One or more parameters are missing a name entry in the yml_dict.") from exc
+
+
+def cif_entry_sets_from_yml(yml_dict: Dict[str, Any]) -> Dict[str, Dict[str, List[str]]]:
+    """
+    Extracts keyword sets from a YAML configuration dictionary.
+
+    Parameters
+    ----------
+    yml_dict : dict
+        The dictionary obtained from parsing the YAML configuration file.
+
+    Returns
+    -------
+    dict
+        A dictionary of keyword sets, where the key is the keyword set name and the value is a dictionary
+        containing 'required', and 'optional' entries.
+    """
+    try:
+        return_dict = {}
+        for eset in deepcopy(yml_dict.get("cif_entry_sets", [])):
+            name = eset["name"]
+            eset.pop("name")
+            return_dict[name] = eset
+            if any(key not in ("required", "optional") for key in eset.keys()):
+                raise InvalidEntrySetError(
+                    f'Found entry other than "name", "required" or "optional" in keyword set {name}. Typo?'
+                )
+        return return_dict
+    except KeyError as exc:
+        raise InvalidEntrySetError("Not all entry sets have a 'name' entry.") from exc
+
+
+def cif_entries_from_entry_set(
+    entry_set_names: List[str], entry_sets: Dict[str, Dict[str, List[str]]]
+) -> Tuple[List[str], List[str]]:
+    """
+    Assembles required and optional CIF entries from a list of keyword sets.
+
+    Parameters
+    ----------
+    entry_set_names : list
+        A list of keyword set names to assemble the entries for.
+    entry_sets : dict
+        A dictionary of keyword sets, where the key is the keyword set name and the value is a dictionary
+        containing 'required', and 'optional' entries.
+
+    Returns
+    -------
+    Tuple[List[str], List[str]]
+        A tuple containing two lists: the first list contains required entries, and the second list
+        contains optional entries.
+    """
+    required = []
+    optional = []
+    for entry_set_name in entry_set_names:
+        try:
+            entry_set = entry_sets[entry_set_name]
+        except KeyError as exc:
+            raise NonExistentEntrySetError(f"Keyword set {entry_set_name} not found.") from exc
+        required += entry_set.get("required", [])
+        optional += entry_set.get("optional", [])
+    return required, optional
+
+
+def cif_entries_from_parameter_dict(
+    parameter_dict: Dict[str, Any], entry_sets: Dict[str, Dict[str, List[str]]]
+) -> Tuple[List[str], List[str], List[str]]:
+    """
+    Extracts required and optional CIF entries from a YAML configuration section.
+
+    Parameters
+    ----------
+    io_section : dict
+        The section of the YAML configuration dictionary containing the CIF entries.
+    entry_sets : dict
+        A dictionary of keyword sets, where the key is the keyword set name and the value is a dictionary
+        containing 'required', and 'optional' entries.
+
+    Returns
+    -------
+    Tuple[List[str], List[str], List[str]]
+        A tuple containing three lists: the first list contains required CIF entries, the second list
+        contains optional CIF entries, and the third list contains custom categories. All lists are de-duplicated.
+
+    Raises
+    ------
+    NoKeywordsError
+        If no entries defining optional or necessary keywords are found in the YAML configuration section.
+    """
+    possible_entries = (
+        "required_entry_sets",
+        "required_entries",
+        "optional_entry_sets",
+        "optional_entries",
+    )
+    if not any(entry in parameter_dict for entry in possible_entries):
+        raise NoKeywordsError("No entries defining optional or necessary keywords found.")
+
+    required_kws = parameter_dict.get("required_entries", [])
+    optional_kws = parameter_dict.get("optional_entries", [])
+
+    required, optional = cif_entries_from_entry_set(parameter_dict.get("required_entry_sets", []), entry_sets)
+    required_kws += required
+    optional_kws += optional
+
+    # for optional entry sets required entries are optional as well
+    required, optional = cif_entries_from_entry_set(parameter_dict.get("optional_entry_sets", []), entry_sets)
+    optional_kws += required
+    optional_kws += optional
+
+    optional_kws = list(kw for kw in optional_kws if kw not in required_kws)
+    custom_categories = list(set(parameter_dict.get("custom_categories", [])))
+
+    return required_kws, optional_kws, custom_categories
+
+
+YmlCifInputSettings = namedtuple(
+    "YmlInputSettings", ["required_entries", "optional_entries", "custom_categories", "merge_su"]
+)
+YmlCifInputSettings.__doc__ = """
+Named tuple for storing input settings from a YAML configuration.
+
+Attributes
+----------
+required_entries : list
+    A list of required CIF entries, Functions will throw exceptions if any of these entries is missing.
+optional_entries : list
+    A list of optional CIF entries, which will be included if present but do not raise an error if missing.
+custom_categories : list
+    A list of custom categories for keyword conversion, if applicable.
+merge_su : bool
+    A boolean indicating whether standard uncertainties should be merged.
+"""
+
+
+def cif_input_entries_from_yml(yml_dict: Dict[str, Any], command: str, parameter) -> YmlCifInputSettings:
+    """
+    Extracts required and optional cif_entries for a given command parameter from a YAML configuration
+    dictionary.
+
+    Parses the YAML configuration dictionary to find and compile lists of required and optional
+    CIF entries specified under a given command parameter. This includes directly specified keywords and
+    those included in keyword sets referenced by the command.
+
+    Parameters
+    ----------
+    yml_dict : dict
+        The dictionary obtained from parsing the YAML configuration file.
+    command : str
+        The command name to look up in the YAML dictionary for extracting CIF entry specifications.
+    parameter : str
+        The parameter name to look up in the YAML dictionary for extracting CIF entry specifications.
+
+    Returns
+    -------
+    YmlCifInputSettings
+        A named tuple containing required and optional CIF entries, custom categories, and a boolean
+        indicating whether standard uncertainties should be merged.
+    """
+    entry_sets = cif_entry_sets_from_yml(yml_dict)
+    parameter_dict = command_parameter_dict_from_yml(yml_dict, command, parameter)
+
+    try:
+        required_entries, optional_entries, custom_categories = cif_entries_from_parameter_dict(
+            parameter_dict, entry_sets
+        )
+    except NoKeywordsError as exc:
+        raise NoKeywordsError(
+            f"Parameter {parameter} of command {command} has no entries defining optional"
+            + "or necessary keywords in the yml_dict."
+        ) from exc
+
+    merge_su = parameter_dict.get("merge_su", False)
+
+    return YmlCifInputSettings(required_entries, optional_entries, custom_categories, merge_su)
+
+
+YmlCifOutputSettings = namedtuple(
+    "YmlOutputSettings",
+    ["required_entries", "optional_entries", "invalidated_entries", "custom_categories", "select_block"],
+)
+YmlCifOutputSettings.__doc__ = """
+Named tuple for storing output settings from a YAML configuration.
+
+Attributes
+----------
+required_entries : list
+    A list of required CIF entries, Functions will throw exceptions if any of these entries is missing.
+optional_entries : list
+    A list of optional CIF entries, which will be included if present but do not raise an error if missing.
+invalidated_entries : list
+    A list of invalidated CIF entries, which will be removed from the CIF content of the original input cif.
+custom_categories : list
+    A list of custom categories for keyword conversion, if applicable.
+select_block : str
+    The block number to select from the new/work CIF file. Default is '0', so the first block. Plain strings
+    are also accepted to select a block by name.
+"""
+
+
+def cif_output_entries_from_yml(yml_dict: Dict[str, Any], command: str, parameter: str) -> YmlCifOutputSettings:
+    """
+    Extracts required and optional cif_entries for a given command parameter from a YAML configuration
+    dictionary.
+
+    Parses the YAML configuration dictionary to find and compile lists of required and optional
+    CIF entries specified under a given command parameter. This includes directly specified keywords
+    and those included in keyword sets referenced by the command.
+
+    Parameters
+    ----------
+    yml_dict : dict
+        The dictionary obtained from parsing the YAML configuration file.
+    command : str
+        The command name to look up in the YAML dictionary for extracting CIF entry specifications.
+    parameter : str
+        The parameter name to look up in the YAML dictionary for extracting CIF entry specifications.
+
+    Returns
+    -------
+    YmlCifOutputSettings
+        A named tuple containing required, optional and invalidated CIF entries, custom categories,
+        and a block number or string to select from the new/work CIF file.
+    """
+    entry_sets = cif_entry_sets_from_yml(yml_dict)
+    parameter_dict = command_parameter_dict_from_yml(yml_dict, command, parameter)
+
+    try:
+        required_entries, optional_entries, custom_categories = cif_entries_from_parameter_dict(
+            parameter_dict, entry_sets
+        )
+    except NoKeywordsError as exc:
+        raise NoKeywordsError(
+            f"Command {command} has no entries defining optional or necessary keywords"
+            + " in section cif_output of the yml_dict."
+        ) from exc
+
+    invalidated_kws = parameter_dict.get("invalidated_entries", [])
+    required, optional = cif_entries_from_entry_set(parameter_dict.get("invalidated_entry_sets", []), entry_sets)
+    invalidated_kws += required
+    invalidated_kws += optional
+    invalidated_kws = list(set(invalidated_kws))
+
+    select_block = parameter_dict.get("select_block", "0")
+
+    return YmlCifOutputSettings(required_entries, optional_entries, invalidated_kws, custom_categories, select_block)
+
+
+class OneOfEntryNotResolvableError(BaseException):
+    """
+    Exception raised when none of the values in a 'one_of' list are found in the block.
+
+    Attributes
+    ----------
+    message : str
+        Explanation of the error
+    """
+
+
+def resolve_special_entries(
+    entries: List[Union[Dict[str, str], str]],
+    block: Dict[str, str],
+    custom_categories: List[str],
+):
+    """
+    Resolves the 'one_of' entries in a list of entries by checking if one of the values
+    in the 'one_of' list is present in the block.
+
+    Parameters
+    ----------
+    entries : list
+        A list of entries to resolve.
+    block : cif.model.block
+        The block to check for the presence of values in the 'one_of' lists.
+    custom_categories : list
+        A list of custom categories for keyword conversion, if applicable.
+
+    Returns
+    -------
+    list
+        The resolved entries.
+    """
+
+    def resolve_single_entry(entry):
+        if isinstance(entry, Mapping):
+            for value in entry["one_of"]:
+                if isinstance(value, str):
+                    if value in block:
+                        return [value]
+                    if entry_to_unified_keyword(value, custom_categories) in block:
+                        return [value]
+                elif isinstance(value, list):
+                    if all(v in block for v in value):
+                        return value
+                    if all(entry_to_unified_keyword(v, custom_categories) in block for v in value):
+                        return value
+            raise OneOfEntryNotResolvableError(
+                f"None of the values in one_of selection: {entry['one_of']} found in block"
+            )
+        return [entry]
+
+    unflattened = [resolve_single_entry(entry) for entry in entries]
+    return list(set(item for sublist in unflattened for item in sublist))
+
+
+def yml_entries_resolve_special(yml_entry: Union[YmlCifInputSettings, YmlCifOutputSettings], cif_block: Dict[str, str]):
+    """
+    Resolves the 'one_of' entries in a YmlCifInputSettings or YmlCifOutputSettings by checking if one of the values
+    in the 'one_of' list is present in the block.
+
+    Parameters
+    ----------
+    yml_entry : Union[YmlCifInputSettings, YmlCifOutputSettings]
+        The YmlCifInputSettings or YmlCifOutputSettings to resolve.
+    cif_block : cif.model.block
+        The block to check for the presence of values in the 'one_of' lists.
+
+    Returns
+    -------
+    Union[YmlCifInputSettings, YmlCifOutputSettings]
+        The resolved YmlCifInputSettings or YmlCifOutputSettings.
+    """
+    resolved_required_entries = resolve_special_entries(
+        yml_entry.required_entries, cif_block, yml_entry.custom_categories
+    )
+    resolved_optional_entries = resolve_special_entries(
+        yml_entry.optional_entries, cif_block, yml_entry.custom_categories
+    )
+
+    if isinstance(yml_entry, YmlCifOutputSettings):
+        return YmlCifOutputSettings(
+            resolved_required_entries,
+            resolved_optional_entries,
+            yml_entry.invalidated_entries,
+            yml_entry.custom_categories,
+            yml_entry.select_block,
+        )
+    elif isinstance(yml_entry, YmlCifInputSettings):
+        return YmlCifInputSettings(
+            resolved_required_entries, resolved_optional_entries, yml_entry.custom_categories, yml_entry.merge_su
+        )
+    else:
+        raise ValueError("yml_entry must be of type YmlCifInputSettings or YmlCifOutputSettings.")
+
+
+def can_run_command(yml_path: Path, command: str, input_cif_path: Path):
+    """
+    Checks if a specified command can be run on an input CIF file based on instructions
+    defined in a YAML configuration. Only checks for the parameter 'input_cif_path' and
+    will assume all other parameters including additional CIF files are present and
+    valid.
+
+    Parameters
+    ----------
+    yml_path : Path
+        The file path to the YAML file containing processing instructions.
+    command : str
+        The specific command within the YAML file to check for processing the CIF file.
+    input_cif_path : Path
+        The file path to the input CIF file to be checked.
+
+    Returns
+    -------
+    bool
+        True if the command can be run with the provided CIF file, False otherwise.
+
+    Notes
+    -----
+    This function was developed for exposing commands within QCrBox. See the project or
+    the test of this function for an example of how such a YAML file might look.
+    """
+    with open(yml_path, "r", encoding="UTF-8") as fobj:
+        yml_dict = yaml.safe_load(fobj)
+
+    try:
+        yml_input_settings = cif_input_entries_from_yml(yml_dict, command, "input_cif_path")
+    except UnknownParameterError:
+        return True
+
+    cif_entries = list_cif_items(input_cif_path)
+    block = {entry: "" for entry in cif_entries}
+    # block, _ = cifdata_str_or_index(read_cif_safe(input_cif_path), "0")
+
+    try:
+        yml_input_settings = yml_entries_resolve_special(yml_input_settings, block)
+    except OneOfEntryNotResolvableError:
+        return False
+
+    required_unified_entries = [
+        entry_to_unified_keyword(entry, yml_input_settings.custom_categories)
+        for entry in yml_input_settings.required_entries
+    ]
+
+    return all(entry in block for entry in required_unified_entries)
+
+
+def load_aliases():
+    """
+    Return a dictionary containing the currently known aliases and deprecated values
+    with a direct corresponding entry to convert to the unified names.
+    """
+    return {
+        "diffrn_ambient_environment": "diffrn.ambient_environment",
+        "diffrn_ambient_pressure": "diffrn.ambient_pressure",
+        "diffrn_ambient_pressure_su": "diffrn.ambient_pressure_su",
+        "diffrn.ambient_pressure_esd": "diffrn.ambient_pressure_su",
+        "diffrn_ambient_pressure_gt": "diffrn.ambient_pressure_gt",
+        "diffrn_ambient_pressure_lt": "diffrn.ambient_pressure_lt",
+        "diffrn_ambient_temperature": "diffrn.ambient_temperature",
+        "diffrn_ambient_temp": "diffrn.ambient_temperature",
+        "diffrn.ambient_temp": "diffrn.ambient_temperature",
+        "diffrn_ambient_temperature_su": "diffrn.ambient_temperature_su",
+        "diffrn_ambient_temp_su": "diffrn.ambient_temperature_su",
+        "diffrn.ambient_temp_esd": "diffrn.ambient_temperature_su",
+        "diffrn_ambient_temp_details": "diffrn.ambient_temperature_details",
+        "diffrn.ambient_temp_details": "diffrn.ambient_temperature_details",
+        "diffrn_ambient_temp_gt": "diffrn.ambient_temperature_gt",
+        "diffrn_ambient_temperature_gt": "diffrn.ambient_temperature_gt",
+        "diffrn.ambient_temp_gt": "diffrn.ambient_temperature_gt",
+        "diffrn_ambient_temp_lt": "diffrn.ambient_temperature_lt",
+        "diffrn_ambient_temperature_lt": "diffrn.ambient_temperature_lt",
+        "diffrn.ambient_temp_lt": "diffrn.ambient_temperature_lt",
+        "diffrn_crystal_treatment": "diffrn.crystal_treatment",
+        "diffrn_measured_fraction_theta_full": "diffrn.measured_fraction_theta_full",
+        "diffrn_measured_fraction_theta_max": "diffrn.measured_fraction_theta_max",
+        "diffrn_special_details": "diffrn.special_details",
+        "diffrn.details": "diffrn.special_details",
+        "diffrn_symmetry_description": "diffrn.symmetry_description",
+        "cell_angle_alpha": "cell.angle_alpha",
+        "cell_angle_alpha_su": "cell.angle_alpha_su",
+        "cell.angle_alpha_esd": "cell.angle_alpha_su",
+        "cell_angle_beta": "cell.angle_beta",
+        "cell_angle.beta_su": "cell.angle_beta_su",
+        "cell_angle_beta_su": "cell.angle_beta_su",
+        "cell.angle_beta_esd": "cell.angle_beta_su",
+        "cell_angle_gamma": "cell.angle_gamma",
+        "cell_angle.gamma_su": "cell.angle_gamma_su",
+        "cell_angle_gamma_su": "cell.angle_gamma_su",
+        "cell.angle_gamma_esd": "cell.angle_gamma_su",
+        "cell_formula_units_Z": "cell.formula_units_z",
+        "cell_formula_units_z": "cell.formula_units_z",
+        "cell_length_a": "cell.length_a",
+        "cell_length_a_su": "cell.length_a_su",
+        "cell.length_a_esd": "cell.length_a_su",
+        "cell_length_b": "cell.length_b",
+        "cell_length_b_su": "cell.length_b_su",
+        "cell.length_b_esd": "cell.length_b_su",
+        "cell_length_c": "cell.length_c",
+        "cell_length_c_su": "cell.length_c_su",
+        "cell.length_c_esd": "cell.length_c_su",
+        "cell_reciprocal_angle_alpha": "cell.reciprocal_angle_alpha",
+        "cell_reciprocal_angle_alpha_su": "cell.reciprocal_angle_alpha_su",
+        "cell.reciprocal_angle_alpha_esd": "cell.reciprocal_angle_alpha_su",
+        "cell_reciprocal_angle_beta": "cell.reciprocal_angle_beta",
+        "cell_reciprocal_angle_beta_su": "cell.reciprocal_angle_beta_su",
+        "cell.reciprocal_angle_beta_esd": "cell.reciprocal_angle_beta_su",
+        "cell_reciprocal_angle_gamma": "cell.reciprocal_angle_gamma",
+        "cell_reciprocal_angle_gamma_su": "cell.reciprocal_angle_gamma_su",
+        "cell.reciprocal_angle_gamma_esd": "cell.reciprocal_angle_gamma_su",
+        "cell_reciprocal_length_a": "cell.reciprocal_length_a",
+        "cell_reciprocal_length_a_su": "cell.reciprocal_length_a_su",
+        "cell.reciprocal_length_a_esd": "cell.reciprocal_length_a_su",
+        "cell_reciprocal_length_b": "cell.reciprocal_length_b",
+        "cell_reciprocal_length_b_su": "cell.reciprocal_length_b_su",
+        "cell.reciprocal_length_b_esd": "cell.reciprocal_length_b_su",
+        "cell_reciprocal_length_c": "cell.reciprocal_length_c",
+        "cell_reciprocal_length_c_su": "cell.reciprocal_length_c_su",
+        "cell.reciprocal_length_c_esd": "cell.reciprocal_length_c_su",
+        "cell_special_details": "cell.special_details",
+        "cell.details": "cell.special_details",
+        "cell_volume": "cell.volume",
+        "cell_volume_su": "cell.volume_su",
+        "cell.volume_esd": "cell.volume_su",
+        "cell_measurement.pressure": "diffrn.ambient_pressure",
+        "cell_measurement_pressure": "diffrn.ambient_pressure",
+        "cell_measurement.pressure_su": "diffrn.ambient_pressure_su",
+        "cell_measurement_pressure_su": "diffrn.ambient_pressure_su",
+        "cell_measurement.pressure_esd": "diffrn.ambient_pressure_su",
+        "cell_measurement_radiation": "cell_measurement.radiation",
+        "cell_measurement_reflns_used": "cell_measurement.reflns_used",
+        "cell_measurement.temperature": "diffrn.ambient_temperature",
+        "cell_measurement_temperature": "diffrn.ambient_temperature",
+        "cell_measurement_temp": "diffrn.ambient_temperature",
+        "cell_measurement.temp": "diffrn.ambient_temperature",
+        "cell_measurement.temperature_su": "diffrn.ambient_temperature_su",
+        "cell_measurement_temp_su": "diffrn.ambient_temperature_su",
+        "cell_measurement.temp_esd": "diffrn.ambient_temperature_su",
+        "cell_measurement_theta_max": "cell_measurement.theta_max",
+        "cell_measurement_theta_min": "cell_measurement.theta_min",
+        "cell_measurement.wavelength": "diffrn_radiation_wavelength.value",
+        "cell_measurement_wavelength": "diffrn_radiation_wavelength.value",
+        "cell_measurement_refln_index_h": "cell_measurement_refln.index_h",
+        "cell_measurement_refln_index_k": "cell_measurement_refln.index_k",
+        "cell_measurement_refln_index_l": "cell_measurement_refln.index_l",
+        "cell_measurement_refln_theta": "cell_measurement_refln.theta",
+        "diffrn_attenuator_code": "diffrn_attenuator.code",
+        "diffrn_attenuator_material": "diffrn_attenuator.material",
+        "diffrn_attenuator_scale": "diffrn_attenuator.scale",
+        "diffrn_detector_area_resol_mean": "diffrn_detector.area_resol_mean",
+        "diffrn_radiation_detector": "diffrn_detector.description",
+        "diffrn_detector": "diffrn_detector.description",
+        "diffrn_detector.detector": "diffrn_detector.description",
+        "diffrn_detector_details": "diffrn_detector.details",
+        "diffrn_detector_dtime": "diffrn_detector.dtime",
+        "diffrn_radiation.detector_dtime": "diffrn_detector.dtime",
+        "diffrn_radiation_detector_dtime": "diffrn_detector.dtime",
+        "diffrn_detector_type": "diffrn_detector.make",
+        "diffrn_detector.type": "diffrn_detector.make",
+        "diffrn_measurement_details": "diffrn_measurement.details",
+        "diffrn.measurement_details": "diffrn_measurement.details",
+        "diffrn_measurement_device": "diffrn_measurement.device_class",
+        "diffrn.measurement_device_class": "diffrn_measurement.device_class",
+        "diffrn_measurement.device": "diffrn_measurement.device_class",
+        "diffrn_measurement_device_details": "diffrn_measurement.device_details",
+        "diffrn.measurement_device_details": "diffrn_measurement.device_details",
+        "diffrn_measurement_device_type": "diffrn_measurement.device_make",
+        "diffrn.measurement_device_make": "diffrn_measurement.device_make",
+        "diffrn_measurement.device_type": "diffrn_measurement.device_make",
+        "diffrn_measurement_method": "diffrn_measurement.method",
+        "diffrn.measurement_method": "diffrn_measurement.method",
+        "diffrn_measurement_specimen_support": "diffrn_measurement.specimen_support",
+        "diffrn.measurement_specimen_support": "diffrn_measurement.specimen_support",
+        "diffrn_orient_matrix_type": "diffrn_orient_matrix.type",
+        "diffrn_orient_matrix_UB_11": "diffrn_orient_matrix.ub_11",
+        "diffrn_orient_matrix_ub_11": "diffrn_orient_matrix.ub_11",
+        "diffrn_orient_matrix.UB[1][1]": "diffrn_orient_matrix.ub_11",
+        "diffrn_orient_matrix.ub[1][1]": "diffrn_orient_matrix.ub_11",
+        "diffrn_orient_matrix_UB_12": "diffrn_orient_matrix.ub_12",
+        "diffrn_orient_matrix_ub_12": "diffrn_orient_matrix.ub_12",
+        "diffrn_orient_matrix.UB[1][2]": "diffrn_orient_matrix.ub_12",
+        "diffrn_orient_matrix.ub[1][2]": "diffrn_orient_matrix.ub_12",
+        "diffrn_orient_matrix_UB_13": "diffrn_orient_matrix.ub_13",
+        "diffrn_orient_matrix_ub_13": "diffrn_orient_matrix.ub_13",
+        "diffrn_orient_matrix.UB[1][3]": "diffrn_orient_matrix.ub_13",
+        "diffrn_orient_matrix.ub[1][3]": "diffrn_orient_matrix.ub_13",
+        "diffrn_orient_matrix_UB_21": "diffrn_orient_matrix.ub_21",
+        "diffrn_orient_matrix_ub_21": "diffrn_orient_matrix.ub_21",
+        "diffrn_orient_matrix.UB[2][1]": "diffrn_orient_matrix.ub_21",
+        "diffrn_orient_matrix.ub[2][1]": "diffrn_orient_matrix.ub_21",
+        "diffrn_orient_matrix_UB_22": "diffrn_orient_matrix.ub_22",
+        "diffrn_orient_matrix_ub_22": "diffrn_orient_matrix.ub_22",
+        "diffrn_orient_matrix.UB[2][2]": "diffrn_orient_matrix.ub_22",
+        "diffrn_orient_matrix.ub[2][2]": "diffrn_orient_matrix.ub_22",
+        "diffrn_orient_matrix_UB_23": "diffrn_orient_matrix.ub_23",
+        "diffrn_orient_matrix_ub_23": "diffrn_orient_matrix.ub_23",
+        "diffrn_orient_matrix.UB[2][3]": "diffrn_orient_matrix.ub_23",
+        "diffrn_orient_matrix.ub[2][3]": "diffrn_orient_matrix.ub_23",
+        "diffrn_orient_matrix_UB_31": "diffrn_orient_matrix.ub_31",
+        "diffrn_orient_matrix_ub_31": "diffrn_orient_matrix.ub_31",
+        "diffrn_orient_matrix.UB[3][1]": "diffrn_orient_matrix.ub_31",
+        "diffrn_orient_matrix.ub[3][1]": "diffrn_orient_matrix.ub_31",
+        "diffrn_orient_matrix_UB_32": "diffrn_orient_matrix.ub_32",
+        "diffrn_orient_matrix_ub_32": "diffrn_orient_matrix.ub_32",
+        "diffrn_orient_matrix.UB[3][2]": "diffrn_orient_matrix.ub_32",
+        "diffrn_orient_matrix.ub[3][2]": "diffrn_orient_matrix.ub_32",
+        "diffrn_orient_matrix_UB_33": "diffrn_orient_matrix.ub_33",
+        "diffrn_orient_matrix_ub_33": "diffrn_orient_matrix.ub_33",
+        "diffrn_orient_matrix.UB[3][3]": "diffrn_orient_matrix.ub_33",
+        "diffrn_orient_matrix.ub[3][3]": "diffrn_orient_matrix.ub_33",
+        "diffrn_orient_refln_angle_chi": "diffrn_orient_refln.angle_chi",
+        "diffrn_orient_refln_angle_kappa": "diffrn_orient_refln.angle_kappa",
+        "diffrn_orient_refln_angle_omega": "diffrn_orient_refln.angle_omega",
+        "diffrn_orient_refln_angle_phi": "diffrn_orient_refln.angle_phi",
+        "diffrn_orient_refln_angle_psi": "diffrn_orient_refln.angle_psi",
+        "diffrn_orient_refln_angle_theta": "diffrn_orient_refln.angle_theta",
+        "diffrn_orient_refln_index_h": "diffrn_orient_refln.index_h",
+        "diffrn_orient_refln_index_k": "diffrn_orient_refln.index_k",
+        "diffrn_orient_refln_index_l": "diffrn_orient_refln.index_l",
+        "diffrn_radiation_collimation": "diffrn_radiation.collimation",
+        "diffrn_radiation_filter_edge": "diffrn_radiation.filter_edge",
+        "diffrn_radiation_inhomogeneity": "diffrn_radiation.inhomogeneity",
+        "diffrn_radiation_monochromator": "diffrn_radiation.monochromator",
+        "diffrn_radiation_polarisn_norm": "diffrn_radiation.polarisn_norm",
+        "diffrn_radiation_polarisn_ratio": "diffrn_radiation.polarisn_ratio",
+        "diffrn_radiation_probe": "diffrn_radiation.probe",
+        "diffrn_radiation.type": "diffrn_radiation_wavelength.type",
+        "diffrn_radiation_type": "diffrn_radiation_wavelength.type",
+        "diffrn_radiation.xray_symbol": "diffrn_radiation_wavelength.xray_symbol",
+        "diffrn_radiation_xray_symbol": "diffrn_radiation_wavelength.xray_symbol",
+        "diffrn_radiation_wavelength_details": "diffrn_radiation_wavelength.details",
+        "diffrn_radiation.wavelength_details": "diffrn_radiation_wavelength.details",
+        "diffrn_radiation_wavelength_determination": "diffrn_radiation_wavelength.determination",
+        "diffrn_radiation.wavelength_determination": "diffrn_radiation_wavelength.determination",
+        "diffrn_radiation_wavelength_id": "diffrn_radiation_wavelength.id",
+        "diffrn_radiation.wavelength_id": "diffrn_radiation_wavelength.id",
+        "diffrn_radiation_wavelength": "diffrn_radiation_wavelength.value",
+        "diffrn_radiation_wavelength.wavelength": "diffrn_radiation_wavelength.value",
+        "diffrn_radiation_wavelength_su": "diffrn_radiation_wavelength.value_su",
+        "diffrn_radiation_wavelength.wavelength_su": "diffrn_radiation_wavelength.value_su",
+        "diffrn_radiation_wavelength_wt": "diffrn_radiation_wavelength.wt",
+        "diffrn_refln_angle_chi": "diffrn_refln.angle_chi",
+        "diffrn_refln_angle_kappa": "diffrn_refln.angle_kappa",
+        "diffrn_refln_angle_omega": "diffrn_refln.angle_omega",
+        "diffrn_refln_angle_phi": "diffrn_refln.angle_phi",
+        "diffrn_refln_angle_psi": "diffrn_refln.angle_psi",
+        "diffrn_refln_angle_theta": "diffrn_refln.angle_theta",
+        "diffrn_refln_attenuator_code": "diffrn_refln.attenuator_code",
+        "diffrn_refln_class_code": "diffrn_refln.class_code",
+        "diffrn_refln_counts_bg_1": "diffrn_refln.counts_bg_1",
+        "diffrn_refln_counts_bg_2": "diffrn_refln.counts_bg_2",
+        "diffrn_refln_counts_net": "diffrn_refln.counts_net",
+        "diffrn_refln_counts_peak": "diffrn_refln.counts_peak",
+        "diffrn_refln_counts_total": "diffrn_refln.counts_total",
+        "diffrn_refln_detect_slit_horiz": "diffrn_refln.detect_slit_horiz",
+        "diffrn_refln_detect_slit_vert": "diffrn_refln.detect_slit_vert",
+        "diffrn_refln_elapsed_time": "diffrn_refln.elapsed_time",
+        "diffrn_refln_index_h": "diffrn_refln.index_h",
+        "diffrn_refln_index_k": "diffrn_refln.index_k",
+        "diffrn_refln_index_l": "diffrn_refln.index_l",
+        "diffrn_refln_intensity_net": "diffrn_refln.intensity_net",
+        "diffrn_refln_intensity_u": "diffrn_refln.intensity_net_su",
+        "diffrn_refln_intensity_sigma": "diffrn_refln.intensity_net_su",
+        "diffrn_refln.intensity_sigma": "diffrn_refln.intensity_net_su",
+        "diffrn_refln.intensity_u": "diffrn_refln.intensity_net_su",
+        "diffrn_refln_scale_group_code": "diffrn_refln.scale_group_code",
+        "diffrn_refln_scan_mode": "diffrn_refln.scan_mode",
+        "diffrn_refln_scan_mode_backgd": "diffrn_refln.scan_mode_backgd",
+        "diffrn_refln_scan_rate": "diffrn_refln.scan_rate",
+        "diffrn_refln_scan_time_backgd": "diffrn_refln.scan_time_backgd",
+        "diffrn_refln_scan_width": "diffrn_refln.scan_width",
+        "diffrn_refln_sint/lambda": "diffrn_refln.sin_theta_over_lambda",
+        "diffrn_refln_sint_over_lambda": "diffrn_refln.sin_theta_over_lambda",
+        "diffrn_refln.sint_over_lambda": "diffrn_refln.sin_theta_over_lambda",
+        "diffrn_refln_standard_code": "diffrn_refln.standard_code",
+        "diffrn_refln_wavelength": "diffrn_refln.wavelength",
+        "diffrn_refln_wavelength_id": "diffrn_refln.wavelength_id",
+        "diffrn_reflns_av_R_equivalents": "diffrn_reflns.av_r_equivalents",
+        "diffrn_reflns_av_r_equivalents": "diffrn_reflns.av_r_equivalents",
+        "diffrn_reflns_av_sigmaI_over_netI": "diffrn_reflns.av_suneti_over_neti",
+        "diffrn_reflns_av_sigmai_over_neti": "diffrn_reflns.av_suneti_over_neti",
+        "diffrn_reflns_av_sigmaI/netI": "diffrn_reflns.av_suneti_over_neti",
+        "diffrn_reflns_av_sigmai/neti": "diffrn_reflns.av_suneti_over_neti",
+        "diffrn_reflns.av_unetI/netI": "diffrn_reflns.av_suneti_over_neti",
+        "diffrn_reflns.av_uneti/neti": "diffrn_reflns.av_suneti_over_neti",
+        "diffrn_reflns_av_unetI/netI": "diffrn_reflns.av_suneti_over_neti",
+        "diffrn_reflns_av_uneti/neti": "diffrn_reflns.av_suneti_over_neti",
+        "diffrn_reflns.av_sigmaI_over_netI": "diffrn_reflns.av_suneti_over_neti",
+        "diffrn_reflns.av_sigmai_over_neti": "diffrn_reflns.av_suneti_over_neti",
+        "diffrn_reflns_Laue_measured_fraction_full": "diffrn_reflns.laue_measured_fraction_full",
+        "diffrn_reflns_laue_measured_fraction_full": "diffrn_reflns.laue_measured_fraction_full",
+        "diffrn_reflns_Laue_measured_fraction_max": "diffrn_reflns.laue_measured_fraction_max",
+        "diffrn_reflns_laue_measured_fraction_max": "diffrn_reflns.laue_measured_fraction_max",
+        "diffrn_reflns_limit_h_max": "diffrn_reflns.limit_h_max",
+        "diffrn_reflns_limit_h_min": "diffrn_reflns.limit_h_min",
+        "diffrn_reflns_limit_k_max": "diffrn_reflns.limit_k_max",
+        "diffrn_reflns_limit_k_min": "diffrn_reflns.limit_k_min",
+        "diffrn_reflns_limit_l_max": "diffrn_reflns.limit_l_max",
+        "diffrn_reflns_limit_l_min": "diffrn_reflns.limit_l_min",
+        "diffrn_reflns_number": "diffrn_reflns.number",
+        "diffrn_reflns_point_group_measured_fraction_full": "diffrn_reflns.point_measured_fraction_full",
+        "diffrn_reflns_point_group_measured_fraction_max": "diffrn_reflns.point_measured_fraction_max",
+        "diffrn_reflns_reduction_process": "diffrn_reflns.reduction_process",
+        "diffrn_reflns_resolution_full": "diffrn_reflns.resolution_full",
+        "diffrn_reflns_resolution_max": "diffrn_reflns.resolution_max",
+        "diffrn_reflns_theta_full": "diffrn_reflns.theta_full",
+        "diffrn_reflns_theta_max": "diffrn_reflns.theta_max",
+        "diffrn_reflns_theta_min": "diffrn_reflns.theta_min",
+        "diffrn_reflns_class_av_R_eq": "diffrn_reflns_class.av_r_eq",
+        "diffrn_reflns_class_av_r_eq": "diffrn_reflns_class.av_r_eq",
+        "diffrn_reflns_class_av_uI_over_I": "diffrn_reflns_class.av_sui_over_i",
+        "diffrn_reflns_class_av_ui_over_i": "diffrn_reflns_class.av_sui_over_i",
+        "diffrn_reflns_class.av_uI/I": "diffrn_reflns_class.av_sui_over_i",
+        "diffrn_reflns_class.av_ui/i": "diffrn_reflns_class.av_sui_over_i",
+        "diffrn_reflns_class_av_uI/I": "diffrn_reflns_class.av_sui_over_i",
+        "diffrn_reflns_class_av_ui/i": "diffrn_reflns_class.av_sui_over_i",
+        "diffrn_reflns_class.av_sgI/I": "diffrn_reflns_class.av_sui_over_i",
+        "diffrn_reflns_class.av_sgi/i": "diffrn_reflns_class.av_sui_over_i",
+        "diffrn_reflns_class_av_sgI/I": "diffrn_reflns_class.av_sui_over_i",
+        "diffrn_reflns_class_av_sgi/i": "diffrn_reflns_class.av_sui_over_i",
+        "diffrn_reflns_class_code": "diffrn_reflns_class.code",
+        "diffrn_reflns_class_d_res_high": "diffrn_reflns_class.d_res_high",
+        "diffrn_reflns_class_d_res_low": "diffrn_reflns_class.d_res_low",
+        "diffrn_reflns_class_description": "diffrn_reflns_class.description",
+        "diffrn_reflns_class_number": "diffrn_reflns_class.number",
+        "diffrn_reflns_transf_matrix_11": "diffrn_reflns_transf_matrix.11",
+        "diffrn_reflns.transf_matrix[1][1]": "diffrn_reflns_transf_matrix.11",
+        "diffrn_reflns_transf_matrix_12": "diffrn_reflns_transf_matrix.12",
+        "diffrn_reflns.transf_matrix[1][2]": "diffrn_reflns_transf_matrix.12",
+        "diffrn_reflns_transf_matrix_13": "diffrn_reflns_transf_matrix.13",
+        "diffrn_reflns.transf_matrix[1][3]": "diffrn_reflns_transf_matrix.13",
+        "diffrn_reflns_transf_matrix_21": "diffrn_reflns_transf_matrix.21",
+        "diffrn_reflns.transf_matrix[2][1]": "diffrn_reflns_transf_matrix.21",
+        "diffrn_reflns_transf_matrix_22": "diffrn_reflns_transf_matrix.22",
+        "diffrn_reflns.transf_matrix[2][2]": "diffrn_reflns_transf_matrix.22",
+        "diffrn_reflns_transf_matrix_23": "diffrn_reflns_transf_matrix.23",
+        "diffrn_reflns.transf_matrix[2][3]": "diffrn_reflns_transf_matrix.23",
+        "diffrn_reflns_transf_matrix_31": "diffrn_reflns_transf_matrix.31",
+        "diffrn_reflns.transf_matrix[3][1]": "diffrn_reflns_transf_matrix.31",
+        "diffrn_reflns_transf_matrix_32": "diffrn_reflns_transf_matrix.32",
+        "diffrn_reflns.transf_matrix[3][2]": "diffrn_reflns_transf_matrix.32",
+        "diffrn_reflns_transf_matrix_33": "diffrn_reflns_transf_matrix.33",
+        "diffrn_reflns.transf_matrix[3][3]": "diffrn_reflns_transf_matrix.33",
+        "diffrn_scale_group_code": "diffrn_scale_group.code",
+        "diffrn_scale_group_I_net": "diffrn_scale_group.i_net",
+        "diffrn_scale_group_i_net": "diffrn_scale_group.i_net",
+        "diffrn_source_current": "diffrn_source.current",
+        "diffrn_source": "diffrn_source.description",
+        "diffrn_radiation_source": "diffrn_source.description",
+        "diffrn_source.source": "diffrn_source.description",
+        "diffrn_source_details": "diffrn_source.details",
+        "diffrn_source_make": "diffrn_source.make",
+        "diffrn_source.type": "diffrn_source.make",
+        "diffrn_source_type": "diffrn_source.make",
+        "diffrn_source_power": "diffrn_source.power",
+        "diffrn_source_size": "diffrn_source.size",
+        "diffrn_source_take-off_angle": "diffrn_source.take_off_angle",
+        "diffrn_source.take-off_angle": "diffrn_source.take_off_angle",
+        "diffrn_source_target": "diffrn_source.target",
+        "diffrn_source_voltage": "diffrn_source.voltage",
+        "diffrn_standards_decay_%": "diffrn_standards.decay_percent",
+        "diffrn_standards.decay_%": "diffrn_standards.decay_percent",
+        "diffrn_standards_decay_percent": "diffrn_standards.decay_percent",
+        "diffrn_standards_interval_count": "diffrn_standards.interval_count",
+        "diffrn_standards_interval_time": "diffrn_standards.interval_time",
+        "diffrn_standards_number": "diffrn_standards.number",
+        "diffrn_standards_scale_sigma": "diffrn_standards.scale_su_average",
+        "diffrn_standards.scale_sigma": "diffrn_standards.scale_su_average",
+        "diffrn_standards.scale_u": "diffrn_standards.scale_su_average",
+        "diffrn_standards_scale_u": "diffrn_standards.scale_su_average",
+        "diffrn_standard_refln_code": "diffrn_standard_refln.code",
+        "diffrn_standard_refln.diffrn_id": "diffrn_standard_refln.code",
+        "diffrn_standard_refln_index_h": "diffrn_standard_refln.index_h",
+        "diffrn_standard_refln_index_k": "diffrn_standard_refln.index_k",
+        "diffrn_standard_refln_index_l": "diffrn_standard_refln.index_l",
+        "refln_A_calc": "refln.a_calc",
+        "refln_a_calc": "refln.a_calc",
+        "refln_A_meas": "refln.a_meas",
+        "refln_a_meas": "refln.a_meas",
+        "refln_B_calc": "refln.b_calc",
+        "refln_b_calc": "refln.b_calc",
+        "refln_B_meas": "refln.b_meas",
+        "refln_b_meas": "refln.b_meas",
+        "refln_class_code": "refln.class_code",
+        "refln_d_spacing": "refln.d_spacing",
+        "refln_F_calc": "refln.f_calc",
+        "refln_f_calc": "refln.f_calc",
+        "refln_F_complex": "refln.f_complex",
+        "refln_f_complex": "refln.f_complex",
+        "refln_F_meas": "refln.f_meas",
+        "refln_f_meas": "refln.f_meas",
+        "refln_F_sigma": "refln.f_meas_su",
+        "refln_f_sigma": "refln.f_meas_su",
+        "refln.F_meas_sigma": "refln.f_meas_su",
+        "refln.f_meas_sigma": "refln.f_meas_su",
+        "refln_F_meas_su": "refln.f_meas_su",
+        "refln_f_meas_su": "refln.f_meas_su",
+        "refln_F_squared_calc": "refln.f_squared_calc",
+        "refln_f_squared_calc": "refln.f_squared_calc",
+        "refln_F_squared_meas": "refln.f_squared_meas",
+        "refln_f_squared_meas": "refln.f_squared_meas",
+        "refln_F_squared_sigma": "refln.f_squared_meas_su",
+        "refln_f_squared_sigma": "refln.f_squared_meas_su",
+        "refln.F_squared_sigma": "refln.f_squared_meas_su",
+        "refln.f_squared_sigma": "refln.f_squared_meas_su",
+        "refln_F_squared_meas_su": "refln.f_squared_meas_su",
+        "refln_f_squared_meas_su": "refln.f_squared_meas_su",
+        "refln_include_status": "refln.include_status",
+        "refln_observed_status": "refln.include_status",
+        "refln.observed_status": "refln.include_status",
+        "refln.status": "refln.include_status",
+        "refln_index_h": "refln.index_h",
+        "refln_index_k": "refln.index_k",
+        "refln_index_l": "refln.index_l",
+        "refln_intensity_calc": "refln.intensity_calc",
+        "refln_intensity_meas": "refln.intensity_meas",
+        "refln_intensity_meas_su": "refln.intensity_meas_su",
+        "refln.intensity_sigma": "refln.intensity_meas_su",
+        "refln_intensity_sigma": "refln.intensity_meas_su",
+        "refln_Lp_factor": "refln.lp_factor",
+        "refln_lp_factor": "refln.lp_factor",
+        "refln_mean_path_length_tbar": "refln.mean_path_length_tbar",
+        "refln_phase_calc": "refln.phase_calc",
+        "refln_phase_meas": "refln.phase_meas",
+        "refln_refinement_status": "refln.refinement_status",
+        "refln_scale_group_code": "refln.scale_group_code",
+        "refln_sint/lambda": "refln.sin_theta_over_lambda",
+        "refln_sin_theta_over_lambda": "refln.sin_theta_over_lambda",
+        "refln.sint_over_lambda": "refln.sin_theta_over_lambda",
+        "refln_symmetry_epsilon": "refln.symmetry_epsilon",
+        "refln_symmetry_multiplicity": "refln.symmetry_multiplicity",
+        "refln_wavelength": "refln.wavelength",
+        "refln_wavelength_id": "refln.wavelength_id",
+        "reflns_d_resolution_high": "reflns.d_resolution_high",
+        "reflns_d_resolution_low": "reflns.d_resolution_low",
+        "reflns_Friedel_coverage": "reflns.friedel_coverage",
+        "reflns_friedel_coverage": "reflns.friedel_coverage",
+        "reflns_Friedel_fraction_full": "reflns.friedel_fraction_full",
+        "reflns_friedel_fraction_full": "reflns.friedel_fraction_full",
+        "reflns_Friedel_fraction_max": "reflns.friedel_fraction_max",
+        "reflns_friedel_fraction_max": "reflns.friedel_fraction_max",
+        "reflns_limit_h_max": "reflns.limit_h_max",
+        "reflns_limit_h_min": "reflns.limit_h_min",
+        "reflns_limit_k_max": "reflns.limit_k_max",
+        "reflns_limit_k_min": "reflns.limit_k_min",
+        "reflns_limit_l_max": "reflns.limit_l_max",
+        "reflns_limit_l_min": "reflns.limit_l_min",
+        "reflns_number_gt": "reflns.number_gt",
+        "reflns_number_observed": "reflns.number_gt",
+        "reflns_number_obs": "reflns.number_gt",
+        "reflns.number_obs": "reflns.number_gt",
+        "reflns_number_total": "reflns.number_total",
+        "reflns_number_all": "reflns.number_total",
+        "reflns.number_all": "reflns.number_total",
+        "reflns_special_details": "reflns.special_details",
+        "reflns.details": "reflns.special_details",
+        "reflns_threshold_expression": "reflns.threshold_expression",
+        "reflns_observed_criterion": "reflns.threshold_expression",
+        "reflns.observed_criterion": "reflns.threshold_expression",
+        "reflns_class_code": "reflns_class.code",
+        "reflns_class_d_res_high": "reflns_class.d_res_high",
+        "reflns_class_d_res_low": "reflns_class.d_res_low",
+        "reflns_class_description": "reflns_class.description",
+        "reflns_class_number_observed": "reflns_class.number_gt",
+        "reflns_class_number_gt": "reflns_class.number_gt",
+        "reflns_class_number_total": "reflns_class.number_total",
+        "reflns_class_R_factor_all": "reflns_class.r_factor_all",
+        "reflns_class_r_factor_all": "reflns_class.r_factor_all",
+        "reflns_class_R_factor_gt": "reflns_class.r_factor_gt",
+        "reflns_class_r_factor_gt": "reflns_class.r_factor_gt",
+        "reflns_class_R_factor_observed": "reflns_class.r_factor_gt",
+        "reflns_class_r_factor_observed": "reflns_class.r_factor_gt",
+        "reflns_class_R_Fsqd_factor": "reflns_class.r_fsqd_factor",
+        "reflns_class_r_fsqd_factor": "reflns_class.r_fsqd_factor",
+        "reflns_class_R_I_factor": "reflns_class.r_i_factor",
+        "reflns_class_r_i_factor": "reflns_class.r_i_factor",
+        "reflns_class_wR_factor_all": "reflns_class.wr_factor_all",
+        "reflns_class_wr_factor_all": "reflns_class.wr_factor_all",
+        "reflns_scale_group_code": "reflns_scale.group_code",
+        "reflns_scale_meas_F": "reflns_scale.meas_f",
+        "reflns_scale_meas_f": "reflns_scale.meas_f",
+        "reflns_scale_meas_F_squared": "reflns_scale.meas_f_squared",
+        "reflns_scale_meas_f_squared": "reflns_scale.meas_f_squared",
+        "reflns_scale_meas_intensity": "reflns_scale.meas_intensity",
+        "reflns_shell_d_res_high": "reflns_shell.d_res_high",
+        "reflns_shell_d_res_low": "reflns_shell.d_res_low",
+        "reflns_shell_meanI_over_uI_all": "reflns_shell.meani_over_sui_all",
+        "reflns_shell_meani_over_ui_all": "reflns_shell.meani_over_sui_all",
+        "reflns_shell_meanI_over_sigI_all": "reflns_shell.meani_over_sui_all",
+        "reflns_shell_meani_over_sigi_all": "reflns_shell.meani_over_sui_all",
+        "reflns_shell.meanI_over_sigI_all": "reflns_shell.meani_over_sui_all",
+        "reflns_shell.meani_over_sigi_all": "reflns_shell.meani_over_sui_all",
+        "reflns_shell.meanI_over_uI_all": "reflns_shell.meani_over_sui_all",
+        "reflns_shell.meani_over_ui_all": "reflns_shell.meani_over_sui_all",
+        "reflns_shell_meanI_over_sigI_obs": "reflns_shell.meani_over_sui_gt",
+        "reflns_shell_meani_over_sigi_obs": "reflns_shell.meani_over_sui_gt",
+        "reflns_shell.meanI_over_sigI_obs": "reflns_shell.meani_over_sui_gt",
+        "reflns_shell.meani_over_sigi_obs": "reflns_shell.meani_over_sui_gt",
+        "reflns_shell.meanI_over_sigI_gt": "reflns_shell.meani_over_sui_gt",
+        "reflns_shell.meani_over_sigi_gt": "reflns_shell.meani_over_sui_gt",
+        "reflns_shell_meanI_over_sigI_gt": "reflns_shell.meani_over_sui_gt",
+        "reflns_shell_meani_over_sigi_gt": "reflns_shell.meani_over_sui_gt",
+        "reflns_shell.meanI_over_uI_gt": "reflns_shell.meani_over_sui_gt",
+        "reflns_shell.meani_over_ui_gt": "reflns_shell.meani_over_sui_gt",
+        "reflns_shell_meanI_over_uI_gt": "reflns_shell.meani_over_sui_gt",
+        "reflns_shell_meani_over_ui_gt": "reflns_shell.meani_over_sui_gt",
+        "reflns_shell_number_measured_all": "reflns_shell.number_measured_all",
+        "reflns_shell_number_measured_obs": "reflns_shell.number_measured_gt",
+        "reflns_shell.number_measured_obs": "reflns_shell.number_measured_gt",
+        "reflns_shell_number_measured_gt": "reflns_shell.number_measured_gt",
+        "reflns_shell_number_possible": "reflns_shell.number_possible",
+        "reflns_shell.number_possible_all": "reflns_shell.number_possible",
+        "reflns_shell_number_unique_all": "reflns_shell.number_unique_all",
+        "reflns_shell_number_unique_gt": "reflns_shell.number_unique_gt",
+        "reflns_shell_number_unique_obs": "reflns_shell.number_unique_gt",
+        "reflns_shell.number_unique_obs": "reflns_shell.number_unique_gt",
+        "reflns_shell_percent_possible_all": "reflns_shell.percent_possible_all",
+        "reflns_shell_percent_possible_gt": "reflns_shell.percent_possible_gt",
+        "reflns_shell_percent_possible_obs": "reflns_shell.percent_possible_gt",
+        "reflns_shell.percent_possible_obs": "reflns_shell.percent_possible_gt",
+        "reflns_shell_Rmerge_F_all": "reflns_shell.rmerge_f_all",
+        "reflns_shell_rmerge_f_all": "reflns_shell.rmerge_f_all",
+        "reflns_shell_Rmerge_F_obs": "reflns_shell.rmerge_f_gt",
+        "reflns_shell_rmerge_f_obs": "reflns_shell.rmerge_f_gt",
+        "reflns_shell.Rmerge_F_obs": "reflns_shell.rmerge_f_gt",
+        "reflns_shell.rmerge_f_obs": "reflns_shell.rmerge_f_gt",
+        "reflns_shell_Rmerge_F_gt": "reflns_shell.rmerge_f_gt",
+        "reflns_shell_rmerge_f_gt": "reflns_shell.rmerge_f_gt",
+        "reflns_shell_Rmerge_I_all": "reflns_shell.rmerge_i_all",
+        "reflns_shell_rmerge_i_all": "reflns_shell.rmerge_i_all",
+        "reflns_shell_Rmerge_I_obs": "reflns_shell.rmerge_i_gt",
+        "reflns_shell_rmerge_i_obs": "reflns_shell.rmerge_i_gt",
+        "reflns_shell.Rmerge_I_obs": "reflns_shell.rmerge_i_gt",
+        "reflns_shell.rmerge_i_obs": "reflns_shell.rmerge_i_gt",
+        "reflns_shell_Rmerge_I_gt": "reflns_shell.rmerge_i_gt",
+        "reflns_shell_rmerge_i_gt": "reflns_shell.rmerge_i_gt",
+        "exptl_crystals_number": "exptl.crystals_number",
+        "exptl_special_details": "exptl.special_details",
+        "exptl.details": "exptl.special_details",
+        "exptl_transmission_factor_max": "exptl.transmission_factor_max",
+        "exptl_transmission_factor_min": "exptl.transmission_factor_min",
+        "chemical_absolute_configuration": "chemical.absolute_configuration",
+        "chemical_compound_source": "chemical.compound_source",
+        "chemical_enantioexcess_bulk": "chemical.enantioexcess_bulk",
+        "chemical_enantioexcess_bulk_technique": "chemical.enantioexcess_bulk_technique",
+        "chemical_enantioexcess_crystal": "chemical.enantioexcess_crystal",
+        "chemical_enantioexcess_crystal_technique": "chemical.enantioexcess_crystal_technique",
+        "chemical_identifier_InChI": "chemical.identifier_inchi",
+        "chemical_identifier_inchi": "chemical.identifier_inchi",
+        "chemical_identifier_InChI_key": "chemical.identifier_inchi_key",
+        "chemical_identifier_inchi_key": "chemical.identifier_inchi_key",
+        "chemical_identifier_InChI_version": "chemical.identifier_inchi_version",
+        "chemical_identifier_inchi_version": "chemical.identifier_inchi_version",
+        "chemical_melting_point": "chemical.melting_point",
+        "chemical_melting_point_gt": "chemical.melting_point_gt",
+        "chemical_melting_point_lt": "chemical.melting_point_lt",
+        "chemical_name_common": "chemical.name_common",
+        "chemical_name_mineral": "chemical.name_mineral",
+        "chemical_name_structure_type": "chemical.name_structure_type",
+        "chemical_name_systematic": "chemical.name_systematic",
+        "chemical_optical_rotation": "chemical.optical_rotation",
+        "chemical_properties_biological": "chemical.properties_biological",
+        "chemical_properties_physical": "chemical.properties_physical",
+        "chemical_temperature_decomposition": "chemical.temperature_decomposition",
+        "chemical_temperature_decomposition_su": "chemical.temperature_decomposition_su",
+        "chemical.temperature_decomposition_esd": "chemical.temperature_decomposition_su",
+        "chemical_temperature_decomposition_gt": "chemical.temperature_decomposition_gt",
+        "chemical_temperature_decomposition_lt": "chemical.temperature_decomposition_lt",
+        "chemical_temperature_sublimation": "chemical.temperature_sublimation",
+        "chemical_temperature_sublimation_su": "chemical.temperature_sublimation_su",
+        "chemical.temperature_sublimation_esd": "chemical.temperature_sublimation_su",
+        "chemical_temperature_sublimation_gt": "chemical.temperature_sublimation_gt",
+        "chemical_temperature_sublimation_lt": "chemical.temperature_sublimation_lt",
+        "chemical_conn_atom_charge": "chemical_conn_atom.charge",
+        "chemical_conn_atom_display_x": "chemical_conn_atom.display_x",
+        "chemical_conn_atom_display_y": "chemical_conn_atom.display_y",
+        "chemical_conn_atom_NCA": "chemical_conn_atom.nca",
+        "chemical_conn_atom_nca": "chemical_conn_atom.nca",
+        "chemical_conn_atom_NH": "chemical_conn_atom.nh",
+        "chemical_conn_atom_nh": "chemical_conn_atom.nh",
+        "chemical_conn_atom_number": "chemical_conn_atom.number",
+        "chemical_conn_atom_type_symbol": "chemical_conn_atom.type_symbol",
+        "chemical_conn_bond_atom_1": "chemical_conn_bond.atom_1",
+        "chem_comp_bond.atom_id_1": "chemical_conn_bond.atom_1",
+        "chemical_conn_bond_atom_2": "chemical_conn_bond.atom_2",
+        "chem_comp_bond.atom_id_2": "chemical_conn_bond.atom_2",
+        "chem_comp_bond.value_dist": "chemical_conn_bond.distance",
+        "chemical_conn_bond_type": "chemical_conn_bond.type",
+        "chem_comp_bond.value_order": "chemical_conn_bond.type",
+        "chemical_formula_analytical": "chemical_formula.analytical",
+        "chemical_formula_IUPAC": "chemical_formula.iupac",
+        "chemical_formula_iupac": "chemical_formula.iupac",
+        "chemical_formula_moiety": "chemical_formula.moiety",
+        "chemical_formula_structural": "chemical_formula.structural",
+        "chemical_formula_sum": "chemical_formula.sum",
+        "chemical_formula_weight": "chemical_formula.weight",
+        "chemical_formula_weight_meas": "chemical_formula.weight_meas",
+        "exptl_absorpt_coefficient_mu": "exptl_absorpt.coefficient_mu",
+        "exptl.absorpt_coefficient_mu": "exptl_absorpt.coefficient_mu",
+        "exptl_absorpt_correction_T_max": "exptl_absorpt.correction_t_max",
+        "exptl_absorpt_correction_t_max": "exptl_absorpt.correction_t_max",
+        "exptl.absorpt_correction_T_max": "exptl_absorpt.correction_t_max",
+        "exptl.absorpt_correction_t_max": "exptl_absorpt.correction_t_max",
+        "exptl_absorpt_correction_T_min": "exptl_absorpt.correction_t_min",
+        "exptl_absorpt_correction_t_min": "exptl_absorpt.correction_t_min",
+        "exptl.absorpt_correction_T_min": "exptl_absorpt.correction_t_min",
+        "exptl.absorpt_correction_t_min": "exptl_absorpt.correction_t_min",
+        "exptl_absorpt_correction_type": "exptl_absorpt.correction_type",
+        "exptl.absorpt_correction_type": "exptl_absorpt.correction_type",
+        "exptl_absorpt_process_details": "exptl_absorpt.process_details",
+        "exptl.absorpt_process_details": "exptl_absorpt.process_details",
+        "exptl_absorpt_special_details": "exptl_absorpt.special_details",
+        "exptl_crystal_colour": "exptl_crystal.colour",
+        "exptl_crystal_density_diffrn": "exptl_crystal.density_diffrn",
+        "exptl_crystal_density_meas": "exptl_crystal.density_meas",
+        "exptl_crystal_density_meas_su": "exptl_crystal.density_meas_su",
+        "exptl_crystal.density_meas_esd": "exptl_crystal.density_meas_su",
+        "exptl_crystal_density_meas_gt": "exptl_crystal.density_meas_gt",
+        "exptl_crystal_density_meas_lt": "exptl_crystal.density_meas_lt",
+        "exptl_crystal_density_meas_temp": "exptl_crystal.density_meas_temp",
+        "exptl_crystal_density_meas_temp_su": "exptl_crystal.density_meas_temp_su",
+        "exptl_crystal.density_meas_temp_esd": "exptl_crystal.density_meas_temp_su",
+        "exptl_crystal_density_meas_temp_gt": "exptl_crystal.density_meas_temp_gt",
+        "exptl_crystal_density_meas_temp_lt": "exptl_crystal.density_meas_temp_lt",
+        "exptl_crystal_density_method": "exptl_crystal.density_method",
+        "exptl_crystal_description": "exptl_crystal.description",
+        "exptl_crystal_F_000": "exptl_crystal.f_000",
+        "exptl_crystal_f_000": "exptl_crystal.f_000",
+        "exptl_crystal_id": "exptl_crystal.id",
+        "exptl_crystal_preparation": "exptl_crystal.preparation",
+        "exptl_crystal_pressure_history": "exptl_crystal.pressure_history",
+        "exptl_crystal_recrystallization_method": "exptl_crystal.recrystallization_method",
+        "exptl_crystal_size_length": "exptl_crystal.size_length",
+        "exptl_crystal_size_max": "exptl_crystal.size_max",
+        "exptl_crystal_size_mid": "exptl_crystal.size_mid",
+        "exptl_crystal_size_min": "exptl_crystal.size_min",
+        "exptl_crystal_size_rad": "exptl_crystal.size_rad",
+        "exptl_crystal_thermal_history": "exptl_crystal.thermal_history",
+        "exptl_crystal_colour_lustre": "exptl_crystal_appearance.general",
+        "exptl_crystal.colour_lustre": "exptl_crystal_appearance.general",
+        "exptl_crystal_colour_primary": "exptl_crystal_appearance.hue",
+        "exptl_crystal.colour_primary": "exptl_crystal_appearance.hue",
+        "exptl_crystal_colour_modifier": "exptl_crystal_appearance.intensity",
+        "exptl_crystal.colour_modifier": "exptl_crystal_appearance.intensity",
+        "exptl_crystal_face_diffr_chi": "exptl_crystal_face.diffr_chi",
+        "exptl_crystal_face_diffr_kappa": "exptl_crystal_face.diffr_kappa",
+        "exptl_crystal_face_diffr_phi": "exptl_crystal_face.diffr_phi",
+        "exptl_crystal_face_diffr_psi": "exptl_crystal_face.diffr_psi",
+        "exptl_crystal_face_index_h": "exptl_crystal_face.index_h",
+        "exptl_crystal_face_index_k": "exptl_crystal_face.index_k",
+        "exptl_crystal_face_index_l": "exptl_crystal_face.index_l",
+        "exptl_crystal_face_perp_dist": "exptl_crystal_face.perp_dist",
+        "space_group_crystal_system": "space_group.crystal_system",
+        "space_group_IT_number": "space_group.it_number",
+        "space_group_it_number": "space_group.it_number",
+        "symmetry.Int_Tables_number": "space_group.it_number",
+        "symmetry.int_tables_number": "space_group.it_number",
+        "symmetry_Int_Tables_number": "space_group.it_number",
+        "symmetry_int_tables_number": "space_group.it_number",
+        "space_group_name_H-M_alt": "space_group.name_h-m_alt",
+        "space_group_name_h-m_alt": "space_group.name_h-m_alt",
+        "_symmetry_space_group_name_H-M_alt": "space_group.name_h-m_alt",
+        "_symmetry_space_group_name_h-m_alt": "space_group.name_h-m_alt",
+        "symmetry.space_group_name_H-M": "space_group.name_h-m_full",
+        "symmetry.space_group_name_h-m": "space_group.name_h-m_full",
+        "symmetry_space_group_name_H-M": "space_group.name_h-m_full",
+        "symmetry_space_group_name_h-m": "space_group.name_h-m_full",
+        "space_group_name_Hall": "space_group.name_hall",
+        "space_group_name_hall": "space_group.name_hall",
+        "symmetry_space_group_name_Hall": "space_group.name_hall",
+        "symmetry_space_group_name_hall": "space_group.name_hall",
+        "symmetry.space_group_name_Hall": "space_group.name_hall",
+        "symmetry.space_group_name_hall": "space_group.name_hall",
+        "symmetry.cell_setting": "space_group.crystal_system",
+        "symmetry_cell_setting": "space_group.crystal_system",
+        "space_group_symop_id": "space_group_symop.id",
+        "symmetry_equiv.pos_site_id": "space_group_symop.id",
+        "symmetry_equiv_pos_site_id": "space_group_symop.id",
+        "space_group_symop_operation_xyz": "space_group_symop.operation_xyz",
+        "symmetry_equiv.pos_as_xyz": "space_group_symop.operation_xyz",
+        "symmetry_equiv_pos_as_xyz": "space_group_symop.operation_xyz",
+        "geom_special_details": "geom.special_details",
+        "geom.details": "geom.special_details",
+        "geom_angle_atom_site_label_1": "geom_angle.atom_site_label_1",
+        "geom_angle.atom_site_id_1": "geom_angle.atom_site_label_1",
+        "geom_angle_atom_site_label_2": "geom_angle.atom_site_label_2",
+        "geom_angle.atom_site_id_2": "geom_angle.atom_site_label_2",
+        "geom_angle_atom_site_label_3": "geom_angle.atom_site_label_3",
+        "geom_angle.atom_site_id_3": "geom_angle.atom_site_label_3",
+        "geom_angle_publ_flag": "geom_angle.publ_flag",
+        "geom_angle_site_symmetry_1": "geom_angle.site_symmetry_1",
+        "geom_angle_site_symmetry_2": "geom_angle.site_symmetry_2",
+        "geom_angle_site_symmetry_3": "geom_angle.site_symmetry_3",
+        "geom_angle": "geom_angle.value",
+        "geom_angle_su": "geom_angle.value_su",
+        "geom_angle.value_esd": "geom_angle.value_su",
+        "geom_bond_atom_site_label_1": "geom_bond.atom_site_label_1",
+        "geom_bond.atom_site_id_1": "geom_bond.atom_site_label_1",
+        "geom_bond_atom_site_label_2": "geom_bond.atom_site_label_2",
+        "geom_bond.atom_site_id_2": "geom_bond.atom_site_label_2",
+        "geom_bond_distance": "geom_bond.distance",
+        "geom_bond.dist": "geom_bond.distance",
+        "geom_bond_distance_su": "geom_bond.distance_su",
+        "geom_bond.dist_esd": "geom_bond.distance_su",
+        "geom_bond_multiplicity": "geom_bond.multiplicity",
+        "geom_bond_publ_flag": "geom_bond.publ_flag",
+        "geom_bond_site_symmetry_1": "geom_bond.site_symmetry_1",
+        "geom_bond_site_symmetry_2": "geom_bond.site_symmetry_2",
+        "geom_bond_valence": "geom_bond.valence",
+        "geom_contact_atom_site_label_1": "geom_contact.atom_site_label_1",
+        "geom_contact.atom_site_id_1": "geom_contact.atom_site_label_1",
+        "geom_contact_atom_site_label_2": "geom_contact.atom_site_label_2",
+        "geom_contact.atom_site_id_2": "geom_contact.atom_site_label_2",
+        "geom_contact_distance": "geom_contact.distance",
+        "geom_contact.dist": "geom_contact.distance",
+        "geom_contact_distance_su": "geom_contact.distance_su",
+        "geom_contact.dist_esd": "geom_contact.distance_su",
+        "geom_contact_publ_flag": "geom_contact.publ_flag",
+        "geom_contact_site_symmetry_1": "geom_contact.site_symmetry_1",
+        "geom_contact_site_symmetry_2": "geom_contact.site_symmetry_2",
+        "geom_hbond_angle_DHA": "geom_hbond.angle_dha",
+        "geom_hbond_angle_dha": "geom_hbond.angle_dha",
+        "geom_hbond_angle_DHA_su": "geom_hbond.angle_dha_su",
+        "geom_hbond_angle_dha_su": "geom_hbond.angle_dha_su",
+        "geom_hbond.angle_DHA_esd": "geom_hbond.angle_dha_su",
+        "geom_hbond.angle_dha_esd": "geom_hbond.angle_dha_su",
+        "geom_hbond_atom_site_label_A": "geom_hbond.atom_site_label_a",
+        "geom_hbond_atom_site_label_a": "geom_hbond.atom_site_label_a",
+        "geom_hbond.atom_site_id_A": "geom_hbond.atom_site_label_a",
+        "geom_hbond.atom_site_id_a": "geom_hbond.atom_site_label_a",
+        "geom_hbond_atom_site_label_D": "geom_hbond.atom_site_label_d",
+        "geom_hbond_atom_site_label_d": "geom_hbond.atom_site_label_d",
+        "geom_hbond.atom_site_id_D": "geom_hbond.atom_site_label_d",
+        "geom_hbond.atom_site_id_d": "geom_hbond.atom_site_label_d",
+        "geom_hbond_atom_site_label_H": "geom_hbond.atom_site_label_h",
+        "geom_hbond_atom_site_label_h": "geom_hbond.atom_site_label_h",
+        "geom_hbond.atom_site_id_H": "geom_hbond.atom_site_label_h",
+        "geom_hbond.atom_site_id_h": "geom_hbond.atom_site_label_h",
+        "geom_hbond_distance_DA": "geom_hbond.distance_da",
+        "geom_hbond_distance_da": "geom_hbond.distance_da",
+        "geom_hbond.dist_DA": "geom_hbond.distance_da",
+        "geom_hbond.dist_da": "geom_hbond.distance_da",
+        "geom_hbond_distance_DA_su": "geom_hbond.distance_da_su",
+        "geom_hbond_distance_da_su": "geom_hbond.distance_da_su",
+        "geom_hbond.dist_DA_esd": "geom_hbond.distance_da_su",
+        "geom_hbond.dist_da_esd": "geom_hbond.distance_da_su",
+        "geom_hbond_distance_DH": "geom_hbond.distance_dh",
+        "geom_hbond_distance_dh": "geom_hbond.distance_dh",
+        "geom_hbond.dist_DH": "geom_hbond.distance_dh",
+        "geom_hbond.dist_dh": "geom_hbond.distance_dh",
+        "geom_hbond_distance_DH_su": "geom_hbond.distance_dh_su",
+        "geom_hbond_distance_dh_su": "geom_hbond.distance_dh_su",
+        "geom_hbond.dist_DH_esd": "geom_hbond.distance_dh_su",
+        "geom_hbond.dist_dh_esd": "geom_hbond.distance_dh_su",
+        "geom_hbond_distance_HA": "geom_hbond.distance_ha",
+        "geom_hbond_distance_ha": "geom_hbond.distance_ha",
+        "geom_hbond.dist_HA": "geom_hbond.distance_ha",
+        "geom_hbond.dist_ha": "geom_hbond.distance_ha",
+        "geom_hbond_distance_HA_su": "geom_hbond.distance_ha_su",
+        "geom_hbond_distance_ha_su": "geom_hbond.distance_ha_su",
+        "geom_hbond.dist_HA_esd": "geom_hbond.distance_ha_su",
+        "geom_hbond.dist_ha_esd": "geom_hbond.distance_ha_su",
+        "geom_hbond_publ_flag": "geom_hbond.publ_flag",
+        "geom_hbond_site_symmetry_A": "geom_hbond.site_symmetry_a",
+        "geom_hbond_site_symmetry_a": "geom_hbond.site_symmetry_a",
+        "geom_hbond_site_symmetry_D": "geom_hbond.site_symmetry_d",
+        "geom_hbond_site_symmetry_d": "geom_hbond.site_symmetry_d",
+        "geom_hbond_site_symmetry_H": "geom_hbond.site_symmetry_h",
+        "geom_hbond_site_symmetry_h": "geom_hbond.site_symmetry_h",
+        "geom_torsion": "geom_torsion.angle",
+        "geom_torsion.value": "geom_torsion.angle",
+        "geom_torsion_su": "geom_torsion.angle_su",
+        "geom_torsion.value_esd": "geom_torsion.angle_su",
+        "geom_torsion_atom_site_label_1": "geom_torsion.atom_site_label_1",
+        "geom_torsion.atom_site_id_1": "geom_torsion.atom_site_label_1",
+        "geom_torsion_atom_site_label_2": "geom_torsion.atom_site_label_2",
+        "geom_torsion.atom_site_id_2": "geom_torsion.atom_site_label_2",
+        "geom_torsion_atom_site_label_3": "geom_torsion.atom_site_label_3",
+        "geom_torsion.atom_site_id_3": "geom_torsion.atom_site_label_3",
+        "geom_torsion_atom_site_label_4": "geom_torsion.atom_site_label_4",
+        "geom_torsion.atom_site_id_4": "geom_torsion.atom_site_label_4",
+        "geom_torsion_publ_flag": "geom_torsion.publ_flag",
+        "geom_torsion_site_symmetry_1": "geom_torsion.site_symmetry_1",
+        "geom_torsion_site_symmetry_2": "geom_torsion.site_symmetry_2",
+        "geom_torsion_site_symmetry_3": "geom_torsion.site_symmetry_3",
+        "geom_torsion_site_symmetry_4": "geom_torsion.site_symmetry_4",
+        "valence_param_atom_1": "valence_param.atom_1",
+        "valence_param_atom_1_valence": "valence_param.atom_1_valence",
+        "valence_param_atom_2": "valence_param.atom_2",
+        "valence_param_atom_2_valence": "valence_param.atom_2_valence",
+        "valence_param_B": "valence_param.b",
+        "valence_param_b": "valence_param.b",
+        "valence_param_details": "valence_param.details",
+        "valence_param_id": "valence_param.id",
+        "valence_param_ref_id": "valence_param.ref_id",
+        "valence_param_Ro": "valence_param.ro",
+        "valence_param_ro": "valence_param.ro",
+        "valence_ref_id": "valence_ref.id",
+        "valence_ref_reference": "valence_ref.reference",
+        "audit_block_code": "audit.block_code",
+        "audit.revision_id": "audit.block_code",
+        "audit_block_DOI": "audit.block_doi",
+        "audit_block_doi": "audit.block_doi",
+        "audit_creation_date": "audit.creation_date",
+        "audit_creation_method": "audit.creation_method",
+        "audit_update_record": "audit.update_record",
+        "audit_author_address": "audit_author.address",
+        "audit_author_name": "audit_author.name",
+        "audit_conform_dict_location": "audit_conform.dict_location",
+        "audit_conform_dict_name": "audit_conform.dict_name",
+        "audit_conform_dict_version": "audit_conform.dict_version",
+        "audit_contact_author_address": "audit_contact_author.address",
+        "audit_contact_author_email": "audit_contact_author.email",
+        "audit_contact_author_fax": "audit_contact_author.fax",
+        "audit_contact_author_name": "audit_contact_author.name",
+        "audit_contact_author": "audit_contact_author.name",
+        "audit_contact_author_phone": "audit_contact_author.phone",
+        "audit_link_block_code": "audit_link.block_code",
+        "audit_link_block_description": "audit_link.block_description",
+        "citation_abstract": "citation.abstract",
+        "citation_abstract_id_CAS": "citation.abstract_id_cas",
+        "citation_abstract_id_cas": "citation.abstract_id_cas",
+        "citation_book_id_ISBN": "citation.book_id_isbn",
+        "citation_book_id_isbn": "citation.book_id_isbn",
+        "citation_book_publisher": "citation.book_publisher",
+        "citation_book_publisher_city": "citation.book_publisher_city",
+        "citation_book_title": "citation.book_title",
+        "citation_coordinate_linkage": "citation.coordinate_linkage",
+        "citation_country": "citation.country",
+        "citation_database_id_CSD": "citation.database_id_csd",
+        "citation_database_id_csd": "citation.database_id_csd",
+        "citation_database_id_Medline": "citation.database_id_medline",
+        "citation_database_id_medline": "citation.database_id_medline",
+        "citation_DOI": "citation.doi",
+        "citation_doi": "citation.doi",
+        "citation_id": "citation.id",
+        "citation_journal_abbrev": "citation.journal_abbrev",
+        "citation_journal_full": "citation.journal_full",
+        "citation_journal_id_ASTM": "citation.journal_id_astm",
+        "citation_journal_id_astm": "citation.journal_id_astm",
+        "citation_journal_id_CSD": "citation.journal_id_csd",
+        "citation_journal_id_csd": "citation.journal_id_csd",
+        "citation_journal_id_ISSN": "citation.journal_id_issn",
+        "citation_journal_id_issn": "citation.journal_id_issn",
+        "citation_journal_issue": "citation.journal_issue",
+        "citation_journal_volume": "citation.journal_volume",
+        "citation_language": "citation.language",
+        "citation_page_first": "citation.page_first",
+        "citation_page_last": "citation.page_last",
+        "citation_publisher": "citation.publisher",
+        "citation_special_details": "citation.special_details",
+        "citation.details": "citation.special_details",
+        "citation_title": "citation.title",
+        "citation_year": "citation.year",
+        "citation_author_citation_id": "citation_author.citation_id",
+        "citation_author_name": "citation_author.name",
+        "citation_author_ordinal": "citation_author.ordinal",
+        "citation_editor_citation_id": "citation_editor.citation_id",
+        "citation_editor": "citation_editor.name",
+        "citation_editor_name": "citation_editor.name",
+        "citation_editor_ordinal": "citation_editor.ordinal",
+        "computing_cell_refinement": "computing.cell_refinement",
+        "computing_data_collection": "computing.diffrn_collection",
+        "computing.data_collection": "computing.diffrn_collection",
+        "computing_data_reduction": "computing.diffrn_reduction",
+        "computing.data_reduction": "computing.diffrn_reduction",
+        "computing_molecular_graphics": "computing.molecular_graphics",
+        "computing_publication_material": "computing.publication_material",
+        "computing_structure_refinement": "computing.structure_refinement",
+        "computing_structure_solution": "computing.structure_solution",
+        "database_CSD_history": "database.csd_history",
+        "database_csd_history": "database.csd_history",
+        "database_dataset_DOI": "database.dataset_doi",
+        "database_dataset_doi": "database.dataset_doi",
+        "database_journal_ASTM": "database.journal_astm",
+        "database_journal_astm": "database.journal_astm",
+        "database_journal_CSD": "database.journal_csd",
+        "database_journal_csd": "database.journal_csd",
+        "database_code_CAS": "database_code.cas",
+        "database_code_cas": "database_code.cas",
+        "database.code_CAS": "database_code.cas",
+        "database.code_cas": "database_code.cas",
+        "database_code_COD": "database_code.cod",
+        "database_code_cod": "database_code.cod",
+        "database.code_COD": "database_code.cod",
+        "database.code_cod": "database_code.cod",
+        "database_code_CSD": "database_code.csd",
+        "database_code_csd": "database_code.csd",
+        "database.code_CSD": "database_code.csd",
+        "database.code_csd": "database_code.csd",
+        "database_code_depnum_CCDC_archive": "database_code.depnum_ccdc_archive",
+        "database_code_depnum_ccdc_archive": "database_code.depnum_ccdc_archive",
+        "database.code_depnum_CCDC_archive": "database_code.depnum_ccdc_archive",
+        "database.code_depnum_ccdc_archive": "database_code.depnum_ccdc_archive",
+        "database_code_depnum_CCDC_fiz": "database_code.depnum_ccdc_fiz",
+        "database_code_depnum_ccdc_fiz": "database_code.depnum_ccdc_fiz",
+        "database.code_depnum_CCDC_fiz": "database_code.depnum_ccdc_fiz",
+        "database.code_depnum_ccdc_fiz": "database_code.depnum_ccdc_fiz",
+        "database_code_depnum_CCDC_journal": "database_code.depnum_ccdc_journal",
+        "database_code_depnum_ccdc_journal": "database_code.depnum_ccdc_journal",
+        "database.code_depnum_CCDC_journal": "database_code.depnum_ccdc_journal",
+        "database.code_depnum_ccdc_journal": "database_code.depnum_ccdc_journal",
+        "database_code_ICSD": "database_code.icsd",
+        "database_code_icsd": "database_code.icsd",
+        "database.code_ICSD": "database_code.icsd",
+        "database.code_icsd": "database_code.icsd",
+        "database_code_MDF": "database_code.mdf",
+        "database_code_mdf": "database_code.mdf",
+        "database.code_MDF": "database_code.mdf",
+        "database.code_mdf": "database_code.mdf",
+        "database_code_NBS": "database_code.nbs",
+        "database_code_nbs": "database_code.nbs",
+        "database.code_NBS": "database_code.nbs",
+        "database.code_nbs": "database_code.nbs",
+        "database_code_PDB": "database_code.pdb",
+        "database_code_pdb": "database_code.pdb",
+        "database.code_PDB": "database_code.pdb",
+        "database.code_pdb": "database_code.pdb",
+        "database_code_PDF": "database_code.pdf",
+        "database_code_pdf": "database_code.pdf",
+        "database.code_PDF": "database_code.pdf",
+        "database.code_pdf": "database_code.pdf",
+        "journal_coden_ASTM": "journal.coden_astm",
+        "journal_coden_astm": "journal.coden_astm",
+        "journal_coden_Cambridge": "journal.coden_cambridge",
+        "journal_coden_cambridge": "journal.coden_cambridge",
+        "journal_data_validation_number": "journal.data_validation_number",
+        "journal_issue": "journal.issue",
+        "journal_language": "journal.language",
+        "journal_name_full": "journal.name_full",
+        "journal_page_first": "journal.page_first",
+        "journal_page_last": "journal.page_last",
+        "journal_paper_category": "journal.paper_category",
+        "journal_paper_DOI": "journal.paper_doi",
+        "journal_paper_doi": "journal.paper_doi",
+        "journal_suppl_publ_number": "journal.suppl_publ_number",
+        "journal_suppl_publ_pages": "journal.suppl_publ_pages",
+        "journal_volume": "journal.volume",
+        "journal_year": "journal.year",
+        "journal_coeditor_address": "journal_coeditor.address",
+        "journal.coeditor_address": "journal_coeditor.address",
+        "journal_coeditor_code": "journal_coeditor.code",
+        "journal.coeditor_code": "journal_coeditor.code",
+        "journal_coeditor_email": "journal_coeditor.email",
+        "journal.coeditor_email": "journal_coeditor.email",
+        "journal_coeditor_fax": "journal_coeditor.fax",
+        "journal.coeditor_fax": "journal_coeditor.fax",
+        "journal_coeditor_name": "journal_coeditor.name",
+        "journal.coeditor_name": "journal_coeditor.name",
+        "journal_coeditor_notes": "journal_coeditor.notes",
+        "journal.coeditor_notes": "journal_coeditor.notes",
+        "journal_coeditor_phone": "journal_coeditor.phone",
+        "journal.coeditor_phone": "journal_coeditor.phone",
+        "journal_date_accepted": "journal_date.accepted",
+        "journal.date_accepted": "journal_date.accepted",
+        "journal_date_from_coeditor": "journal_date.from_coeditor",
+        "journal.date_from_coeditor": "journal_date.from_coeditor",
+        "journal_date_printers_final": "journal_date.printers_final",
+        "journal.date_printers_final": "journal_date.printers_final",
+        "journal_date_printers_first": "journal_date.printers_first",
+        "journal.date_printers_first": "journal_date.printers_first",
+        "journal_date_proofs_in": "journal_date.proofs_in",
+        "journal.date_proofs_in": "journal_date.proofs_in",
+        "journal_date_proofs_out": "journal_date.proofs_out",
+        "journal.date_proofs_out": "journal_date.proofs_out",
+        "journal_date_recd_copyright": "journal_date.recd_copyright",
+        "journal.date_recd_copyright": "journal_date.recd_copyright",
+        "journal_date_recd_electronic": "journal_date.recd_electronic",
+        "journal.date_recd_electronic": "journal_date.recd_electronic",
+        "journal_date_recd_hard_copy": "journal_date.recd_hard_copy",
+        "journal.date_recd_hard_copy": "journal_date.recd_hard_copy",
+        "journal_date_to_coeditor": "journal_date.to_coeditor",
+        "journal.date_to_coeditor": "journal_date.to_coeditor",
+        "journal_index_subterm": "journal_index.subterm",
+        "journal_index_term": "journal_index.term",
+        "journal_index_type": "journal_index.type",
+        "journal_techeditor_address": "journal_techeditor.address",
+        "journal.techeditor_address": "journal_techeditor.address",
+        "journal_techeditor_code": "journal_techeditor.code",
+        "journal.techeditor_code": "journal_techeditor.code",
+        "journal_techeditor_email": "journal_techeditor.email",
+        "journal.techeditor_email": "journal_techeditor.email",
+        "journal_techeditor_fax": "journal_techeditor.fax",
+        "journal.techeditor_fax": "journal_techeditor.fax",
+        "journal_techeditor_name": "journal_techeditor.name",
+        "journal.techeditor_name": "journal_techeditor.name",
+        "journal_techeditor_notes": "journal_techeditor.notes",
+        "journal.techeditor_notes": "journal_techeditor.notes",
+        "journal_techeditor_phone": "journal_techeditor.phone",
+        "journal.techeditor_phone": "journal_techeditor.phone",
+        "publ_contact_letter": "publ.contact_letter",
+        "publ_author_address": "publ_author.address",
+        "publ_author_email": "publ_author.email",
+        "publ_author_footnote": "publ_author.footnote",
+        "publ_author_id_IUCr": "publ_author.id_iucr",
+        "publ_author_id_iucr": "publ_author.id_iucr",
+        "publ_author_id_ORCID": "publ_author.id_orcid",
+        "publ_author_id_orcid": "publ_author.id_orcid",
+        "publ_author_name": "publ_author.name",
+        "publ_author_phone": "publ_author.phone",
+        "publ_body_contents": "publ_body.contents",
+        "publ_body_element": "publ_body.element",
+        "publ_body_format": "publ_body.format",
+        "publ_body_label": "publ_body.label",
+        "publ_body_title": "publ_body.title",
+        "publ_contact_author_address": "publ_contact_author.address",
+        "publ.contact_author_address": "publ_contact_author.address",
+        "publ_contact_author_email": "publ_contact_author.email",
+        "publ.contact_author_email": "publ_contact_author.email",
+        "publ_contact_author_fax": "publ_contact_author.fax",
+        "publ.contact_author_fax": "publ_contact_author.fax",
+        "publ_contact_author_id_IUCr": "publ_contact_author.id_iucr",
+        "publ_contact_author_id_iucr": "publ_contact_author.id_iucr",
+        "publ_contact_author_id_ORCID": "publ_contact_author.id_orcid",
+        "publ_contact_author_id_orcid": "publ_contact_author.id_orcid",
+        "publ_contact_author_name": "publ_contact_author.name",
+        "publ.contact_author": "publ_contact_author.name",
+        "publ_contact_author": "publ_contact_author.name",
+        "publ.contact_author_name": "publ_contact_author.name",
+        "publ_contact_author_phone": "publ_contact_author.phone",
+        "publ.contact_author_phone": "publ_contact_author.phone",
+        "publ_manuscript_creation": "publ_manuscript.creation",
+        "publ.manuscript_creation": "publ_manuscript.creation",
+        "publ_manuscript_processed": "publ_manuscript.processed",
+        "publ.manuscript_processed": "publ_manuscript.processed",
+        "publ_manuscript_text": "publ_manuscript.text",
+        "publ.manuscript_text": "publ_manuscript.text",
+        "publ_manuscript_incl_extra_defn": "publ_manuscript_incl_extra.defn",
+        "publ_manuscript_incl.extra_defn": "publ_manuscript_incl_extra.defn",
+        "publ_manuscript_incl_extra_info": "publ_manuscript_incl_extra.info",
+        "publ_manuscript_incl.extra_info": "publ_manuscript_incl_extra.info",
+        "publ_manuscript_incl_extra_item": "publ_manuscript_incl_extra.item",
+        "publ_manuscript_incl.extra_item": "publ_manuscript_incl_extra.item",
+        "publ_requested_category": "publ_requested.category",
+        "publ.requested_category": "publ_requested.category",
+        "publ_requested_coeditor_name": "publ_requested.coeditor_name",
+        "publ.requested_coeditor_name": "publ_requested.coeditor_name",
+        "publ_requested_journal": "publ_requested.journal",
+        "publ.requested_journal": "publ_requested.journal",
+        "publ_section_abstract": "publ_section.abstract",
+        "publ.section_abstract": "publ_section.abstract",
+        "publ_section_acknowledgements": "publ_section.acknowledgements",
+        "publ.section_acknowledgements": "publ_section.acknowledgements",
+        "publ_section_comment": "publ_section.comment",
+        "publ.section_comment": "publ_section.comment",
+        "publ_section_discussion": "publ_section.discussion",
+        "publ.section_discussion": "publ_section.discussion",
+        "publ_section_experimental": "publ_section.experimental",
+        "publ.section_experimental": "publ_section.experimental",
+        "publ_section_exptl_prep": "publ_section.exptl_prep",
+        "publ.section_exptl_prep": "publ_section.exptl_prep",
+        "publ_section_exptl_refinement": "publ_section.exptl_refinement",
+        "publ.section_exptl_refinement": "publ_section.exptl_refinement",
+        "publ_section_exptl_solution": "publ_section.exptl_solution",
+        "publ.section_exptl_solution": "publ_section.exptl_solution",
+        "publ_section_figure_captions": "publ_section.figure_captions",
+        "publ.section_figure_captions": "publ_section.figure_captions",
+        "publ_section_introduction": "publ_section.introduction",
+        "publ.section_introduction": "publ_section.introduction",
+        "publ_section_keywords": "publ_section.keywords",
+        "publ.section_keywords": "publ_section.keywords",
+        "publ_section_references": "publ_section.references",
+        "publ.section_references": "publ_section.references",
+        "publ_section_related_literature": "publ_section.related_literature",
+        "publ.section_related_literature": "publ_section.related_literature",
+        "publ_section_synopsis": "publ_section.synopsis",
+        "publ.section_synopsis": "publ_section.synopsis",
+        "publ_section_table_legends": "publ_section.table_legends",
+        "publ.section_table_legends": "publ_section.table_legends",
+        "publ_section_title": "publ_section.title",
+        "publ.section_title": "publ_section.title",
+        "publ_section_title_footnote": "publ_section.title_footnote",
+        "publ.section_title_footnote": "publ_section.title_footnote",
+        "atom_site_ADP_type": "atom_site.adp_type",
+        "atom_site_adp_type": "atom_site.adp_type",
+        "atom_site_thermal_displace_type": "atom_site.adp_type",
+        "atom_site.thermal_displace_type": "atom_site.adp_type",
+        "atom_site_attached_hydrogens": "atom_site.attached_hydrogens",
+        "atom_site_B_equiv_geom_mean": "atom_site.b_equiv_geom_mean",
+        "atom_site_b_equiv_geom_mean": "atom_site.b_equiv_geom_mean",
+        "atom_site_B_equiv_geom_mean_su": "atom_site.b_equiv_geom_mean_su",
+        "atom_site_b_equiv_geom_mean_su": "atom_site.b_equiv_geom_mean_su",
+        "atom_site.B_equiv_geom_mean_esd": "atom_site.b_equiv_geom_mean_su",
+        "atom_site.b_equiv_geom_mean_esd": "atom_site.b_equiv_geom_mean_su",
+        "atom_site_B_iso_or_equiv": "atom_site.b_iso_or_equiv",
+        "atom_site_b_iso_or_equiv": "atom_site.b_iso_or_equiv",
+        "atom_site_B_iso_or_equiv_su": "atom_site.b_iso_or_equiv_su",
+        "atom_site_b_iso_or_equiv_su": "atom_site.b_iso_or_equiv_su",
+        "atom_site.B_iso_or_equiv_esd": "atom_site.b_iso_or_equiv_su",
+        "atom_site.b_iso_or_equiv_esd": "atom_site.b_iso_or_equiv_su",
+        "atom_site_calc_attached_atom": "atom_site.calc_attached_atom",
+        "atom_site_calc_flag": "atom_site.calc_flag",
+        "atom_site_Cartn_x": "atom_site.cartn_x",
+        "atom_site_cartn_x": "atom_site.cartn_x",
+        "atom_site_Cartn_x_su": "atom_site.cartn_x_su",
+        "atom_site_cartn_x_su": "atom_site.cartn_x_su",
+        "atom_site.Cartn_x_esd": "atom_site.cartn_x_su",
+        "atom_site.cartn_x_esd": "atom_site.cartn_x_su",
+        "atom_site_Cartn_y": "atom_site.cartn_y",
+        "atom_site_cartn_y": "atom_site.cartn_y",
+        "atom_site_Cartn_y_su": "atom_site.cartn_y_su",
+        "atom_site_cartn_y_su": "atom_site.cartn_y_su",
+        "atom_site.Cartn_y_esd": "atom_site.cartn_y_su",
+        "atom_site.cartn_y_esd": "atom_site.cartn_y_su",
+        "atom_site_Cartn_z": "atom_site.cartn_z",
+        "atom_site_cartn_z": "atom_site.cartn_z",
+        "atom_site_Cartn_z_su": "atom_site.cartn_z_su",
+        "atom_site_cartn_z_su": "atom_site.cartn_z_su",
+        "atom_site.Cartn_z_esd": "atom_site.cartn_z_su",
+        "atom_site.cartn_z_esd": "atom_site.cartn_z_su",
+        "atom_site_chemical_conn_number": "atom_site.chemical_conn_number",
+        "atom_site_constraints": "atom_site.constraints",
+        "atom_site_description": "atom_site.description",
+        "atom_site.details": "atom_site.description",
+        "atom_site_disorder_assembly": "atom_site.disorder_assembly",
+        "atom_site_disorder_group": "atom_site.disorder_group",
+        "atom_site_fract_x": "atom_site.fract_x",
+        "atom_site_fract_x_su": "atom_site.fract_x_su",
+        "atom_site.fract_x_esd": "atom_site.fract_x_su",
+        "atom_site_fract_y": "atom_site.fract_y",
+        "atom_site_fract_y_su": "atom_site.fract_y_su",
+        "atom_site.fract_y_esd": "atom_site.fract_y_su",
+        "atom_site_fract_z": "atom_site.fract_z",
+        "atom_site_fract_z_su": "atom_site.fract_z_su",
+        "atom_site.fract_z_esd": "atom_site.fract_z_su",
+        "atom_site_label": "atom_site.label",
+        "atom_site.id": "atom_site.label",
+        "atom_site_label_component_0": "atom_site.label_component_0",
+        "atom_site_label_component_1": "atom_site.label_component_1",
+        "atom_site_label_component_2": "atom_site.label_component_2",
+        "atom_site_label_component_3": "atom_site.label_component_3",
+        "atom_site_label_component_4": "atom_site.label_component_4",
+        "atom_site_label_component_5": "atom_site.label_component_5",
+        "atom_site_label_component_6": "atom_site.label_component_6",
+        "atom_site_occupancy": "atom_site.occupancy",
+        "atom_site_occupancy_su": "atom_site.occupancy_su",
+        "atom_site.occupancy_esd": "atom_site.occupancy_su",
+        "atom_site_refinement_flags": "atom_site.refinement_flags",
+        "atom_site_refinement_flags_ADP": "atom_site.refinement_flags_adp",
+        "atom_site_refinement_flags_adp": "atom_site.refinement_flags_adp",
+        "atom_site_refinement_flags_occupancy": "atom_site.refinement_flags_occupancy",
+        "atom_site_refinement_flags_posn": "atom_site.refinement_flags_posn",
+        "atom_site_restraints": "atom_site.restraints",
+        "atom_site_site_symmetry_multiplicity": "atom_site.site_symmetry_multiplicity",
+        "atom_site_symmetry_multiplicity": "atom_site.site_symmetry_multiplicity",
+        "atom_site.symmetry_multiplicity": "atom_site.site_symmetry_multiplicity",
+        "atom_site_site_symmetry_order": "atom_site.site_symmetry_order",
+        "atom_site_type_symbol": "atom_site.type_symbol",
+        "atom_site_U_equiv_geom_mean": "atom_site.u_equiv_geom_mean",
+        "atom_site_u_equiv_geom_mean": "atom_site.u_equiv_geom_mean",
+        "atom_site_U_equiv_geom_mean_su": "atom_site.u_equiv_geom_mean_su",
+        "atom_site_u_equiv_geom_mean_su": "atom_site.u_equiv_geom_mean_su",
+        "atom_site.U_equiv_geom_mean_esd": "atom_site.u_equiv_geom_mean_su",
+        "atom_site.u_equiv_geom_mean_esd": "atom_site.u_equiv_geom_mean_su",
+        "atom_site_U_iso_or_equiv": "atom_site.u_iso_or_equiv",
+        "atom_site_u_iso_or_equiv": "atom_site.u_iso_or_equiv",
+        "atom_site_U_iso_or_equiv_su": "atom_site.u_iso_or_equiv_su",
+        "atom_site_u_iso_or_equiv_su": "atom_site.u_iso_or_equiv_su",
+        "atom_site.U_iso_or_equiv_esd": "atom_site.u_iso_or_equiv_su",
+        "atom_site.u_iso_or_equiv_esd": "atom_site.u_iso_or_equiv_su",
+        "atom_site_Wyckoff_symbol": "atom_site.wyckoff_symbol",
+        "atom_site_wyckoff_symbol": "atom_site.wyckoff_symbol",
+        "atom_site_aniso_B_11": "atom_site_aniso.b_11",
+        "atom_site_aniso_b_11": "atom_site_aniso.b_11",
+        "atom_site.aniso_B[1][1]": "atom_site_aniso.b_11",
+        "atom_site.aniso_b[1][1]": "atom_site_aniso.b_11",
+        "atom_site_anisotrop.B[1][1]": "atom_site_aniso.b_11",
+        "atom_site_anisotrop.b[1][1]": "atom_site_aniso.b_11",
+        "atom_site_aniso_B_11_su": "atom_site_aniso.b_11_su",
+        "atom_site_aniso_b_11_su": "atom_site_aniso.b_11_su",
+        "atom_site.aniso_B[1][1]_esd": "atom_site_aniso.b_11_su",
+        "atom_site.aniso_b[1][1]_esd": "atom_site_aniso.b_11_su",
+        "atom_site_anisotrop.B[1][1]_esd": "atom_site_aniso.b_11_su",
+        "atom_site_anisotrop.b[1][1]_esd": "atom_site_aniso.b_11_su",
+        "atom_site_aniso_B_12": "atom_site_aniso.b_12",
+        "atom_site_aniso_b_12": "atom_site_aniso.b_12",
+        "atom_site.aniso_B[1][2]": "atom_site_aniso.b_12",
+        "atom_site.aniso_b[1][2]": "atom_site_aniso.b_12",
+        "atom_site_anisotrop.B[1][2]": "atom_site_aniso.b_12",
+        "atom_site_anisotrop.b[1][2]": "atom_site_aniso.b_12",
+        "atom_site_aniso_B_12_su": "atom_site_aniso.b_12_su",
+        "atom_site_aniso_b_12_su": "atom_site_aniso.b_12_su",
+        "atom_site.aniso_B[1][2]_esd": "atom_site_aniso.b_12_su",
+        "atom_site.aniso_b[1][2]_esd": "atom_site_aniso.b_12_su",
+        "atom_site_anisotrop.B[1][2]_esd": "atom_site_aniso.b_12_su",
+        "atom_site_anisotrop.b[1][2]_esd": "atom_site_aniso.b_12_su",
+        "atom_site_aniso_B_13": "atom_site_aniso.b_13",
+        "atom_site_aniso_b_13": "atom_site_aniso.b_13",
+        "atom_site.aniso_B[1][3]": "atom_site_aniso.b_13",
+        "atom_site.aniso_b[1][3]": "atom_site_aniso.b_13",
+        "atom_site_anisotrop.B[1][3]": "atom_site_aniso.b_13",
+        "atom_site_anisotrop.b[1][3]": "atom_site_aniso.b_13",
+        "atom_site_aniso_B_13_su": "atom_site_aniso.b_13_su",
+        "atom_site_aniso_b_13_su": "atom_site_aniso.b_13_su",
+        "atom_site.aniso_B[1][3]_esd": "atom_site_aniso.b_13_su",
+        "atom_site.aniso_b[1][3]_esd": "atom_site_aniso.b_13_su",
+        "atom_site_anisotrop.B[1][3]_esd": "atom_site_aniso.b_13_su",
+        "atom_site_anisotrop.b[1][3]_esd": "atom_site_aniso.b_13_su",
+        "atom_site_aniso_B_22": "atom_site_aniso.b_22",
+        "atom_site_aniso_b_22": "atom_site_aniso.b_22",
+        "atom_site.aniso_B[2][2]": "atom_site_aniso.b_22",
+        "atom_site.aniso_b[2][2]": "atom_site_aniso.b_22",
+        "atom_site_anisotrop.B[2][2]": "atom_site_aniso.b_22",
+        "atom_site_anisotrop.b[2][2]": "atom_site_aniso.b_22",
+        "atom_site_aniso_B_22_su": "atom_site_aniso.b_22_su",
+        "atom_site_aniso_b_22_su": "atom_site_aniso.b_22_su",
+        "atom_site.aniso_B[2][2]_esd": "atom_site_aniso.b_22_su",
+        "atom_site.aniso_b[2][2]_esd": "atom_site_aniso.b_22_su",
+        "atom_site_anisotrop.B[2][2]_esd": "atom_site_aniso.b_22_su",
+        "atom_site_anisotrop.b[2][2]_esd": "atom_site_aniso.b_22_su",
+        "atom_site_aniso_B_23": "atom_site_aniso.b_23",
+        "atom_site_aniso_b_23": "atom_site_aniso.b_23",
+        "atom_site.aniso_B[2][3]": "atom_site_aniso.b_23",
+        "atom_site.aniso_b[2][3]": "atom_site_aniso.b_23",
+        "atom_site_anisotrop.B[2][3]": "atom_site_aniso.b_23",
+        "atom_site_anisotrop.b[2][3]": "atom_site_aniso.b_23",
+        "atom_site_aniso_B_23_su": "atom_site_aniso.b_23_su",
+        "atom_site_aniso_b_23_su": "atom_site_aniso.b_23_su",
+        "atom_site.aniso_B[2][3]_esd": "atom_site_aniso.b_23_su",
+        "atom_site.aniso_b[2][3]_esd": "atom_site_aniso.b_23_su",
+        "atom_site_anisotrop.B[2][3]_esd": "atom_site_aniso.b_23_su",
+        "atom_site_anisotrop.b[2][3]_esd": "atom_site_aniso.b_23_su",
+        "atom_site_aniso_B_33": "atom_site_aniso.b_33",
+        "atom_site_aniso_b_33": "atom_site_aniso.b_33",
+        "atom_site.aniso_B[3][3]": "atom_site_aniso.b_33",
+        "atom_site.aniso_b[3][3]": "atom_site_aniso.b_33",
+        "atom_site_anisotrop.B[3][3]": "atom_site_aniso.b_33",
+        "atom_site_anisotrop.b[3][3]": "atom_site_aniso.b_33",
+        "atom_site_aniso_B_33_su": "atom_site_aniso.b_33_su",
+        "atom_site_aniso_b_33_su": "atom_site_aniso.b_33_su",
+        "atom_site.aniso_B[3][3]_esd": "atom_site_aniso.b_33_su",
+        "atom_site.aniso_b[3][3]_esd": "atom_site_aniso.b_33_su",
+        "atom_site_anisotrop.B[3][3]_esd": "atom_site_aniso.b_33_su",
+        "atom_site_anisotrop.b[3][3]_esd": "atom_site_aniso.b_33_su",
+        "atom_site_aniso_beta_11": "atom_site_aniso.beta_11",
+        "atom_site_aniso_beta_11_su": "atom_site_aniso.beta_11_su",
+        "atom_site_aniso_beta_12": "atom_site_aniso.beta_12",
+        "atom_site_aniso_beta_12_su": "atom_site_aniso.beta_12_su",
+        "atom_site_aniso_beta_13": "atom_site_aniso.beta_13",
+        "atom_site_aniso_beta_13_su": "atom_site_aniso.beta_13_su",
+        "atom_site_aniso_beta_22": "atom_site_aniso.beta_22",
+        "atom_site_aniso_beta_22_su": "atom_site_aniso.beta_22_su",
+        "atom_site_aniso_beta_23": "atom_site_aniso.beta_23",
+        "atom_site_aniso_beta_23_su": "atom_site_aniso.beta_23_su",
+        "atom_site_aniso_beta_33": "atom_site_aniso.beta_33",
+        "atom_site_aniso_beta_33_su": "atom_site_aniso.beta_33_su",
+        "atom_site_aniso_label": "atom_site_aniso.label",
+        "atom_site_anisotrop.id": "atom_site_aniso.label",
+        "atom_site.tensor_beta": "atom_site_aniso.matrix_beta",
+        "atom_site.tensor_beta_su": "atom_site_aniso.matrix_beta_su",
+        "atom_site_aniso_ratio": "atom_site_aniso.ratio",
+        "atom_site_anisotrop.ratio": "atom_site_aniso.ratio",
+        "atom_site.aniso_ratio": "atom_site_aniso.ratio",
+        "atom_site_aniso_type_symbol": "atom_site_aniso.type_symbol",
+        "atom_site_anisotrop.type_symbol": "atom_site_aniso.type_symbol",
+        "atom_site_aniso_U_11": "atom_site_aniso.u_11",
+        "atom_site_aniso_u_11": "atom_site_aniso.u_11",
+        "atom_site.aniso_U[1][1]": "atom_site_aniso.u_11",
+        "atom_site.aniso_u[1][1]": "atom_site_aniso.u_11",
+        "atom_site_anisotrop.U[1][1]": "atom_site_aniso.u_11",
+        "atom_site_anisotrop.u[1][1]": "atom_site_aniso.u_11",
+        "atom_site_aniso_U_11_su": "atom_site_aniso.u_11_su",
+        "atom_site_aniso_u_11_su": "atom_site_aniso.u_11_su",
+        "atom_site.aniso_U[1][1]_esd": "atom_site_aniso.u_11_su",
+        "atom_site.aniso_u[1][1]_esd": "atom_site_aniso.u_11_su",
+        "atom_site_anisotrop.U[1][1]_esd": "atom_site_aniso.u_11_su",
+        "atom_site_anisotrop.u[1][1]_esd": "atom_site_aniso.u_11_su",
+        "atom_site_aniso_U_12": "atom_site_aniso.u_12",
+        "atom_site_aniso_u_12": "atom_site_aniso.u_12",
+        "atom_site.aniso_U[1][2]": "atom_site_aniso.u_12",
+        "atom_site.aniso_u[1][2]": "atom_site_aniso.u_12",
+        "atom_site_anisotrop.U[1][2]": "atom_site_aniso.u_12",
+        "atom_site_anisotrop.u[1][2]": "atom_site_aniso.u_12",
+        "atom_site_aniso_U_12_su": "atom_site_aniso.u_12_su",
+        "atom_site_aniso_u_12_su": "atom_site_aniso.u_12_su",
+        "atom_site.aniso_U[1][2]_esd": "atom_site_aniso.u_12_su",
+        "atom_site.aniso_u[1][2]_esd": "atom_site_aniso.u_12_su",
+        "atom_site_anisotrop.U[1][2]_esd": "atom_site_aniso.u_12_su",
+        "atom_site_anisotrop.u[1][2]_esd": "atom_site_aniso.u_12_su",
+        "atom_site_aniso_U_13": "atom_site_aniso.u_13",
+        "atom_site_aniso_u_13": "atom_site_aniso.u_13",
+        "atom_site.aniso_U[1][3]": "atom_site_aniso.u_13",
+        "atom_site.aniso_u[1][3]": "atom_site_aniso.u_13",
+        "atom_site_anisotrop.U[1][3]": "atom_site_aniso.u_13",
+        "atom_site_anisotrop.u[1][3]": "atom_site_aniso.u_13",
+        "atom_site_aniso_U_13_su": "atom_site_aniso.u_13_su",
+        "atom_site_aniso_u_13_su": "atom_site_aniso.u_13_su",
+        "atom_site.aniso_U[1][3]_esd": "atom_site_aniso.u_13_su",
+        "atom_site.aniso_u[1][3]_esd": "atom_site_aniso.u_13_su",
+        "atom_site_anisotrop.U[1][3]_esd": "atom_site_aniso.u_13_su",
+        "atom_site_anisotrop.u[1][3]_esd": "atom_site_aniso.u_13_su",
+        "atom_site_aniso_U_22": "atom_site_aniso.u_22",
+        "atom_site_aniso_u_22": "atom_site_aniso.u_22",
+        "atom_site.aniso_U[2][2]": "atom_site_aniso.u_22",
+        "atom_site.aniso_u[2][2]": "atom_site_aniso.u_22",
+        "atom_site_anisotrop.U[2][2]": "atom_site_aniso.u_22",
+        "atom_site_anisotrop.u[2][2]": "atom_site_aniso.u_22",
+        "atom_site_aniso_U_22_su": "atom_site_aniso.u_22_su",
+        "atom_site_aniso_u_22_su": "atom_site_aniso.u_22_su",
+        "atom_site.aniso_U[2][2]_esd": "atom_site_aniso.u_22_su",
+        "atom_site.aniso_u[2][2]_esd": "atom_site_aniso.u_22_su",
+        "atom_site_anisotrop.U[2][2]_esd": "atom_site_aniso.u_22_su",
+        "atom_site_anisotrop.u[2][2]_esd": "atom_site_aniso.u_22_su",
+        "atom_site_aniso_U_23": "atom_site_aniso.u_23",
+        "atom_site_aniso_u_23": "atom_site_aniso.u_23",
+        "atom_site.aniso_U[2][3]": "atom_site_aniso.u_23",
+        "atom_site.aniso_u[2][3]": "atom_site_aniso.u_23",
+        "atom_site_anisotrop.U[2][3]": "atom_site_aniso.u_23",
+        "atom_site_anisotrop.u[2][3]": "atom_site_aniso.u_23",
+        "atom_site_aniso_U_23_su": "atom_site_aniso.u_23_su",
+        "atom_site_aniso_u_23_su": "atom_site_aniso.u_23_su",
+        "atom_site.aniso_U[2][3]_esd": "atom_site_aniso.u_23_su",
+        "atom_site.aniso_u[2][3]_esd": "atom_site_aniso.u_23_su",
+        "atom_site_anisotrop.U[2][3]_esd": "atom_site_aniso.u_23_su",
+        "atom_site_anisotrop.u[2][3]_esd": "atom_site_aniso.u_23_su",
+        "atom_site_aniso_U_33": "atom_site_aniso.u_33",
+        "atom_site_aniso_u_33": "atom_site_aniso.u_33",
+        "atom_site.aniso_U[3][3]": "atom_site_aniso.u_33",
+        "atom_site.aniso_u[3][3]": "atom_site_aniso.u_33",
+        "atom_site_anisotrop.U[3][3]": "atom_site_aniso.u_33",
+        "atom_site_anisotrop.u[3][3]": "atom_site_aniso.u_33",
+        "atom_site_aniso_U_33_su": "atom_site_aniso.u_33_su",
+        "atom_site_aniso_u_33_su": "atom_site_aniso.u_33_su",
+        "atom_site.aniso_U[3][3]_esd": "atom_site_aniso.u_33_su",
+        "atom_site.aniso_u[3][3]_esd": "atom_site_aniso.u_33_su",
+        "atom_site_anisotrop.U[3][3]_esd": "atom_site_aniso.u_33_su",
+        "atom_site_anisotrop.u[3][3]_esd": "atom_site_aniso.u_33_su",
+        "atom_sites_solution_hydrogens": "atom_sites.solution_hydrogens",
+        "atom_sites_solution_primary": "atom_sites.solution_primary",
+        "atom_sites_solution_secondary": "atom_sites.solution_secondary",
+        "atom_sites_special_details": "atom_sites.special_details",
+        "atom_sites_Cartn_transform_axes": "atom_sites_cartn_transform.axes",
+        "atom_sites_cartn_transform_axes": "atom_sites_cartn_transform.axes",
+        "atom_sites.Cartn_transform_axes": "atom_sites_cartn_transform.axes",
+        "atom_sites.cartn_transform_axes": "atom_sites_cartn_transform.axes",
+        "atom_sites_Cartn_tran_matrix_11": "atom_sites_cartn_transform.mat_11",
+        "atom_sites_cartn_tran_matrix_11": "atom_sites_cartn_transform.mat_11",
+        "atom_sites.Cartn_transf_matrix[1][1]": "atom_sites_cartn_transform.mat_11",
+        "atom_sites.cartn_transf_matrix[1][1]": "atom_sites_cartn_transform.mat_11",
+        "atom_sites_Cartn_tran_matrix_12": "atom_sites_cartn_transform.mat_12",
+        "atom_sites_cartn_tran_matrix_12": "atom_sites_cartn_transform.mat_12",
+        "atom_sites.Cartn_transf_matrix[1][2]": "atom_sites_cartn_transform.mat_12",
+        "atom_sites.cartn_transf_matrix[1][2]": "atom_sites_cartn_transform.mat_12",
+        "atom_sites_Cartn_tran_matrix_13": "atom_sites_cartn_transform.mat_13",
+        "atom_sites_cartn_tran_matrix_13": "atom_sites_cartn_transform.mat_13",
+        "atom_sites.Cartn_transf_matrix[1][3]": "atom_sites_cartn_transform.mat_13",
+        "atom_sites.cartn_transf_matrix[1][3]": "atom_sites_cartn_transform.mat_13",
+        "atom_sites_Cartn_tran_matrix_21": "atom_sites_cartn_transform.mat_21",
+        "atom_sites_cartn_tran_matrix_21": "atom_sites_cartn_transform.mat_21",
+        "atom_sites.Cartn_transf_matrix[2][1]": "atom_sites_cartn_transform.mat_21",
+        "atom_sites.cartn_transf_matrix[2][1]": "atom_sites_cartn_transform.mat_21",
+        "atom_sites_Cartn_tran_matrix_22": "atom_sites_cartn_transform.mat_22",
+        "atom_sites_cartn_tran_matrix_22": "atom_sites_cartn_transform.mat_22",
+        "atom_sites.Cartn_transf_matrix[2][2]": "atom_sites_cartn_transform.mat_22",
+        "atom_sites.cartn_transf_matrix[2][2]": "atom_sites_cartn_transform.mat_22",
+        "atom_sites_Cartn_tran_matrix_23": "atom_sites_cartn_transform.mat_23",
+        "atom_sites_cartn_tran_matrix_23": "atom_sites_cartn_transform.mat_23",
+        "atom_sites.Cartn_transf_matrix[2][3]": "atom_sites_cartn_transform.mat_23",
+        "atom_sites.cartn_transf_matrix[2][3]": "atom_sites_cartn_transform.mat_23",
+        "atom_sites_Cartn_tran_matrix_31": "atom_sites_cartn_transform.mat_31",
+        "atom_sites_cartn_tran_matrix_31": "atom_sites_cartn_transform.mat_31",
+        "atom_sites.Cartn_transf_matrix[3][1]": "atom_sites_cartn_transform.mat_31",
+        "atom_sites.cartn_transf_matrix[3][1]": "atom_sites_cartn_transform.mat_31",
+        "atom_sites_Cartn_tran_matrix_32": "atom_sites_cartn_transform.mat_32",
+        "atom_sites_cartn_tran_matrix_32": "atom_sites_cartn_transform.mat_32",
+        "atom_sites.Cartn_transf_matrix[3][2]": "atom_sites_cartn_transform.mat_32",
+        "atom_sites.cartn_transf_matrix[3][2]": "atom_sites_cartn_transform.mat_32",
+        "atom_sites_Cartn_tran_matrix_33": "atom_sites_cartn_transform.mat_33",
+        "atom_sites_cartn_tran_matrix_33": "atom_sites_cartn_transform.mat_33",
+        "atom_sites.Cartn_transf_matrix[3][3]": "atom_sites_cartn_transform.mat_33",
+        "atom_sites.cartn_transf_matrix[3][3]": "atom_sites_cartn_transform.mat_33",
+        "atom_sites_Cartn_tran_vector_1": "atom_sites_cartn_transform.vec_1",
+        "atom_sites_cartn_tran_vector_1": "atom_sites_cartn_transform.vec_1",
+        "atom_sites.Cartn_transf_vector[1]": "atom_sites_cartn_transform.vec_1",
+        "atom_sites.cartn_transf_vector[1]": "atom_sites_cartn_transform.vec_1",
+        "atom_sites_Cartn_tran_vector_2": "atom_sites_cartn_transform.vec_2",
+        "atom_sites_cartn_tran_vector_2": "atom_sites_cartn_transform.vec_2",
+        "atom_sites.Cartn_transf_vector[2]": "atom_sites_cartn_transform.vec_2",
+        "atom_sites.cartn_transf_vector[2]": "atom_sites_cartn_transform.vec_2",
+        "atom_sites_Cartn_tran_vector_3": "atom_sites_cartn_transform.vec_3",
+        "atom_sites_cartn_tran_vector_3": "atom_sites_cartn_transform.vec_3",
+        "atom_sites.Cartn_transf_vector[3]": "atom_sites_cartn_transform.vec_3",
+        "atom_sites.cartn_transf_vector[3]": "atom_sites_cartn_transform.vec_3",
+        "atom_sites_fract_transform_axes": "atom_sites_fract_transform.axes",
+        "atom_sites.fract_transform_axes": "atom_sites_fract_transform.axes",
+        "atom_sites_fract_tran_matrix_11": "atom_sites_fract_transform.mat_11",
+        "atom_sites.fract_transf_matrix[1][1]": "atom_sites_fract_transform.mat_11",
+        "atom_sites_fract_tran_matrix_12": "atom_sites_fract_transform.mat_12",
+        "atom_sites.fract_transf_matrix[1][2]": "atom_sites_fract_transform.mat_12",
+        "atom_sites_fract_tran_matrix_13": "atom_sites_fract_transform.mat_13",
+        "atom_sites.fract_transf_matrix[1][3]": "atom_sites_fract_transform.mat_13",
+        "atom_sites_fract_tran_matrix_21": "atom_sites_fract_transform.mat_21",
+        "atom_sites.fract_transf_matrix[2][1]": "atom_sites_fract_transform.mat_21",
+        "atom_sites_fract_tran_matrix_22": "atom_sites_fract_transform.mat_22",
+        "atom_sites.fract_transf_matrix[2][2]": "atom_sites_fract_transform.mat_22",
+        "atom_sites_fract_tran_matrix_23": "atom_sites_fract_transform.mat_23",
+        "atom_sites.fract_transf_matrix[2][3]": "atom_sites_fract_transform.mat_23",
+        "atom_sites_fract_tran_matrix_31": "atom_sites_fract_transform.mat_31",
+        "atom_sites.fract_transf_matrix[3][1]": "atom_sites_fract_transform.mat_31",
+        "atom_sites_fract_tran_matrix_32": "atom_sites_fract_transform.mat_32",
+        "atom_sites.fract_transf_matrix[3][2]": "atom_sites_fract_transform.mat_32",
+        "atom_sites_fract_tran_matrix_33": "atom_sites_fract_transform.mat_33",
+        "atom_sites.fract_transf_matrix[3][3]": "atom_sites_fract_transform.mat_33",
+        "atom_sites_fract_tran_vector_1": "atom_sites_fract_transform.vec_1",
+        "atom_sites.fract_transf_vector[1]": "atom_sites_fract_transform.vec_1",
+        "atom_sites_fract_tran_vector_2": "atom_sites_fract_transform.vec_2",
+        "atom_sites.fract_transf_vector[2]": "atom_sites_fract_transform.vec_2",
+        "atom_sites_fract_tran_vector_3": "atom_sites_fract_transform.vec_3",
+        "atom_sites.fract_transf_vector[3]": "atom_sites_fract_transform.vec_3",
+        "atom_type_analytical_mass_%": "atom_type.analytical_mass_percent",
+        "atom_type.analytical_mass_%": "atom_type.analytical_mass_percent",
+        "atom_type_description": "atom_type.description",
+        "atom_type_number_in_cell": "atom_type.number_in_cell",
+        "atom_type_oxidation_number": "atom_type.oxidation_number",
+        "atom_type_radius_bond": "atom_type.radius_bond",
+        "atom_type_radius_contact": "atom_type.radius_contact",
+        "atom_type_symbol": "atom_type.symbol",
+        "atom_type_scat_Cromer_Mann_a1": "atom_type_scat.cromer_mann_a1",
+        "atom_type_scat_cromer_mann_a1": "atom_type_scat.cromer_mann_a1",
+        "atom_type.scat_Cromer_Mann_a1": "atom_type_scat.cromer_mann_a1",
+        "atom_type.scat_cromer_mann_a1": "atom_type_scat.cromer_mann_a1",
+        "atom_type_scat_Cromer_Mann_a2": "atom_type_scat.cromer_mann_a2",
+        "atom_type_scat_cromer_mann_a2": "atom_type_scat.cromer_mann_a2",
+        "atom_type.scat_Cromer_Mann_a2": "atom_type_scat.cromer_mann_a2",
+        "atom_type.scat_cromer_mann_a2": "atom_type_scat.cromer_mann_a2",
+        "atom_type_scat_Cromer_Mann_a3": "atom_type_scat.cromer_mann_a3",
+        "atom_type_scat_cromer_mann_a3": "atom_type_scat.cromer_mann_a3",
+        "atom_type.scat_Cromer_Mann_a3": "atom_type_scat.cromer_mann_a3",
+        "atom_type.scat_cromer_mann_a3": "atom_type_scat.cromer_mann_a3",
+        "atom_type_scat_Cromer_Mann_a4": "atom_type_scat.cromer_mann_a4",
+        "atom_type_scat_cromer_mann_a4": "atom_type_scat.cromer_mann_a4",
+        "atom_type.scat_Cromer_Mann_a4": "atom_type_scat.cromer_mann_a4",
+        "atom_type.scat_cromer_mann_a4": "atom_type_scat.cromer_mann_a4",
+        "atom_type_scat_Cromer_Mann_b1": "atom_type_scat.cromer_mann_b1",
+        "atom_type_scat_cromer_mann_b1": "atom_type_scat.cromer_mann_b1",
+        "atom_type.scat_Cromer_Mann_b1": "atom_type_scat.cromer_mann_b1",
+        "atom_type.scat_cromer_mann_b1": "atom_type_scat.cromer_mann_b1",
+        "atom_type_scat_Cromer_Mann_b2": "atom_type_scat.cromer_mann_b2",
+        "atom_type_scat_cromer_mann_b2": "atom_type_scat.cromer_mann_b2",
+        "atom_type.scat_Cromer_Mann_b2": "atom_type_scat.cromer_mann_b2",
+        "atom_type.scat_cromer_mann_b2": "atom_type_scat.cromer_mann_b2",
+        "atom_type_scat_Cromer_Mann_b3": "atom_type_scat.cromer_mann_b3",
+        "atom_type_scat_cromer_mann_b3": "atom_type_scat.cromer_mann_b3",
+        "atom_type.scat_Cromer_Mann_b3": "atom_type_scat.cromer_mann_b3",
+        "atom_type.scat_cromer_mann_b3": "atom_type_scat.cromer_mann_b3",
+        "atom_type_scat_Cromer_Mann_b4": "atom_type_scat.cromer_mann_b4",
+        "atom_type_scat_cromer_mann_b4": "atom_type_scat.cromer_mann_b4",
+        "atom_type.scat_Cromer_Mann_b4": "atom_type_scat.cromer_mann_b4",
+        "atom_type.scat_cromer_mann_b4": "atom_type_scat.cromer_mann_b4",
+        "atom_type_scat_Cromer_Mann_c": "atom_type_scat.cromer_mann_c",
+        "atom_type_scat_cromer_mann_c": "atom_type_scat.cromer_mann_c",
+        "atom_type.scat_Cromer_Mann_c": "atom_type_scat.cromer_mann_c",
+        "atom_type.scat_cromer_mann_c": "atom_type_scat.cromer_mann_c",
+        "atom_type_scat_dispersion_imag": "atom_type_scat.dispersion_imag",
+        "atom_type.scat_dispersion_imag": "atom_type_scat.dispersion_imag",
+        "atom_type_scat_dispersion_real": "atom_type_scat.dispersion_real",
+        "atom_type.scat_dispersion_real": "atom_type_scat.dispersion_real",
+        "atom_type_scat_dispersion_source": "atom_type_scat.dispersion_source",
+        "atom_type.scat_dispersion_source": "atom_type_scat.dispersion_source",
+        "atom_type_scat_length_neutron": "atom_type_scat.length_neutron",
+        "atom_type.scat_length_neutron": "atom_type_scat.length_neutron",
+        "atom_type_scat_source": "atom_type_scat.source",
+        "atom_type.scat_source": "atom_type_scat.source",
+        "atom_type_scat_symbol": "atom_type_scat.symbol",
+        "atom_type_scat_versus_stol_list": "atom_type_scat.versus_stol_list",
+        "atom_type.scat_versus_stol_list": "atom_type_scat.versus_stol_list",
+        "refine_special_details": "refine.special_details",
+        "refine.details": "refine.special_details",
+        "refine_diff_density_max": "refine_diff.density_max",
+        "refine.diff_density_max": "refine_diff.density_max",
+        "refine_diff_density_max_su": "refine_diff.density_max_su",
+        "refine.diff_density_max_esd": "refine_diff.density_max_su",
+        "refine_diff_density_min": "refine_diff.density_min",
+        "refine.diff_density_min": "refine_diff.density_min",
+        "refine_diff_density_min_su": "refine_diff.density_min_su",
+        "refine.diff_density_min_esd": "refine_diff.density_min_su",
+        "refine_diff_density_RMS": "refine_diff.density_rms",
+        "refine_diff_density_rms": "refine_diff.density_rms",
+        "refine.diff_density_RMS": "refine_diff.density_rms",
+        "refine.diff_density_rms": "refine_diff.density_rms",
+        "refine_diff_density_RMS_su": "refine_diff.density_rms_su",
+        "refine_diff_density_rms_su": "refine_diff.density_rms_su",
+        "refine.diff_density_RMS_esd": "refine_diff.density_rms_su",
+        "refine.diff_density_rms_esd": "refine_diff.density_rms_su",
+        "refine_ls_abs_structure_details": "refine_ls.abs_structure_details",
+        "refine.ls_abs_structure_details": "refine_ls.abs_structure_details",
+        "refine_ls_abs_structure_Flack": "refine_ls.abs_structure_flack",
+        "refine_ls_abs_structure_flack": "refine_ls.abs_structure_flack",
+        "refine.ls_abs_structure_Flack": "refine_ls.abs_structure_flack",
+        "refine.ls_abs_structure_flack": "refine_ls.abs_structure_flack",
+        "refine_ls_abs_structure_Flack_su": "refine_ls.abs_structure_flack_su",
+        "refine_ls_abs_structure_flack_su": "refine_ls.abs_structure_flack_su",
+        "refine.ls_abs_structure_Flack_esd": "refine_ls.abs_structure_flack_su",
+        "refine.ls_abs_structure_flack_esd": "refine_ls.abs_structure_flack_su",
+        "refine_ls_abs_structure_Rogers": "refine_ls.abs_structure_rogers",
+        "refine_ls_abs_structure_rogers": "refine_ls.abs_structure_rogers",
+        "refine.ls_abs_structure_Rogers": "refine_ls.abs_structure_rogers",
+        "refine.ls_abs_structure_rogers": "refine_ls.abs_structure_rogers",
+        "refine_ls_abs_structure_Rogers_su": "refine_ls.abs_structure_rogers_su",
+        "refine_ls_abs_structure_rogers_su": "refine_ls.abs_structure_rogers_su",
+        "refine.ls_abs_structure_Rogers_esd": "refine_ls.abs_structure_rogers_su",
+        "refine.ls_abs_structure_rogers_esd": "refine_ls.abs_structure_rogers_su",
+        "refine_ls_d_res_high": "refine_ls.d_res_high",
+        "refine.ls_d_res_high": "refine_ls.d_res_high",
+        "refine_ls_d_res_low": "refine_ls.d_res_low",
+        "refine.ls_d_res_low": "refine_ls.d_res_low",
+        "refine_ls_extinction_coef": "refine_ls.extinction_coef",
+        "refine.ls_extinction_coef": "refine_ls.extinction_coef",
+        "refine_ls_extinction_coef_su": "refine_ls.extinction_coef_su",
+        "refine.ls_extinction_coef_esd": "refine_ls.extinction_coef_su",
+        "refine_ls_extinction_expression": "refine_ls.extinction_expression",
+        "refine.ls_extinction_expression": "refine_ls.extinction_expression",
+        "refine_ls_extinction_method": "refine_ls.extinction_method",
+        "refine.ls_extinction_method": "refine_ls.extinction_method",
+        "refine_ls_F_calc_details": "refine_ls.f_calc_details",
+        "refine_ls_f_calc_details": "refine_ls.f_calc_details",
+        "refine_ls_F_calc_formula": "refine_ls.f_calc_formula",
+        "refine_ls_f_calc_formula": "refine_ls.f_calc_formula",
+        "refine_ls_F_calc_precision": "refine_ls.f_calc_precision",
+        "refine_ls_f_calc_precision": "refine_ls.f_calc_precision",
+        "refine_ls_goodness_of_fit_all": "refine_ls.goodness_of_fit_all",
+        "refine.ls_goodness_of_fit_all": "refine_ls.goodness_of_fit_all",
+        "refine_ls_goodness_of_fit_all_su": "refine_ls.goodness_of_fit_all_su",
+        "refine.ls_goodness_of_fit_all_esd": "refine_ls.goodness_of_fit_all_su",
+        "refine_ls_goodness_of_fit_gt": "refine_ls.goodness_of_fit_gt",
+        "refine_ls_goodness_of_fit_obs": "refine_ls.goodness_of_fit_gt",
+        "refine.ls_goodness_of_fit_obs": "refine_ls.goodness_of_fit_gt",
+        "refine.ls_goodness_of_fit_gt": "refine_ls.goodness_of_fit_gt",
+        "refine_ls_goodness_of_fit_gt_su": "refine_ls.goodness_of_fit_gt_su",
+        "refine.ls_goodness_of_fit_gt_esd": "refine_ls.goodness_of_fit_gt_su",
+        "refine.ls_goodness_of_fit_obs_esd": "refine_ls.goodness_of_fit_gt_su",
+        "refine_ls_goodness_of_fit_ref": "refine_ls.goodness_of_fit_ref",
+        "refine.ls_goodness_of_fit_ref": "refine_ls.goodness_of_fit_ref",
+        "refine_ls_hydrogen_treatment": "refine_ls.hydrogen_treatment",
+        "refine.ls_hydrogen_treatment": "refine_ls.hydrogen_treatment",
+        "refine_ls_matrix_type": "refine_ls.matrix_type",
+        "refine.ls_matrix_type": "refine_ls.matrix_type",
+        "refine_ls_number_constraints": "refine_ls.number_constraints",
+        "refine.ls_number_constraints": "refine_ls.number_constraints",
+        "refine_ls_number_parameters": "refine_ls.number_parameters",
+        "refine.ls_number_parameters": "refine_ls.number_parameters",
+        "refine_ls_number_reflns": "refine_ls.number_reflns",
+        "refine.ls_number_reflns_all": "refine_ls.number_reflns",
+        "refine_ls_number_reflns_gt": "refine_ls.number_reflns_gt",
+        "refine.ls_number_reflns_obs": "refine_ls.number_reflns_gt",
+        "refine_ls_number_restraints": "refine_ls.number_restraints",
+        "refine.ls_number_restraints": "refine_ls.number_restraints",
+        "refine_ls_R_factor_all": "refine_ls.r_factor_all",
+        "refine_ls_r_factor_all": "refine_ls.r_factor_all",
+        "refine.ls_R_factor_all": "refine_ls.r_factor_all",
+        "refine.ls_r_factor_all": "refine_ls.r_factor_all",
+        "refine_ls_R_factor_obs": "refine_ls.r_factor_gt",
+        "refine_ls_r_factor_obs": "refine_ls.r_factor_gt",
+        "refine_ls_R_factor_gt": "refine_ls.r_factor_gt",
+        "refine_ls_r_factor_gt": "refine_ls.r_factor_gt",
+        "refine.ls_R_factor_obs": "refine_ls.r_factor_gt",
+        "refine.ls_r_factor_obs": "refine_ls.r_factor_gt",
+        "refine.ls_R_factor_gt": "refine_ls.r_factor_gt",
+        "refine.ls_r_factor_gt": "refine_ls.r_factor_gt",
+        "refine_ls_R_Fsqd_factor": "refine_ls.r_fsqd_factor",
+        "refine_ls_r_fsqd_factor": "refine_ls.r_fsqd_factor",
+        "refine.ls_R_Fsqd_factor_obs": "refine_ls.r_fsqd_factor",
+        "refine.ls_r_fsqd_factor_obs": "refine_ls.r_fsqd_factor",
+        "refine_ls_R_I_factor": "refine_ls.r_i_factor",
+        "refine_ls_r_i_factor": "refine_ls.r_i_factor",
+        "refine.ls_R_I_factor_obs": "refine_ls.r_i_factor",
+        "refine.ls_r_i_factor_obs": "refine_ls.r_i_factor",
+        "refine_ls_restrained_S_all": "refine_ls.restrained_s_all",
+        "refine_ls_restrained_s_all": "refine_ls.restrained_s_all",
+        "refine.ls_restrained_S_all": "refine_ls.restrained_s_all",
+        "refine.ls_restrained_s_all": "refine_ls.restrained_s_all",
+        "refine_ls_restrained_S_obs": "refine_ls.restrained_s_gt",
+        "refine_ls_restrained_s_obs": "refine_ls.restrained_s_gt",
+        "refine_ls_restrained_S_gt": "refine_ls.restrained_s_gt",
+        "refine_ls_restrained_s_gt": "refine_ls.restrained_s_gt",
+        "refine.ls_restrained_S_obs": "refine_ls.restrained_s_gt",
+        "refine.ls_restrained_s_obs": "refine_ls.restrained_s_gt",
+        "refine_ls_shift_over_su_max": "refine_ls.shift_over_su_max",
+        "refine.ls_shift_over_esd_max": "refine_ls.shift_over_su_max",
+        "refine.ls_shift_over_su_max": "refine_ls.shift_over_su_max",
+        "refine_ls_shift/su_max": "refine_ls.shift_over_su_max",
+        "refine_ls_shift/esd_max": "refine_ls.shift_over_su_max",
+        "refine_ls_shift/su_max_lt": "refine_ls.shift_over_su_max_lt",
+        "refine.ls_shift_over_su_max_lt": "refine_ls.shift_over_su_max_lt",
+        "refine_ls_shift_over_su_mean": "refine_ls.shift_over_su_mean",
+        "refine.ls_shift_over_esd_mean": "refine_ls.shift_over_su_mean",
+        "refine.ls_shift_over_su_mean": "refine_ls.shift_over_su_mean",
+        "refine_ls_shift/su_mean": "refine_ls.shift_over_su_mean",
+        "refine_ls_shift/esd_mean": "refine_ls.shift_over_su_mean",
+        "refine_ls_shift/su_mean_lt": "refine_ls.shift_over_su_mean_lt",
+        "refine.ls_shift_over_su_mean_lt": "refine_ls.shift_over_su_mean_lt",
+        "refine_ls_structure_factor_coef": "refine_ls.structure_factor_coef",
+        "refine.ls_structure_factor_coef": "refine_ls.structure_factor_coef",
+        "refine_ls_weighting_details": "refine_ls.weighting_details",
+        "refine.ls_weighting_details": "refine_ls.weighting_details",
+        "refine_ls_weighting_scheme": "refine_ls.weighting_scheme",
+        "refine.ls_weighting_scheme": "refine_ls.weighting_scheme",
+        "refine_ls_wR_factor_all": "refine_ls.wr_factor_all",
+        "refine_ls_wr_factor_all": "refine_ls.wr_factor_all",
+        "refine.ls_wR_factor_all": "refine_ls.wr_factor_all",
+        "refine.ls_wr_factor_all": "refine_ls.wr_factor_all",
+        "refine_ls_wR_factor_obs": "refine_ls.wr_factor_gt",
+        "refine_ls_wr_factor_obs": "refine_ls.wr_factor_gt",
+        "refine.ls_wR_factor_obs": "refine_ls.wr_factor_gt",
+        "refine.ls_wr_factor_obs": "refine_ls.wr_factor_gt",
+        "refine_ls_wR_factor_gt": "refine_ls.wr_factor_gt",
+        "refine_ls_wr_factor_gt": "refine_ls.wr_factor_gt",
+        "refine_ls_wR_factor_ref": "refine_ls.wr_factor_ref",
+        "refine_ls_wr_factor_ref": "refine_ls.wr_factor_ref",
+        "refine_ls_class_code": "refine_ls_class.code",
+        "refine_ls_class_d_res_high": "refine_ls_class.d_res_high",
+        "refine_ls_class_d_res_low": "refine_ls_class.d_res_low",
+        "refine_ls_class_R_factor_all": "refine_ls_class.r_factor_all",
+        "refine_ls_class_r_factor_all": "refine_ls_class.r_factor_all",
+        "refine_ls_class_R_factor_gt": "refine_ls_class.r_factor_gt",
+        "refine_ls_class_r_factor_gt": "refine_ls_class.r_factor_gt",
+        "refine_ls_class_R_factor_obs": "refine_ls_class.r_factor_gt",
+        "refine_ls_class_r_factor_obs": "refine_ls_class.r_factor_gt",
+        "refine_ls_class_R_Fsqd_factor": "refine_ls_class.r_fsqd_factor",
+        "refine_ls_class_r_fsqd_factor": "refine_ls_class.r_fsqd_factor",
+        "refine_ls_class_R_I_factor": "refine_ls_class.r_i_factor",
+        "refine_ls_class_r_i_factor": "refine_ls_class.r_i_factor",
+        "refine_ls_class_wR_factor_all": "refine_ls_class.wr_factor_all",
+        "refine_ls_class_wr_factor_all": "refine_ls_class.wr_factor_all",
+        "atom_site_Fourier_wave_vector_q1_coeff": "atom_site_fourier_wave_vector.q1_coeff",
+        "atom_site_fourier_wave_vector_q1_coeff": "atom_site_fourier_wave_vector.q1_coeff",
+        "atom_site_Fourier_wave_vector_q2_coeff": "atom_site_fourier_wave_vector.q2_coeff",
+        "atom_site_fourier_wave_vector_q2_coeff": "atom_site_fourier_wave_vector.q2_coeff",
+        "atom_site_Fourier_wave_vector_q3_coeff": "atom_site_fourier_wave_vector.q3_coeff",
+        "atom_site_fourier_wave_vector_q3_coeff": "atom_site_fourier_wave_vector.q3_coeff",
+        "atom_site_Fourier_wave_vector_q_coeff": "atom_site_fourier_wave_vector.q_coeff",
+        "atom_site_fourier_wave_vector_q_coeff": "atom_site_fourier_wave_vector.q_coeff",
+        "atom_site_moment_Cartn": "atom_site_moment.cartn",
+        "atom_site_moment_cartn": "atom_site_moment.cartn",
+        "atom_site_moment_Cartn_x": "atom_site_moment.cartn_x",
+        "atom_site_moment_cartn_x": "atom_site_moment.cartn_x",
+        "atom_site_moment_Cartn_y": "atom_site_moment.cartn_y",
+        "atom_site_moment_cartn_y": "atom_site_moment.cartn_y",
+        "atom_site_moment_Cartn_z": "atom_site_moment.cartn_z",
+        "atom_site_moment_cartn_z": "atom_site_moment.cartn_z",
+        "atom_site_moment_crystalaxis": "atom_site_moment.crystalaxis",
+        "atom_site_moment_crystalaxis_x": "atom_site_moment.crystalaxis_x",
+        "atom_site_moment_crystalaxis_y": "atom_site_moment.crystalaxis_y",
+        "atom_site_moment_crystalaxis_z": "atom_site_moment.crystalaxis_z",
+        "atom_site_moment_label": "atom_site_moment.label",
+        "atom_site_moment_magnitude": "atom_site_moment.magnitude",
+        "atom_site_moment_modulation_flag": "atom_site_moment.modulation_flag",
+        "atom_site_moment_refinement_flags_magnetic": "atom_site_moment.refinement_flags_magnetic",
+        "atom_site_moment_spherical_azimuthal": "atom_site_moment.spherical_azimuthal",
+        "atom_site_moment_spherical_modulus": "atom_site_moment.spherical_modulus",
+        "atom_site_moment_spherical_polar": "atom_site_moment.spherical_polar",
+        "atom_site_moment_symmform": "atom_site_moment.symmform",
+        "atom_site_rotation_Cartn": "atom_site_rotation.cartn",
+        "atom_site_rotation_cartn": "atom_site_rotation.cartn",
+        "atom_site_rotation_Cartn_x": "atom_site_rotation.cartn_x",
+        "atom_site_rotation_cartn_x": "atom_site_rotation.cartn_x",
+        "atom_site_rotation_Cartn_y": "atom_site_rotation.cartn_y",
+        "atom_site_rotation_cartn_y": "atom_site_rotation.cartn_y",
+        "atom_site_rotation_Cartn_z": "atom_site_rotation.cartn_z",
+        "atom_site_rotation_cartn_z": "atom_site_rotation.cartn_z",
+        "atom_site_rotation_crystalaxis": "atom_site_rotation.crystalaxis",
+        "atom_site_rotation_crystalaxis_x": "atom_site_rotation.crystalaxis_x",
+        "atom_site_rotation_crystalaxis_y": "atom_site_rotation.crystalaxis_y",
+        "atom_site_rotation_crystalaxis_z": "atom_site_rotation.crystalaxis_z",
+        "atom_site_rotation_label": "atom_site_rotation.label",
+        "atom_site_rotation_magnitude": "atom_site_rotation.magnitude",
+        "atom_site_rotation_modulation_flag": "atom_site_rotation.modulation_flag",
+        "atom_site_rotation_refinement_flags_rotational": "atom_site_rotation.refinement_flags_rotational",
+        "atom_site_rotation_spherical_azimuthal": "atom_site_rotation.spherical_azimuthal",
+        "atom_site_rotation_spherical_modulus": "atom_site_rotation.spherical_modulus",
+        "atom_site_rotation_spherical_polar": "atom_site_rotation.spherical_polar",
+        "atom_site_rotation_symmform": "atom_site_rotation.symmform",
+        "atom_site_moment_Fourier_param_cos": "atom_site_moment_fourier_param.cos",
+        "atom_site_moment_fourier_param_cos": "atom_site_moment_fourier_param.cos",
+        "atom_site_moment_Fourier_param_cos_symmform": "atom_site_moment_fourier_param.cos_symmform",
+        "atom_site_moment_fourier_param_cos_symmform": "atom_site_moment_fourier_param.cos_symmform",
+        "atom_site_moment_Fourier_param_id": "atom_site_moment_fourier_param.id",
+        "atom_site_moment_fourier_param_id": "atom_site_moment_fourier_param.id",
+        "atom_site_moment_Fourier_param_modulus": "atom_site_moment_fourier_param.modulus",
+        "atom_site_moment_fourier_param_modulus": "atom_site_moment_fourier_param.modulus",
+        "atom_site_moment_Fourier_param_modulus_symmform": "atom_site_moment_fourier_param.modulus_symmform",
+        "atom_site_moment_fourier_param_modulus_symmform": "atom_site_moment_fourier_param.modulus_symmform",
+        "atom_site_moment_Fourier_param_phase": "atom_site_moment_fourier_param.phase",
+        "atom_site_moment_fourier_param_phase": "atom_site_moment_fourier_param.phase",
+        "atom_site_moment_Fourier_param_phase_symmform": "atom_site_moment_fourier_param.phase_symmform",
+        "atom_site_moment_fourier_param_phase_symmform": "atom_site_moment_fourier_param.phase_symmform",
+        "atom_site_moment_Fourier_param_sin": "atom_site_moment_fourier_param.sin",
+        "atom_site_moment_fourier_param_sin": "atom_site_moment_fourier_param.sin",
+        "atom_site_moment_Fourier_param_sin_symmform": "atom_site_moment_fourier_param.sin_symmform",
+        "atom_site_moment_fourier_param_sin_symmform": "atom_site_moment_fourier_param.sin_symmform",
+        "atom_site_moment_special_func_sawtooth_ax": "atom_site_moment_special_func.sawtooth_ax",
+        "atom_site_moment_special_func_sawtooth_ay": "atom_site_moment_special_func.sawtooth_ay",
+        "atom_site_moment_special_func_sawtooth_az": "atom_site_moment_special_func.sawtooth_az",
+        "atom_site_moment_special_func_sawtooth_c": "atom_site_moment_special_func.sawtooth_c",
+        "atom_site_moment_special_func_sawtooth_w": "atom_site_moment_special_func.sawtooth_w",
+        "space_group_magn.point_group_name": "space_group_magn.point_group_name_h-m",
+        "space_group_magn.point_group_number": "space_group_magn.point_group_number_litvin",
+        "space_group_symop_magn.id": "space_group_symop_magn_operation.id",
+        "space_group_symop_magn_ssg.id": "space_group_symop_magn_ssg_operation.id",
+        "atom_site_displace_modulation_flag": "atom_site.displace_modulation_flag",
+        "atom_site_occ_modulation_flag": "atom_site.occ_modulation_flag",
+        "atom_site_subsystem_code": "atom_site.subsystem_code",
+        "atom_site_U_modulation_flag": "atom_site.U_modulation_flag",
+        "atom_site_u_modulation_flag": "atom_site.U_modulation_flag",
+        "atom_site_displace_Fourier_atom_site_label": "atom_site_displace_Fourier.atom_site_label",
+        "atom_site_displace_fourier_atom_site_label": "atom_site_displace_Fourier.atom_site_label",
+        "atom_site_displace_Fourier_axis": "atom_site_displace_Fourier.axis",
+        "atom_site_displace_fourier_axis": "atom_site_displace_Fourier.axis",
+        "atom_site_displace_Fourier_id": "atom_site_displace_Fourier.id",
+        "atom_site_displace_fourier_id": "atom_site_displace_Fourier.id",
+        "atom_site_displace_Fourier_wave_vector_seq_id": "atom_site_displace_Fourier.wave_vector_seq_id",
+        "atom_site_displace_fourier_wave_vector_seq_id": "atom_site_displace_Fourier.wave_vector_seq_id",
+        "atom_site_displace_Fourier_param_cos": "atom_site_displace_Fourier_param.cos",
+        "atom_site_displace_fourier_param_cos": "atom_site_displace_Fourier_param.cos",
+        "atom_site_displace_Fourier_param_id": "atom_site_displace_Fourier_param.id",
+        "atom_site_displace_fourier_param_id": "atom_site_displace_Fourier_param.id",
+        "atom_site_displace_Fourier_param_modulus": "atom_site_displace_Fourier_param.modulus",
+        "atom_site_displace_fourier_param_modulus": "atom_site_displace_Fourier_param.modulus",
+        "atom_site_displace_Fourier_param_phase": "atom_site_displace_Fourier_param.phase",
+        "atom_site_displace_fourier_param_phase": "atom_site_displace_Fourier_param.phase",
+        "atom_site_displace_Fourier_param_sin": "atom_site_displace_Fourier_param.sin",
+        "atom_site_displace_fourier_param_sin": "atom_site_displace_Fourier_param.sin",
+        "atom_site_displace_special_func_atom_site_label": "atom_site_displace_special_func.atom_site_label",
+        "atom_site_displace_special_func_sawtooth_ax": "atom_site_displace_special_func.sawtooth_ax",
+        "atom_site_displace_special_func_sawtooth_ay": "atom_site_displace_special_func.sawtooth_ay",
+        "atom_site_displace_special_func_sawtooth_az": "atom_site_displace_special_func.sawtooth_az",
+        "atom_site_displace_special_func_sawtooth_c": "atom_site_displace_special_func.sawtooth_c",
+        "atom_site_displace_special_func_sawtooth_w": "atom_site_displace_special_func.sawtooth_w",
+        "atom_site_Fourier_wave_vector_description": "atom_site_Fourier_wave_vector.description",
+        "atom_site_fourier_wave_vector_description": "atom_site_Fourier_wave_vector.description",
+        "atom_site_Fourier_wave_vector_seq_id": "atom_site_Fourier_wave_vector.seq_id",
+        "atom_site_fourier_wave_vector_seq_id": "atom_site_Fourier_wave_vector.seq_id",
+        "atom_site_Fourier_wave_vector_x": "atom_site_Fourier_wave_vector.x",
+        "atom_site_fourier_wave_vector_x": "atom_site_Fourier_wave_vector.x",
+        "atom_site_Fourier_wave_vector_y": "atom_site_Fourier_wave_vector.y",
+        "atom_site_fourier_wave_vector_y": "atom_site_Fourier_wave_vector.y",
+        "atom_site_Fourier_wave_vector_z": "atom_site_Fourier_wave_vector.z",
+        "atom_site_fourier_wave_vector_z": "atom_site_Fourier_wave_vector.z",
+        "atom_site_occ_Fourier_atom_site_label": "atom_site_occ_Fourier.atom_site_label",
+        "atom_site_occ_fourier_atom_site_label": "atom_site_occ_Fourier.atom_site_label",
+        "atom_site_occ_Fourier_id": "atom_site_occ_Fourier.id",
+        "atom_site_occ_fourier_id": "atom_site_occ_Fourier.id",
+        "atom_site_occ_Fourier_wave_vector_seq_id": "atom_site_occ_Fourier.wave_vector_seq_id",
+        "atom_site_occ_fourier_wave_vector_seq_id": "atom_site_occ_Fourier.wave_vector_seq_id",
+        "atom_site_occ_Fourier_param_cos": "atom_site_occ_Fourier_param.cos",
+        "atom_site_occ_fourier_param_cos": "atom_site_occ_Fourier_param.cos",
+        "atom_site_occ_Fourier_param_id": "atom_site_occ_Fourier_param.id",
+        "atom_site_occ_fourier_param_id": "atom_site_occ_Fourier_param.id",
+        "atom_site_occ_Fourier_param_modulus": "atom_site_occ_Fourier_param.modulus",
+        "atom_site_occ_fourier_param_modulus": "atom_site_occ_Fourier_param.modulus",
+        "atom_site_occ_Fourier_param_phase": "atom_site_occ_Fourier_param.phase",
+        "atom_site_occ_fourier_param_phase": "atom_site_occ_Fourier_param.phase",
+        "atom_site_occ_Fourier_param_sin": "atom_site_occ_Fourier_param.sin",
+        "atom_site_occ_fourier_param_sin": "atom_site_occ_Fourier_param.sin",
+        "atom_site_occ_special_func_atom_site_label": "atom_site_occ_special_func.atom_site_label",
+        "atom_site_occ_special_func_crenel_c": "atom_site_occ_special_func.crenel_c",
+        "atom_site_occ_special_func_crenel_w": "atom_site_occ_special_func.crenel_w",
+        "atom_site_phason_atom_site_label": "atom_site_phason.atom_site_label",
+        "atom_site_phason_coeff": "atom_site_phason.coeff",
+        "atom_site_phason_formula": "atom_site_phason.formula",
+        "atom_site_rot_Fourier_atom_site_label": "atom_site_rot_Fourier.atom_site_label",
+        "atom_site_rot_fourier_atom_site_label": "atom_site_rot_Fourier.atom_site_label",
+        "atom_site_rot_Fourier_axis": "atom_site_rot_Fourier.axis",
+        "atom_site_rot_fourier_axis": "atom_site_rot_Fourier.axis",
+        "atom_site_rot_Fourier_wave_vector_seq_id": "atom_site_rot_Fourier.wave_vector_seq_id",
+        "atom_site_rot_fourier_wave_vector_seq_id": "atom_site_rot_Fourier.wave_vector_seq_id",
+        "atom_site_rot_Fourier_param_cos": "atom_site_rot_Fourier_param.cos",
+        "atom_site_rot_fourier_param_cos": "atom_site_rot_Fourier_param.cos",
+        "atom_site_rot_Fourier_param_id": "atom_site_rot_Fourier_param.id",
+        "atom_site_rot_fourier_param_id": "atom_site_rot_Fourier_param.id",
+        "atom_site_rot_Fourier_param_modulus": "atom_site_rot_Fourier_param.modulus",
+        "atom_site_rot_fourier_param_modulus": "atom_site_rot_Fourier_param.modulus",
+        "atom_site_rot_Fourier_param_phase": "atom_site_rot_Fourier_param.phase",
+        "atom_site_rot_fourier_param_phase": "atom_site_rot_Fourier_param.phase",
+        "atom_site_rot_Fourier_param_sin": "atom_site_rot_Fourier_param.sin",
+        "atom_site_rot_fourier_param_sin": "atom_site_rot_Fourier_param.sin",
+        "atom_site_rot_special_func_atom_site_label": "atom_site_rot_special_func.atom_site_label",
+        "atom_site_rot_special_func_sawtooth_ax": "atom_site_rot_special_func.sawtooth_ax",
+        "atom_site_rot_special_func_sawtooth_ay": "atom_site_rot_special_func.sawtooth_ay",
+        "atom_site_rot_special_func_sawtooth_az": "atom_site_rot_special_func.sawtooth_az",
+        "atom_site_rot_special_func_sawtooth_c": "atom_site_rot_special_func.sawtooth_c",
+        "atom_site_rot_special_func_sawtooth_w": "atom_site_rot_special_func.sawtooth_w",
+        "atom_site_U_Fourier_atom_site_label": "atom_site_U_Fourier.atom_site_label",
+        "atom_site_u_fourier_atom_site_label": "atom_site_U_Fourier.atom_site_label",
+        "atom_site_U_Fourier_id": "atom_site_U_Fourier.id",
+        "atom_site_u_fourier_id": "atom_site_U_Fourier.id",
+        "atom_site_U_Fourier_tens_elem": "atom_site_U_Fourier.tens_elem",
+        "atom_site_u_fourier_tens_elem": "atom_site_U_Fourier.tens_elem",
+        "atom_site_U_Fourier_wave_vector_seq_id": "atom_site_U_Fourier.wave_vector_seq_id",
+        "atom_site_u_fourier_wave_vector_seq_id": "atom_site_U_Fourier.wave_vector_seq_id",
+        "atom_site_U_Fourier_param_cos": "atom_site_U_Fourier_param.cos",
+        "atom_site_u_fourier_param_cos": "atom_site_U_Fourier_param.cos",
+        "atom_site_U_Fourier_param_id": "atom_site_U_Fourier_param.id",
+        "atom_site_u_fourier_param_id": "atom_site_U_Fourier_param.id",
+        "atom_site_U_Fourier_param_modulus": "atom_site_U_Fourier_param.modulus",
+        "atom_site_u_fourier_param_modulus": "atom_site_U_Fourier_param.modulus",
+        "atom_site_U_Fourier_param_phase": "atom_site_U_Fourier_param.phase",
+        "atom_site_u_fourier_param_phase": "atom_site_U_Fourier_param.phase",
+        "atom_site_U_Fourier_param_sin": "atom_site_U_Fourier_param.sin",
+        "atom_site_u_fourier_param_sin": "atom_site_U_Fourier_param.sin",
+        "atom_sites_displace_Fourier_axes_description": "atom_sites_displace_Fourier.axes_description",
+        "atom_sites_displace_fourier_axes_description": "atom_sites_displace_Fourier.axes_description",
+        "atom_sites_modulation_global_phase_t_1": "atom_sites_modulation.global_phase_t_1",
+        "atom_sites_modulation_global_phase_t_2": "atom_sites_modulation.global_phase_t_2",
+        "atom_sites_modulation_global_phase_t_3": "atom_sites_modulation.global_phase_t_3",
+        "atom_sites_modulation_global_phase_t_4": "atom_sites_modulation.global_phase_t_4",
+        "atom_sites_modulation_global_phase_t_5": "atom_sites_modulation.global_phase_t_5",
+        "atom_sites_modulation_global_phase_t_6": "atom_sites_modulation.global_phase_t_6",
+        "atom_sites_modulation_global_phase_t_7": "atom_sites_modulation.global_phase_t_7",
+        "atom_sites_modulation_global_phase_t_8": "atom_sites_modulation.global_phase_t_8",
+        "atom_sites_rot_Fourier_axes_description": "atom_sites_rot_Fourier.axes_description",
+        "atom_sites_rot_fourier_axes_description": "atom_sites_rot_Fourier.axes_description",
+        "cell_modulation_dimension": "cell.modulation_dimension",
+        "cell_reciprocal_basis_description": "cell.reciprocal_basis_description",
+        "cell_subsystem_code": "cell_subsystem.code",
+        "cell_subsystem_description": "cell_subsystem.description",
+        "cell_subsystem_matrix_W_1_1": "cell_subsystem.matrix_W_1_1",
+        "cell_subsystem_matrix_w_1_1": "cell_subsystem.matrix_W_1_1",
+        "cell_subsystem_matrix_W_1_2": "cell_subsystem.matrix_W_1_2",
+        "cell_subsystem_matrix_w_1_2": "cell_subsystem.matrix_W_1_2",
+        "cell_subsystem_matrix_W_1_3": "cell_subsystem.matrix_W_1_3",
+        "cell_subsystem_matrix_w_1_3": "cell_subsystem.matrix_W_1_3",
+        "cell_subsystem_matrix_W_1_4": "cell_subsystem.matrix_W_1_4",
+        "cell_subsystem_matrix_w_1_4": "cell_subsystem.matrix_W_1_4",
+        "cell_subsystem_matrix_W_1_5": "cell_subsystem.matrix_W_1_5",
+        "cell_subsystem_matrix_w_1_5": "cell_subsystem.matrix_W_1_5",
+        "cell_subsystem_matrix_W_1_6": "cell_subsystem.matrix_W_1_6",
+        "cell_subsystem_matrix_w_1_6": "cell_subsystem.matrix_W_1_6",
+        "cell_subsystem_matrix_W_1_7": "cell_subsystem.matrix_W_1_7",
+        "cell_subsystem_matrix_w_1_7": "cell_subsystem.matrix_W_1_7",
+        "cell_subsystem_matrix_W_1_8": "cell_subsystem.matrix_W_1_8",
+        "cell_subsystem_matrix_w_1_8": "cell_subsystem.matrix_W_1_8",
+        "cell_subsystem_matrix_W_1_9": "cell_subsystem.matrix_W_1_9",
+        "cell_subsystem_matrix_w_1_9": "cell_subsystem.matrix_W_1_9",
+        "cell_subsystem_matrix_W_1_10": "cell_subsystem.matrix_W_1_10",
+        "cell_subsystem_matrix_w_1_10": "cell_subsystem.matrix_W_1_10",
+        "cell_subsystem_matrix_W_1_11": "cell_subsystem.matrix_W_1_11",
+        "cell_subsystem_matrix_w_1_11": "cell_subsystem.matrix_W_1_11",
+        "cell_subsystem_matrix_W_2_1": "cell_subsystem.matrix_W_2_1",
+        "cell_subsystem_matrix_w_2_1": "cell_subsystem.matrix_W_2_1",
+        "cell_subsystem_matrix_W_2_2": "cell_subsystem.matrix_W_2_2",
+        "cell_subsystem_matrix_w_2_2": "cell_subsystem.matrix_W_2_2",
+        "cell_subsystem_matrix_W_2_3": "cell_subsystem.matrix_W_2_3",
+        "cell_subsystem_matrix_w_2_3": "cell_subsystem.matrix_W_2_3",
+        "cell_subsystem_matrix_W_2_4": "cell_subsystem.matrix_W_2_4",
+        "cell_subsystem_matrix_w_2_4": "cell_subsystem.matrix_W_2_4",
+        "cell_subsystem_matrix_W_2_5": "cell_subsystem.matrix_W_2_5",
+        "cell_subsystem_matrix_w_2_5": "cell_subsystem.matrix_W_2_5",
+        "cell_subsystem_matrix_W_2_6": "cell_subsystem.matrix_W_2_6",
+        "cell_subsystem_matrix_w_2_6": "cell_subsystem.matrix_W_2_6",
+        "cell_subsystem_matrix_W_2_7": "cell_subsystem.matrix_W_2_7",
+        "cell_subsystem_matrix_w_2_7": "cell_subsystem.matrix_W_2_7",
+        "cell_subsystem_matrix_W_2_8": "cell_subsystem.matrix_W_2_8",
+        "cell_subsystem_matrix_w_2_8": "cell_subsystem.matrix_W_2_8",
+        "cell_subsystem_matrix_W_2_9": "cell_subsystem.matrix_W_2_9",
+        "cell_subsystem_matrix_w_2_9": "cell_subsystem.matrix_W_2_9",
+        "cell_subsystem_matrix_W_2_10": "cell_subsystem.matrix_W_2_10",
+        "cell_subsystem_matrix_w_2_10": "cell_subsystem.matrix_W_2_10",
+        "cell_subsystem_matrix_W_2_11": "cell_subsystem.matrix_W_2_11",
+        "cell_subsystem_matrix_w_2_11": "cell_subsystem.matrix_W_2_11",
+        "cell_subsystem_matrix_W_3_1": "cell_subsystem.matrix_W_3_1",
+        "cell_subsystem_matrix_w_3_1": "cell_subsystem.matrix_W_3_1",
+        "cell_subsystem_matrix_W_3_2": "cell_subsystem.matrix_W_3_2",
+        "cell_subsystem_matrix_w_3_2": "cell_subsystem.matrix_W_3_2",
+        "cell_subsystem_matrix_W_3_3": "cell_subsystem.matrix_W_3_3",
+        "cell_subsystem_matrix_w_3_3": "cell_subsystem.matrix_W_3_3",
+        "cell_subsystem_matrix_W_3_4": "cell_subsystem.matrix_W_3_4",
+        "cell_subsystem_matrix_w_3_4": "cell_subsystem.matrix_W_3_4",
+        "cell_subsystem_matrix_W_3_5": "cell_subsystem.matrix_W_3_5",
+        "cell_subsystem_matrix_w_3_5": "cell_subsystem.matrix_W_3_5",
+        "cell_subsystem_matrix_W_3_6": "cell_subsystem.matrix_W_3_6",
+        "cell_subsystem_matrix_w_3_6": "cell_subsystem.matrix_W_3_6",
+        "cell_subsystem_matrix_W_3_7": "cell_subsystem.matrix_W_3_7",
+        "cell_subsystem_matrix_w_3_7": "cell_subsystem.matrix_W_3_7",
+        "cell_subsystem_matrix_W_3_8": "cell_subsystem.matrix_W_3_8",
+        "cell_subsystem_matrix_w_3_8": "cell_subsystem.matrix_W_3_8",
+        "cell_subsystem_matrix_W_3_9": "cell_subsystem.matrix_W_3_9",
+        "cell_subsystem_matrix_w_3_9": "cell_subsystem.matrix_W_3_9",
+        "cell_subsystem_matrix_W_3_10": "cell_subsystem.matrix_W_3_10",
+        "cell_subsystem_matrix_w_3_10": "cell_subsystem.matrix_W_3_10",
+        "cell_subsystem_matrix_W_3_11": "cell_subsystem.matrix_W_3_11",
+        "cell_subsystem_matrix_w_3_11": "cell_subsystem.matrix_W_3_11",
+        "cell_subsystem_matrix_W_4_1": "cell_subsystem.matrix_W_4_1",
+        "cell_subsystem_matrix_w_4_1": "cell_subsystem.matrix_W_4_1",
+        "cell_subsystem_matrix_W_4_2": "cell_subsystem.matrix_W_4_2",
+        "cell_subsystem_matrix_w_4_2": "cell_subsystem.matrix_W_4_2",
+        "cell_subsystem_matrix_W_4_3": "cell_subsystem.matrix_W_4_3",
+        "cell_subsystem_matrix_w_4_3": "cell_subsystem.matrix_W_4_3",
+        "cell_subsystem_matrix_W_4_4": "cell_subsystem.matrix_W_4_4",
+        "cell_subsystem_matrix_w_4_4": "cell_subsystem.matrix_W_4_4",
+        "cell_subsystem_matrix_W_4_5": "cell_subsystem.matrix_W_4_5",
+        "cell_subsystem_matrix_w_4_5": "cell_subsystem.matrix_W_4_5",
+        "cell_subsystem_matrix_W_4_6": "cell_subsystem.matrix_W_4_6",
+        "cell_subsystem_matrix_w_4_6": "cell_subsystem.matrix_W_4_6",
+        "cell_subsystem_matrix_W_4_7": "cell_subsystem.matrix_W_4_7",
+        "cell_subsystem_matrix_w_4_7": "cell_subsystem.matrix_W_4_7",
+        "cell_subsystem_matrix_W_4_8": "cell_subsystem.matrix_W_4_8",
+        "cell_subsystem_matrix_w_4_8": "cell_subsystem.matrix_W_4_8",
+        "cell_subsystem_matrix_W_4_9": "cell_subsystem.matrix_W_4_9",
+        "cell_subsystem_matrix_w_4_9": "cell_subsystem.matrix_W_4_9",
+        "cell_subsystem_matrix_W_4_10": "cell_subsystem.matrix_W_4_10",
+        "cell_subsystem_matrix_w_4_10": "cell_subsystem.matrix_W_4_10",
+        "cell_subsystem_matrix_W_4_11": "cell_subsystem.matrix_W_4_11",
+        "cell_subsystem_matrix_w_4_11": "cell_subsystem.matrix_W_4_11",
+        "cell_subsystem_matrix_W_5_1": "cell_subsystem.matrix_W_5_1",
+        "cell_subsystem_matrix_w_5_1": "cell_subsystem.matrix_W_5_1",
+        "cell_subsystem_matrix_W_5_2": "cell_subsystem.matrix_W_5_2",
+        "cell_subsystem_matrix_w_5_2": "cell_subsystem.matrix_W_5_2",
+        "cell_subsystem_matrix_W_5_3": "cell_subsystem.matrix_W_5_3",
+        "cell_subsystem_matrix_w_5_3": "cell_subsystem.matrix_W_5_3",
+        "cell_subsystem_matrix_W_5_4": "cell_subsystem.matrix_W_5_4",
+        "cell_subsystem_matrix_w_5_4": "cell_subsystem.matrix_W_5_4",
+        "cell_subsystem_matrix_W_5_5": "cell_subsystem.matrix_W_5_5",
+        "cell_subsystem_matrix_w_5_5": "cell_subsystem.matrix_W_5_5",
+        "cell_subsystem_matrix_W_5_6": "cell_subsystem.matrix_W_5_6",
+        "cell_subsystem_matrix_w_5_6": "cell_subsystem.matrix_W_5_6",
+        "cell_subsystem_matrix_W_5_7": "cell_subsystem.matrix_W_5_7",
+        "cell_subsystem_matrix_w_5_7": "cell_subsystem.matrix_W_5_7",
+        "cell_subsystem_matrix_W_5_8": "cell_subsystem.matrix_W_5_8",
+        "cell_subsystem_matrix_w_5_8": "cell_subsystem.matrix_W_5_8",
+        "cell_subsystem_matrix_W_5_9": "cell_subsystem.matrix_W_5_9",
+        "cell_subsystem_matrix_w_5_9": "cell_subsystem.matrix_W_5_9",
+        "cell_subsystem_matrix_W_5_10": "cell_subsystem.matrix_W_5_10",
+        "cell_subsystem_matrix_w_5_10": "cell_subsystem.matrix_W_5_10",
+        "cell_subsystem_matrix_W_5_11": "cell_subsystem.matrix_W_5_11",
+        "cell_subsystem_matrix_w_5_11": "cell_subsystem.matrix_W_5_11",
+        "cell_subsystem_matrix_W_6_1": "cell_subsystem.matrix_W_6_1",
+        "cell_subsystem_matrix_w_6_1": "cell_subsystem.matrix_W_6_1",
+        "cell_subsystem_matrix_W_6_2": "cell_subsystem.matrix_W_6_2",
+        "cell_subsystem_matrix_w_6_2": "cell_subsystem.matrix_W_6_2",
+        "cell_subsystem_matrix_W_6_3": "cell_subsystem.matrix_W_6_3",
+        "cell_subsystem_matrix_w_6_3": "cell_subsystem.matrix_W_6_3",
+        "cell_subsystem_matrix_W_6_4": "cell_subsystem.matrix_W_6_4",
+        "cell_subsystem_matrix_w_6_4": "cell_subsystem.matrix_W_6_4",
+        "cell_subsystem_matrix_W_6_5": "cell_subsystem.matrix_W_6_5",
+        "cell_subsystem_matrix_w_6_5": "cell_subsystem.matrix_W_6_5",
+        "cell_subsystem_matrix_W_6_6": "cell_subsystem.matrix_W_6_6",
+        "cell_subsystem_matrix_w_6_6": "cell_subsystem.matrix_W_6_6",
+        "cell_subsystem_matrix_W_6_7": "cell_subsystem.matrix_W_6_7",
+        "cell_subsystem_matrix_w_6_7": "cell_subsystem.matrix_W_6_7",
+        "cell_subsystem_matrix_W_6_8": "cell_subsystem.matrix_W_6_8",
+        "cell_subsystem_matrix_w_6_8": "cell_subsystem.matrix_W_6_8",
+        "cell_subsystem_matrix_W_6_9": "cell_subsystem.matrix_W_6_9",
+        "cell_subsystem_matrix_w_6_9": "cell_subsystem.matrix_W_6_9",
+        "cell_subsystem_matrix_W_6_10": "cell_subsystem.matrix_W_6_10",
+        "cell_subsystem_matrix_w_6_10": "cell_subsystem.matrix_W_6_10",
+        "cell_subsystem_matrix_W_6_11": "cell_subsystem.matrix_W_6_11",
+        "cell_subsystem_matrix_w_6_11": "cell_subsystem.matrix_W_6_11",
+        "cell_subsystem_matrix_W_7_1": "cell_subsystem.matrix_W_7_1",
+        "cell_subsystem_matrix_w_7_1": "cell_subsystem.matrix_W_7_1",
+        "cell_subsystem_matrix_W_7_2": "cell_subsystem.matrix_W_7_2",
+        "cell_subsystem_matrix_w_7_2": "cell_subsystem.matrix_W_7_2",
+        "cell_subsystem_matrix_W_7_3": "cell_subsystem.matrix_W_7_3",
+        "cell_subsystem_matrix_w_7_3": "cell_subsystem.matrix_W_7_3",
+        "cell_subsystem_matrix_W_7_4": "cell_subsystem.matrix_W_7_4",
+        "cell_subsystem_matrix_w_7_4": "cell_subsystem.matrix_W_7_4",
+        "cell_subsystem_matrix_W_7_5": "cell_subsystem.matrix_W_7_5",
+        "cell_subsystem_matrix_w_7_5": "cell_subsystem.matrix_W_7_5",
+        "cell_subsystem_matrix_W_7_6": "cell_subsystem.matrix_W_7_6",
+        "cell_subsystem_matrix_w_7_6": "cell_subsystem.matrix_W_7_6",
+        "cell_subsystem_matrix_W_7_7": "cell_subsystem.matrix_W_7_7",
+        "cell_subsystem_matrix_w_7_7": "cell_subsystem.matrix_W_7_7",
+        "cell_subsystem_matrix_W_7_8": "cell_subsystem.matrix_W_7_8",
+        "cell_subsystem_matrix_w_7_8": "cell_subsystem.matrix_W_7_8",
+        "cell_subsystem_matrix_W_7_9": "cell_subsystem.matrix_W_7_9",
+        "cell_subsystem_matrix_w_7_9": "cell_subsystem.matrix_W_7_9",
+        "cell_subsystem_matrix_W_7_10": "cell_subsystem.matrix_W_7_10",
+        "cell_subsystem_matrix_w_7_10": "cell_subsystem.matrix_W_7_10",
+        "cell_subsystem_matrix_W_7_11": "cell_subsystem.matrix_W_7_11",
+        "cell_subsystem_matrix_w_7_11": "cell_subsystem.matrix_W_7_11",
+        "cell_subsystem_matrix_W_8_1": "cell_subsystem.matrix_W_8_1",
+        "cell_subsystem_matrix_w_8_1": "cell_subsystem.matrix_W_8_1",
+        "cell_subsystem_matrix_W_8_2": "cell_subsystem.matrix_W_8_2",
+        "cell_subsystem_matrix_w_8_2": "cell_subsystem.matrix_W_8_2",
+        "cell_subsystem_matrix_W_8_3": "cell_subsystem.matrix_W_8_3",
+        "cell_subsystem_matrix_w_8_3": "cell_subsystem.matrix_W_8_3",
+        "cell_subsystem_matrix_W_8_4": "cell_subsystem.matrix_W_8_4",
+        "cell_subsystem_matrix_w_8_4": "cell_subsystem.matrix_W_8_4",
+        "cell_subsystem_matrix_W_8_5": "cell_subsystem.matrix_W_8_5",
+        "cell_subsystem_matrix_w_8_5": "cell_subsystem.matrix_W_8_5",
+        "cell_subsystem_matrix_W_8_6": "cell_subsystem.matrix_W_8_6",
+        "cell_subsystem_matrix_w_8_6": "cell_subsystem.matrix_W_8_6",
+        "cell_subsystem_matrix_W_8_7": "cell_subsystem.matrix_W_8_7",
+        "cell_subsystem_matrix_w_8_7": "cell_subsystem.matrix_W_8_7",
+        "cell_subsystem_matrix_W_8_8": "cell_subsystem.matrix_W_8_8",
+        "cell_subsystem_matrix_w_8_8": "cell_subsystem.matrix_W_8_8",
+        "cell_subsystem_matrix_W_8_9": "cell_subsystem.matrix_W_8_9",
+        "cell_subsystem_matrix_w_8_9": "cell_subsystem.matrix_W_8_9",
+        "cell_subsystem_matrix_W_8_10": "cell_subsystem.matrix_W_8_10",
+        "cell_subsystem_matrix_w_8_10": "cell_subsystem.matrix_W_8_10",
+        "cell_subsystem_matrix_W_8_11": "cell_subsystem.matrix_W_8_11",
+        "cell_subsystem_matrix_w_8_11": "cell_subsystem.matrix_W_8_11",
+        "cell_subsystem_matrix_W_9_1": "cell_subsystem.matrix_W_9_1",
+        "cell_subsystem_matrix_w_9_1": "cell_subsystem.matrix_W_9_1",
+        "cell_subsystem_matrix_W_9_2": "cell_subsystem.matrix_W_9_2",
+        "cell_subsystem_matrix_w_9_2": "cell_subsystem.matrix_W_9_2",
+        "cell_subsystem_matrix_W_9_3": "cell_subsystem.matrix_W_9_3",
+        "cell_subsystem_matrix_w_9_3": "cell_subsystem.matrix_W_9_3",
+        "cell_subsystem_matrix_W_9_4": "cell_subsystem.matrix_W_9_4",
+        "cell_subsystem_matrix_w_9_4": "cell_subsystem.matrix_W_9_4",
+        "cell_subsystem_matrix_W_9_5": "cell_subsystem.matrix_W_9_5",
+        "cell_subsystem_matrix_w_9_5": "cell_subsystem.matrix_W_9_5",
+        "cell_subsystem_matrix_W_9_6": "cell_subsystem.matrix_W_9_6",
+        "cell_subsystem_matrix_w_9_6": "cell_subsystem.matrix_W_9_6",
+        "cell_subsystem_matrix_W_9_7": "cell_subsystem.matrix_W_9_7",
+        "cell_subsystem_matrix_w_9_7": "cell_subsystem.matrix_W_9_7",
+        "cell_subsystem_matrix_W_9_8": "cell_subsystem.matrix_W_9_8",
+        "cell_subsystem_matrix_w_9_8": "cell_subsystem.matrix_W_9_8",
+        "cell_subsystem_matrix_W_9_9": "cell_subsystem.matrix_W_9_9",
+        "cell_subsystem_matrix_w_9_9": "cell_subsystem.matrix_W_9_9",
+        "cell_subsystem_matrix_W_9_10": "cell_subsystem.matrix_W_9_10",
+        "cell_subsystem_matrix_w_9_10": "cell_subsystem.matrix_W_9_10",
+        "cell_subsystem_matrix_W_9_11": "cell_subsystem.matrix_W_9_11",
+        "cell_subsystem_matrix_w_9_11": "cell_subsystem.matrix_W_9_11",
+        "cell_subsystem_matrix_W_10_1": "cell_subsystem.matrix_W_10_1",
+        "cell_subsystem_matrix_w_10_1": "cell_subsystem.matrix_W_10_1",
+        "cell_subsystem_matrix_W_10_2": "cell_subsystem.matrix_W_10_2",
+        "cell_subsystem_matrix_w_10_2": "cell_subsystem.matrix_W_10_2",
+        "cell_subsystem_matrix_W_10_3": "cell_subsystem.matrix_W_10_3",
+        "cell_subsystem_matrix_w_10_3": "cell_subsystem.matrix_W_10_3",
+        "cell_subsystem_matrix_W_10_4": "cell_subsystem.matrix_W_10_4",
+        "cell_subsystem_matrix_w_10_4": "cell_subsystem.matrix_W_10_4",
+        "cell_subsystem_matrix_W_10_5": "cell_subsystem.matrix_W_10_5",
+        "cell_subsystem_matrix_w_10_5": "cell_subsystem.matrix_W_10_5",
+        "cell_subsystem_matrix_W_10_6": "cell_subsystem.matrix_W_10_6",
+        "cell_subsystem_matrix_w_10_6": "cell_subsystem.matrix_W_10_6",
+        "cell_subsystem_matrix_W_10_7": "cell_subsystem.matrix_W_10_7",
+        "cell_subsystem_matrix_w_10_7": "cell_subsystem.matrix_W_10_7",
+        "cell_subsystem_matrix_W_10_8": "cell_subsystem.matrix_W_10_8",
+        "cell_subsystem_matrix_w_10_8": "cell_subsystem.matrix_W_10_8",
+        "cell_subsystem_matrix_W_10_9": "cell_subsystem.matrix_W_10_9",
+        "cell_subsystem_matrix_w_10_9": "cell_subsystem.matrix_W_10_9",
+        "cell_subsystem_matrix_W_10_10": "cell_subsystem.matrix_W_10_10",
+        "cell_subsystem_matrix_w_10_10": "cell_subsystem.matrix_W_10_10",
+        "cell_subsystem_matrix_W_10_11": "cell_subsystem.matrix_W_10_11",
+        "cell_subsystem_matrix_w_10_11": "cell_subsystem.matrix_W_10_11",
+        "cell_subsystem_matrix_W_11_1": "cell_subsystem.matrix_W_11_1",
+        "cell_subsystem_matrix_w_11_1": "cell_subsystem.matrix_W_11_1",
+        "cell_subsystem_matrix_W_11_2": "cell_subsystem.matrix_W_11_2",
+        "cell_subsystem_matrix_w_11_2": "cell_subsystem.matrix_W_11_2",
+        "cell_subsystem_matrix_W_11_3": "cell_subsystem.matrix_W_11_3",
+        "cell_subsystem_matrix_w_11_3": "cell_subsystem.matrix_W_11_3",
+        "cell_subsystem_matrix_W_11_4": "cell_subsystem.matrix_W_11_4",
+        "cell_subsystem_matrix_w_11_4": "cell_subsystem.matrix_W_11_4",
+        "cell_subsystem_matrix_W_11_5": "cell_subsystem.matrix_W_11_5",
+        "cell_subsystem_matrix_w_11_5": "cell_subsystem.matrix_W_11_5",
+        "cell_subsystem_matrix_W_11_6": "cell_subsystem.matrix_W_11_6",
+        "cell_subsystem_matrix_w_11_6": "cell_subsystem.matrix_W_11_6",
+        "cell_subsystem_matrix_W_11_7": "cell_subsystem.matrix_W_11_7",
+        "cell_subsystem_matrix_w_11_7": "cell_subsystem.matrix_W_11_7",
+        "cell_subsystem_matrix_W_11_8": "cell_subsystem.matrix_W_11_8",
+        "cell_subsystem_matrix_w_11_8": "cell_subsystem.matrix_W_11_8",
+        "cell_subsystem_matrix_W_11_9": "cell_subsystem.matrix_W_11_9",
+        "cell_subsystem_matrix_w_11_9": "cell_subsystem.matrix_W_11_9",
+        "cell_subsystem_matrix_W_11_10": "cell_subsystem.matrix_W_11_10",
+        "cell_subsystem_matrix_w_11_10": "cell_subsystem.matrix_W_11_10",
+        "cell_subsystem_matrix_W_11_11": "cell_subsystem.matrix_W_11_11",
+        "cell_subsystem_matrix_w_11_11": "cell_subsystem.matrix_W_11_11",
+        "cell_subsystems_number": "cell_subsystems.number",
+        "cell_wave_vector_seq_id": "cell_wave_vector.seq_id",
+        "cell_wave_vector_x": "cell_wave_vector.x",
+        "cell_wave_vector_y": "cell_wave_vector.y",
+        "cell_wave_vector_z": "cell_wave_vector.z",
+        "cell_wave_vectors_meas_details": "cell_wave_vectors.meas_details",
+        "cell_wave_vectors_pressure_max": "cell_wave_vectors.pressure_max",
+        "cell_wave_vectors_pressure_min": "cell_wave_vectors.pressure_min",
+        "cell_wave_vectors_temp_max": "cell_wave_vectors.temp_max",
+        "cell_wave_vectors_temp_min": "cell_wave_vectors.temp_min",
+        "cell_wave_vectors_variation": "cell_wave_vectors.variation",
+        "diffrn_refln_index_m_1": "diffrn_refln.index_m_1",
+        "diffrn_refln_index_m_2": "diffrn_refln.index_m_2",
+        "diffrn_refln_index_m_3": "diffrn_refln.index_m_3",
+        "diffrn_refln_index_m_4": "diffrn_refln.index_m_4",
+        "diffrn_refln_index_m_5": "diffrn_refln.index_m_5",
+        "diffrn_refln_index_m_6": "diffrn_refln.index_m_6",
+        "diffrn_refln_index_m_7": "diffrn_refln.index_m_7",
+        "diffrn_refln_index_m_8": "diffrn_refln.index_m_8",
+        "diffrn_reflns_limit_index_m_1_max": "diffrn_reflns.limit_index_m_1_max",
+        "diffrn_reflns_limit_index_m_2_max": "diffrn_reflns.limit_index_m_2_max",
+        "diffrn_reflns_limit_index_m_3_max": "diffrn_reflns.limit_index_m_3_max",
+        "diffrn_reflns_limit_index_m_4_max": "diffrn_reflns.limit_index_m_4_max",
+        "diffrn_reflns_limit_index_m_5_max": "diffrn_reflns.limit_index_m_5_max",
+        "diffrn_reflns_limit_index_m_6_max": "diffrn_reflns.limit_index_m_6_max",
+        "diffrn_reflns_limit_index_m_7_max": "diffrn_reflns.limit_index_m_7_max",
+        "diffrn_reflns_limit_index_m_8_max": "diffrn_reflns.limit_index_m_8_max",
+        "diffrn_reflns_limit_index_m_1_min": "diffrn_reflns.limit_index_m_1_min",
+        "diffrn_reflns_limit_index_m_2_min": "diffrn_reflns.limit_index_m_2_min",
+        "diffrn_reflns_limit_index_m_3_min": "diffrn_reflns.limit_index_m_3_min",
+        "diffrn_reflns_limit_index_m_4_min": "diffrn_reflns.limit_index_m_4_min",
+        "diffrn_reflns_limit_index_m_5_min": "diffrn_reflns.limit_index_m_5_min",
+        "diffrn_reflns_limit_index_m_6_min": "diffrn_reflns.limit_index_m_6_min",
+        "diffrn_reflns_limit_index_m_7_min": "diffrn_reflns.limit_index_m_7_min",
+        "diffrn_reflns_limit_index_m_8_min": "diffrn_reflns.limit_index_m_8_min",
+        "diffrn_reflns_satellite_order_max": "diffrn_reflns.satellite_order_max",
+        "diffrn_standard_refln_index_m_1": "diffrn_standard_refln.index_m_1",
+        "diffrn_standard_refln_index_m_2": "diffrn_standard_refln.index_m_2",
+        "diffrn_standard_refln_index_m_3": "diffrn_standard_refln.index_m_3",
+        "diffrn_standard_refln_index_m_4": "diffrn_standard_refln.index_m_4",
+        "diffrn_standard_refln_index_m_5": "diffrn_standard_refln.index_m_5",
+        "diffrn_standard_refln_index_m_6": "diffrn_standard_refln.index_m_6",
+        "diffrn_standard_refln_index_m_7": "diffrn_standard_refln.index_m_7",
+        "diffrn_standard_refln_index_m_8": "diffrn_standard_refln.index_m_8",
+        "exptl_crystal_type_of_structure": "exptl_crystal.type_of_structure",
+        "exptl_crystal_face_index_m_1": "exptl_crystal_face.index_m_1",
+        "exptl_crystal_face_index_m_2": "exptl_crystal_face.index_m_2",
+        "exptl_crystal_face_index_m_3": "exptl_crystal_face.index_m_3",
+        "exptl_crystal_face_index_m_4": "exptl_crystal_face.index_m_4",
+        "exptl_crystal_face_index_m_5": "exptl_crystal_face.index_m_5",
+        "exptl_crystal_face_index_m_6": "exptl_crystal_face.index_m_6",
+        "exptl_crystal_face_index_m_7": "exptl_crystal_face.index_m_7",
+        "exptl_crystal_face_index_m_8": "exptl_crystal_face.index_m_8",
+        "geom_angle_av": "geom_angle.av",
+        "geom_angle_max": "geom_angle.max",
+        "geom_angle_min": "geom_angle.min",
+        "geom_angle_site_ssg_symmetry_1": "geom_angle.site_ssg_symmetry_1",
+        "geom_angle_site_ssg_symmetry_2": "geom_angle.site_ssg_symmetry_2",
+        "geom_angle_site_ssg_symmetry_3": "geom_angle.site_ssg_symmetry_3",
+        "geom_bond_distance_av": "geom_bond.distance_av",
+        "geom_bond_distance_max": "geom_bond.distance_max",
+        "geom_bond_distance_min": "geom_bond.distance_min",
+        "geom_bond_site_ssg_symmetry_1": "geom_bond.site_ssg_symmetry_1",
+        "geom_bond_site_ssg_symmetry_2": "geom_bond.site_ssg_symmetry_2",
+        "geom_contact_distance_av": "geom_contact.distance_av",
+        "geom_contact_distance_max": "geom_contact.distance_max",
+        "geom_contact_distance_min": "geom_contact.distance_min",
+        "geom_contact_site_ssg_symmetry_1": "geom_contact.site_ssg_symmetry_1",
+        "geom_contact_site_ssg_symmetry_2": "geom_contact.site_ssg_symmetry_2",
+        "geom_torsion_av": "geom_torsion.av",
+        "geom_torsion_max": "geom_torsion.max",
+        "geom_torsion_min": "geom_torsion.min",
+        "geom_torsion_site_ssg_symmetry_1": "geom_torsion.site_ssg_symmetry_1",
+        "geom_torsion_site_ssg_symmetry_2": "geom_torsion.site_ssg_symmetry_2",
+        "geom_torsion_site_ssg_symmetry_3": "geom_torsion.site_ssg_symmetry_3",
+        "geom_torsion_site_ssg_symmetry_4": "geom_torsion.site_ssg_symmetry_4",
+        "refine_ls_mod_func_description": "refine.ls_mod_func_description",
+        "refine_ls_mod_hydrogen_treatment": "refine.ls_mod_hydrogen_treatment",
+        "refine_ls_mod_overall_phason_coeff": "refine.ls_mod_overall_phason_coeff",
+        "refine_ls_mod_overall_phason_formula": "refine.ls_mod_overall_phason_formula",
+        "refln_index_m_1": "refln.index_m_1",
+        "refln_index_m_2": "refln.index_m_2",
+        "refln_index_m_3": "refln.index_m_3",
+        "refln_index_m_4": "refln.index_m_4",
+        "refln_index_m_5": "refln.index_m_5",
+        "refln_index_m_6": "refln.index_m_6",
+        "refln_index_m_7": "refln.index_m_7",
+        "refln_index_m_8": "refln.index_m_8",
+        "reflns_limit_index_m_1_max": "reflns.limit_index_m_1_max",
+        "reflns_limit_index_m_2_max": "reflns.limit_index_m_2_max",
+        "reflns_limit_index_m_3_max": "reflns.limit_index_m_3_max",
+        "reflns_limit_index_m_4_max": "reflns.limit_index_m_4_max",
+        "reflns_limit_index_m_5_max": "reflns.limit_index_m_5_max",
+        "reflns_limit_index_m_6_max": "reflns.limit_index_m_6_max",
+        "reflns_limit_index_m_7_max": "reflns.limit_index_m_7_max",
+        "reflns_limit_index_m_8_max": "reflns.limit_index_m_8_max",
+        "reflns_limit_index_m_1_min": "reflns.limit_index_m_1_min",
+        "reflns_limit_index_m_2_min": "reflns.limit_index_m_2_min",
+        "reflns_limit_index_m_3_min": "reflns.limit_index_m_3_min",
+        "reflns_limit_index_m_4_min": "reflns.limit_index_m_4_min",
+        "reflns_limit_index_m_5_min": "reflns.limit_index_m_5_min",
+        "reflns_limit_index_m_6_min": "reflns.limit_index_m_6_min",
+        "reflns_limit_index_m_7_min": "reflns.limit_index_m_7_min",
+        "reflns_limit_index_m_8_min": "reflns.limit_index_m_8_min",
+        "space_group_ssg_IT_number": "space_group.ssg_IT_number",
+        "space_group_ssg_it_number": "space_group.ssg_IT_number",
+        "space_group_ssg_name": "space_group.ssg_name",
+        "space_group_ssg_name_IT": "space_group.ssg_name_IT",
+        "space_group_ssg_name_it": "space_group.ssg_name_IT",
+        "space_group_ssg_name_WJJ": "space_group.ssg_name_WJJ",
+        "space_group_ssg_name_wjj": "space_group.ssg_name_WJJ",
+        "space_group_ssg_WJJ_code": "space_group.ssg_WJJ_code",
+        "space_group_ssg_wjj_code": "space_group.ssg_WJJ_code",
+        "space_group_symop_ssg_id": "space_group_symop.ssg_id",
+        "space_group_symop_ssg_operation_algebraic": "space_group_symop.ssg_operation_algebraic",
+        "pd_block_id": "pd_block.id",
+        "pd_block_diffractogram_id": "pd_block_diffractogram.id",
+        "pd_calc_method": "pd_calc.method",
+        "pd_calib.detector_id": "pd_calib_detected_intensity.detector_id",
+        "pd_calib_detector_id": "pd_calib_detected_intensity.detector_id",
+        "pd_calib.detector_response": "pd_calib_detected_intensity.detector_response",
+        "pd_calib_detector_response": "pd_calib_detected_intensity.detector_response",
+        "pd_calib.detector_response_su": "pd_calib_detected_intensity.detector_response_su",
+        "pd_calib.std_internal_mass_percent": "pd_qpa_internal_std.mass_percent",
+        "pd_calib.std_internal_mass_percent_su": "pd_qpa_internal_std.mass_percent_su",
+        "pd_calib_std_internal_name": "pd_calib.std_internal_name",
+        "pd_calib_2theta_off_max": "pd_calib.2theta_off_max",
+        "pd_calib_2theta_off_min": "pd_calib.2theta_off_min",
+        "pd_calib.2theta_off_point": "pd_calib_xcoord.2theta_nominal",
+        "pd_calib_2theta_off_point": "pd_calib_xcoord.2theta_nominal",
+        "pd_calib.2theta_offset": "pd_calib_xcoord.2theta_offset",
+        "pd_calib_2theta_offset": "pd_calib_xcoord.2theta_offset",
+        "pd_calib.2theta_offset_su": "pd_calib_xcoord.2theta_offset_su",
+        "pd_calib_offset.detector_id": "pd_calib_xcoord_overall.detector_id",
+        "pd_calib_offset.id": "pd_calib_xcoord.id",
+        "pd_calib_std_external_block_id": "pd_calib_std.external_block_id",
+        "pd_calib_std_external_name": "pd_calib_std.external_name",
+        "pd_calibration_conversion_eqn": "pd_calibration.conversion_eqn",
+        "pd_calibration_special_details": "pd_calibration.special_details",
+        "pd_char_atten_coef_mu_calc": "pd_char.atten_coef_mu_calc",
+        "pd_char_atten_coef_mu_obs": "pd_char.atten_coef_mu_obs",
+        "pd_char_colour": "pd_char.colour",
+        "pd_char_particle_morphology": "pd_char.particle_morphology",
+        "pd_char_special_details": "pd_char.special_details",
+        "pd_data_point_id": "pd_data.point_id",
+        "pd_calc_intensity_net": "pd_calc.intensity_net",
+        "pd_calc_intensity_total": "pd_calc.intensity_total",
+        "pd_calc_point_id": "pd_calc.point_id",
+        "pd_instr_var_illum_len": "pd_instr.var_illum_len",
+        "pd_meas_2theta_scan": "pd_meas.2theta_scan",
+        "pd_meas_angle_2theta": "pd_meas.2theta_scan",
+        "pd_meas_counts_background": "pd_meas.counts_background",
+        "pd_meas_counts_container": "pd_meas.counts_container",
+        "pd_meas_counts_monitor": "pd_meas.counts_monitor",
+        "pd_meas_counts_total": "pd_meas.counts_total",
+        "pd_meas_detector_id": "pd_meas.detector_id",
+        "pd_meas_intensity_background": "pd_meas.intensity_background",
+        "pd_meas_intensity_container": "pd_meas.intensity_container",
+        "pd_meas_intensity_monitor": "pd_meas.intensity_monitor",
+        "pd_meas_intensity_total": "pd_meas.intensity_total",
+        "pd_meas_point_id": "pd_meas.point_id",
+        "pd_meas_position": "pd_meas.position",
+        "pd_meas_step_count_time": "pd_meas.step_count_time",
+        "pd_meas_time_of_flight": "pd_meas.time_of_flight",
+        "pd_proc_2theta_corrected": "pd_proc.2theta_corrected",
+        "pd_proc_d_spacing": "pd_proc.d_spacing",
+        "pd_proc_energy_detection": "pd_proc.energy_detection",
+        "pd_proc_energy_incident": "pd_proc.energy_incident",
+        "pd_proc_intensity_bkg_calc": "pd_proc.intensity_bkg_calc",
+        "pd_proc_intensity_bkg_fix": "pd_proc.intensity_bkg_fix",
+        "pd_proc_intensity_incident": "pd_proc.intensity_incident",
+        "pd_proc_intensity_net": "pd_proc.intensity_net",
+        "pd_proc_intensity_norm": "pd_proc.intensity_norm",
+        "pd_proc_intensity_total": "pd_proc.intensity_total",
+        "pd_proc_ls_weight": "pd_proc.ls_weight",
+        "pd_proc_point_id": "pd_proc.point_id",
+        "pd_proc_recip_len_Q": "pd_proc.recip_len_q",
+        "pd_proc_recip_len_q": "pd_proc.recip_len_q",
+        "pd_proc_wavelength": "pd_proc.wavelength",
+        "pd_instr_2theta_monochr_pre": "pd_instr.2theta_monochr_pre",
+        "pd_instr_beam_size_ax": "pd_instr.beam_size_ax",
+        "pd_instr_beam_size_eq": "pd_instr.beam_size_eq",
+        "pd_instr_cons_illum_flag": "pd_instr.cons_illum_flag",
+        "pd_instr_cons_illum_len": "pd_instr.cons_illum_len",
+        "pd_instr_dist_mono/spec": "pd_instr.dist_mono_spec",
+        "pd_instr_dist_src/mono": "pd_instr.dist_src_mono",
+        "pd_instr_dist_src/spec": "pd_instr.dist_src_spec",
+        "pd_instr_divg_ax_mono/spec": "pd_instr.divg_ax_mono_spec",
+        "pd_instr_divg_ax_src/mono": "pd_instr.divg_ax_src_mono",
+        "pd_instr_divg_ax_src/spec": "pd_instr.divg_ax_src_spec",
+        "pd_instr_divg_eq_mono/spec": "pd_instr.divg_eq_mono_spec",
+        "pd_instr_divg_eq_src/mono": "pd_instr.divg_eq_src_mono",
+        "pd_instr_divg_eq_src/spec": "pd_instr.divg_eq_src_spec",
+        "pd_instr_geometry": "pd_instr.geometry",
+        "pd_instr_location": "pd_instr.location",
+        "pd_instr_monochr_pre_spec": "pd_instr.monochr_pre_spec",
+        "pd_instr_slit_ax_mono/spec": "pd_instr.slit_ax_mono_spec",
+        "pd_instr_slit_ax_src/mono": "pd_instr.slit_ax_src_mono",
+        "pd_instr_slit_ax_src/spec": "pd_instr.slit_ax_src_spec",
+        "pd_instr_slit_eq_mono/spec": "pd_instr.slit_eq_mono_spec",
+        "pd_instr_slit_eq_src/mono": "pd_instr.slit_eq_src_mono",
+        "pd_instr_slit_eq_src/spec": "pd_instr.slit_eq_src_spec",
+        "pd_instr_soller_ax_mono/spec": "pd_instr.soller_ax_mono_spec",
+        "pd_instr_soller_ax_src/mono": "pd_instr.soller_ax_src_mono",
+        "pd_instr_soller_ax_src/spec": "pd_instr.soller_ax_src_spec",
+        "pd_instr_soller_eq_mono/spec": "pd_instr.soller_eq_mono_spec",
+        "pd_instr_soller_eq_src/mono": "pd_instr.soller_eq_src_mono",
+        "pd_instr_soller_eq_src/spec": "pd_instr.soller_eq_src_spec",
+        "pd_instr_source_size_ax": "pd_instr.source_size_ax",
+        "pd_instr_source_size_eq": "pd_instr.source_size_eq",
+        "pd_instr_special_details": "pd_instr.special_details",
+        "pd_instr_2theta_monochr_post": "pd_instr.2theta_monochr_post",
+        "pd_instr_dist_anal/detc": "pd_instr.dist_anal_detc",
+        "pd_instr_dist_spec/anal": "pd_instr.dist_spec_anal",
+        "pd_instr_dist_spec/detc": "pd_instr.dist_spec_detc",
+        "pd_instr_divg_ax_anal/detc": "pd_instr.divg_ax_anal_detc",
+        "pd_instr_divg_ax_spec/anal": "pd_instr.divg_ax_spec_anal",
+        "pd_instr_divg_ax_spec/detc": "pd_instr.divg_ax_spec_detc",
+        "pd_instr_divg_eq_anal/detc": "pd_instr.divg_eq_anal_detc",
+        "pd_instr_divg_eq_spec/anal": "pd_instr.divg_eq_spec_anal",
+        "pd_instr_divg_eq_spec/detc": "pd_instr.divg_eq_spec_detc",
+        "pd_instr_monochr_post_spec": "pd_instr.monochr_post_spec",
+        "pd_instr_slit_ax_anal/detc": "pd_instr.slit_ax_anal_detc",
+        "pd_instr_slit_ax_spec/anal": "pd_instr.slit_ax_spec_anal",
+        "pd_instr_slit_ax_spec/detc": "pd_instr.slit_ax_spec_detc",
+        "pd_instr_slit_eq_anal/detc": "pd_instr.slit_eq_anal_detc",
+        "pd_instr_slit_eq_spec/anal": "pd_instr.slit_eq_spec_anal",
+        "pd_instr_slit_eq_spec/detc": "pd_instr.slit_eq_spec_detc",
+        "pd_instr_soller_ax_anal/detc": "pd_instr.soller_ax_anal_detc",
+        "pd_instr_soller_ax_spec/anal": "pd_instr.soller_ax_spec_anal",
+        "pd_instr_soller_ax_spec/detc": "pd_instr.soller_ax_spec_detc",
+        "pd_instr_soller_eq_anal/detc": "pd_instr.soller_eq_anal_detc",
+        "pd_instr_soller_eq_spec/anal": "pd_instr.soller_eq_spec_anal",
+        "pd_instr_soller_eq_spec/detc": "pd_instr.soller_eq_spec_detc",
+        "pd_meas_info_author_address": "pd_meas_info_author.address",
+        "pd_meas_info_author_email": "pd_meas_info_author.email",
+        "pd_meas_info_author_fax": "pd_meas_info_author.fax",
+        "pd_meas_info_author_name": "pd_meas_info_author.name",
+        "pd_meas_info_author_phone": "pd_meas_info_author.phone",
+        "pd_meas_2theta_fixed": "pd_meas.2theta_fixed",
+        "pd_meas_2theta_range_inc": "pd_meas.2theta_range_inc",
+        "pd_meas_2theta_range_max": "pd_meas.2theta_range_max",
+        "pd_meas_2theta_range_min": "pd_meas.2theta_range_min",
+        "pd_meas_angle_chi": "pd_meas.angle_chi",
+        "pd_meas_angle_omega": "pd_meas.angle_omega",
+        "pd_meas_angle_phi": "pd_meas.angle_phi",
+        "pd_meas_datetime_initiated": "pd_meas.datetime_initiated",
+        "pd_meas_number_of_points": "pd_meas.number_of_points",
+        "pd_meas_rocking_angle": "pd_meas.rocking_angle",
+        "pd_meas_rocking_axis": "pd_meas.rocking_axis",
+        "pd_meas_scan_method": "pd_meas.scan_method",
+        "pd_meas_special_details": "pd_meas.special_details",
+        "pd_meas_units_of_intensity": "pd_meas.units_of_intensity",
+        "pd_peak_2theta_centroid": "pd_peak.2theta_centroid",
+        "pd_peak_2theta_maximum": "pd_peak.2theta_maximum",
+        "pd_peak_d_spacing": "pd_peak.d_spacing",
+        "pd_peak_id": "pd_peak.id",
+        "pd_peak_intensity": "pd_peak.intensity",
+        "pd_peak_pk_height": "pd_peak.pk_height",
+        "pd_peak_wavelength_id": "pd_peak.wavelength_id",
+        "pd_peak_width_2theta": "pd_peak.width_2theta",
+        "pd_peak_width_d_spacing": "pd_peak.width_d_spacing",
+        "pd_peak_special_details": "pd_peak.special_details",
+        "pd_phase_name": "pd_phase.name",
+        "pd_phase_block_id": "pd_phase_block.id",
+        "pd_phase_mass_%": "pd_phase_mass.percent",
+        "pd_prep_conditions": "pd_prep.conditions",
+        "pd_prep_cool_rate": "pd_prep.cool_rate",
+        "pd_prep_pressure": "pd_prep.pressure",
+        "pd_prep_temperature": "pd_prep.temperature",
+        "pd_proc_info_author_address": "pd_proc_info_author.address",
+        "pd_proc_info_author_email": "pd_proc_info_author.email",
+        "pd_proc_info_author_fax": "pd_proc_info_author.fax",
+        "pd_proc_info_author_name": "pd_proc_info_author.name",
+        "pd_proc_info_author_phone": "pd_proc_info_author.phone",
+        "pd_proc_ls_background_function": "pd_proc_ls.background_function",
+        "pd_proc_ls_peak_cutoff": "pd_proc_ls.peak_cutoff",
+        "pd_proc_ls.pref_orient_corr": "pd_pref_orient.special_details",
+        "pd_proc_ls_pref_orient_corr": "pd_pref_orient.special_details",
+        "pd_proc_ls_prof_R_factor": "pd_proc_ls.prof_r_factor",
+        "pd_proc_ls_prof_r_factor": "pd_proc_ls.prof_r_factor",
+        "pd_proc_ls_prof_wR_expected": "pd_proc_ls.prof_wr_expected",
+        "pd_proc_ls_prof_wr_expected": "pd_proc_ls.prof_wr_expected",
+        "pd_proc_ls_prof_wR_factor": "pd_proc_ls.prof_wr_factor",
+        "pd_proc_ls_prof_wr_factor": "pd_proc_ls.prof_wr_factor",
+        "pd_proc_ls_profile_function": "pd_proc_ls.profile_function",
+        "pd_proc_ls_special_details": "pd_proc_ls.special_details",
+        "pd_proc_2theta_range_inc": "pd_proc.2theta_range_inc",
+        "pd_proc_2theta_range_max": "pd_proc.2theta_range_max",
+        "pd_proc_2theta_range_min": "pd_proc.2theta_range_min",
+        "pd_proc_info_data_reduction": "pd_proc.info_data_reduction",
+        "pd_proc_info_datetime": "pd_proc.info_datetime",
+        "pd_proc_info_excluded_regions": "pd_proc.info_excluded_regions",
+        "pd_proc_info_special_details": "pd_proc.info_special_details",
+        "pd_proc_number_of_points": "pd_proc.number_of_points",
+        "pd_calib_std_internal_mass_%": "pd_qpa_internal_std.mass_percent",
+        "pd_spec_description": "pd_spec.description",
+        "pd_spec_mount_mode": "pd_spec.mount_mode",
+        "pd_spec_mounting": "pd_spec.mounting",
+        "pd_spec_orientation": "pd_spec.orientation",
+        "pd_spec_preparation": "pd_spec.preparation",
+        "pd_spec_shape": "pd_spec.shape",
+        "pd_spec_size_axial": "pd_spec.size_axial",
+        "pd_spec_size_equat": "pd_spec.size_equat",
+        "pd_spec_size_thick": "pd_spec.size_thick",
+        "pd_spec_special_details": "pd_spec.special_details",
+        "pd_refln_peak_id": "pd_refln.peak_id",
+        "pd_refln_phase_id": "pd_refln.phase_id",
+        "pd_refln.wavelength_id": "refln.wavelength_id",
+        "pd_refln_wavelength_id": "refln.wavelength_id",
+        "atom_local_axes_atom0": "atom_local_axes.atom0",
+        "atom_local_axes_atom1": "atom_local_axes.atom1",
+        "atom_local_axes_atom2": "atom_local_axes.atom2",
+        "atom_local_axes_atom_label": "atom_local_axes.atom_label",
+        "atom_local_axes_ax1": "atom_local_axes.ax1",
+        "atom_local_axes_ax2": "atom_local_axes.ax2",
+        "atom_rho_multipole_atom_label": "atom_rho_multipole.atom_label",
+        "atom_rho_multipole_configuration": "atom_rho_multipole.configuration",
+        "atom_rho_multipole_core_source": "atom_rho_multipole.core_source",
+        "atom_rho_multipole_radial_function_type": "atom_rho_multipole.radial_function_type",
+        "atom_rho_multipole_scat_core": "atom_rho_multipole.scat_core",
+        "atom_rho_multipole_scat_core_table": "atom_rho_multipole.scat_core_table",
+        "atom_rho_multipole_scat_valence": "atom_rho_multipole.scat_valence",
+        "atom_rho_multipole_scat_valence_table": "atom_rho_multipole.scat_valence_table",
+        "atom_rho_multipole_valence_source": "atom_rho_multipole.valence_source",
+        "atom_rho_multipole_coeff_list": "atom_rho_multipole_coeff.list",
+        "atom_rho_multipole_coeff_P00": "atom_rho_multipole_coeff.p00",
+        "atom_rho_multipole_coeff_p00": "atom_rho_multipole_coeff.p00",
+        "atom_rho_multipole_coeff_P10": "atom_rho_multipole_coeff.p10",
+        "atom_rho_multipole_coeff_p10": "atom_rho_multipole_coeff.p10",
+        "atom_rho_multipole_coeff_P11": "atom_rho_multipole_coeff.p11",
+        "atom_rho_multipole_coeff_p11": "atom_rho_multipole_coeff.p11",
+        "atom_rho_multipole_coeff_P1_1": "atom_rho_multipole_coeff.p1_1",
+        "atom_rho_multipole_coeff_p1_1": "atom_rho_multipole_coeff.p1_1",
+        "atom_rho_multipole_coeff_P1-1": "atom_rho_multipole_coeff.p1_1",
+        "atom_rho_multipole_coeff_p1-1": "atom_rho_multipole_coeff.p1_1",
+        "atom_rho_multipole_coeff_P20": "atom_rho_multipole_coeff.p20",
+        "atom_rho_multipole_coeff_p20": "atom_rho_multipole_coeff.p20",
+        "atom_rho_multipole_coeff_P21": "atom_rho_multipole_coeff.p21",
+        "atom_rho_multipole_coeff_p21": "atom_rho_multipole_coeff.p21",
+        "atom_rho_multipole_coeff_P22": "atom_rho_multipole_coeff.p22",
+        "atom_rho_multipole_coeff_p22": "atom_rho_multipole_coeff.p22",
+        "atom_rho_multipole_coeff_P2_1": "atom_rho_multipole_coeff.p2_1",
+        "atom_rho_multipole_coeff_p2_1": "atom_rho_multipole_coeff.p2_1",
+        "atom_rho_multipole_coeff_P2-1": "atom_rho_multipole_coeff.p2_1",
+        "atom_rho_multipole_coeff_p2-1": "atom_rho_multipole_coeff.p2_1",
+        "atom_rho_multipole_coeff_P2_2": "atom_rho_multipole_coeff.p2_2",
+        "atom_rho_multipole_coeff_p2_2": "atom_rho_multipole_coeff.p2_2",
+        "atom_rho_multipole_coeff_P2-2": "atom_rho_multipole_coeff.p2_2",
+        "atom_rho_multipole_coeff_p2-2": "atom_rho_multipole_coeff.p2_2",
+        "atom_rho_multipole_coeff_P30": "atom_rho_multipole_coeff.p30",
+        "atom_rho_multipole_coeff_p30": "atom_rho_multipole_coeff.p30",
+        "atom_rho_multipole_coeff_P31": "atom_rho_multipole_coeff.p31",
+        "atom_rho_multipole_coeff_p31": "atom_rho_multipole_coeff.p31",
+        "atom_rho_multipole_coeff_P32": "atom_rho_multipole_coeff.p32",
+        "atom_rho_multipole_coeff_p32": "atom_rho_multipole_coeff.p32",
+        "atom_rho_multipole_coeff_P33": "atom_rho_multipole_coeff.p33",
+        "atom_rho_multipole_coeff_p33": "atom_rho_multipole_coeff.p33",
+        "atom_rho_multipole_coeff_P3_1": "atom_rho_multipole_coeff.p3_1",
+        "atom_rho_multipole_coeff_p3_1": "atom_rho_multipole_coeff.p3_1",
+        "atom_rho_multipole_coeff_P3-1": "atom_rho_multipole_coeff.p3_1",
+        "atom_rho_multipole_coeff_p3-1": "atom_rho_multipole_coeff.p3_1",
+        "atom_rho_multipole_coeff_P3_2": "atom_rho_multipole_coeff.p3_2",
+        "atom_rho_multipole_coeff_p3_2": "atom_rho_multipole_coeff.p3_2",
+        "atom_rho_multipole_coeff_P3-2": "atom_rho_multipole_coeff.p3_2",
+        "atom_rho_multipole_coeff_p3-2": "atom_rho_multipole_coeff.p3_2",
+        "atom_rho_multipole_coeff_P3_3": "atom_rho_multipole_coeff.p3_3",
+        "atom_rho_multipole_coeff_p3_3": "atom_rho_multipole_coeff.p3_3",
+        "atom_rho_multipole_coeff_P3-3": "atom_rho_multipole_coeff.p3_3",
+        "atom_rho_multipole_coeff_p3-3": "atom_rho_multipole_coeff.p3_3",
+        "atom_rho_multipole_coeff_P40": "atom_rho_multipole_coeff.p40",
+        "atom_rho_multipole_coeff_p40": "atom_rho_multipole_coeff.p40",
+        "atom_rho_multipole_coeff_P41": "atom_rho_multipole_coeff.p41",
+        "atom_rho_multipole_coeff_p41": "atom_rho_multipole_coeff.p41",
+        "atom_rho_multipole_coeff_P42": "atom_rho_multipole_coeff.p42",
+        "atom_rho_multipole_coeff_p42": "atom_rho_multipole_coeff.p42",
+        "atom_rho_multipole_coeff_P43": "atom_rho_multipole_coeff.p43",
+        "atom_rho_multipole_coeff_p43": "atom_rho_multipole_coeff.p43",
+        "atom_rho_multipole_coeff_P44": "atom_rho_multipole_coeff.p44",
+        "atom_rho_multipole_coeff_p44": "atom_rho_multipole_coeff.p44",
+        "atom_rho_multipole_coeff_P4_1": "atom_rho_multipole_coeff.p4_1",
+        "atom_rho_multipole_coeff_p4_1": "atom_rho_multipole_coeff.p4_1",
+        "atom_rho_multipole_coeff_P4-1": "atom_rho_multipole_coeff.p4_1",
+        "atom_rho_multipole_coeff_p4-1": "atom_rho_multipole_coeff.p4_1",
+        "atom_rho_multipole_coeff_P4_2": "atom_rho_multipole_coeff.p4_2",
+        "atom_rho_multipole_coeff_p4_2": "atom_rho_multipole_coeff.p4_2",
+        "atom_rho_multipole_coeff_P4-2": "atom_rho_multipole_coeff.p4_2",
+        "atom_rho_multipole_coeff_p4-2": "atom_rho_multipole_coeff.p4_2",
+        "atom_rho_multipole_coeff_P4_3": "atom_rho_multipole_coeff.p4_3",
+        "atom_rho_multipole_coeff_p4_3": "atom_rho_multipole_coeff.p4_3",
+        "atom_rho_multipole_coeff_P4-3": "atom_rho_multipole_coeff.p4_3",
+        "atom_rho_multipole_coeff_p4-3": "atom_rho_multipole_coeff.p4_3",
+        "atom_rho_multipole_coeff_P4_4": "atom_rho_multipole_coeff.p4_4",
+        "atom_rho_multipole_coeff_p4_4": "atom_rho_multipole_coeff.p4_4",
+        "atom_rho_multipole_coeff_P4-4": "atom_rho_multipole_coeff.p4_4",
+        "atom_rho_multipole_coeff_p4-4": "atom_rho_multipole_coeff.p4_4",
+        "atom_rho_multipole_coeff_Pc": "atom_rho_multipole_coeff.pc",
+        "atom_rho_multipole_coeff_pc": "atom_rho_multipole_coeff.pc",
+        "atom_rho_multipole_coeff_Pv": "atom_rho_multipole_coeff.pv",
+        "atom_rho_multipole_coeff_pv": "atom_rho_multipole_coeff.pv",
+        "atom_rho_multipole_kappa": "atom_rho_multipole_kappa.base",
+        "atom_rho_multipole_kappa_list": "atom_rho_multipole_kappa.list",
+        "atom_rho_multipole_kappa_prime0": "atom_rho_multipole_kappa.prime0",
+        "atom_rho_multipole_kappa_prime1": "atom_rho_multipole_kappa.prime1",
+        "atom_rho_multipole_kappa_prime2": "atom_rho_multipole_kappa.prime2",
+        "atom_rho_multipole_kappa_prime3": "atom_rho_multipole_kappa.prime3",
+        "atom_rho_multipole_kappa_prime4": "atom_rho_multipole_kappa.prime4",
+        "atom_rho_multipole_radial_slater_list": "atom_rho_multipole_radial_slater.list",
+        "atom_rho_multipole_radial_slater_n0": "atom_rho_multipole_radial_slater.n0",
+        "atom_rho_multipole_radial_slater_n1": "atom_rho_multipole_radial_slater.n1",
+        "atom_rho_multipole_radial_slater_n2": "atom_rho_multipole_radial_slater.n2",
+        "atom_rho_multipole_radial_slater_n3": "atom_rho_multipole_radial_slater.n3",
+        "atom_rho_multipole_radial_slater_zeta0": "atom_rho_multipole_radial_slater.zeta0",
+        "atom_rho_multipole_radial_slater_zeta1": "atom_rho_multipole_radial_slater.zeta1",
+        "atom_rho_multipole_radial_slater_zeta2": "atom_rho_multipole_radial_slater.zeta2",
+        "atom_rho_multipole_radial_slater_zeta3": "atom_rho_multipole_radial_slater.zeta3",
+        "restr_special_details": "restr.special_details",
+        "restr_angle_atom_site_label_1": "restr_angle.atom_site_label_1",
+        "restr_angle_atom_site_label_2": "restr_angle.atom_site_label_2",
+        "restr_angle_atom_site_label_3": "restr_angle.atom_site_label_3",
+        "restr_angle_details": "restr_angle.details",
+        "restr_angle_diff": "restr_angle.diff",
+        "restr_angle_site_symmetry_1": "restr_angle.site_symmetry_1",
+        "restr_angle_site_symmetry_2": "restr_angle.site_symmetry_2",
+        "restr_angle_site_symmetry_3": "restr_angle.site_symmetry_3",
+        "restr_angle_target": "restr_angle.target",
+        "restr_angle_target_weight_param": "restr_angle.target_weight_param",
+        "restr_distance_atom_site_label_1": "restr_distance.atom_site_label_1",
+        "restr_distance_atom_site_label_2": "restr_distance.atom_site_label_2",
+        "restr_distance_details": "restr_distance.details",
+        "restr_distance_diff": "restr_distance.diff",
+        "restr_distance_site_symmetry_1": "restr_distance.site_symmetry_1",
+        "restr_distance_site_symmetry_2": "restr_distance.site_symmetry_2",
+        "restr_distance_target": "restr_distance.target",
+        "restr_distance_target_weight_param": "restr_distance.target_weight_param",
+        "restr_distance_min_A": "restr_distance_min.A",
+        "restr_distance_min_a": "restr_distance_min.A",
+        "restr_distance_min_atom_site_label_1": "restr_distance_min.atom_site_label_1",
+        "restr_distance_min_atom_site_label_2": "restr_distance_min.atom_site_label_2",
+        "restr_distance_min_B": "restr_distance_min.B",
+        "restr_distance_min_b": "restr_distance_min.B",
+        "restr_distance_min_C": "restr_distance_min.C",
+        "restr_distance_min_c": "restr_distance_min.C",
+        "restr_distance_min_details": "restr_distance_min.details",
+        "restr_distance_min_difference": "restr_distance_min.difference",
+        "restr_distance_min_distance": "restr_distance_min.distance",
+        "restr_distance_min_E": "restr_distance_min.E",
+        "restr_distance_min_e": "restr_distance_min.E",
+        "restr_distance_min_F": "restr_distance_min.F",
+        "restr_distance_min_f": "restr_distance_min.F",
+        "restr_distance_min_G": "restr_distance_min.G",
+        "restr_distance_min_g": "restr_distance_min.G",
+        "restr_distance_min_site_symmetry_1": "restr_distance_min.site_symmetry_1",
+        "restr_distance_min_site_symmetry_2": "restr_distance_min.site_symmetry_2",
+        "restr_equal_angle_atom_site_label_1": "restr_equal_angle.atom_site_label_1",
+        "restr_equal_angle_atom_site_label_2": "restr_equal_angle.atom_site_label_2",
+        "restr_equal_angle_atom_site_label_3": "restr_equal_angle.atom_site_label_3",
+        "restr_equal_angle_class_id": "restr_equal_angle.class_id",
+        "restr_equal_angle_details": "restr_equal_angle.details",
+        "restr_equal_angle_site_symmetry_1": "restr_equal_angle.site_symmetry_1",
+        "restr_equal_angle_site_symmetry_2": "restr_equal_angle.site_symmetry_2",
+        "restr_equal_angle_site_symmetry_3": "restr_equal_angle.site_symmetry_3",
+        "restr_equal_angle_class_average": "restr_equal_angle_class.average",
+        "restr_equal_angle_class_esd": "restr_equal_angle_class.average_su",
+        "restr_equal_angle_class_class_id": "restr_equal_angle_class.class_id",
+        "restr_equal_angle_class_detail": "restr_equal_angle_class.details",
+        "restr_equal_angle_class_details": "restr_equal_angle_class.details",
+        "restr_equal_angle_class_diff_max": "restr_equal_angle_class.diff_max",
+        "restr_equal_angle_class_target_weight_param": "restr_equal_angle_class.target_weight_param",
+        "restr_equal_distance_atom_site_label_1": "restr_equal_distance.atom_site_label_1",
+        "restr_equal_distance_atom_site_label_2": "restr_equal_distance.atom_site_label_2",
+        "restr_equal_distance_class_id": "restr_equal_distance.class_id",
+        "restr_equal_distance_details": "restr_equal_distance.details",
+        "restr_equal_distance_site_symmetry_1": "restr_equal_distance.site_symmetry_1",
+        "restr_equal_distance_site_symmetry_2": "restr_equal_distance.site_symmetry_2",
+        "restr_equal_distance_class_average": "restr_equal_distance_class.average",
+        "restr_equal_distance_class_esd": "restr_equal_distance_class.average_su",
+        "restr_equal_distance_class_class_id": "restr_equal_distance_class.class_id",
+        "restr_equal_distance_class_details": "restr_equal_distance_class.details",
+        "restr_equal_distance_class_diff_max": "restr_equal_distance_class.diff_max",
+        "restr_equal_distance_class_target_weight_param": "restr_equal_distance_class.target_weight_param",
+        "restr_equal_torsion_atom_site_label_1": "restr_equal_torsion.atom_site_label_1",
+        "restr_equal_torsion_atom_site_label_2": "restr_equal_torsion.atom_site_label_2",
+        "restr_equal_torsion_atom_site_label_3": "restr_equal_torsion.atom_site_label_3",
+        "restr_equal_torsion_atom_site_label_4": "restr_equal_torsion.atom_site_label_4",
+        "restr_equal_torsion_class_id": "restr_equal_torsion.class_id",
+        "restr_equal_torsion_details": "restr_equal_torsion.details",
+        "restr_equal_torsion_site_symmetry_1": "restr_equal_torsion.site_symmetry_1",
+        "restr_equal_torsion_site_symmetry_2": "restr_equal_torsion.site_symmetry_2",
+        "restr_equal_torsion_site_symmetry_3": "restr_equal_torsion.site_symmetry_3",
+        "restr_equal_torsion_site_symmetry_4": "restr_equal_torsion.site_symmetry_4",
+        "restr_equal_torsion_class_average": "restr_equal_torsion_class.average",
+        "restr_equal_torsion_class_esd": "restr_equal_torsion_class.average_su",
+        "restr_equal_torsion_class_class_id": "restr_equal_torsion_class.class_id",
+        "restr_equal_torsion_class_details": "restr_equal_torsion_class.details",
+        "restr_equal_torsion_class_diff_max": "restr_equal_torsion_class.diff_max",
+        "restr_equal_torsion_class_target_weight_param": "restr_equal_torsion_class.target_weight_param",
+        "restr_parameter_atom_coefficient": "restr_parameter.atom_coefficient",
+        "restr_parameter_atom_site_label": "restr_parameter.atom_site_label",
+        "restr_parameter_class_id": "restr_parameter.class_id",
+        "restr_parameter_id": "restr_parameter.id",
+        "restr_parameter_class_class_id": "restr_parameter_class.class_id",
+        "restr_parameter_class_details": "restr_parameter_class.details",
+        "restr_parameter_class_parameter_type": "restr_parameter_class.parameter_type",
+        "restr_parameter_class_target": "restr_parameter_class.target",
+        "restr_parameter_class_target_weight_param": "restr_parameter_class.target_weight_param",
+        "restr_plane_atom_site_label": "restr_plane.atom_site_label",
+        "restr_plane_class_id": "restr_plane.class_id",
+        "restr_plane_details": "restr_plane.details",
+        "restr_plane_displacement": "restr_plane.displacement",
+        "restr_plane_id": "restr_plane.id",
+        "restr_plane_site_symmetry": "restr_plane.site_symmetry",
+        "restr_plane_target_weight_param": "restr_plane.target_weight_param",
+        "restr_plane_class_class_id": "restr_plane_class.class_id",
+        "restr_plane_class_details": "restr_plane_class.details",
+        "restr_plane_class_displacement_esd": "restr_plane_class.displacement_avsu",
+        "restr_plane_class_displacement_max": "restr_plane_class.displacement_max",
+        "restr_plane_class_displacement_max_atom_site_label": "restr_plane_class.displacement_max_atom_site_label",
+        "restr_plane_class_displacement_max_site_symmetry": "restr_plane_class.displacement_max_site_symmetry",
+        "restr_rigid_body_atom_site_label": "restr_rigid_body.atom_site_label",
+        "restr_rigid_body_class_id": "restr_rigid_body.class_id",
+        "restr_rigid_body_details": "restr_rigid_body.details",
+        "restr_rigid_body_id": "restr_rigid_body.id",
+        "restr_rigid_body_site_symmetry": "restr_rigid_body.site_symmetry",
+        "restr_rigid_body_class_class_id": "restr_rigid_body_class.class_id",
+        "restr_rigid_body_class_details": "restr_rigid_body_class.details",
+        "restr_torsion_angle_target": "restr_torsion.angle_target",
+        "restr_torsion_atom_site_label_1": "restr_torsion.atom_site_label_1",
+        "restr_torsion_atom_site_label_2": "restr_torsion.atom_site_label_2",
+        "restr_torsion_atom_site_label_3": "restr_torsion.atom_site_label_3",
+        "restr_torsion_atom_site_label_4": "restr_torsion.atom_site_label_4",
+        "restr_torsion_details": "restr_torsion.details",
+        "restr_torsion_diff": "restr_torsion.diff",
+        "restr_torsion_site_symmetry_1": "restr_torsion.site_symmetry_1",
+        "restr_torsion_site_symmetry_2": "restr_torsion.site_symmetry_2",
+        "restr_torsion_site_symmetry_3": "restr_torsion.site_symmetry_3",
+        "restr_torsion_site_symmetry_4": "restr_torsion.site_symmetry_4",
+        "restr_torsion_weight_param": "restr_torsion.weight_param",
+        "restr_U_iso_atom_site_label": "restr_U_iso.atom_site_label",
+        "restr_u_iso_atom_site_label": "restr_U_iso.atom_site_label",
+        "restr_U_iso_weight_param": "restr_U_iso.weight_param",
+        "restr_u_iso_weight_param": "restr_U_iso.weight_param",
+        "restr_U_rigid_atom_site_label_1": "restr_U_rigid.atom_site_label_1",
+        "restr_u_rigid_atom_site_label_1": "restr_U_rigid.atom_site_label_1",
+        "restr_U_rigid_atom_site_label_2": "restr_U_rigid.atom_site_label_2",
+        "restr_u_rigid_atom_site_label_2": "restr_U_rigid.atom_site_label_2",
+        "restr_U_rigid_details": "restr_U_rigid.details",
+        "restr_u_rigid_details": "restr_U_rigid.details",
+        "restr_U_rigid_diff": "restr_U_rigid.diff",
+        "restr_u_rigid_diff": "restr_U_rigid.diff",
+        "restr_U_rigid_site_symmetry_1": "restr_U_rigid.site_symmetry_1",
+        "restr_u_rigid_site_symmetry_1": "restr_U_rigid.site_symmetry_1",
+        "restr_U_rigid_site_symmetry_2": "restr_U_rigid.site_symmetry_2",
+        "restr_u_rigid_site_symmetry_2": "restr_U_rigid.site_symmetry_2",
+        "restr_U_rigid_target_weight_param": "restr_U_rigid.target_weight_param",
+        "restr_u_rigid_target_weight_param": "restr_U_rigid.target_weight_param",
+        "restr_U_rigid_U_parallel": "restr_U_rigid.U_parallel",
+        "restr_u_rigid_u_parallel": "restr_U_rigid.U_parallel",
+        "restr_U_similar_atom_site_label_1": "restr_U_similar.atom_site_label_1",
+        "restr_u_similar_atom_site_label_1": "restr_U_similar.atom_site_label_1",
+        "restr_U_similar_atom_site_label_2": "restr_U_similar.atom_site_label_2",
+        "restr_u_similar_atom_site_label_2": "restr_U_similar.atom_site_label_2",
+        "restr_U_similar_site_symmetry_1": "restr_U_similar.site_symmetry_1",
+        "restr_u_similar_site_symmetry_1": "restr_U_similar.site_symmetry_1",
+        "restr_U_similar_site_symmetry_2": "restr_U_similar.site_symmetry_2",
+        "restr_u_similar_site_symmetry_2": "restr_U_similar.site_symmetry_2",
+        "restr_U_similar_weight_param": "restr_U_similar.weight_param",
+        "restr_u_similar_weight_param": "restr_U_similar.weight_param",
+        "twin_dimensionality": "twin.dimensionality",
+        "twin_formation_mechanism": "twin.formation_mechanism",
+        "twin_morphology": "twin.morphology",
+        "twin_special_details": "twin.special_details",
+        "twin_individual_id": "twin_individual.id",
+        "twin_individual_mass_fraction_refined": "twin_individual.mass_fraction_refined",
+        "twin_individual_twin_lattice_type": "twin_individual.twin_lattice_type",
+        "twin_individual_twin_matrix": "twin_individual.twin_matrix",
+        "twin_individual_twin_matrix_11": "twin_individual.twin_matrix_11",
+        "twin_individual_twin_matrix_12": "twin_individual.twin_matrix_12",
+        "twin_individual_twin_matrix_13": "twin_individual.twin_matrix_13",
+        "twin_individual_twin_matrix_21": "twin_individual.twin_matrix_21",
+        "twin_individual_twin_matrix_22": "twin_individual.twin_matrix_22",
+        "twin_individual_twin_matrix_23": "twin_individual.twin_matrix_23",
+        "twin_individual_twin_matrix_31": "twin_individual.twin_matrix_31",
+        "twin_individual_twin_matrix_32": "twin_individual.twin_matrix_32",
+        "twin_individual_twin_matrix_33": "twin_individual.twin_matrix_33",
+        "twin_refln_datum_id": "twin_refln.datum_id",
+        "twin_refln_F_squared_calc": "twin_refln.F_squared_calc",
+        "twin_refln_f_squared_calc": "twin_refln.F_squared_calc",
+        "twin_refln_F_squared_calc_individual": "twin_refln.F_squared_calc_individual",
+        "twin_refln_f_squared_calc_individual": "twin_refln.F_squared_calc_individual",
+        "twin_refln_F_squared_meas": "twin_refln.F_squared_meas",
+        "twin_refln_f_squared_meas": "twin_refln.F_squared_meas",
+        "twin_refln_F_squared_meas_sigma": "twin_refln.F_squared_meas_sigma",
+        "twin_refln_f_squared_meas_sigma": "twin_refln.F_squared_meas_sigma",
+        "twin_refln_F_squared_sigma": "twin_refln.F_squared_meas_sigma",
+        "twin_refln_f_squared_sigma": "twin_refln.F_squared_meas_sigma",
+        "twin_refln.F_squared_sigma": "twin_refln.F_squared_meas_sigma",
+        "twin_refln.f_squared_sigma": "twin_refln.F_squared_meas_sigma",
+        "twin_refln.F_squared_meas_su": "twin_refln.F_squared_meas_sigma",
+        "twin_refln.f_squared_meas_su": "twin_refln.F_squared_meas_sigma",
+        "twin_refln_include_status": "twin_refln.include_status",
+        "twin_refln_index_h": "twin_refln.index_h",
+        "twin_refln_index_hkl": "twin_refln.index_hkl",
+        "twin_refln_index_k": "twin_refln.index_k",
+        "twin_refln_index_l": "twin_refln.index_l",
+        "twin_refln_individual_id": "twin_refln.individual_id",
+        "diffrn_refln_crystal_id": "diffrn_refln.crystal_id",
+        "refln_crystal_id": "refln.crystal_id",
+        "symmetry_Int_Tables_number-M": "space_group.it_number",
+    }

@@ -26,7 +26,7 @@ commands:
     interactive_lifecycle:
       run:
         implemented_as: "cli_command"
-        call_pattern: "wine /opt/wine_installations/wine_win64/drive_c/Xcalibur/CrysAlisPro171.43.48a/pro.exe {par_path}"
+        call_pattern: "wine /opt/wine_installations/wine_win64/drive_c/Xcalibur/CrysAlisPro171.44.48a/pro.exe {par_path}"
         used_basecommand_parameters: ["par_path"]
       finalise:
         implemented_as: "python_callable"

@@ -7,7 +7,7 @@ from .qcrbox_wrapper import (
     QCrBoxWrapper,
 )
 
-__name__ = [
+__all__ = [
     "QCrBoxWrapper",
     "QCrBoxApplication",
     "QCrBoxCalculation",

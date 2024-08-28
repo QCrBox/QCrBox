@@ -38,6 +38,7 @@
       "export LD_LIBRARY_PATH=${PWD}/.devbox/nix/profile/default/lib/:$LD_LIBRARY_PATH",
       "uv pip install -e ./pyqcrbox[all]",
       "uv pip install -e ./qcrbox_wrapper[env-file]",
+      "uv pip install nicegui",
       "alias vi=nvim",
       "alias vim=nvim",
       "",
@@ -57,7 +58,11 @@
         "echo \"Opening JupyterLab URL: $JUPYTERLAB_URL\"",
         "python -m webbrowser -t $JUPYTERLAB_URL",
         "echo \"Run 'devbox services stop' to shut down the jupyter server again.\""
+      ],
+      "nicegui-step1": [
+        "python ./nicegui/prototype1.py",
       ]
+
     }
   }
 }
