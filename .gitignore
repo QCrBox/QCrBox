@@ -85,3 +85,7 @@ services/applications/xharpy_gpaw/XHARPy
 #MoProSuite
 services/applications/mopro/MoProSuite_*.zip
 services/applications/mopro/Import2MoPro-2024-07.zip
+
+# Jana2020
+services/applications/jana/Jana2020.zip
+services/applications/jana/Jana2020Inst.msi

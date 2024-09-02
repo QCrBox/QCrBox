@@ -1,0 +1,6 @@
+services:
+  jana:
+    build:
+      context: services/applications/jana/
+      args:
+        QCRBOX_DOCKER_TAG: ${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}

@@ -1,0 +1,9 @@
+table Icon
+  Caption: Jana2020
+  Command[0]: $QCRBOX_PYTHON_VENV_DIR/bin/python /opt/jana/bin/dummy_gui.py
+  Icon: /opt/qcrbox/.idesktop/jana_logo.png
+  Width: 48
+  Height: 48
+  X: 70
+  Y: 50
+end

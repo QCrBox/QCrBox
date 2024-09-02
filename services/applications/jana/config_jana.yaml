@@ -1,0 +1,33 @@
+#
+# Configuration for the application 'jana'
+#
+name: "Jana2020"
+slug: "jana"
+version: "x.y.z"
+description: "Jana is a general purpose refinement program supporting a wide range of crystallographic tasks."
+url: "http://jana.fzu.cz/"
+
+commands:
+  - name: "interactive"
+    implemented_as: "interactive"
+    description: "Start dummy GUI in interactive mode"
+    parameters:
+#      - name: "input_cif_path"
+#        dtype: "QCrBox.input_cif"
+#        description: "Path to the CIF file to open in the Dummy GUI"
+      - name: "greeting"
+        dtype: "str"
+        description: "Message to display in the Dummy GUI after start-up"
+    interactive_lifecycle:
+      run:
+        implemented_as: "cli_command"
+        call_pattern: "python dummy_gui.py {greeting}"
+        used_basecommand_parameters: ["greeting"]
+
+
+cif_entry_sets:
+  - name: "example_entry_set"
+    required: ["_cif_category.another_ddlm_entry"]
+    optional: ["_cif_category.another_ddl1_entry"]
+
+qcrbox_yaml_spec_version: "0.1"
