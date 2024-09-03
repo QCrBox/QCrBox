@@ -21,6 +21,7 @@ However, there will be an initial period of stabilisation where this is not adhe
 - Added script for a guided, automated installation of the QCrBox development environment.
 - Added 'qcb validate' command to convenient allow validation of application config yaml files.
 - Added support for 'one_of' in application config yaml files to specify alternative options for cif entries.
+- Added a (non-interactive) dummy application for testing and debugging. ([#281](https://github.com/QCrBox/QCrBox/issues/281))
 
 ### Enhancements
 
