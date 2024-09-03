@@ -1,0 +1,35 @@
+#
+# Configuration for the application 'dummy_cli'
+#
+name: "Dummy CLI"
+slug: "dummy_cli"
+version: "0.1.0"
+description: "Dummy non-interactive application for development, testing and debugging"
+url: ""
+
+commands:
+  - name: "greet_and_sleep"
+    description: "Print a greeting message, then wait for a given duration before returning."
+    implemented_as: "python_callable"
+    import_path: "pyqcrbox.helpers"
+    parameters:
+      - name: "name"
+        dtype: str
+      - name: "duration"
+        dtype: float
+        default_value: 5.0
+        description: "Sleep duration (in seconds)"
+
+  - name: "sample_cmd"
+    implemented_as: "cli_command"
+    call_pattern: "sample_cmd.sh {msg} {some_number}"
+    parameters:
+      - name: "msg"
+        dtype: str
+        default_value: null
+      - name: "some_number"
+        dtype: int
+        default_value: 42
+        required: False
+
+qcrbox_yaml_spec_version: "0.1"
