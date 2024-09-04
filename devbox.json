@@ -25,6 +25,10 @@
     "nix-ld": {
       "version":   "latest",
       "platforms": ["x86_64-linux"]
+    },
+    "wslu": {
+      "version":   "latest",
+      "platforms": ["aarch64-linux", "x86_64-linux"]
     }
   },
   "env": {
@@ -33,13 +37,10 @@
   },
   "shell": {
     "init_hook": [
-      ". $VENV_DIR/bin/activate",
-      "export NIX_LD_LIBRARY_PATH=${PWD}/.devbox/nix/profile/default/lib/:$NIX_LD_LIBRARY_PATH",
-      "export LD_LIBRARY_PATH=${PWD}/.devbox/nix/profile/default/lib/:$LD_LIBRARY_PATH",
+      "source $VENV_DIR/bin/activate",
+      "source ./scripts/devbox/initialise_shell_environment.sh",
       "uv pip install -e ./pyqcrbox[all]",
       "uv pip install -e ./qcrbox_wrapper[env-file]",
-      "alias vi=nvim",
-      "alias vim=nvim",
       "",
       "#bash scripts/create_mamba_env.sh",
       "#alias conda=micromamba",

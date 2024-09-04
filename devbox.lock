@@ -1312,6 +1312,34 @@
           "store_path": "/nix/store/w40ik54r0nv4fjqwiqs81ixpmdf2xdfw-which-2.21"
         }
       }
+    },
+    "wslu@latest": {
+      "last_modified": "2024-08-31T10:12:23Z",
+      "resolved": "github:NixOS/nixpkgs/5629520edecb69630a3f4d17d3d33fc96c13f6fe#wslu",
+      "source": "devbox-search",
+      "version": "4.1.3",
+      "systems": {
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/2cy543wxx32zszisr2bqd6phd3mj0n2q-wslu-4.1.3",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/2cy543wxx32zszisr2bqd6phd3mj0n2q-wslu-4.1.3"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/49c9sf5496m2lg5i4rasfpij25w16xji-wslu-4.1.3",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/49c9sf5496m2lg5i4rasfpij25w16xji-wslu-4.1.3"
+        }
+      }
     }
   }
 }
