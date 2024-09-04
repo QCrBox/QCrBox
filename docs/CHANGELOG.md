@@ -26,8 +26,11 @@ However, there will be an initial period of stabilisation where this is not adhe
 ### Enhancements
 
 - CLI command outputs now use rich text formatting by default (this can be disabled by setting `QCRBOX__CLI__DISABLE_RICH=true`).
+- Improved interaction between WSL and Windows (powered by [wslu](https://github.com/wslutilities/wslu)). ([#274](https://github.com/QCrBox/QCrBox/issues/274)
 
 ### Issues Fixed
+
+- Browser windows now open correctly under WSL. ([#274](https://github.com/QCrBox/QCrBox/issues/274)
 
 ### Development
 
