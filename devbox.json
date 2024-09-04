@@ -25,6 +25,10 @@
     "nix-ld": {
       "version":   "latest",
       "platforms": ["x86_64-linux"]
+    },
+    "wslu": {
+      "version":   "latest",
+      "platforms": ["aarch64-linux", "x86_64-linux"]
     }
   },
   "env": {
