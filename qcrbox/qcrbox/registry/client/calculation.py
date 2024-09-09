@@ -2,20 +2,14 @@
 
 import asyncio
 from abc import ABCMeta, abstractmethod
-from enum import Enum
 
-
-class CalculationStatus(str, Enum):
-    RUNNING = "running"
-    COMPLETED = "completed"
-    FAILED = "failed"
-    UNKNOWN = "unknown"
+from pyqcrbox.sql_models_NEW_v2 import CalculationStatusEnum
 
 
 class BaseCalculation(metaclass=ABCMeta):
     @property
     @abstractmethod
-    def status(self) -> CalculationStatus:
+    def status(self) -> CalculationStatusEnum:
         pass
 
     @property
@@ -29,14 +23,14 @@ class ExternalCmdCalculation(BaseCalculation):
         self.proc = proc
 
     @property
-    def status(self) -> CalculationStatus:
+    def status(self) -> CalculationStatusEnum:
         match self.proc.returncode:
             case None:
-                status = CalculationStatus.RUNNING
+                status = CalculationStatusEnum.RUNNING
             case 0:
-                status = CalculationStatus.COMPLETED
+                status = CalculationStatusEnum.SUCCESSFUL
             case _:
-                status = CalculationStatus.FAILED
+                status = CalculationStatusEnum.FAILED
 
         return status
 
@@ -60,21 +54,21 @@ class PythonCallableCalculation(BaseCalculation):
         self._status_details = None
 
     @property
-    def status(self) -> CalculationStatus:
+    def status(self) -> CalculationStatusEnum:
         try:
             if self.future.running():
-                status = CalculationStatus.RUNNING
+                status = CalculationStatusEnum.RUNNING
             elif self.future.done():
                 # TODO: this branch will also be executed if the future has been cancelled! We should handle this.
                 self._status_details = self.future.result()
-                status = CalculationStatus.COMPLETED
+                status = CalculationStatusEnum.SUCCESSFUL
             else:
-                status = CalculationStatus.UNKNOWN
+                status = CalculationStatusEnum.UNKNOWN
         except Exception as exc:
             self._status_details = {
                 "msg": f"An error occurred when trying to determine the status of the future: {exc}"
             }
-            status = CalculationStatus.UNKNOWN
+            status = CalculationStatusEnum.UNKNOWN
 
         return status
 

@@ -12,7 +12,8 @@ from simple_cod_module import (
     get_number_fitting_cod_entries,
 )
 
-from qcrbox.registry.client import QCrBoxRegistryClient
+from pyqcrbox import sql_models_NEW_v2
+from pyqcrbox.registry.client import QCrBoxClient
 
 YAML_PATH = "./config_cod_check.yaml"
 
@@ -94,14 +95,8 @@ def merge_closest_cod_entry(input_cif_path, output_cif_path, cellpar_deviation_p
     )
 
 
-client = QCrBoxRegistryClient()
-application = client.register_application(
-    "COD Check",
-    version="0.0.1",
-)
+if __name__ == "__main__":
+    application_spec = sql_models_NEW_v2.ApplicationSpec.from_yaml_file(YAML_PATH)
 
-application.register_python_callable("get_number_fitting_cod_entries", qcb_get_number_fitting_cod_entries)
-
-application.register_python_callable("merge_closest_cod_entry", merge_closest_cod_entry)
-
-client.run()
+    client = QCrBoxClient(application_spec=application_spec)
+    client.run()

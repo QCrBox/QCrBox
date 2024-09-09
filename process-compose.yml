@@ -1,0 +1,7 @@
+version: "0.5"
+
+processes:
+  jupyterlab:
+   command: "jupyter lab --no-browser --notebook-dir=./docs/tutorials/examples/"
+   availability:
+    restart: "always"

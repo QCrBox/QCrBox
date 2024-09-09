@@ -1,0 +1,64 @@
+{
+  "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/0.12.0/.schema/devbox.schema.json",
+  "packages": {
+    "readline":                  "latest",
+    "which":                     "latest",
+    "less":                      "latest",
+    "ncdu":                      "latest",
+    "git":                       "latest",
+    "neovim":                    "latest",
+    "docker":                    "latest",
+    "curl":                      "latest",
+    "lazygit":                   "latest",
+    "lazydocker":                "latest",
+    "micromamba":                "latest",
+    "bashInteractive":           "latest",
+    "fzf":                       "latest",
+    "python":                    "3.12",
+    "python312Packages.tkinter": "latest",
+    "uv":                        "latest",
+    "fd":                        "latest",
+    "ripgrep":                   "latest",
+    "delta":                     "latest",
+    "stdenv.cc.cc.lib":          "",
+    "lesspipe":                  "latest",
+    "nix-ld": {
+      "version":   "latest",
+      "platforms": ["x86_64-linux"]
+    },
+    "wslu": {
+      "version":   "latest",
+      "platforms": ["aarch64-linux", "x86_64-linux"]
+    }
+  },
+  "env": {
+    "MAMBA_ROOT_PREFIX":     "${PWD}/.devbox/virtenv/python/.conda",
+    "QCRBOX_MAMBA_ENV_PATH": "${PWD}/.devbox/virtenv/python/.conda/envs/qcrbox/"
+  },
+  "shell": {
+    "init_hook": [
+      "source $VENV_DIR/bin/activate",
+      "source ./scripts/devbox/initialise_shell_environment.sh",
+      "uv pip install -e ./pyqcrbox[all]",
+      "uv pip install -e ./qcrbox_wrapper[env-file]",
+      "",
+      "#bash scripts/create_mamba_env.sh",
+      "#alias conda=micromamba",
+      "#alias sw_vers=/usr/bin/sw_vers",
+      "#eval \"$(micromamba shell hook --shell bash)\"",
+      "#micromamba activate qcrbox",
+      "#echo \"✓ Activated qcrbox mamba environment.\""
+    ],
+    "scripts": {
+      "example-notebooks": [
+        "set -euo pipefail",
+        "devbox services up -b jupyterlab",
+        "until curl --output /dev/null --silent --fail http://localhost:8888/api; do echo -n '.'; sleep 0.5; done; echo; echo 'Jupyterlab started successfully'",
+        "export JUPYTERLAB_URL=$(jupyter lab list | grep docs/tutorials/examples | head -n1 | awk -F:: '{ print $1 }')",
+        "echo \"Opening JupyterLab URL: $JUPYTERLAB_URL\"",
+        "python -m webbrowser -t $JUPYTERLAB_URL",
+        "echo \"Run 'devbox services stop' to shut down the jupyter server again.\""
+      ]
+    }
+  }
+}

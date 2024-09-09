@@ -16,9 +16,21 @@ However, there will be an initial period of stabilisation where this is not adhe
 
 ### New Features
 
+- Added Traefik as a dynamic reverse proxy. ([#225](https://github.com/QCrBox/QCrBox/issues/225))
+- Added Devbox configuration to enable reproducible, automated setup. ([#258](https://github.com/QCrBox/QCrBox/issues/258))
+- Added script for a guided, automated installation of the QCrBox development environment.
+- Added 'qcb validate' command to convenient allow validation of application config yaml files.
+- Added support for 'one_of' in application config yaml files to specify alternative options for cif entries.
+- Added a (non-interactive) dummy application for testing and debugging. ([#281](https://github.com/QCrBox/QCrBox/issues/281))
+
 ### Enhancements
 
+- CLI command outputs now use rich text formatting by default (this can be disabled by setting `QCRBOX__CLI__DISABLE_RICH=true`).
+- Improved interaction between WSL and Windows (powered by [wslu](https://github.com/wslutilities/wslu)). ([#274](https://github.com/QCrBox/QCrBox/issues/274)
+
 ### Issues Fixed
+
+- Browser windows now open correctly under WSL. ([#274](https://github.com/QCrBox/QCrBox/issues/274)
 
 ### Development
 

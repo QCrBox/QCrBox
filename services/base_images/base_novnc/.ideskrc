@@ -1,6 +1,7 @@
 table Config
+  Background.Source: /opt/qcrbox/.idesktop/bg.png
   Background.File: /opt/qcrbox/.idesktop/bg.png
-  Background.Mode: Stretch
+  Background.Mode: Scale
   Background.Color: #FFFFFF
 end
 

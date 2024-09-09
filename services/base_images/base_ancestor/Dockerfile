@@ -5,17 +5,21 @@ USER root
 
 RUN apt-get update -y && \
     apt-get install -y --fix-missing --no-install-recommends \
-        supervisor nano curl file wget rsync git \
+        supervisor nano curl file iputils-ping wget rsync git \
         gosu htop less ncdu procps psmisc tmux tree vim \
         tar cabextract gzip bzip2 zip unzip xzip xz-utils \
         gcc make bash-completion locales \
         openssh-client ca-certificates && \
     rm -rf /var/lib/apt/lists
 
-ARG QCRBOX_ROOT_DIR
+ARG QCRBOX_ROOT_DIR=${QCRBOX_ROOT_DIR}
+ARG QCRBOX_HOME=${QCRBOX_ROOT_DIR}
+ONBUILD ARG QCRBOX_ROOT_DIR=${QCRBOX_ROOT_DIR}
+ONBUILD ENV QCRBOX_ROOT_DIR=${QCRBOX_ROOT_DIR}
+ONBUILD ARG QCRBOX_HOME=${QCRBOX_HOME}
+ONBUILD ENV QCRBOX_HOME=${QCRBOX_HOME}
+
 ARG QCRBOX_VOLUMES_ROOT_DIR
-ARG QCRBOX_RABBITMQ_HOST
-ARG QCRBOX_RABBITMQ_PORT
 
 ##
 ## Create user 'qcrbox'
@@ -32,8 +36,6 @@ RUN groupadd --gid ${QCRBOX_USER_GID} ${QCRBOX_GROUP} && \
 
 ENV QCRBOX_USER=${QCRBOX_USER}
 ENV QCRBOX_HOME=${QCRBOX_HOME}
-ENV QCRBOX_RABBITMQ_HOST=${QCRBOX_RABBITMQ_HOST}
-ENV QCRBOX_RABBITMQ_PORT=${QCRBOX_RABBITMQ_PORT}
 
 ##
 ## Create 'global' file /etc/supervisord.conf. Among other things, this includes any config files
@@ -59,22 +61,22 @@ RUN eval "$(micromamba shell hook --shell bash)" && \
     ${MAMBA_EXE} create -n ${QCRBOX_MAMBA_ENV_NAME} && \
     ${MAMBA_EXE} activate ${QCRBOX_MAMBA_ENV_NAME} && \
     ${MAMBA_EXE} install -y python=3.11 && \
-    ${MAMBA_EXE} install -y pip setuptools wheel build conda-build && \
+    ${MAMBA_EXE} install -y pip setuptools wheel conda-build && \
     ${MAMBA_EXE} install -y cctbx-base && \
     ${MAMBA_EXE} clean -y --all --force-pkgs-dirs
 
 ##
-## Create python virtual environment for QCrBox and install the `qcbrox` package into it
+## Create python virtual environment for QCrBox and install the `pyqcrbox` package into it
 ##
 ARG QCRBOX_PYTHON_VENV_DIR=${QCRBOX_MAMBA_ENV_PATH}
 ENV QCRBOX_PYTHON_VENV_DIR=${QCRBOX_PYTHON_VENV_DIR}
 
-COPY --chown=${QCRBOX_USER}:${QCRBOX_GROUP} ./qcrbox_dist/requirements.txt ./qcrbox_dist/requirements-server.txt ${QCRBOX_HOME}
-RUN ${QCRBOX_PYTHON_VENV_DIR}/bin/python -m pip install -r ${QCRBOX_ROOT_DIR}/requirements.txt -r ${QCRBOX_ROOT_DIR}/requirements-server.txt
+COPY --chown=${QCRBOX_USER}:${QCRBOX_GROUP} ./pyqcrbox_dist/requirements.txt ./pyqcrbox_dist/requirements-server.txt ${QCRBOX_HOME}
+RUN ${QCRBOX_PYTHON_VENV_DIR}/bin/python -m pip install -r ${QCRBOX_HOME}/requirements.txt -r ${QCRBOX_HOME}/requirements-server.txt
 
 ARG QCRBOXTOOLS_VERSION
 ARG QCRBOXTOOLS_WHEEL=qcrboxtools-${QCRBOXTOOLS_VERSION}-py3-none-any.whl
-COPY --chown=${QCRBOX_USER}:${QCRBOX_GROUP} ./qcrbox_dist/${QCRBOXTOOLS_WHEEL} ${QCRBOX_HOME}/
+COPY --chown=${QCRBOX_USER}:${QCRBOX_GROUP} ./pyqcrbox_dist/${QCRBOXTOOLS_WHEEL} ${QCRBOX_HOME}/
 RUN eval "$(micromamba shell hook --shell bash)" && \
     ${MAMBA_EXE} activate ${QCRBOX_MAMBA_ENV_NAME} && \
     #${MAMBA_EXE} install -y cctbx && \
@@ -82,10 +84,10 @@ RUN eval "$(micromamba shell hook --shell bash)" && \
     true
 
 
-ARG QCRBOX_PYTHON_PACKAGE_VERSION=${QCRBOX_PYTHON_PACKAGE_VERSION}
-ARG QCRBOX_PYTHON_PACKAGE_WHEEL=qcrbox-${QCRBOX_PYTHON_PACKAGE_VERSION}-py3-none-any.whl
-COPY --chown=${QCRBOX_USER}:${QCRBOX_GROUP} ./qcrbox_dist/${QCRBOX_PYTHON_PACKAGE_WHEEL} ${QCRBOX_HOME}/
-RUN ${QCRBOX_PYTHON_VENV_DIR}/bin/python -m pip install ${QCRBOX_ROOT_DIR}/qcrbox-*.whl
+ARG PYQCRBOX_PYTHON_PACKAGE_VERSION=${PYQCRBOX_PYTHON_PACKAGE_VERSION}
+ARG PYQCRBOX_PYTHON_PACKAGE_WHEEL=pyqcrbox-${PYQCRBOX_PYTHON_PACKAGE_VERSION}-py3-none-any.whl
+COPY --chown=${QCRBOX_USER}:${QCRBOX_GROUP} ./pyqcrbox_dist/${PYQCRBOX_PYTHON_PACKAGE_WHEEL} ${QCRBOX_HOME}/
+RUN ${QCRBOX_PYTHON_VENV_DIR}/bin/python -m pip install ${QCRBOX_HOME}/pyqcrbox-*.whl
 
 RUN micromamba shell init --shell bash --root-prefix=${MAMBA_ROOT_PREFIX} && \
     echo "${MAMBA_EXE} activate ${QCRBOX_MAMBA_ENV_NAME}" >> ${QCRBOX_HOME}/.bashrc && \

@@ -9,13 +9,9 @@ from qcrboxtools.cif.cif2cif import (
 from qcrboxtools.cif.file_converter.hkl import cif2hkl4
 from qcrboxtools.robots.mopro import MoProImportRobot, MoProInpFile, WinePathHelper, MoProRobot
 
-from qcrbox.registry.client import ExternalCommand, QCrBoxRegistryClient
+from pyqcrbox import sql_models_NEW_v2
+from pyqcrbox.registry.client import QCrBoxClient
 
-client = QCrBoxRegistryClient()
-application = client.register_application(
-    "MoProSuite",
-    version="2022.07",
-)
 YAML_PATH = "./config_mopro.yaml"
 
 lib_path = PureWindowsPath(os.environ["MOPRO_LIB_PATH"])
@@ -222,29 +218,8 @@ def finalise__interactive(input_cif_path, output_cif_path):
     except StopIteration:
         pass
 
-def toparams__interactive(input_cif_path):
-    work_dir = Path(input_cif_path).parent
-    work_cif_path = work_dir / "work.cif"
+if __name__ == "__main__":
+    application_spec = sql_models_NEW_v2.ApplicationSpec.from_yaml_file(YAML_PATH)
 
-
-
-cmd_interactive = ExternalCommand(
-    "wine",
-    "/opt/wine_installations/wine_win64/drive_c/MoProSuite-win-July2022/MoProGUI_Qt_win64/MoProGUI_win64.exe",
-)
-
-application.register_python_callable(
-    "run_inp_file",
-    run_inp_file,
-)
-
-application.register_external_command(
-    "interactive",
-    cmd_interactive,
-)
-
-application.register_python_callable("prepare__interactive", prepare__interactive)
-
-application.register_python_callable("finalise__interactive", finalise__interactive)
-
-client.run()
+    client = QCrBoxClient(application_spec=application_spec)
+    client.run()

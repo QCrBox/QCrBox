@@ -1,0 +1,129 @@
+#
+# Configuration for the application 'xharpy-gpaw'
+#
+name: "XHARPy-GPAW"
+slug: "xharpy-gpaw"
+version: "0.2.0"
+description: "A pure Python library that enables the calculation of and the refinement with custom atomic form factors from periodic calculations with GPAW."
+url: "https://github.com/Niolon/XHARPy"
+doi: "10.1107/S2052252522001385"
+
+commands:
+  - name: "atom_form_fact_gpaw"
+    description: "Calculate the atomic form factors for a given structure using GPAW and XHARPy"
+    implemented_as: "python_callable"
+    import_path: "configure_xharpy_gpaw"
+    parameters:
+      - name: "input_cif_path"
+        dtype: "QCrBox.input_cif"
+        default_value: None
+        description: "Path to the CIF file containing the structure to calculate the atomic form factors for"
+        required_entry_sets: ["cell", "structure", "resolution"]
+        required_entries: ["_space_group_symop_operation_xyz"]
+        merge_su: True
+      - name: "output_tsc_path"
+        dtype: "QCrBox.output_file"
+        default_value: None
+        description: "Path to save the TSC file to after calculating the atomic form factors"
+      - name: "functional"
+        dtype: "str"
+        default_value: None
+        description: "The DFT functional to use for the GPAW calculation"
+      - name: "gridspacing"
+        dtype: "float"
+        default_value: 0.16
+        required: False
+        description: "The grid spacing in Angstrom to use for the GPAW calculation"
+
+  - name: "ha_refine"
+    description: "Do a Hirshfeld atom refinement using XHARPy and GPAW"
+    implemented_as: "python_callable"
+    import_path: "configure_xharpy_gpaw"
+    parameters:
+      - name: "input_cif_path"
+        dtype: "QCrBox.input_cif"
+        default_value: None
+        description: "Path to the CIF file containing the structure to refine"
+        required_entry_sets: ["cell", "structure", "diffraction_intensities", "atomic_information"]
+        optional_entry_sets: ["geometry_lookup"]
+        required_entries: ["_space_group_symop_operation_xyz", "_space_group_crystal_system"]
+        merge_su: True
+        custom_categories: ["shelx"]
+      - name: "output_cif_path"
+        dtype: "QCrBox.output_cif"
+        default_value: None
+        description: "Path to save the CIF file to after refining the structure"
+        required_entry_sets: ["structure", "atomic_information"]
+        optional_entry_sets: ["geometry_lookup"]
+        invalidated_entries: [
+          "_geom.*", "_refln.*calc.*", "_shelx.*", "_iucr.refine_instructions_details",
+          '_refine(?!_ls\.weighting|_ls\.extinction).+', "_atom_site_aniso.u_.._su",
+          "_atom_site.*"
+        ]
+        custom_categories: ["shelx"]
+      - name: "functional"
+        dtype: "str"
+        default_value: None
+        description: "The DFT functional to use for the GPAW calculation"
+      - name: "gridspacing"
+        dtype: "float"
+        default_value: 0.16
+        required: False
+        description: "The grid spacing in Angstrom to use for the GPAW calculation"
+
+
+cif_entry_sets:
+  - name: "cell"
+    required: [
+      "_cell_length_a", "_cell_length_b", "_cell_length_c", "_cell_angle_alpha",
+      "_cell_angle_beta", "_cell_angle_gamma"
+    ]
+  - name: "structure"
+    required: [
+      "_atom_site_label", "_atom_site_type_symbol", "_atom_site_fract_x",
+      "_atom_site_fract_y", "_atom_site_fract_z", "_atom_site_U_iso_or_equiv"
+    ]
+    optional: [
+      "_atom_site_fract_x_su", "_atom_site_fract_y_su", "_atom_site_fract_z_su", # prevent su merging to prevent loss of precision
+      "_atom_site_U_iso_or_equiv_su"
+    ]
+  - name: "resolution"
+    required: [
+      one_of: [
+        "_reflns_d_resolution_high",
+        ["_diffrn_reflns_theta_max", "_diffrn_radiation_wavelength"],
+        [
+          "_diffrn_refln_index_h", "_diffrn_refln_index_k", "_diffrn_refln_index_l",
+          "_cell_length_a", "_cell_length_b", "_cell_length_c",
+          "_cell_angle_alpha", "_cell_angle_beta", "_cell_angle_gamma"
+        ],
+        [
+          "_refln_index_h", "_refln_index_k", "_refln_index_l",
+          "_cell_length_a", "_cell_length_b", "_cell_length_c",
+          "_cell_angle_alpha", "_cell_angle_beta", "_cell_angle_gamma"
+        ]
+      ]
+    ]
+  - name: "diffraction_intensities"
+    required: [
+      one_of: [
+        ["_diffrn_refln_index_h", "_diffrn_refln_index_k", "_diffrn_refln_index_l", "_diffrn_refln_intensity_net", "_diffrn_refln_intensity_u"],
+        "_shelx_hkl_file"
+      ]
+    ]
+  - name: "atomic_information"
+    required: [
+      "_atom_site_aniso_label", "_atom_site_aniso_U_11", "_atom_site_aniso_U_22", "_atom_site_aniso_U_33",
+      "_atom_site_aniso_U_12", "_atom_site_aniso_U_13", "_atom_site_aniso_U_23", "_atom_type_symbol",
+      "_atom_type_scat_dispersion_real", "_atom_type_scat_dispersion_imag", "_diffrn_radiation_wavelength",
+      "_atom_site_adp_type", "_atom_site_occupancy", "_space_group_crystal_system"
+    ]
+  - name: "geometry_lookup"
+    required: [
+      "_geom_bond_atom_site_label_1", "_geom_bond_atom_site_label_2",
+      "_geom_bond_distance", "_geom_bond_site_symmetry_2",
+      "_geom_angle_atom_site_label_1", "_geom_angle_atom_site_label_2", "_geom_angle_atom_site_label_3",
+      "_geom_angle", "_geom_angle_site_symmetry_1", "_geom_angle_site_symmetry_3"
+    ]
+
+qcrbox_yaml_spec_version: "0.1"

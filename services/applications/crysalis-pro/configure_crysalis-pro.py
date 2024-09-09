@@ -5,16 +5,10 @@ from textwrap import dedent
 from qcrboxtools.cif.cif2cif import cif_file_merge_to_unified_by_yml
 from qcrboxtools.cif.file_converter.shelxt import ins2symop_loop
 
-from qcrbox.registry.client import ExternalCommand, Param, QCrBoxRegistryClient
+from pyqcrbox import sql_models_NEW_v2
+from pyqcrbox.registry.client import QCrBoxClient
 
 YAML_PATH = "./config_crysalis-pro.yaml"
-
-client = QCrBoxRegistryClient()
-application = client.register_application(
-    "CrysalisPro",
-    version="171.44.48a",
-)
-
 
 def split_hkl_line(line: str):
     if len(line) < 30:
@@ -22,8 +16,8 @@ def split_hkl_line(line: str):
     return line[:4], line[4:8], line[8:12], line[12:20], line[20:28], line[28:]
 
 
-def finalise__interactive(work_folder: str, output_cif_path: str):
-    work_folder = Path(work_folder)
+def finalise__interactive(par_path, output_cif_path):
+    work_folder = Path(par_path).parent
     output_cif_path = Path(output_cif_path)
 
     newest_cif_path = next(
@@ -109,24 +103,13 @@ def finalise__interactive(work_folder: str, output_cif_path: str):
             newest_cif_path, output_cif_path, None, YAML_PATH, "interactive", "output_cif_path"
         )
 
-
-application.register_python_callable(
-    "finalise__interactive",
-    finalise__interactive,
-)
-
-
 def get_crysalis_path():
     xcalibur_dir = Path("/opt/wine_installations/wine_win64/drive_c/Xcalibur")
     crysalis_install_dir = next(d for d in xcalibur_dir.glob("CrysAlisPro*.*.*") if d.is_dir())
     return str(crysalis_install_dir / "pro.exe")
 
+if __name__ == "__main__":
+    application_spec = sql_models_NEW_v2.ApplicationSpec.from_yaml_file(YAML_PATH)
 
-external_cmd_open_folder_in_crysalis_pro = ExternalCommand("wine", get_crysalis_path(), Param("par_path"))
-
-application.register_external_command(
-    "interactive",
-    external_cmd_open_folder_in_crysalis_pro,
-)
-
-client.run()
+    client = QCrBoxClient(application_spec=application_spec)
+    client.run()

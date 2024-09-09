@@ -18,30 +18,28 @@ QCrBoxApplication : Represents an application within QCrBox.
 QCrBoxCommand : Represents a command for execution on the QCrBox server.
 QCrBoxCalculation : Represents a calculation performed on the QCrBox server.
 QCrBoxPathHelper : Manages file paths within QCrBox Docker containers.
-
-Namedtuples
------------
-QCrBoxParameter : Represents a parameter for QCrBoxCommand.
-QCrBoxCalculationStatus : Represents the status of a calculation in QCrBox.
 """
 
 import json
 import os
 import pathlib
-import textwrap
 import time
 import urllib
 import urllib.request
-import webbrowser
-from collections import namedtuple
 from functools import lru_cache
 from itertools import count
-from textwrap import dedent
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Any, Optional, Union
+
+import httpx
+
+from pyqcrbox import sql_models_NEW_v2
+
+from .qcrbox_application import QCrBoxApplication
+from .qcrbox_command import QCrBoxCommand, QCrBoxCommandBase, QCrBoxInteractiveCommand, QCrBoxParameter
 
 
 @lru_cache(maxsize=5)
-def get_time_cached_app_anwer(server_url: str, ttl_hash: Optional[int] = None) -> Dict[str, str]:
+def get_time_cached_app_answer(web_client: httpx.Client, ttl_hash: int) -> list[dict[str, Any]]:
     """
     Retrieves cached application answers from the QCrBox server.
 
@@ -51,15 +49,15 @@ def get_time_cached_app_anwer(server_url: str, ttl_hash: Optional[int] = None) -
 
     Parameters
     ----------
-    server_url : str
-        The URL of the QCrBox server.
-    ttl_hash : Optional[int]
+    web_client : httpx.Client
+        The web client to use for connecting to the QCrBox server.
+    ttl_hash : int
         A hash value representing the time-to-live for the cache. This value
         controls the cache's validity period to prevent outdated information.
 
     Returns
     -------
-    Dict[str, str]
+    dict[str, str]
         The response from the QCrBox server, typically a list of application details.
 
     Note
@@ -68,9 +66,8 @@ def get_time_cached_app_anwer(server_url: str, ttl_hash: Optional[int] = None) -
     intervals, instead of for a fixed time.
     """
     del ttl_hash
-    with urllib.request.urlopen(f"{server_url}/applications/") as r:
-        answers = json.loads(r.read().decode("UTF-8"))
-    return answers
+    response = web_client.get("/applications")
+    return response.json()
 
 
 def get_ttl_hash(seconds: int = 20) -> int:
@@ -99,65 +96,6 @@ def get_ttl_hash(seconds: int = 20) -> int:
     return round(time.time() / seconds)
 
 
-QCrBoxParameter = namedtuple("QCrBoxParameter", ["name", "dtype"])
-QCrBoxParameter.__doc__ = """
-Represents a parameter for a QCrBoxCommand in QCrBox.
-
-Attributes
-----------
-name : str
-    Name of the parameter.
-dtype : str
-    Data type of the parameter.
-"""
-
-QCrBoxCalculationStatus = namedtuple(
-    "QCrBoxCalculationStatus",
-    ["calculation_id", "command_id", "started_at", "status", "status_details"],
-)
-QCrBoxCalculationStatus.__doc__ = """
-Represents the status of a calculation in QCrBox.
-
-Attributes
-----------
-calculation_id : int
-    Unique identifier for the calculation.
-command_id : int
-    ID of the command that initiated the calculation.
-started_at : str
-    Timestamp when the calculation started.
-status : str
-    Status of the calculation (e.g., 'running', 'completed').
-status_details : dict
-    Detailed status information of the calculation.
-"""
-
-
-class UnsuccessfulCalculationError(Exception):
-    def __init__(self, status: "QCrBoxCalculationStatus"):
-        try:
-            error_message = status.status_details["details"]["msg"]
-        except KeyError:
-            error_message = "No error message available"
-
-        msg = dedent(f"""\
-            Calculation with id {status.calculation_id} does not have the status completed but {status.status}.
-
-            Potential error message:
-            {error_message}
-        """).strip()
-
-        super().__init__(msg)
-
-
-class InteractiveExecutionError(Exception):
-    pass
-
-
-class TimeoutError(Exception):
-    pass
-
-
 class QCrBoxWrapper:
     """
     Provides an interface to interact with the QCrBox server.
@@ -168,7 +106,7 @@ class QCrBoxWrapper:
         The address/IP of the QCrBox server.
     server_port : int
         The port on which the QCrBox server is running.
-    gui_infos : Optional[Dict[str, Dict[str, Union[int, str]]]] = None
+    gui_infos : Optional[dict[str, dict[str, Union[int, str]]]] = None
         GUI information for applications, including ports and commands that have a GUI.
         For each application containing a GUI command, the Application name should be
         the key, with another dict as the item. This dictionary needs the the entries
@@ -183,24 +121,21 @@ class QCrBoxWrapper:
 
     def __init__(
         self,
-        server_addr: str,
-        server_port: int,
-        gui_infos: Optional[Dict[str, Dict[str, Union[int, str]]]] = None,
+        web_client: httpx.Client,
+        gui_infos: Optional[dict[str, dict[str, Union[int, str]]]] = None,
     ) -> None:
         """
         Initializes the QCrBoxWrapper instance.
 
         Parameters
         ----------
-        server_addr : str
-            The address/IP of the QCrBox server.
-        server_port : int
-            The port on which the QCrBox server is running.
-        gui_infos : Optional[Dict[str, Dict[str, Union[int, str]]]] = None
+        web_client: httpx.Client
+            The web client to use for interacting with the QCrBox server.
+        gui_infos : Optional[dict[str, dict[str, Union[int, str]]]] = None
             Dictionary containing the GUI information for applications, including ports
             and commands that have a GUI. For each application containing a GUI command,
             the application name should be the key, with another dict as the item. This
-            dictionary needs the the entries "port" with the port the access the GUI,
+            dictionary needs the entries "port" with the port the access the GUI,
             as well as an entry "commands" that containts a list of all the interactive
             commands.
 
@@ -209,8 +144,10 @@ class QCrBoxWrapper:
         ConnectionError
             If the connection to the QCrBox Registry Server fails.
         """
-        self.server_addr = server_addr
-        self.server_port = server_port
+        self.web_client = web_client
+        self.server_url = str(web_client.base_url)
+        self.server_host = self.web_client.base_url.host
+        self.server_port = self.web_client.base_url.port
 
         # TODO Replace with commands reporting the port
         default_gui_infos = {
@@ -218,53 +155,56 @@ class QCrBoxWrapper:
             "Olex2 (Linux)": {"port": 12004, "commands": ["interactive"]},
             "CrystalExplorer": {"port": 12003, "commands": ["interactive"]},
             "CrysalisPro": {"port": 12001, "commands": ["interactive"]},
-            "MoProSuite": {"port": 12006, "commands": ["interactive"]},
         }
         if gui_infos is None:
             self.gui_infos = default_gui_infos
         else:
             self.gui_infos = gui_infos.update(default_gui_infos)
 
-        with urllib.request.urlopen(f"{self.server_url}") as r:
-            answers = json.loads(r.read().decode("UTF-8"))
+        response = web_client.get("/")
 
-        if "QCrBox" not in answers:
-            print(answers)
+        if "QCrBox" not in response.text:
+            print(response.text)
             raise ConnectionError(f"Cannot connect to QCrBox Registry Server at {self.server_url}")
 
-    @property
-    def server_url(self) -> str:
-        """
-        Constructs the full URL of the QCrBox server.
+    @classmethod
+    def from_server_addr(
+        cls,
+        server_addr: str,
+        server_port: Optional[int] = None,
+        gui_infos: Optional[dict[str, dict[str, Union[int, str]]]] = None,
+    ) -> "QCrBoxWrapper":
+        server_url = f"http://{server_addr}" + (f":{server_port}" if server_port is not None else "")
+        web_client = httpx.Client(base_url=server_url)
 
-        Returns
-        -------
-        str
-            The server URL.
-        """
-        return f"http://{self.server_addr}:{self.server_port}"
+        # with urllib.request.urlopen(f"{server_url}") as r:
+        #     response = r.read().decode("UTF-8")
+        #
+        # if "QCrBox" not in response:
+        #     print(response)
+        #     raise ConnectionError(f"Cannot connect to QCrBox Registry Server at {server_url}")
+
+        return cls(web_client, gui_infos)
+
+    def __repr__(self) -> str:
+        return f"<QCrBoxWrapper({self.server_url!r}')>"
 
     @property
-    def applications(self) -> List["QCrBoxApplication"]:
+    def applications(self) -> list["QCrBoxApplication"]:
         """
         Retrieves a list of applications from the QCrBox server.
 
         Returns
         -------
-        List[QCrBoxApplication]
+        list[qcrbox_wrapper.qcrbox_wrapper_new.QCrBoxApplication]
             A list of QCrBoxApplication namedtuples.
         """
-        answers = get_time_cached_app_anwer(self.server_url, get_ttl_hash())
+        response = get_time_cached_app_answer(self.web_client, get_ttl_hash())
         return [
             QCrBoxApplication(
-                int(ans["id"]),
-                ans["name"],
-                ans["version"],
-                ans["description"],
-                ans["url"],
-                self.commands,
+                application_spec=sql_models_NEW_v2.ApplicationSpecWithCommands(**app_spec), wrapper_parent=self
             )
-            for ans in answers
+            for app_spec in response
         ]
 
     @property
@@ -278,20 +218,19 @@ class QCrBoxWrapper:
             A dictionary where keys are application names and values are
             QCrBoxApplication objects.
         """
-        application_list = self.applications
-        return {application.name: application for application in application_list}
+        return {application.name: application for application in self.applications}
 
     @property
-    def commands(self) -> List["QCrBoxCommandBase"]:
+    def commands(self) -> list["QCrBoxCommandBase"]:
         """
         Retrieves a list of commands from the QCrBox server.
 
         Returns
         -------
-        List[QCrBoxCommandBase]
+        list[QCrBoxCommandBase]
             A list of QCrBoxCommand or QCrBoxInteractiveCommand objects.
         """
-        answers = get_time_cached_app_anwer(self.server_url, get_ttl_hash())
+        answers = get_time_cached_app_answer(self.web_client, get_ttl_hash())
 
         # with urllib.request.urlopen(f"{self.server_url}/applications/") as r:
         #    answers = json.loads(r.read().decode("UTF-8"))
@@ -381,502 +320,6 @@ class QCrBoxWrapper:
 
         return commands
 
-    def __repr__(self) -> str:
-        return f"<QCrBoxWrapper(server_addr={self.server_addr}, server_port={self.server_port})>"
-
-
-class QCrBoxApplication:
-    """
-    Represents an application in QCrBox packaged in its own container.
-
-    Parameters
-    ----------
-    app_id : int
-        Unique identifier for the application.
-    name : str
-        Name of the application.
-    version : str
-        Version of the application.
-    description : str
-        Description of the application.
-    url : str
-        URL for the application documentation or homepage.
-    server_commands : List[QCrBoxCommandBase]
-        A list of commands available for this application.
-    """
-
-    def __init__(
-        self,
-        app_id: int,
-        name: str,
-        version: str,
-        description: str,
-        url: str,
-        server_commands: List["QCrBoxCommand"],
-    ) -> None:
-        """
-        Initializes the QCrBoxApplication instance.
-
-        Parameters
-        ----------
-        app_id : int
-            Unique identifier for the application.
-        name : str
-            Name of the application.
-        version : str
-            Version of the application.
-        description : str
-            Description of the application.
-        url : str
-            URL for the application documentation or homepage.
-        server_commands : List[QCrBoxCommand]
-            A list of commands available for this application.
-        """
-        self.id = app_id
-        self.name = name
-        self.version = version
-        self.description = description
-        self.url = url
-
-        app_cmds = [cmd for cmd in server_commands if cmd.application_id == self.id]
-        method_strings = []
-        for cmd in app_cmds:
-            parameter_strings = (f"{par.name}: {par.dtype}" for par in cmd.parameters)
-            base_indent = "\n                    "
-            all_par_string = base_indent + ("," + base_indent).join(parameter_strings) + "\n                "
-            method_strings.append(f"{cmd.name}({all_par_string})")
-            setattr(self, cmd.name, cmd)
-
-        linker = "\n\n                "
-
-        self.__doc__ = textwrap.dedent(
-            f"""
-            Represents the {self.name} application (v. {self.version}) in QCrBox
-
-            Methods:
-                {linker.join(method_strings)}
-            """
-        )
-
-    def __repr__(self) -> str:
-        return f"{self.name}()"
-
-
-class QCrBoxCommandBase:
-    """
-    Base class for representing a command to be executed on the QCrBox server.
-
-    Parameters
-    ----------
-    cmd_id : int
-        Unique identifier for the command.
-    name : str
-        Name of the command.
-    application_id : int
-        ID of the application used by the command.
-    parameters : List[QCrBoxParameter]
-        List of parameters for the command.
-    wrapper_parent : QCrBoxWrapper
-        Parent wrapper object that instantiated the command.
-    """
-
-    def __init__(
-        self,
-        cmd_id: int,
-        name: str,
-        application_id: int,
-        parameters: List[QCrBoxParameter],
-        wrapper_parent: QCrBoxWrapper,
-    ) -> None:
-        """
-        Initializes the QCrBoxCommandBase instance.
-
-        Parameters
-        ----------
-        cmd_id : int
-            Unique identifier for the command.
-        name : str
-            Name of the command.
-        application_id : int
-            ID of the application used by the command.
-        parameters : List[QCrBoxParameter]
-            List of parameters for the command.
-        wrapper_parent : QCrBoxWrapper
-            Parent wrapper object that instantiated the command.
-        """
-        self.id = cmd_id
-        self.name = name
-        self.application_id = application_id
-        self.parameters = parameters
-        self.wrapper_parent = wrapper_parent
-        self._server_url = wrapper_parent.server_url
-
-    @property
-    def par_name_list(self) -> List[str]:
-        """
-        Retrieves the names of the parameters for the command.
-
-        Returns
-        -------
-        List[str]
-            A list containing the names of the parameters.
-        """
-        return [par.name for par in self.parameters]
-
-    def args_to_kwargs(self, *args, **kwargs):
-        """
-        Converts positional and keyword arguments into a dictionary of only keyword
-        arguments.
-
-        This method ensures that the arguments match the parameter names
-        defined for the command, raising errors for invalid or duplicate arguments.
-
-        Parameters
-        ----------
-        *args : str
-            Positional arguments for the command parameters.
-        **kwargs : str
-            Keyword arguments for the command parameters.
-
-        Returns
-        -------
-        dict
-            A dictionary mapping parameter names to their corresponding values.
-
-        Raises
-        ------
-        NameError
-            If invalid or duplicate keyword arguments are provided.
-        """
-        arguments = {key: str(val) for key, val in zip(self.par_name_list, args)}
-
-        invalid_args = [arg for arg in kwargs if arg not in self.par_name_list]
-        if len(invalid_args) > 0:
-            raise NameError(f'This method got one or more invalid keywords: {", ".join(invalid_args)}')
-
-        overbooked_args = [arg for arg in kwargs if arg in arguments]
-
-        if len(overbooked_args) > 0:
-            raise NameError(f'One or more kwargs already set as args: {", ".join(overbooked_args)}')
-
-        arguments.update({key: str(val) for key, val in kwargs.items()})
-        return arguments
-
-
-class QCrBoxCommand(QCrBoxCommandBase):
-    """
-    Represents a command to be executed on the QCrBox server.
-
-    Parameters
-    ----------
-    cmd_id : int
-        Unique identifier for the command.
-    name : str
-        Name of the command.
-    application_id : int
-        ID of the application used by the command.
-    parameters : List[QCrBoxParameter]
-        List of parameters for the command.
-    wrapper_parent : QCrBoxWrapper
-        Parent wrapper object that instantiated the command.
-    """
-
-    def __call__(self, *args, **kwargs) -> "QCrBoxCalculation":
-        """
-        Executes the command on the QCrBox server with the provided arguments.
-
-        Parameters
-        ----------
-        *args
-            Positional arguments for the command parameters.
-        **kwargs
-            Keyword arguments for the command parameters.
-
-        Returns
-        -------
-        QCrBoxCalculation
-            The resulting calculation object from executing the command.
-
-        Raises
-        ------
-        NameError
-            If invalid or duplicate keyword arguments are provided.
-        ConnectionError
-            If the command cannot be successfully sent to the server.
-        """
-        arguments = self.args_to_kwargs(*args, **kwargs)
-
-        data_dict = {
-            "action": "invoke_command",
-            "payload": {"command_id": self.id, "arguments": arguments},
-        }
-        req = urllib.request.Request(f"{self._server_url}/invoke_command/", method="POST")
-        req.add_header("Content-Type", "application/json")
-        data = json.dumps(data_dict)
-        data = data.encode("UTF-8")
-        r = urllib.request.urlopen(req, data=data)
-        answer = json.loads(r.read())
-        if not answer["status"] == "success":
-            raise TimeoutError(f"Command not successfully send. Answer was {answer}")
-
-        return QCrBoxCalculation(answer["payload"]["calculation_id"], self)
-
-    def __repr__(self) -> str:
-        return f"QCrBoxCommand({self.name})"
-
-
-class QCrBoxInteractiveCommand(QCrBoxCommandBase):
-    """
-    Represents an interactive command to be executed on the QCrBox server.
-
-    This class includes additional steps for preparation and finalization of
-    the command execution, along with a GUI URL for interactive sessions.
-
-    Parameters
-    ----------
-    cmd_id : int
-        Unique identifier for the command.
-    name : str
-        Name of the command.
-    application_id : int
-        ID of the application used by the command.
-    parameters : List[QCrBoxParameter]
-        List of parameters for the command.
-    gui_url : str
-        URL for the GUI associated with the interactive command.
-    wrapper_parent : QCrBoxWrapper
-        Parent wrapper object that instantiated the command.
-    run_cmd : QCrBoxCommand
-        Command to be executed as the main run command.
-    prepare_cmd : Optional[QCrBoxCommand], optional
-        Command to be executed as the preparation command, by default None.
-    finalise_cmd : Optional[QCrBoxCommand], optional
-        Command to be executed as the finalization command, by default None.
-    """
-
-    def __init__(
-        self,
-        cmd_id: int,
-        name: str,
-        application_id: int,
-        parameters: List[QCrBoxParameter],
-        gui_url: str,
-        wrapper_parent: QCrBoxWrapper,
-        run_cmd: QCrBoxCommand,
-        prepare_cmd: Optional[QCrBoxCommand] = None,
-        finalise_cmd: Optional[QCrBoxCommand] = None,
-    ) -> None:
-        """
-        Initializes the QCrBoxInteractiveCommand instance.
-
-        Parameters
-        ----------
-        cmd_id : int
-            Unique identifier for the command.
-        name : str
-            Name of the command.
-        application_id : int
-            ID of the application used by the command.
-        parameters : List[QCrBoxParameter]
-            List of parameters for the command.
-        gui_url : str
-            URL for the GUI associated with the interactive command.
-        wrapper_parent : QCrBoxWrapper
-            Parent wrapper object that instantiated the command.
-        run_cmd : QCrBoxCommand
-            Command to be executed as the main run command.
-        prepare_cmd : Optional[QCrBoxCommand], optional
-            Command to be executed as the preparation command (before run), by default None.
-        finalise_cmd : Optional[QCrBoxCommand], optional
-            Command to be executed as the finalization command (after trigger after run),
-            by default None.
-        """
-        super().__init__(
-            cmd_id=cmd_id,
-            name=name,
-            application_id=application_id,
-            parameters=parameters,
-            wrapper_parent=wrapper_parent,
-        )
-        self.gui_url = gui_url
-        self._server_url = wrapper_parent.server_url
-        self.run_cmd = run_cmd
-        self.prepare_cmd = prepare_cmd
-        self.finalise_cmd = finalise_cmd
-
-    def execute_prepare(self, arguments: dict):
-        """
-        Executes the preparation command with the provided arguments.
-
-        Parameters
-        ----------
-        arguments : dict
-            Dictionary of arguments for the preparation command.
-
-        Returns
-        -------
-        dict
-            Updated arguments after preparation command execution.
-        """
-        prepare_calculation = None
-        if self.prepare_cmd is not None:
-            prepare_arguments = {key: val for key, val in arguments.items() if key in self.prepare_cmd.par_name_list}
-
-            prepare_calculation = self.prepare_cmd(**prepare_arguments)
-            try:
-                prepare_calculation.wait_while_running(0.1)
-            except UnsuccessfulCalculationError as e:
-                raise InteractiveExecutionError(f"Prepare command of {self.name} failed") from e
-
-    def execute_run(self, arguments: dict) -> Tuple["QCrBoxCalculation", dict]:
-        """
-        Executes the main run command with the provided arguments.
-
-        Parameters
-        ----------
-        arguments : dict
-            Dictionary of arguments for the run command.
-
-        Returns
-        -------
-        Tuple[QCrBoxCalculation, dict]
-            The resulting calculation object and the updated arguments.
-        """
-        run_arguments = {key: val for key, val in arguments.items() if key in self.run_cmd.par_name_list}
-        run_calculation = self.run_cmd(**run_arguments)
-        if run_calculation.status.status not in ("running", "completed"):
-            raise UnsuccessfulCalculationError(run_calculation.status)
-        return run_calculation
-
-    def execute_finalise(self, arguments: dict) -> dict:
-        """
-        Executes the finalization command with the provided arguments.
-
-        Parameters
-        ----------
-        arguments : dict
-            Dictionary of arguments for the finalization command.
-
-        Returns
-        -------
-        dict
-            Updated arguments after finalization command execution
-        """
-        if self.finalise_cmd is not None:
-            finalise_arguments = {key: val for key, val in arguments.items() if key in self.finalise_cmd.par_name_list}
-            finalise_calculation = self.finalise_cmd(**finalise_arguments)
-            try:
-                finalise_calculation.wait_while_running(0.1)
-            except UnsuccessfulCalculationError as e:
-                raise InteractiveExecutionError(f"Finalise command of {self.name} failed") from e
-
-    def __call__(self, *args, **kwargs) -> "QCrBoxCalculation":
-        """
-        Executes the interactive command with the provided arguments.
-
-        Parameters
-        ----------
-        *args
-            Positional arguments for the command parameters.
-        **kwargs
-            Keyword arguments for the command parameters.
-
-        Returns
-        -------
-        QCrBoxCalculation
-            The resulting calculation object from the run command.
-
-        Raises
-        ------
-        NameError
-            If invalid or duplicate keyword arguments are provided.
-        ConnectionError
-            If the command cannot be successfully sent to the server.
-        """
-        arguments = self.args_to_kwargs(*args, **kwargs)
-
-        self.execute_prepare(arguments)
-        if self.gui_url is not None:
-            webbrowser.open(self.gui_url)
-        run_calculation = self.execute_run(arguments)
-        if self.gui_url is not None:
-            input("Press enter when you have finished your interactive session")
-
-        self.execute_finalise(arguments)
-
-        return run_calculation
-
-
-class QCrBoxCalculation:
-    """
-    Represents a calculation performed on the QCrBox server.
-
-    Parameters
-    ----------
-    calc_id : int
-        Unique identifier for the calculation.
-    calculation_parent : QCrBoxCommand
-        Parent command object that instantiated the calculation.
-    """
-
-    def __init__(self, calc_id: int, calculation_parent: "QCrBoxCommand") -> None:
-        """
-        Initializes the QCrBoxCalculation instance.
-
-        Parameters
-        ----------
-        calc_id : int
-            Unique identifier for the calculation.
-        calculation_parent : QCrBoxCommand
-            Parent command object that instantiated the calculation.
-        """
-        self.id = calc_id
-        self.calculation_parent = calculation_parent
-        self._server_url = calculation_parent._server_url
-
-    @property
-    def status(self) -> QCrBoxCalculationStatus:
-        """
-        Fetches and returns the current status of the calculation from the server.
-
-        Returns
-        -------
-        QCrBoxCalculationStatus
-            A namedtuple containing detailed status information of the calculation.
-        """
-        with urllib.request.urlopen(f"{self._server_url}/calculations/{self.id}") as r:
-            answers = json.loads(r.read().decode("UTF-8"))
-
-        return QCrBoxCalculationStatus(
-            int(answers["id"]),
-            int(answers["command_id"]),
-            answers["started_at"],
-            answers["status_details"]["status"],
-            answers["status_details"],
-        )
-
-    def wait_while_running(self, sleep_time: float) -> None:
-        """
-        Periodically checks the calculation's status and blocks until it is no longer 'running'.
-
-        Parameters
-        ----------
-        sleep_time : float
-            The interval, in seconds, between status checks.
-
-        Raises
-        ------
-        RuntimeError
-            If the calculation finishes with a status other than 'completed'.
-        """
-        while self.status.status == "running":
-            time.sleep(sleep_time)
-        if self.status.status != "completed":
-            raise UnsuccessfulCalculationError(self.status)
-
-    def __repr__(self) -> str:
-        return f"<QCrBoxCalculation(id={self.id}, parent_command={self.calculation_parent.name})>"
-
 
 class QCrBoxPathHelper:
     """
@@ -932,7 +375,7 @@ class QCrBoxPathHelper:
         else:
             self.local_path = pathlib.Path(local_path) / base_dir
             self.qcrbox_path = pathlib.PurePosixPath(qcrbox_path) / base_dir
-        self.local_path.mkdir(exist_ok=True, parents=True)
+        self.local_path.mkdir(exist_ok=True)
 
     @classmethod
     def from_dotenv(cls, dotenv_name: str, base_dir: Optional[pathlib.Path] = None) -> "QCrBoxPathHelper":
@@ -1035,7 +478,7 @@ class QCrBoxPathHelper:
         """
         return self.path_to_local(path), self.path_to_qcrbox(path)
 
-    def create_next_step_folder(self) -> Tuple[pathlib.Path, str]:
+    def create_next_step_folder(self) -> tuple[pathlib.Path, str]:
         """
         Creates a new folder for the next step in a sequence within the local file system
         and returns its path equivalents in both the local and QCrBox file systems.
@@ -1048,7 +491,7 @@ class QCrBoxPathHelper:
 
         Returns
         -------
-        Tuple[pathlib.Path, str]
+        tuple[pathlib.Path, str]
             A tuple containing the newly created folder's path in the local file system
             (as a pathlib.Path object) and its equivalent in the QCrBox file system
             (as a POSIX-style string path).

@@ -1,0 +1,6 @@
+services:
+  dummy_cli:
+    build:
+      context: services/applications/dummy_cli/
+      args:
+        QCRBOX_DOCKER_TAG: ${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}
