@@ -68,11 +68,11 @@ def add_files_mopro_inp(inp_file: MoProInpFile, table_type: str, wave_function_t
 def run_inp_file(
     input_cif_path,
     output_cif_path,
-    inp_file_path: str,
-    constraint_file_path: str,
-    restraint_file_path: str,
-    table_type: str,
-    wave_function_type: str
+    inp_file_path,
+    constraint_file_path,
+    restraint_file_path,
+    table_type,
+    wavefunction_type
 ):
     work_folder = Path(input_cif_path).parent
     work_cif_path = work_folder / "work.cif"
@@ -90,7 +90,7 @@ def run_inp_file(
     path_helper = WinePathHelper()
     inp_file_path = Path(inp_file_path)
     inp_file = MoProInpFile.from_file(inp_file_path)
-    add_files_mopro_inp(inp_file, table_type, wave_function_type)
+    add_files_mopro_inp(inp_file, table_type, wavefunction_type)
     para_path = work_cif_path.with_name(work_cif_path.stem + "_00.par")
     inp_file.files["PARA"] = path_helper.get_windows_path(para_path)
     inp_file.files["DATA"] = path_helper.get_windows_path(work_cif_path.with_suffix(".hkl"))

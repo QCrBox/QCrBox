@@ -26,11 +26,11 @@ commands:
         custom_categories: ["iucr", "mopro"]
       - name: "table_type"
         dtype: "str"
-        default: "MoPro v20"
+        default_value: "MoPro v20"
         description: "to be added"
       - name: "wavefunction_type"
         dtype: "str"
-        default: "Su Coppens"
+        default_value: "Su Coppens"
         description: "to be added"
     interactive_lifecycle:
       prepare:
@@ -49,8 +49,7 @@ commands:
 
   - name: "run_inp_file"
     implemented_as: "python_callable"
-    module: "configure_mopro"
-    function: "run_inp_file"
+    import_path: "configure_mopro"
     parameters:
       - name: "input_cif_path"
         dtype: "QCrBox.input_cif"
@@ -65,7 +64,7 @@ commands:
       - name: "inp_file_path"
         dtype: "QCrBox.input_file"
         description: "path to the MoPro input file"
-      - name: "contraint_file_path"
+      - name: "constraint_file_path"
         dtype: "QCrBox.input_file"
         description: "path to the MoPro constraints file"
       - name: "restraint_file_path"
@@ -73,11 +72,11 @@ commands:
         description: "path to the MoPro restraints file"
       - name: "table_type"
         dtype: "str"
-        default: "MoPro v20"
+        default_value: "MoPro v20"
         description: "to be added"
       - name: "wavefunction_type"
         dtype: "str"
-        default: "Su Coppens"
+        default_value: "Su Coppens"
         description: "to be added"
 
 
