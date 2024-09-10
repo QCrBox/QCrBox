@@ -139,7 +139,7 @@ def run_inp_file(
 
 
 
-def prepare__interactive(input_cif_path, table_type, wave_function_type):
+def prepare__interactive(input_cif_path, table_type, wavefunction_type):
     input_cif_path = Path(input_cif_path)
     work_dir = input_cif_path.parent
     roaming_dir = Path(
@@ -158,7 +158,7 @@ def prepare__interactive(input_cif_path, table_type, wave_function_type):
     replace_dict = {
         "{{mopro_workdir}}": str(wine_work_dir),
         "{{tabl_path}}": str(table_path(table_type)),
-        "{{wave_path}}": str(wave_function_path(wave_function_type)),
+        "{{wave_path}}": str(wave_function_path(wavefunction_type)),
         "{{anom_path}}": str(anom_path()),
         "{{dens_path}}": str(density_path()),
         "{{mopro_path}}": os.environ["MOPRO_PATH"],
