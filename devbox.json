@@ -31,7 +31,8 @@
       "platforms": ["aarch64-linux", "x86_64-linux"]
     },
     "process-compose": "latest",
-    "ncurses":         "latest"
+    "ncurses":         "latest",
+    "jq":              "latest"
   },
   "env": {
     "MAMBA_ROOT_PREFIX":     "${PWD}/.devbox/virtenv/python/.conda",
