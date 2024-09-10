@@ -315,6 +315,12 @@ cmdline() {
         esac
     done
 
+    # Use the current pre-release version of Devbox as it fixes issues
+    # with native libraries not being found.
+    #  -- Max, 2024-09-10
+    # TODO: remove this once the next version of Devbox is released.
+    export DEVBOX_USE_VERSION="0.13.0-dev"
+
     local qcrbox_repo_path=${_TARGET_DIR}
     local git_revision="dev"
 
