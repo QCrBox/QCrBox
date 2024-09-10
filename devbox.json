@@ -29,7 +29,9 @@
     "wslu": {
       "version":   "latest",
       "platforms": ["aarch64-linux", "x86_64-linux"]
-    }
+    },
+    "process-compose": "latest",
+    "ncurses":         "latest"
   },
   "env": {
     "MAMBA_ROOT_PREFIX":     "${PWD}/.devbox/virtenv/python/.conda",

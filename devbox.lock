@@ -841,6 +841,90 @@
         }
       }
     },
+    "ncurses@latest": {
+      "last_modified": "2024-08-31T10:12:23Z",
+      "resolved": "github:NixOS/nixpkgs/5629520edecb69630a3f4d17d3d33fc96c13f6fe#ncurses",
+      "source": "devbox-search",
+      "version": "6.4.20221231",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/782szkyx7bkd12k6c10k6d4bw84ygj9l-ncurses-6.4.20221231",
+              "default": true
+            },
+            {
+              "name": "man",
+              "path": "/nix/store/66fvz69cx751n4bf3n3a7qmyr1ladbd8-ncurses-6.4.20221231-man",
+              "default": true
+            },
+            {
+              "name": "dev",
+              "path": "/nix/store/iy590iz2lw27b3fg4k8l9m4p0b6aj91a-ncurses-6.4.20221231-dev"
+            }
+          ],
+          "store_path": "/nix/store/782szkyx7bkd12k6c10k6d4bw84ygj9l-ncurses-6.4.20221231"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/qmckz7yxdzs3ijms4g6ym25k9kjvvf8w-ncurses-6.4.20221231",
+              "default": true
+            },
+            {
+              "name": "man",
+              "path": "/nix/store/iagn4wbnj1yq8b769qd8aa2j729p6hb0-ncurses-6.4.20221231-man",
+              "default": true
+            },
+            {
+              "name": "dev",
+              "path": "/nix/store/2jypnc3s7vqc92k20mlbdbq11phgxdid-ncurses-6.4.20221231-dev"
+            }
+          ],
+          "store_path": "/nix/store/qmckz7yxdzs3ijms4g6ym25k9kjvvf8w-ncurses-6.4.20221231"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/9339922d182xpcwjrzs7ssc5rxiazd93-ncurses-6.4.20221231",
+              "default": true
+            },
+            {
+              "name": "man",
+              "path": "/nix/store/z60qr9cnj2g05w5v3wknfgwjswifklxr-ncurses-6.4.20221231-man",
+              "default": true
+            },
+            {
+              "name": "dev",
+              "path": "/nix/store/a5kj97pdagqlq98k8dcff64c32anan3c-ncurses-6.4.20221231-dev"
+            }
+          ],
+          "store_path": "/nix/store/9339922d182xpcwjrzs7ssc5rxiazd93-ncurses-6.4.20221231"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/0l52axcc0k0pn1qpwyhnjz7pipidrwvr-ncurses-6.4.20221231",
+              "default": true
+            },
+            {
+              "name": "man",
+              "path": "/nix/store/pqwnn7ppfxifz00lc7h4gcqszmy23rjd-ncurses-6.4.20221231-man",
+              "default": true
+            },
+            {
+              "name": "dev",
+              "path": "/nix/store/ynmpm3wxvb0sa948fbskwv4hwwx8v65v-ncurses-6.4.20221231-dev"
+            }
+          ],
+          "store_path": "/nix/store/0l52axcc0k0pn1qpwyhnjz7pipidrwvr-ncurses-6.4.20221231"
+        }
+      }
+    },
     "neovim@latest": {
       "last_modified": "2024-08-13T00:39:45Z",
       "resolved": "github:NixOS/nixpkgs/60dfaff009e440faefbaeb20d8dda3239ba4a439#neovim",
@@ -914,6 +998,54 @@
             }
           ],
           "store_path": "/nix/store/p9r34j4q5vf5qd28xidqwm1kvfql1dkp-nix-ld-1.2.3"
+        }
+      }
+    },
+    "process-compose@latest": {
+      "last_modified": "2024-08-31T10:12:23Z",
+      "resolved": "github:NixOS/nixpkgs/5629520edecb69630a3f4d17d3d33fc96c13f6fe#process-compose",
+      "source": "devbox-search",
+      "version": "1.24.2",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/9x23iryryk6mak6pjak4qq62d0xdv3c1-process-compose-1.24.2",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/9x23iryryk6mak6pjak4qq62d0xdv3c1-process-compose-1.24.2"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/k3jpx9l06rqgs0iirn9y38i1j2clmlv6-process-compose-1.24.2",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/k3jpx9l06rqgs0iirn9y38i1j2clmlv6-process-compose-1.24.2"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/kv7m7mn0xjs22qmvyhyz35gllrq5mn5v-process-compose-1.24.2",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/kv7m7mn0xjs22qmvyhyz35gllrq5mn5v-process-compose-1.24.2"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/4sxr0bayv0rv5xpmm7ma8p8ks3ls0lml-process-compose-1.24.2",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/4sxr0bayv0rv5xpmm7ma8p8ks3ls0lml-process-compose-1.24.2"
         }
       }
     },
