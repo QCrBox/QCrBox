@@ -5,7 +5,7 @@ from pathlib import Path, PureWindowsPath
 from qcrboxtools.cif.cif2cif import cif_file_merge_to_unified_by_yml, cif_file_to_specific_by_yml
 from qcrboxtools.cif.file_converter.hkl import cif2hkl4
 
-from pyqcrbox import sql_models_NEW_v2
+from pyqcrbox import sql_models
 from pyqcrbox.registry.client import QCrBoxClient
 
 YAML_PATH = "./config_mopro.yaml"
@@ -95,7 +95,7 @@ def finalise__interactive(input_cif_path, output_cif_path):
         pass
 
 if __name__ == "__main__":
-    application_spec = sql_models_NEW_v2.ApplicationSpec.from_yaml_file(YAML_PATH)
+    application_spec = sql_models.ApplicationSpec.from_yaml_file(YAML_PATH)
 
     client = QCrBoxClient(application_spec=application_spec)
     client.run()

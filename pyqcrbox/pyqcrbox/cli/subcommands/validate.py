@@ -8,8 +8,8 @@ from pathlib import Path
 
 import click
 
-from pyqcrbox.sql_models_NEW_v2 import ApplicationSpec
-from pyqcrbox.sql_models_NEW_v2.command_spec import ImplementedAs
+from pyqcrbox.sql_models import ApplicationSpec
+from pyqcrbox.sql_models.command_spec import ImplementedAs
 from ..helpers import ClickCommandCls
 
 

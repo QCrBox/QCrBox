@@ -3,12 +3,12 @@ from typing import TYPE_CHECKING
 
 import nats.js.errors
 
-from pyqcrbox.sql_models_NEW_v2 import ApplicationSpecDB
+from pyqcrbox.sql_models import ApplicationSpecDB
 
 from .helper_functions import get_nats_key_value
 
 if TYPE_CHECKING:
-    from pyqcrbox.sql_models_NEW_v2 import ApplicationSpec
+    from pyqcrbox.sql_models import ApplicationSpec
 
 
 class BasePersistenceAdapter(metaclass=ABCMeta):

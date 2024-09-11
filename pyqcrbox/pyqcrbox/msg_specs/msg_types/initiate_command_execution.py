@@ -1,12 +1,12 @@
 from typing import Literal
 
-from pyqcrbox import sql_models_NEW_v2
+from pyqcrbox import sql_models
 
 from ..base import QCrBoxBaseAction
 
 __all__ = ["InitiateCommandExecution", "PayloadForInitiateCommandExecution"]
 
-PayloadForInitiateCommandExecution = sql_models_NEW_v2.CommandExecutionCreate
+PayloadForInitiateCommandExecution = sql_models.CommandExecutionCreate
 
 
 class InitiateCommandExecution(QCrBoxBaseAction):

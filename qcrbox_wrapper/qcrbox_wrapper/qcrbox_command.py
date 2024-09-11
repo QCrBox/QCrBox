@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 
 import requests
 
-from pyqcrbox import sql_models_NEW_v2
+from pyqcrbox import sql_models
 
 from .qcrbox_calculation import QCrBoxCalculation
 
@@ -50,7 +50,7 @@ class QCrBoxCommandBase:
         *,
         application_slug: str,
         application_version: str,
-        cmd_spec: sql_models_NEW_v2.CommandSpecWithParameters,
+        cmd_spec: sql_models.CommandSpecWithParameters,
         wrapper_parent: "QCrBoxWrapper",
     ) -> None:
         """
@@ -58,7 +58,7 @@ class QCrBoxCommandBase:
 
         Parameters
         ----------
-        cmd_spec : pyqcrbox.sql_models_NEW_v2.CommandSpecWithParameters
+        cmd_spec : pyqcrbox.sql_models.CommandSpecWithParameters
             Pydantic model representing the command specification.
         server_url : str
             URL of the QCrBox server
@@ -163,7 +163,7 @@ class QCrBoxCommand(QCrBoxCommandBase):
         """
         arguments = self.args_to_kwargs(*args, **kwargs)
 
-        data_dict = sql_models_NEW_v2.CommandInvocationCreate(
+        data_dict = sql_models.CommandInvocationCreate(
             application_slug=self.application_slug,
             application_version=self.application_version,
             command_name=self.name,
@@ -189,7 +189,7 @@ class QCrBoxInteractiveCommand(QCrBoxCommandBase):
         self,
         application_slug: str,
         application_version: str,
-        cmd_spec: sql_models_NEW_v2.CommandSpecWithParameters,
+        cmd_spec: sql_models.CommandSpecWithParameters,
         wrapper_parent: "QCrBoxWrapper",
         # parameters: list[QCrBoxParameter],
         gui_url: str,

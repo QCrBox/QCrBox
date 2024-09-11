@@ -2,13 +2,13 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel
 
-from pyqcrbox import sql_models_NEW_v2
+from pyqcrbox import sql_models
 from pyqcrbox.msg_specs.base import QCrBoxBaseAction, QCrBoxGenericResponse
 
 __all__ = ["InvokeCommand", "InvokeCommandResponse", "PayloadForInvokeCommand", "PayloadForInvokeCommandResponse"]
 
 
-PayloadForInvokeCommand = sql_models_NEW_v2.CommandInvocationCreate
+PayloadForInvokeCommand = sql_models.CommandInvocationCreate
 
 
 class InvokeCommand(QCrBoxBaseAction):

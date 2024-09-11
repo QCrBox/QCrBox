@@ -2,7 +2,7 @@ import re
 
 import anyio
 
-from pyqcrbox.sql_models_NEW_v2 import CLICommandSpec
+from pyqcrbox.sql_models import CLICommandSpec
 
 __all__ = ["CLICommand"]
 

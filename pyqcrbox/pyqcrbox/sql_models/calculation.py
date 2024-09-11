@@ -5,16 +5,16 @@ import sqlalchemy
 from pydantic import computed_field, model_validator
 from sqlmodel import JSON, Column, Field, Relationship, UniqueConstraint, desc, select
 
-from pyqcrbox import logger, sql_models
+from pyqcrbox import sql_models
+from pyqcrbox.logging import logger
 from pyqcrbox.settings import settings
 
+from .base import QCrBoxBaseSQLModel
 from .calculation_status_event import CalculationStatusEnum, CalculationStatusEventDB
-
-# from .command import CommandSpecDB
-from .qcrbox_base_models import QCrBoxBaseSQLModel
+from .command_spec import CommandSpecDB
 
 if TYPE_CHECKING:
-    from .application import ApplicationSpecDB
+    from .application_spec_db import ApplicationSpecDB
 
 
 class CalculationBase(QCrBoxBaseSQLModel):
@@ -26,7 +26,6 @@ class CalculationBase(QCrBoxBaseSQLModel):
 
 
 class CalculationResponseModel(CalculationBase):
-    id: int
     status: str
 
 
@@ -163,4 +162,34 @@ class CalculationDB(CalculationBase, table=True):
             return self
 
     def to_response_model(self) -> CalculationResponseModel:
-        return CalculationResponseModel(**self.model_dump())
+        # breakpoint()
+        # calculation_id = self.id
+        # status = self.status
+        #
+        # include_fields = {"id", "status", "calculation_id", "application_"
+        #                   calculation_id: str
+        # application_slug: str
+        # application_version: str
+        # command_name: str
+        # arguments: dict[str, Any] = Field(sa_column=Column(JSON))
+        #
+        # }
+        # data = {
+        #     "calculation_id": self.calculation_id,
+        #     "status": self.status,
+        #     "application_slug": self.application.slug,
+        #     "application_version": self.application.version,
+        #     "command_name": self.command.name,
+        #
+        # }
+        data = self.model_dump(
+            include=[
+                "calculation_id",
+                "status",
+                "application_slug",
+                "application_version",
+                "command_name",
+                "arguments",
+            ]
+        )
+        return CalculationResponseModel(**data)

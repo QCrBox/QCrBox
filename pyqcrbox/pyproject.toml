@@ -213,4 +213,4 @@ exclude_type_checking_imports = true
 #    "application",
 #    "command | cif_entry_set",
 #]
-#containers = ["pyqcrbox.sql_models_NEW_v2"]
+#containers = ["pyqcrbox.sql_models"]

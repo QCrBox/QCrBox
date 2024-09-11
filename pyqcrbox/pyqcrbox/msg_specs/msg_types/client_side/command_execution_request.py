@@ -1,4 +1,4 @@
-from pyqcrbox.sql_models_NEW_v2.base import QCrBoxPydanticBaseModel
+from pyqcrbox.sql_models.base import QCrBoxPydanticBaseModel
 
 from ..server_side.invoke_command_nats import CommandInvocationRequestNATS
 

@@ -2,8 +2,8 @@ from typing import Annotated, Union
 
 from pydantic import Field, Tag
 
-from pyqcrbox.sql_models_NEW_v2.command_spec.cli_command_spec import CLICommandSpec
-from pyqcrbox.sql_models_NEW_v2.command_spec.python_callable_spec import PythonCallableSpec
+from pyqcrbox.sql_models.command_spec.cli_command_spec import CLICommandSpec
+from pyqcrbox.sql_models.command_spec.python_callable_spec import PythonCallableSpec
 
 NonInteractiveCommandSpec = Annotated[
     Union[

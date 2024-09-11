@@ -5,7 +5,7 @@ import sys
 import click
 import requests
 
-from pyqcrbox.sql_models_NEW_v2 import CommandInvocationCreate
+from pyqcrbox.sql_models import CommandInvocationCreate
 
 from ... import settings
 from ..helpers import ClickCommandCls

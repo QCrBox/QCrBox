@@ -6,12 +6,12 @@ from typing import Optional
 from faststream.nats import NatsBroker
 from litestar import Litestar
 
-from pyqcrbox import helpers, logger, msg_specs, settings, sql_models_NEW_v2
+from pyqcrbox import helpers, logger, msg_specs, settings, sql_models
 from pyqcrbox.cli.helpers import get_repo_root
 from pyqcrbox.helpers import generate_private_routing_key
 from pyqcrbox.registry.client.executable_command.base_calculation import BaseCalculation
 from pyqcrbox.registry.shared.calculation_status import update_calculation_status_in_nats_kv_NEW
-from pyqcrbox.sql_models_NEW_v2 import CalculationStatusDetails, CalculationStatusEnum
+from pyqcrbox.sql_models import CalculationStatusDetails, CalculationStatusEnum
 
 from ..shared import QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup
 from .api_endpoints import create_client_asgi_server
@@ -27,7 +27,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
     def __init__(
         self,
         *,
-        application_spec: sql_models_NEW_v2.ApplicationSpec,
+        application_spec: sql_models.ApplicationSpec,
         client_id: str = "anonymous_client",
         private_routing_key: Optional[str] = None,
         # broker: Optional[RabbitBroker] = None,
@@ -233,7 +233,7 @@ def main():
     except IndexError:
         application_config_file = repo_root.joinpath("services/applications/olex2_linux/config_olex2.yaml")
 
-    application_spec = sql_models_NEW_v2.ApplicationSpec.from_yaml_file(application_config_file)
+    application_spec = sql_models.ApplicationSpec.from_yaml_file(application_config_file)
 
     # Add the directory containing the application config file to PATH so that any scripts
     # present there are available during command execution.

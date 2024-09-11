@@ -3,7 +3,7 @@
 import asyncio
 from abc import ABCMeta, abstractmethod
 
-from pyqcrbox.sql_models_NEW_v2 import CalculationStatusEnum
+from pyqcrbox.sql_models import CalculationStatusEnum
 
 
 class BaseCalculation(metaclass=ABCMeta):
