@@ -18,6 +18,7 @@ lib_path = PureWindowsPath(os.environ["MOPRO_LIB_PATH"])
 mopro_exe = PureWindowsPath(os.environ["MOPRO_PATH"])
 import_mopro_exe = PureWindowsPath(os.environ["IMOPRO_PATH"])
 
+
 def clean_cif(cif_path, cleaned_cif_path):
     text = cif_path.read_text(encoding="utf-8", errors="replace")
     non_character_pattern = re.compile(
