@@ -1,7 +1,12 @@
 version: "0.5"
 
 processes:
-  jupyterlab:
-   command: "jupyter lab --no-browser --notebook-dir=./docs/tutorials/examples/"
-   availability:
-    restart: "always"
+  jupyterlab-examples:
+    command: "jupyter lab --ip=0.0.0.0 --port=18433 --no-browser --notebook-dir=./docs/tutorials/examples/"
+    availability:
+      restart: "always"
+
+  jupyterlab-playground:
+    command: "jupyter lab --ip=0.0.0.0 --port=18434 --no-browser --notebook-dir=./playground/"
+    availability:
+      restart: "always"

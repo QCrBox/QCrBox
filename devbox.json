@@ -29,7 +29,10 @@
     "wslu": {
       "version":   "latest",
       "platforms": ["aarch64-linux", "x86_64-linux"]
-    }
+    },
+    "process-compose": "latest",
+    "ncurses":         "latest",
+    "jq":              "latest"
   },
   "env": {
     "MAMBA_ROOT_PREFIX":     "${PWD}/.devbox/virtenv/python/.conda",
@@ -52,12 +55,21 @@
     "scripts": {
       "example-notebooks": [
         "set -euo pipefail",
-        "devbox services up -b jupyterlab",
-        "until curl --output /dev/null --silent --fail http://localhost:8888/api; do echo -n '.'; sleep 0.5; done; echo; echo 'Jupyterlab started successfully'",
-        "export JUPYTERLAB_URL=$(jupyter lab list | grep docs/tutorials/examples | head -n1 | awk -F:: '{ print $1 }')",
+        "devbox services up -b jupyterlab-examples",
+        "until curl --output /dev/null --silent --fail http://localhost:18433/api; do echo -n '.'; sleep 0.5; done; echo; echo 'Jupyterlab started successfully'",
+        "export JUPYTERLAB_URL=$(jupyter lab list | grep 18433 | head -n1 | awk -F:: '{ print $1 }')",
         "echo \"Opening JupyterLab URL: $JUPYTERLAB_URL\"",
         "python -m webbrowser -t $JUPYTERLAB_URL",
-        "echo \"Run 'devbox services stop' to shut down the jupyter server again.\""
+        "echo \"Run 'devbox services stop jupyterlab-examples' to shut down the jupyter server again.\""
+      ],
+      "playground-notebooks": [
+        "set -euo pipefail",
+        "devbox services up -b jupyterlab-playground",
+        "until curl --output /dev/null --silent --fail http://localhost:18434/api; do echo -n '.'; sleep 0.5; done; echo; echo 'Jupyterlab started successfully'",
+        "export JUPYTERLAB_URL=$(jupyter lab list | grep 18434 | head -n1 | awk -F:: '{ print $1 }')",
+        "echo \"Opening JupyterLab URL: $JUPYTERLAB_URL\"",
+        "python -m webbrowser -t $JUPYTERLAB_URL",
+        "echo \"Run 'devbox services stop jupyterlab-playground' to shut down the jupyter server again.\""
       ]
     }
   }
