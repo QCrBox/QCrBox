@@ -7,8 +7,6 @@ anyio==4.4.0
     #   fast-depends
     #   faststream
     #   httpx
-appnope==0.1.4
-    # via ipykernel
 asttokens==2.4.1
     # via stack-data
 attrs==23.2.0
@@ -29,6 +27,8 @@ certifi==2024.7.4
     #   httpcore
     #   httpx
     #   requests
+cffi==1.17.1
+    # via cryptography
 charset-normalizer==3.3.2
     # via requests
 click==8.1.7
@@ -43,6 +43,8 @@ colorama==0.4.6
     # via mkdocs-material
 comm==0.2.2
     # via ipykernel
+cryptography==43.0.1
+    # via secretstorage
 debugpy==1.8.2
     # via ipykernel
 decorator==5.1.1
@@ -103,6 +105,10 @@ jaraco-functools==4.0.1
     # via keyring
 jedi==0.19.1
     # via ipython
+jeepney==0.8.0
+    # via
+    #   keyring
+    #   secretstorage
 jinja2==3.1.4
     # via
     #   mkdocs
@@ -237,6 +243,8 @@ ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.2
     # via stack-data
+pycparser==2.22
+    # via cffi
 pydantic==2.8.2
     # via
     #   pyqcrbox (pyproject.toml)
@@ -295,6 +303,8 @@ rpds-py==0.19.0
     # via
     #   jsonschema
     #   referencing
+secretstorage==3.3.3
+    # via keyring
 shellingham==1.5.4
     # via
     #   hatch

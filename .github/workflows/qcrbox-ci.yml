@@ -30,7 +30,6 @@ jobs:
         run: |
           pip install --upgrade uv
           uv pip install --system -r ./pyqcrbox/requirements-docs.txt
-          uv pip install markdown-exec[ansi]
           uv pip install --system pyqcrbox@./pyqcrbox
 
       - name: Build the documentation
