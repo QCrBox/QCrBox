@@ -29,8 +29,8 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade uv
-          uv pip install --system -r ./qcrbox/requirements-docs.txt
-          uv pip install --system qcrbox@./qcrbox
+          uv pip install --system -r ./pyqcrbox/requirements-docs.txt
+          uv pip install --system pyqcrbox@./pyqcrbox
 
       - name: Build the documentation
         run: mkdocs build
@@ -76,10 +76,10 @@ jobs:
           args: --version
       - uses: chartboost/ruff-action@v1
         with:
-          args: check --config qcrbox/pyproject.toml
+          args: check --config pyqcrbox/pyproject.toml
       - uses: chartboost/ruff-action@v1
         with:
-          args: format --diff --config qcrbox/pyproject.toml
+          args: format --diff --config pyqcrbox/pyproject.toml
 
   pyqcrbox-tests:
     runs-on: ubuntu-latest
