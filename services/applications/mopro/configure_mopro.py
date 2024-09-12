@@ -17,6 +17,7 @@ YAML_PATH = "./config_mopro.yaml"
 lib_path = PureWindowsPath(os.environ["MOPRO_LIB_PATH"])
 mopro_exe = PureWindowsPath(os.environ["MOPRO_PATH"])
 import_mopro_exe = PureWindowsPath(os.environ["IMOPRO_PATH"])
+mopro_roaming_dir = Path(os.environ["MOPRO_ROAMING_PROFILE_DIR"])
 
 
 def clean_cif(cif_path, cleaned_cif_path):
@@ -60,6 +61,35 @@ def density_path():
     return lib_path / "dens_sph_neu.tab"
 
 
+
+def create_mopro_inis(work_dir, table_type, wavefunction_type):
+    mopro_roaming_dir.mkdir(parents=True, exist_ok=True)
+
+    wine_work_dir = PureWindowsPath("Y:\\")
+    for part in Path(work_dir.absolute()).parts[4:]:
+        wine_work_dir = wine_work_dir / part
+
+    replace_dict = {
+        "{{mopro_workdir}}": str(wine_work_dir),
+        "{{tabl_path}}": str(table_path(table_type)),
+        "{{wave_path}}": str(wave_function_path(wavefunction_type)),
+        "{{anom_path}}": str(anom_path()),
+        "{{dens_path}}": str(density_path()),
+        "{{mopro_path}}": os.environ["MOPRO_PATH"],
+        "{{vmopro_path}}": os.environ["VMOPRO_PATH"],
+        "{{imopro_path}}": os.environ["IMOPRO_PATH"],
+        "{{mopro_viewer_path}}": os.environ["MOPRO_VIEWER_PATH"],
+    }
+
+    for filename in Path("./templates").iterdir():
+        with Path(filename).open("r", encoding="UTF-8") as fobj:
+            content = fobj.read()
+        for key, value in replace_dict.items():
+            content = content.replace(key, value)
+        with (mopro_roaming_dir / filename.name).open("w", encoding="UTF-8") as fobj:
+            fobj.write(content)
+
+
 def add_files_mopro_inp(inp_file: MoProInpFile, table_type: str, wave_function_type: str):
     inp_file.files["TABL"] = table_path(table_type)
     inp_file.files["WAVE"] = wave_function_path(wave_function_type)
@@ -81,6 +111,10 @@ def run_inp_file(
         input_cif_path, work_cif_path, YAML_PATH, "run_inp_file", "input_cif_path"
     )
     cif2hkl4(input_cif_path, 0, work_cif_path.with_suffix(".hkl"))
+
+    mopro_ini_path = mopro_roaming_dir / "mopro.ini"
+    if mopro_ini_path.exists():
+        mopro_ini_path.unlink()
 
     path_helper = WinePathHelper()
     imopro_unix_path = path_helper.get_unix_path(Path(os.environ["IMOPRO_PATH"]))
@@ -138,43 +172,15 @@ def run_inp_file(
     )
 
 
-
-
 def prepare__interactive(input_cif_path, table_type, wavefunction_type):
     input_cif_path = Path(input_cif_path)
     work_dir = input_cif_path.parent
-    roaming_dir = Path(
-        "/opt/wine_installations/wine_win64/drive_c/users/qcrbox/AppData/Roaming/mopro"
-    )
-    roaming_dir.mkdir(parents=True, exist_ok=True)
     work_cif_path = work_dir / "work.cif"
     cif_file_to_specific_by_yml(
         input_cif_path, work_cif_path, YAML_PATH, "interactive", "input_cif_path"
     )
 
-    wine_work_dir = PureWindowsPath("Y:\\")
-    for part in Path(work_dir.absolute()).parts[4:]:
-        wine_work_dir = wine_work_dir / part
-
-    replace_dict = {
-        "{{mopro_workdir}}": str(wine_work_dir),
-        "{{tabl_path}}": str(table_path(table_type)),
-        "{{wave_path}}": str(wave_function_path(wavefunction_type)),
-        "{{anom_path}}": str(anom_path()),
-        "{{dens_path}}": str(density_path()),
-        "{{mopro_path}}": os.environ["MOPRO_PATH"],
-        "{{vmopro_path}}": os.environ["VMOPRO_PATH"],
-        "{{imopro_path}}": os.environ["IMOPRO_PATH"],
-        "{{mopro_viewer_path}}": os.environ["MOPRO_VIEWER_PATH"],
-    }
-
-    for filename in Path("./templates").iterdir():
-        with Path(filename).open("r", encoding="UTF-8") as fobj:
-            content = fobj.read()
-        for key, value in replace_dict.items():
-            content = content.replace(key, value)
-        with (roaming_dir / filename.name).open("w", encoding="UTF-8") as fobj:
-            fobj.write(content)
+    create_mopro_inis(work_dir, table_type, wavefunction_type)
 
     cif2hkl4(input_cif_path, 0, input_cif_path.with_suffix(".hkl"))
 
@@ -218,6 +224,13 @@ def finalise__interactive(input_cif_path, output_cif_path):
         )
     except StopIteration:
         pass
+
+def toparams__interactive(input_cif_path):
+    pass
+
+
+def redo__interactive(input_cif_path):
+    pass
 
 if __name__ == "__main__":
     application_spec = sql_models_NEW_v2.ApplicationSpec.from_yaml_file(YAML_PATH)
