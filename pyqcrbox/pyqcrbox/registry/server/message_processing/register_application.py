@@ -1,4 +1,4 @@
-# from pyqcrbox import db_helpers, logger, msg_specs, settings, sql_models_NEW_v2
+# from pyqcrbox import db_helpers, logger, msg_specs, settings, sql_models
 #
 #
 # def handle_application_registration_request(msg: msg_specs.RegisterApplication, **kwargs):
@@ -10,10 +10,10 @@
 #     logger.info(f"Registering application: {app_slug} (version: {app_version})")
 #
 #     application_db = db_helpers.get_one_or_none(
-#         sql_models_NEW_v2.ApplicationSpecDB, slug=app_slug, version=app_version
+#         sql_models.ApplicationSpecDB, slug=app_slug, version=app_version
 #     )
 #     if application_db is None:
-#         application_db = sql_models_NEW_v2.ApplicationSpecDB.from_pydantic_model(
+#         application_db = sql_models.ApplicationSpecDB.from_pydantic_model(
 #             application_spec,
 #             private_routing_key=msg.payload.private_routing_key,
 #         )

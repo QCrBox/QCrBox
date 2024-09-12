@@ -2,7 +2,7 @@ import anyio
 
 from pyqcrbox import helpers
 from pyqcrbox.registry.client.executable_command import BaseCommand
-from pyqcrbox.sql_models_NEW_v2 import InteractiveCommandSpec
+from pyqcrbox.sql_models import InteractiveCommandSpec
 from .interactive_command_calculation import InteractiveCmdCalculation
 
 __all__ = ["InteractiveCommand"]

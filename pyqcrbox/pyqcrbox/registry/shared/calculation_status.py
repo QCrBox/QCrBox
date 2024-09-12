@@ -2,7 +2,7 @@ import json
 from typing import TYPE_CHECKING
 
 from pyqcrbox import logger
-from pyqcrbox.sql_models_NEW_v2.calculation_status_event import CalculationStatusDetails
+from pyqcrbox.sql_models.calculation_status_event import CalculationStatusDetails
 from pyqcrbox.svcs import get_nats_key_value
 
 if TYPE_CHECKING:

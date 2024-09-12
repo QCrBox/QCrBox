@@ -10,7 +10,7 @@ import anyio
 from pydantic._internal._validate_call import ValidateCallWrapper
 
 from pyqcrbox import logger
-from pyqcrbox.sql_models_NEW_v2 import PythonCallableSpec
+from pyqcrbox.sql_models import PythonCallableSpec
 
 from . import BaseCommand
 from .python_callable_calculation import PythonCallableCalculation

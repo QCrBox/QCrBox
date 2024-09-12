@@ -1,13 +1,13 @@
 from typing import Literal
 
-from pyqcrbox import sql_models_NEW_v2
+from pyqcrbox import sql_models
 from pyqcrbox.msg_specs.base import QCrBoxBaseAction, QCrBoxBasePayload
 
 __all__ = ["PayloadForRegisterApplication", "RegisterApplication"]
 
 
 class PayloadForRegisterApplication(QCrBoxBasePayload):
-    application_spec: sql_models_NEW_v2.ApplicationSpec
+    application_spec: sql_models.ApplicationSpec
     private_routing_key: str
 
 

@@ -9,7 +9,7 @@ from .command_spec import CommandSpec
 # from .interactive_command_spec import InteractiveLifecycleSteps, NonInteractiveCommandSpec
 
 if TYPE_CHECKING:
-    from pyqcrbox.sql_models_NEW_v2 import ApplicationSpecDB, CalculationDB
+    from pyqcrbox.sql_models import ApplicationSpecDB, CalculationDB
 
 
 class CommandSpecDB(QCrBoxBaseSQLModel, table=True):

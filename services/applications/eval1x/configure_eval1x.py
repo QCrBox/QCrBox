@@ -17,7 +17,7 @@ from qcrboxtools.robots.eval import (
     TextFile,
 )
 
-from pyqcrbox import sql_models_NEW_v2
+from pyqcrbox import sql_models
 from pyqcrbox.registry.client import QCrBoxClient
 
 YAML_PATH = "./config_eval1x.yaml"
@@ -303,7 +303,7 @@ def redo__interactive(work_folder, par_json, par_folder):
 
 
 if __name__ == "__main__":
-    application_spec = sql_models_NEW_v2.ApplicationSpec.from_yaml_file(YAML_PATH)
+    application_spec = sql_models.ApplicationSpec.from_yaml_file(YAML_PATH)
 
     client = QCrBoxClient(application_spec=application_spec)
     client.run()

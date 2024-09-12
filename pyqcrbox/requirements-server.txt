@@ -9,9 +9,9 @@ anyio==4.4.0
     #   httpx
     #   litestar
     #   watchfiles
-attrs==23.2.0
+attrs==24.2.0
     # via svcs
-certifi==2024.7.4
+certifi==2024.8.30
     # via
     #   httpcore
     #   httpx
@@ -20,7 +20,6 @@ click==8.1.7
     #   hatch
     #   litestar
     #   rich-click
-    #   typer
     #   userpath
     #   uvicorn
 cloudpickle==3.0.0
@@ -29,19 +28,19 @@ distlib==0.3.8
     # via virtualenv
 doit==0.36.0
     # via pyqcrbox (pyproject.toml)
-faker==26.0.0
+faker==28.4.1
     # via polyfactory
-fast-depends==2.4.6
+fast-depends==2.4.11
     # via faststream
-faststream==0.5.15
+faststream==0.5.23
     # via pyqcrbox (pyproject.toml)
-filelock==3.15.4
+filelock==3.16.0
     # via virtualenv
 gitdb==4.0.11
     # via gitpython
 gitpython==3.1.43
     # via pyqcrbox (pyproject.toml)
-greenlet==3.0.3
+greenlet==3.1.0
     # via sqlalchemy
 h11==0.14.0
     # via
@@ -55,28 +54,28 @@ httpcore==1.0.5
     # via httpx
 httptools==0.6.1
     # via uvicorn
-httpx==0.27.0
+httpx==0.27.2
     # via
     #   hatch
     #   litestar
 hyperlink==21.0.0
     # via hatch
-idna==3.7
+idna==3.8
     # via
     #   anyio
     #   httpx
     #   hyperlink
-importlib-metadata==8.0.0
+importlib-metadata==8.5.0
     # via doit
 jaraco-classes==3.4.0
     # via keyring
-jaraco-context==5.3.0
+jaraco-context==6.0.1
     # via keyring
-jaraco-functools==4.0.1
+jaraco-functools==4.0.2
     # via keyring
-keyring==25.2.1
+keyring==25.3.0
     # via hatch
-litestar==2.9.1
+litestar==2.11.0
     # via pyqcrbox (pyproject.toml)
 loguru==0.7.2
     # via pyqcrbox (pyproject.toml)
@@ -84,15 +83,15 @@ markdown-it-py==3.0.0
     # via rich
 mdurl==0.1.2
     # via markdown-it-py
-more-itertools==10.3.0
+more-itertools==10.5.0
     # via
     #   jaraco-classes
     #   jaraco-functools
 msgspec==0.18.6
     # via litestar
-multidict==6.0.5
+multidict==6.1.0
     # via litestar
-nats-py==2.8.0
+nats-py==2.9.0
     # via faststream
 packaging==24.1
     # via
@@ -102,7 +101,7 @@ pathspec==0.12.1
     # via hatchling
 pexpect==4.9.0
     # via hatch
-platformdirs==4.2.2
+platformdirs==4.3.2
     # via
     #   hatch
     #   virtualenv
@@ -112,15 +111,15 @@ polyfactory==2.16.2
     # via litestar
 ptyprocess==0.7.0
     # via pexpect
-pydantic==2.8.2
+pydantic==2.9.1
     # via
     #   pyqcrbox (pyproject.toml)
     #   fast-depends
     #   pydantic-settings
     #   sqlmodel
-pydantic-core==2.20.1
+pydantic-core==2.23.3
     # via pydantic
-pydantic-settings==2.3.4
+pydantic-settings==2.5.2
     # via pyqcrbox (pyproject.toml)
 pygments==2.18.0
     # via rich
@@ -130,23 +129,20 @@ python-dotenv==1.0.1
     # via
     #   pydantic-settings
     #   uvicorn
-pyyaml==6.0.1
+pyyaml==6.0.2
     # via
     #   litestar
     #   uvicorn
-rich==13.7.1
+rich==13.8.1
     # via
     #   pyqcrbox (pyproject.toml)
     #   hatch
     #   litestar
     #   rich-click
-    #   typer
 rich-click==1.8.3
     # via litestar
 shellingham==1.5.4
-    # via
-    #   hatch
-    #   typer
+    # via hatch
 six==1.16.0
     # via python-dateutil
 smmap==5.0.1
@@ -155,11 +151,11 @@ sniffio==1.3.1
     # via
     #   anyio
     #   httpx
-sqlalchemy==2.0.31
+sqlalchemy==2.0.34
     # via sqlmodel
-sqlmodel==0.0.20
+sqlmodel==0.0.22
     # via pyqcrbox (pyproject.toml)
-stamina==24.2.0
+stamina==24.3.0
     # via pyqcrbox (pyproject.toml)
 structlog==24.4.0
     # via pyqcrbox (pyproject.toml)
@@ -167,18 +163,16 @@ svcs==24.1.0
     # via pyqcrbox (pyproject.toml)
 tabulate==0.9.0
     # via pyqcrbox (pyproject.toml)
-tenacity==8.5.0
+tenacity==9.0.0
     # via
     #   pyqcrbox (pyproject.toml)
     #   stamina
 tomli-w==1.0.0
     # via hatch
-tomlkit==0.13.0
+tomlkit==0.13.2
     # via hatch
 trove-classifiers==2024.7.2
     # via hatchling
-typer==0.12.3
-    # via faststream
 typing-extensions==4.12.2
     # via
     #   faststream
@@ -188,22 +182,21 @@ typing-extensions==4.12.2
     #   pydantic-core
     #   rich-click
     #   sqlalchemy
-    #   typer
 userpath==1.9.2
     # via hatch
-uv==0.2.27
+uv==0.4.9
     # via hatch
-uvicorn==0.30.3
+uvicorn==0.30.6
     # via pyqcrbox (pyproject.toml)
-uvloop==0.19.0
+uvloop==0.20.0
     # via uvicorn
-virtualenv==20.26.3
+virtualenv==20.26.4
     # via hatch
-watchfiles==0.22.0
+watchfiles==0.24.0
     # via uvicorn
-websockets==12.0
+websockets==13.0.1
     # via uvicorn
-zipp==3.19.2
+zipp==3.20.1
     # via importlib-metadata
 zstandard==0.23.0
     # via hatch

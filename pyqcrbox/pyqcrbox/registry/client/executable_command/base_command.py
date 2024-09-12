@@ -2,7 +2,7 @@ from abc import ABCMeta, abstractmethod
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from pyqcrbox.sql_models_NEW_v2 import CommandSpecDiscriminatedUnion
+    from pyqcrbox.sql_models import CommandSpecDiscriminatedUnion
 
 __all__ = ["BaseCommand"]
 

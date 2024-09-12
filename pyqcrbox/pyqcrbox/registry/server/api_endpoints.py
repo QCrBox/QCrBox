@@ -17,7 +17,7 @@ __all__ = ["create_server_asgi_server"]
 from litestar.exceptions import ClientException
 from sqlmodel import select
 
-from pyqcrbox import QCRBOX_SVCS_REGISTRY, logger, msg_specs, settings, sql_models_NEW_v2
+from pyqcrbox import QCRBOX_SVCS_REGISTRY, logger, msg_specs, settings, sql_models
 from pyqcrbox.registry.shared import structlog_plugin
 from pyqcrbox.svcs import get_nats_key_value
 
@@ -44,8 +44,8 @@ async def health_check() -> dict:
 @get(path="/applications", media_type=MediaType.JSON)
 async def retrieve_applications(
     slug: str | None = None, version: str | None = None
-) -> list[sql_models_NEW_v2.ApplicationSpecWithCommands]:
-    model_cls = sql_models_NEW_v2.ApplicationSpecDB
+) -> list[sql_models.ApplicationSpecWithCommands]:
+    model_cls = sql_models.ApplicationSpecDB
     filter_clauses = construct_filter_clauses(model_cls, slug=slug, version=version)
 
     with settings.db.get_session() as session:
@@ -58,18 +58,18 @@ async def retrieve_applications(
 @get(path="/commands", media_type=MediaType.JSON)
 async def retrieve_commands(
     name: str | None, application_slug: str | None, application_version: str | None
-) -> list[sql_models_NEW_v2.CommandSpecWithParameters]:
-    model_cls = sql_models_NEW_v2.CommandSpecDB
+) -> list[sql_models.CommandSpecWithParameters]:
+    model_cls = sql_models.CommandSpecDB
     filter_clauses = [
         (name is None) or (model_cls.name == name),
-        (application_slug is None) or (sql_models_NEW_v2.ApplicationSpecDB.slug == application_slug),
-        (application_version is None) or (sql_models_NEW_v2.ApplicationSpecDB.version == application_version),
+        (application_slug is None) or (sql_models.ApplicationSpecDB.slug == application_slug),
+        (application_version is None) or (sql_models.ApplicationSpecDB.version == application_version),
     ]
     stmt = select(
-        sql_models_NEW_v2.CommandSpecDB,
-        sql_models_NEW_v2.ApplicationSpecDB.slug,
-        sql_models_NEW_v2.ApplicationSpecDB.version).join(
-        sql_models_NEW_v2.CommandSpecDB.application,
+        sql_models.CommandSpecDB,
+        sql_models.ApplicationSpecDB.slug,
+        sql_models.ApplicationSpecDB.version).join(
+        sql_models.CommandSpecDB.application,
     )
 
     with settings.db.get_session() as session:
@@ -97,17 +97,17 @@ async def retrieve_commands(
 
 def verify_command_exists(
     application_slug: str, application_version: str | None, command_name: str | None
-) -> sql_models_NEW_v2.CommandSpecDB:
+) -> sql_models.CommandSpecDB:
     with settings.db.get_session() as session:
         try:
             cmd_spec_db = session.exec(
-                select(sql_models_NEW_v2.CommandSpecDB)
-                .join(sql_models_NEW_v2.ApplicationSpecDB)
-                .options(joinedload(sql_models_NEW_v2.CommandSpecDB.application))
+                select(sql_models.CommandSpecDB)
+                .join(sql_models.ApplicationSpecDB)
+                .options(joinedload(sql_models.CommandSpecDB.application))
                 .where(
-                    application_slug is None or (sql_models_NEW_v2.ApplicationSpecDB.slug == application_slug),
-                    application_version is None or (sql_models_NEW_v2.ApplicationSpecDB.version == application_version),
-                    sql_models_NEW_v2.CommandSpecDB.name == command_name,
+                    application_slug is None or (sql_models.ApplicationSpecDB.slug == application_slug),
+                    application_version is None or (sql_models.ApplicationSpecDB.version == application_version),
+                    sql_models.CommandSpecDB.name == command_name,
                 )
             ).one()
         except sqlalchemy.exc.NoResultFound:
@@ -131,7 +131,7 @@ def verify_command_exists(
 
 
 def validate_arguments_against_command_parameters(
-    cmd_spec_db: sql_models_NEW_v2.CommandSpecDB, arguments: dict
+    cmd_spec_db: sql_models.CommandSpecDB, arguments: dict
 ) -> None:
     params = list(cmd_spec_db.parameters.values())
     required_param_names = set(p["name"] for p in params if p["required"] is True)
@@ -154,7 +154,7 @@ def validate_arguments_against_command_parameters(
 
 
 @post(path="/commands/invoke", media_type=MediaType.JSON)
-async def commands_invoke(data: sql_models_NEW_v2.CommandInvocationCreate, request: Request) -> dict:
+async def commands_invoke(data: sql_models.CommandInvocationCreate, request: Request) -> dict:
     logger.info(f"Received command invocation via API: {data=}")
 
     with svcs.Container(QCRBOX_SVCS_REGISTRY) as con:
@@ -271,7 +271,7 @@ async def get_calculation_info_by_calculation_id(calculation_id: str) -> dict | 
 @get(path="/calculations", media_type=MediaType.JSON)
 async def get_calculation_info() -> list[dict]:
     with settings.db.get_session() as session:
-        calculations_db = session.exec(select(sql_models_NEW_v2.CalculationDB)).all()
+        calculations_db = session.exec(select(sql_models.CalculationDB)).all()
         return [c.to_response_model() for c in calculations_db]
 
 

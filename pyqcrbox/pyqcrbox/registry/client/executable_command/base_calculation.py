@@ -3,7 +3,7 @@ from abc import ABCMeta, abstractmethod
 
 import anyio
 
-from pyqcrbox.sql_models_NEW_v2 import CalculationStatusDetails, CalculationStatusEnum
+from pyqcrbox.sql_models import CalculationStatusDetails, CalculationStatusEnum
 
 
 class BaseCalculation(metaclass=ABCMeta):
