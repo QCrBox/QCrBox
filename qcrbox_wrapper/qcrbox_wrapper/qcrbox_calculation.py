@@ -4,7 +4,7 @@ import time
 import urllib.request
 from typing import TYPE_CHECKING
 
-from pyqcrbox.sql_models_NEW_v2 import CalculationStatusDetails, CalculationStatusEnum
+from pyqcrbox.sql_models import CalculationStatusDetails, CalculationStatusEnum
 
 if TYPE_CHECKING:
     from qcrbox_wrapper.qcrbox_wrapper import QCrBoxCommand

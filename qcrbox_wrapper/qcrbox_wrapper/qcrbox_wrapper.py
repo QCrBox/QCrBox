@@ -32,7 +32,7 @@ from typing import Any, Optional, Union
 
 import httpx
 
-from pyqcrbox import sql_models_NEW_v2
+from pyqcrbox import sql_models
 
 from .qcrbox_application import QCrBoxApplication
 from .qcrbox_command import QCrBoxCommand, QCrBoxCommandBase, QCrBoxInteractiveCommand, QCrBoxParameter
@@ -202,7 +202,7 @@ class QCrBoxWrapper:
         response = get_time_cached_app_answer(self.web_client, get_ttl_hash())
         return [
             QCrBoxApplication(
-                application_spec=sql_models_NEW_v2.ApplicationSpecWithCommands(**app_spec), wrapper_parent=self
+                application_spec=sql_models.ApplicationSpecWithCommands(**app_spec), wrapper_parent=self
             )
             for app_spec in response
         ]

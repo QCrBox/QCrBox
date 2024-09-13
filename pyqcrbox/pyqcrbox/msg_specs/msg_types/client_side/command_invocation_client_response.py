@@ -1,4 +1,4 @@
-from pyqcrbox.sql_models_NEW_v2 import QCrBoxPydanticBaseModel
+from pyqcrbox.sql_models import QCrBoxPydanticBaseModel
 
 __all__ = ["CommandInvocationClientResponseNATS"]
 

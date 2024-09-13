@@ -9,7 +9,7 @@ from qcrboxtools.cif.cif2cif import (
 from qcrboxtools.cif.file_converter.hkl import cif2hkl4
 from qcrboxtools.robots.mopro import MoProImportRobot, MoProInpFile, WinePathHelper, MoProRobot
 
-from pyqcrbox import sql_models_NEW_v2
+from pyqcrbox import sql_models
 from pyqcrbox.registry.client import QCrBoxClient
 
 YAML_PATH = "./config_mopro.yaml"
@@ -233,7 +233,7 @@ def redo__interactive(input_cif_path):
     pass
 
 if __name__ == "__main__":
-    application_spec = sql_models_NEW_v2.ApplicationSpec.from_yaml_file(YAML_PATH)
+    application_spec = sql_models.ApplicationSpec.from_yaml_file(YAML_PATH)
 
     client = QCrBoxClient(application_spec=application_spec)
     client.run()

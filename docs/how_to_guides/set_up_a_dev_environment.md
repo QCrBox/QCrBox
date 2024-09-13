@@ -1,150 +1,36 @@
 # Setting up a development environment
 
-## Check prerequisites
+## Quick start
 
-Make sure you have the necessary prerequisites installed.
+Make sure you have the necessary prerequisites installed (see [below](#prerequisites) for detailed instructions).
+
+- Docker / Docker Compose
+- WSL2 (Windows Subsystem for Linux 2) - _only required for Windows_
+
+Then run the following command to download the setup script and install QCrBox.
+```bash
+$ bash <(curl -fsSL https://raw.githubusercontent.com/QCrBox/QCrBox/dev/scripts/qcrbox_setup.sh)
+```
+
+If you prefer to inspect the script before running it, you can download it first and then run it manually:
+```bash
+$ curl -fsSL https://raw.githubusercontent.com/QCrBox/QCrBox/dev/scripts/qcrbox_setup.sh > qcrbox_setup.sh
+$ bash qcrbox_setup.sh
+```
 
 !!! info inline end
-    QCrBox has been tested with the versions of Python and Docker
-    listed here, but other recent versions should also work. Please
-    [raise an issue](https://github.com/QCrBox/QCrBox/issues/new){:target="_blank"}
-    on GitHub if you experience any problems.
+    If you are using Windows, make sure to run the above command in a WSL2 terminal,
+    not in PowerShell or the Windows command prompt.
 
-    Note that QCrBox requires Docker Engine version 25.0 or later due to the use of `--start-interval`
-    in container [health checks](https://docs.docker.com/reference/dockerfile/#healthcheck).
+The setup script will give you the option to automatically install Devbox and Nix (if they are not already installed).
+Then it will clone the QCrBox repository and create an isolated development environment inside it. This development
+environment includes a virtual environment for the `pyqcrbox` Python package and all other dependencies needed to
+run and develop QCrBox. Once installation is complete, you can activate the development shell by running `devbox shell`.
 
-```
-$ python --version
-Python 3.11.5
+QCrBox relies on [Devbox](https://www.jetify.com/devbox/docs/) to provide a consistent development environment.
+Internally, Devbox uses the [Nix package manager](https://nixos.org/) to install packages into isolated environments.
 
-$ docker version
-Client:
- Version:           24.0.9
- API version:       1.43
- Go version:        go1.22.5
- Git commit:        v24.0.9
- Built:             Thu Jan  1 00:00:00 1970
- OS/Arch:           linux/amd64
- Context:           default
-
-Server: Docker Engine - Community
- Engine:
-  Version:          27.1.1
-  API version:      1.46 (minimum version 1.24)
-  Go version:       go1.21.12
-  Git commit:       cc13f95
-  Built:            Tue Jul 23 19:57:01 2024
-  OS/Arch:          linux/amd64
-  Experimental:     false
- containerd:
-  Version:          1.7.19
-  GitCommit:        2bf793ef6dc9a18e00cb12efb64355c2c9d5eb41
- runc:
-  Version:          1.7.19
-  GitCommit:        v1.1.13-0-g58aa920
- docker-init:
-  Version:          0.19.0
-  GitCommit:        de40ad0
-
-$ docker compose version
-Docker Compose version v2.21.0
-```
-
-
-## Clone the QCrBox repository
-```
-$ git clone https://github.com/QCrBox/QCrBox.git
-$ cd QCrBox
-```
-
-## Create a virtual environment
-
-Create a virtual environment for the `qcrbox` Python package and activate it.
-
-=== "Linux/Mac OS"
-    ```
-    $ python -m venv ./venv
-    $ source ./venv/bin/activate
-    ```
-
-=== "Windows (Powershell)"
-    ```
-    $ python -m venv .\venv
-    $ .\venv\Scripts\activate.ps1
-    ```
-
-=== "Windows (command line)"
-    ```
-    $ python -m venv .\venv
-    $ .\venv\Scripts\activate.bat
-    ```
-
-!!! note
-    In this guide we use a "vanilla" Python [virtual environment](https://docs.python.org/3/library/venv.html)
-    because it does not require any additional dependencies.
-    If you use a custom package manager such as `poetry` or `conda`
-    you can of course adapt the previous step to your specific setup.
-
-Let's also update `pip` to its latest version and install the `uv` package installer (which is *much* faster than the
-standard `pip` installer).
-```
-(venv) $ python -m pip install --upgrade pip uv
-```
-
-## Install the `pyqcrbox` Python package
-
-Next, install the `pyqcrbox` package itself.
-```
-$ uv pip install -e ./pyqcrbox[all]
-```
-This command installs the `qcb` command line tool, which acts as the command line interface for the
-Quantum Crystallography Toolbox, together with all extra dependencies needed for  development. These
-extra dependencies include developer tools for testing, code formatting and linting; packages needed
-to run the QCrBox server & client locally, and packages needed to build and serve the documentation.
-
-!!! note
-    The above command uses the `-e` switch to install `pyqcrbox` in [editable mode](https://setuptools.pypa.io/en/latest/userguide/development_mode.html).
-    This means that any changes we make to the code during development are automatically picked up in our local installation
-    without having to reinstall/upgrade the `pyqcrbox` package.
-
-
-### Alternative: installation with minimal dependencies
-
-If you only care about being able to run the `qcb` command line tool (which is needed in order to build and run the
-QCrBox docker containers) but not about any other development capabilities, you can choose to install `pyqcrbox` with
-only a minimal set of dependencies as follows.
-```
-(venv) $ uv pip install -e ./pyqcrbox
-```
-
-### Alternative: installation with targeted sets of extra dependencies
-
-QCrBox comes with several other sets of additional dependencies which can be specified in square brackets after `pyqcrbox`.
-
-If you only want to be able to build the documentation, for example, run the following command.
-```
-(venv) $ uv pip install -e ./pyqcrbox[docs]
-```
-
-If you plan on developing QCrBox, making modifications to the code and/or submitting merge requests,
-you most likely want to install the `dev` dependencies, too.
-```
-(venv) $ uv pip install -e ./pyqcrbox[dev]
-```
-
-Two other sets of additional dependencies are `pyqcrbox[client]` and `pyqcrbox[server]`, but these are mostly relevant
-for targeted installation inside the Docker containers.
-
-
-## Installing pre-commit hooks (for development on `qcrbox`)
-
-For development on `qcrbox`, you need to install the [pre-commit](https://pre-commit.com/) hooks for linting,
-auto-formatting, etc. Make sure you have the dev dependencies installed (as described above), which ensures
-that the `pre-commit` tool is installed. Then run:
-```
-(venv) $ pre-commit install
-```
-Now `pre-commit` will run automatically on `git commit`.
+The QCrBox setup script will give you the option to automatically install Devbox and Nix if they are not already installed.
 
 
 ## Verify the installation
@@ -176,17 +62,12 @@ Try building a component by typing:
 $ qcb build qcrboxtools
 ```
 
-!!! warning
-    There were issues with running hatchling under Windows 11, especially when using a Python version from the Windows Store. If ``qcb build`` fails during ``Building Python package: pyqcrbox`` with a code 106 error (or silently when running without ``-v``), try the following remedy:
-
-      1. Uninstall the Windows Store Python version using the app uninstall of Windows
-      2. Get a new installer from [python.org](https://www.python.org/)
-      3. Install. Activate support for long paths and add Python to path
-      4. Delete the venv folder and create a new one with the new Python version
 
 ## Improving File Access Speed on Windows
 
-When using Docker on Windows with WSL2 (Windows Subsystem for Linux 2), file access in shared folders can be slow, which can cause problems for processes like data reduction. By default, the shared files are stored in `<project_folder>/shared_files/` on your Windows drive. You should move the shared files to your WSL2 partition for faster access.
+When using Docker on Windows with WSL2 (Windows Subsystem for Linux 2), file access in shared folders can be slow,
+which can cause problems for processes like data reduction. By default, the shared files are stored in
+`<project_folder>/shared_files/` on your Windows drive. You should move the shared files to your WSL2 partition for faster access.
 
 ### Steps
 
@@ -224,3 +105,60 @@ When using Docker on Windows with WSL2 (Windows Subsystem for Linux 2), file acc
      ```
 
    - Make sure to use single quotes around the path
+
+
+## Prerequisites
+
+The following dependencies need to be installed manually.
+
+**Docker** and **Docker Compose**
+
+The easiest way to install Docker is to use the [Docker Desktop](https://docs.docker.com/desktop/)
+(scroll down to find the box titled "Install Docker Desktop" and click on the link for your operating system).
+
+If you don't care about a graphical user interface (for example, if you are working on a remote server),
+you can also manually install [Docker Engine](https://docs.docker.com/engine/install/) and
+[Docker Compose](https://docs.docker.com/compose/install/).
+
+
+!!! info inline end
+    QCrBox has been tested with the version of Docker listed below, but other recent versions should
+    also work. Please [create an issue](https://github.com/QCrBox/QCrBox/issues/new){:target="_blank"}
+    on GitHub if you experience any problems.
+
+    Note that QCrBox requires Docker Engine version 25.0 or later due to the use of `--start-interval`
+    in container [health checks](https://docs.docker.com/reference/dockerfile/#healthcheck).
+
+```
+$ docker version
+Client:
+ Version:           24.0.9
+ API version:       1.43
+ Go version:        go1.22.5
+ Git commit:        v24.0.9
+ Built:             Thu Jan  1 00:00:00 1970
+ OS/Arch:           linux/amd64
+ Context:           default
+
+Server: Docker Engine - Community
+ Engine:
+  Version:          27.1.1
+  API version:      1.46 (minimum version 1.24)
+  Go version:       go1.21.12
+  Git commit:       cc13f95
+  Built:            Tue Jul 23 19:57:01 2024
+  OS/Arch:          linux/amd64
+  Experimental:     false
+ containerd:
+  Version:          1.7.19
+  GitCommit:        2bf793ef6dc9a18e00cb12efb64355c2c9d5eb41
+ runc:
+  Version:          1.7.19
+  GitCommit:        v1.1.13-0-g58aa920
+ docker-init:
+  Version:          0.19.0
+  GitCommit:        de40ad0
+
+$ docker compose version
+Docker Compose version v2.21.0
+```

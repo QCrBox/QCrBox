@@ -1,7 +1,7 @@
 import anyio
 
 from pyqcrbox import logger
-from pyqcrbox.sql_models_NEW_v2 import CalculationStatusEnum
+from pyqcrbox.sql_models import CalculationStatusEnum
 from .base_calculation import BaseCalculation
 
 

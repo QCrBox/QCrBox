@@ -5,7 +5,7 @@ from textwrap import dedent
 from qcrboxtools.cif.cif2cif import cif_file_merge_to_unified_by_yml
 from qcrboxtools.cif.file_converter.shelxt import ins2symop_loop
 
-from pyqcrbox import sql_models_NEW_v2
+from pyqcrbox import sql_models
 from pyqcrbox.registry.client import QCrBoxClient
 
 YAML_PATH = "./config_crysalis-pro.yaml"
@@ -109,7 +109,7 @@ def get_crysalis_path():
     return str(crysalis_install_dir / "pro.exe")
 
 if __name__ == "__main__":
-    application_spec = sql_models_NEW_v2.ApplicationSpec.from_yaml_file(YAML_PATH)
+    application_spec = sql_models.ApplicationSpec.from_yaml_file(YAML_PATH)
 
     client = QCrBoxClient(application_spec=application_spec)
     client.run()

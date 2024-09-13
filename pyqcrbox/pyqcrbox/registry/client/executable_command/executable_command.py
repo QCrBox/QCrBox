@@ -1,9 +1,9 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from pyqcrbox.sql_models_NEW_v2.command_spec.command_spec import CommandSpecDiscriminatedUnion
+    from pyqcrbox.sql_models.command_spec.command_spec import CommandSpecDiscriminatedUnion
 
-from pyqcrbox.sql_models_NEW_v2.command_spec import ImplementedAs
+from pyqcrbox.sql_models.command_spec import ImplementedAs
 
 from .cli_command import CLICommand
 from .interactive_command import InteractiveCommand

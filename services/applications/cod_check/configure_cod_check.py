@@ -12,7 +12,7 @@ from simple_cod_module import (
     get_number_fitting_cod_entries,
 )
 
-from pyqcrbox import sql_models_NEW_v2
+from pyqcrbox import sql_models
 from pyqcrbox.registry.client import QCrBoxClient
 
 YAML_PATH = "./config_cod_check.yaml"
@@ -96,7 +96,7 @@ def merge_closest_cod_entry(input_cif_path, output_cif_path, cellpar_deviation_p
 
 
 if __name__ == "__main__":
-    application_spec = sql_models_NEW_v2.ApplicationSpec.from_yaml_file(YAML_PATH)
+    application_spec = sql_models.ApplicationSpec.from_yaml_file(YAML_PATH)
 
     client = QCrBoxClient(application_spec=application_spec)
     client.run()
