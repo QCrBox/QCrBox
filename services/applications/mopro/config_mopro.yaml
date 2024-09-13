@@ -40,7 +40,7 @@ commands:
         used_basecommand_parameters: ["input_cif_path", "table_type", "wavefunction_type"]
       run:
         implemented_as: "cli_command"
-        call_pattern: "wine /opt/wine_installations/wine_win64/drive_c/MoProSuite-win-July2022/MoProGUI_Qt_win64/MoProGUI_win64.exe"
+        call_pattern: "wine $MOPRO_GUI_PATH"
       finalise:
         implemented_as: "python_callable"
         import_path: "configure_mopro"

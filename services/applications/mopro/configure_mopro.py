@@ -31,11 +31,13 @@ def clean_cif(cif_path, cleaned_cif_path):
 
 def table_path(table_type):
     match table_type:
-        case "MoPro v20":
-            table_name = lib_path / "mopro_v20.tab"
-        case "XD":
-            table_name = lib_path / "mopro_xd.tab"
+        case "MoPro v24":
+            table_name = lib_path / "mopro_v24.tab"
+        #case "XD":
+        #    table_name = lib_path / "mopro_xd.tab"
         case _:
+            if not table_type.endswith(".tab"):
+                table_type += ".tab"
             table_name = lib_path / table_type
     return table_name
 
@@ -46,8 +48,8 @@ def wave_function_path(wave_function_type):
             wave_name = lib_path / "WAVEF_Su_Coppens_relativistic"
         case "Clementi Roetti":
             wave_name = lib_path / "WAVEF"
-        case "Mollynx":
-            wave_name = lib_path / "WAVEF_Mollynx"
+        #case "Mollynx":
+        #    wave_name = lib_path / "WAVEF_Mollynx"
         case _:
             wave_name = lib_path / f"WAVEF_{wave_function_type}"
     return wave_name
