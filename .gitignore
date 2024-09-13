@@ -85,3 +85,27 @@ services/applications/xharpy_gpaw/XHARPy
 #MoProSuite
 services/applications/mopro/MoProSuite_*.zip
 services/applications/mopro/Import2MoPro-2024-07.zip
+
+#React
+# dependencies
+qcrbox-frontend/node_modules
+qcrbox-frontend/.pnp
+qcrbox-frontend/.pnp.js
+
+# testing
+qcrbox-frontend/coverage
+
+# production
+qcrbox-frontend/build
+
+# misc
+qcrbox-frontend/.DS_Store
+qcrbox-frontend/.env.local
+qcrbox-frontend/.env.development.local
+qcrbox-frontend/.env.test.local
+qcrbox-frontend/.env.production.local
+
+qcrbox-frontend/npm-debug.log*
+qcrbox-frontend/yarn-debug.log*
+qcrbox-frontend/yarn-error.log*
+
