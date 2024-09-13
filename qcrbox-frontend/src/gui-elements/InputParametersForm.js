@@ -1,15 +1,15 @@
-export default function InputParametersForm ({textValue, intValue, setTextValue, setIntValue }) {
+export default function InputParametersForm ({nameValue, durationValue, setNameValue, setDurationValue }) {
 
     // Handler for text input change
     function handleTextChange(e) {
-      setTextValue(e.target.value);
+      setNameValue(e.target.value);
     }
   
     // Handler for integer input change
     function handleIntChange(e) {
       const value = parseInt(e.target.value, 10);
       if (!isNaN(value)) {
-        setIntValue(value);
+        setDurationValue(value);
       }
     }
   
@@ -17,20 +17,20 @@ export default function InputParametersForm ({textValue, intValue, setTextValue,
       <div>
         <div>
           <label>
-            Text Input:
+            Name:
             <input 
               type="text" 
-              value={textValue} 
+              value={nameValue} 
               onChange={handleTextChange} 
             />
           </label>
         </div>
         <div>
           <label>
-            Integer Input:
+            Duration:
             <input 
               type="number" 
-              value={intValue} 
+              value={durationValue} 
               onChange={handleIntChange} 
             />
           </label>

@@ -12,8 +12,8 @@ export default function MyApp() {
   const [calcInvokeInfo, setCalcInvokeInfo] = useState(null);
   const [taskStatusInfo, setTaskStatusInfo] = useState(null);
 
-  const [textValue, setTextValue] = useState('Max');
-  const [intValue, setIntValue] = useState(10);
+  const [nameValue, setNameValue] = useState('Max');
+  const [durationValue, setDurationValue] = useState(10);
 
   async function listApplications() {
 
@@ -56,7 +56,7 @@ export default function MyApp() {
         "application_slug": "dummy_cli",
         "application_version": "0.1.0",
         "command_name": "greet_and_sleep",
-        "arguments": {"name": "John", "duration": 10}
+        "arguments": {"name": nameValue, "duration": durationValue}
       }),
     })
     .then(response => response.json())
@@ -138,10 +138,10 @@ export default function MyApp() {
       </ul>
 
       <InputParametersForm 
-        textValue={textValue} 
-        intValue={intValue} 
-        setTextValue={setTextValue} 
-        setIntValue={setIntValue} 
+        nameValue={nameValue} 
+        durationValue={durationValue} 
+        setNameValue={setNameValue} 
+        setDurationValue={setDurationValue} 
       />
 
       <MyButton onClick={invokeCommand} buttonText='Invoke Greet and Sleep Command'/>    
