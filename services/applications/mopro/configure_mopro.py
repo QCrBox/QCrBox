@@ -7,7 +7,8 @@ from qcrboxtools.cif.cif2cif import (
     cif_file_to_specific_by_yml,
 )
 from qcrboxtools.cif.file_converter.hkl import cif2hkl4
-from qcrboxtools.robots.mopro import MoProImportRobot, MoProInpFile, WinePathHelper, MoProRobot
+from qcrboxtools.robots.mopro import MoProImportRobot, MoProInpFile, MoProRobot
+from qcrbox.util.wine import WinePathHelper
 
 from pyqcrbox import sql_models
 from pyqcrbox.registry.client import QCrBoxClient
@@ -228,7 +229,8 @@ def finalise__interactive(input_cif_path, output_cif_path):
         pass
 
 def toparams__interactive(input_cif_path):
-    pass
+    input_cif_path = Path(input_cif_path)
+    work_folder = input_cif_path.parent
 
 
 def redo__interactive(input_cif_path):
