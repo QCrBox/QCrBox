@@ -71,6 +71,9 @@
         "echo \"Opening JupyterLab URL: $JUPYTERLAB_URL\"",
         "python -m webbrowser -t $JUPYTERLAB_URL",
         "echo \"Run 'devbox services stop jupyterlab-playground' to shut down the jupyter server again.\""
+      ],
+      "test": [
+        "pytest -svx ./pyqcrbox/tests",
       ]
     }
   }
