@@ -16,5 +16,6 @@ async def test_import_of_local_file(sample_cif_file):
     await data_file_manager.import_local_file(sample_cif_file, _qcrbox_file_id=qcrbox_file_id)
     assert await data_file_manager.exists(qcrbox_file_id)
 
-    file_contents = await data_file_manager.read_file(qcrbox_file_id)
-    assert file_contents == sample_cif_file.read_text()
+    stored_file_contents = await data_file_manager.get_file_contents(qcrbox_file_id)
+    actual_file_contents = sample_cif_file.read_bytes()
+    assert stored_file_contents == actual_file_contents
