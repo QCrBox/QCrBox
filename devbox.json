@@ -32,7 +32,8 @@
     },
     "process-compose": "latest",
     "ncurses":         "latest",
-    "jq":              "latest"
+    "jq":              "latest",
+    "nats-server":     "latest"
   },
   "env": {
     "MAMBA_ROOT_PREFIX":     "${PWD}/.devbox/virtenv/python/.conda",
