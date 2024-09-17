@@ -15,8 +15,6 @@ export default function MyApp() {
   const [nameValue, setNameValue] = useState('Max');
   const [durationValue, setDurationValue] = useState(10);
 
-  // const [startTime, setStartTime] = useState(null);
-  // const [endTime, setEndTime] = useState(null);
   const [calcDuration, setCalcDuration] = useState(null);
 
   async function listApplications() {
@@ -90,6 +88,7 @@ export default function MyApp() {
     // Calculate the duration in seconds
     duration = (endTime - startTime) / 1000;
     console.log(`Task completed in ${duration} seconds`);
+    setCalcDuration(duration);
   }
 
   async function checkTaskStatus(taskId) {
