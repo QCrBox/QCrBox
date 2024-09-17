@@ -5,7 +5,7 @@ import InputParametersForm from './gui-elements/InputParametersForm.js';
 
 
 export default function MyApp() {
-  const [calcID, setcalcID] = useState(null);
+  // const [calcID, setcalcID] = useState(null);
   const [apps, setApps] = useState([]);
   const [commands, setCommands] = useState([]);
   const [calculations, setCalculations] = useState([]);
@@ -14,6 +14,10 @@ export default function MyApp() {
 
   const [nameValue, setNameValue] = useState('Max');
   const [durationValue, setDurationValue] = useState(10);
+
+  // const [startTime, setStartTime] = useState(null);
+  // const [endTime, setEndTime] = useState(null);
+  const [calcDuration, setCalcDuration] = useState(null);
 
   async function listApplications() {
 
@@ -49,8 +53,17 @@ export default function MyApp() {
       });
   }
 
-  function invokeCommand() {
-    fetch('/commands/invoke/', {
+  let startTime;
+  let endTime;
+  let duration;
+
+  async function invokeCommand() {
+
+    // Record the start time
+    startTime = Date.now();
+    console.log('start time: ', startTime);
+
+    const response = await fetch('/commands/invoke/', {
       method: 'POST',
       body: JSON.stringify({
         "application_slug": "dummy_cli",
@@ -59,37 +72,68 @@ export default function MyApp() {
         "arguments": {"name": nameValue, "duration": durationValue}
       }),
     })
-    .then(response => response.json())
-    .then(json => {
-      console.log(json);
-      setcalcID(json.payload.calculation_id);
-      setCalcInvokeInfo(json);
-    });
-    console.log('calculation ID: ', calcID);
-    console.log('calcInvokeInfo', calcInvokeInfo);
+
+    const data = await response.json();
+    console.log(data);
+    setCalcInvokeInfo(data);
+    const taskId = await data.payload.calculation_id;
+    console.log(data.payload.calculation_id);
+
+    // Wait for the task to complete
+    const result = await checkTaskStatus(taskId);
+    console.log(result);
+
+    // Record the end time
+    endTime = Date.now();
+    console.log('end time: ', endTime);
+
+    // Calculate the duration in seconds
+    duration = (endTime - startTime) / 1000;
+    console.log(`Task completed in ${duration} seconds`);
   }
 
-  function checkTaskStatus() {
-    console.log(`/calculations/${calcID}/`);
+  async function checkTaskStatus(taskId) {
 
-    fetch(`/calculations/${calcID}/`, {
-      method: 'GET',
-    })
-    .then(response => response.json())
-    .then(json => {
-      console.log(json);
-      setTaskStatusInfo(json);
-    });
+    console.log(`/calculations/${taskId}/`);
+
+    return new Promise(async (resolve, reject) => {
+      const poll = async () => {
+        
+        try {
+          const response = await fetch(`/calculations/${taskId}/`, {
+              method: 'GET',
+            });
+            const data = await response.json();
+            setTaskStatusInfo(data);
+
+            if (data.status === 'successful') {
+              resolve(data.result); // Task completed, resolve the promise with the result
+              console.log(data);
+            } else if (data.status === 'error') {
+              reject(new Error(data.error)); // Task failed, reject the promise
+              alert('Error: ', data.error); // Send an alert to the user
+            } else {
+              window.console.log('Task not yet completed, checking again...');
+              setTimeout(poll, 1000); // Poll every 5 seconds
+              
+              // Record the end time
+              endTime = Date.now();
+              console.log('end time: ', endTime);
+
+              // Calculate the duration in seconds
+              duration = (endTime - startTime) / 1000;
+              console.log('duration: ', duration);
+              setCalcDuration(duration);
+            }
+          } catch (error) {
+            reject(error); // Handle fetch errors
+            alert('Error: ', error);
+          }
+        };
+        poll();
+      });
   }
 
-  // async function runCommand() {
-  //   // Call startTask and wait for it to complete
-  //   await invokeCommand()
-  //   .then(() => {
-  //     // Code here will run after the task has completed
-  //     window.console.log('Code to run after task completed');
-  //   })
-  // }
 
   return (
     <div>
@@ -146,6 +190,7 @@ export default function MyApp() {
 
       <MyButton onClick={invokeCommand} buttonText='Invoke Greet and Sleep Command'/>    
       <br /> 
+      <p>Calculation Invocation Information:</p>
       <ul>
         {calcInvokeInfo !== null ? (
             <>
@@ -165,8 +210,9 @@ export default function MyApp() {
         )}
       </ul>
 
-      <MyButton onClick={checkTaskStatus} buttonText='Check Calculation Status'/> 
+      {/* <MyButton onClick={checkTaskStatus} buttonText='Check Calculation Status'/>  */}
       <br /> 
+      <p>Calculation Status:</p>
       <ul>
         {taskStatusInfo !== null ? (
             <>
@@ -178,6 +224,9 @@ export default function MyApp() {
               </li>
               <li>
                 Stdout: {taskStatusInfo.stdout}
+              </li>
+              <li>
+                Calculation duration: {calcDuration}
               </li>
             </>
           )
