@@ -11,6 +11,7 @@ async def test_import_of_local_file(sample_cif_file):
     data_file_manager = await get_data_file_manager()
 
     qcrbox_file_id = "qcrbox_data_file_001"
+    await data_file_manager.delete(qcrbox_file_id)
     assert not await data_file_manager.exists(qcrbox_file_id)
 
     await data_file_manager.import_local_file(sample_cif_file, _qcrbox_file_id=qcrbox_file_id)
