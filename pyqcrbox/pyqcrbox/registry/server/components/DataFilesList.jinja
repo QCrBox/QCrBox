@@ -1,14 +1,14 @@
 {#def data_files = [] #}
 
-<div>
-  <ul>
+<div class="content">
   {% if data_files %}
     Existing data files:
+    <ul>
     {% for data_file in data_files %}
       <li>{{ data_file.name }}</li>
     {% endfor %}
+    </ul>
   {% else %}
     No data files found.
   {% endif %}
-  </ul>
 </div>
