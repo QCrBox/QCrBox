@@ -83,6 +83,7 @@ client = [
 
 server = [
     "faststream[nats]>=0.5.2",
+    "jinjax",
     "litestar",
     "tenacity",
     "uvicorn[standard]",
