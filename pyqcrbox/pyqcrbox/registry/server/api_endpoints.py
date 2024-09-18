@@ -1,25 +1,45 @@
 import json
+from pathlib import Path
 
+import jinjax
 import nats.js.errors
 import sqlalchemy
 import svcs
 from faststream.nats import NatsBroker
-
-# from faststream.rabbit import RabbitBroker
 from litestar import Litestar, MediaType, Request, Response, get, post
-from litestar.openapi import OpenAPIConfig
-from litestar.plugins.structlog import StructlogPlugin
-from sqlalchemy.orm import joinedload
-
-__all__ = ["create_server_asgi_server"]
-
-
+from litestar.contrib.htmx.request import HTMXRequest
 from litestar.exceptions import ClientException
+from litestar.openapi import OpenAPIConfig
+from sqlalchemy.orm import joinedload
 from sqlmodel import select
 
 from pyqcrbox import QCRBOX_SVCS_REGISTRY, logger, msg_specs, settings, sql_models
 from pyqcrbox.registry.shared import structlog_plugin
 from pyqcrbox.svcs import get_nats_key_value
+
+__all__ = ["create_server_asgi_server"]
+
+here = Path(__file__).parent
+
+catalog = jinjax.Catalog()
+catalog.add_folder(here / "components")
+
+
+def render(*args, **kwargs) -> Response:
+    rendered_content = catalog.render(*args, **kwargs)
+    return Response(content=rendered_content, media_type=MediaType.HTML)
+
+
+@get(path="/example_htmx")
+async def example_htmx() -> Response:
+    return render("Main", title="QCrBox Web UI")
+    #return render("Layout", title="Htmx example", content="Hello world!")
+
+
+@post(path="/test1", exclude_from_csrf=True)
+async def test1(request: HTMXRequest) -> Response:
+    message = "This is a response from HTMX and JinjaX components"
+    return render("TestResponseMessage", message=message)
 
 
 def construct_filter_clauses(model_cls, **kwargs):
@@ -66,9 +86,8 @@ async def retrieve_commands(
         (application_version is None) or (sql_models.ApplicationSpecDB.version == application_version),
     ]
     stmt = select(
-        sql_models.CommandSpecDB,
-        sql_models.ApplicationSpecDB.slug,
-        sql_models.ApplicationSpecDB.version).join(
+        sql_models.CommandSpecDB, sql_models.ApplicationSpecDB.slug, sql_models.ApplicationSpecDB.version
+    ).join(
         sql_models.CommandSpecDB.application,
     )
 
@@ -130,9 +149,7 @@ def verify_command_exists(
     return cmd_spec_db
 
 
-def validate_arguments_against_command_parameters(
-    cmd_spec_db: sql_models.CommandSpecDB, arguments: dict
-) -> None:
+def validate_arguments_against_command_parameters(cmd_spec_db: sql_models.CommandSpecDB, arguments: dict) -> None:
     params = list(cmd_spec_db.parameters.values())
     required_param_names = set(p["name"] for p in params if p["required"] is True)
     all_param_names = set(cmd_spec_db.parameters.keys())
@@ -180,7 +197,7 @@ async def commands_invoke(data: sql_models.CommandInvocationCreate, request: Req
         status="ok",
         payload={
             "calculation_id": response.payload.calculation_id,
-            "href": request.url_for("get_calculation_details", calculation_id=response.payload.calculation_id)
+            "href": request.url_for("get_calculation_details", calculation_id=response.payload.calculation_id),
         },
     )
 
@@ -278,6 +295,8 @@ async def get_calculation_info() -> list[dict]:
 def create_server_asgi_server(custom_lifespan) -> Litestar:
     app = Litestar(
         route_handlers=[
+            example_htmx,
+            test1,
             hello,
             health_check,
             retrieve_applications,
