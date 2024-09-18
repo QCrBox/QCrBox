@@ -1,7 +1,7 @@
 <div class="content">
   <form
      hx-encoding="multipart/form-data"
-     hx-post="/upload"
+     hx-post="/data_files/upload"
      _="on htmx:xhr:progress(loaded, total) set #progress.value to (loaded/total)*100"
   >
       <input type="file" name="file">

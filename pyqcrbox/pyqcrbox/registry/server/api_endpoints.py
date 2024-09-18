@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from typing import Annotated
 
 import jinjax
 import nats.js.errors
@@ -8,8 +9,11 @@ import svcs
 from faststream.nats import NatsBroker
 from litestar import Litestar, MediaType, Request, Response, get, post
 from litestar.contrib.htmx.request import HTMXRequest
+from litestar.datastructures import UploadFile
+from litestar.enums import RequestEncodingType
 from litestar.exceptions import ClientException
 from litestar.openapi import OpenAPIConfig
+from litestar.params import Body
 from sqlalchemy.orm import joinedload
 from sqlmodel import select
 
@@ -292,6 +296,17 @@ async def get_calculation_info() -> list[dict]:
         return [c.to_response_model() for c in calculations_db]
 
 
+@post(path="/data_files/upload", media_type=MediaType.TEXT)
+async def handle_data_file_upload(
+    data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)],
+) -> str:
+    filename = data.filename
+    logger.warning(f"TODO: store data file in Nats object store: {filename}")
+    return f"Successfully imported data file: {filename}"
+
+
+
+
 def create_server_asgi_server(custom_lifespan) -> Litestar:
     app = Litestar(
         route_handlers=[
@@ -304,6 +319,7 @@ def create_server_asgi_server(custom_lifespan) -> Litestar:
             commands_invoke,
             get_calculation_info,
             get_calculation_info_by_calculation_id,
+            handle_data_file_upload,
         ],
         lifespan=[custom_lifespan],
         debug=True,
