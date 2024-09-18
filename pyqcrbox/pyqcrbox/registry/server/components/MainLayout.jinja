@@ -6,14 +6,18 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{ title }}</title>
-  <script defer src="//cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-  <script src="//cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/htmx.org@2.0.2"></script>
+  <script src="https://unpkg.com/hyperscript.org@0.9.12"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
 </head>
 
 <body>
-{{ content }}
-</body>
-
+  <section class="section">
+    <div class="container">
+      <Header title={{ title }} />
+    </div>
+    <div class="container">
+      {{ content }}
+     <div>
+  </section>
 </html>

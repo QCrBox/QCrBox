@@ -30,9 +30,9 @@ def render(*args, **kwargs) -> Response:
     return Response(content=rendered_content, media_type=MediaType.HTML)
 
 
-@get(path="/example_htmx")
-async def example_htmx() -> Response:
-    return render("Main", title="QCrBox Web UI")
+@get(path="/data_files")
+async def data_files_page() -> Response:
+    return render("DataFilesPage")
     #return render("Layout", title="Htmx example", content="Hello world!")
 
 
@@ -295,7 +295,7 @@ async def get_calculation_info() -> list[dict]:
 def create_server_asgi_server(custom_lifespan) -> Litestar:
     app = Litestar(
         route_handlers=[
-            example_htmx,
+            data_files_page,
             test1,
             hello,
             health_check,
