@@ -18,15 +18,20 @@ class QCrBoxDataFileManager:
         except nats.js.errors.ObjectNotFoundError:
             return False
 
-    async def import_local_file(self, file_path: str | Path, _qcrbox_file_id: str | None = None) -> None:
+    async def import_local_file(self, file_path: str | Path, _qcrbox_file_id: str | None = None) -> str:
+        with open(file_path, "rb") as f:
+            return await self.import_bytes(f.read(), _qcrbox_file_id)
+
+    async def import_bytes(self, file_contents: bytes, _qcrbox_file_id: str | None = None) -> str:
         from pyqcrbox.services import get_nats_broker
 
         qcrbox_file_id = _qcrbox_file_id or generate_data_file_id()
+        logger.debug(f"Storing file {qcrbox_file_id!r} in NATS object store")
+
         nats_broker = await get_nats_broker()
         data_file_storage = await nats_broker.object_storage("qcrbox_data_files")
-        with open(file_path, "rb") as f:
-            logger.debug(f"Storing file {qcrbox_file_id!r} in NATS object store")
-            await data_file_storage.put(qcrbox_file_id, f)
+        await data_file_storage.put(qcrbox_file_id, file_contents)
+        return qcrbox_file_id
 
     async def get_file_contents(self, qcrbox_file_id: str) -> bytes:
         from pyqcrbox.services import get_nats_broker
