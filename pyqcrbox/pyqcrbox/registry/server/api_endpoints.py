@@ -310,7 +310,7 @@ async def handle_data_file_upload(
     data_file_manager = await get_data_file_manager()
     filename = data.filename
     logger.debug(f"Storing data file in Nats object store: {filename!r}")
-    qcrbox_data_file_id = await data_file_manager.import_bytes(await data.read())
+    qcrbox_data_file_id = await data_file_manager.import_bytes(await data.read(), filename=filename)
     return f"Successfully imported data file: {filename!r} ({qcrbox_data_file_id=!r}"
 
 
