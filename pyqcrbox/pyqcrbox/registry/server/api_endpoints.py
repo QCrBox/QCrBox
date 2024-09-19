@@ -19,6 +19,7 @@ from sqlmodel import select
 
 from pyqcrbox import QCRBOX_SVCS_REGISTRY, logger, msg_specs, settings, sql_models
 from pyqcrbox.registry.shared import structlog_plugin
+from pyqcrbox.services import get_data_file_manager
 from pyqcrbox.svcs import get_nats_key_value
 
 __all__ = ["create_server_asgi_server"]
@@ -37,7 +38,6 @@ def render(*args, **kwargs) -> Response:
 @get(path="/data_files")
 async def data_files_page() -> Response:
     return render("DataFilesPage")
-    #return render("Layout", title="Htmx example", content="Hello world!")
 
 
 @post(path="/test1", exclude_from_csrf=True)
@@ -67,10 +67,10 @@ async def health_check() -> dict:
 # @get(path="/applications", media_type=MediaType.JSON, return_dto=sql_models.ApplicationReadDTO)
 @get(path="/applications", media_type=MediaType.JSON)
 async def retrieve_applications(
-    slug: str | None = None, version: str | None = None
+    # slug: str | None = None, version: str | None = None
 ) -> list[sql_models.ApplicationSpecWithCommands]:
     model_cls = sql_models.ApplicationSpecDB
-    filter_clauses = construct_filter_clauses(model_cls, slug=slug, version=version)
+    # filter_clauses = construct_filter_clauses(model_cls, slug=slug, version=version)
 
     with settings.db.get_session() as session:
         # applications = session.scalars(select(model_cls).where(*filter_clauses)).all()
@@ -81,14 +81,14 @@ async def retrieve_applications(
 
 @get(path="/commands", media_type=MediaType.JSON)
 async def retrieve_commands(
-    name: str | None, application_slug: str | None, application_version: str | None
+    # name: str | None, application_slug: str | None, application_version: str | None
 ) -> list[sql_models.CommandSpecWithParameters]:
-    model_cls = sql_models.CommandSpecDB
-    filter_clauses = [
-        (name is None) or (model_cls.name == name),
-        (application_slug is None) or (sql_models.ApplicationSpecDB.slug == application_slug),
-        (application_version is None) or (sql_models.ApplicationSpecDB.version == application_version),
-    ]
+    # model_cls = sql_models.CommandSpecDB
+    # filter_clauses = [
+    #     (name is None) or (model_cls.name == name),
+    #     (application_slug is None) or (sql_models.ApplicationSpecDB.slug == application_slug),
+    #     (application_version is None) or (sql_models.ApplicationSpecDB.version == application_version),
+    # ]
     stmt = select(
         sql_models.CommandSpecDB, sql_models.ApplicationSpecDB.slug, sql_models.ApplicationSpecDB.version
     ).join(
@@ -300,11 +300,11 @@ async def get_calculation_info() -> list[dict]:
 async def handle_data_file_upload(
     data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)],
 ) -> str:
+    data_file_manager = await get_data_file_manager()
     filename = data.filename
-    logger.warning(f"TODO: store data file in Nats object store: {filename}")
-    return f"Successfully imported data file: {filename}"
-
-
+    logger.debug(f"Storing data file in Nats object store: {filename!r}")
+    qcrbox_data_file_id = await data_file_manager.import_bytes(await data.read())
+    return f"Successfully imported data file: {filename!r} ({qcrbox_data_file_id=!r}"
 
 
 def create_server_asgi_server(custom_lifespan) -> Litestar:
