@@ -311,7 +311,7 @@ async def handle_data_file_upload(
     filename = data.filename
     logger.debug(f"Storing data file in Nats object store: {filename!r}")
     qcrbox_data_file_id = await data_file_manager.import_bytes(await data.read(), filename=filename)
-    return f"Successfully imported data file: {filename!r} ({qcrbox_data_file_id=!r}"
+    return f"Successfully imported data file: {filename!r} (<code>{qcrbox_data_file_id!r}</code>)"
 
 
 def create_server_asgi_server(custom_lifespan) -> Litestar:
