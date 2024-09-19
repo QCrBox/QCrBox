@@ -9,10 +9,11 @@ class DevelopmentServicesRegistry(svcs.Registry):
     def __init__(self):
         super().__init__()
 
-        self.nats_broker = NatsBroker(settings.nats.url, graceful_timeout=10, max_reconnect_attempts=1)
-
         self.register_value(QCrBoxDataFileManager, QCrBoxDataFileManager())
-        self.register_value(NatsBroker, self.nats_broker)
+        self.register_factory(NatsBroker, self.create_nats_broker)
+
+    def create_nats_broker(self):
+        return NatsBroker(settings.nats.url, graceful_timeout=10, max_reconnect_attempts=1)
 
 
 def get_qcrbox_services_registry():
