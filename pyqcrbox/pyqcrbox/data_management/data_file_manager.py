@@ -5,6 +5,8 @@ import nats.js.errors
 from pyqcrbox import logger
 from pyqcrbox.helpers import generate_data_file_id
 
+from .data_file import QCrBoxDataFile
+
 
 class QCrBoxDataFileManager:
     async def exists(self, qcrbox_file_id: str) -> bool:
@@ -60,14 +62,25 @@ class DummyDataFileManager:
     async def exists(self, qcrbox_file_id: str) -> bool:
         return qcrbox_file_id in self.dummy_storage
 
-    async def import_local_file(self, file_path: str | Path, _qcrbox_file_id: str | None = None) -> None:
+    async def import_local_file(self, file_path: str | Path, _qcrbox_file_id: str | None = None) -> str:
         qcrbox_file_id = _qcrbox_file_id or generate_data_file_id()
 
         with open(file_path, "rb") as f:
-            self.dummy_storage[qcrbox_file_id] = f.read()
+            data_file = QCrBoxDataFile(
+                qcrbox_file_id=qcrbox_file_id,
+                filename=file_path.name,
+                contents=f.read(),
+            )
+            self.dummy_storage[qcrbox_file_id] = data_file
 
-    async def read_file(self, qcrbox_file_id: str) -> bytes:
-        return self.dummy_storage[qcrbox_file_id]
+        return qcrbox_file_id
+
+    async def get_data_files(self) -> list[QCrBoxDataFile]:
+        return list(self.dummy_storage.values())
+
+    async def get_file_contents(self, qcrbox_file_id: str) -> bytes:
+        data_file = self.dummy_storage[qcrbox_file_id]
+        return data_file.contents
 
     async def delete(self, qcrbox_file_id: str) -> None:
         _ = self.dummy_storage.pop(qcrbox_file_id, None)
