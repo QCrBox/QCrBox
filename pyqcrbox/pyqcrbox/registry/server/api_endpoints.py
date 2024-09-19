@@ -35,7 +35,7 @@ def render(*args, **kwargs) -> Response:
     return Response(content=rendered_content, media_type=MediaType.HTML)
 
 
-@get(path="/data_files")
+@get(path="/data_files_page")
 async def data_files_page() -> Response:
     return render("DataFilesPage")
 
@@ -296,6 +296,13 @@ async def get_calculation_info() -> list[dict]:
         return [c.to_response_model() for c in calculations_db]
 
 
+@get(path="/data_files", media_type=MediaType.JSON)
+async def get_data_files() -> list[dict]:
+    data_file_manager = await get_data_file_manager()
+    data_files = await data_file_manager.get_data_files()
+    return [f.to_response_model() for f in data_files]
+
+
 @post(path="/data_files/upload", media_type=MediaType.TEXT)
 async def handle_data_file_upload(
     data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)],
@@ -319,6 +326,7 @@ def create_server_asgi_server(custom_lifespan) -> Litestar:
             commands_invoke,
             get_calculation_info,
             get_calculation_info_by_calculation_id,
+            get_data_files,
             handle_data_file_upload,
         ],
         lifespan=[custom_lifespan],
