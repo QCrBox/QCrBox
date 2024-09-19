@@ -22,13 +22,16 @@ class QCrBoxDataFileManager:
 
     async def import_local_file(self, file_path: str | Path, _qcrbox_file_id: str | None = None) -> str:
         with open(file_path, "rb") as f:
-            return await self.import_bytes(f.read(), _qcrbox_file_id)
+            return await self.import_bytes(f.read(), filename=file_path.name, _qcrbox_file_id=_qcrbox_file_id)
 
-    async def import_bytes(self, file_contents: bytes, _qcrbox_file_id: str | None = None) -> str:
+    async def import_bytes(
+        self, file_contents: bytes, *, filename: str | None = None, _qcrbox_file_id: str | None = None
+    ) -> str:
         from pyqcrbox.services import get_nats_broker
 
         qcrbox_file_id = _qcrbox_file_id or generate_data_file_id()
         logger.debug(f"Storing file {qcrbox_file_id!r} in NATS object store")
+        logger.warning(f"TODO: Store metadata about the file, including the filename {filename!r}")
 
         nats_broker = await get_nats_broker()
         data_file_storage = await nats_broker.object_storage("qcrbox_data_files")
@@ -63,15 +66,23 @@ class DummyDataFileManager:
         return qcrbox_file_id in self.dummy_storage
 
     async def import_local_file(self, file_path: str | Path, _qcrbox_file_id: str | None = None) -> str:
-        qcrbox_file_id = _qcrbox_file_id or generate_data_file_id()
-
         with open(file_path, "rb") as f:
-            data_file = QCrBoxDataFile(
-                qcrbox_file_id=qcrbox_file_id,
-                filename=file_path.name,
-                contents=f.read(),
-            )
-            self.dummy_storage[qcrbox_file_id] = data_file
+            return await self.import_bytes(f.read(), filename=file_path.name, _qcrbox_file_id=_qcrbox_file_id)
+
+    async def import_bytes(
+        self,
+        file_contents: bytes,
+        *,
+        filename: str | None = None,
+        _qcrbox_file_id: str | None = None,
+    ) -> str:
+        qcrbox_file_id = _qcrbox_file_id or generate_data_file_id()
+        data_file = QCrBoxDataFile(
+            qcrbox_file_id=qcrbox_file_id,
+            filename=filename,
+            contents=file_contents,
+        )
+        self.dummy_storage[qcrbox_file_id] = data_file
 
         return qcrbox_file_id
 

@@ -3,7 +3,7 @@ from pydantic import BaseModel
 
 class QCrBoxDataFile(BaseModel):
     qcrbox_file_id: str
-    filename: str
+    filename: str | None
     contents: bytes
 
     def to_response_model(self) -> "QCrBoxDataFileResponse":
@@ -15,4 +15,4 @@ class QCrBoxDataFile(BaseModel):
 
 class QCrBoxDataFileResponse(BaseModel):
     qcrbox_file_id: str
-    filename: str
+    filename: str | None
