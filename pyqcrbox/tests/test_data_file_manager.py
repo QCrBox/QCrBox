@@ -32,13 +32,13 @@ async def test_list_existing_data_files(sample_cif_file):
     qcrbox_file_id = "qcrbox_data_file_001"
     await data_file_manager.delete(qcrbox_file_id)
 
-    data_files = await data_file_manager.list_data_files()
+    data_files = await data_file_manager.get_data_files()
     assert len(data_files) == 0
 
-    data_file_manager.import_local_file(sample_cif_file, _qcrbox_file_id=qcrbox_file_id)
-    data_files = await data_file_manager.list_data_files()
+    await data_file_manager.import_local_file(sample_cif_file, _qcrbox_file_id=qcrbox_file_id)
+    data_files = await data_file_manager.get_data_files()
     assert len(data_files) == 1
 
     file1 = data_files[0]
-    assert file1.id == qcrbox_file_id
-    assert file1.name == sample_cif_file.name
+    assert file1.qcrbox_file_id == qcrbox_file_id
+    assert file1.filename == sample_cif_file.name
