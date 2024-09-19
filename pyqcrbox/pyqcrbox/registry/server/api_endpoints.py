@@ -37,7 +37,7 @@ def render(*args, **kwargs) -> Response:
 
 @get(path="/data_files_page")
 async def data_files_page() -> Response:
-    return render("DataFilesPage")
+    return render("DataFilesPage", data_files=await _get_data_files())
 
 
 @post(path="/test1", exclude_from_csrf=True)
@@ -298,6 +298,10 @@ async def get_calculation_info() -> list[dict]:
 
 @get(path="/data_files", media_type=MediaType.JSON)
 async def get_data_files() -> list[dict]:
+    return await _get_data_files()
+
+
+async def _get_data_files() -> list[dict]:
     data_file_manager = await get_data_file_manager()
     data_files = await data_file_manager.get_data_files()
     return [f.to_response_model() for f in data_files]
