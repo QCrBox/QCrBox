@@ -2,14 +2,15 @@ import svcs
 from faststream.nats import NatsBroker
 
 from pyqcrbox import settings
-from pyqcrbox.data_management import QCrBoxDataFileManager
+from pyqcrbox.data_management import DummyDataFileManager, QCrBoxDataFileManager
 
 
 class DevelopmentServicesRegistry(svcs.Registry):
     def __init__(self):
         super().__init__()
 
-        self.register_value(QCrBoxDataFileManager, QCrBoxDataFileManager())
+        # self.register_value(QCrBoxDataFileManager, QCrBoxDataFileManager())
+        self.register_value(QCrBoxDataFileManager, DummyDataFileManager())
         self.register_factory(NatsBroker, self.create_nats_broker)
 
     def create_nats_broker(self):
