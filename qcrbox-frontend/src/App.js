@@ -11,9 +11,9 @@ export default function MyApp() {
   const [calculations, setCalculations] = useState([]);
   const [calcInvokeInfo, setCalcInvokeInfo] = useState(null);
   const [taskStatusInfo, setTaskStatusInfo] = useState(null);
+  const [commandParameters, setCommandParameters] = useState(null);
 
-  const [nameValue, setNameValue] = useState('Max');
-  const [durationValue, setDurationValue] = useState(10);
+  const [inputValues, setInputValues] = useState({});
 
   const [calcDuration, setCalcDuration] = useState(null);
 
@@ -37,6 +37,8 @@ export default function MyApp() {
       .then(json => {
         console.log(json);
         setCommands(json);
+        console.log(json[0].parameters);
+        setCommandParameters(json[0].parameters);
       });
   }
 
@@ -67,7 +69,7 @@ export default function MyApp() {
         "application_slug": "dummy_cli",
         "application_version": "0.1.0",
         "command_name": "greet_and_sleep",
-        "arguments": {"name": nameValue, "duration": durationValue}
+        "arguments": inputValues,
       }),
     })
 
@@ -181,10 +183,9 @@ export default function MyApp() {
       </ul>
 
       <InputParametersForm 
-        nameValue={nameValue} 
-        durationValue={durationValue} 
-        setNameValue={setNameValue} 
-        setDurationValue={setDurationValue} 
+        commandParameters={commandParameters}
+        inputValues={inputValues}
+        setInputValues={setInputValues}
       />
 
       <MyButton onClick={invokeCommand} buttonText='Invoke Greet and Sleep Command'/>    
