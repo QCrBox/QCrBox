@@ -7,23 +7,21 @@ import nats.js.errors
 import sqlalchemy
 import svcs
 from faststream.nats import NatsBroker
-from litestar import Litestar, MediaType, Request, Response, get, post
+from litestar import MediaType, Request, Response, get, post
 from litestar.contrib.htmx.request import HTMXRequest
 from litestar.datastructures import UploadFile
 from litestar.enums import RequestEncodingType
 from litestar.exceptions import ClientException
-from litestar.openapi import OpenAPIConfig
 from litestar.params import Body
 from sqlalchemy.orm import joinedload
 from sqlmodel import select
 
 from pyqcrbox import QCRBOX_SVCS_REGISTRY, logger, msg_specs, settings, sql_models
 from pyqcrbox.data_management.data_file import QCrBoxDataFile
-from pyqcrbox.registry.shared import structlog_plugin
 from pyqcrbox.services import get_data_file_manager
 from pyqcrbox.svcs import get_nats_key_value
 
-__all__ = ["create_server_asgi_server"]
+__all__ = []
 
 here = Path(__file__).parent
 
@@ -325,26 +323,3 @@ async def handle_data_file_upload(
     # qcrbox_data_file_id = await data_file_manager.import_bytes(await data.read(), filename=filename)
     # return f"Successfully imported data file: {filename!r} (<code>{qcrbox_data_file_id!r}</code>)"
     return f"<li>{filename}</li>"
-
-
-def create_server_asgi_server(custom_lifespan) -> Litestar:
-    app = Litestar(
-        route_handlers=[
-            data_files_page,
-            test1,
-            hello,
-            health_check,
-            retrieve_applications,
-            retrieve_commands,
-            commands_invoke,
-            get_calculation_info,
-            get_calculation_info_by_calculation_id,
-            get_data_files,
-            handle_data_file_upload,
-        ],
-        lifespan=[custom_lifespan],
-        debug=True,
-        plugins=[structlog_plugin],
-        openapi_config=OpenAPIConfig(title="QCrBox Server API", version="0.1"),
-    )
-    return app

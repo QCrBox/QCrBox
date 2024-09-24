@@ -1,18 +1,31 @@
-import nats.js.errors
-
 import json
 from typing import Any
 
+import nats.js.errors
 from faststream import Context
+from litestar import Litestar
+from litestar.openapi import OpenAPIConfig
 from pydantic import BaseModel
 from sqlmodel import select
 
 from pyqcrbox import helpers, logger, msg_specs, settings, sql_models
+from pyqcrbox.registry.server.api_endpoints import (
+    commands_invoke,
+    data_files_page,
+    get_calculation_info,
+    get_calculation_info_by_calculation_id,
+    get_data_files,
+    handle_data_file_upload,
+    health_check,
+    hello,
+    retrieve_applications,
+    retrieve_commands,
+    test1,
+)
 from pyqcrbox.registry.shared.calculation_status import update_calculation_status_in_nats_kv_NEW
 from pyqcrbox.sql_models import CalculationStatusDetails, CalculationStatusEnum
 
-from ..shared import QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup
-from .api_endpoints import create_server_asgi_server
+from ..shared import QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup, structlog_plugin
 
 
 class ExecutingClientDetails(BaseModel):
@@ -170,15 +183,31 @@ class QCrBoxServer(QCrBoxServerClientBase):
         )
         with settings.db.get_session() as session:
             calculation_db: sql_models.CalculationDB = session.exec(
-                select(sql_models.CalculationDB).where(
-                    sql_models.CalculationDB.calculation_id == calculation_id
-                )
+                select(sql_models.CalculationDB).where(sql_models.CalculationDB.calculation_id == calculation_id)
             ).one()
             calculation_db.update_status(status_details.status, comment="NATS notification")
             logger.debug("Updated calculation status in the database.")
 
     def _set_up_asgi_server(self) -> None:
-        self.asgi_server = create_server_asgi_server(self.lifespan_context)
+        self.asgi_server = Litestar(
+            route_handlers=[
+                data_files_page,
+                test1,
+                hello,
+                health_check,
+                retrieve_applications,
+                retrieve_commands,
+                commands_invoke,
+                get_calculation_info,
+                get_calculation_info_by_calculation_id,
+                get_data_files,
+                handle_data_file_upload,
+            ],
+            lifespan=[self.lifespan_context],
+            debug=True,
+            plugins=[structlog_plugin],
+            openapi_config=OpenAPIConfig(title="QCrBox Server API", version="0.1"),
+        )
 
     @on_qcrbox_startup
     async def init_database(self, purge_existing_db_tables: bool) -> None:
