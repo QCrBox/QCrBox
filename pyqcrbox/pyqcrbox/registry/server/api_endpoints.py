@@ -1,25 +1,57 @@
 import json
+from pathlib import Path
+from typing import Annotated
 
+import jinjax
 import nats.js.errors
 import sqlalchemy
 import svcs
 from faststream.nats import NatsBroker
-
-# from faststream.rabbit import RabbitBroker
 from litestar import Litestar, MediaType, Request, Response, get, post
-from litestar.openapi import OpenAPIConfig
-from litestar.plugins.structlog import StructlogPlugin
-from sqlalchemy.orm import joinedload
-
-__all__ = ["create_server_asgi_server"]
-
-
+from litestar.contrib.htmx.request import HTMXRequest
+from litestar.datastructures import UploadFile
+from litestar.enums import RequestEncodingType
 from litestar.exceptions import ClientException
+from litestar.openapi import OpenAPIConfig
+from litestar.params import Body
+from sqlalchemy.orm import joinedload
 from sqlmodel import select
 
 from pyqcrbox import QCRBOX_SVCS_REGISTRY, logger, msg_specs, settings, sql_models
+from pyqcrbox.data_management.data_file import QCrBoxDataFile
 from pyqcrbox.registry.shared import structlog_plugin
+from pyqcrbox.services import get_data_file_manager
 from pyqcrbox.svcs import get_nats_key_value
+
+__all__ = ["create_server_asgi_server"]
+
+here = Path(__file__).parent
+
+catalog = jinjax.Catalog()
+catalog.add_folder(here / "components")
+
+
+def render(*args, **kwargs) -> Response:
+    rendered_content = catalog.render(*args, **kwargs)
+    return Response(content=rendered_content, media_type=MediaType.HTML)
+
+
+@get(path="/data_files_page")
+async def data_files_page() -> Response:
+    # return render("DataFilesPage", data_files=await _get_data_files())
+    return render(
+        "DataFilesPage",
+        data_files=[
+            QCrBoxDataFile(qcrbox_file_id="123", filename="test1.txt", contents=b"Hello, world!"),
+            QCrBoxDataFile(qcrbox_file_id="456", filename="test2.txt", contents=b""),
+        ],
+    )
+
+
+@post(path="/test1", exclude_from_csrf=True)
+async def test1(request: HTMXRequest) -> Response:
+    message = "This is a response from HTMX and JinjaX components"
+    return render("TestResponseMessage", message=message)
 
 
 def construct_filter_clauses(model_cls, **kwargs):
@@ -43,10 +75,10 @@ async def health_check() -> dict:
 # @get(path="/applications", media_type=MediaType.JSON, return_dto=sql_models.ApplicationReadDTO)
 @get(path="/applications", media_type=MediaType.JSON)
 async def retrieve_applications(
-    slug: str | None = None, version: str | None = None
+    # slug: str | None = None, version: str | None = None
 ) -> list[sql_models.ApplicationSpecWithCommands]:
     model_cls = sql_models.ApplicationSpecDB
-    filter_clauses = construct_filter_clauses(model_cls, slug=slug, version=version)
+    # filter_clauses = construct_filter_clauses(model_cls, slug=slug, version=version)
 
     with settings.db.get_session() as session:
         # applications = session.scalars(select(model_cls).where(*filter_clauses)).all()
@@ -57,18 +89,17 @@ async def retrieve_applications(
 
 @get(path="/commands", media_type=MediaType.JSON)
 async def retrieve_commands(
-    name: str | None, application_slug: str | None, application_version: str | None
+    # name: str | None, application_slug: str | None, application_version: str | None
 ) -> list[sql_models.CommandSpecWithParameters]:
-    model_cls = sql_models.CommandSpecDB
-    filter_clauses = [
-        (name is None) or (model_cls.name == name),
-        (application_slug is None) or (sql_models.ApplicationSpecDB.slug == application_slug),
-        (application_version is None) or (sql_models.ApplicationSpecDB.version == application_version),
-    ]
+    # model_cls = sql_models.CommandSpecDB
+    # filter_clauses = [
+    #     (name is None) or (model_cls.name == name),
+    #     (application_slug is None) or (sql_models.ApplicationSpecDB.slug == application_slug),
+    #     (application_version is None) or (sql_models.ApplicationSpecDB.version == application_version),
+    # ]
     stmt = select(
-        sql_models.CommandSpecDB,
-        sql_models.ApplicationSpecDB.slug,
-        sql_models.ApplicationSpecDB.version).join(
+        sql_models.CommandSpecDB, sql_models.ApplicationSpecDB.slug, sql_models.ApplicationSpecDB.version
+    ).join(
         sql_models.CommandSpecDB.application,
     )
 
@@ -130,9 +161,7 @@ def verify_command_exists(
     return cmd_spec_db
 
 
-def validate_arguments_against_command_parameters(
-    cmd_spec_db: sql_models.CommandSpecDB, arguments: dict
-) -> None:
+def validate_arguments_against_command_parameters(cmd_spec_db: sql_models.CommandSpecDB, arguments: dict) -> None:
     params = list(cmd_spec_db.parameters.values())
     required_param_names = set(p["name"] for p in params if p["required"] is True)
     all_param_names = set(cmd_spec_db.parameters.keys())
@@ -180,7 +209,7 @@ async def commands_invoke(data: sql_models.CommandInvocationCreate, request: Req
         status="ok",
         payload={
             "calculation_id": response.payload.calculation_id,
-            "href": request.url_for("get_calculation_details", calculation_id=response.payload.calculation_id)
+            "href": request.url_for("get_calculation_details", calculation_id=response.payload.calculation_id),
         },
     )
 
@@ -275,9 +304,34 @@ async def get_calculation_info() -> list[dict]:
         return [c.to_response_model() for c in calculations_db]
 
 
+@get(path="/data_files", media_type=MediaType.JSON)
+async def get_data_files() -> list[dict]:
+    return await _get_data_files()
+
+
+async def _get_data_files() -> list[dict]:
+    data_file_manager = await get_data_file_manager()
+    data_files = await data_file_manager.get_data_files()
+    return [f.to_response_model() for f in data_files]
+
+
+@post(path="/data_files/upload", media_type=MediaType.TEXT)
+async def handle_data_file_upload(
+    data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)],
+) -> str:
+    # data_file_manager = await get_data_file_manager()
+    filename = data.filename
+    logger.debug(f"Storing data file in Nats object store: {filename!r}")
+    # qcrbox_data_file_id = await data_file_manager.import_bytes(await data.read(), filename=filename)
+    # return f"Successfully imported data file: {filename!r} (<code>{qcrbox_data_file_id!r}</code>)"
+    return f"<li>{filename}</li>"
+
+
 def create_server_asgi_server(custom_lifespan) -> Litestar:
     app = Litestar(
         route_handlers=[
+            data_files_page,
+            test1,
             hello,
             health_check,
             retrieve_applications,
@@ -285,6 +339,8 @@ def create_server_asgi_server(custom_lifespan) -> Litestar:
             commands_invoke,
             get_calculation_info,
             get_calculation_info_by_calculation_id,
+            get_data_files,
+            handle_data_file_upload,
         ],
         lifespan=[custom_lifespan],
         debug=True,

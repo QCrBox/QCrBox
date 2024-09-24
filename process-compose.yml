@@ -1,6 +1,32 @@
 version: "0.5"
 
+vars:
+  QCRBOX__NATS__PORT: "4222"
+  QCRBOX__NATS__MANAGEMENT_PORT: "8222"
+  QCRBOX__NATS__STORE_DIR: ".local_data/nats_store"
+  QCRBOX__REGISTRY_SERVER__HOST: "localhost"
+  QCRBOX__REGISTRY_SERVER__PORT: "8001"
+
 processes:
+  nats-server:
+    command: |
+      nats-server \
+        --jetstream \
+        --port={{ or "${QCRBOX__NATS__PORT}" .QCRBOX__NATS__PORT }} \
+        -m {{ or "${QCRBOX__NATS__MANAGEMENT_PORT}" .QCRBOX__NATS__MANAGEMENT_PORT }} \
+        --store_dir={{ or "${QCRBOX__NATS__STORE_DIR}" .QCRBOX__NATS__STORE_DIR }} \
+        --server_name=qcrbox-nats
+    availability:
+      restart: "always"
+
+  qcrbox-server:
+    command: "pyqcrbox-run-registry-server"
+    environment:
+      - 'QCRBOX__REGISTRY_SERVER__HOST={{ or "${QCRBOX__REGISTRY_SERVER__HOST}" .QCRBOX__REGISTRY_SERVER__HOST }}'
+      - 'QCRBOX__REGISTRY_SERVER__PORT={{ or "${QCRBOX__REGISTRY_SERVER__PORT}" .QCRBOX__REGISTRY_SERVER__PORT }}'
+    availability:
+      restart: "always"
+
   jupyterlab-examples:
     command: "jupyter lab --ip=0.0.0.0 --port=18433 --no-browser --notebook-dir=./docs/tutorials/examples/"
     availability:

@@ -32,7 +32,8 @@
     },
     "process-compose": "latest",
     "ncurses":         "latest",
-    "jq":              "latest"
+    "jq":              "latest",
+    "nats-server":     "latest"
   },
   "env": {
     "MAMBA_ROOT_PREFIX":     "${PWD}/.devbox/virtenv/python/.conda",
@@ -44,6 +45,7 @@
       "source ./scripts/devbox/initialise_shell_environment.sh",
       "uv pip install -e ./pyqcrbox[all]",
       "uv pip install -e ./qcrbox_wrapper[env-file]",
+      "test -x .git/hooks/pre-commit || pre-commit install",
       "",
       "#bash scripts/create_mamba_env.sh",
       "#alias conda=micromamba",
@@ -70,6 +72,9 @@
         "echo \"Opening JupyterLab URL: $JUPYTERLAB_URL\"",
         "python -m webbrowser -t $JUPYTERLAB_URL",
         "echo \"Run 'devbox services stop jupyterlab-playground' to shut down the jupyter server again.\""
+      ],
+      "test": [
+        "pytest -svx ./pyqcrbox/tests",
       ]
     }
   }
