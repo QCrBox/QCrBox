@@ -18,6 +18,7 @@ from sqlalchemy.orm import joinedload
 from sqlmodel import select
 
 from pyqcrbox import QCRBOX_SVCS_REGISTRY, logger, msg_specs, settings, sql_models
+from pyqcrbox.data_management.data_file import QCrBoxDataFile
 from pyqcrbox.registry.shared import structlog_plugin
 from pyqcrbox.services import get_data_file_manager
 from pyqcrbox.svcs import get_nats_key_value
@@ -37,7 +38,14 @@ def render(*args, **kwargs) -> Response:
 
 @get(path="/data_files_page")
 async def data_files_page() -> Response:
-    return render("DataFilesPage", data_files=await _get_data_files())
+    # return render("DataFilesPage", data_files=await _get_data_files())
+    return render(
+        "DataFilesPage",
+        data_files=[
+            QCrBoxDataFile(qcrbox_file_id="123", filename="test1.txt", contents=b"Hello, world!"),
+            QCrBoxDataFile(qcrbox_file_id="456", filename="test2.txt", contents=b""),
+        ],
+    )
 
 
 @post(path="/test1", exclude_from_csrf=True)
@@ -311,11 +319,12 @@ async def _get_data_files() -> list[dict]:
 async def handle_data_file_upload(
     data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)],
 ) -> str:
-    data_file_manager = await get_data_file_manager()
+    # data_file_manager = await get_data_file_manager()
     filename = data.filename
     logger.debug(f"Storing data file in Nats object store: {filename!r}")
-    qcrbox_data_file_id = await data_file_manager.import_bytes(await data.read(), filename=filename)
-    return f"Successfully imported data file: {filename!r} (<code>{qcrbox_data_file_id!r}</code>)"
+    # qcrbox_data_file_id = await data_file_manager.import_bytes(await data.read(), filename=filename)
+    # return f"Successfully imported data file: {filename!r} (<code>{qcrbox_data_file_id!r}</code>)"
+    return f"<li>{filename}</li>"
 
 
 def create_server_asgi_server(custom_lifespan) -> Litestar:
