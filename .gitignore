@@ -6,6 +6,9 @@
 .ackrc
 .tool-versions
 
+# Local tweaks to QCrBox settings
+.env.local
+
 # Python
 .venv/
 venv*/

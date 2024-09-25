@@ -137,7 +137,7 @@ class LoggingSettings(QCrBoxSettingsBaseModel):
 class QCrBoxSettings(QCrBoxSettingsBaseModel):
     model_config = SettingsConfigDict(
         case_sensitive=False,
-        # env_file='.env',
+        env_file=[".env.local"],
         env_nested_delimiter="__",
         env_prefix="QCRBOX__",
     )
