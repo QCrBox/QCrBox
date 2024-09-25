@@ -56,7 +56,7 @@ def _get_calculation_info() -> list[sql_models.CalculationResponseModel]:
         return [c.to_response_model() for c in calculations_db]
 
 
-def _get_calculation_info_by_calculation_id(calculation_id: str) -> dict:
+async def _get_calculation_info_by_calculation_id(calculation_id: str) -> dict:
     # with settings.db.get_session() as session:
     #     try:
     #         calc = session.exec(

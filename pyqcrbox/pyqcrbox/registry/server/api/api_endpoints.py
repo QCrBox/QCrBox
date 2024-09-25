@@ -52,7 +52,7 @@ async def get_calculation_info() -> list[sql_models.CalculationResponseModel]:
 @get(path="/calculations/{calculation_id:str}", media_type=MediaType.JSON, name="get_calculation_details")
 async def get_calculation_info_by_calculation_id(calculation_id: str) -> dict | Response[dict]:
     try:
-        return api_helpers._get_calculation_info_by_calculation_id(calculation_id)
+        return await api_helpers._get_calculation_info_by_calculation_id(calculation_id)
     except api_helpers.CalculationNotFoundError:
         return Response({"status": "error", "msg": f"Calculation not found: {calculation_id!r}"}, status_code=404)
 
