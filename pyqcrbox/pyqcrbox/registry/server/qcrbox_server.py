@@ -16,16 +16,14 @@ from pyqcrbox.registry.server.api_endpoints import (
     get_calculation_info_by_calculation_id,
     get_data_files,
     handle_data_file_upload,
-    health_check,
-    hello,
     retrieve_applications,
     retrieve_commands,
-    test1,
 )
 from pyqcrbox.registry.shared.calculation_status import update_calculation_status_in_nats_kv_NEW
 from pyqcrbox.sql_models import CalculationStatusDetails, CalculationStatusEnum
 
 from ..shared import QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup, structlog_plugin
+from .api import api_router
 
 
 class ExecutingClientDetails(BaseModel):
@@ -191,10 +189,8 @@ class QCrBoxServer(QCrBoxServerClientBase):
     def _set_up_asgi_server(self) -> None:
         self.asgi_server = Litestar(
             route_handlers=[
+                api_router,
                 data_files_page,
-                test1,
-                hello,
-                health_check,
                 retrieve_applications,
                 retrieve_commands,
                 commands_invoke,

@@ -8,7 +8,6 @@ import sqlalchemy
 import svcs
 from faststream.nats import NatsBroker
 from litestar import MediaType, Request, Response, get, post
-from litestar.contrib.htmx.request import HTMXRequest
 from litestar.datastructures import UploadFile
 from litestar.enums import RequestEncodingType
 from litestar.exceptions import ClientException
@@ -46,28 +45,12 @@ async def data_files_page() -> Response:
     )
 
 
-@post(path="/test1", exclude_from_csrf=True)
-async def test1(request: HTMXRequest) -> Response:
-    message = "This is a response from HTMX and JinjaX components"
-    return render("TestResponseMessage", message=message)
-
-
 def construct_filter_clauses(model_cls, **kwargs):
     filter_clauses = []
     for name, value in kwargs.items():
         if value is not None:
             filter_clauses.append((name is None) or (getattr(model_cls, name) == value))
     return filter_clauses
-
-
-@get("/", media_type=MediaType.TEXT, include_in_schema=False)
-async def hello() -> str:
-    return "Hello from QCrBox!"
-
-
-@get(path="/healthz", media_type=MediaType.JSON, skip_logging=False)
-async def health_check() -> dict:
-    return {"status": "ok"}
 
 
 # @get(path="/applications", media_type=MediaType.JSON, return_dto=sql_models.ApplicationReadDTO)
