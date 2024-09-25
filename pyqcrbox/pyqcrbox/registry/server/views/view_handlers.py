@@ -9,7 +9,7 @@ __all__ = []
 
 here = Path(__file__).parent
 
-catalog = jinjax.Catalog(root_url="/views/static/components")
+catalog = jinjax.Catalog(root_url="/views/static/components", file_ext=".jinjax")
 catalog.add_folder(here / "components")
 
 
