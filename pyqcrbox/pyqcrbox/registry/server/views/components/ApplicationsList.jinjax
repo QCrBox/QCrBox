@@ -1,0 +1,13 @@
+{#def applications = [] #}
+
+<div class="content">
+  {% if applications %}
+    <ul id="applications_list">
+    {% for application in applications %}
+      <ApplicationsListItem application={{ application }} />
+    {% endfor %}
+    </ul>
+  {% else %}
+    No applications registered.
+  {% endif %}
+</div>
