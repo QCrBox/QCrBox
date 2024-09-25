@@ -1,8 +1,8 @@
 {#def data_files = [] #}
 
-<div id="data_files_list" class="content">
+<div class="content">
   {% if data_files %}
-    <ul>
+    <ul id="data_files_list">
     {% for data_file in data_files %}
       <li>{{ data_file.filename }}</li>
     {% endfor %}

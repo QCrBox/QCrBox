@@ -7,7 +7,7 @@ from typing import Any, Optional
 import sqlalchemy
 import sqlmodel
 from loguru import logger
-from pydantic import BaseModel, computed_field
+from pydantic import computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlmodel import Session, create_engine
 
@@ -39,10 +39,11 @@ def _create_db_tables(engine, purge_existing: bool):
     QCrBoxBaseSQLModel.metadata.create_all(engine)
 
 
-class QCrBoxSettingsBaseModel(BaseModel):
+class QCrBoxSettingsBaseModel(BaseSettings):
     model_config = SettingsConfigDict(
         validate_assignment=True,
     )
+
 
 class DatabaseSettings(QCrBoxSettingsBaseModel):
     url: SQLiteDsn = "sqlite:///:memory:"
@@ -91,6 +92,7 @@ class NATSSettings(QCrBoxSettingsBaseModel):
 class ServerAPISettings(QCrBoxSettingsBaseModel):
     host: str = "127.0.0.1"
     port: int = 8001
+    enable_autoreload: bool = False
 
     @computed_field  # type: ignore
     @property
@@ -135,7 +137,7 @@ class LoggingSettings(QCrBoxSettingsBaseModel):
 class QCrBoxSettings(QCrBoxSettingsBaseModel):
     model_config = SettingsConfigDict(
         case_sensitive=False,
-        # env_file='.env',
+        env_file=[".env.local"],
         env_nested_delimiter="__",
         env_prefix="QCRBOX__",
     )
