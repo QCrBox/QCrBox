@@ -1,7 +1,5 @@
-import json
 from typing import Annotated, Any
 
-import nats.js.errors
 import sqlalchemy
 import svcs
 from faststream.nats import NatsBroker
@@ -18,7 +16,6 @@ from sqlmodel import select
 
 from pyqcrbox import QCRBOX_SVCS_REGISTRY, logger, msg_specs, settings, sql_models
 from pyqcrbox.services import get_data_file_manager
-from pyqcrbox.svcs import get_nats_key_value
 
 from . import api_helpers
 
@@ -33,14 +30,6 @@ async def health_check() -> dict:
     return {"status": "ok"}
 
 
-# def construct_filter_clauses(model_cls, **kwargs):
-#     filter_clauses = []
-#     for name, value in kwargs.items():
-#         if value is not None:
-#             filter_clauses.append((name is None) or (getattr(model_cls, name) == value))
-#     return filter_clauses
-
-
 @get(path="/applications", media_type=MediaType.JSON)
 async def retrieve_applications(
     # slug: str | None = None, version: str | None = None
@@ -52,50 +41,19 @@ async def retrieve_applications(
 async def retrieve_commands(
     # name: str | None, application_slug: str | None, application_version: str | None
 ) -> list[sql_models.CommandSpecWithParameters]:
-    # model_cls = sql_models.CommandSpecDB
-    # filter_clauses = [
-    #     (name is None) or (model_cls.name == name),
-    #     (application_slug is None) or (sql_models.ApplicationSpecDB.slug == application_slug),
-    #     (application_version is None) or (sql_models.ApplicationSpecDB.version == application_version),
-    # ]
-    stmt = select(
-        sql_models.CommandSpecDB, sql_models.ApplicationSpecDB.slug, sql_models.ApplicationSpecDB.version
-    ).join(
-        sql_models.CommandSpecDB.application,
-    )
-
-    with settings.db.get_session() as session:
-        # commands = session.scalars(select(model_cls).where(*filter_clauses)).all()
-        commands = session.scalars(stmt).all()
-        commands = [cmd.to_response_model() for cmd in commands]
-        return commands
+    return api_helpers._retrieve_commands()
 
 
 @get(path="/calculations", media_type=MediaType.JSON)
-async def get_calculation_info() -> list[dict]:
-    with settings.db.get_session() as session:
-        calculations_db = session.exec(select(sql_models.CalculationDB)).all()
-        return [c.to_response_model() for c in calculations_db]
+async def get_calculation_info() -> list[sql_models.CalculationResponseModel]:
+    return api_helpers._get_calculation_info()
 
 
 @get(path="/calculations/{calculation_id:str}", media_type=MediaType.JSON, name="get_calculation_details")
 async def get_calculation_info_by_calculation_id(calculation_id: str) -> dict | Response[dict]:
-    # with settings.db.get_session() as session:
-    #     try:
-    #         calc = session.exec(
-    #             select(sql_models.CalculationDB).where(sql_models.CalculationDB.calculation_id == calculation_id)
-    #         ).one()
-    #         pass
-    #     except sqlalchemy.orm.exc.NoResultFound:
-    #         return Response(
-    #             {"msg": f"No calculation exists with id={calculation_id}"},
-    #             status_code=404)
-
     try:
-        kv_calculation_status = await get_nats_key_value(bucket="calculation_status")
-        calc_status_info = (await kv_calculation_status.get(calculation_id)).value
-        return json.loads(calc_status_info)
-    except nats.js.errors.KeyNotFoundError:
+        return api_helpers._get_calculation_info_by_calculation_id(calculation_id)
+    except api_helpers.CalculationNotFoundError:
         return Response({"status": "error", "msg": f"Calculation not found: {calculation_id!r}"}, status_code=404)
 
 
