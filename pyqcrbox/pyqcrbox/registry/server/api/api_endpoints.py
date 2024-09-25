@@ -56,10 +56,8 @@ async def retrieve_commands(
 
 
 @get(path="/calculations", media_type=MediaType.JSON)
-async def get_calculation_info() -> list[dict]:
-    with settings.db.get_session() as session:
-        calculations_db = session.exec(select(sql_models.CalculationDB)).all()
-        return [c.to_response_model() for c in calculations_db]
+async def get_calculation_info() -> list[sql_models.CalculationResponseModel]:
+    return api_helpers._get_calculation_info()
 
 
 @get(path="/calculations/{calculation_id:str}", media_type=MediaType.JSON, name="get_calculation_details")

@@ -40,3 +40,9 @@ def _retrieve_commands() -> list[sql_models.CommandSpecWithParameters]:
         commands = [cmd.to_response_model() for cmd in commands]
 
     return commands
+
+
+def _get_calculation_info() -> list[sql_models.CalculationResponseModel]:
+    with settings.db.get_session() as session:
+        calculations_db = session.exec(select(sql_models.CalculationDB)).all()
+        return [c.to_response_model() for c in calculations_db]
