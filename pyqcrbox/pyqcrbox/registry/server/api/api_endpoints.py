@@ -1,7 +1,5 @@
-import json
 from typing import Annotated, Any
 
-import nats.js.errors
 import sqlalchemy
 import svcs
 from faststream.nats import NatsBroker
@@ -18,7 +16,6 @@ from sqlmodel import select
 
 from pyqcrbox import QCRBOX_SVCS_REGISTRY, logger, msg_specs, settings, sql_models
 from pyqcrbox.services import get_data_file_manager
-from pyqcrbox.svcs import get_nats_key_value
 
 from . import api_helpers
 
@@ -54,22 +51,9 @@ async def get_calculation_info() -> list[sql_models.CalculationResponseModel]:
 
 @get(path="/calculations/{calculation_id:str}", media_type=MediaType.JSON, name="get_calculation_details")
 async def get_calculation_info_by_calculation_id(calculation_id: str) -> dict | Response[dict]:
-    # with settings.db.get_session() as session:
-    #     try:
-    #         calc = session.exec(
-    #             select(sql_models.CalculationDB).where(sql_models.CalculationDB.calculation_id == calculation_id)
-    #         ).one()
-    #         pass
-    #     except sqlalchemy.orm.exc.NoResultFound:
-    #         return Response(
-    #             {"msg": f"No calculation exists with id={calculation_id}"},
-    #             status_code=404)
-
     try:
-        kv_calculation_status = await get_nats_key_value(bucket="calculation_status")
-        calc_status_info = (await kv_calculation_status.get(calculation_id)).value
-        return json.loads(calc_status_info)
-    except nats.js.errors.KeyNotFoundError:
+        return api_helpers._get_calculation_info_by_calculation_id(calculation_id)
+    except api_helpers.CalculationNotFoundError:
         return Response({"status": "error", "msg": f"Calculation not found: {calculation_id!r}"}, status_code=404)
 
 
