@@ -9,12 +9,12 @@ from pydantic import BaseModel
 from sqlmodel import select
 
 from pyqcrbox import helpers, logger, msg_specs, settings, sql_models
-from pyqcrbox.registry.server.api_endpoints import data_files_page
 from pyqcrbox.registry.shared.calculation_status import update_calculation_status_in_nats_kv_NEW
 from pyqcrbox.sql_models import CalculationStatusDetails, CalculationStatusEnum
 
 from ..shared import QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup, structlog_plugin
 from .api import api_router
+from .views import views_router
 
 
 class ExecutingClientDetails(BaseModel):
@@ -181,7 +181,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
         self.asgi_server = Litestar(
             route_handlers=[
                 api_router,
-                data_files_page,
+                views_router,
             ],
             lifespan=[self.lifespan_context],
             debug=True,
