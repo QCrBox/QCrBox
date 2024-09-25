@@ -1,0 +1,13 @@
+{#def applications = [] #}
+
+<div class="content">
+  {% if applications %}
+    <ul id="applications_list">
+    {% for application in applications %}
+      <li>{{ application.name }} (version: {{ application.version }})</li>
+    {% endfor %}
+    </ul>
+  {% else %}
+    No applications registered.
+  {% endif %}
+</div>
