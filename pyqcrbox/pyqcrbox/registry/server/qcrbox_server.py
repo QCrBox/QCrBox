@@ -9,16 +9,7 @@ from pydantic import BaseModel
 from sqlmodel import select
 
 from pyqcrbox import helpers, logger, msg_specs, settings, sql_models
-from pyqcrbox.registry.server.api_endpoints import (
-    commands_invoke,
-    data_files_page,
-    get_calculation_info,
-    get_calculation_info_by_calculation_id,
-    get_data_files,
-    handle_data_file_upload,
-    retrieve_applications,
-    retrieve_commands,
-)
+from pyqcrbox.registry.server.api_endpoints import data_files_page
 from pyqcrbox.registry.shared.calculation_status import update_calculation_status_in_nats_kv_NEW
 from pyqcrbox.sql_models import CalculationStatusDetails, CalculationStatusEnum
 
@@ -191,13 +182,6 @@ class QCrBoxServer(QCrBoxServerClientBase):
             route_handlers=[
                 api_router,
                 data_files_page,
-                retrieve_applications,
-                retrieve_commands,
-                commands_invoke,
-                get_calculation_info,
-                get_calculation_info_by_calculation_id,
-                get_data_files,
-                handle_data_file_upload,
             ],
             lifespan=[self.lifespan_context],
             debug=True,
