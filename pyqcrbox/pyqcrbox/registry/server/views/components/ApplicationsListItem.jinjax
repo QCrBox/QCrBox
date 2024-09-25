@@ -1,0 +1,10 @@
+{#def application #}
+
+<div>
+  <li>
+    <a href="{{ application.url }}", target="_blank">
+      {{ application.name }}
+    </a>, version: {{ application.version }}
+    <i>(registered: {{ application.registered_at.strftime("%Y-%m-%d %H:%M:%S") }})</i>
+  </li>
+</div>

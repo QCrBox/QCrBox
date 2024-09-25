@@ -4,7 +4,7 @@
   {% if applications %}
     <ul id="applications_list">
     {% for application in applications %}
-      <li>{{ application.name }} (version: {{ application.version }})</li>
+      <ApplicationsListItem application={{ application }} />
     {% endfor %}
     </ul>
   {% else %}
