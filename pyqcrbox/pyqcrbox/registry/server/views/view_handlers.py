@@ -23,7 +23,15 @@ async def views_root_handler() -> str:
     return "<html><h1>Hello world!</h1></html>"
 
 
-@get(path="/data_files_page")
+@get(path="/applications")
+async def serve_applications_page() -> Response:
+    return render(
+        "ApplicationsPage",
+        applications=[],
+    )
+
+
+@get(path="/data_files")
 async def serve_data_files_page() -> Response:
     # return render("DataFilesPage", data_files=await _get_data_files())
     return render(
@@ -37,5 +45,9 @@ async def serve_data_files_page() -> Response:
 
 views_router = Router(
     path="/views",
-    route_handlers=[views_root_handler, serve_data_files_page],
+    route_handlers=[
+        views_root_handler,
+        serve_applications_page,
+        serve_data_files_page,
+    ],
 )
