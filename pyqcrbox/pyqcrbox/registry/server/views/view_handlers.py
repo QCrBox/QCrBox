@@ -5,6 +5,8 @@ from litestar import MediaType, Response, Router, get
 
 from pyqcrbox.data_management.data_file import QCrBoxDataFile
 
+from ..api import api_helpers
+
 __all__ = []
 
 here = Path(__file__).parent
@@ -25,9 +27,10 @@ async def views_root_handler() -> str:
 
 @get(path="/applications")
 async def serve_applications_page() -> Response:
+    applications = api_helpers._retrieve_applications()
     return render(
         "ApplicationsPage",
-        applications=[],
+        applications=applications,
     )
 
 

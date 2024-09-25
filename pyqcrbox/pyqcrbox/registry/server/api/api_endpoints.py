@@ -20,6 +20,8 @@ from pyqcrbox import QCRBOX_SVCS_REGISTRY, logger, msg_specs, settings, sql_mode
 from pyqcrbox.services import get_data_file_manager
 from pyqcrbox.svcs import get_nats_key_value
 
+from . import api_helpers
+
 
 @get("/", media_type=MediaType.JSON, include_in_schema=False)
 async def api_root_handler() -> dict[str, Any]:
@@ -43,15 +45,7 @@ async def health_check() -> dict:
 async def retrieve_applications(
     # slug: str | None = None, version: str | None = None
 ) -> list[sql_models.ApplicationSpecWithCommands]:
-    model_cls = sql_models.ApplicationSpecDB
-    # filter_clauses = construct_filter_clauses(model_cls, slug=slug, version=version)
-
-    with settings.db.get_session() as session:
-        # applications = session.scalars(select(model_cls).where(*filter_clauses)).all()
-        applications = session.scalars(select(model_cls)).all()
-        applications = [app.to_response_model() for app in applications]
-
-    return applications
+    return api_helpers._retrieve_applications()
 
 
 @get(path="/commands", media_type=MediaType.JSON)
