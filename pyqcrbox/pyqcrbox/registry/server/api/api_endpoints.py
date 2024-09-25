@@ -33,14 +33,6 @@ async def health_check() -> dict:
     return {"status": "ok"}
 
 
-# def construct_filter_clauses(model_cls, **kwargs):
-#     filter_clauses = []
-#     for name, value in kwargs.items():
-#         if value is not None:
-#             filter_clauses.append((name is None) or (getattr(model_cls, name) == value))
-#     return filter_clauses
-
-
 @get(path="/applications", media_type=MediaType.JSON)
 async def retrieve_applications(
     # slug: str | None = None, version: str | None = None
