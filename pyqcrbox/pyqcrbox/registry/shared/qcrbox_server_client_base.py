@@ -95,7 +95,6 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
             self.asgi_server,
             host=self.host,
             port=self.port,
-            reload=settings.registry.server.enable_autoreload,
         )
         self.uvicorn_server = uvicorn.Server(uvicorn_config)
 
