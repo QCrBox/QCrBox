@@ -3,7 +3,7 @@
 <div id="command-details" class="block">
   {% if command is not none %}
     Command name: <code>{{ command.name }}</code><br>
-    Description: {{ command.description }}<br>
+    Description: {{ command.description | default("<i>No description provided</i>", true) }}<br>
   {% else %}
     Command details not found.
   {% endif %}
