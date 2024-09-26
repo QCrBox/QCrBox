@@ -1,6 +1,7 @@
 import json
 
 import nats.js.errors
+import sqlalchemy.exc
 from sqlmodel import select
 
 from pyqcrbox import settings, sql_models
@@ -8,6 +9,10 @@ from pyqcrbox.svcs import get_nats_key_value
 
 
 class CalculationNotFoundError(Exception):
+    pass
+
+
+class CommandNotFoundError(Exception):
     pass
 
 
@@ -50,14 +55,22 @@ def _retrieve_commands() -> list[sql_models.CommandSpecWithParameters]:
     return commands
 
 
-def _retrieve_command_by_id(cmd_id: int) -> sql_models.CommandSpecWithParameters:
+def _retrieve_command_by_id(
+    cmd_id: int, raise_if_not_found: bool = True
+) -> sql_models.CommandSpecWithParameters | None:
     """
     Retrieves details of a command from the database.
     """
     query = select(sql_models.CommandSpecDB).where(sql_models.CommandSpecDB.id == cmd_id)
 
     with settings.db.get_session() as session:
-        cmd = session.scalars(query).one()
+        try:
+            cmd = session.scalars(query).one()
+        except sqlalchemy.exc.NoResultFound:
+            if raise_if_not_found:
+                raise CommandNotFoundError(cmd_id)
+            else:
+                return None
         cmd_response_model = cmd.to_response_model()
 
     return cmd_response_model
