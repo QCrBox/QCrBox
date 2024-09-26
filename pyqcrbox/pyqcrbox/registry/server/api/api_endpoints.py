@@ -1,6 +1,6 @@
 from typing import Annotated, Any
 
-import sqlalchemy
+import sqlalchemy.exc
 import svcs
 from faststream.nats import NatsBroker
 from litestar import MediaType, Request, Response, Router, get, post
@@ -42,6 +42,14 @@ async def retrieve_commands(
     # name: str | None, application_slug: str | None, application_version: str | None
 ) -> list[sql_models.CommandSpecWithParameters]:
     return api_helpers._retrieve_commands()
+
+
+@get(path="/commands/{cmd_id:int}", media_type=MediaType.JSON)
+async def retrieve_command_by_id(cmd_id: int) -> sql_models.CommandSpecWithParameters | Response[dict]:
+    try:
+        return api_helpers._retrieve_command_by_id(cmd_id)
+    except sqlalchemy.exc.NoResultFound:
+        return Response({"status": "error", "msg": f"Command not found: id={cmd_id!r}"}, status_code=404)
 
 
 @get(path="/calculations", media_type=MediaType.JSON)
@@ -175,6 +183,7 @@ api_router = Router(
         health_check,
         retrieve_applications,
         retrieve_commands,
+        retrieve_command_by_id,
         commands_invoke,
         get_calculation_info,
         get_calculation_info_by_calculation_id,

@@ -50,6 +50,19 @@ def _retrieve_commands() -> list[sql_models.CommandSpecWithParameters]:
     return commands
 
 
+def _retrieve_command_by_id(cmd_id: int) -> sql_models.CommandSpecWithParameters:
+    """
+    Retrieves details of a command from the database.
+    """
+    query = select(sql_models.CommandSpecDB).where(sql_models.CommandSpecDB.id == cmd_id)
+
+    with settings.db.get_session() as session:
+        cmd = session.scalars(query).one()
+        cmd_response_model = cmd.to_response_model()
+
+    return cmd_response_model
+
+
 def _get_calculation_info() -> list[sql_models.CalculationResponseModel]:
     with settings.db.get_session() as session:
         calculations_db = session.exec(select(sql_models.CalculationDB)).all()
