@@ -28,9 +28,11 @@ async def views_root_handler() -> str:
 @get(path="/applications")
 async def serve_applications_page() -> Response:
     applications = api_helpers._retrieve_applications()
+    commands = api_helpers._retrieve_commands()
     return render(
         "ApplicationsPage",
         applications=applications,
+        commands=commands,
     )
 
 

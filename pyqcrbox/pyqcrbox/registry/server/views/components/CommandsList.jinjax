@@ -1,0 +1,13 @@
+{#def commands = [] #}
+
+<div class="content">
+  {% if commands %}
+    <ul id="commands_list">
+    {% for command in commands %}
+      <CommandsListItem command={{ command }} />
+    {% endfor %}
+    </ul>
+  {% else %}
+    No commands registered.
+  {% endif %}
+</div>

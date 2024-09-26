@@ -1,0 +1,7 @@
+{#def command #}
+
+<div>
+  <li>
+      {{ command.name }}
+  </li>
+</div>
