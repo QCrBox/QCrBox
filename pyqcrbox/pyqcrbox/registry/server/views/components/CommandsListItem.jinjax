@@ -1,7 +1,6 @@
 {#def command #}
 
-<div>
-  <li>
-      {{ command.name }}
-  </li>
-</div>
+<label class="radio">
+    <input type="radio" name="command" />
+    {{command.name}}
+</label>

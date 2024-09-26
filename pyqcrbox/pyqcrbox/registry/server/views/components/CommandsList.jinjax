@@ -1,12 +1,12 @@
 {#def commands = [] #}
 
-<div class="content">
+<div class="block">
   {% if commands %}
-    <ul id="commands_list">
+  <div class="radios is-flex is-flex-direction-column">
     {% for command in commands %}
       <CommandsListItem command={{ command }} />
     {% endfor %}
-    </ul>
+    </div>
   {% else %}
     No commands registered.
   {% endif %}
