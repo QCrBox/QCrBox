@@ -4,6 +4,24 @@
   {% if command is not none %}
     Command name: <code>{{ command.name }}</code><br>
     Description: {{ command.description | default("<i>No description provided</i>", true) }}<br>
+  {% for key, param in command.parameters.items() %}
+    <br>
+    <h3>Parameter: {{ param.name }}</h3>
+    <ul>
+      <li>
+        Type: {{ param.dtype }}
+      </li>
+      <li>
+        Description: {{ param.description }}
+      </li>
+      <li>
+        Required: {{ param.required }}
+      </li>
+      <li>
+        Default value: {{ param.default_value | default('None') }}
+      </li>
+    </ul>
+  {% endfor %}
   {% else %}
     Command details not found.
   {% endif %}
