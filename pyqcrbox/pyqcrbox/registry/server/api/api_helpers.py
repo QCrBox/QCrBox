@@ -136,7 +136,7 @@ def validate_arguments_against_command_parameters(cmd_spec_db: sql_models.Comman
         raise ClientException(error_msg)
 
 
-def _invoke_command(data: sql_models.CommandInvocationCreate) -> dict:
+async def _invoke_command(data: sql_models.CommandInvocationCreate) -> dict:
     with svcs.Container(QCRBOX_SVCS_REGISTRY) as con:
         nats_broker = await con.aget(NatsBroker)
 
