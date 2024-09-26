@@ -1,6 +1,0 @@
-{#def command #}
-
-<label class="radio">
-    <input type="radio" name="command" />
-    {{command.name}}
-</label>

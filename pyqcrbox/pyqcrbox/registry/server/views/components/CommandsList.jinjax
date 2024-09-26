@@ -2,12 +2,28 @@
 
 <div class="block">
   {% if commands %}
-  <div class="radios is-flex is-flex-direction-column">
+  <div
+    id="commands-list"
+    class="radios is-flex is-flex-direction-column"
+  >
     {% for command in commands %}
-      <CommandsListItem command={{ command }} />
+      <label class="radio">
+        <input type="radio"
+               name="cmd_list"
+               value="{{command.id}}"
+               hx-get="/views/command/{{command.id}}"
+               hx-trigger="change"
+               hx-target="#command-details"
+        />
+        {{command.name}}
+      </label>
     {% endfor %}
-    </div>
+  </div>
   {% else %}
     No commands registered.
   {% endif %}
+</div>
+
+<div id="command-details" class="block">
+  Command details will be displayed here.
 </div>
