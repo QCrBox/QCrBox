@@ -28,10 +28,18 @@ async def views_root_handler() -> str:
 @get(path="/applications")
 async def serve_applications_page() -> Response:
     applications = api_helpers._retrieve_applications()
+    commands = api_helpers._retrieve_commands()
     return render(
         "ApplicationsPage",
         applications=applications,
+        commands=commands,
     )
+
+
+@get(path="/command/{cmd_id:int}", media_type=MediaType.HTML)
+async def get_command_details(cmd_id: int) -> Response:
+    command = api_helpers._retrieve_command_by_id(cmd_id, raise_if_not_found=False)
+    return render("CommandDetails", command=command)
 
 
 @get(path="/data_files")
@@ -52,5 +60,6 @@ views_router = Router(
         views_root_handler,
         serve_applications_page,
         serve_data_files_page,
+        get_command_details,
     ],
 )
