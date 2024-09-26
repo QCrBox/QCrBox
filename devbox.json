@@ -73,6 +73,9 @@
         "python -m webbrowser -t $JUPYTERLAB_URL",
         "echo \"Run 'devbox services stop jupyterlab-playground' to shut down the jupyter server again.\""
       ],
+      "qcrbox-dev-server": [
+        "watchmedo auto-restart --pattern=*.py --recursive -- pyqcrbox-run-registry-server"
+      ],
       "test": [
         "pytest -svx ./pyqcrbox/tests",
       ]
