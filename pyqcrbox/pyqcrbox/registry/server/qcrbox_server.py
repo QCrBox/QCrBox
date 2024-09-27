@@ -1,10 +1,12 @@
 import json
+from pathlib import Path
 from typing import Any
 
 import nats.js.errors
 from faststream import Context
 from litestar import Litestar
 from litestar.openapi import OpenAPIConfig
+from litestar.static_files import create_static_files_router
 from pydantic import BaseModel
 from sqlmodel import select
 
@@ -15,6 +17,9 @@ from pyqcrbox.sql_models import CalculationStatusDetails, CalculationStatusEnum
 from ..shared import QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup, structlog_plugin
 from .api import api_router
 from .views import views_router
+
+static_files_dir = Path(__file__).parent / "assets"
+static_files_router = create_static_files_router(path="/static", directories=[static_files_dir])
 
 
 class ExecutingClientDetails(BaseModel):
@@ -180,6 +185,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
     def _set_up_asgi_server(self) -> None:
         self.asgi_server = Litestar(
             route_handlers=[
+                static_files_router,
                 api_router,
                 views_router,
             ],
