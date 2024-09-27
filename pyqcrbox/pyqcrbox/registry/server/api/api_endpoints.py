@@ -64,13 +64,16 @@ async def get_calculation_info_by_calculation_id(calculation_id: str) -> dict | 
 @post(path="/data_files/upload", media_type=MediaType.TEXT)
 async def handle_data_file_upload(
     data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)],
-) -> str:
-    # data_file_manager = await get_data_file_manager()
-    filename = data.filename
-    logger.debug(f"Storing data file in Nats object store: {filename!r}")
-    # qcrbox_data_file_id = await data_file_manager.import_bytes(await data.read(), filename=filename)
-    # return f"Successfully imported data file: {filename!r} (<code>{qcrbox_data_file_id!r}</code>)"
-    return f"<li>{filename}</li>"
+) -> Response:
+    qcrbox_data_file_id = await api_helpers._import_data_file(data)
+    return Response(
+        {
+            "status": "success",
+            "msg": f"Imported data file: {data.filename!r}",
+            "payload": {"qcrbox_id": qcrbox_data_file_id},
+        },
+        status_code=200,
+    )
 
 
 @get(path="/data_files", media_type=MediaType.JSON)
