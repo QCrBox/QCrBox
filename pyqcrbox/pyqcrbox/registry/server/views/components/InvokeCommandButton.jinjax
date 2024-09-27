@@ -1,17 +1,15 @@
 {#def invoked_command_info='' #}
 
   <button 
+    hx-headers='{"Content-Type": "application/json"}'
     hx-post="/views/invoke_command" 
-    hx-vals='{
-    "application_slug": "dummy_cli",
+    hx-vals='{"application_slug": "dummy_cli",
     "application_version": "0.1.0",
     "command_name": "greet_and_sleep",
-    "arguments": {"name": "John", "duration": 30}
-    }'
+    "arguments": {"name": "John", "duration": 30}}'
     hx-target="#response-container"
     hx-trigger="click"
     hx-swap="innerHTML"
-    hx-headers='{"Content-Type": "application/json"}'
     >
     Invoke Command
   </button>
