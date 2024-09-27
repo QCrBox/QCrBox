@@ -61,6 +61,7 @@ views_router = Router(
         views_root_handler,
         serve_applications_page,
         serve_data_files_page,
+        handle_data_file_upload,
         get_command_details,
     ],
 )
