@@ -23,11 +23,11 @@ theme:
     - search.suggest
     - toc.integrate
   font:
-    text: Roboto
+    text: Signika
     code: Roboto Mono
   palette:
-    primary: "deep purple"
-    accent: "purple"
+    primary: "blue grey"
+    accent: "deep orange"
   logo: "images/logo_white.png"
   favicon: "images/logo_black.png"
 extra_css:
