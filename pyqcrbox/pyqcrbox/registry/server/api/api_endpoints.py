@@ -75,7 +75,7 @@ async def handle_data_file_upload(
 
 @get(path="/data_files", media_type=MediaType.JSON)
 async def get_data_files() -> list[dict]:
-    return await _get_data_files()
+    return await api_helpers._get_data_files()
 
 
 async def _get_data_files() -> list[dict]:

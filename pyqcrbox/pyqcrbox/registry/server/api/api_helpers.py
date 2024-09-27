@@ -9,6 +9,7 @@ from sqlalchemy.orm import joinedload
 from sqlmodel import select
 
 from pyqcrbox import QCRBOX_SVCS_REGISTRY, logger, msg_specs, settings, sql_models
+from pyqcrbox.services import get_data_file_manager
 from pyqcrbox.svcs import get_nats_key_value
 
 
@@ -178,3 +179,9 @@ async def _get_calculation_info_by_calculation_id(calculation_id: str) -> dict:
         return json.loads(calc_status_info_str)
     except nats.js.errors.KeyNotFoundError:
         raise CalculationNotFoundError(calculation_id)
+
+
+async def _get_data_files() -> list[dict]:
+    data_file_manager = await get_data_file_manager()
+    data_files = await data_file_manager.get_data_files()
+    return [f.to_response_model() for f in data_files]
