@@ -1,9 +1,11 @@
 from pathlib import Path
+from typing import Annotated
 
 import jinjax
-from litestar import MediaType, Response, Router, get
-
-from pyqcrbox.data_management.data_file import QCrBoxDataFile
+from litestar import MediaType, Response, Router, get, post
+from litestar.datastructures import UploadFile
+from litestar.enums import RequestEncodingType
+from litestar.params import Body
 
 from ..api import api_helpers
 
@@ -44,14 +46,13 @@ async def get_command_details(cmd_id: int) -> Response:
 
 @get(path="/data_files")
 async def serve_data_files_page() -> Response:
-    # return render("DataFilesPage", data_files=await _get_data_files())
-    return render(
-        "DataFilesPage",
-        data_files=[
-            QCrBoxDataFile(qcrbox_file_id="123", filename="test1.txt", contents=b"Hello, world!"),
-            QCrBoxDataFile(qcrbox_file_id="456", filename="test2.txt", contents=b""),
-        ],
-    )
+    return render("DataFilesPage", data_files=await api_helpers._get_data_files())
+
+
+@post(path="/data_files/upload", media_type=MediaType.TEXT)
+async def handle_data_file_upload(data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)]) -> str:
+    _qcrbox_data_file_id = await api_helpers._import_data_file(data)
+    return render("DataFilesList", data_files=await api_helpers._get_data_files())
 
 
 views_router = Router(
