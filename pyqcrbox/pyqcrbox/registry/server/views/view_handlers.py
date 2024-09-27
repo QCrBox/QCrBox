@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import jinjax
-from litestar import MediaType, Response, Router, get
+from litestar import MediaType, Request, Response, Router, get, post
 
 from pyqcrbox.data_management.data_file import QCrBoxDataFile
 
@@ -36,6 +36,19 @@ async def serve_applications_page() -> Response:
     )
 
 
+@post(path="/invoke_command")
+async def display_invoke_command_button(request: Request) -> Response:
+    # Get JSON data from the request
+    data = await request.json()
+    print(data)
+    invoked_command_info = api_helpers._invoke_command(data)
+
+    return render(
+        "InvokeCommandButton",
+        invoked_command_info=invoked_command_info,
+    )
+
+
 @get(path="/command/{cmd_id:int}", media_type=MediaType.HTML)
 async def get_command_details(cmd_id: int) -> Response:
     command = api_helpers._retrieve_command_by_id(cmd_id, raise_if_not_found=False)
@@ -61,5 +74,6 @@ views_router = Router(
         serve_applications_page,
         serve_data_files_page,
         get_command_details,
+        display_invoke_command_button,
     ],
 )
