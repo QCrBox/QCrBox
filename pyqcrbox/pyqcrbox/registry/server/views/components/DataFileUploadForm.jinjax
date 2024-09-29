@@ -8,7 +8,20 @@
      hx-on::before-request="console.log('Submitting request...')"
      hx-on::after-request="this.reset(); console.log('Done making request')"
   >
-      <input id="file_selector" type="file" name="file" required />
+      <div class="file is-small">
+        <label class="file-label">
+          <input id="file_selector" class="file-input" type="file" name="file" required />
+          <span class="file-cta">
+            <span class="file-label"> Choose a file… </span>
+          </span>
+        </label>
+          <span
+            class="file-name"
+            _="on change from #file_selector put #file_selector.value into me then log file_selector.value
+               on htmx:load from body or reset from #file_upload_form put '<i>No file selected</i>' into me"
+          >
+          </span>
+      </div>
       <span>
         <button
           id="btn_data_file_upload"
