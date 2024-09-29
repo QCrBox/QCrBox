@@ -5,8 +5,7 @@
      hx-post="/views/data_files/upload"
      hx-target="#data_files_list"
      hx-swap="outerHTML"
-     hx-on::before-request="console.log('Submitting request...')"
-     hx-on::after-request="this.reset(); console.log('Done making request')"
+     hx-on::after-request="this.reset()"
   >
       <div class="file is-small">
         <label class="file-label">
@@ -17,7 +16,7 @@
         </label>
           <span
             class="file-name"
-            _="on change from #file_selector put #file_selector.value into me then log file_selector.value
+            _="on change from #file_selector put #file_selector.value into me
                on htmx:load from body or reset from #file_upload_form put '<i>No file selected</i>' into me"
           >
           </span>
