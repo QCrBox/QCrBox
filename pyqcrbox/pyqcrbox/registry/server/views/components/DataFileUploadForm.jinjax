@@ -1,13 +1,25 @@
 <div class="content">
   <form
+     id="file_upload_form"
      hx-encoding="multipart/form-data"
      hx-post="/views/data_files/upload"
      hx-target="#data_files_list"
      hx-swap="outerHTML"
-     _="on htmx:xhr:progress(loaded, total) set #progress.value to (loaded/total)*100"
+     hx-on::before-request="console.log('Submitting request...')"
+     hx-on::after-request="this.reset(); console.log('Done making request')"
   >
-      <input type="file" name="file">
-      <button class="button is-outline is-small">Upload</button>
-      <progress id="progress" class="htmx-indicator" value="0" max="100"></progress>
+      <input id="file_selector" type="file" name="file" required />
+      <span>
+        <button
+          id="btn_data_file_upload"
+          class="button is-outline is-small"
+          disabled
+          script="on change from #file_selector remove @disabled
+                  on reset from #file_upload_form add @disabled"
+          data-loading-disable
+        >
+            Upload
+        </button>
+      </span>
   </form>
 </div>
