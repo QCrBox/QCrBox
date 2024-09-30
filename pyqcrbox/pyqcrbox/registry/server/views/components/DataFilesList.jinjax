@@ -1,6 +1,6 @@
 {#def data_files = [] #}
 
-<div class="block list is-hoverable" id="data_files_list">
+<div class="list block" id="data_files_list">
   {% for data_file in data_files %}
   <div class="list-item">
     <li><code class="filename">{{ data_file.filename }}</code></li>
