@@ -20,11 +20,10 @@
                on htmx:load from body or reset from #file_upload_form put '<i>No file selected</i>' into me"
           >
           </span>
-      </div>
       <span>
         <button
           id="btn_data_file_upload"
-          class="button is-outline is-small"
+          class="button is-outline is-small ml-3"
           disabled
           script="on change from #file_selector remove @disabled
                   on reset from #file_upload_form add @disabled"
@@ -33,5 +32,6 @@
             Upload
         </button>
       </span>
+    </div>
   </form>
 </div>
