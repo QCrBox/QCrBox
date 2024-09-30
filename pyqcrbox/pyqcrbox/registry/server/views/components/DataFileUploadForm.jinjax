@@ -1,4 +1,4 @@
-<div class="content">
+<div class="block">
   <form
      id="file_upload_form"
      hx-encoding="multipart/form-data"
@@ -15,9 +15,9 @@
           </span>
         </label>
           <span
-            class="file-name"
-            _="on change from #file_selector put #file_selector.value into me
-               on htmx:load from body or reset from #file_upload_form put '<i>No file selected</i>' into me"
+            class="file-name "
+            _="on change from #file_selector log #file_selector.files[0] then put #file_selector.files[0].name into me
+               on htmx:load from body or reset from #file_upload_form put '<span style=\'color: #666\'>(No file chosen)</span>' into me"
           >
           </span>
       <span>
