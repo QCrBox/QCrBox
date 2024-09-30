@@ -2,3 +2,7 @@
 [data-loading] {
   display: none;
 }
+
+.list:not(:has(div.list-item))::after {
+  content: "No data files present.";
+}

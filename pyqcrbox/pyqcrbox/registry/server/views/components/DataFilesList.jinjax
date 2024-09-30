@@ -1,13 +1,9 @@
 {#def data_files = [] #}
 
-<div class="content" id="data_files_list">
-  {% if data_files %}
-    <ul>
-    {% for data_file in data_files %}
-      <li>{{ data_file.filename }}</li>
-    {% endfor %}
-    </ul>
-  {% else %}
-    No data files found.
-  {% endif %}
+<div class="block list is-hoverable" id="data_files_list">
+  {% for data_file in data_files %}
+  <div class="list-item">
+    {{ data_file.filename }}
+  </div>
+  {% endfor %}
 </div>
