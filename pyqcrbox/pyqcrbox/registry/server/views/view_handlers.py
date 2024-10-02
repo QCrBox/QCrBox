@@ -2,12 +2,13 @@ from pathlib import Path
 from typing import Annotated
 
 import jinjax
-from litestar import MediaType, Request, Response, Router, get, post
+from litestar import MediaType, Response, Router, get, post
 from litestar.datastructures import UploadFile
 from litestar.enums import RequestEncodingType
+from litestar.exceptions import HTTPException
 from litestar.params import Body
 
-from pyqcrbox import msg_specs, sql_models
+from pyqcrbox import sql_models
 
 from ..api import api_helpers
 
@@ -41,12 +42,15 @@ async def serve_applications_page() -> Response:
 
 
 @post(path="/invoke_command", media_type=MediaType.JSON)
-async def display_invoke_command_button(data: sql_models.CommandInvocationCreate, request: Request) -> Response:
-    # Get JSON data from the request
-    response_json = await api_helpers._invoke_command(data)
-    invoked_command_info = msg_specs.QCrBoxGenericResponse(**response_json)
+async def display_invoke_command_button(data: sql_models.CommandInvocationCreate) -> Response:
+    try:
+        response_json = await api_helpers._invoke_command(data)
+        response = render("InvokeCommandResponse", response_json=response_json)
+    except HTTPException as exc:
+        response = render("InvokeCommandResponse", response_json={"status_code": exc.status_code, "detail": exc.detail})
+        response.status_code = exc.status_code
 
-    return render("InvokeCommandButton", invoked_command_info=invoked_command_info)
+    return response
 
 
 @get(path="/command/{cmd_id:int}", media_type=MediaType.HTML)

@@ -107,7 +107,7 @@ def verify_command_exists(
                 f"version: {application_version!r})"
             )
             logger.error(error_msg)
-            raise ClientException(error_msg)
+            raise ClientException(error_msg, status_code=404)
         except sqlalchemy.exc.MultipleResultsFound:
             error_msg = (
                 f"Found multiple candidates for command: {command_name}. "
