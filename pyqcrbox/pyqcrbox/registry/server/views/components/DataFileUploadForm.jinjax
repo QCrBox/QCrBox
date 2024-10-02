@@ -36,6 +36,9 @@
           data-loading-disable
           data-loading-class="is-loading"
         >
+          <span class="file-icon">
+            <i class="ph ph-upload"></i>
+          </span>
             Import
         </button>
       </div>
