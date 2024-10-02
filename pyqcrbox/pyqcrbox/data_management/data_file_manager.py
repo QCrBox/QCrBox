@@ -30,7 +30,7 @@ class QCrBoxDataFileManager:
         from pyqcrbox.services import get_nats_broker
 
         qcrbox_file_id = _qcrbox_file_id or generate_data_file_id()
-        logger.debug(f"Storing file {qcrbox_file_id!r} in NATS object store")
+        logger.debug(f"Storing file {filename!r} in NATS object store (id={qcrbox_file_id!r})")
         logger.warning(f"TODO: Store metadata about the file, including the filename {filename!r}")
 
         nats_broker = await get_nats_broker()

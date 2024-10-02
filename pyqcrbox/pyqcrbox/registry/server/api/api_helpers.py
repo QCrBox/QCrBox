@@ -1,14 +1,19 @@
 import json
+from typing import Annotated
 
 import nats.js.errors
 import sqlalchemy.exc
 import svcs
 from faststream.nats import NatsBroker
+from litestar.datastructures import UploadFile
+from litestar.enums import RequestEncodingType
 from litestar.exceptions import ClientException
+from litestar.params import Body
 from sqlalchemy.orm import joinedload
 from sqlmodel import select
 
 from pyqcrbox import QCRBOX_SVCS_REGISTRY, logger, msg_specs, settings, sql_models
+from pyqcrbox.services import get_data_file_manager
 from pyqcrbox.svcs import get_nats_key_value
 
 
@@ -178,3 +183,15 @@ async def _get_calculation_info_by_calculation_id(calculation_id: str) -> dict:
         return json.loads(calc_status_info_str)
     except nats.js.errors.KeyNotFoundError:
         raise CalculationNotFoundError(calculation_id)
+
+
+async def _get_data_files() -> list[dict]:
+    data_file_manager = await get_data_file_manager()
+    data_files = await data_file_manager.get_data_files()
+    return [f.to_response_model() for f in data_files]
+
+
+async def _import_data_file(data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)]) -> str:
+    data_file_manager = await get_data_file_manager()
+    qcrbox_data_file_id = await data_file_manager.import_bytes(await data.read(), filename=data.filename)
+    return qcrbox_data_file_id
