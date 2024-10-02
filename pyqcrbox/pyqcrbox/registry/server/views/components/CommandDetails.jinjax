@@ -1,11 +1,15 @@
 {#def command #}
 
 <div id="command-details"  class="card">
-{% if command is not none %}
   <header class="card-header">
-    <p class="card-header-title">Command:<code class="ml-3">{{ command.name }}</code></p>
+    <p class="card-header-title">
+      {% if command is not none %}
+        Command:<code class="ml-3">{{ command.name }}</code>
+      {% endif %}
+    </p>
   </header>
   <div class="card-content">
+    {% if command is not none %}
     <div class="content">
       Description: {{ command.description | default("<i>No description provided</i>", true) }}<br>
       {% for key, param in command.parameters.items() %}
@@ -26,9 +30,9 @@
           </li>
         </ul>
       {% endfor %}
-  </div>
-  {% else %}
-    Please select a command.
-  {% endif %}
+    </div>
+    {% else %}
+      Please select a command.
+    {% endif %}
   </div>
 </div>
