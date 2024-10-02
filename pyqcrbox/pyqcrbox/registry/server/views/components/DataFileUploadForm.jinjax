@@ -7,7 +7,7 @@
      hx-swap="outerHTML"
      hx-on::after-request="this.reset()"
   >
-    <div class="file is-small">
+    <div class="file is-small is-flex-direction-row">
       <label class="file-label">
         <input id="file_selector" class="file-input" type="file" name="file" required />
         <span class="file-cta">
@@ -20,24 +20,26 @@
 <!--           on htmx:load from body or reset from #file_upload_form put '<span style=\'color: #666\'>(No file chosen)</span>' into my.value"-->
 <!--        />-->
 <!--      </div>-->
-      <span
+      <div
         class="file-name"
         _="on change from #file_selector if #file_selector.value is not empty put #file_selector.files[0].name into me end
            on htmx:load from body or reset from #file_upload_form put '<span style=\'color: #666\'>(No file chosen)</span>' into me"
       >
-      </span>
-      <span>
+      </div>
+      <div>
         <button
           id="btn_data_file_upload"
           class="button is-outline is-small ml-3"
+          type="submit"
           disabled
           script="on change from #file_selector remove @disabled
                   on reset from #file_upload_form add @disabled"
           data-loading-disable
+          data-loading-class="is-loading"
         >
             Upload
         </button>
-      </span>
+      </div>
     </div>
   </form>
 </div>
