@@ -31,8 +31,8 @@
           class="button is-outline is-small ml-3"
           type="submit"
           disabled
-          script="on change from #file_selector remove @disabled
-                  on reset from #file_upload_form add @disabled"
+          script="on change from #file_selector remove @disabled then add .is-link
+                  on reset from #file_upload_form add @disabled then remove .is-link"
           data-loading-disable
           data-loading-class="is-loading"
         >
