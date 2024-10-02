@@ -1,9 +1,15 @@
 {#def data_files = [] #}
 
-<div class="list block" id="data_files_list">
-  {% for data_file in data_files %}
-  <div class="list-item">
-    <li><code class="filename">{{ data_file.filename }}</code></li>
+<div class="block">
+  <div id="data_files_list" class="list">
+    {% if data_files %}
+      {% for data_file in data_files %}
+      <div class="list-item">
+        <li><code class="filename">{{ data_file.filename }}</code></li>
+      </div>
+      {% endfor %}
+    {% else %}
+      No data files found.
+    {% endif %}
   </div>
-  {% endfor %}
 </div>
