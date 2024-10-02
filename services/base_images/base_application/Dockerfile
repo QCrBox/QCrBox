@@ -9,7 +9,7 @@ HEALTHCHECK \
     --interval=60s \
     --start-period=60s \
     --start-interval=3s \
-    CMD curl --fail http://127.0.0.1:${QCRBOX__REGISTRY__CLIENT__PORT}/healthz || exit 1
+    CMD curl --fail http://127.0.0.1:${QCRBOX__REGISTRY__CLIENT__PORT}/api/healthz || exit 1
 
 ARG QCRBOX_SUPERVISORD_CONF_DIR=${QCRBOX_SUPERVISORD_CONF_DIR}
 COPY supervisord.base_application.conf ${QCRBOX_SUPERVISORD_CONF_DIR}/

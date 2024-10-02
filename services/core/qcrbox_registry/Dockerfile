@@ -9,7 +9,7 @@ HEALTHCHECK \
     --interval=60s \
     --start-period=60s \
     --start-interval=1s \
-    CMD curl --fail http://127.0.0.1:${QCRBOX__REGISTRY__SERVER__PORT}/healthz || exit 1
+    CMD curl --fail http://127.0.0.1:${QCRBOX__REGISTRY__SERVER__PORT}/api/healthz || exit 1
 
 
 ARG QCRBOX_REGISTRY_DB_DIR=${QCRBOX_REGISTRY_DB_DIR}
