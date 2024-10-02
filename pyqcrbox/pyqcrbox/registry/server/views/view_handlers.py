@@ -2,10 +2,12 @@ from pathlib import Path
 from typing import Annotated
 
 import jinjax
-from litestar import MediaType, Response, Router, get, post
+from litestar import MediaType, Request, Response, Router, get, post
 from litestar.datastructures import UploadFile
 from litestar.enums import RequestEncodingType
 from litestar.params import Body
+
+from pyqcrbox import msg_specs, sql_models
 
 from ..api import api_helpers
 
@@ -38,6 +40,15 @@ async def serve_applications_page() -> Response:
     )
 
 
+@post(path="/invoke_command", media_type=MediaType.JSON)
+async def display_invoke_command_button(data: sql_models.CommandInvocationCreate, request: Request) -> Response:
+    # Get JSON data from the request
+    response_json = await api_helpers._invoke_command(data)
+    invoked_command_info = msg_specs.QCrBoxGenericResponse(**response_json)
+
+    return render("InvokeCommandButton", invoked_command_info=invoked_command_info)
+
+
 @get(path="/command/{cmd_id:int}", media_type=MediaType.HTML)
 async def get_command_details(cmd_id: int) -> Response:
     command = api_helpers._retrieve_command_by_id(cmd_id, raise_if_not_found=False)
@@ -63,5 +74,6 @@ views_router = Router(
         serve_data_files_page,
         handle_data_file_upload,
         get_command_details,
+        display_invoke_command_button,
     ],
 )
