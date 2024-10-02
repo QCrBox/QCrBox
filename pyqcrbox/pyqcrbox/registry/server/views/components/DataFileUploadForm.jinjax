@@ -7,6 +7,7 @@
      hx-swap="outerHTML"
      hx-on::after-request="this.reset()"
   >
+    <label class="label">Import data file:</label>
     <div class="file is-small is-flex-direction-row">
       <label class="file-label">
         <input id="file_selector" class="file-input" type="file" name="file" required />
@@ -14,17 +15,15 @@
           <span class="file-label"> Choose a file… </span>
         </span>
       </label>
-<!--      <div class="control">-->
-<!--        <input class="input is-small filename" type="text" value="(No file chosen)" readonly-->
-<!--                _="on change from #file_selector if #file_selector.value is not empty put #file_selector.files[0].name into my.value end-->
-<!--           on htmx:load from body or reset from #file_upload_form put '<span style=\'color: #666\'>(No file chosen)</span>' into my.value"-->
-<!--        />-->
-<!--      </div>-->
       <div
         class="file-name"
-        _="on change from #file_selector if #file_selector.value is not empty put #file_selector.files[0].name into me end
-           on htmx:load from body or reset from #file_upload_form put '<span style=\'color: #666\'>(No file chosen)</span>' into me"
-      >
+        _="on change from #file_selector
+              if #file_selector.value is not empty
+                 put #file_selector.files[0].name into me
+              end
+           on htmx:load from body or reset from #file_upload_form
+              put '<span style=\'color: #666\'>(No file chosen)</span>' into me
+          ">
       </div>
       <div>
         <button
@@ -37,7 +36,7 @@
           data-loading-disable
           data-loading-class="is-loading"
         >
-            Upload
+            Import
         </button>
       </div>
     </div>
