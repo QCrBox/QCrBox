@@ -1,28 +1,33 @@
 {#def command #}
 
-<div id="command-details" class="block">
-  {% if command is not none %}
-    Command name: <code>{{ command.name }}</code><br>
-    Description: {{ command.description | default("<i>No description provided</i>", true) }}<br>
-  {% for key, param in command.parameters.items() %}
-    <br>
-    <h3>Parameter: {{ param.name }}</h3>
-    <ul>
-      <li>
-        Type: {{ param.dtype }}
-      </li>
-      <li>
-        Description: {{ param.description }}
-      </li>
-      <li>
-        Required: {{ param.required }}
-      </li>
-      <li>
-        Default value: {{ param.default_value | default('None') }}
-      </li>
-    </ul>
-  {% endfor %}
-  {% else %}
-    Command details not found.
-  {% endif %}
+<div id="command-details"  class="card">
+{% if command is not none %}
+  <header class="card-header">
+    <p class="card-header-title">Command:<code class="ml-3">{{ command.name }}</code></p>
+  </header>
+  <div class="card-content">
+    <div class="content">
+      Description: {{ command.description | default("<i>No description provided</i>", true) }}<br>
+      {% for key, param in command.parameters.items() %}
+        <br>
+        <h3>Parameter: {{ param.name }}</h3>
+        <ul>
+          <li>
+            Type: {{ param.dtype }}
+          </li>
+          <li>
+            Description: {{ param.description }}
+          </li>
+          <li>
+            Required: {{ param.required }}
+          </li>
+          <li>
+            Default value: {{ param.default_value | default('None') }}
+          </li>
+        </ul>
+      {% endfor %}
+  </div>
+{% else %}
+  Command details not found.
+{% endif %}
 </div>
