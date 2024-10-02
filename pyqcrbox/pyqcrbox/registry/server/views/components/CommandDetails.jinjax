@@ -27,7 +27,8 @@
         </ul>
       {% endfor %}
   </div>
-{% else %}
-  Command details not found.
-{% endif %}
+  {% else %}
+    Please select a command.
+  {% endif %}
+  </div>
 </div>
