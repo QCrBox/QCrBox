@@ -10,7 +10,7 @@ hide:
 ![Insulin](images/insulin.webp){ align=left; }
 
 
-## Key Principles of QCrBox:
+## Key Principles of QCrBox
 
 ### Interoperability
 QCrBox integrates widely used crystallographic software into a single, secure workflow. This allows researchers at all levels to access state-of-the-art tools for data integration, structure refinement, and cutting-edge quantum crystallography techniques.
