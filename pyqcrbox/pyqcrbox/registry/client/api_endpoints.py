@@ -1,10 +1,11 @@
 from litestar import Litestar, MediaType, get
+
 from pyqcrbox.registry.shared import structlog_plugin
 
 __all__ = ["create_client_asgi_server"]
 
 
-@get(path="/healthz", media_type=MediaType.JSON, skip_logging=True)
+@get(path="/api/healthz", media_type=MediaType.JSON, skip_logging=True)
 async def health_check() -> dict:
     return {"status": "ok"}
 

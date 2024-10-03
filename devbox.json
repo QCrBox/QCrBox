@@ -6,7 +6,6 @@
     "less":                      "latest",
     "ncdu":                      "latest",
     "git":                       "latest",
-    "neovim":                    "latest",
     "docker":                    "latest",
     "curl":                      "latest",
     "lazygit":                   "latest",
@@ -24,20 +23,20 @@
     "lesspipe":                  "latest",
     "nix-ld": {
       "version":   "latest",
-      "platforms": ["x86_64-linux"]
+      "platforms": ["x86_64-linux"],
     },
     "wslu": {
       "version":   "latest",
-      "platforms": ["aarch64-linux", "x86_64-linux"]
+      "platforms": ["aarch64-linux", "x86_64-linux"],
     },
     "process-compose": "latest",
     "ncurses":         "latest",
     "jq":              "latest",
-    "nats-server":     "latest"
+    "nats-server":     "latest",
   },
   "env": {
     "MAMBA_ROOT_PREFIX":     "${PWD}/.devbox/virtenv/python/.conda",
-    "QCRBOX_MAMBA_ENV_PATH": "${PWD}/.devbox/virtenv/python/.conda/envs/qcrbox/"
+    "QCRBOX_MAMBA_ENV_PATH": "${PWD}/.devbox/virtenv/python/.conda/envs/qcrbox/",
   },
   "shell": {
     "init_hook": [
@@ -52,7 +51,7 @@
       "#alias sw_vers=/usr/bin/sw_vers",
       "#eval \"$(micromamba shell hook --shell bash)\"",
       "#micromamba activate qcrbox",
-      "#echo \"✓ Activated qcrbox mamba environment.\""
+      "#echo \"✓ Activated qcrbox mamba environment.\"",
     ],
     "scripts": {
       "example-notebooks": [
@@ -62,7 +61,7 @@
         "export JUPYTERLAB_URL=$(jupyter lab list | grep 18433 | head -n1 | awk -F:: '{ print $1 }')",
         "echo \"Opening JupyterLab URL: $JUPYTERLAB_URL\"",
         "python -m webbrowser -t $JUPYTERLAB_URL",
-        "echo \"Run 'devbox services stop jupyterlab-examples' to shut down the jupyter server again.\""
+        "echo \"Run 'devbox services stop jupyterlab-examples' to shut down the jupyter server again.\"",
       ],
       "playground-notebooks": [
         "set -euo pipefail",
@@ -71,14 +70,14 @@
         "export JUPYTERLAB_URL=$(jupyter lab list | grep 18434 | head -n1 | awk -F:: '{ print $1 }')",
         "echo \"Opening JupyterLab URL: $JUPYTERLAB_URL\"",
         "python -m webbrowser -t $JUPYTERLAB_URL",
-        "echo \"Run 'devbox services stop jupyterlab-playground' to shut down the jupyter server again.\""
+        "echo \"Run 'devbox services stop jupyterlab-playground' to shut down the jupyter server again.\"",
       ],
       "qcrbox-dev-server": [
-        "watchmedo auto-restart --pattern=*.py --recursive -- pyqcrbox-run-registry-server"
+        "watchmedo auto-restart --pattern=*.py --recursive -- pyqcrbox-run-registry-server",
       ],
       "test": [
         "pytest -svx ./pyqcrbox/tests",
-      ]
-    }
-  }
+      ],
+    },
+  },
 }
