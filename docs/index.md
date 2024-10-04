@@ -21,7 +21,7 @@ QCrBox enables routine access to quantum crystallography methods, going beyond t
 ### Resilience
 Ensuring the longevity of crystallographic research is at the core of QCrBox. By preserving software and data through version histories, QCrBox guarantees that research outputs and (legacy) software remain accessible and reproducible, benefiting future scientists.
 
-### Reusabiltiy
+### Reusability
 The project continually expands its integral Quantum Crystallographic Toolbox (qctbx), offering reusable functions to the community. These tools can be integrated with existing software or used to develop new crystallographic applications, fostering innovation and collaboration across the field.
 
 # A Project with Global Support
