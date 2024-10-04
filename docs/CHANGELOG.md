@@ -40,6 +40,7 @@ However, there will be an initial period of stabilisation where this is not adhe
 - How-to guide on building and running components using the `qcb` command line tool. ([#167](https://github.com/QCrBox/QCrBox/issues/167))
 - Output of code blocks is now coloured correctly. ([#194](https://github.com/QCrBox/QCrBox/issues/194))
 - Updated instructions for setting up a development environment using the new installation script. ([#287](https://github.com/QCrBox/QCrBox/issues/287))
+- Added landing page for the website.
 
 ## [v0.0.1]
 
