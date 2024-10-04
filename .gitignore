@@ -90,4 +90,4 @@ services/applications/xharpy_gpaw/XHARPy
 
 #MoProSuite
 services/applications/mopro/MoProSuite_*.zip
-services/applications/mopro/Import2MoPro-2024-07.zip
+services/applications/mopro/Import2MoPro*.zip
