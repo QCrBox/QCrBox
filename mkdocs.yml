@@ -26,7 +26,7 @@ theme:
     - search.suggest
     - toc.integrate
   font:
-    text: Signika
+    text: Roboto
     code: Roboto Mono
   palette:
     primary: "blue grey"
