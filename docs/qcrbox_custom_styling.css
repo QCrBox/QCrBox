@@ -5,20 +5,34 @@ h1#documentation, h1#technical-reference {
 :root {
   --md-admonition-icon--welcome: url('images/logo_black.png')
 }
+/* hp */
+.md-nav {
+  font-size: 0.75rem;  
+}
+
+.md-header__title {
+  flex-grow: 1;
+  font-size: 1.0rem;
+  height: 2.4rem;
+  line-height: 2.4rem;
+}
+
+/* END hp */
+
 .md-typeset .admonition.welcome {
   width: 50%;
   margin-inline: auto;
   margin-right: 40px;
 }
 .md-typeset .admonition.welcome,
-.md-typeset details.welcome {
+.md-typeset details.welcome { 
   border-color: rgb(43, 155, 70);
   margin-top: 0px;
   font-size: 11pt;
 }
 .md-typeset .welcome > .admonition-title,
 .md-typeset .welcome > summary {
-  background-color: rgba(43, 155, 70, 0.1);
+  background-color: rgba(43, 155, 70, 0.2);
 }
 .md-typeset .welcome > .admonition-title::before,
 .md-typeset .welcome > summary::before {
@@ -37,13 +51,13 @@ h1#documentation, h1#technical-reference {
 }
 .md-typeset .admonition.get-in-touch,
 .md-typeset details.get-in-touch {
-  border-color: rgb(0, 176, 255);
+  border-color: rgb(7, 43, 59);
   margin-top: 0px;
   font-size: 11pt;
 }
 .md-typeset .get-in-touch > .admonition-title,
 .md-typeset .get-in-touch > summary {
-  background-color: rgba(0, 176, 255, 0.1);
+  background-color: rgba(6, 47, 66, 0.1);
 }
 .md-typeset .get-in-touch > .admonition-title::before,
 .md-typeset .get-in-touch > summary::before {
