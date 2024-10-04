@@ -1,6 +1,6 @@
 nav:
   - "QCrBox": index.md
-  - introduction
+  - introduction.md
   - how_to_guides
   - tutorials
   - technical_reference
