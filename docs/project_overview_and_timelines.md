@@ -1,6 +1,6 @@
 # Project Phases / Roadmap
 
-## Project Phases and Achievements
+## Project Phases and Accomplishments
 
 - Identification and negotiation of requirements combined with explorative prototyping, resulting in iterative refinement of the project vision and scope.
 
