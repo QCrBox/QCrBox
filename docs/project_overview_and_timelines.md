@@ -45,3 +45,16 @@
     - Cloud-based deployments
     - Dedicated server hosted & managed by a university department or group
     - Installation on personal devices (laptop or desktop computer)
+
+
+## Events
+
+|               Date | Location              | Event                                                                                                                                                                                                                                                 |
+|-------------------:|:----------------------|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|       3-7 Apr 2023 | Sheffield, UK         | BCA                                                                                                                                                                                                                                                   |
+|     22-29 Aug 2023 | Melbourne, Australia  | <div><a href="https://www.iucr.org/iucr/cong/2023-iucr-xxvi">IUCr</a><ul><li>H.&nbsp;Puschmann accepted presentation</li><li>Workshop for the crystallographic community</li><li>Workshop for developers of crystallographic software</li></ul></div> |
+|       4-8 Sep 2023 | Swansea, UK           | [RSEcon23](https://rsecon23.society-rse.org/)                                                                                                                                                                                                         |
+|     25-28 Mar 2024 | Leeds, UK             | BCA                                                                                                                                                                                                                                                   |
+|     13-14 May 2024 | Durham, UK            | Internal QCrBox project planning meeting                                                                                                                                                                                                              |
+|     26-30 Aug 2024 | Padova, Italy         | [ECM](https://www.ecm34.org/)                                                                                                                                                                                                                         |
+| 30 Sep-02 Oct 2024 | Neu-Isenburg, Germany | [YCM](https://rigaku.com/products/crystallography/young-crystallographers-meeting-2024)                                                                                                                                                               |
