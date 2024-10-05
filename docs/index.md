@@ -7,10 +7,10 @@ hide:
 **QCrBox** (Quantum Crystallographic Toolbox) is a collaborative project transforming small-molecule crystallographic analysis. With a large and growing community of crystallographers and chemists, QCrBox provides the tools needed to make crystallography more accessible, reliable, and innovative for everyone
 
 
-![Insulin](images/insulin.webp){ align=left }
+![Insulin](images/insulin.webp){ align=left; }
 
 
-## Key Principles of QCrBox:
+## Key Principles of QCrBox
 
 ### Interoperability
 QCrBox integrates widely used crystallographic software into a single, secure workflow. This allows researchers at all levels to access state-of-the-art tools for data integration, structure refinement, and cutting-edge quantum crystallography techniques.
@@ -21,7 +21,7 @@ QCrBox enables routine access to quantum crystallography methods, going beyond t
 ### Resilience
 Ensuring the longevity of crystallographic research is at the core of QCrBox. By preserving software and data through version histories, QCrBox guarantees that research outputs and (legacy) software remain accessible and reproducible, benefiting future scientists.
 
-### Reusabiltiy
+### Reusability
 The project continually expands its integral Quantum Crystallographic Toolbox (qctbx), offering reusable functions to the community. These tools can be integrated with existing software or used to develop new crystallographic applications, fostering innovation and collaboration across the field.
 
 # A Project with Global Support

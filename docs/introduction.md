@@ -28,15 +28,12 @@ hide:
 
 - [How-To Guides](how_to_guides/contents.md) (Start Here)
 - [Tutorials](tutorials/contents.md)
-- [Technical Reference](technical_reference/contents.md)
-- [Background Information](background_info/contents.md)
 
 
 <div style="height:2em;">&nbsp;</div>
 
 # Technical reference:
 
-- [Architectural Decision Records](ADRs/README.md)
 - [Changelog](CHANGELOG.md)
 
 

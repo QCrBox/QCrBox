@@ -1,6 +1,9 @@
 site_name: Quantum Crystallography Toolbox (QCrBox)
 site_url: https://qcrbox.github.io/QCrBox/
 site_dir: .build/docs_site
+#repo_url: https://github.com/QCrBox/QCrBox/
+#repo_name: QCrBox/QCrBox
+#edit_uri: edit/dev/docs
 theme:
   name: "material"
   include_search_page: false
@@ -23,13 +26,15 @@ theme:
     - search.suggest
     - toc.integrate
   font:
-    text: Signika
+    text: Roboto
     code: Roboto Mono
   palette:
     primary: "blue grey"
     accent: "deep orange"
   logo: "images/logo_white.png"
   favicon: "images/logo_black.png"
+  icon:
+    repo: "fontawesome/brands/git-alt"
 extra_css:
   - qcrbox_custom_styling.css
 

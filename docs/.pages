@@ -1,9 +1,7 @@
 nav:
   - "QCrBox": index.md
+  - project_overview_and_timelines.md
   - introduction.md
   - how_to_guides
   - tutorials
-  - technical_reference
-  - background_info
-  - ADRs
   - CHANGELOG.md
