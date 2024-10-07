@@ -40,6 +40,9 @@ QCrBox serves a broad international community of crystallographers, scientists, 
 - **Leadership**: The project is led by the University of Southampton and Durham University, with strong institutional support from the crystallographic community.
 - **Open Source & Free to Use**: QCrBox is open to all, inviting contributions from across the global crystallography community to ensure that the project grows and adapts to its users' needs.
 
+# Affiliation
+The project is built and funded by:
+![images/institutions_logos.png](images/institutions_logos.png)
 
 <div style="font-size:smaller; margin-top:2em" markdown>
 _The documentation structure is based on the [Divio Documentation System](https://documentation.divio.com/)._
