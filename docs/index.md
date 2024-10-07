@@ -43,7 +43,3 @@ QCrBox serves a broad international community of crystallographers, scientists, 
 # Affiliation
 The project is built and funded by:
 ![images/institutions_logos.png](images/institutions_logos.png)
-
-<div style="font-size:smaller; margin-top:2em" markdown>
-_The documentation structure is based on the [Divio Documentation System](https://documentation.divio.com/)._
-</div>
