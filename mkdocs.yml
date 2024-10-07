@@ -6,6 +6,7 @@ site_dir: .build/docs_site
 #edit_uri: edit/dev/docs
 theme:
   name: "material"
+  custom_dir: docs_overrides
   include_search_page: false
   search_index_only: true
 
@@ -67,9 +68,12 @@ markdown_extensions:
       smart_enable: all
   - pymdownx.caret
   - pymdownx.details
-#  - pymdownx.emoji:
-#      emoji_index: !!python/name:materialx.emoji.twemoji
-#      emoji_generator: !!python/name:materialx.emoji.to_svg
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+      options:
+        custom_icons:
+          - docs_overrides/.icons
   - pymdownx.highlight
   - pymdownx.inlinehilite
   - pymdownx.keys
