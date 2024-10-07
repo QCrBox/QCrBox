@@ -300,6 +300,8 @@ rich==13.9.1
     # via
     #   pyqcrbox (pyproject.toml)
     #   hatch
+rich-click==1.8.3
+    # via litestar
 rpds-py==0.20.0
     # via
     #   jsonschema

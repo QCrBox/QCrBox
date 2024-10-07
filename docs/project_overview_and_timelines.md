@@ -23,7 +23,10 @@
     - ... _integration of further software is ongoing_ ...
 
 
-- Graphical User Interface (GUI): initial design -> prototypes -> formal frontend development
+- Graphical User Interface (GUI): We have created a set of target designs in close communication with the community. These ideas form the basis for the formal frontend development which has started recently. In the meantime we have implemented a set of prototype GUIs to test the interaction of different components of QCrBox. A quantum crystallographic example workflow in one of these prototypes can be found in the following video:
+
+   [<img src="https://img.youtube.com/vi/2x1SuYvV7VE/0.jpg" width="250"/>](https://www.youtube.com/watch?v=2x1SuYvV7VE)
+
 
 - Tooling to ensure an easy and smooth experience for developers
     - Easy script-based installation
