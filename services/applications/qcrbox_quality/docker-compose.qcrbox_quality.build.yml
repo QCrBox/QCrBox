@@ -1,0 +1,6 @@
+services:
+  qcrbox_quality:
+    build:
+      context: services/applications/qcrbox_quality/
+      args:
+        QCRBOX_DOCKER_TAG: ${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}

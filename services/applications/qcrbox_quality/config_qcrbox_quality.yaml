@@ -1,0 +1,73 @@
+#
+# Configuration for the application 'qcrbox_quality'
+#
+name: "Qcrbox Quality"
+slug: "qcrbox_quality"
+version: "x.y.z"
+description: "Brief description of the application."
+url: ""
+
+commands:
+  - name: "greet_and_sleep"
+    description: "Print a greeting message, then wait for a given duration before returning."
+    implemented_as: "python_callable"
+    import_path: "pyqcrbox.helpers"
+    parameters:
+      - name: "name"
+        dtype: str
+      - name: "duration"
+        dtype: float
+        default_value: 5.0
+        description: "Sleep duration (in seconds)"
+
+  - name: "sample_cmd"
+    implemented_as: "cli_command"
+    call_pattern: "sample_cmd.sh {input_cif_path} {output_cif_path}"
+    parameters:
+      - name: "input_cif_path"
+        dtype: "QCrBox.input_cif"
+        required_entries: ["_cif_category.ddlm_entry"]
+        optional_entries: ["_cif_category_ddl1_entry"]
+        required_entry_sets: ["example_entry_set"]
+      - name: "output_cif_path"
+        dtype: "QCrBox.output_cif"
+        required_entries: ["_cif_category.ddlm_entry"]
+        optional_entries: ["_cif_category_ddl1_entry"]
+        required_entry_sets: ["example_entry_set"]
+        invalidated_entries: ["_processing_category\\..*"]
+
+  - name: "sample_cmd_v2"
+    implemented_as: "cli_command"
+    call_pattern: "sample_cmd.sh {msg} {some_number}"
+    parameters:
+      - name: "msg"
+        dtype: str
+        default_value: null
+      - name: "some_number"
+        dtype: int
+        default_value: 42
+        required: False
+
+  - name: "interactive"
+    implemented_as: "interactive"
+    description: "Start dummy GUI in interactive mode"
+    parameters:
+#      - name: "input_cif_path"
+#        dtype: "QCrBox.input_cif"
+#        description: "Path to the CIF file to open in the Dummy GUI"
+      - name: "greeting"
+        dtype: "str"
+        description: "Message to display in the Dummy GUI after start-up"
+    interactive_lifecycle:
+      run:
+        implemented_as: "cli_command"
+        call_pattern: "python dummy_gui.py {greeting}"
+        used_basecommand_parameters: ["greeting"]
+
+
+cif_entry_sets:
+  - name: "example_entry_set"
+    required: ["_cif_category.another_ddlm_entry"]
+    optional: ["_cif_category.another_ddl1_entry"]
+
+qcrbox_yaml_spec_version: "0.1"
