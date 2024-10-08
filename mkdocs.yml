@@ -1,8 +1,12 @@
 site_name: Quantum Crystallography Toolbox (QCrBox)
 site_url: https://qcrbox.github.io/QCrBox/
 site_dir: .build/docs_site
+#repo_url: https://github.com/QCrBox/QCrBox/
+#repo_name: QCrBox/QCrBox
+#edit_uri: edit/dev/docs
 theme:
   name: "material"
+  custom_dir: docs_overrides
   include_search_page: false
   search_index_only: true
 
@@ -26,10 +30,12 @@ theme:
     text: Roboto
     code: Roboto Mono
   palette:
-    primary: "deep purple"
-    accent: "purple"
+    primary: "blue grey"
+    accent: "deep orange"
   logo: "images/logo_white.png"
   favicon: "images/logo_black.png"
+  icon:
+    repo: "fontawesome/brands/git-alt"
 extra_css:
   - qcrbox_custom_styling.css
 
@@ -62,9 +68,12 @@ markdown_extensions:
       smart_enable: all
   - pymdownx.caret
   - pymdownx.details
-#  - pymdownx.emoji:
-#      emoji_index: !!python/name:materialx.emoji.twemoji
-#      emoji_generator: !!python/name:materialx.emoji.to_svg
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+      options:
+        custom_icons:
+          - docs_overrides/.icons
   - pymdownx.highlight
   - pymdownx.inlinehilite
   - pymdownx.keys

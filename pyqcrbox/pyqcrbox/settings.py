@@ -7,7 +7,7 @@ from typing import Any, Optional
 import sqlalchemy
 import sqlmodel
 from loguru import logger
-from pydantic import BaseModel, computed_field
+from pydantic import computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlmodel import Session, create_engine
 
@@ -39,7 +39,13 @@ def _create_db_tables(engine, purge_existing: bool):
     QCrBoxBaseSQLModel.metadata.create_all(engine)
 
 
-class DatabaseSettings(BaseModel):
+class QCrBoxSettingsBaseModel(BaseSettings):
+    model_config = SettingsConfigDict(
+        validate_assignment=True,
+    )
+
+
+class DatabaseSettings(QCrBoxSettingsBaseModel):
     url: SQLiteDsn = "sqlite:///:memory:"
     connect_args: dict = {"check_same_thread": False}
     echo: bool = False
@@ -71,7 +77,7 @@ class DatabaseSettings(BaseModel):
         return Session(engine)
 
 
-class NATSSettings(BaseModel):
+class NATSSettings(QCrBoxSettingsBaseModel):
     host: str = "127.0.0.1"
     port: int = 4222
     rpc_timeout: float = 3  # seconds
@@ -83,9 +89,10 @@ class NATSSettings(BaseModel):
         return f"nats://{self.host}:{self.port}/"
 
 
-class ServerAPISettings(BaseModel):
+class ServerAPISettings(QCrBoxSettingsBaseModel):
     host: str = "127.0.0.1"
     port: int = 8001
+    enable_autoreload: bool = False
 
     @computed_field  # type: ignore
     @property
@@ -93,23 +100,23 @@ class ServerAPISettings(BaseModel):
         return f"http://{self.host}:{self.port}/"
 
 
-class ClientAPISettings(BaseModel):
+class ClientAPISettings(QCrBoxSettingsBaseModel):
     host: str = "127.0.0.1"
     port: int = 8002
 
 
-class RegistrySettings(BaseModel):
+class RegistrySettings(QCrBoxSettingsBaseModel):
     server: ServerAPISettings = ServerAPISettings()
     client: ClientAPISettings = ClientAPISettings()
 
 
-class TestingSettings(BaseModel):
+class TestingSettings(QCrBoxSettingsBaseModel):
     # report_coverage: bool = False
     use_in_memory_db: bool = False
     use_real_rabbitmq_broker: bool = False
 
 
-class CLISettings(BaseModel):
+class CLISettings(QCrBoxSettingsBaseModel):
     disable_rich: bool = False
 
 
@@ -118,7 +125,7 @@ class StructlogRendererEnum(Enum):
     JSON = "json"
 
 
-class LoggingSettings(BaseModel):
+class LoggingSettings(QCrBoxSettingsBaseModel):
     log_level: str = "INFO" if not IS_RUNNING_INSIDE_TESTS else "DEBUG"
     renderer: StructlogRendererEnum = StructlogRendererEnum.CONSOLE
 
@@ -127,10 +134,10 @@ class LoggingSettings(BaseModel):
         return get_log_level_as_int(self.log_level)
 
 
-class QCrBoxSettings(BaseSettings):
+class QCrBoxSettings(QCrBoxSettingsBaseModel):
     model_config = SettingsConfigDict(
         case_sensitive=False,
-        # env_file='.env',
+        env_file=[".env.local"],
         env_nested_delimiter="__",
         env_prefix="QCRBOX__",
     )

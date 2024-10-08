@@ -1,45 +1,45 @@
----
+<!-- ---
 hide:
   - navigation
----
+--- -->
 
-!!! welcome inline "Welcome to QCrBox!"
-
-    QCrBox is an open-source platform aimed at revolutionizing general & quantum crystallography
-    by addressing the field's core challenges: *complex workflows, software interoperability,
-    and reproducibility barriers*.
-
-    QCrBox aims to facilitate the adoption of advanced crystallographic methods and spur the development
-    of new tools by integrating existing software into a unified, containerized environment. Our goal is
-    to streamline research processes, simplify software installation, enhance reproducibility, and improve
-    reporting standards.
-
-    We are currently working on completing the core framework. Feedback and collaboration is always welcome.
+# Empowering a Global Crystallography Community
+**QCrBox** (Quantum Crystallographic Toolbox) is a collaborative project transforming small-molecule crystallographic analysis. With a large and growing community of crystallographers and chemists, QCrBox provides the tools needed to make crystallography more accessible, reliable, and innovative for everyone
 
 
-!!! get-in-touch inline "Get in touch"
-
-    Do you have any questions, suggestions, want to get involved, or are simply curious to learn more?
-
-      - Join our [Discord server](https://discord.com/invite/eU2ya5psxH){:target="_blank"} to come and chat with us!
+![Insulin](images/insulin.webp){ align=left; }
 
 
-# Documentation:
+## Key Principles of QCrBox
 
-- [How-To Guides](how_to_guides/contents.md) (Start Here)
-- [Tutorials](tutorials/contents.md)
-- [Technical Reference](technical_reference/contents.md)
-- [Background Information](background_info/contents.md)
+### Interoperability
+QCrBox integrates widely used crystallographic software into a single, secure workflow. This allows researchers at all levels to access state-of-the-art tools for data integration, structure refinement, and cutting-edge quantum crystallography techniques.
 
+### Beyond the Independent Atom Model (IAM)
+QCrBox enables routine access to quantum crystallography methods, going beyond traditional Independent Atom Models (IAM). Modern diffraction data contains extensive information, and QCrBox unlocks this potential for a much wider audience, making advanced crystal structure analysis available to the broader scientific community.
 
-<div style="height:2em;">&nbsp;</div>
+### Resilience
+Ensuring the longevity of crystallographic research is at the core of QCrBox. By preserving software and data through version histories, QCrBox guarantees that research outputs and (legacy) software remain accessible and reproducible, benefiting future scientists.
 
-# Technical reference:
+### Reusability
+The project continually expands its integral Quantum Crystallographic Toolbox (qctbx), offering reusable functions to the community. These tools can be integrated with existing software or used to develop new crystallographic applications, fostering innovation and collaboration across the field.
 
-- [Architectural Decision Records](ADRs/README.md)
-- [Changelog](CHANGELOG.md)
+# A Project with Global Support
+QCrBox has the full backing of major crystallographic institutions, including European and IUCr commissions on quantum crystallography, which recognise its potential to advance the field significantly. These official bodies, representing thousands of crystallography users worldwide, strongly advocate QCrBox’s mission.
 
+# Supporting a Large and Diverse User Community
+QCrBox serves a broad international community of crystallographers, scientists, and software developers. Whether you're a seasoned researcher or new to the field, QCrBox provides tools that make it easier for everyone to participate in advanced crystallographic analysis.
 
-<div style="font-size:smaller; margin-top:2em" markdown>
-_The documentation structure is based on the [Divio Documentation System](https://documentation.divio.com/)._
-</div>
+- **Widespread Benefit**: QCrBox's streamlined workflows, advanced methods, and reproducibility will benefit the growing user base.
+
+- **Collaborative Environment**: Researchers and developers are invited to contribute their own tools and software, with support from professional research software engineers who ensure sustainable integration.
+
+# About the Project
+
+- **Funding**: QCrBox is a three-year project (September 2022 – September 2025) funded by public institutions.
+- **Leadership**: The project is led by the University of Southampton and Durham University, with strong institutional support from the crystallographic community.
+- **Open Source & Free to Use**: QCrBox is open to all, inviting contributions from across the global crystallography community to ensure that the project grows and adapts to its users' needs.
+
+# Affiliation
+The project is built and funded by:
+![images/institutions_logos.png](images/institutions_logos.png)

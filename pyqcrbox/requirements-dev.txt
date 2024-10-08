@@ -4,14 +4,12 @@ aioresult==1.0
     # via pyqcrbox (pyproject.toml)
 annotated-types==0.7.0
     # via pydantic
-anyio==4.4.0
+anyio==4.6.0
     # via
     #   fast-depends
     #   faststream
     #   httpx
     #   jupyter-server
-appnope==0.1.4
-    # via ipykernel
 argon2-cffi==23.1.0
     # via jupyter-server
 argon2-cffi-bindings==21.2.0
@@ -54,7 +52,9 @@ certifi==2024.8.30
     #   httpx
     #   requests
 cffi==1.17.1
-    # via argon2-cffi-bindings
+    # via
+    #   argon2-cffi-bindings
+    #   cryptography
 cfgv==3.4.0
     # via pre-commit
 chardet==5.2.0
@@ -79,7 +79,9 @@ cookiecutter==2.6.0
     # via pyqcrbox (pyproject.toml)
 coverage==7.6.1
     # via pytest-cov
-debugpy==1.8.5
+cryptography==43.0.1
+    # via secretstorage
+debugpy==1.8.6
     # via ipykernel
 decopatch==1.4.10
     # via pytest-cases
@@ -99,9 +101,9 @@ fast-depends==2.4.11
     # via faststream
 fastjsonschema==2.20.0
     # via nbformat
-faststream==0.5.23
+faststream==0.5.25
     # via pyqcrbox (pyproject.toml)
-filelock==3.16.0
+filelock==3.16.1
     # via virtualenv
 fqdn==1.5.1
     # via jsonschema
@@ -109,7 +111,7 @@ gitdb==4.0.11
     # via gitpython
 gitpython==3.1.43
     # via pyqcrbox (pyproject.toml)
-greenlet==3.1.0
+greenlet==3.1.1
     # via sqlalchemy
 grimp==3.4.1
     # via import-linter
@@ -119,7 +121,7 @@ hatch==1.12.0
     # via pyqcrbox (pyproject.toml)
 hatchling==1.25.0
     # via hatch
-httpcore==1.0.5
+httpcore==1.0.6
     # via httpx
 httpx==0.27.2
     # via
@@ -127,9 +129,9 @@ httpx==0.27.2
     #   jupyterlab
 hyperlink==21.0.0
     # via hatch
-identify==2.6.0
+identify==2.6.1
     # via pre-commit
-idna==3.8
+idna==3.10
     # via
     #   anyio
     #   httpx
@@ -157,10 +159,14 @@ jaraco-classes==3.4.0
     # via keyring
 jaraco-context==6.0.1
     # via keyring
-jaraco-functools==4.0.2
+jaraco-functools==4.1.0
     # via keyring
 jedi==0.19.1
     # via ipython
+jeepney==0.8.0
+    # via
+    #   keyring
+    #   secretstorage
 jinja2==3.1.4
     # via
     #   cookiecutter
@@ -180,7 +186,7 @@ jsonschema==4.23.0
     #   nbformat
 jsonschema-specifications==2023.12.1
     # via jsonschema
-jupyter-client==8.6.2
+jupyter-client==8.6.3
     # via
     #   ipykernel
     #   jupyter-server
@@ -214,13 +220,13 @@ jupyterlab-server==2.27.3
     # via jupyterlab
 jurigged==0.5.8
     # via pytest-hot-reloading
-keyring==25.3.0
+keyring==25.4.1
     # via hatch
 license-expression==30.3.1
     # via reuse
 loguru==0.7.2
     # via pyqcrbox (pyproject.toml)
-makefun==1.15.4
+makefun==1.15.6
     # via
     #   decopatch
     #   pytest-cases
@@ -289,7 +295,7 @@ pexpect==4.9.0
     # via
     #   hatch
     #   ipython
-platformdirs==4.3.2
+platformdirs==4.3.6
     # via
     #   hatch
     #   jupyter-core
@@ -300,9 +306,9 @@ pluggy==1.5.0
     #   pytest
 pre-commit==3.8.0
     # via pyqcrbox (pyproject.toml)
-prometheus-client==0.20.0
+prometheus-client==0.21.0
     # via jupyter-server
-prompt-toolkit==3.0.47
+prompt-toolkit==3.0.48
     # via ipython
 psutil==6.0.0
     # via ipykernel
@@ -314,13 +320,13 @@ pure-eval==0.2.3
     # via stack-data
 pycparser==2.22
     # via cffi
-pydantic==2.9.1
+pydantic==2.9.2
     # via
     #   pyqcrbox (pyproject.toml)
     #   fast-depends
     #   pydantic-settings
     #   sqlmodel
-pydantic-core==2.23.3
+pydantic-core==2.23.4
     # via pydantic
 pydantic-settings==2.5.2
     # via pyqcrbox (pyproject.toml)
@@ -336,11 +342,11 @@ pytest==8.3.3
     #   pytest-cov
 pytest-asyncio==0.24.0
     # via pyqcrbox (pyproject.toml)
-pytest-cases==3.8.5
+pytest-cases==3.8.6
     # via pyqcrbox (pyproject.toml)
 pytest-cov==5.0.0
     # via pyqcrbox (pyproject.toml)
-pytest-hot-reloading==0.1.0a18
+pytest-hot-reloading==0.1.0a19
     # via pyqcrbox (pyproject.toml)
 python-dateutil==2.9.0.post0
     # via
@@ -384,7 +390,7 @@ rfc3986-validator==0.1.1
     # via
     #   jsonschema
     #   jupyter-events
-rich==13.8.1
+rich==13.9.1
     # via
     #   pyqcrbox (pyproject.toml)
     #   cookiecutter
@@ -393,11 +399,13 @@ rpds-py==0.20.0
     # via
     #   jsonschema
     #   referencing
-ruff==0.6.4
+ruff==0.6.8
     # via pyqcrbox (pyproject.toml)
+secretstorage==3.3.3
+    # via keyring
 send2trash==1.8.3
     # via jupyter-server
-setuptools==74.1.2
+setuptools==75.1.0
     # via
     #   jupyterlab
     #   setuptools-scm
@@ -421,7 +429,7 @@ sniffio==1.3.1
     #   httpx
 soupsieve==2.6
     # via beautifulsoup4
-sqlalchemy==2.0.34
+sqlalchemy==2.0.35
     # via sqlmodel
 sqlmodel==0.0.22
     # via pyqcrbox (pyproject.toml)
@@ -472,13 +480,13 @@ traitlets==5.14.3
     #   nbclient
     #   nbconvert
     #   nbformat
-trove-classifiers==2024.7.2
+trove-classifiers==2024.9.12
     # via hatchling
 types-python-dateutil==2.9.0.20240906
     # via arrow
-types-pyyaml==6.0.12.20240808
+types-pyyaml==6.0.12.20240917
     # via pyqcrbox (pyproject.toml)
-types-setuptools==74.1.0.20240907
+types-setuptools==75.1.0.20240917
     # via pyqcrbox (pyproject.toml)
 types-ujson==5.10.0.20240515
     # via pyqcrbox (pyproject.toml)
@@ -493,19 +501,19 @@ typing-extensions==4.12.2
     #   sqlalchemy
 uri-template==1.3.0
     # via jsonschema
-urllib3==2.2.2
+urllib3==2.2.3
     # via requests
 userpath==1.9.2
     # via hatch
-uv==0.4.9
+uv==0.4.18
     # via
     #   pyqcrbox (pyproject.toml)
     #   hatch
-virtualenv==20.26.4
+virtualenv==20.26.6
     # via
     #   hatch
     #   pre-commit
-watchdog==5.0.2
+watchdog==5.0.3
     # via jurigged
 wcwidth==0.2.13
     # via
@@ -519,7 +527,7 @@ webencodings==0.5.1
     #   tinycss2
 websocket-client==1.8.0
     # via jupyter-server
-zipp==3.20.1
+zipp==3.20.2
     # via importlib-metadata
 zstandard==0.23.0
     # via hatch

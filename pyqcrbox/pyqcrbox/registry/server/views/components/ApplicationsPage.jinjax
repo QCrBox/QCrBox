@@ -1,0 +1,13 @@
+{#def title = "QCrBox Registered Applications", applications = [], commands = [] #}
+
+<MainLayout title={{ title }}>
+  <div class="box">
+    <ApplicationsList applications={{ applications }} />
+  </div>
+  <div class="box">
+    <CommandsList commands={{ commands }} />
+  </div>
+  <div class="box">
+    <InvokeCommandButton />
+  </div>
+</MainLayout>

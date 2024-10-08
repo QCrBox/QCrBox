@@ -1,0 +1,12 @@
+/* https://github.com/bigskysoftware/htmx-extensions/blob/main/src/loading-states/README.md#usage */
+[data-loading] {
+  display: none;
+}
+
+.list:not(:has(div.list-item))::after {
+  content: "No data files present.";
+}
+
+.filename {
+  background-color: white;
+}

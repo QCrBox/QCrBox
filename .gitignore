@@ -6,6 +6,9 @@
 .ackrc
 .tool-versions
 
+# Local tweaks to QCrBox settings
+.env.local
+
 # Python
 .venv/
 venv*/
@@ -23,6 +26,9 @@ node_modules
 
 # Folder for files shared with/between containers
 shared_files/**
+
+# Folder for data files created by services running locally
+.local_data/**
 
 # doit database
 .doit.db
