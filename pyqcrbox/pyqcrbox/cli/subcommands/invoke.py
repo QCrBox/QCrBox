@@ -37,7 +37,7 @@ def invoke_command(command_name: str, command_args: list[str], application_slug:
         arguments=arguments,
     )
     response = requests.post(
-        settings.registry.server.api_url + "commands/invoke",
+        settings.registry.server.api_url + "/commands/invoke",
         cmd.model_dump_json().encode(),
     )
     if not response.ok:

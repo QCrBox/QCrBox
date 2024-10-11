@@ -174,8 +174,8 @@ class QCrBoxWrapper:
         server_port: Optional[int] = None,
         gui_infos: Optional[dict[str, dict[str, Union[int, str]]]] = None,
     ) -> "QCrBoxWrapper":
-        server_url = f"http://{server_addr}" + (f":{server_port}" if server_port is not None else "")
-        web_client = httpx.Client(base_url=server_url)
+        server_api_url = f"http://{server_addr}" + (f":{server_port}" if server_port is not None else "") + "/api"
+        web_client = httpx.Client(base_url=server_api_url)
 
         # with urllib.request.urlopen(f"{server_url}") as r:
         #     response = r.read().decode("UTF-8")
@@ -201,9 +201,7 @@ class QCrBoxWrapper:
         """
         response = get_time_cached_app_answer(self.web_client, get_ttl_hash())
         return [
-            QCrBoxApplication(
-                application_spec=sql_models.ApplicationSpecWithCommands(**app_spec), wrapper_parent=self
-            )
+            QCrBoxApplication(application_spec=sql_models.ApplicationSpecWithCommands(**app_spec), wrapper_parent=self)
             for app_spec in response
         ]
 
