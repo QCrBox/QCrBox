@@ -100,7 +100,7 @@ def list_applications(slug: Optional[str], version: Optional[str]):
     """
     List registered applications.
     """
-    r = run_request_against_registry_api("/api/applications", params={"slug": slug, "version": version})
+    r = run_request_against_registry_api("/applications", params={"slug": slug, "version": version})
 
     cols_to_print = (
         "id",
@@ -149,7 +149,7 @@ def list_commands(
     List registered commands.
     """
     r = run_request_against_registry_api(
-        "/api/commands",
+        "/commands",
         params={"name": name, "application_slug": application_slug, "application_version": application_version},
     )
     assert r.status_code == 200, "Error retrieving commands from server"

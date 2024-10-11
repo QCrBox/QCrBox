@@ -97,7 +97,7 @@ class ServerAPISettings(QCrBoxSettingsBaseModel):
     @computed_field  # type: ignore
     @property
     def api_url(self) -> str:
-        return f"http://{self.host}:{self.port}/"
+        return f"http://{self.host}:{self.port}/api"
 
 
 class ClientAPISettings(QCrBoxSettingsBaseModel):
