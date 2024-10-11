@@ -25,7 +25,37 @@ commands:
         ]
       - name: "output_html_path"
         dtype: str
-        default_value: 5.0
-        description: "Sleep duration (in seconds)"
+        description: "Output path of html snippet"
+
+  - name: "fobs_div_fcalc_plotly"
+    description: "create boxes for some quality indicators"
+    implemented_as: "python_callable"
+    import_path: "qcrbox_quality_module"
+    parameters:
+      - name: "input_cif_path"
+        dtype: "QCrBox.input_cif"
+        required_entries: ["one_of": ["_iucr.refine_fcf_details", [
+          "_refln_F_squared_calc", "_refln_F_squared_meas"
+        ]]]
+        optional_entries: ["_refln_index_h", "_refln_index_k", "_refln_index_l"]
+      - name: "output_html_path"
+        dtype: str
+        description: "Output path of html snippet"
+
+  - name: "fobs_div_fcalc_bokeh"
+    description: "create boxes for some quality indicators"
+    implemented_as: "python_callable"
+    import_path: "qcrbox_quality_module"
+    parameters:
+      - name: "input_cif_path"
+        dtype: "QCrBox.input_cif"
+        required_entries: ["one_of": ["_iucr.refine_fcf_details", [
+          "_refln_F_squared_calc", "_refln_F_squared_meas"
+        ]]]
+        optional_entries: ["_refln_index_h", "_refln_index_k", "_refln_index_l"]
+      - name: "output_html_path"
+        dtype: str
+        description: "Output path of html snippet"
+
 
 qcrbox_yaml_spec_version: "0.1"

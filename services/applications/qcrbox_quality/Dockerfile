@@ -11,6 +11,8 @@ ENV QCRBOX__REGISTRY__SERVER__PORT="8000"
 
 ENV QCRBOX_APPLICATION_DISPLAY_NAME="Qcrbox Quality"
 
+RUN conda install -n qcrbox -c conda-forge plotly bokeh
+
 RUN rm -f /opt/qcrbox/.idesktop/default.lnk
 COPY --chown=qcrbox:qcrbox \
      config_qcrbox_quality.yaml \
