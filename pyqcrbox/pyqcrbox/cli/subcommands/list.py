@@ -154,7 +154,7 @@ def list_commands(
     )
     assert r.status_code == 200, "Error retrieving commands from server"
     cols_to_print = (
-        #"id",
+        # "id",
         "application",
         "version",
         "cmd_name",

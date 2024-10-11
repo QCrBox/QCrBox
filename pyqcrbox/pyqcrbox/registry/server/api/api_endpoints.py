@@ -18,7 +18,7 @@ from . import api_helpers
 
 @get("/", media_type=MediaType.JSON, include_in_schema=False)
 async def api_root_handler() -> dict[str, Any]:
-    return {"message": "Hello world!"}
+    return {"message": "Hello from QCrBox!"}
 
 
 @get(path="/healthz", media_type=MediaType.JSON, skip_logging=False)
