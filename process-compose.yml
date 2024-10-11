@@ -24,6 +24,22 @@ processes:
     environment:
       - 'QCRBOX__REGISTRY_SERVER__HOST={{ or "${QCRBOX__REGISTRY_SERVER__HOST}" .QCRBOX__REGISTRY_SERVER__HOST }}'
       - 'QCRBOX__REGISTRY_SERVER__PORT={{ or "${QCRBOX__REGISTRY_SERVER__PORT}" .QCRBOX__REGISTRY_SERVER__PORT }}'
+    depends_on:
+      nats-server:
+        condition: process_started
+    availability:
+      restart: "always"
+
+  qcrbox-client-dummy-cli:
+    command: "pyqcrbox-run-registry-client services/applications/dummy_cli/config_dummy_cli.yaml"
+    environment:
+      - 'QCRBOX__REGISTRY_SERVER__HOST={{ or "${QCRBOX__REGISTRY_SERVER__HOST}" .QCRBOX__REGISTRY_SERVER__HOST }}'
+      - 'QCRBOX__REGISTRY_SERVER__PORT={{ or "${QCRBOX__REGISTRY_SERVER__PORT}" .QCRBOX__REGISTRY_SERVER__PORT }}'
+    depends_on:
+      nats-server:
+        condition: process_started
+      qcrbox-server:
+        condition: process_started
     availability:
       restart: "always"
 
