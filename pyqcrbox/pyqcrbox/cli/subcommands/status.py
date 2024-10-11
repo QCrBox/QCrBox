@@ -20,7 +20,7 @@ def retrieve_status(calculation_id: str, use_json_output: bool = False):
         click.echo(f"Invalid calculation id: {calculation_id!r}")
         sys.exit(1)
 
-    response = requests.get(settings.registry.server.api_url + f"calculations/{calculation_id}")
+    response = requests.get(settings.registry.server.api_url + f"/calculations/{calculation_id}")
     if not response.ok:
         if response.status_code == 404:
             click.echo(f"Calculation not found: {calculation_id!r}")
@@ -36,6 +36,7 @@ def retrieve_status(calculation_id: str, use_json_output: bool = False):
         click.echo(data)
     else:
         from pyqcrbox import logger
+
         logger.debug(data)
         click.echo(f"Calculation id: {data['calculation_id']}")
         click.echo(f"Status: {data['status']}")
