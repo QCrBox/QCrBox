@@ -1,0 +1,3 @@
+calculation_id                                  application_slug    application_version    command_name     arguments                              status
+----------------------------------------------  ------------------  ---------------------  ---------------  -------------------------------------  ----------
+*  dummy_cli           0.1.0                  greet_and_sleep  {'name': 'John Doe', 'duration': '0'}  successful
