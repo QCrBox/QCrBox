@@ -1,0 +1,3 @@
+  id  slug       name       version    registered_at
+----  ---------  ---------  ---------  -------------------
+   1  dummy_cli  Dummy CLI  0.1.0      *
