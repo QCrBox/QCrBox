@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: MPL-2.0
 import shutil
-import subprocess
 from pathlib import Path
 from typing import Iterable
 
@@ -11,12 +10,10 @@ from loguru import logger
 from ..helpers import (
     ClickCommandCls,
     DockerProject,
-    QCrBoxSubprocessError,
     add_cli_option_to_enable_or_disable_components,
     add_verbose_option,
     get_repo_root,
     make_task,
-    prettyprint_called_process_error,
     run_tasks,
 )
 from ..helpers.compose_file_config import QCrBoxNoBuildContextError
@@ -62,17 +59,8 @@ def make_action_to_copy_file(src, dest):
 
 
 def make_action_to_build_wheel(package_root, output_dir):
-    def _action_build_wheel_for_python_package():
-        cmd = f"hatch build -t wheel {output_dir}"
-        proc = subprocess.run(cmd, cwd=package_root, shell=True, check=False, capture_output=True)
-
-        try:
-            proc.check_returncode()
-        except subprocess.CalledProcessError as exc:
-            error_msg = prettyprint_called_process_error(exc)
-            raise QCrBoxSubprocessError(error_msg)
-
-    return _action_build_wheel_for_python_package
+    cmd = f"cd {package_root} && hatch build -t wheel {output_dir}"
+    return cmd
 
 
 @make_task
