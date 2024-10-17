@@ -75,26 +75,6 @@ def make_action_to_build_wheel(package_root, output_dir):
     return _action_build_wheel_for_python_package
 
 
-def make_action_to_build_pyqcrbox_wheel(base_ancestor_pyqcrbox_dist_dir):
-    def action_build_pyqcrbox_wheel():
-        repo_root = get_repo_root()
-        pyqcrbox_package_root = repo_root.joinpath("pyqcrbox")
-
-        try:
-            cmd = [shutil.which("hatch"), "build", "-t", "wheel", str(base_ancestor_pyqcrbox_dist_dir)]
-            proc = subprocess.run(cmd, cwd=pyqcrbox_package_root, shell=True, check=False, capture_output=True)
-        except Exception as exc:
-            raise QCrBoxSubprocessError(f"Error when trying to run docker compose command: {exc}")
-
-        try:
-            proc.check_returncode()
-        except subprocess.CalledProcessError as exc:
-            error_msg = prettyprint_called_process_error(exc)
-            raise QCrBoxSubprocessError(error_msg)
-
-    return action_build_pyqcrbox_wheel
-
-
 @make_task
 def task_clone_qcrboxtools_repo(dry_run: bool):
     qcrboxtools_repo_url = "https://github.com/QCrBox/QCrBoxTools.git"
@@ -147,7 +127,7 @@ def task_build_qcrboxtools_python_package(dry_run: bool):
             qcrboxtools_package_root, base_ancestor_pyqcrbox_dist_dir
         )
         # actions_copy_requirements_files = [
-        #     make_action_to_copy_file(filename, base_ancestor_qcrbox_dist_dir) for filename in requirements_files
+        #     make_action_to_copy_file(filename, base_ancestor_pyqcrbox_dist_dir) for filename in requirements_files
         # ]
 
         actions += [action_build_qcrboxtools_wheel]
