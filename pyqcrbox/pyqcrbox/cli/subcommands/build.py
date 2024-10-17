@@ -63,7 +63,7 @@ def make_action_to_copy_file(src, dest):
 
 def make_action_to_build_wheel(package_root, output_dir):
     def _action_build_wheel_for_python_package():
-        cmd = [shutil.which("hatch"), "build", "-t", "wheel", str(output_dir)]
+        cmd = f"hatch build -t wheel {output_dir}"
         proc = subprocess.run(cmd, cwd=package_root, shell=True, check=False, capture_output=True)
 
         try:
