@@ -22,9 +22,9 @@ def render(*args, **kwargs) -> Response:
     return Response(content=rendered_content, media_type=MediaType.HTML)
 
 
-@get(path="/", media_type=MediaType.HTML)
-async def views_root_handler() -> str:
-    return "<html><h1>Hello world!</h1></html>"
+@get(path="/index", media_type=MediaType.HTML)
+async def serve_qcrbox_homepage() -> Response:
+    return render("QCrBoxHomePage")
 
 
 @get(path="/applications")
@@ -58,7 +58,7 @@ async def handle_data_file_upload(data: Annotated[UploadFile, Body(media_type=Re
 views_router = Router(
     path="/views",
     route_handlers=[
-        views_root_handler,
+        serve_qcrbox_homepage,
         serve_applications_page,
         serve_data_files_page,
         handle_data_file_upload,
