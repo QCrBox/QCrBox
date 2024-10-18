@@ -3,22 +3,24 @@
 <div class="grid">
   <div class="cell">
       <div class="box is-flex is-flex-direction-column" id="workflow-pipeline">
-          <div class="block">
+          <div class="mb-4">
               <h2 class="title is-5">{{ workflow_title }}</h2>
           </div>
 
           {% for item in items %}
               <WorkflowItem item={{ item }} />
+          {% else %}
+              No workflow items present.
           {% endfor %}
       </div>
   </div>
 
   <div class="cell">
       <div class="box" id="info-box">
-          <div class="block">
+          <div class="mb-4">
               <h2 class="title is-5">Metadata</h2>
           </div>
-          <div class="block" id="contents-metadata">
+          <div id="contents-metadata">
               Placeholder for metadata.
           </div>
       </div>
