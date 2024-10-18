@@ -5,7 +5,9 @@
         <div class="column">
             <div class="box mt-3" style="display: inline-flex; align-items: center;">
                 <span class="icon" style="margin-right: 10px;">
-                    <i class="ph-fill ph-square" style="color: #8A8A8A; font-size: 3em;"></i>
+                    <button id="open-modal" hx-get="/modal-content" hx-target="#modal-content" hx-swap="innerHTML" style="background-color: transparent; border: none; cursor: pointer;">
+                        <i class="ph-fill ph-square" style="color: #8A8A8A; font-size: 3em;"></i>
+                    </button>
                 </span>
                 <div style="width: 100px; height: 3px; background-color: #417890; margin: 0 10px;"></div>
                 <div class="box m-3" style="border: 2px solid #417890; padding: 10px;">Click the grey box to select a data file.</div>
@@ -13,7 +15,43 @@
         </div>
 
         <div class="column">
-            <div class="box mt-3" style="border: 2px solid #417890; padding: 10px;">Information about the data file.</div>
+            <div class="box mt-3" style="border: 2px solid #417890; padding: 10px;">
+                Information about the data file.
+            </div>
         </div>
     </div>
+
+    <div class="modal" id="modal">
+        <div class="modal-background"></div>
+        <div class="modal-card">
+            <header class="modal-card-head">
+                <p class="modal-card-title">Import your data</p>
+                <button class="delete" aria-label="close" id="close-modal"></button>
+            </header>
+            <section class="modal-card-body" id="modal-content">
+                <button class="button is-primary is-outlined">Import Data</button>
+            </section>
+            <footer class="modal-card-foot">
+            </footer>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('open-modal').onclick = function () {
+            document.getElementById('modal').style.display = 'block';
+        };
+
+        document.getElementById('close-modal').onclick = function () {
+            document.getElementById('modal').style.display = 'none';
+        };
+
+        document.getElementById('close-modal-2').onclick = function () {
+            document.getElementById('modal').style.display = 'none';
+        };
+
+        document.querySelector('.modal-background').onclick = function () {
+            document.getElementById('modal').style.display = 'none';
+        };
+    </script>
+
 </MainLayout>
