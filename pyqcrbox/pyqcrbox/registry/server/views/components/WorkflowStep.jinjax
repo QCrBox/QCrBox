@@ -1,0 +1,7 @@
+{#def step #}
+
+<div class="button is-static py-2 my-1">
+    <div class="button py-2 my-1" id="{{ step.html_div_id }}">
+        TODO
+    </div>
+</div>

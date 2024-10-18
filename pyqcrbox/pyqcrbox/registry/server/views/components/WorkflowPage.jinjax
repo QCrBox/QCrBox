@@ -1,16 +1,16 @@
-{#def title = "QCrBox", workflow_title = "Unnamed Workflow", items = [] #}
+{#def workflow #}
 
 <div class="grid">
   <div class="cell">
       <div class="box is-flex is-flex-direction-column" id="workflow-pipeline">
           <div class="mb-4">
-              <h2 class="title is-5">{{ workflow_title }}</h2>
+              <h2 class="title is-5">{{ workflow.title }}</h2>
           </div>
 
-          {% for item in items %}
-              <WorkflowItem item={{ item }} />
+          {% for step in workflow.steps %}
+              <WorkflowStep step={{ step }} />
           {% else %}
-              No workflow items present.
+              <DatasetLoader workflow_id={{ workflow.workflow_id }} />
           {% endfor %}
       </div>
   </div>

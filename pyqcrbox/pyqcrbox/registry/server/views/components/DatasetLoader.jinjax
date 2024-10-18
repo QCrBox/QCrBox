@@ -1,0 +1,11 @@
+{#def workflow_id #}
+
+<div class="button py-2 my-1" id="workflow-{{ workflow_id }}-dataset-loader">
+  <button class="button"
+          hx-post="/views/workflows/{{ workflow_id }}/initial_dataset?qcrbox_data_file_id=qcrbox_file_xxxyyyzzz"
+          hx-target="#workflow-{{ workflow_id }}-dataset-loader"
+          hx-swap="outerHTML"
+  >
+      Select data file
+  </button>
+</div>
