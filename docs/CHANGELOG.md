@@ -32,6 +32,7 @@ However, there will be an initial period of stabilisation where this is not adhe
 ### Issues Fixed
 
 - Browser windows now open correctly under WSL. ([#274](https://github.com/QCrBox/QCrBox/issues/274)
+- Fixed a build issue under WSL. ([#335](https://github.com/QCrBox/QCrBox/issues/335))
 
 ### Development
 
