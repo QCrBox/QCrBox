@@ -17,10 +17,8 @@
 
 <body hx-ext="loading-states">
   <section class="section">
-    <div class="container">
-      <Header title={{ title }} />
-    </div>
-    <div class="container">
+    <Header title={{ title }} />
+    <div class="block">
       {{ content }}
      <div>
   </section>
