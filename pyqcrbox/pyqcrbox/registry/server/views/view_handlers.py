@@ -27,6 +27,16 @@ async def serve_qcrbox_homepage() -> Response:
     return render("QCrBoxHomePage")
 
 
+@get(path="/workflow/{workflow_id:int}", media_type=MediaType.HTML)
+async def serve_workflow_page(workflow_id: int) -> Response:
+    workflow_items = []
+    return render(
+        "WorkflowPage",
+        workflow_id=workflow_id,
+        items=workflow_items,
+    )
+
+
 @get(path="/applications")
 async def serve_applications_page() -> Response:
     applications = api_helpers._retrieve_applications()
@@ -50,7 +60,9 @@ async def serve_data_files_page() -> Response:
 
 
 @post(path="/data_files/upload", media_type=MediaType.TEXT)
-async def handle_data_file_upload(data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)]) -> str:
+async def handle_data_file_upload(
+    data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)],
+) -> Response:
     _qcrbox_data_file_id = await api_helpers._import_data_file(data)
     return render("DataFilesList", data_files=await api_helpers._get_data_files())
 
@@ -61,6 +73,7 @@ views_router = Router(
         serve_qcrbox_homepage,
         serve_applications_page,
         serve_data_files_page,
+        serve_workflow_page,
         handle_data_file_upload,
         get_command_details,
     ],

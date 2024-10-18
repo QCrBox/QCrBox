@@ -1,4 +1,5 @@
-{#def title = "QCrBox" #}
+{#def title = "QCrBox", workflow_id = 1, items = [] #}
 
 <MainLayout title={{ title }}>
+    <WorkflowPage workflow_id={{ workflow_id }} items={{ items }} />
 </MainLayout>

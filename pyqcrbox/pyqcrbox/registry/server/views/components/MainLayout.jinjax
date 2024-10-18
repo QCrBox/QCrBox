@@ -16,7 +16,7 @@
 </head>
 
 <body hx-ext="loading-states">
-  <section class="section">
+  <section class="section is-fullheight">
     <Header title={{ title }} />
     <div class="block">
       {{ content }}

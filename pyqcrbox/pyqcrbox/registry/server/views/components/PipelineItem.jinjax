@@ -1,0 +1,7 @@
+{#def item #}
+
+<div class="button is-static py-2 my-1">
+    <div id="{{ item.name }}">
+        Input CIF file #1
+    </div>
+</div>

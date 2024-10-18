@@ -1,0 +1,26 @@
+{#def title = "QCrBox", workflow_id, items #}
+
+<div class="grid">
+  <div class="cell">
+      <div class="box is-flex is-flex-direction-column" id="workflow-pipeline">
+          <div class="block">
+              <h2 class="title is-5">Workflow {{ workflow_id }}</h2>
+          </div>
+
+          {% for item in items %}
+              <WorkflowItem item={{ item }} />
+          {% endfor %}
+      </div>
+  </div>
+
+  <div class="cell">
+      <div class="box" id="info-box">
+          <div class="block">
+              <h2 class="title is-5">Metadata</h2>
+          </div>
+          <div class="block" id="contents-metadata">
+              Placeholder for metadata.
+          </div>
+      </div>
+  </div>
+</div>
