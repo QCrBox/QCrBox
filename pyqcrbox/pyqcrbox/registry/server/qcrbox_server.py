@@ -8,6 +8,7 @@ from litestar import Litestar, MediaType, get
 from litestar.openapi import OpenAPIConfig
 from litestar.response import Redirect
 from litestar.static_files import create_static_files_router
+from litestar.status_codes import HTTP_303_SEE_OTHER
 from pydantic import BaseModel
 from sqlmodel import select
 
@@ -39,7 +40,7 @@ class CalculationDetails(BaseModel):
 
 @get(path="/", media_type=MediaType.HTML)
 def web_root_handler() -> Redirect:
-    return Redirect(path="/views/index")
+    return Redirect(path="/views/index", status_code=HTTP_303_SEE_OTHER)
 
 
 class QCrBoxServer(QCrBoxServerClientBase):
