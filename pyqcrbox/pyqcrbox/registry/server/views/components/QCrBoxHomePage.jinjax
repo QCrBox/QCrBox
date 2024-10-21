@@ -10,12 +10,12 @@
                     </button>
                 </span>
                 <div style="width: 100px; height: 3px; background-color: #417890; margin: 0 10px;"></div>
-                <div class="box m-3" style="border: 2px solid #417890; padding: 10px;">Click the grey box to select a data file.</div>
+                <div id="datafile-text" class="box m-3" style="border: 2px solid #417890; padding: 10px;">Click the grey box to select a data file.</div>
             </div>
         </div>
 
         <div class="column">
-            <div class="box mt-3" style="border: 2px solid #417890; padding: 10px;">
+            <div id="metadata" class="box mt-3" style="border: 2px solid #417890; padding: 10px;">
                 Information about the data file.
             </div>
         </div>
@@ -29,7 +29,7 @@
                 <button class="delete" aria-label="close" id="close-modal"></button>
             </header>
             <section class="modal-card-body" id="modal-content">
-                <button class="button is-primary is-outlined">Import Data</button>
+                <button class="button is-primary is-outlined" id="import-button">Import Data</button>
             </section>
             <footer class="modal-card-foot">
             </footer>
@@ -45,12 +45,18 @@
             document.getElementById('modal').style.display = 'none';
         };
 
-        document.getElementById('close-modal-2').onclick = function () {
+        document.querySelector('.modal-background').onclick = function () {
             document.getElementById('modal').style.display = 'none';
         };
 
-        document.querySelector('.modal-background').onclick = function () {
+        // Close the modal when the "Import" button is clicked
+        document.getElementById('import-button').onclick = function () {
             document.getElementById('modal').style.display = 'none';
+
+            // Replace the text "Click the grey box to select a datafile" with "Datafile"
+            document.getElementById('datafile-text').textContent = 'Filename';
+            document.getElementById('metadata').textContent = 'Metadata';
+
         };
     </script>
 
