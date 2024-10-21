@@ -59,7 +59,7 @@ def make_action_to_copy_file(src, dest):
 
 
 def make_action_to_build_wheel(package_root, output_dir):
-    cmd = f"cd {package_root} && hatch build -t wheel {output_dir}"
+    cmd = f"cd {package_root} && uv build --wheel --out-dir {output_dir}"
     return cmd
 
 
