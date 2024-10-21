@@ -81,6 +81,11 @@ async def get_data_files() -> list[dict]:
     return await api_helpers._get_data_files()
 
 
+@get(path="/datasets", media_type=MediaType.JSON)
+async def get_datasets() -> list[dict]:
+    return await api_helpers._get_datasets()
+
+
 async def _get_data_files() -> list[dict]:
     data_file_manager = await get_data_file_manager()
     data_files = await data_file_manager.get_data_files()
@@ -119,6 +124,7 @@ api_router = Router(
         get_calculation_info,
         get_calculation_info_by_calculation_id,
         get_data_files,
+        get_datasets,
         handle_data_file_upload,
     ],
 )

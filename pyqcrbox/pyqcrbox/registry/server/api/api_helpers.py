@@ -191,7 +191,26 @@ async def _get_data_files() -> list[dict]:
     return [f.to_response_model() for f in data_files]
 
 
+async def _get_datasets() -> list[dict]:
+    data_file_manager = await get_data_file_manager()
+    datasets = await data_file_manager.get_datasets()
+    return [d.to_response_model() for d in datasets]
+
+
 async def _import_data_file(data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)]) -> str:
     data_file_manager = await get_data_file_manager()
     qcrbox_data_file_id = await data_file_manager.import_bytes(await data.read(), filename=data.filename)
     return qcrbox_data_file_id
+
+
+async def _import_dataset(data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)]) -> str:
+    data_file_manager = await get_data_file_manager()
+    qcrbox_data_file_id = await data_file_manager.import_bytes(await data.read(), filename=data.filename)
+    qcrbox_dataset_id = await data_file_manager.create_dataset_from_data_file(qcrbox_data_file_id)
+    return qcrbox_dataset_id
+
+
+async def _get_dataset_info(dataset_id: str) -> dict:
+    data_file_manager = await get_data_file_manager()
+    dataset_info = await data_file_manager.get_dataset_info(dataset_id)
+    return dataset_info.model_dump()
