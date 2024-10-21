@@ -96,7 +96,8 @@ class DummyDataFileManager:
         return qcrbox_file_id
 
     async def create_dataset_from_data_file(self, data_file_id: str) -> str:
-        dataset_id = generate_dataset_id()
+        #dataset_id = generate_dataset_id()
+        dataset_id = "xxx_dummy_dataset_id_xxx"
         data_files = [await self.get_data_file(data_file_id)]
         self.datasets[dataset_id] = QCrBoxDataset(dataset_id=dataset_id, data_files=data_files)
         return dataset_id

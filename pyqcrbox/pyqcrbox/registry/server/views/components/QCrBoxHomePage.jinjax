@@ -1,4 +1,17 @@
 {#def title = "QCrBox" #}
 
 <MainLayout title={{ title }}>
+    <button hx-post="/views/workflows/create?input_dataset_id=xxx_dummy_dataset_id_xxx"
+            hx-target="#dataset-name"
+    >
+        <span class="icon is-size-3 has-background-grey-lighter">
+            <i class="ph-thin ph-square"></i>
+        </span>
+    </button>
+    <div id="dataset-name" class="box">
+
+    </div>
+    <div class="box">
+        <div id="info-box">Placeholder for metadata.</div>
+    </div>
 </MainLayout>

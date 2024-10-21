@@ -1,0 +1,4 @@
+{#def dataset_info #}
+
+<div><code>my_input_file.cif</code></div>
+<div id="info-box" hx-swap-oob="innerHTML">Habemus CIF file!</div>

@@ -55,10 +55,21 @@ async def handle_data_file_upload(data: Annotated[UploadFile, Body(media_type=Re
     return render("DataFilesList", data_files=await api_helpers._get_data_files())
 
 
-@post(path="/datasets/upload", media_type=MediaType.TEXT)
+@post(path="/datasets/new", media_type=MediaType.TEXT)
 async def handle_dataset_upload(data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)]) -> str:
     _qcrbox_dataset_id = await api_helpers._import_dataset(data)
-    return render("DatasetInfo", dataset=await api_helpers._get_dataset_info(_qcrbox_dataset_id))
+    return _qcrbox_dataset_id
+
+
+@post(path="/workflows/create")
+async def create_new_workflow(input_dataset_id: str) -> str:
+    # TODO: verify that the dataset id is valid and retrieve file info
+
+    return render("DatasetInfo", dataset_info=await api_helpers._get_dataset_info(input_dataset_id))
+    # return """
+    #     <div><code>my_input_file.cif</code></div>
+    #     <div id="info-box" hx-swap-oob="innerHTML">Habemus CIF file!</div>
+    #     """
 
 
 views_router = Router(
@@ -69,6 +80,7 @@ views_router = Router(
         serve_data_files_page,
         handle_data_file_upload,
         handle_dataset_upload,
+        create_new_workflow,
         get_command_details,
     ],
 )
