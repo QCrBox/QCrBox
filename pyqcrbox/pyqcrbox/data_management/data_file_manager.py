@@ -5,7 +5,7 @@ import nats.js.errors
 from pyqcrbox import logger
 from pyqcrbox.helpers import generate_data_file_id, generate_dataset_id
 
-from .data_file import QCrBoxDataFile, QCrBoxDataset
+from .data_file import QCrBoxDataFile, QCrBoxDataset, QCrBoxDatasetResponse
 
 
 class QCrBoxDataFileManager:
@@ -109,6 +109,9 @@ class DummyDataFileManager:
 
     async def get_datasets(self) -> list[QCrBoxDataset]:
         return list(self.datasets.values())
+
+    async def get_dataset_info(self, dataset_id: str) -> QCrBoxDatasetResponse:
+        return self.datasets[dataset_id].to_response_model()
 
     async def get_file_contents(self, qcrbox_file_id: str) -> bytes:
         data_file = self.dummy_storage[qcrbox_file_id]
