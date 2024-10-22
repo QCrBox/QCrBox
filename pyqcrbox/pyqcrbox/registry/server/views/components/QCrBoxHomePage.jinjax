@@ -57,6 +57,9 @@
             document.getElementById('datafile-text').textContent = 'Filename';
             document.getElementById('metadata').textContent = 'Metadata';
 
+            // Change the color of the icon to black
+            document.querySelector('.ph-fill.ph-square').style.color = '#000000';
+
         };
     </script>
 
