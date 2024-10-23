@@ -6,6 +6,7 @@
      hx-target="#datafile-text"
      hx-swap="outerHTML"
      hx-on::after-request="this.reset()"
+     _="on htmx:afterRequest trigger closeModal"
   >
     <label class="label">Import data file:</label>
     <div class="file is-small is-flex-direction-row">
