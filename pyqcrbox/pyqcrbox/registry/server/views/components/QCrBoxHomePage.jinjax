@@ -5,7 +5,10 @@
         <div class="column">
             <div class="box mt-3" style="display: inline-flex; align-items: center;">
                 <span class="icon" style="margin-right: 10px;">
-                    <button id="open-modal" hx-get="/modal-content" hx-target="#modal-content" hx-swap="innerHTML" style="background-color: transparent; border: none; cursor: pointer;">
+                    <button id="open-modal"
+                            style="background-color: transparent; border: none; cursor: pointer;"
+                            _="on click trigger showModal on #modal"
+                    >
                         <i class="ph-fill ph-square" style="color: #8A8A8A; font-size: 3em;"></i>
                     </button>
                 </span>
@@ -21,46 +24,26 @@
         </div>
     </div>
 
-    <div class="modal" id="modal">
+    <div class="modal"
+         id="modal"
+         _="on showModal add .is-active on closeModal remove .is-active"
+    >
         <div class="modal-background"></div>
         <div class="modal-card">
             <header class="modal-card-head">
                 <p class="modal-card-title">Import your data</p>
-                <button class="delete" aria-label="close" id="close-modal"></button>
+                <button class="delete"
+                        aria-label="close"
+                        id="close-modal"
+                        _="on click trigger closeModal"
+                ></button>
             </header>
             <section class="modal-card-body" id="modal-content">
-                <button class="button is-primary is-outlined" id="import-button">Import Data</button>
+                <DatasetUploadForm />
             </section>
             <footer class="modal-card-foot">
             </footer>
         </div>
     </div>
-
-    <script>
-        document.getElementById('open-modal').onclick = function () {
-            document.getElementById('modal').style.display = 'block';
-        };
-
-        document.getElementById('close-modal').onclick = function () {
-            document.getElementById('modal').style.display = 'none';
-        };
-
-        document.querySelector('.modal-background').onclick = function () {
-            document.getElementById('modal').style.display = 'none';
-        };
-
-        // Close the modal when the "Import" button is clicked
-        document.getElementById('import-button').onclick = function () {
-            document.getElementById('modal').style.display = 'none';
-
-            // Replace the text "Click the grey box to select a datafile" with "Datafile"
-            document.getElementById('datafile-text').textContent = 'Filename';
-            document.getElementById('metadata').textContent = 'Metadata';
-
-            // Change the color of the icon to black
-            document.querySelector('.ph-fill.ph-square').style.color = '#000000';
-
-        };
-    </script>
 
 </MainLayout>
