@@ -19,6 +19,7 @@ However, there will be an initial period of stabilisation where this is not adhe
 
 ### Enhancements
 
+- Added template for pull requests. ([#356](https://github.com/QCrBox/QCrBox/issues/356))
 
 ### Issues Fixed
 
