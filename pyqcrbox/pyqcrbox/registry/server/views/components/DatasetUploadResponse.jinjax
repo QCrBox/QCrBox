@@ -1,0 +1,35 @@
+{#def dataset_info #}
+
+{% if dataset_info.data_files | length == 1 %}
+    <div id="datafile-text">Awesome filename!</div>
+    <div id="metadata" hx-swap-oob="innerHTML">
+        {{ dataset_info.data_files[0].filename }}
+    </div>
+    <div id="dataset-id" hx-swap-oob="innerHTML">
+        <ul>
+            <li>Dataset id: <code>{{ dataset_info.dataset_id }}</code></li>
+            <li>File type: TODO</code></li>
+        </ul>
+    </div>
+
+{% elif dataset_info.data_files == [] %}
+    <div id="datafile-text">
+        <i>Empty dataset<i>
+    </div>
+    <div id="metadata" hx-swap-oob="innerHTML">
+        <div class="notification is-danger is-light">
+            Error: the dataset contains no data files.
+        </div>
+    </div>
+
+{% else %}
+    <div id="datafile-text">
+        <i>Multi-file dataset<i>
+    </div>
+    <div id="metadata" hx-swap-oob="innerHTML">
+        <div class="notification is-danger is-light">
+            Warning: the dataset contains multiple files, which is not currently supported.
+        </div>
+    </div>
+
+{% endif %}
