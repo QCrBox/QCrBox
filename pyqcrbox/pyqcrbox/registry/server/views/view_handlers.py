@@ -50,15 +50,20 @@ async def serve_data_files_page() -> Response:
 
 
 @post(path="/data_files/upload", media_type=MediaType.TEXT)
-async def handle_data_file_upload(data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)]) -> str:
+async def handle_data_file_upload(
+    data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)],
+) -> Response:
     _qcrbox_data_file_id = await api_helpers._import_data_file(data)
     return render("DataFilesList", data_files=await api_helpers._get_data_files())
 
 
-@post(path="/datasets/upload", media_type=MediaType.TEXT)
-async def handle_dataset_upload(data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)]) -> str:
-    _qcrbox_dataset_id = await api_helpers._import_dataset(data)
-    return render("DatasetInfo", dataset=await api_helpers._get_dataset_info(_qcrbox_dataset_id))
+@post(path="/datasets/new", media_type=MediaType.TEXT)
+async def handle_dataset_upload(
+    data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)],
+) -> Response:
+    dataset_id = await api_helpers._import_dataset(data)
+    dataset_info = await api_helpers._get_dataset_info(dataset_id)
+    return render("DatasetUploadResponse", dataset_info=dataset_info)
 
 
 views_router = Router(
