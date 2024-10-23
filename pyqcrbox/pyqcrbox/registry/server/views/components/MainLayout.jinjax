@@ -13,6 +13,11 @@
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
   <link rel="stylesheet" href="/static/custom.css">
+  <style>
+    .modal {
+        display: none;
+    }
+  </style>
 </head>
 
 <body hx-ext="loading-states">
@@ -24,4 +29,4 @@
       {{ content }}
      <div>
   </section>
-</html>
+</body>
