@@ -29,13 +29,7 @@
                 <button class="delete" aria-label="close" id="close-modal"></button>
             </header>
             <section class="modal-card-body" id="modal-content">
-                <button class="button is-primary is-outlined"
-                        id="import-button"
-                        hx-post="/views/datasets/new"
-                        hx-target="#datafile-text"
-                >
-                    Import Data
-                </button>
+                <DatasetUploadForm />
             </section>
             <footer class="modal-card-foot">
             </footer>
