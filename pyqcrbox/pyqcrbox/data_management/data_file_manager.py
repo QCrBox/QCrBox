@@ -86,9 +86,11 @@ class DummyDataFileManager:
         _qcrbox_file_id: str | None = None,
     ) -> str:
         qcrbox_file_id = _qcrbox_file_id or generate_data_file_id()
+        file_extension = Path(filename).suffix[1:]
         data_file = QCrBoxDataFile(
             qcrbox_file_id=qcrbox_file_id,
             filename=filename,
+            filetype=file_extension,
             contents=file_contents,
         )
         self.dummy_storage[qcrbox_file_id] = data_file

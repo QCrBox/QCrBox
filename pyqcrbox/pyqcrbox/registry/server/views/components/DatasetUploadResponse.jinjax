@@ -1,15 +1,15 @@
 {#def dataset_info #}
 
 {% if dataset_info.data_files | length == 1 %}
-    <div id="datafile-text">Awesome filename!</div>
+    <div id="datafile-text">{{ dataset_info.data_files[0].filename }}</div>
     <div id="metadata" hx-swap-oob="innerHTML">
-        {{ dataset_info.data_files[0].filename }}
-    </div>
-    <div id="dataset-id" hx-swap-oob="innerHTML">
         <ul>
             <li>Dataset id: <code>{{ dataset_info.dataset_id }}</code></li>
-            <li>File type: TODO</code></li>
+            <li>File type: <code>{{ dataset_info.data_files[0].filetype }}</code></li>
         </ul>
+    </div>
+    <div id="dataset-id" hx-swap-oob="innerHTML">
+        {{ dataset_info.dataset_id }}
     </div>
 
 {% elif dataset_info.data_files == [] %}
