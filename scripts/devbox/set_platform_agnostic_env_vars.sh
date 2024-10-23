@@ -3,4 +3,4 @@ export UV_PYTHON=$VENV_DIR/bin/python
 
 # Ensure that hatch uses the uv binary and python interpreter installed via Devbox
 export HATCH_ENV_TYPE_VIRTUAL_UV_PATH=$DEVBOX_PACKAGES_DIR/bin/uv
-export HATCH_PYTHON=$DEVBOX_PACKAGES_DIR/bin/python
+export HATCH_PYTHON=$VENV_DIR/bin/python
