@@ -1,0 +1,9 @@
+{#def data_files = [] #}
+
+<div id="datafile-text" class="box m-3" style="border: 2px solid #417890; padding: 10px;">
+    {% if data_files %}
+        {{ data_files[-1].filename }}
+    {% else %}
+        <p>Click the grey box to select a data file.
+    {% endif %}
+</div>

@@ -49,10 +49,17 @@ async def serve_data_files_page() -> Response:
     return render("DataFilesPage", data_files=await api_helpers._get_data_files())
 
 
+# @post(path="/data_files/upload", media_type=MediaType.TEXT)
+# async def handle_data_file_upload(data: Annotated[UploadFile,
+#   Body(media_type=RequestEncodingType.MULTI_PART)]) -> str:
+#     _qcrbox_data_file_id = await api_helpers._import_data_file(data)
+#     return render("DataFilesList", data_files=await api_helpers._get_data_files())
+
+
 @post(path="/data_files/upload", media_type=MediaType.TEXT)
 async def handle_data_file_upload(data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)]) -> str:
     _qcrbox_data_file_id = await api_helpers._import_data_file(data)
-    return render("DataFilesList", data_files=await api_helpers._get_data_files())
+    return render("QCrBoxHomePage", data_files=await api_helpers._get_data_files())
 
 
 views_router = Router(

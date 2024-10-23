@@ -3,7 +3,7 @@
      id="file_upload_form"
      hx-encoding="multipart/form-data"
      hx-post="/views/data_files/upload"
-     hx-target="#homepage"
+     hx-target="#data_files_list"
      hx-swap="outerHTML"
      hx-on::after-request="this.reset()"
   >
@@ -24,23 +24,6 @@
            on htmx:load from body or reset from #file_upload_form
               put '<span style=\'color: #666\'>(No file chosen)</span>' into me
           ">
-      </div>
-      <div>
-        <button
-          id="import-button"
-          class="button is-outline is-small ml-3"
-          type="submit"
-          disabled
-          script="on change from #file_selector remove @disabled
-                  on reset from #file_upload_form add @disabled"
-          data-loading-disable
-          data-loading-class="is-loading"
-        >
-          <span class="file-icon">
-            <i class="ph ph-upload"></i>
-          </span>
-            Import
-        </button>
       </div>
     </div>
   </form>

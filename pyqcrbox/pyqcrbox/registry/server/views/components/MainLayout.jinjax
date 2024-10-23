@@ -20,7 +20,7 @@
   </style>
 </head>
 
-<body hx-ext="loading-states">
+<body hx-ext="loading-states" id="homepage">
   <section class="section">
     <div class="container">
       <Header title={{ title }} />

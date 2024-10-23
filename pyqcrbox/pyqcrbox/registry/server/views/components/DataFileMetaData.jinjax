@@ -1,0 +1,14 @@
+{#def data_files = [] #}
+
+<h2> Data File Metadata </h2>
+{% if data_files %}
+    <div class="list block m-3" id="data_files_metadata">
+        <div class="list-item">
+            <li>Filename: {{ data_files[-1].filename }}</li>
+        </div>
+        <div class="list-item">
+            <li>QCrBox File ID: {{ data_files[-1].qcrbox_file_id }}</li>
+        </div>
+    </div>
+{% endif %}
+

@@ -1,4 +1,4 @@
-{#def title = "QCrBox" #}
+{#def title = "QCrBox", data_files=[] #}
 
 <MainLayout title={{ title }}>
     <div class="columns">
@@ -10,13 +10,29 @@
                     </button>
                 </span>
                 <div style="width: 100px; height: 3px; background-color: #417890; margin: 0 10px;"></div>
-                <div id="datafile-text" class="box m-3" style="border: 2px solid #417890; padding: 10px;">Click the grey box to select a data file.</div>
+                <div id="datafile-text" class="box m-3" style="border: 2px solid #417890; padding: 10px;">
+                    {% if data_files %}
+                        {{ data_files[-1].filename }}
+                    {% else %}
+                        <p>Click the grey box to select a data file.
+                    {% endif %}
+                </div>
             </div>
         </div>
 
         <div class="column">
             <div id="metadata" class="box mt-3" style="border: 2px solid #417890; padding: 10px;">
-                Information about the data file.
+                <h2> Data File Metadata </h2>
+                {% if data_files %}
+                    <div class="list block m-3" id="data_files_metadata">
+                        <div class="list-item">
+                            <li>Filename: {{ data_files[-1].filename }}</li>
+                        </div>
+                        <div class="list-item">
+                            <li>QCrBox File ID: {{ data_files[-1].qcrbox_file_id }}</li>
+                        </div>
+                    </div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -29,7 +45,8 @@
                 <button class="delete" aria-label="close" id="close-modal"></button>
             </header>
             <section class="modal-card-body" id="modal-content">
-                <button class="button is-primary is-outlined" id="import-button">Import Data</button>
+                <DataFileUploadForm />
+                {#<button class="button is-primary is-outlined" id="import-button">Import Data</button>#}
             </section>
             <footer class="modal-card-foot">
             </footer>
@@ -54,8 +71,8 @@
             document.getElementById('modal').style.display = 'none';
 
             // Replace the text "Click the grey box to select a datafile" with "Datafile"
-            document.getElementById('datafile-text').textContent = 'Filename';
-            document.getElementById('metadata').textContent = 'Metadata';
+            {#document.getElementById('datafile-text').textContent = 'Filename';#}
+            {#document.getElementById('metadata').textContent = 'Metadata';#}
 
             // Change the color of the icon to black
             document.querySelector('.ph-fill.ph-square').style.color = '#000000';
