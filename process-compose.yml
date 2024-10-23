@@ -30,6 +30,17 @@ processes:
     availability:
       restart: "always"
 
+  qcrbox-dev-server:
+    command: "watchmedo auto-restart --pattern=*.py --recursive -- pyqcrbox-run-registry-server"
+    environment:
+      - 'QCRBOX__REGISTRY_SERVER__HOST={{ or "${QCRBOX__REGISTRY_SERVER__HOST}" .QCRBOX__REGISTRY_SERVER__HOST }}'
+      - 'QCRBOX__REGISTRY_SERVER__PORT={{ or "${QCRBOX__REGISTRY_SERVER__PORT}" .QCRBOX__REGISTRY_SERVER__PORT }}'
+    depends_on:
+      nats-server:
+        condition: process_started
+    availability:
+      restart: "always"
+
   qcrbox-client-dummy-cli:
     command: "pyqcrbox-run-registry-client services/applications/dummy_cli/config_dummy_cli.yaml"
     environment:
