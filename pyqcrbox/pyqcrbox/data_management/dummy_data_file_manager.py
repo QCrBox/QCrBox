@@ -1,15 +1,27 @@
+from collections import defaultdict
 from pathlib import Path
 
 from pyqcrbox.helpers import generate_data_file_id, generate_dataset_id
 
+from ..sql_models import QCrBoxPydanticBaseModel
 from .base import DataFileManager
 from .data_file import QCrBoxDataFile, QCrBoxDataset, QCrBoxDatasetResponse
 
 
 class DummyDataFileManager(DataFileManager):
     def __init__(self):
-        self.dummy_storage = {}
+        self.dummy_storage = defaultdict(dict)
         self.datasets = {}
+
+    async def _store_in_kv(self, bucket: str, key: str, value: QCrBoxPydanticBaseModel):
+        self.dummy_storage[bucket][key] = value.model_dump_json().encode()
+
+    async def _retrieve_from_kv(
+        self, bucket: str, key: str, value_cls: QCrBoxPydanticBaseModel
+    ) -> QCrBoxPydanticBaseModel:
+        value_as_bytes = self.dummy_storage[bucket][key]
+        obj = value_cls.model_validate_json(value_as_bytes.decode())
+        return obj
 
     async def exists(self, qcrbox_file_id: str) -> bool:
         return qcrbox_file_id in self.dummy_storage
