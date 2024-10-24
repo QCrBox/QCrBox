@@ -63,7 +63,8 @@ async def handle_dataset_upload(
 ) -> Response:
     dataset_id = await api_helpers._import_dataset(data)
     dataset_info = await api_helpers._get_dataset_info(dataset_id)
-    return render("DatasetUploadResponse", dataset_info=dataset_info)
+    applications = api_helpers._retrieve_applications()
+    return render("DatasetUploadResponse", dataset_info=dataset_info, applications=applications)
 
 
 views_router = Router(

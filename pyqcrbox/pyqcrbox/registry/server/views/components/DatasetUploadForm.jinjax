@@ -6,7 +6,7 @@
      hx-target="#datafile-text"
      hx-swap="outerHTML"
      hx-on::after-request="this.reset()"
-     _="on htmx:afterRequest trigger closeModal"
+     _="on htmx:afterRequest trigger closeModal then set #datafile-square's *color to '#000000'"
   >
     <label class="label">Import data file:</label>
     <div class="file is-small is-flex-direction-row">

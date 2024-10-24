@@ -1,7 +1,7 @@
-{#def dataset_info #}
+{#def dataset_info, applications = [] #}
 
 {% if dataset_info.data_files | length == 1 %}
-    <div id="datafile-text">{{ dataset_info.data_files[0].filename }}</div>
+    <div id="datafile-text" class="box m-3" style="border: 2px solid #417890; padding: 10px;">{{ dataset_info.data_files[0].filename }}</div>
     <div id="metadata" hx-swap-oob="innerHTML">
         <ul>
             <li>Dataset id: <code>{{ dataset_info.dataset_id }}</code></li>
@@ -10,6 +10,30 @@
     </div>
     <div id="dataset-id" hx-swap-oob="innerHTML">
         {{ dataset_info.dataset_id }}
+    </div>
+
+    <div id="run-command-step" hx-swap-oob="outerHTML" class="box mt-3" style="display: inline-flex; align-items: center;">
+        <span class="icon" style="margin-right: 10px;">
+            <i id="run-command-triangle" class="ph-fill ph-triangle" style="color: #8A8A8A; font-size: 3em; transform: rotate(180deg);"></i>
+        </span>
+        <div style="width: 100px; height: 3px; background-color: #417890; margin: 0 10px;"></div>
+        <div class="box m-3" style="border: 2px solid #417890; padding: 10px;">
+            <select id="select-application" name="application">
+                <option value="" disabled selected hidden>Please select an application</option>
+                {% if applications %}
+                    {% for application in applications %}
+                        <option value="{{application.name}}"                     
+                        data-url="{{ application.url }}"
+                        data-version="{{ application.version }}"
+                        data-registered="{{ application.registered_at.strftime('%Y-%m-%d %H:%M:%S') }}">
+                            {{ application.name }}
+                        </option>
+                    {% endfor %}
+                {% else %}
+                    <option value="no_applications">No applications registered.</option>
+                {% endif %}
+            </select>
+        </div>
     </div>
 
 {% elif dataset_info.data_files == [] %}
@@ -33,3 +57,37 @@
     </div>
 
 {% endif %}
+
+
+
+<script>
+    // Update metadata when a selection is made
+    document.getElementById('select-application').addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex]; // Get the selected option
+        const metadataBox = document.getElementById('metadata');
+
+        // Get the details from the application attributes
+        const appName = selectedOption.value;
+        const appUrl = selectedOption.getAttribute('data-url');
+        const appVersion = selectedOption.getAttribute('data-version');
+        const appRegistered = selectedOption.getAttribute('data-registered');
+        
+        // If a valid application is selected, construct the HTML content
+        if (appName && appVersion && appRegistered) {
+            metadataBox.outerHTML = `
+            <div id="metadata" class="box mt-3" style="border: 2px solid #417890; padding: 10px;">
+                <h3 class="title is-4">${appName}</h3>
+                <ul class="list" style="list-style-type: disc; padding-left: 20px;">
+                    <li>Version: ${appVersion}</li>
+                    <li>Date Registered: ${appRegistered}</li>
+                    <li>Website: <a href="${appUrl}" target="_blank" class="has-text-link">
+                            ${appName}
+                        </a>
+                    </li>
+                </ul>
+                <button class="button is-dark m-3" style="background-color: #417890;">Start Interactive Session</button>
+            </div>
+            `;
+        } 
+    });
+</script>
