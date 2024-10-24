@@ -5,10 +5,12 @@ import nats.js.errors
 from pyqcrbox import logger
 from pyqcrbox.helpers import generate_data_file_id, generate_dataset_id
 
+from .base import DataFileManager
+
 # from .data_file import QCrBoxDataFile, QCrBoxDataset, QCrBoxDatasetResponse
 
 
-class NatsDataFileManager:
+class NatsDataFileManager(DataFileManager):
     def __init__(self):
         self.datasets = {}
 

@@ -2,10 +2,11 @@ from pathlib import Path
 
 from pyqcrbox.helpers import generate_data_file_id, generate_dataset_id
 
+from .base import DataFileManager
 from .data_file import QCrBoxDataFile, QCrBoxDataset, QCrBoxDatasetResponse
 
 
-class DummyDataFileManager:
+class DummyDataFileManager(DataFileManager):
     def __init__(self):
         self.dummy_storage = {}
         self.datasets = {}
