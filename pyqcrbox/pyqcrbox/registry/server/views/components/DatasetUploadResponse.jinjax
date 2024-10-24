@@ -86,6 +86,7 @@
                         </a>
                     </li>
                 </ul>
+                <button class="button is-dark m-3" style="background-color: #417890;">Start Interactive Session</button>
             </div>
             `;
         } 
