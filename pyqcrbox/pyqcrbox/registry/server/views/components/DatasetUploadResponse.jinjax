@@ -11,7 +11,6 @@
     <div id="dataset-id" hx-swap-oob="innerHTML">
         {{ dataset_info.dataset_id }}
     </div>
-    <i id='datafile-square' hx-swap-oob="outerHTML" class="ph-fill ph-square" style="color: #000000; font-size: 3em;"></i>
 
     <div id = "run-command-step" hx-swap-oob="outerHTML" class="box mt-3" style="display: inline-flex; align-items: center;">
         <span class="icon" style="margin-right: 10px;">
