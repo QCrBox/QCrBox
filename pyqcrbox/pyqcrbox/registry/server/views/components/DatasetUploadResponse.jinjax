@@ -1,7 +1,7 @@
 {#def dataset_info #}
 
 {% if dataset_info.data_files | length == 1 %}
-    <div id="datafile-text">{{ dataset_info.data_files[0].filename }}</div>
+    <div id="datafile-text" class="box m-3" style="border: 2px solid #417890; padding: 10px;">{{ dataset_info.data_files[0].filename }}</div>
     <div id="metadata" hx-swap-oob="innerHTML">
         <ul>
             <li>Dataset id: <code>{{ dataset_info.dataset_id }}</code></li>
@@ -11,6 +11,7 @@
     <div id="dataset-id" hx-swap-oob="innerHTML">
         {{ dataset_info.dataset_id }}
     </div>
+    <i id='datafile_square' hx-swap-oob="outerHTML" class="ph-fill ph-square" style="color: #000000; font-size: 3em;"></i>
 
 {% elif dataset_info.data_files == [] %}
     <div id="datafile-text">
