@@ -1,3 +1,3 @@
-from .base_data_file_manager import QCrBoxDataFileManager
+from .base_data_file_manager import DataFileManager
 from .dummy_data_file_manager import DummyDataFileManager
 from .nats_data_file_manager import NatsDataFileManager

@@ -1,2 +1,2 @@
-class QCrBoxDataFileManager:
+class DataFileManager:
     pass
