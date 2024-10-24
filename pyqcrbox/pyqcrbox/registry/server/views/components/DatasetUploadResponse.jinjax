@@ -12,7 +12,7 @@
         {{ dataset_info.dataset_id }}
     </div>
 
-    <div id = "run-command-step" hx-swap-oob="outerHTML" class="box mt-3" style="display: inline-flex; align-items: center;">
+    <div id="run-command-step" hx-swap-oob="outerHTML" class="box mt-3" style="display: inline-flex; align-items: center;">
         <span class="icon" style="margin-right: 10px;">
             <i id="run-command-triangle" class="ph-fill ph-triangle" style="color: #8A8A8A; font-size: 3em; transform: rotate(180deg);"></i>
         </span>

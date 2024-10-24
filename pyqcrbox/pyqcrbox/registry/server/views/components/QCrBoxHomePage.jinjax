@@ -3,7 +3,7 @@
 <MainLayout title={{ title }}>
     <div class="columns">
         <div class="column">
-            <div id = "initial-data-step" class="box mt-3" style="display: inline-flex; align-items: center;">
+            <div id="initial-data-step" class="box mt-3" style="display: inline-flex; align-items: center;">
                 <span class="icon" style="margin-right: 10px;">
                     <button id="open-modal"
                             style="background-color: transparent; border: none; cursor: pointer;"
@@ -15,7 +15,7 @@
                 <div style="width: 100px; height: 3px; background-color: #417890; margin: 0 10px;"></div>
                 <div id="datafile-text" class="box m-3" style="border: 2px solid #417890; padding: 10px;">Click the grey box to select a data file.</div>
             </div>
-            <div id = "run-command-step">
+            <div id="run-command-step">
             </div>
             
         </div>
