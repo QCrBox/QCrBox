@@ -4,8 +4,10 @@ import nats.js.errors
 
 from pyqcrbox import logger
 from pyqcrbox.helpers import generate_data_file_id, generate_dataset_id
+from pyqcrbox.svcs import get_nats_key_value
 
 from .base import DataFileManager
+from .data_file import QCrBoxDatasetResponse
 
 # from .data_file import QCrBoxDataFile, QCrBoxDataset, QCrBoxDatasetResponse
 
@@ -66,3 +68,11 @@ class NatsDataFileManager(DataFileManager):
         except nats.js.errors.ObjectNotFoundError:
             # We don't care if the file doesn't exist in the first place
             pass
+
+    async def get_dataset_info(self, dataset_id: str) -> QCrBoxDatasetResponse:
+        kv = await get_nats_key_value(bucket="datasets")
+        try:
+            dataset_info = await kv.get(dataset_id)
+        except nats.js.errors.KeyNotFoundError:
+            raise KeyError(f"Dataset {dataset_id!r} not found")
+        return dataset_info
