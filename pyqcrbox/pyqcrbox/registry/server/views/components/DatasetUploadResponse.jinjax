@@ -1,4 +1,4 @@
-{#def dataset_info #}
+{#def dataset_info, applications = [] #}
 
 {% if dataset_info.data_files | length == 1 %}
     <div id="datafile-text" class="box m-3" style="border: 2px solid #417890; padding: 10px;">{{ dataset_info.data_files[0].filename }}</div>
@@ -19,12 +19,15 @@
         </span>
         <div style="width: 100px; height: 3px; background-color: #417890; margin: 0 10px;"></div>
         <div id="select-application" class="box m-3" style="border: 2px solid #417890; padding: 10px;">
-            <label for="select-application">Select Application:</label>
-            <select id="select-application" name="application" style="font-size: 1.2em; color: #8A8A8A;">
-                <option value="app1">Application 1</option>
-                <option value="app2">Application 2</option>
-                <option value="app3">Application 3</option>
-                <option value="app4">Application 4</option>
+            <select id="select-application" name="application">
+                <option value="" disabled selected hidden>Please select an application</option>
+                {% if applications %}
+                    {% for application in applications %}
+                        <option value={{application.name}}>{{ application.name }}</option>
+                    {% endfor %}
+                {% else %}
+                    <option value="no_applications">No applications registered.</option>
+                {% endif %}
             </select>
         </div>
     </div>
