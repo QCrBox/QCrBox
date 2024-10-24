@@ -33,6 +33,8 @@
     "ncurses":         "latest",
     "jq":              "latest",
     "nats-server":     "latest",
+    "natscli":         "latest",
+    "nats-top":        "latest",
   },
   "env": {
     "MAMBA_ROOT_PREFIX":     "${PWD}/.devbox/virtenv/python/.conda",
