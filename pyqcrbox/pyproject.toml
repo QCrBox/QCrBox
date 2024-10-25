@@ -182,6 +182,7 @@ select = [
 "qcrbox/qcrbox/registry/client/registered_application_client_side.py" = ["F821"]
 "services/applications/olex2_linux/prebuild__01_create_olex2_headless.py" = ["E501"]
 "services/applications/qcrboxtools/qcrbtls_check_convergence_glue.py" = ["E501"]
+"pyqcrbox/tests_BAK_2024-09-02/**" = ["E402"]
 
 [tool.ruff.format]
 exclude = ["services/applications/*/configure_*.py"]
