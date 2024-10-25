@@ -85,7 +85,9 @@
                         </a>
                     </li>
                 </ul>
-                <button class="button is-dark m-3" style="background-color: #417890;">Start Interactive Session</button>
+                <a href="http://localhost:12004/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true" target="_blank">
+                    <button class="button is-dark m-3" style="background-color: #417890;">Start Interactive Session</button>
+                </a>
             </div>
             `;
         } 
