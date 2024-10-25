@@ -16,6 +16,7 @@ However, there will be an initial period of stabilisation where this is not adhe
 
 ### New Features
 
+- Implemented persistence of imported data files and associated metadata. ([#352](https://github.com/QCrBox/QCrBox/issues/352))
 
 ### Enhancements
 
