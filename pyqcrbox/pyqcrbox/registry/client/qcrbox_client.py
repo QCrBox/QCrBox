@@ -124,7 +124,9 @@ class QCrBoxClient(QCrBoxServerClientBase):
         try:
             cmd = self.get_executable_command(msg.command_name)
             logger.debug(f"Executing command in working dir cwd={self.working_dir!r}")
-            calc = await cmd.execute_in_background(**msg.arguments, _calculation_id=msg.calculation_id, _cwd=self.working_dir)
+            calc = await cmd.execute_in_background(
+                **msg.arguments, _calculation_id=msg.calculation_id, _cwd=self.working_dir
+            )
             if not isinstance(calc, BaseCalculation):
                 raise RuntimeError("Command execution did not return a calculation object.")
         except Exception as exc:
