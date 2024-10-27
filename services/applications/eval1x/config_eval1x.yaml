@@ -51,15 +51,15 @@ commands:
         custom_categories: ["iucr", "shelx"]
         invalidated_entries: []
       - name: "rmat_file_path"
-        dtype: "QCrBox.input_file"
+        dtype: "QCrBox.input_path"
         default_value: None
         description: "Path to the rmat file or the CIF file containing the rotation matrix information"
       - name: "beamstop_file_path"
-        dtype: "QCrBox.input_file"
+        dtype: "QCrBox.input_path"
         default_value: None
         description: "Path to the Eval .vic file containing the beamstop information"
       - name: "detalign_file_path"
-        dtype: "QCrBox.input_file"
+        dtype: "QCrBox.input_path"
         default_value: None
         description: "Path to the Eval .vic file containing the detector alignment information"
       - name: "maximum_res"

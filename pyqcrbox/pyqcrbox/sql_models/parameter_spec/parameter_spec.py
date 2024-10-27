@@ -7,7 +7,7 @@ from pydantic import Field, Tag, TypeAdapter
 from .builtin_parameter_types import BoolParameterSpec, FloatParameterSpec, IntParameterSpec, StrParameterSpec
 from .filesystem_path_parameters import (
     FolderPathParameterSpec,
-    GenericInputFileParameterSpec,
+    GenericInputPathParameterSpec,
     GenericOutputFileParameterSpec,
     InputCifParameterSpec,
     OutputCifParameterSpec,
@@ -29,7 +29,7 @@ ParameterSpecTaggedUnion = Union[
     # File/directory types with QCrBox-specific logic
     #
     Annotated[InputCifParameterSpec, Tag("QCrBox.input_cif")],
-    Annotated[GenericInputFileParameterSpec, Tag("QCrBox.input_file")],
+    Annotated[GenericInputPathParameterSpec, Tag("QCrBox.input_path")],
     Annotated[OutputCifParameterSpec, Tag("QCrBox.output_cif")],
     Annotated[GenericOutputFileParameterSpec, Tag("QCrBox.output_file")],
     Annotated[WorkCifParameterSpec, Tag("QCrBox.work_cif")],

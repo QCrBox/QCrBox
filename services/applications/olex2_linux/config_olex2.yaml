@@ -137,7 +137,7 @@ commands:
         custom_categories: ["iucr", "shelx"]
         invalidated_entries: ["_shelx_.*"]
       - name: "tsc_path"
-        dtype: "QCrBox.input_file"
+        dtype: "QCrBox.input_path"
         description: "Path to the TSC file to use."
       - name: "ls_cycles"
         dtype: int
@@ -172,7 +172,7 @@ commands:
         custom_categories: ["iucr", "shelx"]
         invalidated_entries: ["_shelx_.*"]
       - name: "cmd_file_path"
-        dtype: "QCrBox.input_file"
+        dtype: "QCrBox.input_path"
         description: "Path to the file containing the commands to run."
 
 cif_entry_sets:
