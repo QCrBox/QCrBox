@@ -7,7 +7,7 @@ __all__ = []
 
 
 class ImplementedAs(str, Enum):
-    cli = "cli_command"
+    cli_command = "cli_command"
     python_callable = "python_callable"
     interactive = "interactive"
 

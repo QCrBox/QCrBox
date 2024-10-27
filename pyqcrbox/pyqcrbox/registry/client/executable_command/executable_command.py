@@ -16,7 +16,7 @@ def ExecutableCommand(cmd_spec: "CommandSpecDiscriminatedUnion"):
     match cmd_spec.implemented_as:
         case ImplementedAs.python_callable:
             return PythonCallable(cmd_spec)
-        case ImplementedAs.cli:
+        case ImplementedAs.cli_command:
             return CLICommand(cmd_spec)
         case ImplementedAs.interactive:
             return InteractiveCommand(cmd_spec)
