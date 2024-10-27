@@ -10,6 +10,7 @@ class ImplementedAs(str, Enum):
     cli_command = "cli_command"
     python_callable = "python_callable"
     interactive = "interactive"
+    interactive_session = "interactive_session"
 
 
 class BaseCommandSpec(QCrBoxPydanticBaseModel):
@@ -31,6 +32,10 @@ class BaseCommandSpec(QCrBoxPydanticBaseModel):
     @property
     def is_interactive(self) -> bool:
         return self.implemented_as == ImplementedAs.interactive
+
+    @property
+    def is_interactive_session(self) -> bool:
+        return self.implemented_as == ImplementedAs.interactive_session
 
     @property
     def parameter_default_values(self):
