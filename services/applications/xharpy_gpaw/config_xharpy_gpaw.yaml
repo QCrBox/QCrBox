@@ -22,7 +22,7 @@ commands:
         required_entries: ["_space_group_symop_operation_xyz"]
         merge_su: True
       - name: "output_tsc_path"
-        dtype: "QCrBox.output_file"
+        dtype: "QCrBox.output_path"
         default_value: None
         description: "Path to save the TSC file to after calculating the atomic form factors"
       - name: "functional"

@@ -31,7 +31,7 @@ commands:
         custom_categories: ["iucr", "shelx"]
         output_block: "0" # select first block from output cif file (the default)
       - name: "parameter_json_path"
-        dtype: "QCrBox.output_file"
+        dtype: "QCrBox.output_path"
         description: "Path to the JSON file to save the parameters for recreating the interactive result."
       - name: "parameter_folder"
         dtype: "QCrBox.folder_path"
@@ -74,7 +74,7 @@ commands:
           custom_categories: ["iucr", "shelx"]
           output_block: "0" # select first block from output cif file (the default)
         - name: "parameter_json_path"
-          dtype: "QCrBox.output_file"
+          dtype: "QCrBox.output_path"
           description: "Path to the JSON file to load the parameters from for recreating the interactive result."
         - name: "parameter_folder"
           dtype: "QCrBox.folder_path"

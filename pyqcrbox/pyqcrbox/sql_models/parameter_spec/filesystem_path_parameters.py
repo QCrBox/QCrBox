@@ -22,8 +22,8 @@ class GenericInputPathParameterSpec(BaseFilesystemPathParameterSpec):
     dtype: Literal["QCrBox.input_path"]
 
 
-class GenericOutputFileParameterSpec(BaseFilesystemPathParameterSpec):
-    dtype: Literal["QCrBox.output_file"]
+class GenericOutputPathParameterSpec(BaseFilesystemPathParameterSpec):
+    dtype: Literal["QCrBox.output_path"]
 
 
 class FolderPathParameterSpec(BaseFilesystemPathParameterSpec):

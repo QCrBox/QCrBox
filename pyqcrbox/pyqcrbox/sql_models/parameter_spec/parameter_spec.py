@@ -8,7 +8,7 @@ from .builtin_parameter_types import BoolParameterSpec, FloatParameterSpec, IntP
 from .filesystem_path_parameters import (
     FolderPathParameterSpec,
     GenericInputPathParameterSpec,
-    GenericOutputFileParameterSpec,
+    GenericOutputPathParameterSpec,
     InputCifParameterSpec,
     OutputCifParameterSpec,
     WorkCifParameterSpec,
@@ -31,7 +31,7 @@ ParameterSpecTaggedUnion = Union[
     Annotated[InputCifParameterSpec, Tag("QCrBox.input_cif")],
     Annotated[GenericInputPathParameterSpec, Tag("QCrBox.input_path")],
     Annotated[OutputCifParameterSpec, Tag("QCrBox.output_cif")],
-    Annotated[GenericOutputFileParameterSpec, Tag("QCrBox.output_file")],
+    Annotated[GenericOutputPathParameterSpec, Tag("QCrBox.output_path")],
     Annotated[WorkCifParameterSpec, Tag("QCrBox.work_cif")],
     Annotated[FolderPathParameterSpec, Tag("QCrBox.folder_path")],
 ]
