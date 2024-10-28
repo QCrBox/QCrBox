@@ -1,0 +1,30 @@
+{#def datafile_name="" #}
+<div id="data-step">
+    <div style="display: inline-flex; align-items: center;">
+        <button class="button">
+            <span class="icon">
+                <i id='processed_datafile-square' class="ph-fill ph-square" style="color: #000000; font-size: 3em;"></i>
+            </span>
+        </button>
+        <div style="width: 100px; height: 3px; background-color: #417890; margin: 0 10px;"></div>
+        <div id="datafile-text" class="box" style="border: 2px solid #417890; padding: 10px;">{{ datafile_name}}</div>
+    </div>
+    <div style="width: 3px; height: 100px; background-color: #417890; position: relative; left: 17px"></div>
+</div>
+
+<div id="start-button" hx-swap-oob="outerHTML">
+    <button 
+        class="button is-dark m-3" style="background-color: #417890;" 
+        hx-post="/views/start_session"
+        hx-target="#stop-button"
+        hx-swap="innerHTML"
+        onclick="openOlexTab()">
+        Start Interactive Session
+    </button>
+</div>
+
+<button id="run-command-triangle-button" hx-swap-oob="outerHTML" class="button is-ghost" style="transform: rotate(180deg);">
+    <span class="icon">
+        <i id="run-command-triangle" class="ph-fill ph-triangle" style="color: #000000; font-size: 3em;"></i>
+    </span>
+</button>

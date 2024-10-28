@@ -67,7 +67,7 @@ async def handle_dataset_upload(
     return render("DatasetUploadResponse", dataset_info=dataset_info, applications=applications)
 
 
-@get(path="/start_session")
+@post(path="/start_session")
 async def start_interactive_session() -> Response:
     return render("StartSessionResponse")
 
@@ -75,6 +75,12 @@ async def start_interactive_session() -> Response:
 @get(path="/view_start_session_button")
 async def view_interactive_session_button() -> Response:
     return render("StartInteractiveSessionButton")
+
+
+@post(path="/close_session")
+async def close_session() -> Response:
+    datafile_name = "processed_file.cif"
+    return render("StopSessionResponse", datafile_name=datafile_name)
 
 
 views_router = Router(
@@ -88,5 +94,6 @@ views_router = Router(
         get_command_details,
         start_interactive_session,
         view_interactive_session_button,
+        close_session,
     ],
 )
