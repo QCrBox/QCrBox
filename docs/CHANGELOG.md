@@ -28,6 +28,8 @@ However, there will be an initial period of stabilisation where this is not adhe
 
 ### Development
 
+- Added dummy GUI application for testing of interactive sessions. ([#364](https://github.com/QCrBox/QCrBox/issues/364))
+
 
 ### Documentation
 
