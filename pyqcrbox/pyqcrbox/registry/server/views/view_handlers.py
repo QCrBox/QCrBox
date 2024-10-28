@@ -77,6 +77,12 @@ async def view_interactive_session_button() -> Response:
     return render("StartInteractiveSessionButton")
 
 
+@get(path="/data_step")
+async def serve_next_data_step() -> Response:
+    datafile_name = "processed_file.cif"
+    return render("DataStep", datafile_name=datafile_name)
+
+
 views_router = Router(
     path="/views",
     route_handlers=[
@@ -88,5 +94,6 @@ views_router = Router(
         get_command_details,
         start_interactive_session,
         view_interactive_session_button,
+        serve_next_data_step,
     ],
 )

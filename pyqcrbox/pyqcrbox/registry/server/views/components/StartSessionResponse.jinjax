@@ -1,3 +1,8 @@
-<button class="button is-light m-3" onclick="closeVncTab()">
+<button 
+    class="button is-light m-3" 
+    onclick="closeVncTab()" 
+    hx-get="/views/data_step" 
+    hx-target="#data-step" 
+    hx-swap="outerHTML">
     Stop Interactive Session
 </button>

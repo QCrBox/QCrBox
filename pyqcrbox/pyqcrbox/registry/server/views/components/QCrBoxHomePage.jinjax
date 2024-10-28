@@ -17,6 +17,8 @@
             </div>
             <div id="run-command-step">
             </div>
+            <div id="data-step">
+            </div>
             
         </div>
 

@@ -1,0 +1,15 @@
+{#def datafile_name="" #}
+<div id="data-step" class="box mt-3" style="display: inline-flex; align-items: center;">
+    <span class="icon" style="margin-right: 10px;">
+        <button id="open-modal"
+                style="background-color: transparent; border: none; cursor: pointer;"
+                _="on click trigger showModal on #modal"
+        >
+            <i id='processed_datafile-square' class="ph-fill ph-square" style="color: #000000; font-size: 3em;"></i>
+        </button>
+    </span>
+    <div style="width: 100px; height: 3px; background-color: #417890; margin: 0 10px;"></div>
+    <div id="datafile-text" class="box m-3" style="border: 2px solid #417890; padding: 10px;">{{ datafile_name}}</div>
+</div>
+
+<i id="run-command-triangle" hx-swap-oob="outerHTML" class="ph-fill ph-triangle" style="color: #000000; font-size: 3em; transform: rotate(180deg);"></i>
