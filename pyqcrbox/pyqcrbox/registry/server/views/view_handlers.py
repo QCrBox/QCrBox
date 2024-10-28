@@ -67,6 +67,16 @@ async def handle_dataset_upload(
     return render("DatasetUploadResponse", dataset_info=dataset_info, applications=applications)
 
 
+@get(path="/start_session")
+async def start_interactive_session() -> Response:
+    return render("StartSessionResponse")
+
+
+@get(path="/view_start_session_button")
+async def view_interactive_session_button() -> Response:
+    return render("StartInteractiveSessionButton")
+
+
 views_router = Router(
     path="/views",
     route_handlers=[
@@ -76,5 +86,7 @@ views_router = Router(
         handle_data_file_upload,
         handle_dataset_upload,
         get_command_details,
+        start_interactive_session,
+        view_interactive_session_button,
     ],
 )

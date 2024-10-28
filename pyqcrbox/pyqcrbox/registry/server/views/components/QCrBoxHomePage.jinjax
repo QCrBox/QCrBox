@@ -21,8 +21,14 @@
         </div>
 
         <div class="column">
-            <div id="metadata" class="box mt-3" style="border: 2px solid #417890; padding: 10px;">
-                Information about the data file.
+            <div class="box mt-3" style="border: 2px solid #417890; padding: 10px;">
+                <div id="metadata">
+                    Information about the data file.
+                </div>
+                <div id="start-button">
+                </div>
+                <div id="stop-button">
+                </div>
             </div>
         </div>
     </div>
@@ -50,3 +56,19 @@
     </div>
 
 </MainLayout>
+
+<script>
+    let olexTab; // Variable to store the reference to the opened tab
+
+    function openOlexTab() {
+        // Open the URL in a new tab and store the reference
+        olexTab = window.open("http://localhost:12004/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true", '_blank');
+    }
+
+    function closeVncTab() {
+        // Close the tab if it's open
+        if (olexTab && !olexTab.closed) {
+            olexTab.close();
+        }
+    }
+</script>
