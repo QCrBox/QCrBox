@@ -15,5 +15,7 @@
 </div>
 
 <button id="run-command-triangle-button" hx-swap-oob="outerHTML" class="button is-ghost is-loading" style="transform: rotate(180deg);">
-    <i id="run-command-triangle" class="ph-fill ph-triangle" style="color: #8A8A8A; font-size: 3em;"></i>
+    <span class="icon">
+        <i id="run-command-triangle" class="ph-fill ph-triangle" style="color: #8A8A8A; font-size: 3em;"></i>
+    </span>
 </button>

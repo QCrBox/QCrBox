@@ -4,7 +4,7 @@
      hx-encoding="multipart/form-data"
      hx-post="/views/datasets/new"
      hx-target="#datafile-text"
-     hx-swap="outerHTML"
+     hx-swap="innerHTML"
      hx-on::after-request="this.reset()"
      _="on htmx:afterRequest trigger closeModal then set #datafile-square's *color to '#000000'"
   >
