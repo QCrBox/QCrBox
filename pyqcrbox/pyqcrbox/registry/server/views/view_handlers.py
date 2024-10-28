@@ -80,7 +80,7 @@ async def view_interactive_session_button() -> Response:
 @post(path="/close_session")
 async def close_session() -> Response:
     datafile_name = "processed_file.cif"
-    return render("DataStep", datafile_name=datafile_name)
+    return render("StopSessionResponse", datafile_name=datafile_name)
 
 
 views_router = Router(

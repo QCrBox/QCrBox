@@ -12,4 +12,17 @@
     <div id="datafile-text" class="box m-3" style="border: 2px solid #417890; padding: 10px;">{{ datafile_name}}</div>
 </div>
 
-<i id="run-command-triangle" hx-swap-oob="outerHTML" class="ph-fill ph-triangle" style="color: #000000; font-size: 3em; transform: rotate(180deg);"></i>
+<div id="start-button" hx-swap-oob="outerHTML">
+    <button 
+        class="button is-dark m-3" style="background-color: #417890;" 
+        hx-post="/views/start_session"
+        hx-target="#stop-button"
+        hx-swap="innerHTML"
+        onclick="openOlexTab()">
+        Start Interactive Session
+    </button>
+</div>
+
+<button id="run-command-triangle-button" hx-swap-oob="outerHTML" class="button is-ghost" style="transform: rotate(180deg);">
+    <i id="run-command-triangle" class="ph-fill ph-triangle" style="color: #000000; font-size: 3em;"></i>
+</button>
