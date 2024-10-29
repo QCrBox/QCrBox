@@ -23,6 +23,7 @@ dependencies = [
     "pydantic",
     "pydantic-settings",
     "rich",
+    "setuptools_scm",
     "sqlmodel",
     "svcs",
     "stamina",
@@ -42,7 +43,6 @@ dev = [
     "requests",
     "reuse",
     "ruff",
-    "setuptools_scm",
     #
     # linting
     "import-linter",
