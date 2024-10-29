@@ -18,6 +18,7 @@ _known_dtypes = {
     "QCrBox.folder_path": str,
     "QCrBox.input_path": str,
     "QCrBox.output_path": str,
+    "QCrBox.data_file": str,
 }
 
 

@@ -11,6 +11,7 @@ __all__ = [
     "GenericInputPathParameterSpec",
     "OutputCifParameterSpec",
     "WorkCifParameterSpec",
+    "DataFileParameterSpec",
 ]
 
 
@@ -28,6 +29,10 @@ class GenericOutputPathParameterSpec(BaseFilesystemPathParameterSpec):
 
 class FolderPathParameterSpec(BaseFilesystemPathParameterSpec):
     dtype: Literal["QCrBox.folder_path"]
+
+
+class DataFileParameterSpec(BaseFilesystemPathParameterSpec):
+    dtype: Literal["QCrBox.data_file"]
 
 
 class BaseCifFileParameterSpec(BaseFilesystemPathParameterSpec):
