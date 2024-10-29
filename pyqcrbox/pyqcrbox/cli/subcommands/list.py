@@ -205,3 +205,22 @@ def list_containers(application_id: Optional[int], update_status: bool):
     )  # we're dropping column 'routing_key__registry_to_application'
     data = [pretty_print_timestamp("registered_at")(extract_columns(cols_to_print)(row)) for row in r.json()]
     click.echo(tabulate(data, headers="keys", tablefmt="simple"))
+
+
+@list_qcrbox_resources.command(name="calculations")
+def list_calculations():
+    """
+    List calculations.
+    """
+    r = run_request_against_registry_api("/calculations", params={})
+    assert r.status_code == 200, "Error retrieving calculations from server"
+    cols_to_print = (
+        "calculation_id",
+        "application_slug",
+        "application_version",
+        "command_name",
+        "arguments",
+        "status",
+    )
+    data = [extract_columns(cols_to_print)(row) for row in r.json()]
+    click.echo(tabulate(data, headers="keys", tablefmt="simple"))

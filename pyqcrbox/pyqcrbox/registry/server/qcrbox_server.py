@@ -4,8 +4,9 @@ from typing import Any
 
 import nats.js.errors
 from faststream import Context
-from litestar import Litestar
+from litestar import Litestar, MediaType, get
 from litestar.openapi import OpenAPIConfig
+from litestar.response import Redirect
 from litestar.static_files import create_static_files_router
 from pydantic import BaseModel
 from sqlmodel import select
@@ -34,6 +35,11 @@ class CalculationDetails(BaseModel):
     command_name: str
     arguments: dict[str, Any]
     executing_client: ExecutingClientDetails | None = None
+
+
+@get(path="/", media_type=MediaType.HTML)
+def web_root_handler() -> Redirect:
+    return Redirect(path="/views/index")
 
 
 class QCrBoxServer(QCrBoxServerClientBase):
@@ -188,6 +194,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
                 static_files_router,
                 api_router,
                 views_router,
+                web_root_handler,
             ],
             lifespan=[self.lifespan_context],
             debug=True,

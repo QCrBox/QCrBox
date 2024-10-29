@@ -1,0 +1,8 @@
+<button 
+    class="button is-dark m-3" style="background-color: #417890;" 
+    hx-post="/views/start_session"
+    hx-target="#stop-button"
+    hx-swap="innerHTML"
+    onclick="openOlexTab()">
+    Start Interactive Session
+</button>

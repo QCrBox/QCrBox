@@ -1,12 +1,11 @@
 # SPDX-License-Identifier: MPL-2.0
 
-import functools
-import shutil
 import subprocess
 import textwrap
 from pathlib import Path
 from typing import Optional, TypeVar
 
+import setuptools_scm
 from git import InvalidGitRepositoryError, Repo
 
 # Type alias
@@ -15,25 +14,11 @@ PathLike = TypeVar("PathLike", str, Path)
 __all__ = ["get_current_pyqcrbox_version", "get_repo_root"]
 
 
-@functools.lru_cache(maxsize=1)
 def get_current_pyqcrbox_version() -> str:
     """
     Return the current version of the 'pyqcrbox' module.
     """
-    repo_root = get_repo_root()
-
-    hatch_executable_name = "hatch"
-    hatch_executable = shutil.which(hatch_executable_name)
-    if hatch_executable is None:
-        raise FileNotFoundError(f"Could not find executable: '{hatch_executable_name}'")
-
-    proc = subprocess.run(
-        [hatch_executable, "--no-color", "version"],
-        cwd=repo_root.joinpath("pyqcrbox"),
-        capture_output=True,
-    )
-    proc.check_returncode()
-    return proc.stdout.strip().decode()
+    return setuptools_scm.get_version(root=get_repo_root())
 
 
 def get_repo_root(path: Optional[PathLike] = None):

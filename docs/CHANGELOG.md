@@ -16,6 +16,30 @@ However, there will be an initial period of stabilisation where this is not adhe
 
 ### New Features
 
+- Implemented persistence of imported data files and associated metadata. ([#352](https://github.com/QCrBox/QCrBox/issues/352))
+
+### Enhancements
+
+- Added template for pull requests. ([#356](https://github.com/QCrBox/QCrBox/issues/356))
+
+### Issues Fixed
+
+- Fixed an error when running `qcb build`. ([#335](https://github.com/QCrBox/QCrBox/issues/335))
+- Fixed missing dependency, leading to startup errors. ([#368](https://github.com/QCrBox/QCrBox/issues/368))
+
+### Development
+
+- Added dummy GUI application for testing of interactive sessions. ([#364](https://github.com/QCrBox/QCrBox/issues/364))
+
+
+### Documentation
+
+
+
+## [v0.0.2]
+
+### New Features
+
 - Added Traefik as a dynamic reverse proxy. ([#225](https://github.com/QCrBox/QCrBox/issues/225))
 - Added Devbox configuration to enable reproducible, automated setup. ([#258](https://github.com/QCrBox/QCrBox/issues/258))
 - Added script for a guided, automated installation of the QCrBox development environment.
@@ -32,8 +56,8 @@ However, there will be an initial period of stabilisation where this is not adhe
 ### Issues Fixed
 
 - Browser windows now open correctly under WSL. ([#274](https://github.com/QCrBox/QCrBox/issues/274)
+- Fixed a build issue under WSL. ([#335](https://github.com/QCrBox/QCrBox/issues/335))
 
-### Development
 
 ### Documentation
 
@@ -94,5 +118,6 @@ However, there will be an initial period of stabilisation where this is not adhe
 - The folder structure in `qcrbox/cli/subcommands` has been simplified by removing an extra level of subfolders. ([#90](https://github.com/QCrBox/QCrBox/issues/90))
 
 
-[unreleased]: https://github.com/QCrBox/QCrBox/compare/v0.0.1...master
+[unreleased]: https://github.com/QCrBox/QCrBox/compare/v0.0.2...master
+[v0.0.2]: https://github.com/QCrBox/QCrBox/compare/v0.0.1...v0.0.2
 [v0.0.1]: https://github.com/QCrBox/QCrBox/compare/initial_commit...v0.0.1

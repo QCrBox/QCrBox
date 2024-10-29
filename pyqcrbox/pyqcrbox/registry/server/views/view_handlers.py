@@ -22,9 +22,9 @@ def render(*args, **kwargs) -> Response:
     return Response(content=rendered_content, media_type=MediaType.HTML)
 
 
-@get(path="/", media_type=MediaType.HTML)
-async def views_root_handler() -> str:
-    return "<html><h1>Hello world!</h1></html>"
+@get(path="/index", media_type=MediaType.HTML)
+async def serve_qcrbox_homepage() -> Response:
+    return render("QCrBoxHomePage")
 
 
 @get(path="/applications")
@@ -50,18 +50,50 @@ async def serve_data_files_page() -> Response:
 
 
 @post(path="/data_files/upload", media_type=MediaType.TEXT)
-async def handle_data_file_upload(data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)]) -> str:
+async def handle_data_file_upload(
+    data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)],
+) -> Response:
     _qcrbox_data_file_id = await api_helpers._import_data_file(data)
     return render("DataFilesList", data_files=await api_helpers._get_data_files())
+
+
+@post(path="/datasets/new", media_type=MediaType.TEXT)
+async def handle_dataset_upload(
+    data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)],
+) -> Response:
+    dataset_id = await api_helpers._import_dataset(data)
+    dataset_info = await api_helpers._get_dataset_info(dataset_id)
+    applications = api_helpers._retrieve_applications()
+    return render("DatasetUploadResponse", dataset_info=dataset_info, applications=applications)
+
+
+@post(path="/start_session")
+async def start_interactive_session() -> Response:
+    return render("StartSessionResponse")
+
+
+@get(path="/view_start_session_button")
+async def view_interactive_session_button() -> Response:
+    return render("StartInteractiveSessionButton")
+
+
+@post(path="/close_session")
+async def close_session() -> Response:
+    datafile_name = "processed_file.cif"
+    return render("StopSessionResponse", datafile_name=datafile_name)
 
 
 views_router = Router(
     path="/views",
     route_handlers=[
-        views_root_handler,
+        serve_qcrbox_homepage,
         serve_applications_page,
         serve_data_files_page,
         handle_data_file_upload,
+        handle_dataset_upload,
         get_command_details,
+        start_interactive_session,
+        view_interactive_session_button,
+        close_session,
     ],
 )

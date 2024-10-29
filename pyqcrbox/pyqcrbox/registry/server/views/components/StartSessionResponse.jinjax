@@ -1,0 +1,21 @@
+<button 
+    class="button is-light m-3" 
+    onclick="closeVncTab()" 
+    hx-post="/views/close_session" 
+    hx-target="#data-step" 
+    hx-swap="outerHTML">
+    Stop Interactive Session
+</button>
+
+<div id="start-button" hx-swap-oob="outerHTML">
+    <button 
+        class="button is-dark m-3 is-loading" style="background-color: #417890;">
+        Start Interactive Session
+    </button>
+</div>
+
+<button id="run-command-triangle-button" hx-swap-oob="outerHTML" class="button is-ghost is-loading" style="transform: rotate(180deg);">
+    <span class="icon">
+        <i id="run-command-triangle" class="ph-fill ph-triangle" style="color: #8A8A8A; font-size: 3em;"></i>
+    </span>
+</button>

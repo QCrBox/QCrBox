@@ -3,9 +3,9 @@
   display: none;
 }
 
-.list:not(:has(div.list-item))::after {
+/* .list:not(:has(div.list-item))::after {
   content: "No data files present.";
-}
+} */
 
 .filename {
   background-color: white;

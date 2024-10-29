@@ -1,0 +1,4 @@
+application    version    cmd_name         parameters
+-------------  ---------  ---------------  ----------------------
+dummy_cli      0.1.0      greet_and_sleep  ['name', 'duration']
+dummy_cli      0.1.0      sample_cmd       ['msg', 'some_number']

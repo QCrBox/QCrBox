@@ -8,7 +8,7 @@ from uuid import uuid4
 
 from pyqcrbox.logging import logger
 
-__all__ = ["generate_correlation_id", "generate_data_file_id", "generate_private_routing_key"]
+__all__ = ["generate_correlation_id", "generate_data_file_id", "generate_dataset_id", "generate_private_routing_key"]
 
 
 def generate_private_routing_key() -> str:
@@ -32,6 +32,12 @@ def generate_calculation_id() -> str:
 def generate_data_file_id() -> str:
     result = create_unique_id(prefix="qcrbox_df_")
     logger.debug(f"Generated data file id: {result}")
+    return result
+
+
+def generate_dataset_id() -> str:
+    result = create_unique_id(prefix="qcrbox_ds_")
+    logger.debug(f"Generated dataset id: {result}")
     return result
 
 
