@@ -1,9 +1,9 @@
 from typing import Literal
 
-from .base_parameter_spec import BaseParameterSpec
-from ..cif_entry_set import OneOfCifEntrySpec, CifEntryLiteral
 from pydantic import validator
 
+from ..cif_entry_set import CifEntryLiteral, OneOfCifEntrySpec
+from .base_parameter_spec import BaseParameterSpec
 
 __all__ = [
     "FolderPathParameterSpec",
@@ -31,8 +31,8 @@ class FolderPathParameterSpec(BaseFilesystemPathParameterSpec):
 
 
 class BaseCifFileParameterSpec(BaseFilesystemPathParameterSpec):
-    required_entries: list[CifEntryLiteral|OneOfCifEntrySpec] = []
-    optional_entries: list[CifEntryLiteral|OneOfCifEntrySpec] = []
+    required_entries: list[CifEntryLiteral | OneOfCifEntrySpec] = []
+    optional_entries: list[CifEntryLiteral | OneOfCifEntrySpec] = []
     required_entry_sets: list[str] = []
     optional_entry_sets: list[str] = []
     merge_su: bool = False

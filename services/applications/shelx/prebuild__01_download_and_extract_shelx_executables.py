@@ -7,9 +7,8 @@ from time import sleep
 from urllib.parse import urlparse
 
 import requests
-from requests.auth import HTTPBasicAuth
-
 from qcrbox.logging import logger
+from requests.auth import HTTPBasicAuth
 
 
 def load_shelx_executable_urls():
