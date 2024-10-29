@@ -73,6 +73,6 @@ class DataFileManager(ABC):
     async def create_dataset_from_data_file(self, data_file_id: str) -> str:
         dataset_id = generate_dataset_id()
         data_files = [await self.get_file_metadata(data_file_id)]
-        dataset_info = Dataset(dataset_id=dataset_id, data_files=data_files)
+        dataset_info = Dataset(dataset_id=dataset_id, data_files={f.filename: f for f in data_files})
         await self.store_dataset_info(dataset_info)
         return dataset_id
