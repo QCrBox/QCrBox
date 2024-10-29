@@ -7,7 +7,13 @@ from ..base import QCrBoxPydanticBaseModel
 
 SENTINEL_UNDEFINED = "<undefined>"
 
-_known_dtypes = {
+
+class DataFileParameter(QCrBoxPydanticBaseModel):
+    dataset_id: str
+    key: str
+
+
+_builtin_dtypes = {
     "str": str,
     "int": int,
     "float": float,
@@ -18,8 +24,13 @@ _known_dtypes = {
     "QCrBox.folder_path": str,
     "QCrBox.input_path": str,
     "QCrBox.output_path": str,
-    "QCrBox.data_file": str,
 }
+
+_custom_dtypes = {
+    "QCrBox.data_file": DataFileParameter,
+}
+
+_known_dtypes = _builtin_dtypes | _custom_dtypes
 
 
 def verify_dtype_is_a_known_type(v: str) -> str:
