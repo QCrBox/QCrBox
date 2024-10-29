@@ -25,6 +25,7 @@ However, there will be an initial period of stabilisation where this is not adhe
 ### Issues Fixed
 
 - Fixed an error when running `qcb build`. ([#335](https://github.com/QCrBox/QCrBox/issues/335))
+- Fixed missing dependency, leading to startup errors. ([#368](https://github.com/QCrBox/QCrBox/issues/368))
 
 ### Development
 
