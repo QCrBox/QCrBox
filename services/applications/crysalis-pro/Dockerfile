@@ -19,11 +19,10 @@ ENV WINEARCH=${WINEARCH}
 ENV QCRBOX_ROOT_DIR=${QCRBOX_ROOT_DIR}
 
 COPY --chown=${QCRBOX_USER}:${QCRBOX_USER} ./.idesktop ./.idesktop
-
-RUN gosu ${QCRBOX_USER} bash -x ${QCRBOX_ROOT_DIR}/run_crysalis_pro_setup_if_not_yet_installed.sh
-
 COPY configure_crysalis-pro.py ./
 COPY config_crysalis-pro.yaml ./
+
+RUN gosu ${QCRBOX_USER} bash -x ${QCRBOX_ROOT_DIR}/run_crysalis_pro_setup_if_not_yet_installed.sh
 
 ENV PATH="$PATH:/opt/crysalis-pro/bin/"
 

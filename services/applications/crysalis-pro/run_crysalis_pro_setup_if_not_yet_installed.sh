@@ -30,6 +30,8 @@ wine ${NEW_CRYSALIS_PRO_INSTALLER} /S /v/qn
 
 NEW_CRYSALIS_PRO_EXECUTABLE=$(find ${WINEPREFIX}/drive_c/Xcalibur/CrysAlisPro* -name pro.exe -print -quit || true)
 
+sed -i "s%BASH_REPLACED_CRYSALISPRO_PATH_PLACEHOLDER%${NEW_CRYSALIS_PRO_EXECUTABLE}%g" "config_crysalis-pro.yaml"
+
 wine ${NEW_CRYSALIS_PRO_EXECUTABLE} &
 
 until xdotool search --name "Choose*"
