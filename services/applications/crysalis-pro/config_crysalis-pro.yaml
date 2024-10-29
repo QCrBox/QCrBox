@@ -12,6 +12,10 @@ commands:
     implemented_as: "interactive"
     description: "Run CrysalisPro interactively"
     parameters:
+      - name: "input_folder"
+        dtype: "QCrBox.input_folder"
+        default_value: None
+        description: "Path to the directory containing all the necessary files (frames and other) for the CAP integration."
       - name: "par_path"
         dtype: "QCrBox.input_file"
         default_value: None
@@ -26,7 +30,7 @@ commands:
     interactive_lifecycle:
       run:
         implemented_as: "cli_command"
-        call_pattern: "wine /opt/wine_installations/wine_win64/drive_c/Xcalibur/CrysAlisPro171.43.48a/pro.exe {par_path}"
+        call_pattern: "wine /opt/wine_installations/wine_win64/drive_c/Xcalibur/CrysAlisPro171.44.48a/pro.exe {par_path}"
         used_basecommand_parameters: ["par_path"]
       finalise:
         implemented_as: "python_callable"

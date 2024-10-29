@@ -10,6 +10,7 @@ from .filesystem_path_parameters import (
     GenericInputFileParameterSpec,
     GenericOutputFileParameterSpec,
     InputCifParameterSpec,
+    InputFolderParameterSpec,
     OutputCifParameterSpec,
     WorkCifParameterSpec,
 )
@@ -34,6 +35,7 @@ ParameterSpecTaggedUnion = Union[
     Annotated[GenericOutputFileParameterSpec, Tag("QCrBox.output_file")],
     Annotated[WorkCifParameterSpec, Tag("QCrBox.work_cif")],
     Annotated[FolderPathParameterSpec, Tag("QCrBox.folder_path")],
+    Annotated[InputFolderParameterSpec, Tag("QCrBox.input_folder")],
 ]
 ParameterSpecDiscriminatedUnion = Annotated[ParameterSpecTaggedUnion, Field(discriminator="dtype")]
 
