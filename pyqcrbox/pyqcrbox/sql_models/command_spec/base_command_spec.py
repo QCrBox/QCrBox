@@ -40,3 +40,7 @@ class BaseCommandSpec(QCrBoxPydanticBaseModel):
     @property
     def parameter_default_values(self):
         return {param.name: param.default_value for param in self.parameters if not param.required}
+
+    def get_parameter_by_name(self, param_name) -> ParameterSpecDiscriminatedUnion:
+        # TODO: handle case where parameter is not found
+        return next((param for param in self.parameters if param.name == param_name))

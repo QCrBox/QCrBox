@@ -12,6 +12,7 @@ from pyqcrbox.helpers import generate_private_routing_key
 from pyqcrbox.registry.client.executable_command.base_calculation import BaseCalculation
 from pyqcrbox.registry.shared.calculation_status import update_calculation_status_in_nats_kv_NEW
 from pyqcrbox.sql_models import CalculationStatusDetails, CalculationStatusEnum
+from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import parse_parameter_default_as_its_dtype
 
 from ..shared import QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup
 from .api_endpoints import create_client_asgi_server
@@ -123,8 +124,21 @@ class QCrBoxClient(QCrBoxServerClientBase):
 
         try:
             cmd = self.get_executable_command(msg.command_name)
+
+            # Parse each argument in `msg.arguments` as the correct parameter type
+            # Steps:
+            #   - get the command spec and look up parameter types for each argument
+            #   - parse each argument as the correct type
+            parsed_args = {}
+            for param_name, value in msg.arguments.items():
+                logger.debug(f"Argument: {param_name!r} = {value!r}")
+                param_dtype_str = cmd.cmd_spec.get_parameter_by_name(param_name).dtype
+                parsed_args[param_name] = parse_parameter_default_as_its_dtype(value, param_dtype_str)
+
             logger.debug(f"Executing command in working dir cwd={self.working_dir!r}")
-            calc = await cmd.execute_in_background(**msg.arguments, _calculation_id=msg.calculation_id, _cwd=self.working_dir)
+            calc = await cmd.execute_in_background(
+                **parsed_args, _calculation_id=msg.calculation_id, _cwd=self.working_dir
+            )
             if not isinstance(calc, BaseCalculation):
                 raise RuntimeError("Command execution did not return a calculation object.")
         except Exception as exc:

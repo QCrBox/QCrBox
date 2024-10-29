@@ -1,7 +1,8 @@
 from typing import Annotated, Any
 
-# from pyqcrbox.logging import logger
 from pydantic import BeforeValidator, field_validator, model_validator
+
+from pyqcrbox.logging import logger
 
 from ..base import QCrBoxPydanticBaseModel
 
@@ -42,6 +43,19 @@ def verify_dtype_is_a_known_type(v: str) -> str:
 def parse_parameter_default_value_as_string(v: Any) -> str:
     # logger.debug(f"[DDD] convert_default_value_to_string_representation({v=!r})")
     return repr(v)
+
+
+def parse_parameter_default_as_its_dtype(v: Any, dtype_str) -> Any:
+    try:
+        if isinstance(v, dict):
+            result = _known_dtypes[dtype_str](**v)
+        else:
+            result = _known_dtypes[dtype_str](v)
+    except Exception as exc:
+        logger.warning(f"Could not convert default value to its declared type- leaving unchanged: {exc}")
+        result = v
+
+    return result
 
 
 DTypeAsStr = Annotated[str, BeforeValidator(verify_dtype_is_a_known_type)]
