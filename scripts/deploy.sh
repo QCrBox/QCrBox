@@ -3,7 +3,7 @@
 set -euo pipefail
 
 export QCRBOX_REPO=${QCRBOX_REPO:-"$(git rev-parse --show-toplevel)"}
-export QCRBOX_BRANCH=${QCRBX_BRANCH:-"dev"}
+export QCRBOX_BRANCH=${QCRBOX_BRANCH:-"dev"}
 export QCRBOX_COMPONENTS=${QCRBOX_COMPONENTS:-"olex2 crystal-explorer"}
 
 
