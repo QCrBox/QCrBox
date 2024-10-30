@@ -24,7 +24,7 @@
                 <select 
                     id="select-application" 
                     name="application" 
-                    hx-get="/views/view_start_session_button" 
+                    hx-get="/views/view_start_olex_session_button" 
                     hx-target="#start-button" 
                     hx-trigger="change">
                     <option value="" disabled selected hidden>Please select an application</option>

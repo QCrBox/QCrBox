@@ -67,29 +67,39 @@ async def handle_dataset_upload(
     return render("DatasetUploadResponse", dataset_info=dataset_info, applications=applications)
 
 
-@post(path="/start_session")
-async def start_interactive_session() -> Response:
-    return render("StartSessionResponse")
+@post(path="/start_olex_session")
+async def start_olex_interactive_session() -> Response:
+    return render("StartOlexSessionResponse")
 
 
-@get(path="/view_start_session_button")
-async def view_interactive_session_button() -> Response:
-    return render("StartInteractiveSessionButton")
+@get(path="/view_start_olex_session_button")
+async def view_olex_interactive_session_button() -> Response:
+    return render("StartOlexInteractiveSessionButton")
 
 
-@post(path="/close_session")
-async def close_session() -> Response:
+@post(path="/close_olex_session")
+async def close_olex_session() -> Response:
     datafile_name = "output.cif"
     processed_dataset_id = "example ID"
     processed_dataset_filetype = "example filetype"
     applications = api_helpers._retrieve_applications()
     return render(
-        "StopSessionResponse",
+        "StopOlexSessionResponse",
         datafile_name=datafile_name,
         processed_dataset_id=processed_dataset_id,
         processed_dataset_filetype=processed_dataset_filetype,
         applications=applications,
     )
+
+
+@get(path="/view_start_crystal_explorer_session_button")
+async def view_crystal_explorer_interactive_session_button() -> Response:
+    return render("StartCrystalExplorerButton")
+
+
+@post(path="/start_crystal_explorer_session")
+async def start_crystal_explorer_interactive_session() -> Response:
+    return render("StartOlexSessionResponse")
 
 
 views_router = Router(
@@ -101,8 +111,10 @@ views_router = Router(
         handle_data_file_upload,
         handle_dataset_upload,
         get_command_details,
-        start_interactive_session,
-        view_interactive_session_button,
-        close_session,
+        start_olex_interactive_session,
+        view_olex_interactive_session_button,
+        close_olex_session,
+        view_crystal_explorer_interactive_session_button,
+        start_crystal_explorer_interactive_session,
     ],
 )
