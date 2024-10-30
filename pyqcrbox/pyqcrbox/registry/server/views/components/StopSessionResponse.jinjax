@@ -1,4 +1,5 @@
-{#def datafile_name="" #}
+{#def datafile_name="", processed_dataset_id="", processed_dataset_filetype="", applications = [] #}
+
 <div id="data-step">
     <div style="display: inline-flex; align-items: center;">
         <button class="button">
@@ -28,3 +29,82 @@
         <i id="run-command-triangle" class="ph-fill ph-triangle" style="color: #000000; font-size: 3em;"></i>
     </span>
 </button>
+
+<div id="metadata" hx-swap-oob="outerHTML">
+    <ul>
+        <li>Dataset id: <code>{{ processed_dataset_id }}</code></li>
+        <li>File type: <code>{{ processed_dataset_filetype }}</code></li>
+    </ul>
+</div>
+<div id="start-button" hx-swap-oob="outerHTML">
+</div>
+<div id="stop-button" hx-swap-oob="outerHTML">
+</div>
+<div id="dataset-id" hx-swap-oob="outerHTML">
+    {{ processed_dataset_id }}
+</div>
+
+<div id="run-command-step-2" hx-swap-oob="outerHTML">
+    <div style="display: inline-flex; align-items: center;">
+        <button id="run-command-triangle-button-2" class="button is-ghost" style="transform: rotate(180deg);">
+            <span class="icon">
+                <i id="run-command-triangle-2" class="ph-fill ph-triangle" style="color: #8A8A8A; font-size: 3em;"></i>
+            </span>
+        </button>
+        <div style="width: 100px; height: 3px; background-color: #417890; margin: 0 10px;"></div>
+        <div class="box" style="border: 2px solid #417890; padding: 10px;">
+            <select 
+                id="select-application-2" 
+                name="application-2" 
+                hx-get="/views/view_start_session_button" 
+                hx-target="#start-button" 
+                hx-trigger="change">
+                <option value="" disabled selected hidden>Please select an application</option>
+                {% if applications %}
+                    {% for application in applications %}
+                        <option value="{{application.name}}"                     
+                        data-url="{{ application.url }}"
+                        data-version="{{ application.version }}"
+                        data-registered="{{ application.registered_at.strftime('%Y-%m-%d %H:%M:%S') }}">
+                            {{ application.name }}
+                        </option>
+                    {% endfor %}
+                {% else %}
+                    <option value="no_applications">No applications registered.</option>
+                {% endif %}
+            </select>
+        </div>
+    </div>
+    <div style="width: 3px; height: 100px; background-color: #417890; position: relative; left: 17px"></div>
+</div>
+
+<script>
+    // Update metadata when a selection is made
+    document.getElementById('select-application-2').addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex]; // Get the selected option
+        const metadataBox = document.getElementById('metadata');
+
+        // Get the details from the application attributes
+        const appName = selectedOption.value;
+        const appUrl = selectedOption.getAttribute('data-url');
+        const appVersion = selectedOption.getAttribute('data-version');
+        const appRegistered = selectedOption.getAttribute('data-registered');
+        
+        // If a valid application is selected, construct the HTML content
+        if (appName && appVersion && appRegistered) {
+            metadataBox.outerHTML = `
+            <div id="metadata">
+                <h3 class="title is-4">${appName}</h3>
+                <ul class="list" style="list-style-type: disc; padding-left: 20px;">
+                    <li>Version: ${appVersion}</li>
+                    <li>Date Registered: ${appRegistered}</li>
+                    <li>Website: <a href="${appUrl}" target="_blank" class="has-text-link">
+                            ${appName}
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            `;
+        } 
+    });
+</script>

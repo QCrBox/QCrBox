@@ -79,8 +79,17 @@ async def view_interactive_session_button() -> Response:
 
 @post(path="/close_session")
 async def close_session() -> Response:
-    datafile_name = "processed_file.cif"
-    return render("StopSessionResponse", datafile_name=datafile_name)
+    datafile_name = "output.cif"
+    processed_dataset_id = "example ID"
+    processed_dataset_filetype = "example filetype"
+    applications = api_helpers._retrieve_applications()
+    return render(
+        "StopSessionResponse",
+        datafile_name=datafile_name,
+        processed_dataset_id=processed_dataset_id,
+        processed_dataset_filetype=processed_dataset_filetype,
+        applications=applications,
+    )
 
 
 views_router = Router(
