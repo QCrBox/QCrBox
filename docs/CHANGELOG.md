@@ -29,6 +29,10 @@ However, there will be an initial period of stabilisation where this is not adhe
 - Fixed missing dependency, leading to startup errors. ([#368](https://github.com/QCrBox/QCrBox/issues/368))
 - Fixed a bug that prevented pre-build scripts from being run if the build is invoked from a subdirectory. ([#385](https://github.com/QCrBox/QCrBox/issues/385))
 
+### Other changes
+
+- By default, containers now listen on all interfaces rather than just localhost.
+
 ### Development
 
 - Added dummy GUI application for testing of interactive sessions. ([#364](https://github.com/QCrBox/QCrBox/issues/364))
