@@ -1,6 +1,7 @@
 import os
 import sys
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import Optional
 
 from faststream.nats import NatsBroker
@@ -31,6 +32,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         application_spec: sql_models.ApplicationSpec,
         client_id: str = "anonymous_client",
         private_routing_key: Optional[str] = None,
+        work_root_dir: Optional[Path] = None,
         # broker: Optional[RabbitBroker] = None,
         nats_broker: Optional[NatsBroker] = None,
         asgi_server: Optional[Litestar] = None,
@@ -40,8 +42,12 @@ class QCrBoxClient(QCrBoxServerClientBase):
         self.client_id = client_id
         self.private_routing_key = private_routing_key or generate_private_routing_key()
         # self.routing_key_command_invocation = application_spec.routing_key_command_invocation
+        self.work_root_dir = work_root_dir or self._create_work_root_dir()
         self._calculations: list[BaseCommand] = []
         self.status = ClientStatus(ClientStatusEnum.IDLE)
+
+    def _create_work_root_dir(self):
+        return TemporaryDirectory(prefix=f"work_root_{self.client_id}_", delete=False)
 
     @property
     def working_dir(self) -> Path:
