@@ -60,6 +60,18 @@ class DataFileManager(ABC):
     async def get_file_contents(self, data_file_id: str) -> bytes:
         return await self._retrieve_from_object_store("data_file_contents", data_file_id)
 
+    async def export_data_file(self, data_file_id: str, output_dir: str, output_filename: str | None = None) -> None:
+        file_contents = await self._retrieve_from_object_store("data_file_contents", data_file_id)
+        object_store_filename = (await self.get_file_metadata(data_file_id)).filename
+
+        output_dir = Path(output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        output_filename = output_filename or object_store_filename
+        output_path = output_dir / output_filename
+        with output_path.open("wb") as f:
+            f.write(file_contents)
+
     async def store_file_metadata(self, key: str, metadata: DataFileMetadata) -> None:
         await self._store_in_kv("data_file_metadata", key, metadata.model_dump_json().encode())
 

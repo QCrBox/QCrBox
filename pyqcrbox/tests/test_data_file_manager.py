@@ -42,3 +42,26 @@ async def test_list_existing_data_files(sample_cif_file):
     file1 = data_files[0]
     assert file1.qcrbox_file_id == qcrbox_file_id
     assert file1.filename == sample_cif_file.name
+
+
+@pytest.mark.anyio
+async def test_export_data_file(sample_cif_file, tmp_path):
+    """
+    Test that exporting a previously imported data file produces the expected file contents.
+    """
+    data_file_manager = await get_data_file_manager()
+
+    qcrbox_file_id = "qcrbox_data_file_001"
+    await data_file_manager.delete_data_file(qcrbox_file_id)
+    await data_file_manager.import_local_file(sample_cif_file, _qcrbox_file_id=qcrbox_file_id)
+
+    output_dir = tmp_path / "output"
+    output_filename = "output.cif"
+    await data_file_manager.export_data_file(qcrbox_file_id, output_dir, output_filename)
+
+    output_file_path = output_dir / output_filename
+    assert output_file_path.exists()
+
+    exported_file_contents = output_file_path.read_bytes()
+    original_file_contents = sample_cif_file.read_bytes()
+    assert exported_file_contents == original_file_contents
