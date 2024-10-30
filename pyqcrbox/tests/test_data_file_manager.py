@@ -11,11 +11,11 @@ async def test_import_of_local_file(sample_cif_file):
     data_file_manager = await get_data_file_manager()
 
     qcrbox_file_id = "qcrbox_data_file_001"
-    await data_file_manager.delete(qcrbox_file_id)
-    assert not await data_file_manager.exists(qcrbox_file_id)
+    await data_file_manager.delete_data_file(qcrbox_file_id)
+    assert not await data_file_manager.data_file_exists(qcrbox_file_id)
 
     await data_file_manager.import_local_file(sample_cif_file, _qcrbox_file_id=qcrbox_file_id)
-    assert await data_file_manager.exists(qcrbox_file_id)
+    assert await data_file_manager.data_file_exists(qcrbox_file_id)
 
     stored_file_contents = await data_file_manager.get_file_contents(qcrbox_file_id)
     actual_file_contents = sample_cif_file.read_bytes()
@@ -30,13 +30,13 @@ async def test_list_existing_data_files(sample_cif_file):
     data_file_manager = await get_data_file_manager()
 
     qcrbox_file_id = "qcrbox_data_file_001"
-    await data_file_manager.delete(qcrbox_file_id)
+    await data_file_manager.delete_data_file(qcrbox_file_id)
 
-    data_files = await data_file_manager.get_data_files()
+    data_files = await data_file_manager.get_data_files_metadata()
     assert len(data_files) == 0
 
     await data_file_manager.import_local_file(sample_cif_file, _qcrbox_file_id=qcrbox_file_id)
-    data_files = await data_file_manager.get_data_files()
+    data_files = await data_file_manager.get_data_files_metadata()
     assert len(data_files) == 1
 
     file1 = data_files[0]
