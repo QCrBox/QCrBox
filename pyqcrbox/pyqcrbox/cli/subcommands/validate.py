@@ -1,15 +1,13 @@
 # SPDX-License-Identifier: MPL-2.0
 import sys
 
+import click
 import pydantic
 import yaml
 
-from pathlib import Path
-
-import click
-
 from pyqcrbox.sql_models import ApplicationSpec
 from pyqcrbox.sql_models.command_spec import ImplementedAs
+
 from ..helpers import ClickCommandCls
 
 
@@ -71,7 +69,7 @@ def validate_application_spec(application_spec_file: click.Path, show_pydantic_e
 
         if show_pydantic_errors or not all_errors_recognised:
             click.echo()
-            click.echo(f"Original error:")
+            click.echo("Original error:")
             click.echo()
             click.echo(exc)
 
