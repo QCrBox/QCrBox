@@ -11,7 +11,8 @@ ENV QCRBOX__REGISTRY__SERVER__PORT="8000"
 
 ENV QCRBOX_APPLICATION_DISPLAY_NAME="Qcrbox Quality"
 
-RUN conda install -n qcrbox -c conda-forge plotly bokeh
+RUN micromamba install -n qcrbox -c conda-forge plotly bokeh numpy trimesh && \
+    micromamba clean --all --yes
 
 RUN rm -f /opt/qcrbox/.idesktop/default.lnk
 COPY --chown=qcrbox:qcrbox \

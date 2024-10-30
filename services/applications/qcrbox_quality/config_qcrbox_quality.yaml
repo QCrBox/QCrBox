@@ -57,5 +57,46 @@ commands:
         dtype: str
         description: "Output path of html snippet"
 
+  - name: "ortep_3d"
+    description: "Create a 3D ORTEP depiction of the contained structure"
+    implemented_as: "python_callable"
+    import_path: "qcrbox_quality_module"
+    parameters:
+      - name: "input_cif_path"
+        dtype: "QCrBox.input_cif"
+        required_entries: [
+          "_space_group_crystal_system",
+          "_space_group_symop_operation_xyz",
+          "_cell_length_a",
+          "_cell_length_b",
+          "_cell_length_c",
+          "_cell_angle_alpha",
+          "_cell_angle_beta",
+          "_cell_angle_gamma",
+          "_atom_site_label",
+          "_atom_site_type_symbol",
+          "_atom_site_fract_x",
+          "_atom_site_fract_y",
+          "_atom_site_fract_z",
+          "_atom_site_U_iso_or_equiv",
+          "_atom_site_adp_type"
+        ]
+        optional_entries: [
+          "_atom_site_disorder_assembly",
+          "_atom_site_disorder_group",
+          "_atom_site_aniso_label",
+          "_atom_site_aniso_U_11",
+          "_atom_site_aniso_U_22",
+          "_atom_site_aniso_U_33",
+          "_atom_site_aniso_U_23",
+          "_atom_site_aniso_U_13",
+          "_atom_site_aniso_U_12",
+          "_geom_bond_atom_site_label_1",
+          "_geom_bond_atom_site_label_2",
+          "_geom_bond_distance",
+          "_geom_bond_site_symmetry_2",
+          "_geom_bond_publ_flag"
+        ]
+
 
 qcrbox_yaml_spec_version: "0.1"
