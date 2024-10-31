@@ -103,9 +103,10 @@ def verify_command_exists(
             ).one()
         except sqlalchemy.exc.NoResultFound:
             error_msg = (
-                f"Command not found: {command_name} "
-                f"(application: {application_slug!r}, "
-                f"version: {application_version!r})"
+                f"Command or application not found: "
+                f"command={command_name!r}, "
+                f"application: {application_slug!r}, "
+                f"version: {application_version!r}"
             )
             logger.error(error_msg)
             raise ClientException(error_msg)
