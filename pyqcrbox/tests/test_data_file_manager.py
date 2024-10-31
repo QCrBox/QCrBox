@@ -57,11 +57,12 @@ async def test_export_data_file(sample_cif_file, tmp_path):
 
     output_dir = tmp_path / "output"
     output_filename = "output.cif"
-    await data_file_manager.export_data_file(qcrbox_file_id, output_dir, output_filename)
+    expected_output_file_path = output_dir / output_filename
 
-    output_file_path = output_dir / output_filename
-    assert output_file_path.exists()
+    exported_file_path = await data_file_manager.export_data_file(qcrbox_file_id, output_dir, output_filename)
+    assert exported_file_path.exists()
+    assert exported_file_path == expected_output_file_path
 
-    exported_file_contents = output_file_path.read_bytes()
     original_file_contents = sample_cif_file.read_bytes()
+    exported_file_contents = exported_file_path.read_bytes()
     assert exported_file_contents == original_file_contents
