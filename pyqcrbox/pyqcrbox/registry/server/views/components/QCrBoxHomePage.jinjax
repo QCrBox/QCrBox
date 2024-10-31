@@ -25,6 +25,8 @@
             </div>
             <div id="run-command-step-2">
             </div>
+            <div id="end-workflow-step">
+            </div>
             
         </div>
 

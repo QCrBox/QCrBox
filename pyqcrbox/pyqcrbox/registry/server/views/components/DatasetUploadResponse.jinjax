@@ -3,6 +3,7 @@
 {% if dataset_info.data_files | length == 1 %}
     <div id="datafile-text">{{ dataset_info.data_files[0].filename }}</div>
     <div id="metadata" hx-swap-oob="innerHTML">
+        <h3 class="title is-4">Dataset Metadata</h3>
         <ul>
             <li>Dataset id: <code>{{ dataset_info.dataset_id }}</code></li>
             <li>File type: <code>{{ dataset_info.data_files[0].filetype }}</code></li>

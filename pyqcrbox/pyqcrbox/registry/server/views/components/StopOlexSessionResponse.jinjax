@@ -31,6 +31,7 @@
 </button>
 
 <div id="metadata" hx-swap-oob="outerHTML">
+    <h3 class="title is-4">Processed Dataset Metadata</h3>
     <ul>
         <li>Dataset id: <code>{{ processed_dataset_id }}</code></li>
         <li>File type: <code>{{ processed_dataset_filetype }}</code></li>

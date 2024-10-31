@@ -99,7 +99,12 @@ async def view_crystal_explorer_interactive_session_button() -> Response:
 
 @post(path="/start_crystal_explorer_session")
 async def start_crystal_explorer_interactive_session() -> Response:
-    return render("StartOlexSessionResponse")
+    return render("StartCrystalExplorerSessionResponse")
+
+
+@post(path="/close_crystal_explorer_session")
+async def close_crystal_explorer_session() -> Response:
+    return render("StopCrystalExplorerSessionResponse")
 
 
 views_router = Router(
@@ -116,5 +121,6 @@ views_router = Router(
         close_olex_session,
         view_crystal_explorer_interactive_session_button,
         start_crystal_explorer_interactive_session,
+        close_crystal_explorer_session,
     ],
 )

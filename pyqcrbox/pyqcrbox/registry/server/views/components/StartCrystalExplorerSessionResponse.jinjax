@@ -1,8 +1,8 @@
 <button 
     class="button is-light m-3" 
     onclick="closeCrystalExplorerTab()" 
-    hx-post="/views/close_olex_session" 
-    hx-target="#data-step" 
+    hx-post="/views/close_crystal_explorer_session" 
+    hx-target="#end-workflow-step" 
     hx-swap="outerHTML">
     Stop Interactive Session
 </button>
