@@ -90,7 +90,12 @@ async def start_interactive_session() -> Response:
 
 
 @get(path="/view_start_session_button")
-async def view_interactive_session_button() -> Response:
+async def view_interactive_session_button(
+    data_file_id: str, application_slug: str, application_version: str
+) -> Response:
+    from pyqcrbox.logging import logger
+
+    logger.debug(f"{data_file_id=}, {application_slug=}, {application_version=}")
     return render("StartInteractiveSessionButton")
 
 

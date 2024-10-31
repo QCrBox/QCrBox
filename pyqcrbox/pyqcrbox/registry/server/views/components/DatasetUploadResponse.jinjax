@@ -29,10 +29,12 @@
                     <option value="" disabled selected hidden>Please select an application</option>
                     {% if applications %}
                         {% for application in applications %}
-                            <option value="{{application.name}}"                     
-                            data-url="{{ application.url }}"
-                            data-version="{{ application.version }}"
-                            data-registered="{{ application.registered_at.strftime('%Y-%m-%d %H:%M:%S') }}">
+                            <option value="{{application.name}}"
+                                    data-name="{{ application.name }}"
+                                    data-slug="{{ application.slug }}"
+                                    data-version="{{ application.version }}"
+                                    data-url="{{ application.url }}"
+                                    data-registered="{{ application.registered_at.strftime('%Y-%m-%d %H:%M:%S') }}">
                                 {{ application.name }}
                             </option>
                         {% endfor %}
@@ -78,7 +80,9 @@
         const appName = selectedOption.getAttribute('data-name');
         const appSlug = selectedOption.getAttribute('data-slug');
         const appVersion = selectedOption.getAttribute('data-version');
-        htmx.ajax('GET', '/views/view_start_session_button', '#start-button').then(() => {
+        const url = `/views/view_start_session_button?data_file_id={{ dataset_info.first_data_file.qcrbox_file_id}}&application_slug=${appSlug}&application_version=${appVersion}`;
+
+        htmx.ajax('GET', url, '#start-button').then(() => {
             console.log("Successfully updated start session button");
         });
     }
@@ -89,7 +93,7 @@
         const metadataBox = document.getElementById('metadata');
 
         // Get the details from the application attributes
-        const appName = selectedOption.value;
+        const appName = selectedOption.getAttribute('data-name');
         const appUrl = selectedOption.getAttribute('data-url');
         const appVersion = selectedOption.getAttribute('data-version');
         const appRegistered = selectedOption.getAttribute('data-registered');
