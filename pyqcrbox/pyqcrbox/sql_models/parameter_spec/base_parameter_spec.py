@@ -40,6 +40,7 @@ _builtin_dtypes = {
     "QCrBox.folder_path": str,
     "QCrBox.input_path": str,
     "QCrBox.output_path": str,
+    "QCrBox.input_folder": str,
 }
 
 _custom_dtypes = {

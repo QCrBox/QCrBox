@@ -2,7 +2,9 @@
 # from .base_message_dispatcher import client_side_message_dispatcher
 
 
-# async def handle_command_invocation_request_via_nats(msg: msg_specs.CommandInvocationRequest, nats_broker: Context("broker")):
+# async def handle_command_invocation_request_via_nats(
+#     msg: msg_specs.CommandInvocationRequest, nats_broker: Context("broker")
+# ):
 #     assert msg.action == "command_invocation_request"
 #     logger.debug(f"Received command invocation request: {msg}")
 #
