@@ -1,6 +1,7 @@
 {#def datafile_name="", processed_dataset_id="", processed_dataset_filetype="", applications = [] #}
 
 <div id="data-step">
+    <div style="width: 3px; height: 100px; background-color: #417890; position: relative; left: 17px"></div>
     <div style="display: inline-flex; align-items: center;">
         <button class="button">
             <span class="icon">
@@ -10,7 +11,6 @@
         <div style="width: 100px; height: 3px; background-color: #417890; margin: 0 10px;"></div>
         <div id="datafile-text" class="box" style="border: 2px solid #417890; padding: 10px;">{{ datafile_name}}</div>
     </div>
-    <div style="width: 3px; height: 100px; background-color: #417890; position: relative; left: 17px"></div>
 </div>
 
 <div id="start-button" hx-swap-oob="outerHTML">
@@ -45,6 +45,7 @@
 </div>
 
 <div id="run-command-step-2" hx-swap-oob="outerHTML">
+    <div style="width: 3px; height: 100px; background-color: #417890; position: relative; left: 17px"></div>
     <div style="display: inline-flex; align-items: center;">
         <button id="run-command-triangle-button-2" class="button is-ghost" style="transform: rotate(180deg);">
             <span class="icon">
@@ -75,7 +76,6 @@
             </select>
         </div>
     </div>
-    <div style="width: 3px; height: 100px; background-color: #417890; position: relative; left: 17px"></div>
 </div>
 
 <script>

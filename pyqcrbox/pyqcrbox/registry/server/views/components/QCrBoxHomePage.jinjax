@@ -17,7 +17,6 @@
                     <div style="width: 100px; height: 3px; background-color: #417890; margin: 0 10px;"></div>
                     <div id="datafile-text" class="box" style="border: 2px solid #417890; padding: 10px;">Click the grey box to select a data file.</div>
                 </div>
-                <div style="width: 3px; height: 100px; background-color: #417890; position: relative; left: 17px"></div>
             </div>
 
             <div id="run-command-step">
