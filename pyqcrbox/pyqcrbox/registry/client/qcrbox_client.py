@@ -13,7 +13,7 @@ from pyqcrbox.helpers import generate_private_routing_key
 from pyqcrbox.registry.client.executable_command.base_calculation import BaseCalculation
 from pyqcrbox.registry.shared.calculation_status import update_calculation_status_in_nats_kv_NEW
 from pyqcrbox.sql_models import CalculationStatusDetails, CalculationStatusEnum
-from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import parse_parameter_default_as_its_dtype
+from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import parse_parameter_as_its_dtype
 
 from ..shared import QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup
 from .api_endpoints import create_client_asgi_server
@@ -139,7 +139,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
             for param_name, value in msg.arguments.items():
                 logger.debug(f"Argument: {param_name!r} = {value!r}")
                 param_dtype_str = cmd.cmd_spec.get_parameter_by_name(param_name).dtype
-                parsed_args[param_name] = parse_parameter_default_as_its_dtype(value, param_dtype_str)
+                parsed_args[param_name] = parse_parameter_as_its_dtype(value, param_dtype_str)
 
             logger.debug(f"Executing command in working dir cwd={self.working_dir!r}")
             calc = await cmd.execute_in_background(

@@ -9,9 +9,25 @@ from ..base import QCrBoxPydanticBaseModel
 SENTINEL_UNDEFINED = "<undefined>"
 
 
+class BuiltinParameter(QCrBoxPydanticBaseModel):
+    dtype: type
+    value: Any
+
+    async def prepare_for_execution(self, target_dir: str, target_filename: str | None = None) -> Any:
+        return self.value
+
+
 class DataFileParameter(QCrBoxPydanticBaseModel):
-    dataset_id: str
+    data_file_id: str
     key: str
+
+    async def prepare_for_execution(self, target_dir: str, target_filename: str | None = None) -> str:
+        from pyqcrbox.services import get_data_file_manager
+
+        logger.debug(f"Preparing data file for execution: {self.data_file_id=} {self.key=}")
+        data_file_manager = await get_data_file_manager()
+        exported_file_path = await data_file_manager.export_data_file(self.data_file_id, target_dir, target_filename)
+        return str(exported_file_path)
 
 
 _builtin_dtypes = {
@@ -45,14 +61,24 @@ def parse_parameter_default_value_as_string(v: Any) -> str:
     return repr(v)
 
 
-def parse_parameter_default_as_its_dtype(v: Any, dtype_str) -> Any:
+def parse_parameter_as_its_dtype(v: Any, dtype_str) -> Any:
+    if dtype_str not in _known_dtypes:
+        raise ValueError(f"Unsupported parameter type: {dtype_str}")
+
+    if dtype_str in _builtin_dtypes:
+        dtype = _builtin_dtypes[dtype_str]
+        return BuiltinParameter(dtype=dtype, value=v)
+
     try:
         if isinstance(v, dict):
             result = _known_dtypes[dtype_str](**v)
         else:
             result = _known_dtypes[dtype_str](v)
     except Exception as exc:
-        logger.warning(f"Could not convert default value to its declared type- leaving unchanged: {exc}")
+        logger.warning(
+            f"Could not convert value to its declared type - leaving unchanged: value={v!r}\n\n"
+            f"Original error: {exc}"
+        )
         result = v
 
     return result
