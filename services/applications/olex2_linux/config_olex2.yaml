@@ -9,6 +9,23 @@ url: "https://www.olexsys.org/olex2/"
 doi: "10.1107/S0021889808042726"
 
 commands:
+  - name: "interactive_session"
+    implemented_as: "interactive_session"
+    description: "Start Olex2 in interactive mode; this can be used to solve, refine and finish small-molecule crystal structures."
+    parameters:
+      - name: "input_file"
+        dtype: "QCrBox.data_file"
+        description: "The CIF file to open in Olex2"
+#        required_entry_sets: ["cell_data", "diffraction_data"]
+#        optional_entry_sets: ["atom_data"]
+#        merge_su: Yes
+#        custom_categories: ["iucr", "shelx"]
+    interactive_lifecycle:
+      run:
+        implemented_as: "cli_command"
+        call_pattern: "/bin/bash /opt/olex2/start {input_cif_path}"
+        used_basecommand_parameters: ["input_cif_path"]
+
   - name: "interactive"
     implemented_as: "interactive"
     description: "Start Olex2 in interactive mode; this can be used to solve, refine and finish small-molecule crystal structures."
