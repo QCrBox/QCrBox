@@ -11,9 +11,9 @@ commands:
     implemented_as: "interactive_session"
     description: "Start dummy GUI"
     parameters:
-      - name: "input_path"
-        dtype: "QCrBox.input_path"
-        description: "Path to file to open in the dummy GUI"
+      - name: "input_file"
+        dtype: "QCrBox.data_file"
+        description: "The file to open in the dummy GUI"
     interactive_lifecycle:
 #      prepare:
 #        implemented_as: "python_callable"
@@ -22,8 +22,8 @@ commands:
 #        used_basecommand_parameters: ["input_cif_path", "work_cif_path"]
       run:
         implemented_as: "cli_command"
-        call_pattern: "python dummy_gui.py {input_path}"
-        used_basecommand_parameters: ["input_path"]
+        call_pattern: "python dummy_gui.py {input_file}"
+        used_basecommand_parameters: ["input_file"]
 #      finalise:
 #        implemented_as: "python_callable"
 #        import_path: "configure_olex2"
