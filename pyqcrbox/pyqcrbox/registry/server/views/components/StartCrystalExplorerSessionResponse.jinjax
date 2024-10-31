@@ -1,6 +1,6 @@
 <button 
     class="button is-light m-3" 
-    onclick="closeOlexTab()" 
+    onclick="closeCrystalExplorerTab()" 
     hx-post="/views/close_olex_session" 
     hx-target="#data-step" 
     hx-swap="outerHTML">
@@ -14,8 +14,8 @@
     </button>
 </div>
 
-<button id="run-command-triangle-button" hx-swap-oob="outerHTML" class="button is-ghost is-loading" style="transform: rotate(180deg);">
+<button id="run-command-triangle-button-2" hx-swap-oob="outerHTML" class="button is-ghost is-loading" style="transform: rotate(180deg);">
     <span class="icon">
-        <i id="run-command-triangle" class="ph-fill ph-triangle" style="color: #8A8A8A; font-size: 3em;"></i>
+        <i id="run-command-triangle-2" class="ph-fill ph-triangle" style="color: #8A8A8A; font-size: 3em;"></i>
     </span>
 </button>

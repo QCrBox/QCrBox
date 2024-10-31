@@ -74,10 +74,23 @@
         olexTab = window.open("http://localhost:12004/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true", '_blank');
     }
 
-    function closeVncTab() {
+    function closeOlexTab() {
         // Close the tab if it's open
         if (olexTab && !olexTab.closed) {
             olexTab.close();
+        }
+    }
+
+    let crystalExplorerTab; 
+
+    function openCrystalExplorerTab() {
+        crystalExplorerTab = window.open("http://localhost:12003/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true", '_blank');
+    }
+
+    function closeCrystalExplorerTab() {
+        // Close the tab if it's open
+        if (crystalExplorerTab && !crystalExplorerTab.closed) {
+            crystalExplorerTab.close();
         }
     }
 </script>

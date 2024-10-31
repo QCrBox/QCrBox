@@ -3,6 +3,6 @@
     hx-post="/views/start_crystal_explorer_session"
     hx-target="#stop-button"
     hx-swap="innerHTML"
-    onclick="openOlexTab()">
+    onclick="openCrystalExplorerTab()">
     Start Interactive Session
 </button>
