@@ -19,12 +19,11 @@ class BuiltinParameter(QCrBoxPydanticBaseModel):
 
 class DataFileParameter(QCrBoxPydanticBaseModel):
     data_file_id: str
-    key: str
 
     async def prepare_for_execution(self, target_dir: str, target_filename: str | None = None) -> str:
         from pyqcrbox.services import get_data_file_manager
 
-        logger.debug(f"Preparing data file for execution: {self.data_file_id=} {self.key=}")
+        logger.debug(f"Preparing data file for execution: {self.data_file_id=}")
         data_file_manager = await get_data_file_manager()
         exported_file_path = await data_file_manager.export_data_file(self.data_file_id, target_dir, target_filename)
         return str(exported_file_path)

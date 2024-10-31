@@ -7,6 +7,8 @@ from litestar.datastructures import UploadFile
 from litestar.enums import RequestEncodingType
 from litestar.params import Body
 
+from pyqcrbox.sql_models import CommandInvocationCreate
+
 from ..api import api_helpers
 
 __all__ = []
@@ -67,6 +69,21 @@ async def handle_dataset_upload(
     return render("DatasetUploadResponse", dataset_info=dataset_info, applications=applications)
 
 
+@post(path="/interactive/start_session")
+async def start_interactive_session_with_data_file(
+    application_slug: str, application_version: str, data_file_id: str
+) -> Response:
+    cmd = CommandInvocationCreate(
+        application_slug=application_slug,
+        application_version=application_version,
+        command_name="interactive_session",
+        arguments={"input_file": {"data_file_id": data_file_id}},
+    )
+
+    await api_helpers._invoke_command(cmd)
+    return render("StartSessionResponse")
+
+
 @post(path="/start_session")
 async def start_interactive_session() -> Response:
     return render("StartSessionResponse")
@@ -92,6 +109,7 @@ views_router = Router(
         handle_data_file_upload,
         handle_dataset_upload,
         get_command_details,
+        start_interactive_session_with_data_file,
         start_interactive_session,
         view_interactive_session_button,
         close_session,
