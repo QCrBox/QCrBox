@@ -23,10 +23,9 @@
             <div class="box" style="border: 2px solid #417890; padding: 10px;">
                 <select 
                     id="select-application" 
-                    name="application" 
-                    hx-get="/views/view_start_session_button" 
-                    hx-target="#start-button" 
-                    hx-trigger="change">
+                    name="application"
+                    onchange="updateStartSessionButton()"
+                >
                     <option value="" disabled selected hidden>Please select an application</option>
                     {% if applications %}
                         {% for application in applications %}
@@ -71,6 +70,19 @@
 
 
 <script>
+    function updateStartSessionButton() {
+        const selectedOption = document.querySelector('#select-application > option:checked')
+
+        console.log("Updating start session button");
+        console.log(`Selected option: ${selectedOption}`);
+        const appName = selectedOption.getAttribute('data-name');
+        const appSlug = selectedOption.getAttribute('data-slug');
+        const appVersion = selectedOption.getAttribute('data-version');
+        htmx.ajax('GET', '/views/view_start_session_button', '#start-button').then(() => {
+            console.log("Successfully updated start session button");
+        });
+    }
+
     // Update metadata when a selection is made
     document.getElementById('select-application').addEventListener('change', function() {
         const selectedOption = this.options[this.selectedIndex]; // Get the selected option
