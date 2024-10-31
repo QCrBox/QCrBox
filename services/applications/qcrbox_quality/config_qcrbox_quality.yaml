@@ -65,38 +65,40 @@ commands:
       - name: "input_cif_path"
         dtype: "QCrBox.input_cif"
         required_entries: [
-          "_space_group_crystal_system",
-          "_space_group_symop_operation_xyz",
-          "_cell_length_a",
-          "_cell_length_b",
-          "_cell_length_c",
-          "_cell_angle_alpha",
-          "_cell_angle_beta",
-          "_cell_angle_gamma",
-          "_atom_site_label",
-          "_atom_site_type_symbol",
-          "_atom_site_fract_x",
-          "_atom_site_fract_y",
-          "_atom_site_fract_z",
-          "_atom_site_U_iso_or_equiv",
-          "_atom_site_adp_type"
+          "_space_group.crystal_system",
+          "_space_group.symop_operation_xyz",
+          "_cell.length_a",
+          "_cell.length_b",
+          "_cell.length_c",
+          "_cell.angle_alpha",
+          "_cell.angle_beta",
+          "_cell.angle_gamma",
+          "_atom_site.label",
+          "_atom_site.type_symbol",
+          "_atom_site.fract_x",
+          "_atom_site.fract_y",
+          "_atom_site.fract_z",
+          "_atom_site.U_iso_or_equiv",
+          "_atom_site.adp_type"
         ]
         optional_entries: [
-          "_atom_site_disorder_assembly",
-          "_atom_site_disorder_group",
-          "_atom_site_aniso_label",
-          "_atom_site_aniso_U_11",
-          "_atom_site_aniso_U_22",
-          "_atom_site_aniso_U_33",
-          "_atom_site_aniso_U_23",
-          "_atom_site_aniso_U_13",
-          "_atom_site_aniso_U_12",
-          "_geom_bond_atom_site_label_1",
-          "_geom_bond_atom_site_label_2",
-          "_geom_bond_distance",
-          "_geom_bond_site_symmetry_2",
-          "_geom_bond_publ_flag"
+          "_atom_site.disorder_assembly",
+          "_atom_site.disorder_group",
+          "_atom_site_aniso.label",
+          "_atom_site_aniso.U_11",
+          "_atom_site_aniso.U_22",
+          "_atom_site_aniso.U_33",
+          "_atom_site_aniso.U_23",
+          "_atom_site_aniso.U_13",
+          "_atom_site_aniso.U_12",
+          "_geom_bond.atom_site_label_1",
+          "_geom_bond.atom_site_label_2",
+          "_geom_bond.distance",
+          "_geom_bond.site_symmetry_2"
         ]
+      - name: "output_html_path"
+        dtype: str
+        description: "Output path of html snippet"
 
 
 qcrbox_yaml_spec_version: "0.1"

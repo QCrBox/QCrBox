@@ -7,6 +7,7 @@ from bokeh.embed import file_html
 from bokeh.models import ColumnDataSource
 from bokeh.plotting import figure
 from iotbx.cif import reader
+from qcrboxtools.analyse.ortep import cif2ortep_glb
 from qcrboxtools.analyse.quality.cif import from_entry
 from qcrboxtools.analyse.quality.html.quality_box import (
     QualityIndicatorBox,
@@ -258,3 +259,22 @@ def fobs_div_fcalc_bokeh(input_cif_path, output_html_path):
     html_string = file_html(p)
 
     output_html_path.write_text(html_string, encoding="UTF-8")
+
+
+def ortep_3d(input_cif_path, output_html_path):
+    input_cif_path = Path(input_cif_path)
+    output_html_path = Path(output_html_path)
+    output_glb_path = output_html_path.parent / "structure.glb"
+    cif2ortep_glb(input_cif_path, output_glb_path)
+    html_snippet = dedent(
+        """
+        <!-- Import the component -->
+        <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js">
+        </script>
+
+        <!-- Use it like any other HTML element -->
+        <model-viewer alt="3D ORTEP" src="structure.glb" ar shadow-intensity="1" camera-controls touch-action="pan-y">
+        </model-viewer>
+    """
+    ).strip()
+    output_html_path.write(html_snippet)
