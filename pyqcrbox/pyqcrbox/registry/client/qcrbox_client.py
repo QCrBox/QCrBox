@@ -47,7 +47,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         self.status = ClientStatus(ClientStatusEnum.IDLE)
 
     def _create_work_root_dir(self):
-        return TemporaryDirectory(prefix=f"work_root_{self.client_id}_", delete=False)
+        return TemporaryDirectory(prefix=f"work_root_{self.client_id}_")
 
     @property
     def working_dir(self) -> Path:
