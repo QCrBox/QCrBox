@@ -3,6 +3,7 @@
 {% if dataset_info.data_files | length == 1 %}
     <div id="datafile-text">{{ dataset_info.data_files[0].filename }}</div>
     <div id="metadata" hx-swap-oob="innerHTML">
+        <h3 class="title is-4">Dataset Metadata</h3>
         <ul>
             <li>Dataset id: <code>{{ dataset_info.dataset_id }}</code></li>
             <li>File type: <code>{{ dataset_info.data_files[0].filetype }}</code></li>
@@ -13,6 +14,7 @@
     </div>
 
     <div id="run-command-step" hx-swap-oob="outerHTML">
+        <div style="width: 3px; height: 100px; background-color: #417890; position: relative; left: 17px"></div>
         <div style="display: inline-flex; align-items: center;">
             <button id="run-command-triangle-button" class="button is-ghost" style="transform: rotate(180deg);">
                 <span class="icon">
@@ -24,7 +26,7 @@
                 <select 
                     id="select-application" 
                     name="application" 
-                    hx-get="/views/view_start_session_button" 
+                    hx-get="/views/view_start_olex_session_button" 
                     hx-target="#start-button" 
                     hx-trigger="change">
                     <option value="" disabled selected hidden>Please select an application</option>
@@ -43,7 +45,6 @@
                 </select>
             </div>
         </div>
-        <div style="width: 3px; height: 100px; background-color: #417890; position: relative; left: 17px"></div>
     </div>
 
 {% elif dataset_info.data_files == [] %}
