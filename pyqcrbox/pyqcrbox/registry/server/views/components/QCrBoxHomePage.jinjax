@@ -17,12 +17,15 @@
                     <div style="width: 100px; height: 3px; background-color: #417890; margin: 0 10px;"></div>
                     <div id="datafile-text" class="box" style="border: 2px solid #417890; padding: 10px;">Click the grey box to select a data file.</div>
                 </div>
-                <div style="width: 3px; height: 100px; background-color: #417890; position: relative; left: 17px"></div>
             </div>
 
             <div id="run-command-step">
             </div>
             <div id="data-step">
+            </div>
+            <div id="run-command-step-2">
+            </div>
+            <div id="end-workflow-step">
             </div>
             
         </div>
@@ -72,10 +75,23 @@
         olexTab = window.open(`http://${window.location.hostname}:12004/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true`, '_blank');
     }
 
-    function closeVncTab() {
+    function closeOlexTab() {
         // Close the tab if it's open
         if (olexTab && !olexTab.closed) {
             olexTab.close();
+        }
+    }
+
+    let crystalExplorerTab; 
+
+    function openCrystalExplorerTab() {
+        crystalExplorerTab = window.open(`http://${window.location.hostname}:12003/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true`, '_blank');
+    }
+
+    function closeCrystalExplorerTab() {
+        // Close the tab if it's open
+        if (crystalExplorerTab && !crystalExplorerTab.closed) {
+            crystalExplorerTab.close();
         }
     }
 </script>

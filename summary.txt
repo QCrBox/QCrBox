@@ -1,0 +1,4 @@
+QCrBox (Quantum Crystallographic Toolbox) is a collaboration between the University of Southampton and Durham University aiming at transforming small-molecule crystallographic analysis. With a large and growing community of crystallographers and chemists, QCrBox provides the tools needed to make crystallography more accessible, reliable, and innovative for everyone.
+
+QCrBox is an open-source platform aims to revolutionise general & quantum crystallography by addressing the field's core challenges: complex workflows, software interoperability, and reproducibility barriers. QCrBox integrates widely used crystallographic software into a single, consistent workflow. This allows researchers at all levels to access state-of-the-art tools for data integration, structure refinement, and cutting-edge quantum crystallography techniques.
+
