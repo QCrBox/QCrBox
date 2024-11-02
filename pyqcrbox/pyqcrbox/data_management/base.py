@@ -44,7 +44,11 @@ class DataFileManager(ABC):
         pass
 
     async def store_interactive_session_info(self, session_info: InteractiveSessionInfo) -> None:
-        await self._store_in_kv("sessions", session_info.session_id, session_info.model_dump_json().encode())
+        await self._store_in_kv("interactive_sessions", session_info.session_id, session_info.model_dump_json().encode())
+
+    async def get_interactive_session_info(self, session_id: str) -> InteractiveSessionInfo:
+        session_info_as_bytes = await self._retrieve_from_kv("interactive_sessions", session_id)
+        return InteractiveSessionInfo.model_validate_json(session_info_as_bytes.decode())
 
     async def store_dataset_info(self, dataset_info: Dataset) -> None:
         await self._store_in_kv("datasets", dataset_info.dataset_id, dataset_info.model_dump_json().encode())

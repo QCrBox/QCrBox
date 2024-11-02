@@ -15,7 +15,7 @@ class InteractiveSession(BaseCommand):
         super().__init__(cmd_spec)
         # self.prepare_cmd_spec = cmd_spec.interactive_lifecycle.prepare
         self.run_cmd_spec = cmd_spec.interactive_lifecycle.run
-        # self.finalise_cmd_spec = cmd_spec.interactive_lifecycle.finalise
+        self.finalise_cmd_spec = cmd_spec.interactive_lifecycle.finalise
 
     async def execute_in_background(
         self,
@@ -43,21 +43,21 @@ class InteractiveSession(BaseCommand):
         run_calc_id = helpers.generate_calculation_id()
         run_calc = await run_cmd.execute_in_background(_calculation_id=run_calc_id, _cwd=_cwd, **kwargs)
 
-        # if self.finalise_cmd_spec:
-        #     finalise_cmd = ExecutableCommand(self.finalise_cmd_spec)
-        #     finalise_calc_id = helpers.generate_calculation_id()
-        #     finalise_calc = await finalise_cmd.execute_in_background(
-        #         _calculation_id=finalise_calc_id, _cwd=_cwd, **kwargs
-        #     )
-        # else:
-        #     finalise_calc = None
+        if self.finalise_cmd_spec:
+            finalise_cmd = ExecutableCommand(self.finalise_cmd_spec)
+            finalise_calc_id = helpers.generate_calculation_id()
+            finalise_calc = await finalise_cmd.execute_in_background(
+                _calculation_id=finalise_calc_id, _cwd=_cwd, **kwargs
+            )
+        else:
+            finalise_calc = None
 
         return InteractiveSessionCalculation(
             calculation_id=_calculation_id,
             calc_finished_event=calc_finished_event,
             # prepare_calc=prepare_calc,
             run_calc=run_calc,
-            # finalise_calc=finalise_calc,
+            finalise_calc=finalise_calc,
         )
 
     def terminate(self):

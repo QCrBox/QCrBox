@@ -10,7 +10,7 @@ from .non_interactive_command_spec import NonInteractiveCommandSpec
 class InteractiveLifecycleSteps(QCrBoxPydanticBaseModel):
     # prepare: NonInteractiveCommandSpec | None = None
     run: NonInteractiveCommandSpec
-    # finalise: NonInteractiveCommandSpec | None = None
+    finalise: NonInteractiveCommandSpec | None = None
     # toparams: NonInteractiveCommandSpec | None = None
 
     @model_validator(mode="before")
