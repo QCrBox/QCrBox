@@ -31,8 +31,11 @@ class ParameterValidator:
         fn_param = self.fn_params[param_spec.name]
         if fn_param is None:
             raise MissingTypeAnnotation(f"Missing type annotation for parameter: {param_spec.name!r}")
-        if param_spec.dtype != fn_param.dtype:
-            raise ValueError(f"Parameter dtype mismatch: {param_spec.dtype} != {fn_param.dtype}")
+
+        if not param_spec.dtype_is_compatible_with(fn_param.dtype):
+            raise ValueError(
+                f"Parameter dtype mismatch: {param_spec.dtype!r} is not compatible with {fn_param.dtype!r}"
+            )
 
         if param_spec.required != fn_param.required:
             raise ValueError(f"Mismatch in parameter definitions: {param_spec!r} != {fn_param!r}")

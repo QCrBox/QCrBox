@@ -16,7 +16,11 @@ __all__ = [
 
 
 class BaseFilesystemPathParameterSpec(BaseParameterSpec):
-    pass
+    def dtype_is_compatible_with(self, other_dtype: str):
+        if super().dtype_is_compatible_with(other_dtype):
+            return True
+
+        return other_dtype in ["str"]
 
 
 class GenericInputPathParameterSpec(BaseFilesystemPathParameterSpec):
