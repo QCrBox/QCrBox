@@ -80,8 +80,24 @@ async def start_interactive_session_with_data_file(
         arguments={"input_file": {"data_file_id": data_file_id}},
     )
 
-    await api_helpers._invoke_command(cmd)
-    return render("StartInteractiveSessionResponse")
+    response_json = await api_helpers._invoke_command(cmd)
+    interactive_session_id = response_json["payload"]["calculation_id"]
+    return render("StartInteractiveSessionResponse", interactive_session_id=interactive_session_id)
+
+
+@post(path="/interactive/close_session")
+async def close_interactive_session(session_id: str) -> Response:
+    datafile_name = "output.cif"
+    processed_dataset_id = f"example ID (session ID: {session_id})"
+    processed_dataset_filetype = "example filetype"
+    applications = api_helpers._retrieve_applications()
+    return render(
+        "StopInteractiveSessionResponse",
+        datafile_name=datafile_name,
+        processed_dataset_id=processed_dataset_id,
+        processed_dataset_filetype=processed_dataset_filetype,
+        applications=applications,
+    )
 
 
 @post(path="/start_olex2_session")
@@ -153,6 +169,7 @@ views_router = Router(
         handle_dataset_upload,
         get_command_details,
         start_interactive_session_with_data_file,
+        close_interactive_session,
         start_olex2_interactive_session,
         view_interactive_session_button,
         view_olex2_interactive_session_button,

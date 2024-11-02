@@ -1,7 +1,8 @@
+{# def interactive_session_id #}
 <button
     class="button is-light m-3"
-    onclick="closeOlexTab()"
-    hx-post="/views/close_olex2_session"
+    onclick="closeInteractiveSessionTab()"
+    hx-post="/views/interactive/close_session?session_id={{ interactive_session_id }}"
     hx-target="#data-step"
     hx-swap="outerHTML">
     Stop Interactive Session

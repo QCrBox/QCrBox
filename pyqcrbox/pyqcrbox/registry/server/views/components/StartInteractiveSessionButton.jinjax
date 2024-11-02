@@ -4,6 +4,6 @@
     hx-post="/views/interactive/start_session?application_slug={{ application_slug }}&application_version={{ application_version }}&data_file_id={{ data_file_id }}"
     hx-target="#stop-button"
     hx-swap="innerHTML"
-    onclick="openOlexTab()">
+    onclick="openInteractiveSessionTab()">
     Start interactive session
 </button>

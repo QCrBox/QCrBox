@@ -68,17 +68,17 @@
 </MainLayout>
 
 <script>
-    let olexTab; // Variable to store the reference to the opened tab
+    let interactiveSessionTab;  // Variable to store the reference to the opened tab
 
-    function openOlexTab() {
+    function openInteractiveSessionTab() {
         // Open the URL in a new tab and store the reference
-        olexTab = window.open(`http://${window.location.hostname}:12004/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true`, '_blank');
+        interactiveSessionTab = window.open(`http://${window.location.hostname}:12002/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true`, '_blank');
     }
 
-    function closeOlexTab() {
+    function closeInteractiveSessionTab() {
         // Close the tab if it's open
-        if (olexTab && !olexTab.closed) {
-            olexTab.close();
+        if (interactiveSessionTab && !interactiveSessionTab.closed) {
+            interactiveSessionTab.close();
         }
     }
 
