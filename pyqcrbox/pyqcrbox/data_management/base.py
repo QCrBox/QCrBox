@@ -6,6 +6,7 @@ from pathlib import Path
 
 from pyqcrbox import logger
 from pyqcrbox.data_management.data_file import DataFileMetadata, Dataset, DatasetResponse
+from pyqcrbox.data_management.interactive_session_info import InteractiveSessionInfo
 from pyqcrbox.helpers import generate_data_file_id, generate_dataset_id
 
 
@@ -41,6 +42,9 @@ class DataFileManager(ABC):
     @abstractmethod
     async def _delete_from_object_store(self, bucket: str, key: str) -> None:
         pass
+
+    async def store_interactive_session_info(self, session_info: InteractiveSessionInfo) -> None:
+        await self._store_in_kv("sessions", session_info.session_id, session_info.model_dump_json().encode())
 
     async def store_dataset_info(self, dataset_info: Dataset) -> None:
         await self._store_in_kv("datasets", dataset_info.dataset_id, dataset_info.model_dump_json().encode())

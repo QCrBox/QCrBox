@@ -9,9 +9,11 @@ from litestar import Litestar
 
 from pyqcrbox import helpers, logger, msg_specs, settings, sql_models
 from pyqcrbox.cli.helpers import get_repo_root
+from pyqcrbox.data_management.interactive_session_info import InteractiveSessionInfo
 from pyqcrbox.helpers import generate_private_routing_key
 from pyqcrbox.registry.client.executable_command.base_calculation import BaseCalculation
 from pyqcrbox.registry.shared.calculation_status import update_calculation_status_in_nats_kv_NEW
+from pyqcrbox.services import get_data_file_manager
 from pyqcrbox.sql_models import CalculationStatusDetails, CalculationStatusEnum
 from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import parse_parameter_as_its_dtype
 
@@ -127,6 +129,14 @@ class QCrBoxClient(QCrBoxServerClientBase):
     async def handle_command_execution(self, msg: msg_specs.CommandExecutionRequestNATS):
         logger.info(f"Received command execution request: {msg!r} (current status: {self.status})")
         self.status.set_busy()
+
+        interactive_session_info = InteractiveSessionInfo(
+            session_id=msg.calculation_id,
+            client_private_inbox=self.private_inbox,
+            cmd_execution_request=msg,
+        )
+        data_manager = await get_data_file_manager()
+        data_manager.store_interactive_session_info(interactive_session_info)
 
         try:
             cmd = self.get_executable_command(msg.command_name)
