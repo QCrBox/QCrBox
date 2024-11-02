@@ -18,6 +18,7 @@ However, there will be an initial period of stabilisation where this is not adhe
 
 - Implemented persistence of imported data files and associated metadata. ([#352](https://github.com/QCrBox/QCrBox/issues/352))
 - Added deployment script (`scripts/deploy.sh`). ([#381](https://github.com/QCrBox/QCrBox/issues/381))
+- Interactive GUI sessions can now be started with input files that were previously imported. ([#345](https://github.com/QCrBox/QCrBox/issues/345), [#354](https://github.com/QCrBox/QCrBox/issues/354))
 
 ### Enhancements
 
