@@ -72,7 +72,7 @@
 
     function openOlexTab() {
         // Open the URL in a new tab and store the reference
-        olexTab = window.open("http://localhost:12004/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true", '_blank');
+        olexTab = window.open(`http://${window.location.hostname}:12004/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true`, '_blank');
     }
 
     function closeOlexTab() {
@@ -85,7 +85,7 @@
     let crystalExplorerTab; 
 
     function openCrystalExplorerTab() {
-        crystalExplorerTab = window.open("http://localhost:12003/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true", '_blank');
+        crystalExplorerTab = window.open(`http://${window.location.hostname}:12003/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true`, '_blank');
     }
 
     function closeCrystalExplorerTab() {

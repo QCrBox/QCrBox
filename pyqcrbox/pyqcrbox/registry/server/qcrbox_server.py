@@ -38,7 +38,7 @@ class CalculationDetails(BaseModel):
 
 
 @get(path="/", media_type=MediaType.HTML)
-def web_root_handler() -> Redirect:
+async def web_root_handler() -> Redirect:
     return Redirect(path="/views/index")
 
 

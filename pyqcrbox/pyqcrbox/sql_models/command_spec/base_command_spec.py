@@ -7,9 +7,10 @@ __all__ = []
 
 
 class ImplementedAs(str, Enum):
-    cli = "cli_command"
+    cli_command = "cli_command"
     python_callable = "python_callable"
     interactive = "interactive"
+    interactive_session = "interactive_session"
 
 
 class BaseCommandSpec(QCrBoxPydanticBaseModel):
@@ -33,5 +34,13 @@ class BaseCommandSpec(QCrBoxPydanticBaseModel):
         return self.implemented_as == ImplementedAs.interactive
 
     @property
+    def is_interactive_session(self) -> bool:
+        return self.implemented_as == ImplementedAs.interactive_session
+
+    @property
     def parameter_default_values(self):
         return {param.name: param.default_value for param in self.parameters if not param.required}
+
+    def get_parameter_by_name(self, param_name) -> ParameterSpecDiscriminatedUnion:
+        # TODO: handle case where parameter is not found
+        return next((param for param in self.parameters if param.name == param_name))

@@ -1,13 +1,35 @@
 from typing import Annotated, Any
 
-# from pyqcrbox.logging import logger
 from pydantic import BeforeValidator, field_validator, model_validator
+
+from pyqcrbox.logging import logger
 
 from ..base import QCrBoxPydanticBaseModel
 
 SENTINEL_UNDEFINED = "<undefined>"
 
-_known_dtypes = {
+
+class BuiltinParameter(QCrBoxPydanticBaseModel):
+    dtype: type
+    value: Any
+
+    async def prepare_for_execution(self, target_dir: str, target_filename: str | None = None) -> Any:
+        return self.value
+
+
+class DataFileParameter(QCrBoxPydanticBaseModel):
+    data_file_id: str
+
+    async def prepare_for_execution(self, target_dir: str, target_filename: str | None = None) -> str:
+        from pyqcrbox.services import get_data_file_manager
+
+        logger.debug(f"Preparing data file for execution: {self.data_file_id=}")
+        data_file_manager = await get_data_file_manager()
+        exported_file_path = await data_file_manager.export_data_file(self.data_file_id, target_dir, target_filename)
+        return str(exported_file_path)
+
+
+_builtin_dtypes = {
     "str": str,
     "int": int,
     "float": float,
@@ -16,10 +38,16 @@ _known_dtypes = {
     "QCrBox.output_cif": str,
     "QCrBox.work_cif": str,
     "QCrBox.folder_path": str,
+    "QCrBox.input_path": str,
+    "QCrBox.output_path": str,
     "QCrBox.input_folder": str,
-    "QCrBox.input_file": str,
-    "QCrBox.output_file": str,
 }
+
+_custom_dtypes = {
+    "QCrBox.data_file": DataFileParameter,
+}
+
+_known_dtypes = _builtin_dtypes | _custom_dtypes
 
 
 def verify_dtype_is_a_known_type(v: str) -> str:
@@ -31,6 +59,29 @@ def verify_dtype_is_a_known_type(v: str) -> str:
 def parse_parameter_default_value_as_string(v: Any) -> str:
     # logger.debug(f"[DDD] convert_default_value_to_string_representation({v=!r})")
     return repr(v)
+
+
+def parse_parameter_as_its_dtype(v: Any, dtype_str) -> Any:
+    if dtype_str not in _known_dtypes:
+        raise ValueError(f"Unsupported parameter type: {dtype_str}")
+
+    if dtype_str in _builtin_dtypes:
+        dtype = _builtin_dtypes[dtype_str]
+        return BuiltinParameter(dtype=dtype, value=v)
+
+    try:
+        if isinstance(v, dict):
+            result = _known_dtypes[dtype_str](**v)
+        else:
+            result = _known_dtypes[dtype_str](v)
+    except Exception as exc:
+        logger.warning(
+            f"Could not convert value to its declared type - leaving unchanged: value={v!r}\n\n"
+            f"Original error: {exc}"
+        )
+        result = v
+
+    return result
 
 
 DTypeAsStr = Annotated[str, BeforeValidator(verify_dtype_is_a_known_type)]

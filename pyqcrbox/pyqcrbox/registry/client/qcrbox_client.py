@@ -1,6 +1,7 @@
 import os
 import sys
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import Optional
 
 from faststream.nats import NatsBroker
@@ -12,6 +13,7 @@ from pyqcrbox.helpers import generate_private_routing_key
 from pyqcrbox.registry.client.executable_command.base_calculation import BaseCalculation
 from pyqcrbox.registry.shared.calculation_status import update_calculation_status_in_nats_kv_NEW
 from pyqcrbox.sql_models import CalculationStatusDetails, CalculationStatusEnum
+from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import parse_parameter_as_its_dtype
 
 from ..shared import QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup
 from .api_endpoints import create_client_asgi_server
@@ -30,6 +32,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         application_spec: sql_models.ApplicationSpec,
         client_id: str = "anonymous_client",
         private_routing_key: Optional[str] = None,
+        work_root_dir: Optional[Path] = None,
         # broker: Optional[RabbitBroker] = None,
         nats_broker: Optional[NatsBroker] = None,
         asgi_server: Optional[Litestar] = None,
@@ -39,8 +42,12 @@ class QCrBoxClient(QCrBoxServerClientBase):
         self.client_id = client_id
         self.private_routing_key = private_routing_key or generate_private_routing_key()
         # self.routing_key_command_invocation = application_spec.routing_key_command_invocation
+        self.work_root_dir = work_root_dir or self._create_work_root_dir()
         self._calculations: list[BaseCommand] = []
         self.status = ClientStatus(ClientStatusEnum.IDLE)
+
+    def _create_work_root_dir(self):
+        return TemporaryDirectory(prefix=f"work_root_{self.client_id}_")
 
     @property
     def working_dir(self) -> Path:
@@ -123,9 +130,20 @@ class QCrBoxClient(QCrBoxServerClientBase):
 
         try:
             cmd = self.get_executable_command(msg.command_name)
+
+            # Parse each argument in `msg.arguments` as the correct parameter type
+            # Steps:
+            #   - get the command spec and look up parameter types for each argument
+            #   - parse each argument as the correct type
+            parsed_args = {}
+            for param_name, value in msg.arguments.items():
+                logger.debug(f"Argument: {param_name!r} = {value!r}")
+                param_dtype_str = cmd.cmd_spec.get_parameter_by_name(param_name).dtype
+                parsed_args[param_name] = parse_parameter_as_its_dtype(value, param_dtype_str)
+
             logger.debug(f"Executing command in working dir cwd={self.working_dir!r}")
             calc = await cmd.execute_in_background(
-                **msg.arguments, _calculation_id=msg.calculation_id, _cwd=self.working_dir
+                **parsed_args, _calculation_id=msg.calculation_id, _cwd=self.working_dir
             )
             if not isinstance(calc, BaseCalculation):
                 raise RuntimeError("Command execution did not return a calculation object.")

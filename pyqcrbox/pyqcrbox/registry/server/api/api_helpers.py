@@ -13,6 +13,7 @@ from sqlalchemy.orm import joinedload
 from sqlmodel import select
 
 from pyqcrbox import QCRBOX_SVCS_REGISTRY, logger, msg_specs, settings, sql_models
+from pyqcrbox.data_management import Dataset
 from pyqcrbox.services import get_data_file_manager
 from pyqcrbox.svcs import get_nats_key_value
 
@@ -102,9 +103,10 @@ def verify_command_exists(
             ).one()
         except sqlalchemy.exc.NoResultFound:
             error_msg = (
-                f"Command not found: {command_name} "
-                f"(application: {application_slug!r}, "
-                f"version: {application_version!r})"
+                f"Command or application not found: "
+                f"command={command_name!r}, "
+                f"application: {application_slug!r}, "
+                f"version: {application_version!r}"
             )
             logger.error(error_msg)
             raise ClientException(error_msg)
@@ -210,7 +212,7 @@ async def _import_dataset(data: Annotated[UploadFile, Body(media_type=RequestEnc
     return qcrbox_dataset_id
 
 
-async def _get_dataset_info(dataset_id: str) -> dict:
+async def _get_dataset_info(dataset_id: str) -> Dataset:
     data_file_manager = await get_data_file_manager()
     dataset_info = await data_file_manager.get_dataset_info(dataset_id)
-    return dataset_info.model_dump()
+    return dataset_info

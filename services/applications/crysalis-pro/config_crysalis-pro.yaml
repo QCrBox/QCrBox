@@ -17,7 +17,7 @@ commands:
         default_value: None
         description: "Path to the directory containing all the necessary files (frames and other) for the CAP integration."
       - name: "par_path"
-        dtype: "QCrBox.input_file"
+        dtype: "QCrBox.input_path"
         default_value: None
         description: "Path to the CrysAlisPro .par file. Must be located in the folder containing the remaining frames and other data"
       - name: "output_cif_path"

@@ -8,9 +8,10 @@ from .base_parameter_spec import BaseParameterSpec
 __all__ = [
     "FolderPathParameterSpec",
     "InputCifParameterSpec",
-    "GenericInputFileParameterSpec",
+    "GenericInputPathParameterSpec",
     "OutputCifParameterSpec",
     "WorkCifParameterSpec",
+    "DataFileParameterSpec",
 ]
 
 
@@ -18,12 +19,12 @@ class BaseFilesystemPathParameterSpec(BaseParameterSpec):
     pass
 
 
-class GenericInputFileParameterSpec(BaseFilesystemPathParameterSpec):
-    dtype: Literal["QCrBox.input_file"]
+class GenericInputPathParameterSpec(BaseFilesystemPathParameterSpec):
+    dtype: Literal["QCrBox.input_path"]
 
 
-class GenericOutputFileParameterSpec(BaseFilesystemPathParameterSpec):
-    dtype: Literal["QCrBox.output_file"]
+class GenericOutputPathParameterSpec(BaseFilesystemPathParameterSpec):
+    dtype: Literal["QCrBox.output_path"]
 
 
 class InputFolderParameterSpec(BaseFilesystemPathParameterSpec):
@@ -32,6 +33,10 @@ class InputFolderParameterSpec(BaseFilesystemPathParameterSpec):
 
 class FolderPathParameterSpec(BaseFilesystemPathParameterSpec):
     dtype: Literal["QCrBox.folder_path"]
+
+
+class DataFileParameterSpec(BaseFilesystemPathParameterSpec):
+    dtype: Literal["QCrBox.data_file"]
 
 
 class BaseCifFileParameterSpec(BaseFilesystemPathParameterSpec):

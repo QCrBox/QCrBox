@@ -12,6 +12,7 @@ from .command_spec import (
     CommandSpecDiscriminatedUnion,
     CommandSpecWithParameters,
     InteractiveCommandSpec,
+    InteractiveSessionSpec,
     PythonCallableSpec,
 )
 from .parameter_spec import ParameterSpec, ParameterSpecDiscriminatedUnion

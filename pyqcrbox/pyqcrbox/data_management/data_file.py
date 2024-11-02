@@ -22,17 +22,35 @@ class DataFileMetadataResponse(QCrBoxPydanticBaseModel):
     filetype: str
 
 
-class Dataset(QCrBoxPydanticBaseModel):
+class DatasetBase(QCrBoxPydanticBaseModel):
+    @property
+    def is_empty(self):
+        return len(self.data_files) == 0
+
+    @property
+    def contains_single_file(self):
+        return len(self.data_files) == 1
+
+    @property
+    def contains_multiple_files(self):
+        return len(self.data_files) > 1
+
+    @property
+    def first_data_file(self) -> DataFileMetadata:
+        return next(iter(self.data_files.values()))
+
+
+class Dataset(DatasetBase):
     dataset_id: str
-    data_files: list[DataFileMetadata]
+    data_files: dict[str, DataFileMetadata]
 
     def to_response_model(self) -> "DatasetResponse":
         return DatasetResponse(
             dataset_id=self.dataset_id,
-            data_files=[f.to_response_model() for f in self.data_files],
+            data_files={key: f.to_response_model() for key, f in self.data_files.items()},
         )
 
 
-class DatasetResponse(QCrBoxPydanticBaseModel):
+class DatasetResponse(DatasetBase):
     dataset_id: str
-    data_files: list[DataFileMetadataResponse]
+    data_files: dict[str, DataFileMetadataResponse]

@@ -1,12 +1,12 @@
 {#def dataset_info, applications = [] #}
 
-{% if dataset_info.data_files | length == 1 %}
-    <div id="datafile-text">{{ dataset_info.data_files[0].filename }}</div>
+{% if dataset_info.contains_single_file %}
+    <div id="datafile-text">{{ dataset_info.first_data_file.filename }}</div>
     <div id="metadata" hx-swap-oob="innerHTML">
         <h3 class="title is-4">Dataset Metadata</h3>
         <ul>
             <li>Dataset id: <code>{{ dataset_info.dataset_id }}</code></li>
-            <li>File type: <code>{{ dataset_info.data_files[0].filetype }}</code></li>
+            <li>File type: <code>{{ dataset_info.first_data_file.filetype }}</code></li>
         </ul>
     </div>
     <div id="dataset-id" hx-swap-oob="innerHTML">
@@ -25,17 +25,18 @@
             <div class="box" style="border: 2px solid #417890; padding: 10px;">
                 <select 
                     id="select-application" 
-                    name="application" 
-                    hx-get="/views/view_start_olex_session_button" 
-                    hx-target="#start-button" 
-                    hx-trigger="change">
+                    name="application"
+                    onchange="updateStartSessionButton()"
+                >
                     <option value="" disabled selected hidden>Please select an application</option>
                     {% if applications %}
                         {% for application in applications %}
-                            <option value="{{application.name}}"                     
-                            data-url="{{ application.url }}"
-                            data-version="{{ application.version }}"
-                            data-registered="{{ application.registered_at.strftime('%Y-%m-%d %H:%M:%S') }}">
+                            <option value="{{application.name}}"
+                                    data-name="{{ application.name }}"
+                                    data-slug="{{ application.slug }}"
+                                    data-version="{{ application.version }}"
+                                    data-url="{{ application.url }}"
+                                    data-registered="{{ application.registered_at.strftime('%Y-%m-%d %H:%M:%S') }}">
                                 {{ application.name }}
                             </option>
                         {% endfor %}
@@ -47,7 +48,7 @@
         </div>
     </div>
 
-{% elif dataset_info.data_files == [] %}
+{% elif dataset_info.is_empty %}
     <div id="datafile-text">
         <i>Empty dataset<i>
     </div>
@@ -72,13 +73,28 @@
 
 
 <script>
+    function updateStartSessionButton() {
+        const selectedOption = document.querySelector('#select-application > option:checked')
+
+        console.log("Updating start session button");
+        console.log(`Selected option: ${selectedOption}`);
+        const appName = selectedOption.getAttribute('data-name');
+        const appSlug = selectedOption.getAttribute('data-slug');
+        const appVersion = selectedOption.getAttribute('data-version');
+        const url = `/views/view_start_session_button?data_file_id={{ dataset_info.first_data_file.qcrbox_file_id}}&application_slug=${appSlug}&application_version=${appVersion}`;
+
+        htmx.ajax('GET', url, '#start-button').then(() => {
+            console.log("Successfully updated start session button");
+        });
+    }
+
     // Update metadata when a selection is made
     document.getElementById('select-application').addEventListener('change', function() {
         const selectedOption = this.options[this.selectedIndex]; // Get the selected option
         const metadataBox = document.getElementById('metadata');
 
         // Get the details from the application attributes
-        const appName = selectedOption.value;
+        const appName = selectedOption.getAttribute('data-name');
         const appUrl = selectedOption.getAttribute('data-url');
         const appVersion = selectedOption.getAttribute('data-version');
         const appRegistered = selectedOption.getAttribute('data-registered');

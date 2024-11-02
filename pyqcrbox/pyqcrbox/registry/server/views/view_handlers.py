@@ -7,6 +7,8 @@ from litestar.datastructures import UploadFile
 from litestar.enums import RequestEncodingType
 from litestar.params import Body
 
+from pyqcrbox.sql_models import CommandInvocationCreate
+
 from ..api import api_helpers
 
 __all__ = []
@@ -67,18 +69,52 @@ async def handle_dataset_upload(
     return render("DatasetUploadResponse", dataset_info=dataset_info, applications=applications)
 
 
-@post(path="/start_olex_session")
-async def start_olex_interactive_session() -> Response:
+@post(path="/interactive/start_session")
+async def start_interactive_session_with_data_file(
+    application_slug: str, application_version: str, data_file_id: str
+) -> Response:
+    cmd = CommandInvocationCreate(
+        application_slug=application_slug,
+        application_version=application_version,
+        command_name="interactive_session",
+        arguments={"input_file": {"data_file_id": data_file_id}},
+    )
+
+    await api_helpers._invoke_command(cmd)
+    return render("StartInteractiveSessionResponse")
+
+
+@post(path="/start_olex2_session")
+async def start_olex2_interactive_session() -> Response:
     return render("StartOlexSessionResponse")
 
 
-@get(path="/view_start_olex_session_button")
-async def view_olex_interactive_session_button() -> Response:
-    return render("StartOlexInteractiveSessionButton")
+@get(path="/view_start_session_button")
+async def view_interactive_session_button(
+    data_file_id: str, application_slug: str, application_version: str
+) -> Response:
+    return render(
+        "StartInteractiveSessionButton",
+        application_slug=application_slug,
+        application_version=application_version,
+        data_file_id=data_file_id,
+    )
 
 
-@post(path="/close_olex_session")
-async def close_olex_session() -> Response:
+@get(path="/view_start_olex2_session_button")
+async def view_olex2_interactive_session_button(
+    data_file_id: str, application_slug: str, application_version: str
+) -> Response:
+    return render(
+        "StartOlexInteractiveSessionButton",
+        application_slug=application_slug,
+        application_version=application_version,
+        data_file_id=data_file_id,
+    )
+
+
+@post(path="/close_olex2_session")
+async def close_olex2_session() -> Response:
     datafile_name = "output.cif"
     processed_dataset_id = "example ID"
     processed_dataset_filetype = "example filetype"
@@ -116,9 +152,11 @@ views_router = Router(
         handle_data_file_upload,
         handle_dataset_upload,
         get_command_details,
-        start_olex_interactive_session,
-        view_olex_interactive_session_button,
-        close_olex_session,
+        start_interactive_session_with_data_file,
+        start_olex2_interactive_session,
+        view_interactive_session_button,
+        view_olex2_interactive_session_button,
+        close_olex2_session,
         view_crystal_explorer_interactive_session_button,
         start_crystal_explorer_interactive_session,
         close_crystal_explorer_session,
