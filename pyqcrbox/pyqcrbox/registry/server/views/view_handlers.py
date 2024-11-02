@@ -81,11 +81,11 @@ async def start_interactive_session_with_data_file(
     )
 
     await api_helpers._invoke_command(cmd)
-    return render("StartSessionResponse")
+    return render("StartInteractiveSessionResponse")
 
 
-@post(path="/start_olex_session")
-async def start_olex_interactive_session() -> Response:
+@post(path="/start_olex2_session")
+async def start_olex2_interactive_session() -> Response:
     return render("StartOlexSessionResponse")
 
 
@@ -101,13 +101,20 @@ async def view_interactive_session_button(
     )
 
 
-@get(path="/view_start_olex_session_button")
-async def view_olex_interactive_session_button() -> Response:
-    return render("StartOlexInteractiveSessionButton")
+@get(path="/view_start_olex2_session_button")
+async def view_olex2_interactive_session_button(
+    data_file_id: str, application_slug: str, application_version: str
+) -> Response:
+    return render(
+        "StartOlexInteractiveSessionButton",
+        application_slug=application_slug,
+        application_version=application_version,
+        data_file_id=data_file_id,
+    )
 
 
-@post(path="/close_olex_session")
-async def close_olex_session() -> Response:
+@post(path="/close_olex2_session")
+async def close_olex2_session() -> Response:
     datafile_name = "output.cif"
     processed_dataset_id = "example ID"
     processed_dataset_filetype = "example filetype"
@@ -146,9 +153,10 @@ views_router = Router(
         handle_dataset_upload,
         get_command_details,
         start_interactive_session_with_data_file,
-        start_olex_interactive_session,
-        view_olex_interactive_session_button,
-        close_olex_session,
+        start_olex2_interactive_session,
+        view_interactive_session_button,
+        view_olex2_interactive_session_button,
+        close_olex2_session,
         view_crystal_explorer_interactive_session_button,
         start_crystal_explorer_interactive_session,
         close_crystal_explorer_session,
