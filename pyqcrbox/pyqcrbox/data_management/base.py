@@ -6,8 +6,8 @@ from pathlib import Path
 
 from pyqcrbox import logger
 from pyqcrbox.data_management.data_file import DataFileMetadata, Dataset, DatasetResponse
-from pyqcrbox.data_management.interactive_session_info import InteractiveSessionInfo
 from pyqcrbox.helpers import generate_data_file_id, generate_dataset_id
+from pyqcrbox.sql_models.interactive_session_info import InteractiveSessionInfo
 
 
 class DataFileManager(ABC):

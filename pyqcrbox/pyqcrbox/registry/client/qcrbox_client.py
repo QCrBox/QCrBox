@@ -9,12 +9,12 @@ from litestar import Litestar
 
 from pyqcrbox import helpers, logger, msg_specs, settings, sql_models
 from pyqcrbox.cli.helpers import get_repo_root
-from pyqcrbox.data_management.interactive_session_info import InteractiveSessionInfo
 from pyqcrbox.helpers import generate_private_routing_key
 from pyqcrbox.registry.client.executable_command.base_calculation import BaseCalculation
 from pyqcrbox.registry.shared.calculation_status import update_calculation_status_in_nats_kv_NEW
 from pyqcrbox.services import get_data_file_manager
 from pyqcrbox.sql_models import CalculationStatusDetails, CalculationStatusEnum
+from pyqcrbox.sql_models.interactive_session_info import InteractiveSessionInfo
 from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import parse_parameter_as_its_dtype
 
 from ..shared import QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup
