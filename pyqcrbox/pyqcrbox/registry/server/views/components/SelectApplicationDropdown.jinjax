@@ -1,7 +1,7 @@
 {# def applications = [] #}
 
 <select
-    id="select-application"
+    id="select-application-dropdown"
     name="application"
     onchange="updateStartSessionButton()"
 >

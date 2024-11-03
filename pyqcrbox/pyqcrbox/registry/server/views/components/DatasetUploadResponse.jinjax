@@ -43,7 +43,7 @@
 
 <script>
     function updateStartSessionButton() {
-        const selectedOption = document.querySelector('#select-application > option:checked')
+        const selectedOption = document.querySelector('#select-application-dropdown > option:checked')
 
         console.log("Updating start session button");
         console.log(`Selected option: ${selectedOption}`);
@@ -58,7 +58,7 @@
     }
 
     // Update metadata when a selection is made
-    document.getElementById('select-application').addEventListener('change', function() {
+    document.getElementById('select-application-dropdown').addEventListener('change', function() {
         const selectedOption = this.options[this.selectedIndex]; // Get the selected option
         const metadataBox = document.getElementById('metadata');
 
