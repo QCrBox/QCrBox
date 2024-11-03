@@ -1,0 +1,23 @@
+{# def applications = [] #}
+
+<select
+    id="select-application"
+    name="application"
+    onchange="updateStartSessionButton()"
+>
+    <option value="" disabled selected hidden>Please select an application</option>
+    {% if applications %}
+        {% for application in applications %}
+            <option value="{{application.name}}"
+                    data-name="{{ application.name }}"
+                    data-slug="{{ application.slug }}"
+                    data-version="{{ application.version }}"
+                    data-url="{{ application.url }}"
+                    data-registered="{{ application.registered_at.strftime('%Y-%m-%d %H:%M:%S') }}">
+                {{ application.name }}
+            </option>
+        {% endfor %}
+    {% else %}
+        <option value="no_applications">No applications registered.</option>
+    {% endif %}
+</select>
