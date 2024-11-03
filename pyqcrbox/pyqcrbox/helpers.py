@@ -99,3 +99,17 @@ def import_all_submodules(parent_dir: Path, parent_package_name: str):
 
 def join_string_reprs(some_strings: list[str]):
     return ", ".join(repr(s) for s in some_strings)
+
+
+def as_bool(x):
+    if isinstance(x, str):
+        if x.lower() == "true":
+            return True
+        elif x.lower() == "false":
+            return False
+        else:
+            raise ValueError(f"Invalid boolean string: {x}")
+    elif isinstance(x, bool):
+        return x
+    else:
+        raise ValueError(f"Invalid boolean value: {x}")

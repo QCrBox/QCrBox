@@ -7,6 +7,7 @@ from litestar.datastructures import UploadFile
 from litestar.enums import RequestEncodingType
 from litestar.params import Body
 
+from pyqcrbox.helpers import as_bool
 from pyqcrbox.services import get_data_file_manager
 from pyqcrbox.sql_models import CommandInvocationCreate
 
@@ -18,6 +19,7 @@ here = Path(__file__).parent
 
 catalog = jinjax.Catalog(root_url="/views/static/components", file_ext=".jinjax")
 catalog.add_folder(here / "components")
+catalog.jinja_env.filters["as_bool"] = as_bool
 
 
 def render(*args, **kwargs) -> Response:
