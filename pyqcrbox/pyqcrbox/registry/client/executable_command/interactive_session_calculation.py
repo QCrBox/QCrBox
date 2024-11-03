@@ -24,6 +24,7 @@ class InteractiveSessionCalculation(BaseCalculation):
         self.finalise_calc = finalise_calc
         self.is_closed = False
         self.output_data_file_id = None
+        self.session_closed_event = anyio.Event()
 
     @property
     def status(self) -> CalculationStatusEnum:
@@ -63,6 +64,7 @@ class InteractiveSessionCalculation(BaseCalculation):
             self.output_data_file_id = await data_manager.import_local_file(output_file)
 
         self.is_closed = True
+        self.session_closed_event.set()
         logger.debug(f"Interactive session finished: {self.calculation_id!r}")
 
     async def close_interactive_session(self):
@@ -82,4 +84,5 @@ class InteractiveSessionCalculation(BaseCalculation):
 
         logger.debug("Sending 'calc_finished' event to interactive session calculation")
         self.calc_finished_event.set()
+        await self.session_closed_event.wait()
         logger.debug("Done. The session should finish now.")
