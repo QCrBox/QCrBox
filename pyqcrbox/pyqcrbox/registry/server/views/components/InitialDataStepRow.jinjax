@@ -6,7 +6,7 @@
                     class="button p-0 m-3"
             >
             <span class="icon">
-                <i id='datafile-square' class="ph-fill ph-square" style="color: #8A8A8A; font-size: 2em;"></i>
+                <i id='datafile-square' class="ph-fill ph-square" style="color: #8A8A8A; font-size: 2.5em;"></i>
             </span>
         </button>
         <HorizontalConnectorLine />
