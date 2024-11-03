@@ -124,33 +124,6 @@ async def view_interactive_session_button(
     )
 
 
-@get(path="/view_start_olex2_session_button")
-async def view_olex2_interactive_session_button(
-    data_file_id: str, application_slug: str, application_version: str
-) -> Response:
-    return render(
-        "StartOlexInteractiveSessionButton",
-        application_slug=application_slug,
-        application_version=application_version,
-        data_file_id=data_file_id,
-    )
-
-
-@post(path="/close_olex2_session")
-async def close_olex2_session() -> Response:
-    datafile_name = "output.cif"
-    processed_dataset_id = "example ID"
-    processed_dataset_filetype = "example filetype"
-    applications = api_helpers._retrieve_applications()
-    return render(
-        "StopOlexSessionResponse",
-        datafile_name=datafile_name,
-        processed_dataset_id=processed_dataset_id,
-        processed_dataset_filetype=processed_dataset_filetype,
-        applications=applications,
-    )
-
-
 @get(path="/view_start_crystal_explorer_session_button")
 async def view_crystal_explorer_interactive_session_button() -> Response:
     return render("StartCrystalExplorerButton")
@@ -177,10 +150,7 @@ views_router = Router(
         get_command_details,
         start_interactive_session_with_data_file,
         close_interactive_session,
-        start_olex2_interactive_session,
         view_interactive_session_button,
-        view_olex2_interactive_session_button,
-        close_olex2_session,
         view_crystal_explorer_interactive_session_button,
         start_crystal_explorer_interactive_session,
         close_crystal_explorer_session,

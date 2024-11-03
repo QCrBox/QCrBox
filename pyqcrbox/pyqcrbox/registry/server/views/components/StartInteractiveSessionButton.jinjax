@@ -5,5 +5,5 @@
     hx-target="#stop-button"
     hx-swap="innerHTML"
     onclick="openInteractiveSessionTab()">
-    Start interactive session
+    Start interactive session (generic)
 </button>
