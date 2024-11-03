@@ -7,6 +7,7 @@ from litestar.datastructures import UploadFile
 from litestar.enums import RequestEncodingType
 from litestar.params import Body
 
+from pyqcrbox.services import get_data_file_manager
 from pyqcrbox.sql_models import CommandInvocationCreate
 
 from ..api import api_helpers
@@ -88,12 +89,12 @@ async def start_interactive_session_with_data_file(
 @post(path="/interactive/close_session")
 async def close_interactive_session(session_id: str) -> Response:
     response_json = await api_helpers._close_interactive_session(session_id)
-    breakpoint()
-    response_json_v2 = await api_helpers._close_interactive_session(session_id)
+    data_manager = await get_data_file_manager()
+    output_data_file_info = await data_manager.get_file_metadata(response_json.output_data_file_id)
 
-    datafile_name = "output.cif"
-    processed_dataset_id = f"example ID (session ID: {session_id})"
-    processed_dataset_filetype = "example filetype"
+    datafile_name = output_data_file_info.filename
+    processed_dataset_id = output_data_file_info.qcrbox_file_id
+    processed_dataset_filetype = output_data_file_info.filetype
     applications = api_helpers._retrieve_applications()
     return render(
         "StopInteractiveSessionResponse",

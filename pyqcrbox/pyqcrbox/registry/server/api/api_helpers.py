@@ -198,7 +198,8 @@ async def _close_interactive_session(session_id: str) -> msg_specs.CloseInteract
         f"{session_info.client_private_inbox}.interactive_session.close",
         rpc=True,
     )
-    return response_json
+    response = msg_specs.CloseInteractiveSessionResponseNATS(**response_json)
+    return response
 
 
 async def _get_data_files() -> list[dict]:

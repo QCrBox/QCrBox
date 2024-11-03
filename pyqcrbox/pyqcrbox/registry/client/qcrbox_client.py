@@ -180,7 +180,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         # logger.debug(f"Storing KV value for {msg.calculation_id=}")
         await update_calculation_status_in_nats_kv_NEW(await calc.get_status_details())
 
-        output_file_id = await calc.wait_until_finished()
+        await calc.wait_until_finished()
         await update_calculation_status_in_nats_kv_NEW(await calc.get_status_details())
 
         self.status.set_idle()
@@ -195,7 +195,9 @@ class QCrBoxClient(QCrBoxServerClientBase):
         response = msg_specs.CalculationStatusResponseNATS(calculation_id=msg.calculation_id, status=status)
         return response
 
-    async def close_interactive_session(self, msg: msg_specs.CloseInteractiveSessionNATS) -> None:
+    async def close_interactive_session(
+        self, msg: msg_specs.CloseInteractiveSessionNATS
+    ) -> msg_specs.CloseInteractiveSessionResponseNATS | None:
         logger.debug(f"Received request to close interactive session: {msg!r}")
         session_id = msg.session_id
         if session_id not in self.calculations:
