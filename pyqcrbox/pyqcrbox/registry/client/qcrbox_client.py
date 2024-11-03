@@ -180,7 +180,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         # logger.debug(f"Storing KV value for {msg.calculation_id=}")
         await update_calculation_status_in_nats_kv_NEW(await calc.get_status_details())
 
-        await calc.wait_until_finished()
+        output_file_id = await calc.wait_until_finished()
         await update_calculation_status_in_nats_kv_NEW(await calc.get_status_details())
 
         self.status.set_idle()
@@ -209,6 +209,13 @@ class QCrBoxClient(QCrBoxServerClientBase):
         except AttributeError:
             logger.warning(f"Calculation for{session_id!r} does not seem to represent an interactive session")
             return
+
+        response = msg_specs.CloseInteractiveSessionResponseNATS(
+            session_id=session_id,
+            status=calc.status,
+            output_data_file_id=calc.output_data_file_id,
+        )
+        return response
 
     def _set_up_asgi_server(self) -> None:
         self.asgi_server = create_client_asgi_server(self.lifespan_context)

@@ -1,9 +1,11 @@
 import anyio
 
 from pyqcrbox import logger
+from pyqcrbox.services import get_data_file_manager
 from pyqcrbox.sql_models import CalculationStatusEnum
 
 from .base_calculation import BaseCalculation
+from .python_callable_calculation import PythonCallableCalculation
 
 
 class InteractiveSessionCalculation(BaseCalculation):
@@ -21,6 +23,7 @@ class InteractiveSessionCalculation(BaseCalculation):
         self.run_calc = run_calc
         self.finalise_calc = finalise_calc
         self.is_closed = False
+        self.output_data_file_id = None
 
     @property
     def status(self) -> CalculationStatusEnum:
@@ -50,18 +53,33 @@ class InteractiveSessionCalculation(BaseCalculation):
 
         if self.finalise_calc:
             logger.debug("Running the 'finalise' command")
+            assert isinstance(
+                self.finalise_calc, PythonCallableCalculation
+            ), "Only Python callables are supported for 'finalise_command' at the moment"
             await self.finalise_calc.wait_until_finished()
+            output_file = self.finalise_calc.return_value
+
+            data_manager = await get_data_file_manager()
+            self.output_data_file_id = await data_manager.import_local_file(output_file)
 
         self.is_closed = True
         logger.debug(f"Interactive session finished: {self.calculation_id!r}")
 
     async def close_interactive_session(self):
+        if self.calc_finished_event.is_set():
+            if self.is_closed:
+                logger.debug("Interactive session already closed")
+            else:
+                logger.warning("Interactive session is being closed.")
+            return
+
         logger.debug("Closing interactive session")
-        logger.debug("Sending 'calc_finished' event to run_calc")
 
         # TODO: should we set the calc_finished_event for the run command?
         #       might be safer in case it doesn't terminate on its own.
+        # logger.debug("Sending 'calc_finished' event to run_calc")
         # self.run_calc.calc_finished_event.set()
 
+        logger.debug("Sending 'calc_finished' event to interactive session calculation")
         self.calc_finished_event.set()
         logger.debug("Done. The session should finish now.")

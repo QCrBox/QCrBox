@@ -1,6 +1,11 @@
 from pyqcrbox.sql_models import QCrBoxPydanticBaseModel
 
-__all__ = ["GetCalculationStatusNATS", "CalculationStatusResponseNATS", "CloseInteractiveSessionNATS"]
+__all__ = [
+    "GetCalculationStatusNATS",
+    "CalculationStatusResponseNATS",
+    "CloseInteractiveSessionNATS",
+    "CloseInteractiveSessionResponseNATS",
+]
 
 
 class GetCalculationStatusNATS(QCrBoxPydanticBaseModel):
@@ -17,5 +22,6 @@ class CloseInteractiveSessionNATS(QCrBoxPydanticBaseModel):
 
 
 class CloseInteractiveSessionResponseNATS(QCrBoxPydanticBaseModel):
-    calculation_id: str
+    session_id: str
     status: str
+    output_data_file_id: str | None

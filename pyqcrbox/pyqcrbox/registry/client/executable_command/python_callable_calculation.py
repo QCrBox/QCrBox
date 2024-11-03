@@ -32,6 +32,7 @@ class PythonCallableCalculation(BaseCalculation):
         logger.debug(f"Waiting for calculation to finish: {self.calculation_id!r}")
         await self.calc_finished_event.wait()
         logger.debug(f"Calculation finished: {self.calculation_id!r}")
+        _ = self.status  # FIXME: This is a workaround to ensure the return value is set.
 
     @property
     def status(self) -> CalculationStatusEnum:

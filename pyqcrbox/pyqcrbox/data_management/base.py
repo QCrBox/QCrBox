@@ -116,7 +116,8 @@ class DataFileManager(ABC):
         return qcrbox_file_id
 
     async def import_local_file(self, file_path: str | Path, _qcrbox_file_id: str | None = None) -> str:
-        with open(file_path, "rb") as f:
+        file_path = Path(file_path)
+        with file_path.open("rb") as f:
             return await self.import_bytes(f.read(), filename=file_path.name, _qcrbox_file_id=_qcrbox_file_id)
 
     async def create_dataset_from_data_file(self, data_file_id: str) -> str:

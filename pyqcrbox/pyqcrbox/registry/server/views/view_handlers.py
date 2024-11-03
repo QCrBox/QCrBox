@@ -87,7 +87,9 @@ async def start_interactive_session_with_data_file(
 
 @post(path="/interactive/close_session")
 async def close_interactive_session(session_id: str) -> Response:
-    await api_helpers._close_interactive_session(session_id)
+    response_json = await api_helpers._close_interactive_session(session_id)
+    breakpoint()
+    response_json_v2 = await api_helpers._close_interactive_session(session_id)
 
     datafile_name = "output.cif"
     processed_dataset_id = f"example ID (session ID: {session_id})"
