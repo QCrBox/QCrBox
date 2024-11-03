@@ -50,7 +50,7 @@
         const appName = selectedOption.getAttribute('data-name');
         const appSlug = selectedOption.getAttribute('data-slug');
         const appVersion = selectedOption.getAttribute('data-version');
-        const url = `/views/view_start_session_button?data_file_id={{ dataset_info.first_data_file.qcrbox_file_id}}&application_slug=${appSlug}&application_version=${appVersion}`;
+        const url = `/views/view_start_session_button?data_file_id={{ dataset_info.first_data_file.qcrbox_file_id}}&application_name=${appName}&application_slug=${appSlug}&application_version=${appVersion}`;
 
         htmx.ajax('GET', url, '#start-button').then(() => {
             console.log("Successfully updated start session button");

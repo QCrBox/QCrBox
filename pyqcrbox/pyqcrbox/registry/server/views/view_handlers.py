@@ -74,7 +74,7 @@ async def handle_dataset_upload(
 
 @post(path="/interactive/start_session")
 async def start_interactive_session_with_data_file(
-    application_slug: str, application_version: str, data_file_id: str
+    application_name: str, application_slug: str, application_version: str, data_file_id: str
 ) -> Response:
     cmd = CommandInvocationCreate(
         application_slug=application_slug,
@@ -85,7 +85,11 @@ async def start_interactive_session_with_data_file(
 
     response_json = await api_helpers._invoke_command(cmd)
     interactive_session_id = response_json["payload"]["calculation_id"]
-    return render("StartInteractiveSessionResponse", interactive_session_id=interactive_session_id)
+    return render(
+        "StartInteractiveSessionResponse",
+        application_name=application_name,
+        interactive_session_id=interactive_session_id,
+    )
 
 
 @post(path="/interactive/close_session")
@@ -114,10 +118,11 @@ async def start_olex2_interactive_session() -> Response:
 
 @get(path="/view_start_session_button")
 async def view_interactive_session_button(
-    data_file_id: str, application_slug: str, application_version: str
+    data_file_id: str, application_name: str, application_slug: str, application_version: str
 ) -> Response:
     return render(
         "StartInteractiveSessionButton",
+        application_name=application_name,
         application_slug=application_slug,
         application_version=application_version,
         data_file_id=data_file_id,

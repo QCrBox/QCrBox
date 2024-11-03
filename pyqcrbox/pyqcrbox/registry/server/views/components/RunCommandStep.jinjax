@@ -8,7 +8,7 @@
         </span>
     </button>
     <HorizontalConnectorLine />
-    <div id="select-application" class="box" style="border: 2px solid #417890; padding: 10px;">
+    <div id="application-box" class="box" style="border: 2px solid #417890; padding: 10px;">
         <SelectApplicationDropdown applications={{ applications }} />
     </div>
 </div>

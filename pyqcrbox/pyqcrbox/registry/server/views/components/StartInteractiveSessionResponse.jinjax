@@ -1,4 +1,4 @@
-{# def interactive_session_id #}
+{# def application_name, interactive_session_id #}
 <button
     class="button is-light m-3"
     onclick="closeInteractiveSessionTab()"
@@ -20,3 +20,7 @@
         <i id="run-command-triangle" class="ph-fill ph-triangle" style="color: #8A8A8A; font-size: 3em;"></i>
     </span>
 </button>
+
+<div id="application-box" hx-swap-oob="innerHTML">
+    {{ application_name }}
+</div>
