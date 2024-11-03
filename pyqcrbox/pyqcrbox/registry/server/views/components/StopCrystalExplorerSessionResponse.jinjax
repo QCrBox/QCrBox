@@ -1,5 +1,5 @@
 <div id="end-workflow-step">
-    <div style="width: 3px; height: 100px; background-color: #417890; position: relative; left: 17px;"></div>
+    <VerticalConnectorLine />
     <button class="button is-ghost">
         <span class="icon">
             <i id="end-workflow-circle" class="ph-fill ph-circle" style="color: #000000; font-size: 3em; position: relative; left: 15px: top: 4px"></i>

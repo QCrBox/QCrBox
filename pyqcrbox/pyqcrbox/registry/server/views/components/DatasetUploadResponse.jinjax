@@ -14,7 +14,7 @@
     </div>
 
     <div id="run-command-step" hx-swap-oob="outerHTML">
-        <div style="width: 3px; height: 100px; background-color: #417890; position: relative; left: 17px"></div>
+        <VerticalConnectorLine />
         <div style="display: inline-flex; align-items: center;">
             <button id="run-command-triangle-button" class="button is-ghost" style="transform: rotate(180deg);">
                 <span class="icon">
