@@ -3,9 +3,10 @@ from textwrap import dedent
 
 import numpy as np
 import plotly.graph_objects as go
-from bokeh.embed import file_html
+from bokeh.embed import components
 from bokeh.models import ColumnDataSource
 from bokeh.plotting import figure
+from bokeh.resources import INLINE
 from iotbx.cif import reader
 from qcrboxtools.analyse.ortep import cif2ortep_glb
 from qcrboxtools.analyse.quality.cif import from_entry
@@ -39,32 +40,32 @@ def basic_model_quality_indicators(input_cif_path, output_html_path):
     indicators = [
         QualityIndicatorBox(
             name=r"$R_1(F)$",
-            value=str(float(cif_block["_refine_ls.r_factor_all"]) * 100),
+            value=f'{float(cif_block["_refine_ls.r_factor_all"]) * 100:.2f}',
             unit="%",
             quality_level=from_entry(cif_block, "_refine_ls.r_factor_all"),
         ),
         QualityIndicatorBox(
             name=r"$wR_2(F^2)$",
-            value=str(float(cif_block["_refine_ls.wr_factor_gt"]) * 100),
+            value=f'{float(cif_block["_refine_ls.wr_factor_gt"]) * 100:.2f}',
             unit="%",
             quality_level=from_entry(cif_block, "_refine_ls.wr_factor_gt"),
         ),
         QualityIndicatorBox(
             name=r"$\rho_\mathrm{max}$",
             value=cif_block["_refine.diff_density_max"],
-            unit=r"$e\,\AA^{-3}$",
+            unit=r"$e\,\unicode{x212B}^{-3}$",
             quality_level=from_entry(cif_block, "_refine.diff_density_max"),
         ),
         QualityIndicatorBox(
             name=r"$\rho_\mathrm{min}$",
             value=cif_block["_refine.diff_density_min"],
-            unit=r"$e\,\AA^{-3}$",
+            unit=r"$e\,\unicode{x212B}^{-3}$",
             quality_level=from_entry(cif_block, "_refine.diff_density_min"),
         ),
         QualityIndicatorBox(
             name=r"$d_\mathrm{min}$",
             value=cif_block["_refine_ls.d_res_high"],
-            unit=r"$\AA$",
+            unit=r"$\unicode{x212B}$",
             quality_level=from_entry(cif_block, "_refine_ls.d_res_high"),
         ),
         QualityIndicatorBox(
@@ -91,7 +92,7 @@ def basic_model_quality_indicators(input_cif_path, output_html_path):
             padding: 10px;
             border-radius: 5px;
             text-align: center;
-            width: 120px;
+            width: 80px;
             color: white;
         }
 
@@ -128,23 +129,44 @@ def basic_model_quality_indicators(input_cif_path, output_html_path):
 
         /* Indicator Content */
         .indicator .name {
+            font-size: small;
+            height: 33%;
+        }
+
+        .indicator .value {
             font-weight: bold;
+            height: 33%
+        }
+
+        .indicator .unit {
+            font-size: small;
+            height: 33%;
         }
     """
     ).strip()
+    mathjax = dedent(
+        r"""
+        <script type="text/javascript" id="MathJax-script" async
+        src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js">
+        </script>
+    """
+    ).strip()
 
-    output_html_path.write_text(quality_div_group(indicators), encoding="UTF-8")
-    output_html_path.with_suffix(".css").write_text(boxes_css, encoding="UTF-8")
+    css_in_html = f"<style>\n{boxes_css}\n</style>\n\n"
+
+    html_snippet = mathjax + css_in_html + quality_div_group(indicators)
+    output_html_path.write_text(html_snippet, encoding="UTF-8")
+    # output_html_path.with_suffix(".css").write_text(boxes_css, encoding="UTF-8")
 
 
-def fobs_calc_block_from_cif(input_cif_path: Path):
+def fobs_calc_block_from_cif(input_cif_path: Path, plotting_module: str = "bokeh"):
     work_cif_path = input_cif_path.parent / "qcrbox_work.cif"
 
     cif_file_to_specific_by_yml(
         input_cif_path,
         work_cif_path,
         YAML_PATH,
-        "fobs_div_fcalc",
+        f"fobs_div_fcalc_{plotting_module}",
         "input_cif_path",
     )
 
@@ -178,7 +200,7 @@ def fobs_div_fcalc_plotly(input_cif_path, output_html_path):
     input_cif_path = Path(input_cif_path)
     output_html_path = Path(output_html_path)
 
-    cif_block = fobs_calc_block_from_cif(input_cif_path)
+    cif_block = fobs_calc_block_from_cif(input_cif_path, "plotly")
 
     f_calc_sq = np.array(cif_block["_refln_F_squared_calc"], dtype=np.float64)
     f_obs_sq = np.array(cif_block["_refln_F_squared_meas"], dtype=np.float64)
@@ -217,16 +239,16 @@ def fobs_div_fcalc_plotly(input_cif_path, output_html_path):
     fig.update_yaxes(range=view_range)
     fig.update_layout(showlegend=False)
 
-    html_string = fig.to_html(include_plotlyjs=True, include_mathjax="cdn")
+    html_snippet = fig.to_html(include_mathjax="cdn", full_html=False)
 
-    output_html_path.write_text(html_string, encoding="UTF-8")
+    output_html_path.write_text(html_snippet, encoding="UTF-8")
 
 
 def fobs_div_fcalc_bokeh(input_cif_path, output_html_path):
     input_cif_path = Path(input_cif_path)
     output_html_path = Path(output_html_path)
 
-    cif_block = fobs_calc_block_from_cif(input_cif_path)
+    cif_block = fobs_calc_block_from_cif(input_cif_path, "bokeh")
 
     f_calc_sq = np.array(cif_block["_refln_F_squared_calc"], dtype=np.float64)
     f_obs_sq = np.array(cif_block["_refln_F_squared_meas"], dtype=np.float64)
@@ -256,9 +278,12 @@ def fobs_div_fcalc_bokeh(input_cif_path, output_html_path):
     )
     p.scatter("Fobs", "Fcalc", source=source)
     p.line(line_start_end, line_start_end, line_width=1, color="#000000", alpha=0.2)
-    html_string = file_html(p)
+    plot_script, plot_div = components(p)
+    js_resources = INLINE.render_js()
+    css_resources = INLINE.render_css()
+    snippet = f"{js_resources}\n{css_resources}\n{plot_script}\n{plot_div}"
 
-    output_html_path.write_text(html_string, encoding="UTF-8")
+    output_html_path.write_text(snippet, encoding="UTF-8")
 
 
 def ortep_3d(input_cif_path, output_html_path):
@@ -268,13 +293,17 @@ def ortep_3d(input_cif_path, output_html_path):
     cif2ortep_glb(input_cif_path, output_glb_path)
     html_snippet = dedent(
         """
-        <!-- Import the component -->
         <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js">
         </script>
+        <style>
+        model-viewer {
+            width: 100%;
+            height: 100%;
+        }
+        </style>
 
-        <!-- Use it like any other HTML element -->
-        <model-viewer alt="3D ORTEP" src="structure.glb" ar shadow-intensity="1" camera-controls touch-action="pan-y">
+        <model-viewer alt="3D ORTEP" src="structure.glb" shadow-intensity="1" camera-controls touch-action="pan-y">
         </model-viewer>
     """
     ).strip()
-    output_html_path.write(html_snippet)
+    output_html_path.write_text(html_snippet, encoding="UTF-8")

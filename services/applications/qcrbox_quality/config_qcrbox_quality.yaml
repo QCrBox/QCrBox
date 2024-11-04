@@ -1,11 +1,11 @@
 #
 # Configuration for the application 'qcrbox_quality'
 #
-name: "Qcrbox Quality"
+name: "QCrBox Quality"
 slug: "qcrbox_quality"
-version: "x.y.z"
-description: "Brief description of the application."
-url: ""
+version: "0.0.1"
+description: "This container provides data quality visualisations based on routines from QCrBoxtools."
+url: "https://github.com/QCrBox/QCrBox"
 
 commands:
   - name: "basic_model_quality_indicators"
