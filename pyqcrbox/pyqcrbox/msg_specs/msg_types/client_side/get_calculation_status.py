@@ -24,4 +24,4 @@ class CloseInteractiveSessionNATS(QCrBoxPydanticBaseModel):
 class CloseInteractiveSessionResponseNATS(QCrBoxPydanticBaseModel):
     session_id: str
     status: str
-    output_data_file_id: str | None
+    output_dataset_id: str | None

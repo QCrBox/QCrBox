@@ -96,17 +96,12 @@ async def start_interactive_session_with_data_file(
 async def close_interactive_session(session_id: str) -> Response:
     response_json = await api_helpers._close_interactive_session(session_id)
     data_manager = await get_data_file_manager()
-    output_data_file_info = await data_manager.get_file_metadata(response_json.output_data_file_id)
+    output_dataset_info = await data_manager.get_dataset_info(response_json.output_dataset_id)
 
-    datafile_name = output_data_file_info.filename
-    processed_dataset_id = output_data_file_info.qcrbox_file_id
-    processed_dataset_filetype = output_data_file_info.filetype
     applications = api_helpers._retrieve_applications()
     return render(
         "StopInteractiveSessionResponse",
-        datafile_name=datafile_name,
-        processed_dataset_id=processed_dataset_id,
-        processed_dataset_filetype=processed_dataset_filetype,
+        dataset_info=output_dataset_info,
         applications=applications,
     )
 

@@ -23,7 +23,7 @@ class InteractiveSessionCalculation(BaseCalculation):
         self.run_calc = run_calc
         self.finalise_calc = finalise_calc
         self.is_closed = False
-        self.output_data_file_id = None
+        self.output_dataset_id = None
         self.session_closed_event = anyio.Event()
 
     @property
@@ -61,7 +61,8 @@ class InteractiveSessionCalculation(BaseCalculation):
             output_file = self.finalise_calc.return_value
 
             data_manager = await get_data_file_manager()
-            self.output_data_file_id = await data_manager.import_local_file(output_file)
+            output_data_file_id = await data_manager.import_local_file(output_file)
+            self.output_dataset_id = await data_manager.create_dataset_from_data_file(output_data_file_id)
 
         self.is_closed = True
         self.session_closed_event.set()

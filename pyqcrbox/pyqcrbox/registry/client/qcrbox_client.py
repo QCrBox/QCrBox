@@ -215,7 +215,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         response = msg_specs.CloseInteractiveSessionResponseNATS(
             session_id=session_id,
             status=calc.status,
-            output_data_file_id=calc.output_data_file_id,
+            output_dataset_id=calc.output_dataset_id,
         )
         return response
 
