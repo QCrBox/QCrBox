@@ -57,7 +57,7 @@
 
     function openInteractiveSessionTab() {
         // Open the URL in a new tab and store the reference
-        interactiveSessionTab = window.open(`http://${window.location.hostname}:12002/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true`, '_blank');
+        interactiveSessionTab = window.open(`http://${window.location.hostname}:12004/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true`, '_blank');
     }
 
     function closeInteractiveSessionTab() {
