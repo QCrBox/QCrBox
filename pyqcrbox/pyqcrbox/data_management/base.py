@@ -7,6 +7,7 @@ from pathlib import Path
 from pyqcrbox import logger
 from pyqcrbox.data_management.data_file import DataFileMetadata, Dataset, DatasetResponse
 from pyqcrbox.helpers import generate_data_file_id, generate_dataset_id
+from pyqcrbox.sql_models.interactive_session_info import InteractiveSessionInfo
 
 
 class DataFileManager(ABC):
@@ -41,6 +42,13 @@ class DataFileManager(ABC):
     @abstractmethod
     async def _delete_from_object_store(self, bucket: str, key: str) -> None:
         pass
+
+    async def store_interactive_session_info(self, session_info: InteractiveSessionInfo) -> None:
+        await self._store_in_kv("interactive_sessions", session_info.session_id, session_info.model_dump_json().encode())
+
+    async def get_interactive_session_info(self, session_id: str) -> InteractiveSessionInfo:
+        session_info_as_bytes = await self._retrieve_from_kv("interactive_sessions", session_id)
+        return InteractiveSessionInfo.model_validate_json(session_info_as_bytes.decode())
 
     async def store_dataset_info(self, dataset_info: Dataset) -> None:
         await self._store_in_kv("datasets", dataset_info.dataset_id, dataset_info.model_dump_json().encode())
@@ -108,7 +116,8 @@ class DataFileManager(ABC):
         return qcrbox_file_id
 
     async def import_local_file(self, file_path: str | Path, _qcrbox_file_id: str | None = None) -> str:
-        with open(file_path, "rb") as f:
+        file_path = Path(file_path)
+        with file_path.open("rb") as f:
             return await self.import_bytes(f.read(), filename=file_path.name, _qcrbox_file_id=_qcrbox_file_id)
 
     async def create_dataset_from_data_file(self, data_file_id: str) -> str:

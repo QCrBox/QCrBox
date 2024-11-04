@@ -24,10 +24,10 @@ commands:
         implemented_as: "cli_command"
         call_pattern: "python dummy_gui.py {input_file}"
         used_basecommand_parameters: ["input_file"]
-#      finalise:
-#        implemented_as: "python_callable"
-#        import_path: "configure_olex2"
-#        callable_name: "finalise__interactive"
-#        used_basecommand_parameters: ["input_cif_path", "output_cif_path"]
+      finalise:
+        implemented_as: "python_callable"
+        import_path: "dummy_gui_commands"
+        callable_name: "finalise_interactive"
+        used_basecommand_parameters: ["input_file"]
 
 qcrbox_yaml_spec_version: "0.1"

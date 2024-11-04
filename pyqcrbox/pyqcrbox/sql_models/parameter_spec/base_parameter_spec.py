@@ -116,6 +116,9 @@ class BaseParameterSpec(QCrBoxPydanticBaseModel):
 
         return model_data
 
+    def dtype_is_compatible_with(self, other_dtype: str):
+        return self.dtype == other_dtype
+
     # @field_validator("default_value")
     # @classmethod
     # def convert_default_value_to_string_representation(cls, value: Any) -> str:

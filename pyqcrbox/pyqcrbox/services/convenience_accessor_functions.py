@@ -5,7 +5,7 @@ from pyqcrbox.data_management import DataFileManager
 from pyqcrbox.services.services_registry import QCRBOX_GLOBAL_SERVICES_REGISTRY
 
 
-async def get_data_file_manager():
+async def get_data_file_manager() -> DataFileManager:
     with svcs.Container(QCRBOX_GLOBAL_SERVICES_REGISTRY) as con:
         return await con.aget(DataFileManager)
 

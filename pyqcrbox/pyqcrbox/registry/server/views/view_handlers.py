@@ -7,6 +7,8 @@ from litestar.datastructures import UploadFile
 from litestar.enums import RequestEncodingType
 from litestar.params import Body
 
+from pyqcrbox.helpers import as_bool
+from pyqcrbox.services import get_data_file_manager
 from pyqcrbox.sql_models import CommandInvocationCreate
 
 from ..api import api_helpers
@@ -17,6 +19,7 @@ here = Path(__file__).parent
 
 catalog = jinjax.Catalog(root_url="/views/static/components", file_ext=".jinjax")
 catalog.add_folder(here / "components")
+catalog.jinja_env.filters["as_bool"] = as_bool
 
 
 def render(*args, **kwargs) -> Response:
@@ -71,7 +74,7 @@ async def handle_dataset_upload(
 
 @post(path="/interactive/start_session")
 async def start_interactive_session_with_data_file(
-    application_slug: str, application_version: str, data_file_id: str
+    application_name: str, application_slug: str, application_version: str, data_file_id: str
 ) -> Response:
     cmd = CommandInvocationCreate(
         application_slug=application_slug,
@@ -80,8 +83,27 @@ async def start_interactive_session_with_data_file(
         arguments={"input_file": {"data_file_id": data_file_id}},
     )
 
-    await api_helpers._invoke_command(cmd)
-    return render("StartInteractiveSessionResponse")
+    response_json = await api_helpers._invoke_command(cmd)
+    interactive_session_id = response_json["payload"]["calculation_id"]
+    return render(
+        "StartInteractiveSessionResponse",
+        application_name=application_name,
+        interactive_session_id=interactive_session_id,
+    )
+
+
+@post(path="/interactive/close_session")
+async def close_interactive_session(session_id: str) -> Response:
+    response_json = await api_helpers._close_interactive_session(session_id)
+    data_manager = await get_data_file_manager()
+    output_dataset_info = await data_manager.get_dataset_info(response_json.output_dataset_id)
+
+    applications = api_helpers._retrieve_applications()
+    return render(
+        "StopInteractiveSessionResponse",
+        dataset_info=output_dataset_info,
+        applications=applications,
+    )
 
 
 @post(path="/start_olex2_session")
@@ -91,40 +113,14 @@ async def start_olex2_interactive_session() -> Response:
 
 @get(path="/view_start_session_button")
 async def view_interactive_session_button(
-    data_file_id: str, application_slug: str, application_version: str
+    data_file_id: str, application_name: str, application_slug: str, application_version: str
 ) -> Response:
     return render(
         "StartInteractiveSessionButton",
+        application_name=application_name,
         application_slug=application_slug,
         application_version=application_version,
         data_file_id=data_file_id,
-    )
-
-
-@get(path="/view_start_olex2_session_button")
-async def view_olex2_interactive_session_button(
-    data_file_id: str, application_slug: str, application_version: str
-) -> Response:
-    return render(
-        "StartOlexInteractiveSessionButton",
-        application_slug=application_slug,
-        application_version=application_version,
-        data_file_id=data_file_id,
-    )
-
-
-@post(path="/close_olex2_session")
-async def close_olex2_session() -> Response:
-    datafile_name = "output.cif"
-    processed_dataset_id = "example ID"
-    processed_dataset_filetype = "example filetype"
-    applications = api_helpers._retrieve_applications()
-    return render(
-        "StopOlexSessionResponse",
-        datafile_name=datafile_name,
-        processed_dataset_id=processed_dataset_id,
-        processed_dataset_filetype=processed_dataset_filetype,
-        applications=applications,
     )
 
 
@@ -153,10 +149,8 @@ views_router = Router(
         handle_dataset_upload,
         get_command_details,
         start_interactive_session_with_data_file,
-        start_olex2_interactive_session,
+        close_interactive_session,
         view_interactive_session_button,
-        view_olex2_interactive_session_button,
-        close_olex2_session,
         view_crystal_explorer_interactive_session_button,
         start_crystal_explorer_interactive_session,
         close_crystal_explorer_session,

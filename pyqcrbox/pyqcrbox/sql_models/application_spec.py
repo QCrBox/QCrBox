@@ -90,7 +90,8 @@ class ApplicationSpec(ApplicationSpecBase):
     @classmethod
     def from_yaml_file(cls, file_path: str | Path):
         yaml_file_path = Path(file_path)
-        sys.path.insert(0, yaml_file_path.parent.absolute())
+        yaml_file_dir = str(yaml_file_path.parent.absolute())
+        sys.path.insert(0, yaml_file_dir)
         yaml_data = yaml.safe_load(yaml_file_path.open())
         return cls(**yaml_data, yaml_file_path=yaml_file_path)
 

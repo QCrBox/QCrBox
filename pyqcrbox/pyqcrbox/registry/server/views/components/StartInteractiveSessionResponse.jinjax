@@ -1,7 +1,8 @@
+{# def application_name, interactive_session_id #}
 <button
     class="button is-light m-3"
-    onclick="closeOlexTab()"
-    hx-post="/views/close_olex2_session"
+    onclick="closeInteractiveSessionTab()"
+    hx-post="/views/interactive/close_session?session_id={{ interactive_session_id }}"
     hx-target="#data-step"
     hx-swap="outerHTML">
     Stop Interactive Session
@@ -19,3 +20,7 @@
         <i id="run-command-triangle" class="ph-fill ph-triangle" style="color: #8A8A8A; font-size: 3em;"></i>
     </span>
 </button>
+
+<div id="application-box" hx-swap-oob="innerHTML">
+    {{ application_name }}
+</div>

@@ -12,7 +12,9 @@ from pyqcrbox.cli.helpers import get_repo_root
 from pyqcrbox.helpers import generate_private_routing_key
 from pyqcrbox.registry.client.executable_command.base_calculation import BaseCalculation
 from pyqcrbox.registry.shared.calculation_status import update_calculation_status_in_nats_kv_NEW
+from pyqcrbox.services import get_data_file_manager
 from pyqcrbox.sql_models import CalculationStatusDetails, CalculationStatusEnum
+from pyqcrbox.sql_models.interactive_session_info import InteractiveSessionInfo
 from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import parse_parameter_as_its_dtype
 
 from ..shared import QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup
@@ -75,6 +77,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         )
         self.nats_broker.subscriber(f"{self.private_inbox}.cmd.execute")(self.handle_command_execution)
         self.nats_broker.subscriber(f"{self.private_inbox}.calc.status")(self.get_calculation_status)
+        self.nats_broker.subscriber(f"{self.private_inbox}.interactive_session.close")(self.close_interactive_session)
 
         # # Subscriber for command invocation requests
         # subject = f"cmd-invocation.request.{self.application_spec.nats_subject}"
@@ -128,6 +131,16 @@ class QCrBoxClient(QCrBoxServerClientBase):
         logger.info(f"Received command execution request: {msg!r} (current status: {self.status})")
         self.status.set_busy()
 
+        if msg.command_name == "interactive_session":
+            # TODO: this does not belong here - it should be handled by the interactive session itself
+            interactive_session_info = InteractiveSessionInfo(
+                session_id=msg.calculation_id,
+                client_private_inbox=self.private_inbox,
+                cmd_execution_request=msg,
+            )
+            data_manager = await get_data_file_manager()
+            await data_manager.store_interactive_session_info(interactive_session_info)
+
         try:
             cmd = self.get_executable_command(msg.command_name)
 
@@ -180,6 +193,38 @@ class QCrBoxClient(QCrBoxServerClientBase):
         status = self.calculations[msg.calculation_id].status
         logger.debug(f"Current calculation status: {status!r}")
         response = msg_specs.CalculationStatusResponseNATS(calculation_id=msg.calculation_id, status=status)
+        return response
+
+    async def close_interactive_session(
+        self, msg: msg_specs.CloseInteractiveSessionNATS
+    ) -> msg_specs.CloseInteractiveSessionResponseNATS | None:
+        logger.debug(f"Received request to close interactive session: {msg!r}")
+        session_id = msg.session_id
+        if session_id not in self.calculations:
+            logger.warning(f"No calculation found for interactive session ID {session_id!r}")
+            response = msg_specs.CloseInteractiveSessionResponseNATS(
+                session_id=session_id,
+                status=CalculationStatusEnum.FAILED,
+                output_dataset_id=None,
+            )
+            return response
+
+        calc = self.calculations[session_id]
+        try:
+            await calc.close_interactive_session()
+            session_status = calc.status
+            output_dataset_id = calc.output_dataset_id
+            logger.info(f"Closed interactive session: {session_id!r}")
+        except AttributeError:
+            logger.warning(f"Calculation for{session_id!r} does not seem to represent an interactive session")
+            session_status = CalculationStatusEnum.FAILED
+            output_dataset_id = None
+
+        response = msg_specs.CloseInteractiveSessionResponseNATS(
+            session_id=session_id,
+            status=session_status,
+            output_dataset_id=output_dataset_id,
+        )
         return response
 
     def _set_up_asgi_server(self) -> None:

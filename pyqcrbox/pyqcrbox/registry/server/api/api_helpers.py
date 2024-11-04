@@ -14,7 +14,7 @@ from sqlmodel import select
 
 from pyqcrbox import QCRBOX_SVCS_REGISTRY, logger, msg_specs, settings, sql_models
 from pyqcrbox.data_management import Dataset
-from pyqcrbox.services import get_data_file_manager
+from pyqcrbox.services import get_data_file_manager, get_nats_broker
 from pyqcrbox.svcs import get_nats_key_value
 
 
@@ -185,6 +185,21 @@ async def _get_calculation_info_by_calculation_id(calculation_id: str) -> dict:
         return json.loads(calc_status_info_str)
     except nats.js.errors.KeyNotFoundError:
         raise CalculationNotFoundError(calculation_id)
+
+
+async def _close_interactive_session(session_id: str) -> msg_specs.CloseInteractiveSessionResponseNATS:
+    nats_broker = await get_nats_broker()
+    data_manager = await get_data_file_manager()
+    session_info = await data_manager.get_interactive_session_info(session_id)
+
+    msg = msg_specs.CloseInteractiveSessionNATS(session_id=session_id)
+    response_json = await nats_broker.publish(
+        msg,
+        f"{session_info.client_private_inbox}.interactive_session.close",
+        rpc=True,
+    )
+    response = msg_specs.CloseInteractiveSessionResponseNATS(**response_json)
+    return response
 
 
 async def _get_data_files() -> list[dict]:
