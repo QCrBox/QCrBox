@@ -45,6 +45,30 @@ def finalise__interactive(input_cif_path, output_cif_path):
     )
 
 
+def __finalise_interactive(input_cif_path):
+    input_cif_path = Path(input_cif_path)
+    work_folder = input_cif_path.parent
+
+    newest_cif_path = next(
+        reversed(
+            sorted(
+                (file_path for file_path in work_folder.glob("*.cif") if file_path.name != "output.cif"),
+                key=os.path.getmtime,
+            )
+        )
+    )
+
+    # TODO if not existing, rerun newest res with ACTA
+    #
+    #
+    # # Go to unified keywords and split SUs into separate entries
+    # cif_file_merge_to_unified_by_yml(
+    #     newest_cif_path, output_cif_path, input_cif_path, YAML_PATH, "interactive", "output_cif_path"
+    # )
+
+    return newest_cif_path
+
+
 def toparams__interactive(input_cif_path, parameter_json_path, parameter_folder):
     input_cif_path = Path(input_cif_path)
     work_folder = input_cif_path.parent
