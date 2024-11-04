@@ -202,20 +202,28 @@ class QCrBoxClient(QCrBoxServerClientBase):
         session_id = msg.session_id
         if session_id not in self.calculations:
             logger.warning(f"No calculation found for interactive session ID {session_id!r}")
-            return
+            response = msg_specs.CloseInteractiveSessionResponseNATS(
+                session_id=session_id,
+                status=CalculationStatusEnum.FAILED,
+                output_dataset_id=None,
+            )
+            return response
 
         calc = self.calculations[session_id]
         try:
             await calc.close_interactive_session()
-            logger.warning(f"Closed interactive session: {session_id!r}")
+            session_status = calc.status
+            output_dataset_id = calc.output_dataset_id
+            logger.info(f"Closed interactive session: {session_id!r}")
         except AttributeError:
             logger.warning(f"Calculation for{session_id!r} does not seem to represent an interactive session")
-            return
+            session_status = CalculationStatusEnum.FAILED
+            output_dataset_id = None
 
         response = msg_specs.CloseInteractiveSessionResponseNATS(
             session_id=session_id,
-            status=calc.status,
-            output_dataset_id=calc.output_dataset_id,
+            status=session_status,
+            output_dataset_id=output_dataset_id,
         )
         return response
 
