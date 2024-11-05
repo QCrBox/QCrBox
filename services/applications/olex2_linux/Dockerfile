@@ -28,9 +28,9 @@ COPY --chown=${QCRBOX_USER}:${QCRBOX_GROUP} ./olex2_files/olex2-linux64_hl.zip /
 USER ${QCRBOX_USER}
 
 RUN cd /opt &&  \
-    unzip olex2/olex2-linux64_hl.zip && \
+    unzip -o olex2/olex2-linux64_hl.zip  && \
     rm olex2/olex2-linux64_hl.zip && \
-    chmod +x olex2/olex2c-linux64 && \
+    # chmod +x olex2/olex2c-linux64 && \
     chmod +x olex2/startc
 
 RUN sed -i 's|^#! /bin/sh|#! /bin/bash|' /opt/olex2/start && \
