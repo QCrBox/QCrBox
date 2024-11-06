@@ -205,7 +205,9 @@ def fobs_div_fcalc_plotly(input_cif_path, output_html_path):
     f_calc_sq = np.array(cif_block["_refln_F_squared_calc"], dtype=np.float64)
     f_obs_sq = np.array(cif_block["_refln_F_squared_meas"], dtype=np.float64)
 
-    fobs = np.sqrt(f_obs_sq)
+    fobs = np.zeros_like(f_obs_sq)
+    fobs[f_obs_sq > 0] = np.sqrt(f_obs_sq[f_obs_sq > 0])
+    fobs[f_obs_sq < 0] = -np.sqrt(np.abs(f_obs_sq[f_obs_sq < 0]))
     fcalc = np.sqrt(f_calc_sq)
 
     line_start_end, view_range = diagonal_line_parameters(fobs, fcalc)
@@ -252,8 +254,9 @@ def fobs_div_fcalc_bokeh(input_cif_path, output_html_path):
 
     f_calc_sq = np.array(cif_block["_refln_F_squared_calc"], dtype=np.float64)
     f_obs_sq = np.array(cif_block["_refln_F_squared_meas"], dtype=np.float64)
-
-    fobs = np.sqrt(f_obs_sq)
+    fobs = np.zeros_like(f_obs_sq)
+    fobs[f_obs_sq > 0] = np.sqrt(f_obs_sq[f_obs_sq > 0])
+    fobs[f_obs_sq < 0] = -np.sqrt(np.abs(f_obs_sq[f_obs_sq < 0]))
     fcalc = np.sqrt(f_calc_sq)
 
     line_start_end, view_range = diagonal_line_parameters(fobs, fcalc)
