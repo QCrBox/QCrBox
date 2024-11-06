@@ -30,6 +30,8 @@ However, there will be an initial period of stabilisation where this is not adhe
 - Fixed formatting checks in CI runs. ([#370](https://github.com/QCrBox/QCrBox/issues/370))
 - Fixed missing dependency, leading to startup errors. ([#368](https://github.com/QCrBox/QCrBox/issues/368))
 - Fixed a bug that prevented pre-build scripts from being run if the build is invoked from a subdirectory. ([#385](https://github.com/QCrBox/QCrBox/issues/385))
+- Fixed an issue that prevented the deployment script from running. ([#393](https://github.com/QCrBox/QCrBox/issues/393))
+- Fixed an issue that prevented the Olex2 docker image from being built. ([#394](https://github.com/QCrBox/QCrBox/issues/394))
 
 ### Other changes
 
