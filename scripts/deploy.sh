@@ -51,11 +51,11 @@ main() {
     prompt_for_confirmation
 
     cd $QCRBOX_REPO
-    devbox run qcb down
-    devbox run git checkout $QCRBOX_BRANCH
-    devbox run git pull
-    devbox run qcb build $QCRBOX_COMPONENTS
-    devbox run qcb up --no-build $QCRBOX_COMPONENTS
+    qcb down
+    git checkout $QCRBOX_BRANCH
+    git pull
+    qcb build $QCRBOX_COMPONENTS
+    qcb up --no-build $QCRBOX_COMPONENTS
 
     echo "Deployment successful"
 }
