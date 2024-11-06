@@ -65,6 +65,7 @@
         // Open the URL in a new tab and store the reference
         let hostname = window.location.hostname;
         let port = gui_ports[appSlug] || 12001;
+        console.log(`Looking up GUI port for appSlug '${appSlug}' (found: ${port})`)
         interactiveSessionTabs[appSlug] = window.open(`http://${hostname}:${port}/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true`, '_blank');
     }
 
