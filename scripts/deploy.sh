@@ -22,6 +22,16 @@ prompt_for_confirmation() {
 }
 
 
+abort_if_not_running_within_devbox_shell() {
+    local devbox_shell_enabled=${DEVBOX_SHELL_ENABLED:-}
+
+    if [ "${devbox_shell_enabled}" = "" ]; then
+        echo "This script must be run from within a devbox shell."
+        echo "Please run 'devbox shell' and then execute it again."
+        exit 1
+    fi
+}
+
 print_planned_actions() {
     local qcrbox_repo=$1
     local branch=$2
@@ -36,6 +46,7 @@ print_planned_actions() {
 
 
 main() {
+    abort_if_not_running_within_devbox_shell
     print_planned_actions "${QCRBOX_REPO}" "${QCRBOX_BRANCH}" "${QCRBOX_COMPONENTS}"
     prompt_for_confirmation
 
