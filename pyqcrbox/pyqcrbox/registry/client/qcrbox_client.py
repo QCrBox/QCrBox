@@ -220,6 +220,11 @@ class QCrBoxClient(QCrBoxServerClientBase):
             session_status = CalculationStatusEnum.FAILED
             output_dataset_id = None
 
+        logger.debug(f"Current client status: {self.status}")
+        logger.debug("Setting client status to 'idle'")
+        self.status.set_idle()
+        logger.debug(f"Client status now: {self.status}")
+
         response = msg_specs.CloseInteractiveSessionResponseNATS(
             session_id=session_id,
             status=session_status,
