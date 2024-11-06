@@ -56,8 +56,8 @@
     let interactiveSessionTabs = {};  // Variable to store the reference to the opened tab(s)
     let gui_ports = {
         "olex2": 12004,
-        "crystal_explorer": 12003,
-        "dummy_gui": 12002,
+        "crystal-explorer": 12003,
+        "dummy-gui": 12002,
     };
     let myAppSlug = "dummy_gui";
 
