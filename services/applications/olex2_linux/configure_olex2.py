@@ -45,8 +45,8 @@ def finalise__interactive(input_cif_path, output_cif_path):
     )
 
 
-def __finalise_interactive(input_cif_path):
-    input_cif_path = Path(input_cif_path)
+def __finalise_interactive(input_file):
+    input_cif_path = Path(input_file)
     work_folder = input_cif_path.parent
 
     newest_cif_path = next(
