@@ -64,6 +64,6 @@ main() {
     qcb build $QCRBOX_COMPONENTS
     qcb up --no-build $QCRBOX_COMPONENTS
 
-    echo "Deployment successful"
+    echo f"Successfully deployed branch: {QCRBOX_BRANCH}"
 }
 main
