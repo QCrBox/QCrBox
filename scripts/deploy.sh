@@ -45,6 +45,12 @@ print_planned_actions() {
 }
 
 
+remove_docker_volumes() {
+    echo "Removing Docker volumes for NATS storage and QCrBox server db"
+    docker volume rm -f qcrbox_qcrbox-nats-storage qcrbox_qcrbox-registry-db
+}
+
+
 main() {
     abort_if_not_running_within_devbox_shell
     print_planned_actions "${QCRBOX_REPO}" "${QCRBOX_BRANCH}" "${QCRBOX_COMPONENTS}"
@@ -52,6 +58,7 @@ main() {
 
     cd $QCRBOX_REPO
     qcb down
+    remove_docker_volumes
     git checkout $QCRBOX_BRANCH
     git pull
     qcb build $QCRBOX_COMPONENTS
