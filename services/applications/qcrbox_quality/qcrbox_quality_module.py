@@ -78,69 +78,96 @@ def basic_model_quality_indicators(input_cif_path, output_html_path):
 
     boxes_css = dedent(
         """
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-
-        .container {
+        .indicators-container {
             display: flex;
-            gap: 10px;
+            gap: 16px;
+            justify-content: center;
+            flex-direction: row;
+            padding: 20px;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
         }
 
         .indicator {
-            padding: 10px;
-            border-radius: 5px;
+            padding: 12px;
+            border-radius: 8px;
             text-align: center;
-            width: 80px;
-            color: white;
+            width: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 70px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.2s ease;
         }
 
-        /* Data Quality Colour Classes */
+        .indicator:hover {
+            transform: translateY(-2px);
+        }
+
+        /* Data Quality Colour Classes with slightly muted colors */
         .data-quality-good {
-            background-color: #00821e;
+            background-color: #2e9d4f;
             color: #ffffff;
         }
 
         .data-quality-goodish {
-            background-color: #6fc936;
+            background-color: #7ed957;
             color: #000000;
         }
 
         .data-quality-marginal {
-            background-color: #dfee14;
+            background-color: #e4ef4c;
             color: #000000;
         }
 
         .data-quality-badish {
-            background-color: #FF9800;
+            background-color: #ffa726;
             color: #000000;
         }
 
         .data-quality-bad {
-            background-color: #ee3a14;
+            background-color: #f44336;
             color: #ffffff;
         }
 
         .data-quality-information {
-            background-color: #6b6b6b;
+            background-color: #78909c;
             color: #ffffff;
         }
 
         /* Indicator Content */
         .indicator .name {
-            font-size: small;
-            height: 33%;
+            font-size: 14px;
+            line-height: 1.4;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 40px;
         }
 
         .indicator .value {
-            font-weight: bold;
-            height: 33%
+            font-size: 18px;
+            font-weight: 600;
+            margin: 4px 0;
         }
 
         .indicator .unit {
-            font-size: small;
-            height: 33%;
+            font-size: 12px;
+            opacity: 0.9;
+            margin-top: 4px;
+            line-height: 1.2;
+        }
+
+        /* MathJax specific adjustments */
+        .mjx-chtml {
+            font-size: 110% !important;
+            margin: 0 !important;
+        }
+
+        .name .mjx-chtml {
+            display: inline-flex !important;
+            align-items: center;
         }
     """
     ).strip()
@@ -278,6 +305,7 @@ def fobs_div_fcalc_bokeh(input_cif_path, output_html_path):
         x_range=view_range,
         y_axis_label=r"$$F_\mathrm{calc}$$",
         x_axis_label=r"$$F_\mathrm{obs}$$",
+        sizing_mode="stretch_both",
     )
     p.scatter("Fobs", "Fcalc", source=source)
     p.line(line_start_end, line_start_end, line_width=1, color="#000000", alpha=0.2)
