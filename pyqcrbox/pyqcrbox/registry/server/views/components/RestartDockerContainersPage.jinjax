@@ -1,0 +1,3 @@
+<MainLayout title="QCrBox Admin">
+    <RestartDockerContainersButton />
+</MainLayout>

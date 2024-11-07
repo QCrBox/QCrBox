@@ -3,12 +3,13 @@ from typing import Annotated
 
 import jinjax
 from litestar import MediaType, Response, Router, get, post
-from litestar.datastructures import UploadFile
+from litestar.datastructures import ResponseHeader, UploadFile
 from litestar.enums import RequestEncodingType
 from litestar.params import Body
 
 from pyqcrbox.helpers import as_bool
-from pyqcrbox.services import get_data_file_manager
+from pyqcrbox.logging import logger
+from pyqcrbox.services import get_data_file_manager, get_nats_broker
 from pyqcrbox.sql_models import CommandInvocationCreate
 
 from ..api import api_helpers
@@ -139,6 +140,25 @@ async def close_crystal_explorer_session() -> Response:
     return render("StopCrystalExplorerSessionResponse")
 
 
+@get(path="/restart")
+async def serve_restart_docker_containers_page() -> Response:
+    return render("RestartDockerContainersPage")
+
+
+@post(
+    path="/restart_docker_containers",
+    media_type=MediaType.HTML,
+    response_headers=[ResponseHeader(name="HX-Refresh", value="true")],
+)
+async def restart_docker_containers() -> None:
+    logger.debug("Sending NATS message to restart docker containers")
+
+    nats_broker = await get_nats_broker()
+    await nats_broker.publish("Please restart containers now", subject="restart-qcrbox-containers")
+    logger.debug("NATS message sent, containers should be restarting shortly.")
+    return render("RestartDockerContainersPage")
+
+
 views_router = Router(
     path="/views",
     route_handlers=[
@@ -154,5 +174,7 @@ views_router = Router(
         view_crystal_explorer_interactive_session_button,
         start_crystal_explorer_interactive_session,
         close_crystal_explorer_session,
+        serve_restart_docker_containers_page,
+        restart_docker_containers,
     ],
 )
