@@ -17,10 +17,12 @@ listen_to_nats_messages() {
 
 restart_components_upon_new_message() {
     while true; do
-      echo "================================================"
-      echo "[DDD] Beginning of while loop"
-      ls -d ${NATS_MSG_DUMP_DIR}/* | entr -p -d ./restart_components.sh
-      sleep 1
+        echo "================================================"
+        echo "[DDD] Beginning of while loop"
+        ls -d ${NATS_MSG_DUMP_DIR}/* | \
+            entr -p -n -d ./restart_components.sh || \
+            echo "Entr exited with status: $?"
+        sleep 1
     done
 }
 
