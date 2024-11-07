@@ -53,30 +53,29 @@
 </MainLayout>
 
 <script>
-    let interactiveSessionTab;  // Variable to store the reference to the opened tab
+    let interactiveSessionTabs = {};  // Variable to store the reference to the opened tab(s)
+    let gui_ports = {
+        "olex2": 12004,
+        "crystal-explorer": 12003,
+        "dummy-gui": 12002,
+    };
+    let myAppSlug = "dummy_gui";
 
-    function openInteractiveSessionTab() {
+    function openInteractiveSessionTab(appSlug) {
         // Open the URL in a new tab and store the reference
-        interactiveSessionTab = window.open(`http://${window.location.hostname}:12004/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true`, '_blank');
+        let hostname = window.location.hostname;
+        let port = gui_ports[appSlug] || 12001;
+        console.log(`Looking up GUI port for appSlug '${appSlug}' (found: ${port})`)
+        interactiveSessionTabs[appSlug] = window.open(`http://${hostname}:${port}/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true`, '_blank');
     }
 
-    function closeInteractiveSessionTab() {
+    function closeInteractiveSessionTab(appSlug) {
         // Close the tab if it's open
-        if (interactiveSessionTab && !interactiveSessionTab.closed) {
-            interactiveSessionTab.close();
+        let session_tab = interactiveSessionTabs[appSlug];
+        if (session_tab && !session_tab.closed) {
+            session_tab.close();
+            interactiveSessionTabs[appSlug] = null;
         }
     }
 
-    let crystalExplorerTab; 
-
-    function openCrystalExplorerTab() {
-        crystalExplorerTab = window.open(`http://${window.location.hostname}:12003/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true`, '_blank');
-    }
-
-    function closeCrystalExplorerTab() {
-        // Close the tab if it's open
-        if (crystalExplorerTab && !crystalExplorerTab.closed) {
-            crystalExplorerTab.close();
-        }
-    }
 </script>
