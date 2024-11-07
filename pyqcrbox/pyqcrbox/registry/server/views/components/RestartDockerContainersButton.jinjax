@@ -1,0 +1,8 @@
+<div class="box">
+    <button class="button is-danger"
+            type="submit"
+            hx-post="/views/restart_docker_containers"
+    >
+        Restart QCrBox docker containers
+    </button>
+</div>
