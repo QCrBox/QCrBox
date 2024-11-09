@@ -20,12 +20,12 @@ class CLICmdCalculation(BaseCalculation):
         self.calc_finished_event = calc_finished_event
 
     async def wait_until_finished(self):
-        logger.debug(f"Waiting for calculation to finish: {self.calculation_id!r}")
+        logger.debug(f"Waiting for calculation to finish: {self!r}")
         # logger.debug("Waiting for process to exit...")
         await self.proc.wait()
         # logger.debug("Process finished.")
         self.calc_finished_event.set()
-        logger.debug(f"Calculation finished: {self.calculation_id!r} (status: {self.status!r})")
+        logger.debug(f"Calculation finished: {self!r} (status: {self.status!r})")
         if self.status == CalculationStatusEnum.FAILED:
             logger.debug(f"\nStdout:\n\n{await self.stdout}\n\nStderr:\n\n{await self.stderr}")
 
