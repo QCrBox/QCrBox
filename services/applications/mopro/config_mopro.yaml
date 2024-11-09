@@ -9,6 +9,25 @@ url: "https://crm2.univ-lorraine.fr/de/die-software/mopro/download-mopro/"
 doi: "10.1107/S0108767306053748"
 
 commands:
+  - name: "interactive_session"
+    implemented_as: "interactive_session"
+    description: "qad"
+    parameters:
+      - name: "input_file"
+        dtype: "QCrBox.data_file"
+        description: "The CIF file to open in Olex2"
+    interactive_lifecycle:
+      run:
+        implemented_as: "python_callable"
+        import_path: "configure_mopro"
+        callable_name: "__run_interactive"
+        used_basecommand_parameters: ["input_file"]
+      finalise:
+        implemented_as: "python_callable"
+        import_path: "configure_mopro"
+        callable_name: "__finalise_interactive"
+        used_basecommand_parameters: ["input_file"]
+
   - name: "interactive"
     implemented_as: "interactive"
     parameters:
