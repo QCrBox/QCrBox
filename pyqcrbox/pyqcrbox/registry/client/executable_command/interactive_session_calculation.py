@@ -80,8 +80,10 @@ class InteractiveSessionCalculation(BaseCalculation):
 
         # TODO: should we set the calc_finished_event for the run command?
         #       might be safer in case it doesn't terminate on its own.
-        # logger.debug("Sending 'calc_finished' event to run_calc")
-        # self.run_calc.calc_finished_event.set()
+        logger.debug("Sending 'calc_finished' event to run_calc")
+        self.run_calc.calc_finished_event.set()
+
+        # Todo: terminate run_calc
 
         logger.debug("Sending 'calc_finished' event to interactive session calculation")
         self.calc_finished_event.set()

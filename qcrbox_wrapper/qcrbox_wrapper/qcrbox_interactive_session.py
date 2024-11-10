@@ -114,7 +114,7 @@ class QCrBoxInteractiveSession:
 
             missing_arguments = set(self.finalise_cmd.parameter_names).difference(finalise_arguments.keys())
             if missing_arguments:
-                raise ValueError(f"Missing arguments for 'prepare' command: {missing_arguments!r}")
+                raise ValueError(f"Missing arguments for 'finalise' command: {missing_arguments!r}")
 
             finalise_calculation = self.finalise_cmd(**finalise_arguments)
             return finalise_calculation

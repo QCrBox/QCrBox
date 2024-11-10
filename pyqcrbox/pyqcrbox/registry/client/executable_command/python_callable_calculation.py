@@ -24,14 +24,10 @@ class PythonCallableCalculation(BaseCalculation):
         # self._status_details = None
         self.return_value = None
 
-    def __repr__(self):
-        clsname = self.__class__.__name__
-        return f"<{clsname}: calculation_id={self.calculation_id}>"
-
     async def wait_until_finished(self):
-        logger.debug(f"Waiting for calculation to finish: {self.calculation_id!r}")
+        logger.debug(f"Waiting for calculation to finish: {self!r}")
         await self.calc_finished_event.wait()
-        logger.debug(f"Calculation finished: {self.calculation_id!r}")
+        logger.debug(f"Calculation finished: {self!r}")
         _ = self.status  # FIXME: This is a workaround to ensure the return value is set.
 
     @property
