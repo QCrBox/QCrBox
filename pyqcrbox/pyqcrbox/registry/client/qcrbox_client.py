@@ -215,6 +215,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
             session_status = calc.status
             output_dataset_id = calc.output_dataset_id
             logger.info(f"Closed interactive session: {session_id!r}")
+            logger.info(f"Output dataset id: {output_dataset_id!r}")
         except AttributeError:
             logger.warning(f"Calculation for{session_id!r} does not seem to represent an interactive session")
             session_status = CalculationStatusEnum.FAILED

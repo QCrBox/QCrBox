@@ -6,7 +6,9 @@ from litestar import MediaType, Response, Router, get, post
 from litestar.datastructures import ResponseHeader, UploadFile
 from litestar.enums import RequestEncodingType
 from litestar.params import Body
+from litestar.status_codes import HTTP_200_OK, HTTP_206_PARTIAL_CONTENT
 
+from pyqcrbox.data_management import DatasetNotFoundError
 from pyqcrbox.helpers import as_bool
 from pyqcrbox.logging import logger
 from pyqcrbox.services import get_data_file_manager, get_nats_broker
@@ -23,9 +25,9 @@ catalog.add_folder(here / "components")
 catalog.jinja_env.filters["as_bool"] = as_bool
 
 
-def render(*args, **kwargs) -> Response:
+def render(*args, _status_code=HTTP_200_OK, **kwargs) -> Response:
     rendered_content = catalog.render(*args, **kwargs)
-    return Response(content=rendered_content, media_type=MediaType.HTML)
+    return Response(content=rendered_content, media_type=MediaType.HTML, status_code=_status_code)
 
 
 @get(path="/index", media_type=MediaType.HTML)
@@ -97,7 +99,10 @@ async def start_interactive_session_with_data_file(
 async def close_interactive_session(session_id: str) -> Response:
     response_json = await api_helpers._close_interactive_session(session_id)
     data_manager = await get_data_file_manager()
-    output_dataset_info = await data_manager.get_dataset_info(response_json.output_dataset_id)
+    try:
+        output_dataset_info = await data_manager.get_dataset_info(response_json.output_dataset_id)
+    except DatasetNotFoundError:
+        return render("StopInteractiveSessionResponseNoOutputDataset", _status_code=HTTP_206_PARTIAL_CONTENT)
 
     applications = api_helpers._retrieve_applications()
     return render(

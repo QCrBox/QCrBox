@@ -42,6 +42,7 @@ class InteractiveSession(BaseCommand):
         run_cmd = ExecutableCommand(self.run_cmd_spec)
         run_calc_id = helpers.generate_calculation_id()
         run_calc = await run_cmd.execute_in_background(_calculation_id=run_calc_id, _cwd=_cwd, **kwargs)
+        await run_calc.wait_until_finished()
 
         if self.finalise_cmd_spec:
             finalise_cmd = ExecutableCommand(self.finalise_cmd_spec)

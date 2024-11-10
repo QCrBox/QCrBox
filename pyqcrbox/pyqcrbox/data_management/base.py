@@ -10,6 +10,10 @@ from pyqcrbox.helpers import generate_data_file_id, generate_dataset_id
 from pyqcrbox.sql_models.interactive_session_info import InteractiveSessionInfo
 
 
+class DatasetNotFoundError(Exception):
+    pass
+
+
 class DataFileManager(ABC):
     @abstractmethod
     async def _kv_key_exists(self, bucket: str, key: str) -> bool:
@@ -44,7 +48,9 @@ class DataFileManager(ABC):
         pass
 
     async def store_interactive_session_info(self, session_info: InteractiveSessionInfo) -> None:
-        await self._store_in_kv("interactive_sessions", session_info.session_id, session_info.model_dump_json().encode())
+        await self._store_in_kv(
+            "interactive_sessions", session_info.session_id, session_info.model_dump_json().encode()
+        )
 
     async def get_interactive_session_info(self, session_id: str) -> InteractiveSessionInfo:
         session_info_as_bytes = await self._retrieve_from_kv("interactive_sessions", session_id)
@@ -54,7 +60,10 @@ class DataFileManager(ABC):
         await self._store_in_kv("datasets", dataset_info.dataset_id, dataset_info.model_dump_json().encode())
 
     async def get_dataset_info(self, dataset_id: str) -> DatasetResponse:
-        dataset_info_as_bytes = await self._retrieve_from_kv("datasets", dataset_id)
+        try:
+            dataset_info_as_bytes = await self._retrieve_from_kv("datasets", dataset_id)
+        except KeyError:
+            raise DatasetNotFoundError(f"Dataset not found: {dataset_id!r}")
         return Dataset.model_validate_json(dataset_info_as_bytes.decode()).to_response_model()
 
     async def get_data_files_metadata(self) -> list[DataFileMetadata]:
