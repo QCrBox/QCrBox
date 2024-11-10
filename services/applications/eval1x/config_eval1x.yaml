@@ -13,8 +13,8 @@ commands:
     implemented_as: "interactive"
     description: "Run the Eval Software Suite interactively"
     parameters:
-      - name: "work_folder"
-        dtype: "QCrBox.folder_path"
+      - name: "input_folder"
+        dtype: "QCrBox.input_folder"
         description: "The folder containing the images / data"
       - name: "output_cif_path"
         dtype: "QCrBox.output_cif"
@@ -26,21 +26,21 @@ commands:
     interactive_lifecycle:
       run:
         implemented_as: "cli_command"
-        call_pattern: "lxterminal --working-directory={work_folder}"
-        used_basecommand_parameters: ["work_folder"]
+        call_pattern: "lxterminal --working-directory={input_folder}"
+        used_basecommand_parameters: ["input_folder"]
       finalise:
         implemented_as: "python_callable"
         import_path: "configure_eval1x"
         callable_name: "finalise__interactive"
-        used_basecommand_parameters: ["work_folder", "output_cif_path"]
+        used_basecommand_parameters: ["input_folder", "output_cif_path"]
 
   - name: "integrate"
     implemented_as: "python_callable"
     description: "Run the Eval Software Suite programs automatically one after the other"
     import_path: "configure_eval1x"
     parameters:
-      - name: "work_folder"
-        dtype: "QCrBox.folder_path"
+      - name: "input_folder"
+        dtype: "QCrBox.input_folder"
         default_value: None
         description: "The folder containing the images / data"
       - name: "output_cif_path"
@@ -51,15 +51,15 @@ commands:
         custom_categories: ["iucr", "shelx"]
         invalidated_entries: []
       - name: "rmat_file_path"
-        dtype: "QCrBox.input_file"
+        dtype: "QCrBox.input_path"
         default_value: None
         description: "Path to the rmat file or the CIF file containing the rotation matrix information"
       - name: "beamstop_file_path"
-        dtype: "QCrBox.input_file"
+        dtype: "QCrBox.input_path"
         default_value: None
         description: "Path to the Eval .vic file containing the beamstop information"
       - name: "detalign_file_path"
-        dtype: "QCrBox.input_file"
+        dtype: "QCrBox.input_path"
         default_value: None
         description: "Path to the Eval .vic file containing the detector alignment information"
       - name: "maximum_res"

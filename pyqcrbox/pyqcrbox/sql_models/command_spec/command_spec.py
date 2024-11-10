@@ -5,6 +5,7 @@ from pydantic import Field, Tag, TypeAdapter
 from .base_command_spec import BaseCommandSpec
 from .cli_command_spec import CLICommandSpec
 from .interactive_command_spec import InteractiveCommandSpec
+from .interactive_session_spec import InteractiveSessionSpec
 from .python_callable_spec import PythonCallableSpec
 
 __all__ = ["CommandSpecDiscriminatedUnion", "CommandSpec", "CommandSpecWithParameters"]
@@ -14,6 +15,7 @@ CommandSpecTaggedUnion = Union[
     Annotated[CLICommandSpec, Tag("cli_command")],
     Annotated[PythonCallableSpec, Tag("python_callable")],
     Annotated[InteractiveCommandSpec, Tag("interactive")],
+    Annotated[InteractiveSessionSpec, Tag("interactive_session")],
 ]
 
 

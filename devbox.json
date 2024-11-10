@@ -35,6 +35,7 @@
     "nats-server":     "latest",
     "natscli":         "latest",
     "nats-top":        "latest",
+    "entr":            "latest",
   },
   "env": {
     "MAMBA_ROOT_PREFIX":     "${PWD}/.devbox/virtenv/python/.conda",

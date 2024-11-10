@@ -3,13 +3,16 @@ import os
 import shutil
 from pathlib import Path
 
-from qcrboxtools.cif.cif2cif import cif_file_merge_to_unified_by_yml, cif_file_to_specific_by_yml
+from qcrboxtools.cif.cif2cif import (
+    cif_file_merge_to_unified_by_yml,
+    cif_file_to_specific_by_yml,
+)
 from qcrboxtools.cif.merge import replace_structure_from_cif
 from qcrboxtools.robots.olex2 import Olex2Socket
 
-from pyqcrbox import sql_models
+from pyqcrbox import logger, sql_models
 
-#from pyqcrbox.registry.client import ExternalCommand, Param, QCrBoxRegistryClient
+# from pyqcrbox.registry.client import ExternalCommand, Param, QCrBoxRegistryClient
 from pyqcrbox.registry.client import QCrBoxClient
 
 YAML_PATH = "./config_olex2.yaml"
@@ -41,8 +44,44 @@ def finalise__interactive(input_cif_path, output_cif_path):
 
     # Go to unified keywords and split SUs into separate entries
     cif_file_merge_to_unified_by_yml(
-        newest_cif_path, output_cif_path, input_cif_path, YAML_PATH, "interactive", "output_cif_path"
+        newest_cif_path,
+        output_cif_path,
+        input_cif_path,
+        YAML_PATH,
+        "interactive",
+        "output_cif_path",
     )
+
+
+def __finalise_interactive(input_file):
+    input_cif_path = Path(input_file)
+    work_folder = input_cif_path.parent
+
+    newest_cif_path = next(
+        reversed(
+            sorted(
+                (
+                    file_path
+                    for file_path in work_folder.glob("*.cif")
+                    if file_path.name != "output.cif" and file_path != input_cif_path
+                ),
+                key=os.path.getmtime,
+            )
+        )
+    )
+    logger.debug(f"[DDD] {input_cif_path=!r}")
+    logger.debug(f"[DDD] {work_folder=!r}")
+    logger.debug(f"[DDD] {newest_cif_path=!r}")
+
+    # TODO if not existing, rerun newest res with ACTA
+    #
+    #
+    # # Go to unified keywords and split SUs into separate entries
+    # cif_file_merge_to_unified_by_yml(
+    #     newest_cif_path, output_cif_path, input_cif_path, YAML_PATH, "interactive", "output_cif_path"
+    # )
+
+    return newest_cif_path
 
 
 def toparams__interactive(input_cif_path, parameter_json_path, parameter_folder):
@@ -60,7 +99,12 @@ def toparams__interactive(input_cif_path, parameter_json_path, parameter_folder)
     )
 
     cif_file_merge_to_unified_by_yml(
-        newest_cif_path, parameter_folder / "combine.cif", input_cif_path, YAML_PATH, "interactive", "output_cif_path"
+        newest_cif_path,
+        parameter_folder / "combine.cif",
+        input_cif_path,
+        YAML_PATH,
+        "interactive",
+        "output_cif_path",
     )
 
     tojson = {"structure_cif": "$par_folder/combine.cif"}
@@ -115,7 +159,7 @@ if __name__ == "__main__":
     application_spec = sql_models.ApplicationSpec.from_yaml_file("config_olex2.yaml")
 
     client = QCrBoxClient(application_spec=application_spec)
-    #application = client.register_application("Olex2 (Linux)", version="1.5")
+    # application = client.register_application("Olex2 (Linux)", version="1.5")
     # application.register_external_command(
     #     "interactive",
     #     ExternalCommand("/bin/bash", "/opt/olex2/start", Param("input_cif_path")),

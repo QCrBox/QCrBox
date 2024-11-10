@@ -3,26 +3,14 @@
 <MainLayout title={{ title }}>
     <div class="columns mt-3">
         <div class="column">
-            <div id="initial-data-step">
-                <div style="display: inline-flex; align-items: center;">
-                    <button id="open-modal"
-                                style="background-color: transparent; border: none; cursor: pointer;"
-                                _="on click trigger showModal on #modal"
-                                class="button"
-                        >
-                        <span class="icon">
-                            <i id='datafile-square' class="ph-fill ph-square" style="color: #8A8A8A; font-size: 3em;"></i>
-                        </span>
-                    </button>
-                    <div style="width: 100px; height: 3px; background-color: #417890; margin: 0 10px;"></div>
-                    <div id="datafile-text" class="box" style="border: 2px solid #417890; padding: 10px;">Click the grey box to select a data file.</div>
-                </div>
-                <div style="width: 3px; height: 100px; background-color: #417890; position: relative; left: 17px"></div>
-            </div>
-
+            <InitialDataStepRow />
             <div id="run-command-step">
             </div>
             <div id="data-step">
+            </div>
+            <div id="run-command-step-2">
+            </div>
+            <div id="end-workflow-step">
             </div>
             
         </div>
@@ -65,17 +53,30 @@
 </MainLayout>
 
 <script>
-    let olexTab; // Variable to store the reference to the opened tab
+    let interactiveSessionTabs = {};  // Variable to store the reference to the opened tab(s)
+    let gui_ports = {
+        "olex2": 12004,
+        "crystal-explorer": 12003,
+        "mopro": 12006,
+        "dummy-gui": 12002,
+    };
+    let myAppSlug = "dummy_gui";
 
-    function openOlexTab() {
+    function openInteractiveSessionTab(appSlug) {
         // Open the URL in a new tab and store the reference
-        olexTab = window.open("http://localhost:12004/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true", '_blank');
+        let hostname = window.location.hostname;
+        let port = gui_ports[appSlug] || 12001;
+        console.log(`Looking up GUI port for appSlug '${appSlug}' (found: ${port})`)
+        interactiveSessionTabs[appSlug] = window.open(`http://${hostname}:${port}/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true`, '_blank');
     }
 
-    function closeVncTab() {
+    function closeInteractiveSessionTab(appSlug) {
         // Close the tab if it's open
-        if (olexTab && !olexTab.closed) {
-            olexTab.close();
+        let session_tab = interactiveSessionTabs[appSlug];
+        if (session_tab && !session_tab.closed) {
+            session_tab.close();
+            interactiveSessionTabs[appSlug] = null;
         }
     }
+
 </script>

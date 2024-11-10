@@ -3,6 +3,7 @@ import importlib
 import inspect
 import multiprocessing.pool
 import multiprocessing.process
+import os
 import traceback
 from typing import Union
 
@@ -35,6 +36,7 @@ class PythonCallable(BaseCommand):
         if inspect.iscoroutinefunction(fn):
             raise TypeError("At present PythonCallable can only handle regular functions, not coroutine functions.")
 
+        self.cmd_spec = cmd_spec
         self.fn = fn
         self.signature = inspect.signature(fn)
         self.parameters = self._extract_parameters_from_callable_signature()
@@ -88,10 +90,17 @@ class PythonCallable(BaseCommand):
                 "TODO: Change into working directory before executing "
                 "the python callable (and switch back afterwards)!"
             )
+
+        working_dir = _cwd or os.getcwd()
+        param_values = self.cmd_spec.parameter_default_values | kwargs
+        param_values = {
+            name: await param.prepare_for_execution(target_dir=working_dir) for name, param in param_values.items()
+        }
+
         pending_result = self.pool.apply_async(
             self._fn_with_call_args_validation,
             args,
-            kwargs,
+            param_values,
             callback=success_callback,
             error_callback=error_callback,
         )

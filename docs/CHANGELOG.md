@@ -18,6 +18,8 @@ However, there will be an initial period of stabilisation where this is not adhe
 
 - Implemented persistence of imported data files and associated metadata. ([#352](https://github.com/QCrBox/QCrBox/issues/352))
 - Added data quality container ([#301](https://github.com/QCrBox/QCrBox/issues/301)))
+- Added deployment script (`scripts/deploy.sh`). ([#381](https://github.com/QCrBox/QCrBox/issues/381))
+- Interactive GUI sessions can now be started with input files that were previously imported. ([#345](https://github.com/QCrBox/QCrBox/issues/345), [#354](https://github.com/QCrBox/QCrBox/issues/354))
 
 ### Enhancements
 
@@ -29,6 +31,8 @@ However, there will be an initial period of stabilisation where this is not adhe
 - Fixed formatting checks in CI runs. ([#370](https://github.com/QCrBox/QCrBox/issues/370))
 - Fixed missing dependency, leading to startup errors. ([#368](https://github.com/QCrBox/QCrBox/issues/368))
 - Fixed a bug that prevented pre-build scripts from being run if the build is invoked from a subdirectory. ([#385](https://github.com/QCrBox/QCrBox/issues/385))
+- Fixed an issue that prevented the deployment script from running. ([#393](https://github.com/QCrBox/QCrBox/issues/393))
+- Fixed an issue that prevented the Olex2 docker image from being built. ([#394](https://github.com/QCrBox/QCrBox/issues/394))
 
 ### Other changes
 

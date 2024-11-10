@@ -1,0 +1,15 @@
+<div id="initial-data-step">
+    <div style="display: inline-flex; align-items: center;">
+        <button id="open-modal"
+                    style="background-color: transparent; border: none; cursor: pointer;"
+                    _="on click trigger showModal on #modal"
+                    class="button p-0 m-3"
+            >
+            <span class="icon">
+                <i id='datafile-square' class="ph-fill ph-square" style="color: #8A8A8A; font-size: 2.5em;"></i>
+            </span>
+        </button>
+        <HorizontalConnectorLine />
+        <DataFileText text="Click the grey box to select a data file." />
+    </div>
+</div>

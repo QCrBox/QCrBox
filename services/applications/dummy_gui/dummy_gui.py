@@ -7,6 +7,8 @@ from tkinter import ttk
 
 
 def add_labels(frame, input_args):
+    ttk.Label(frame, text=f"Current working directory: '{Path.cwd()}'\n", justify=tk.LEFT).pack(fill=tk.X)
+
     try:
         input_filepath = Path(input_args[0])
         input_filename = input_filepath.name

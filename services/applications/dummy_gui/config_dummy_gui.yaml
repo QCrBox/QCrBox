@@ -1,0 +1,33 @@
+#
+# Configuration for the application 'Dummy GUI'
+#
+name: "Dummy GUI"
+slug: "dummy_gui"
+version: "x.y.z"
+description: "Dummy GUI for testing of interactive applications"
+
+commands:
+  - name: "interactive_session"
+    implemented_as: "interactive_session"
+    description: "Start dummy GUI"
+    parameters:
+      - name: "input_file"
+        dtype: "QCrBox.data_file"
+        description: "The file to open in the dummy GUI"
+    interactive_lifecycle:
+#      prepare:
+#        implemented_as: "python_callable"
+#        import_path: "configure_olex2"
+#        callable_name: "prepare__interactive"
+#        used_basecommand_parameters: ["input_cif_path", "work_cif_path"]
+      run:
+        implemented_as: "cli_command"
+        call_pattern: "python dummy_gui.py {input_file}"
+        used_basecommand_parameters: ["input_file"]
+      finalise:
+        implemented_as: "python_callable"
+        import_path: "dummy_gui_commands"
+        callable_name: "finalise_interactive"
+        used_basecommand_parameters: ["input_file"]
+
+qcrbox_yaml_spec_version: "0.1"

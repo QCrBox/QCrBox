@@ -1,0 +1,26 @@
+<div id="end-workflow-step">
+    <VerticalConnectorLine />
+    <button class="button is-ghost">
+        <span class="icon">
+            <i id="end-workflow-circle" class="ph-fill ph-circle" style="color: #000000; font-size: 3em; position: relative; left: 15px: top: 4px"></i>
+        </span>
+    </button>
+</div>
+
+
+<div id="start-button" hx-swap-oob="outerHTML">
+</div>
+<div id="stop-button" hx-swap-oob="outerHTML">
+</div>
+
+<button id="run-command-triangle-button-2" hx-swap-oob="outerHTML" class="button is-ghost" style="transform: rotate(180deg);">
+    <span class="icon">
+        <i id="run-command-triangle-2" class="ph-fill ph-triangle" style="color: #000000; font-size: 3em;"></i>
+    </span>
+</button>
+
+<div id="metadata" hx-swap-oob="outerHTML">
+    <h3 class="title is-4">Workflow Complete</h3>
+</div>
+
+

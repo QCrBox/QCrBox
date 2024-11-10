@@ -1,3 +1,4 @@
+import os
 import re
 
 import anyio
@@ -93,8 +94,7 @@ class CLICommand(BaseCommand):
     def __str__(self):
         return self.call_pattern
 
-    def bind(self, **kwargs):
-        param_values = self.cmd_spec.parameter_default_values | kwargs
+    async def bind(self, working_dir: str, **param_values):
         return self.call_pattern.format(**param_values)
 
     async def execute_in_background(
@@ -108,8 +108,14 @@ class CLICommand(BaseCommand):
     ) -> CLICmdCalculation:
         calc_finished_event = anyio.Event()
 
+        working_dir = _cwd or os.getcwd()
+        param_values = self.cmd_spec.parameter_default_values | kwargs
+        param_values = {
+            name: await param.prepare_for_execution(target_dir=working_dir) for name, param in param_values.items()
+        }
+
         try:
-            cmd_with_bound_args = self.bind(**kwargs)
+            cmd_with_bound_args = await self.bind(working_dir, **param_values)
         except KeyError as exc:
             raise QCrBoxCmdArgumentMismatch(exc.args[0])
 
@@ -118,7 +124,7 @@ class CLICommand(BaseCommand):
             stdin=_stdin,
             stdout=_stdout,
             stderr=_stderr,
-            cwd=_cwd,
+            cwd=working_dir,
         )
 
         return CLICmdCalculation(self.proc, calculation_id=_calculation_id, calc_finished_event=calc_finished_event)

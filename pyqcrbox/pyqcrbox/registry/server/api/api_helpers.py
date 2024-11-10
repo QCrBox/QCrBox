@@ -13,7 +13,8 @@ from sqlalchemy.orm import joinedload
 from sqlmodel import select
 
 from pyqcrbox import QCRBOX_SVCS_REGISTRY, logger, msg_specs, settings, sql_models
-from pyqcrbox.services import get_data_file_manager
+from pyqcrbox.data_management import Dataset
+from pyqcrbox.services import get_data_file_manager, get_nats_broker
 from pyqcrbox.svcs import get_nats_key_value
 
 
@@ -102,9 +103,10 @@ def verify_command_exists(
             ).one()
         except sqlalchemy.exc.NoResultFound:
             error_msg = (
-                f"Command not found: {command_name} "
-                f"(application: {application_slug!r}, "
-                f"version: {application_version!r})"
+                f"Command or application not found: "
+                f"command={command_name!r}, "
+                f"application: {application_slug!r}, "
+                f"version: {application_version!r}"
             )
             logger.error(error_msg)
             raise ClientException(error_msg)
@@ -185,6 +187,21 @@ async def _get_calculation_info_by_calculation_id(calculation_id: str) -> dict:
         raise CalculationNotFoundError(calculation_id)
 
 
+async def _close_interactive_session(session_id: str) -> msg_specs.CloseInteractiveSessionResponseNATS:
+    nats_broker = await get_nats_broker()
+    data_manager = await get_data_file_manager()
+    session_info = await data_manager.get_interactive_session_info(session_id)
+
+    msg = msg_specs.CloseInteractiveSessionNATS(session_id=session_id)
+    response_json = await nats_broker.publish(
+        msg,
+        f"{session_info.client_private_inbox}.interactive_session.close",
+        rpc=True,
+    )
+    response = msg_specs.CloseInteractiveSessionResponseNATS(**response_json)
+    return response
+
+
 async def _get_data_files() -> list[dict]:
     data_file_manager = await get_data_file_manager()
     data_files = await data_file_manager.get_data_files()
@@ -210,7 +227,7 @@ async def _import_dataset(data: Annotated[UploadFile, Body(media_type=RequestEnc
     return qcrbox_dataset_id
 
 
-async def _get_dataset_info(dataset_id: str) -> dict:
+async def _get_dataset_info(dataset_id: str) -> Dataset:
     data_file_manager = await get_data_file_manager()
     dataset_info = await data_file_manager.get_dataset_info(dataset_id)
-    return dataset_info.model_dump()
+    return dataset_info

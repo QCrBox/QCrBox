@@ -27,7 +27,7 @@ commands:
         ]
         merge_su: No
       - name: "structure_cif_path"
-        dtype: "QCrBox.input_file" # not cif as it should not be cut to input_cif entries
+        dtype: "QCrBox.input_path" # not cif as it should not be cut to input_cif entries
         default_value: None
         description: "Path to the CIF file containing the structure to be inserted"
         #required_entries: [
@@ -88,7 +88,7 @@ commands:
         default_value: None
         description: "Maximum absolute difference in U(cif) / standard uncertainties"
       - name: "output_json_path"
-        dtype: "QCrBox.output_file"
+        dtype: "QCrBox.output_path"
         default_value: None
         description: "Path to save the result as JSON file to after comparing the CIF files"
 

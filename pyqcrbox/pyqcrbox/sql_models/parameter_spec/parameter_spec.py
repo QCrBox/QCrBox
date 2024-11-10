@@ -6,10 +6,12 @@ from pydantic import Field, Tag, TypeAdapter
 # from .base_parameter_spec import SENTINEL_UNDEFINED
 from .builtin_parameter_types import BoolParameterSpec, FloatParameterSpec, IntParameterSpec, StrParameterSpec
 from .filesystem_path_parameters import (
+    DataFileParameterSpec,
     FolderPathParameterSpec,
-    GenericInputFileParameterSpec,
-    GenericOutputFileParameterSpec,
+    GenericInputPathParameterSpec,
+    GenericOutputPathParameterSpec,
     InputCifParameterSpec,
+    InputFolderParameterSpec,
     OutputCifParameterSpec,
     WorkCifParameterSpec,
 )
@@ -29,11 +31,13 @@ ParameterSpecTaggedUnion = Union[
     # File/directory types with QCrBox-specific logic
     #
     Annotated[InputCifParameterSpec, Tag("QCrBox.input_cif")],
-    Annotated[GenericInputFileParameterSpec, Tag("QCrBox.input_file")],
+    Annotated[GenericInputPathParameterSpec, Tag("QCrBox.input_path")],
     Annotated[OutputCifParameterSpec, Tag("QCrBox.output_cif")],
-    Annotated[GenericOutputFileParameterSpec, Tag("QCrBox.output_file")],
+    Annotated[GenericOutputPathParameterSpec, Tag("QCrBox.output_path")],
     Annotated[WorkCifParameterSpec, Tag("QCrBox.work_cif")],
     Annotated[FolderPathParameterSpec, Tag("QCrBox.folder_path")],
+    Annotated[DataFileParameterSpec, Tag("QCrBox.data_file")],
+    Annotated[InputFolderParameterSpec, Tag("QCrBox.input_folder")],
 ]
 ParameterSpecDiscriminatedUnion = Annotated[ParameterSpecTaggedUnion, Field(discriminator="dtype")]
 

@@ -11,6 +11,10 @@ class BaseCalculation(metaclass=ABCMeta):
         self.calculation_id = calculation_id
         self.calc_finished_event = calc_finished_event
 
+    def __repr__(self):
+        clsname = self.__class__.__name__
+        return f"<{clsname}: calculation_id={self.calculation_id}>"
+
     @abstractmethod
     async def wait_until_finished(self):
         pass
