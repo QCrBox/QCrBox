@@ -3,7 +3,7 @@
 set -euo pipefail
 
 export QCRBOX_REPO=${QCRBOX_REPO:-"$(git rev-parse --show-toplevel)"}
-export QCRBOX_COMPONENTS=${QCRBOX_COMPONENTS:-"olex2 crystal-explorer"}
+export QCRBOX_COMPONENTS=${QCRBOX_COMPONENTS:-"olex2 crystal-explorer mopro"}
 
 
 abort_if_not_running_within_devbox_shell() {
@@ -27,7 +27,6 @@ stop_single_docker_container() {
 
 stop_docker_containers() {
     local components="$1"
-    echo "[DDD] components: ${components}"
 
     for component in ${components}; do
         stop_single_docker_container ${component}
