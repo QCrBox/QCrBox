@@ -15,7 +15,7 @@ commands:
     parameters:
       - name: "input_file"
         dtype: "QCrBox.data_file"
-        description: "The CIF file to open in Olex2"
+        description: "The CIF file to open in MoPro"
     interactive_lifecycle:
       run:
         implemented_as: "python_callable"
