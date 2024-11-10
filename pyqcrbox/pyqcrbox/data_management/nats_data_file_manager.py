@@ -53,8 +53,11 @@ class NatsDataFileManager(DataFileManager):
 
         nats_broker = await get_nats_broker()
         kv = await nats_broker.key_value(bucket)
-        entry = await kv.get(key)
-        return entry.value
+        try:
+            item = await kv.get(key)
+        except nats.js.errors.KeyNotFoundError:
+            raise KeyError(f"Key not found: {key}")
+        return item.value
 
     async def _delete_from_kv(self, bucket: str, key: str) -> None:
         from pyqcrbox.services import get_nats_broker
