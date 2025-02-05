@@ -19,6 +19,7 @@ COPY --chown=qcrbox:qcrbox \
      config_qcrbox_quality.yaml \
      configure_qcrbox_quality.py \
      qcrbox_quality_module.py \
+     cifvis.umd.js \
      ${QCRBOX_HOME}
 
 USER ${QCRBOX_USER}

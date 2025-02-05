@@ -66,7 +66,7 @@ commands:
         dtype: "QCrBox.input_cif"
         required_entries: [
           "_space_group.crystal_system",
-          "_space_group.symop_operation_xyz",
+          "_space_group_symop.operation_xyz",
           "_cell.length_a",
           "_cell.length_b",
           "_cell.length_c",
@@ -95,6 +95,69 @@ commands:
           "_geom_bond.atom_site_label_2",
           "_geom_bond.distance",
           "_geom_bond.site_symmetry_2"
+        ]
+      - name: "output_html_path"
+        dtype: str
+        description: "Output path of html snippet"
+
+  - name: "ortep_cifvis_3d"
+    description: "Create a 3D ORTEP depiction of the contained structure"
+    implemented_as: "python_callable"
+    import_path: "qcrbox_quality_module"
+    parameters:
+      - name: "input_cif_path"
+        dtype: "QCrBox.input_cif"
+        required_entries: [
+          "_space_group.crystal_system",
+          "_space_group_symop.operation_xyz",
+          "_cell.length_a",
+          "_cell.length_b",
+          "_cell.length_c",
+          "_cell.angle_alpha",
+          "_cell.angle_beta",
+          "_cell.angle_gamma",
+          "_atom_site.label",
+          "_atom_site.type_symbol",
+          "_atom_site.fract_x",
+          "_atom_site.fract_y",
+          "_atom_site.fract_z",
+          "_atom_site.u_iso_or_equiv",
+          "_atom_site.adp_type"
+        ]
+        optional_entries: [
+          "_space_group.it_number",
+          "_atom_site.disorder_assembly",
+          "_atom_site.disorder_group",
+          "_atom_site_aniso.label",
+          "_atom_site_aniso.u_11",
+          "_atom_site_aniso.u_11_su",
+          "_atom_site_aniso.u_22",
+          "_atom_site_aniso.u_22_su",
+          "_atom_site_aniso.u_33",
+          "_atom_site_aniso.u_33_su",
+          "_atom_site_aniso.u_23",
+          "_atom_site_aniso.u_23_su",
+          "_atom_site_aniso.u_13",
+          "_atom_site_aniso.u_13_su",
+          "_atom_site_aniso.u_12",
+          "_atom_site_aniso.u_12_su",
+          "_geom_bond.atom_site_label_1",
+          "_geom_bond.atom_site_label_2",
+          "_geom_bond.distance",
+          "_geom_bond.distance_su",
+          "_geom_bond.site_symmetry_2",
+          "_geom_hbond.atom_site_label_d",
+          "_geom_hbond.atom_site_label_h",
+          "_geom_hbond.atom_site_label_a",
+          "_geom_hbond.distance_dh",
+          "_geom_hbond.distance_dh_su",
+          "_geom_hbond.distance_ha",
+          "_geom_hbond.distance_ha_su",
+          "_geom_hbond.distance_da",
+          "_geom_hbond.distance_da_su",
+          "_geom_hbond.angle_dha",
+          "_geom_hbond.angle_dha_su",
+          "_geom_hbond.site_symmetry_a"
         ]
       - name: "output_html_path"
         dtype: str

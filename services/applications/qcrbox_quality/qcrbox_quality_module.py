@@ -1,3 +1,4 @@
+import base64
 from pathlib import Path
 from textwrap import dedent
 
@@ -338,3 +339,122 @@ def ortep_3d(input_cif_path, output_html_path):
     """
     ).strip()
     output_html_path.write_text(html_snippet, encoding="UTF-8")
+
+
+def ortep_cifvis_3d_2(input_cif_path, output_html_path):
+    input_cif_path = Path(input_cif_path)
+    output_html_path = Path(output_html_path)
+    work_cif_path = input_cif_path.with_name("qcrbox_work.cif")
+    cif_file_to_specific_by_yml(input_cif_path, work_cif_path, YAML_PATH, "ortep_cifvis_3d", "input_cif_path")
+    ciftext = work_cif_path.read_text()
+
+    with open("cifvis.umd.js", "r") as fobj:
+        js_code = fobj.read()
+
+    cif_b64 = base64.b64encode(ciftext.encode()).decode()
+
+    fragment = f"""
+    <div class="cifvis-container" style="width: 100%; height: 100%;">
+        
+        <!-- Import required libraries -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/14.0.1/math.js"></script>
+        
+        <cifview-widget 
+            id="cifview"
+            caption="Crystal Structure"
+            style="width: 100%; height: 100%;">
+        </cifview-widget>
+
+        <script type="module">
+            import * as THREE from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/0.172.0/three.module.js';
+            
+            window.THREE = THREE;
+            window.math = math.create(math.all);
+            
+            // Load the bundle
+            {js_code}
+            
+            // Initialize with CIF data
+            const widget = document.getElementById('cifview');
+            const cifData = atob("{cif_b64}");
+            widget.data = cifData;
+        </script>
+    </div>
+    """
+
+    output_html_path.write_text(fragment, encoding="UTF-8")
+
+
+def ortep_cifvis_3d(input_cif_path, output_html_path):
+    input_cif_path = Path(input_cif_path)
+    output_html_path = Path(output_html_path)
+    work_cif_path = input_cif_path.with_name("qcrbox_work.cif")
+    cif_file_to_specific_by_yml(input_cif_path, work_cif_path, YAML_PATH, "ortep_cifvis_3d", "input_cif_path")
+    ciftext = work_cif_path.read_text()
+
+    with open("cifvis.umd.js", "r") as fobj:
+        js_code = fobj.read()
+
+    cif_b64 = base64.b64encode(ciftext.encode()).decode()
+
+    fragment = dedent(
+        f"""
+    <div class="cifvis-container" style="width: 100%; height: 100%;">
+        
+        <!-- Import required libraries -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/14.0.1/math.js"></script>
+                      
+        <style>
+            .cifvis-container {{
+                background-color: white;
+            }}
+            
+            cifview-widget {{
+                background-color: white !important;
+            }}
+            
+            cifview-widget .control-button {{
+                background-color: #f5f5f5 !important;
+                border: 1px solid #e0e0e0;
+                transition: all 0.2s ease;
+            }}
+            
+            cifview-widget .control-button:hover {{
+                background-color: #e8e8e8 !important;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }}
+            
+            cifview-widget .crystal-container {{
+                background-color: white;
+            }}
+        </style>
+        
+        <cifview-widget 
+            id="cifview"
+            caption="Crystal Structure"
+            style="width: 100%; height: 100%;">
+        </cifview-widget>
+
+        <script type="module">
+            import * as THREE from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/0.172.0/three.module.js';
+            
+            window.THREE = THREE;
+            window.math = math.create(math.all);
+            
+            // Load the bundle
+            {js_code}
+            
+            // Initialize with CIF data
+            const widget = document.getElementById('cifview');
+            
+            // Wait for custom element to be defined and connected
+            customElements.whenDefined('cifview-widget').then(() => {{
+                const cifData = atob("{cif_b64}");
+                widget.loadFromString(cifData);
+            }});
+        </script>
+    </div>
+    """
+    )
+
+    output_html_path.write_text(fragment, encoding="UTF-8")
