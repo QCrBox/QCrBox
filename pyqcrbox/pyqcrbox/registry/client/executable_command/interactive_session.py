@@ -13,7 +13,7 @@ class InteractiveSession(BaseCommand):
     def __init__(self, cmd_spec: InteractiveSessionSpec):
         assert cmd_spec.implemented_as == "interactive_session"
         super().__init__(cmd_spec)
-        # self.prepare_cmd_spec = cmd_spec.interactive_lifecycle.prepare
+        self.prepare_cmd_spec = cmd_spec.interactive_lifecycle.prepare
         self.run_cmd_spec = cmd_spec.interactive_lifecycle.run
         self.finalise_cmd_spec = cmd_spec.interactive_lifecycle.finalise
 
@@ -30,14 +30,12 @@ class InteractiveSession(BaseCommand):
 
         calc_finished_event = anyio.Event()
 
-        # if self.prepare_cmd_spec:
-        #     prepare_cmd = ExecutableCommand(self.prepare_cmd_spec)
-        #     prepare_calc_id = helpers.generate_calculation_id()
-        #     prepare_calc = await prepare_cmd.execute_in_background(
-        #         _calculation_id=prepare_calc_id, _cwd=_cwd, **kwargs
-        #     )
-        # else:
-        #     prepare_calc = None
+        if self.prepare_cmd_spec:
+            prepare_cmd = ExecutableCommand(self.prepare_cmd_spec)
+            prepare_calc_id = helpers.generate_calculation_id()
+            prepare_calc = await prepare_cmd.execute_in_background(_calculation_id=prepare_calc_id, _cwd=_cwd, **kwargs)
+        else:
+            prepare_calc = None
 
         run_cmd = ExecutableCommand(self.run_cmd_spec)
         run_calc_id = helpers.generate_calculation_id()
@@ -56,7 +54,7 @@ class InteractiveSession(BaseCommand):
         return InteractiveSessionCalculation(
             calculation_id=_calculation_id,
             calc_finished_event=calc_finished_event,
-            # prepare_calc=prepare_calc,
+            prepare_calc=prepare_calc,
             run_calc=run_calc,
             finalise_calc=finalise_calc,
         )

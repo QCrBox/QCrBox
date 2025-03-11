@@ -13,24 +13,43 @@ commands:
     implemented_as: "interactive_session"
     description: "Start Olex2 in interactive mode; this can be used to solve, refine and finish small-molecule crystal structures."
     parameters:
-      - name: "input_file"
-        dtype: "QCrBox.data_file"
-        description: "The CIF file to open in Olex2"
-#        required_entry_sets: ["cell_data", "diffraction_data"]
-#        optional_entry_sets: ["atom_data"]
-#        merge_su: Yes
-#        custom_categories: ["iucr", "shelx"]
+      - name: "input_cif_path"
+        dtype: "QCrBox.input_cif"
+        description: "Path to the CIF file to open in Olex2."
+        required_entry_sets: ["cell_data", "diffraction_data"]
+        optional_entry_sets: ["atom_data"]
+        merge_su: Yes
+        custom_categories: ["iucr", "shelx"]
+      - name: "work_cif_path"
+        dtype: "QCrBox.work_cif"
+        description: "Path used for creating the specific cif file in Olex compatible format."
+      - name: "output_cif_path"
+        dtype: "QCrBox.output_cif"
+        description: "Path to save the CIF file to after finishing the interactive session."
+        required_entry_sets: ["olex_structure_output", "olex2_only_interactive_output"]
+        invalidated_entries: ["_shelx_.*"]
+        custom_categories: ["iucr", "shelx"]
+        output_block: "0" # select first block from output cif file (the default)
     interactive_lifecycle:
+      prepare:
+        implemented_as: "python_callable"
+        import_path: "configure_olex2"
+        callable_name: "prepare__interactive"
+        used_basecommand_parameters: ["input_cif_path", "work_cif_path"]
       run:
         implemented_as: "cli_command"
-        call_pattern: "/bin/bash /opt/olex2/start {input_file}"
-        used_basecommand_parameters: ["input_file"]
+        call_pattern: "/bin/bash /opt/olex2/start {work_cif_path}"
+        used_basecommand_parameters: ["work_cif_path"]
       finalise:
         implemented_as: "python_callable"
         import_path: "configure_olex2"
         callable_name: "__finalise_interactive"
-        used_basecommand_parameters: ["input_file"]
-
+        used_basecommand_parameters: ["input_cif_path"]
+      # finalise:
+      #   implemented_as: "python_callable"
+      #   import_path: "configure_olex2"
+      #   callable_name: "finalise__interactive"
+      #   used_basecommand_parameters: ["input_cif_path", "output_cif_path"]
   - name: "interactive"
     implemented_as: "interactive"
     description: "Start Olex2 in interactive mode; this can be used to solve, refine and finish small-molecule crystal structures."

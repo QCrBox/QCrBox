@@ -20,6 +20,7 @@ YAML_PATH = "./config_olex2.yaml"
 
 def prepare__interactive(input_cif_path, work_cif_path):
     input_cif_path = Path(input_cif_path)
+    work_cif_path = Path(work_cif_path)
 
     # create a cif file using the requested cif entries in olex2 format
     # will most likely be handled internally by QCrBox in the future
@@ -157,16 +158,5 @@ def redo__interactive(redo_input_cif_path, redo_output_cif_path, parameter_json_
 
 if __name__ == "__main__":
     application_spec = sql_models.ApplicationSpec.from_yaml_file("config_olex2.yaml")
-
     client = QCrBoxClient(application_spec=application_spec)
-    # application = client.register_application("Olex2 (Linux)", version="1.5")
-    # application.register_external_command(
-    #     "interactive",
-    #     ExternalCommand("/bin/bash", "/opt/olex2/start", Param("input_cif_path")),
-    # )
-
-    # application.register_python_callable("prepare__interactive", prepare__interactive)
-    # application.register_python_callable("finalise__interactive", finalise__interactive)
-    # application.register_python_callable("toparams__interactive", toparams__interactive)
-    # application.register_python_callable("redo__interactive", redo__interactive)
     client.run()
