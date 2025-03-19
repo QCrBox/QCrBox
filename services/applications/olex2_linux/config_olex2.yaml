@@ -17,10 +17,10 @@ commands:
       - name: "input_file"
         dtype: "QCrBox.data_file"
         description: "Path to the CIF file to open in Olex2."
-        # required_entry_sets: ["cell_data", "diffraction_data"]
-        # optional_entry_sets: ["atom_data"]
-        # merge_su: Yes
-        # custom_categories: ["iucr", "shelx"]
+        required_entry_sets: ["cell_data", "diffraction_data"]
+        optional_entry_sets: ["atom_data"]
+        merge_su: Yes
+        custom_categories: ["iucr", "shelx"]
     interactive_lifecycle:
       prepare:
         implemented_as: "cli_command"

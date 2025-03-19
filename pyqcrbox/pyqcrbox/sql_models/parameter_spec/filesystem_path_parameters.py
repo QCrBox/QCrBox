@@ -39,10 +39,6 @@ class FolderPathParameterSpec(BaseFilesystemPathParameterSpec):
     dtype: Literal["QCrBox.folder_path"]
 
 
-class DataFileParameterSpec(BaseFilesystemPathParameterSpec):
-    dtype: Literal["QCrBox.data_file"]
-
-
 class BaseCifFileParameterSpec(BaseFilesystemPathParameterSpec):
     required_entries: list[CifEntryLiteral | OneOfCifEntrySpec] = []
     optional_entries: list[CifEntryLiteral | OneOfCifEntrySpec] = []
@@ -60,6 +56,10 @@ class BaseCifFileParameterSpec(BaseFilesystemPathParameterSpec):
                 for item in v
             ]
         return v
+
+
+class DataFileParameterSpec(BaseCifFileParameterSpec):
+    dtype: Literal["QCrBox.data_file"]
 
 
 class InputCifParameterSpec(BaseCifFileParameterSpec):

@@ -56,20 +56,28 @@ def run_commands(args):
 
 
 def prepare_interactive(args):
+    """Prepare a CIF data file for Olex2.
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        The parsed command-line arguments, including input_cif_path.
+    """
+    # We'll create a work file, which will be used to run the interactive
+    # program too. This file will be in the same parent directory as the
+    # input file
     input_cif_path = Path(args.input_cif_path)
     work_cif_path = input_cif_path.parent / "qcrbox_work.cif"
-    print(f"pre-processing interactive for work file {work_cif_path} and input file {input_cif_path}")
 
-    # create a cif file using the requested cif entries in olex2 format
-    # will most likely be handled internally by QCrBox in the future
-    # cif_file_to_specific_by_yml(
-    #     input_cif_path, work_cif_path, YAML_PATH, "interactive", "input_cif_path"
-    # )
-
-    import shutil
-
-    # just copy the input file to the work path for now....
-    shutil.copy(input_cif_path, work_cif_path)
+    # Create a new CIF file, at work_cif_path, with the required entries defined
+    # in the Olex2 YAML configuration
+    cif_file_to_specific_by_yml(
+        input_cif_path,
+        work_cif_path,
+        YAML_PATH,
+        "interactive_session",
+        "input_file",
+    )
 
 
 def run_interactive(args):
