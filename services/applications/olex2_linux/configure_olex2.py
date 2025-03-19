@@ -18,45 +18,48 @@ from pyqcrbox.registry.client import QCrBoxClient
 YAML_PATH = "./config_olex2.yaml"
 
 
-def prepare__interactive(input_cif_path, work_cif_path):
+def prepare__interactive(input_cif_path):
     input_cif_path = Path(input_cif_path)
-    work_cif_path = Path(work_cif_path)
+    work_cif_path = input_cif_path.parent / "qcrbox_work.cif"
 
     # create a cif file using the requested cif entries in olex2 format
     # will most likely be handled internally by QCrBox in the future
     cif_file_to_specific_by_yml(input_cif_path, work_cif_path, YAML_PATH, "interactive", "input_cif_path")
 
+    return work_cif_path.absolute()
 
-def finalise__interactive(input_cif_path, output_cif_path):
-    input_cif_path = Path(input_cif_path)
-    output_cif_path = Path(output_cif_path)
-    work_folder = input_cif_path.parent
 
-    newest_cif_path = next(
-        reversed(
-            sorted(
-                (file_path for file_path in work_folder.glob("*.cif") if file_path.name != "output.cif"),
-                key=os.path.getmtime,
-            )
-        )
-    )
+# def finalise__interactive(input_cif_path):
+#     input_cif_path = Path(input_cif_path)
+#     output_cif_path = input_cif_path.parent / "qcrbox_output.cif"
+#     work_folder = input_cif_path.parent
 
-    # TODO if not existing, rerun newest res with ACTA
+#     newest_cif_path = next(
+#         reversed(
+#             sorted(
+#                 (file_path for file_path in work_folder.glob("*.cif") if file_path.name != "output.cif"),
+#                 key=os.path.getmtime,
+#             )
+#         )
+#     )
 
-    # Go to unified keywords and split SUs into separate entries
-    cif_file_merge_to_unified_by_yml(
-        newest_cif_path,
-        output_cif_path,
-        input_cif_path,
-        YAML_PATH,
-        "interactive",
-        "output_cif_path",
-    )
+#     # TODO if not existing, rerun newest res with ACTA
+#     # Go to unified keywords and split SUs into separate entries
+#     cif_file_merge_to_unified_by_yml(
+#         newest_cif_path,
+#         output_cif_path,
+#         input_cif_path,
+#         YAML_PATH,
+#         "interactive",
+#         "output_cif_path",
+#     )
+
+#     return newest_cif_path.absolute()
 
 
 def __finalise_interactive(input_file):
-    input_cif_path = Path(input_file)
-    work_folder = input_cif_path.parent
+    input_file = Path(input_file)
+    work_folder = input_file.parent
 
     newest_cif_path = next(
         reversed(
@@ -64,13 +67,13 @@ def __finalise_interactive(input_file):
                 (
                     file_path
                     for file_path in work_folder.glob("*.cif")
-                    if file_path.name != "output.cif" and file_path != input_cif_path
+                    if file_path.name != "output.cif" and file_path != input_file
                 ),
                 key=os.path.getmtime,
             )
         )
     )
-    logger.debug(f"[DDD] {input_cif_path=!r}")
+    logger.debug(f"[DDD] {input_file=!r}")
     logger.debug(f"[DDD] {work_folder=!r}")
     logger.debug(f"[DDD] {newest_cif_path=!r}")
 

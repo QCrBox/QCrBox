@@ -154,12 +154,15 @@ class QCrBoxClient(QCrBoxServerClientBase):
                 param_dtype_str = cmd.cmd_spec.get_parameter_by_name(param_name).dtype
                 parsed_args[param_name] = parse_parameter_as_its_dtype(value, param_dtype_str)
 
+            logger.debug(f"Parsed arguments: {parsed_args}")
             logger.debug(f"Executing command in working dir cwd={self.working_dir!r}")
+
             calc = await cmd.execute_in_background(
                 **parsed_args, _calculation_id=msg.calculation_id, _cwd=self.working_dir
             )
             if not isinstance(calc, BaseCalculation):
                 raise RuntimeError("Command execution did not return a calculation object.")
+
         except Exception as exc:
             error_msg = f"Command execution failed: {exc!r}"
             logger.error(error_msg)

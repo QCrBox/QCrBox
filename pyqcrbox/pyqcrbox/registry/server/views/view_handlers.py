@@ -83,13 +83,7 @@ async def start_interactive_session_with_data_file(
         application_slug=application_slug,
         application_version=application_version,
         command_name="interactive_session",
-        # What's the difference between the input_cif_path, work_cif_path and output_cif_path?
-        # Why do we need three separate files in this pipeline?
-        arguments={
-            "input_cif_path": {"data_file_id": data_file_id},
-            "work_cif_path": {"data_file_id": None},
-            "output_cif_path": {"data_file_id": None},
-        },
+        arguments={"input_file": {"data_file_id": data_file_id}},
     )
 
     response_json = await api_helpers._invoke_command(cmd)

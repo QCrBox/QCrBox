@@ -148,6 +148,7 @@ async def _invoke_command(data: sql_models.CommandInvocationCreate) -> dict:
         nats_broker = await con.aget(NatsBroker)
 
     cmd_spec_db = verify_command_exists(data.application_slug, data.application_version, data.command_name)
+    logger.debug("Command found: %s", cmd_spec_db)
     validate_arguments_against_command_parameters(cmd_spec_db, data.arguments)
 
     msg = msg_specs.InvokeCommandNATS(

@@ -9,212 +9,32 @@ url: "https://www.olexsys.org/olex2/"
 doi: "10.1107/S0021889808042726"
 
 commands:
+
   - name: "interactive_session"
     implemented_as: "interactive_session"
     description: "Start Olex2 in interactive mode; this can be used to solve, refine and finish small-molecule crystal structures."
     parameters:
-      - name: "input_cif_path"
-        dtype: "QCrBox.input_cif"
+      - name: "input_file"
+        dtype: "QCrBox.data_file"
         description: "Path to the CIF file to open in Olex2."
-        required_entry_sets: ["cell_data", "diffraction_data"]
-        optional_entry_sets: ["atom_data"]
-        merge_su: Yes
-        custom_categories: ["iucr", "shelx"]
-      - name: "work_cif_path"
-        dtype: "QCrBox.work_cif"
-        description: "Path used for creating the specific cif file in Olex compatible format."
-      - name: "output_cif_path"
-        dtype: "QCrBox.output_cif"
-        description: "Path to save the CIF file to after finishing the interactive session."
-        required_entry_sets: ["olex_structure_output", "olex2_only_interactive_output"]
-        invalidated_entries: ["_shelx_.*"]
-        custom_categories: ["iucr", "shelx"]
-        output_block: "0" # select first block from output cif file (the default)
+        # required_entry_sets: ["cell_data", "diffraction_data"]
+        # optional_entry_sets: ["atom_data"]
+        # merge_su: Yes
+        # custom_categories: ["iucr", "shelx"]
     interactive_lifecycle:
       prepare:
-        implemented_as: "python_callable"
-        import_path: "configure_olex2"
-        callable_name: "prepare__interactive"
-        used_basecommand_parameters: ["input_cif_path", "work_cif_path"]
+        implemented_as: "cli_command"
+        call_pattern: "python /opt/qcrbox/olex2_glue_cli.py prepare --input_cif_path {input_file}"
+        used_basecommand_parameters: ["input_file"]
       run:
         implemented_as: "cli_command"
-        call_pattern: "/bin/bash /opt/olex2/start {work_cif_path}"
-        used_basecommand_parameters: ["work_cif_path"]
+        call_pattern: "python /opt/qcrbox/olex2_glue_cli.py run --input_cif_path {input_file}"
+        used_basecommand_parameters: ["input_file"]
       finalise:
         implemented_as: "python_callable"
         import_path: "configure_olex2"
         callable_name: "__finalise_interactive"
-        used_basecommand_parameters: ["input_cif_path"]
-      # finalise:
-      #   implemented_as: "python_callable"
-      #   import_path: "configure_olex2"
-      #   callable_name: "finalise__interactive"
-      #   used_basecommand_parameters: ["input_cif_path", "output_cif_path"]
-  - name: "interactive"
-    implemented_as: "interactive"
-    description: "Start Olex2 in interactive mode; this can be used to solve, refine and finish small-molecule crystal structures."
-    parameters:
-      - name: "input_cif_path"
-        dtype: "QCrBox.input_cif"
-        description: "Path to the CIF file to open in Olex2."
-        required_entry_sets: ["cell_data", "diffraction_data"]
-        optional_entry_sets: ["atom_data"]
-        merge_su: Yes
-        custom_categories: ["iucr", "shelx"]
-      - name: "work_cif_path"
-        dtype: "QCrBox.work_cif"
-        description: "Path used for creating the specific cif file in Olex compatible format."
-      - name: "output_cif_path"
-        dtype: "QCrBox.output_cif"
-        description: "Path to save the CIF file to after finishing the interactive session."
-        required_entry_sets: ["olex_structure_output", "olex2_only_interactive_output"]
-        invalidated_entries: ["_shelx_.*"]
-        custom_categories: ["iucr", "shelx"]
-        output_block: "0" # select first block from output cif file (the default)
-      - name: "parameter_json_path"
-        dtype: "QCrBox.output_path"
-        description: "Path to the JSON file to save the parameters for recreating the interactive result."
-      - name: "parameter_folder"
-        dtype: "QCrBox.folder_path"
-        description: "Folder to save files needed as parameters for recreating the interactive result."
-    interactive_lifecycle:
-      prepare:
-        implemented_as: "python_callable"
-        import_path: "configure_olex2"
-        callable_name: "prepare__interactive"
-        used_basecommand_parameters: ["input_cif_path", "work_cif_path"]
-      run:
-        implemented_as: "cli_command"
-        call_pattern: "/bin/bash /opt/olex2/start {work_cif_path}"
-        used_basecommand_parameters: ["work_cif_path"]
-      finalise:
-        implemented_as: "python_callable"
-        import_path: "configure_olex2"
-        callable_name: "finalise__interactive"
-        used_basecommand_parameters: ["input_cif_path", "output_cif_path"]
-      toparams:
-        implemented_as: "python_callable"
-        import_path: "configure_olex2"
-        callable_name: "toparams__interactive"
-        used_basecommand_parameters: ["input_cif_path", "parameter_json_path", "parameter_folder"]
-    non_interactive_equivalent:
-      name: "redo__interactive"
-      implemented_as: "python_callable"
-      import_path: "configure_olex2"
-      parameters:
-        - name: "redo_input_cif_path"
-          dtype: "QCrBox.input_cif"
-          description: "Path to the CIF file to recreate the interactive result for."
-          required_entry_sets: ["cell_data", "diffraction_data"]
-          optional_entry_sets: ["atom_data"]
-        - name: "redo_output_cif_path"
-          dtype: "QCrBox.output_cif"
-          description: "Path to save the CIF file to after finishing the interactive session."
-          required_entry_sets: ["olex_structure_output", "olex2_only_interactive_output"]
-          invalidated_entries: ["_shelx_.*"]
-          custom_categories: ["iucr", "shelx"]
-          output_block: "0" # select first block from output cif file (the default)
-        - name: "parameter_json_path"
-          dtype: "QCrBox.output_path"
-          description: "Path to the JSON file to load the parameters from for recreating the interactive result."
-        - name: "parameter_folder"
-          dtype: "QCrBox.folder_path"
-          description: "Folder to load files needed as parameters for recreating the interactive result."
-  - name: "refine_iam"
-    implemented_as: "cli_command"
-    description: "Refine a CIF file using the IAM method."
-    call_pattern: |
-      python /opt/qcrbox/olex2_glue_cli.py refine \
-         --input_cif_path {input_cif_path} \
-         --output_cif_path {output_cif_path} \
-         --n_cycles {ls_cycles} \
-         --weight_cycles {weight_cycles}
-    parameters:
-      - name: "input_cif_path"
-        dtype: QCrBox.input_cif
-        description: "Path to the CIF file to refine."
-        required_entry_sets: ["cell_data", "diffraction_data", "atom_data"]
-        merge_su: Yes
-        custom_categories: ["iucr", "shelx"]
-      - name: "output_cif_path"
-        dtype: QCrBox.output_cif
-        description: "Path to save the refined CIF file to."
-        required_entry_sets: ["olex_structure_output"]
-        custom_categories: ["iucr", "shelx"]
-        invalidated_entries: ["_shelx_.*"]
-      - name: "ls_cycles"
-        dtype: int
-        default_value: 5
-        required: False
-        description: "Number of least squares cycles to run."
-      - name: "weight_cycles"
-        dtype: int
-        default_value: 5
-        required: False
-        description: "Number of weight cycles to run. Each weight cycle consists of the full number of least squares cycles."
-
-  - name: "refine_tsc"
-    implemented_as: "cli_command"
-    description: "Refine a CIF file using aspheric form factors from a tsc(b) file."
-    doi: 10.1039/D0SC05526C
-    call_pattern: |
-      python /opt/qcrbox/olex2_glue_cli.py refine
-        --input_cif_path {input_cif_path}
-        --output_cif_path {output_cif_path}
-        --tsc_path {tsc_path}
-        --n_cycles {ls_cycles}
-        --weight_cycles {weight_cycles}
-    parameters:
-      - name: "input_cif_path"
-        dtype: "QCrBox.input_cif"
-        description: "Path to the CIF file to refine."
-        required_entry_sets: ["cell_data", "diffraction_data", "atom_data"]
-        merge_su: Yes
-        custom_categories: ["iucr", "shelx"]
-      - name: "output_cif_path"
-        dtype: "QCrBox.output_cif"
-        description: "Path to save the refined CIF file to."
-        required_entry_sets: ["olex_structure_output"]
-        custom_categories: ["iucr", "shelx"]
-        invalidated_entries: ["_shelx_.*"]
-      - name: "tsc_path"
-        dtype: "QCrBox.input_path"
-        description: "Path to the TSC file to use."
-      - name: "ls_cycles"
-        dtype: int
-        default_value: 5
-        required: False
-        description: "Number of least squares cycles to run."
-      - name: "weight_cycles"
-        dtype: int
-        default_value: 5
-        required: False
-        description: "Number of weight cycles to run. Each weight cycle consists of the full number of least squares cycles."
-
-  - name: "run_cmds_file"
-    implemented_as: "cli_command"
-    description: "Run a olex console commands read from a text file."
-    call_pattern: |
-      python /opt/qcrbox/olex2_glue_cli.py cmds
-        --input_cif_path {input_cif_path}
-        --output_cif_path {output_cif_path}
-        --cmd_file_path {cmd_file_path}
-    parameters:
-      - name: "input_cif_path"
-        dtype: QCrBox.input_cif
-        description: "Path to the CIF file to run the commands with."
-        optional_entry_sets: ["all_olex_optional"]
-        custom_categories: ["iucr", "shelx"]
-      - name: "output_cif_path"
-        dtype: QCrBox.output_cif
-        description: "Path to save the CIF file to after running the commands. If not given, no output will be read back."
-        required: False
-        optional_entry_sets: ["all_olex_optional"]
-        custom_categories: ["iucr", "shelx"]
-        invalidated_entries: ["_shelx_.*"]
-      - name: "cmd_file_path"
-        dtype: "QCrBox.input_path"
-        description: "Path to the file containing the commands to run."
+        used_basecommand_parameters: ["input_file"]
 
 cif_entry_sets:
   - name: "cell_data"

@@ -113,11 +113,14 @@ class CLICommand(BaseCommand):
         param_values = {
             name: await param.prepare_for_execution(target_dir=working_dir) for name, param in param_values.items()
         }
+        logger.debug(f"Parameters for execution {param_values}")
 
         try:
             cmd_with_bound_args = await self.bind(working_dir, **param_values)
         except KeyError as exc:
             raise QCrBoxCmdArgumentMismatch(exc.args[0])
+
+        logger.debug(f"cmd_with_bounds_args {cmd_with_bound_args}")
 
         self.proc = await asyncio.create_subprocess_shell(
             cmd_with_bound_args,
