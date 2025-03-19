@@ -13,6 +13,7 @@ from sqlmodel import Session, create_engine
 
 __all__ = ["settings"]
 
+sys._qcrbox_running_inside_tests = True
 IS_RUNNING_INSIDE_TESTS = hasattr(sys, "_qcrbox_running_inside_tests")
 
 SQLiteDsn = str  # alias for readability

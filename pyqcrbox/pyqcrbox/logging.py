@@ -59,13 +59,11 @@ match settings.logging.renderer:
         processors = []
         assert_never(settings.logging.renderer)
 
-
 structlog.configure(
     processors=processors,
     logger_factory=structlog.PrintLoggerFactory(),
     cache_logger_on_first_use=False,
 )
 
-# set_log_level(settings.logging.log_level_as_int)
-#
+set_log_level(settings.logging.log_level_as_int)
 logger = structlog.get_logger()
