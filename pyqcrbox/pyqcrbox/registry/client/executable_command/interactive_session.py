@@ -34,6 +34,7 @@ class InteractiveSession(BaseCommand):
             prepare_cmd = ExecutableCommand(self.prepare_cmd_spec)
             prepare_calc_id = helpers.generate_calculation_id()
             prepare_calc = await prepare_cmd.execute_in_background(_calculation_id=prepare_calc_id, _cwd=_cwd, **kwargs)
+            await prepare_calc.wait_until_finished()
         else:
             prepare_calc = None
 
