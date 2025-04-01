@@ -23,7 +23,6 @@ class InteractiveSessionCalculation(BaseCalculation):
         self.run_calc = run_calc
         self.finalise_calc = finalise_calc
         self.is_closed = False
-        self.prepare_dataset_id = None
         self.output_dataset_id = None
         self.session_closed_event = anyio.Event()
 
@@ -45,6 +44,9 @@ class InteractiveSessionCalculation(BaseCalculation):
     async def wait_until_finished(self):
         if self.prepare_calc:
             logger.debug("Running 'prepare' command")
+            assert isinstance(
+                self.prepare_calc, PythonCallableCalculation
+            ), "Only Python callables are supported for 'prepare_command' at the moment"
             await self.prepare_calc.wait_until_finished()
 
         logger.debug("Running the main interactive command")
@@ -60,6 +62,7 @@ class InteractiveSessionCalculation(BaseCalculation):
             ), "Only Python callables are supported for 'finalise_command' at the moment"
             await self.finalise_calc.wait_until_finished()
 
+            # TODO: we can expect a list here of data files to put into the dataset
             output_file = self.finalise_calc.return_value
             data_manager = await get_data_file_manager()
             output_data_file_id = await data_manager.import_local_file(output_file)

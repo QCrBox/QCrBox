@@ -11,20 +11,19 @@ from qcrboxtools.cif.merge import replace_structure_from_cif
 from qcrboxtools.robots.olex2 import Olex2Socket
 
 from pyqcrbox import logger, sql_models
-
-# from pyqcrbox.registry.client import ExternalCommand, Param, QCrBoxRegistryClient
 from pyqcrbox.registry.client import QCrBoxClient
 
 YAML_PATH = "./config_olex2.yaml"
 
 
-def prepare__interactive(input_cif_path):
-    input_cif_path = Path(input_cif_path)
-    work_cif_path = input_cif_path.parent / "qcrbox_work.cif"
+def prepare__interactive(input_file):
+    input_file = Path(input_file)
+    work_cif_path = input_file.parent / "qcrbox_work.cif"
 
     # create a cif file using the requested cif entries in olex2 format
     # will most likely be handled internally by QCrBox in the future
-    cif_file_to_specific_by_yml(input_cif_path, work_cif_path, YAML_PATH, "interactive", "input_cif_path")
+    # cif_file_to_specific_by_yml(input_cif_path, work_cif_path, YAML_PATH, "interactive", "input_cif_path")
+    shutil.copy(input_file, work_cif_path)
 
     return work_cif_path.absolute()
 
@@ -57,7 +56,7 @@ def prepare__interactive(input_cif_path):
 #     return newest_cif_path.absolute()
 
 
-def __finalise_interactive(input_file):
+def finalise__interactive(input_file):
     input_file = Path(input_file)
     work_folder = input_file.parent
 

@@ -17,24 +17,26 @@ commands:
       - name: "input_file"
         dtype: "QCrBox.data_file"
         description: "Path to the CIF file to open in Olex2."
-        required_entry_sets: ["cell_data", "diffraction_data"]
-        optional_entry_sets: ["atom_data"]
-        merge_su: Yes
-        custom_categories: ["iucr", "shelx"]
     interactive_lifecycle:
       prepare:
-        implemented_as: "cli_command"
-        call_pattern: "python /opt/qcrbox/olex2_glue_cli.py prepare --input_cif_path {input_file}"
+        implemented_as: "python_callable"
+        import_path: "configure_olex2"
+        callable_name: "prepare__interactive"
         used_basecommand_parameters: ["input_file"]
       run:
         implemented_as: "cli_command"
-        call_pattern: "python /opt/qcrbox/olex2_glue_cli.py run --input_cif_path {input_file}"
+        call_pattern: "/bin/bash /opt/olex2/start {input_file}"
         used_basecommand_parameters: ["input_file"]
       finalise:
         implemented_as: "python_callable"
         import_path: "configure_olex2"
-        callable_name: "__finalise_interactive"
+        callable_name: "finalise__interactive"
         used_basecommand_parameters: ["input_file"]
+
+# cif_required_entry_sets: ["cell_data", "diffraction_data"]
+# cif_optional_entry_sets: ["atom_data"]
+# cif_merge_su: Yes
+# cif_custom_categories: ["iucr", "shelx"]
 
 cif_entry_sets:
   - name: "cell_data"
