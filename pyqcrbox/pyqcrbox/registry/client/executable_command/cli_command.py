@@ -109,11 +109,7 @@ class CLICommand(BaseCommand):
         calc_finished_event = anyio.Event()
 
         working_dir = _cwd or os.getcwd()
-        param_values = self.cmd_spec.parameter_default_values | kwargs
-        param_values = {
-            name: await param.prepare_for_execution(target_dir=working_dir) for name, param in param_values.items()
-        }
-        logger.debug(f"Parameters for execution {param_values}")
+        param_values = {k: kwargs[k] for k in self.parameter_names if k in kwargs}
 
         try:
             cmd_with_bound_args = await self.bind(working_dir, **param_values)

@@ -3,7 +3,6 @@ import importlib
 import inspect
 import multiprocessing.pool
 import multiprocessing.process
-import os
 import traceback
 from typing import Union
 
@@ -90,12 +89,7 @@ class PythonCallable(BaseCommand):
                 "TODO: Change into working directory before executing "
                 "the python callable (and switch back afterwards)!"
             )
-
-        working_dir = _cwd or os.getcwd()
-        param_values = self.cmd_spec.parameter_default_values | kwargs
-        param_values = {
-            name: await param.prepare_for_execution(target_dir=working_dir) for name, param in param_values.items()
-        }
+        param_values = {k: kwargs[k] for k in self.parameter_names if k in kwargs}
 
         pending_result = self.pool.apply_async(
             self._fn_with_call_args_validation,
