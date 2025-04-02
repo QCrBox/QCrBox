@@ -31,12 +31,15 @@ class InteractiveSession(BaseCommand):
         from .executable_command import ExecutableCommand
 
         working_dir = _cwd or os.getcwd()
-        param_values = (
-            self.prepare_cmd_spec.parameter_default_values
-            | self.run_cmd_spec.parameter_default_values
-            | self.finalise_cmd_spec.parameter_default_values
-            | kwargs
-        )
+
+        # It is mandatory to have a run command defined, but optional to have a prepare or finalise command. So
+        # we have to be careful here and add their parameters if they are defined.
+        param_values = self.run_cmd_spec.parameter_default_values
+        if self.prepare_cmd_spec:
+            param_values = param_values | self.prepare_cmd_spec.parameter_default_values
+        if self.finalise_cmd_spec:
+            param_values = param_values | self.finalise_cmd_spec.parameter_default_values
+        param_values = param_values | kwargs
         param_values = {
             name: await param.prepare_for_execution(target_dir=working_dir) for name, param in param_values.items()
         }
