@@ -15,7 +15,7 @@ commands:
     description: "Start Olex2 in interactive mode; this can be used to solve, refine and finish small-molecule crystal structures."
     parameters:
       - name: "input_file"
-        dtype: "QCrBox.data_file"
+        dtype: "QCrBox.cif_data_file"
         description: "Path to the CIF file to open in Olex2."
     interactive_lifecycle:
       prepare:

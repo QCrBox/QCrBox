@@ -6,6 +6,7 @@ from pydantic import Field, Tag, TypeAdapter
 # from .base_parameter_spec import SENTINEL_UNDEFINED
 from .builtin_parameter_types import BoolParameterSpec, FloatParameterSpec, IntParameterSpec, StrParameterSpec
 from .filesystem_path_parameters import (
+    CifDataFileParameterSpec,
     DataFileParameterSpec,
     FolderPathParameterSpec,
     GenericInputPathParameterSpec,
@@ -37,6 +38,7 @@ ParameterSpecTaggedUnion = Union[
     Annotated[WorkCifParameterSpec, Tag("QCrBox.work_cif")],
     Annotated[FolderPathParameterSpec, Tag("QCrBox.folder_path")],
     Annotated[DataFileParameterSpec, Tag("QCrBox.data_file")],
+    Annotated[CifDataFileParameterSpec, Tag("QCrBox.cif_data_file")],
     Annotated[InputFolderParameterSpec, Tag("QCrBox.input_folder")],
 ]
 ParameterSpecDiscriminatedUnion = Annotated[ParameterSpecTaggedUnion, Field(discriminator="dtype")]

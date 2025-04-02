@@ -12,6 +12,9 @@ __all__ = [
     "OutputCifParameterSpec",
     "WorkCifParameterSpec",
     "DataFileParameterSpec",
+    "CifDataFileParameterSpec",
+    "GenericOutputPathParameterSpec",
+    "InputFolderParameterSpec",
 ]
 
 
@@ -39,6 +42,10 @@ class FolderPathParameterSpec(BaseFilesystemPathParameterSpec):
     dtype: Literal["QCrBox.folder_path"]
 
 
+class DataFileParameterSpec(BaseFilesystemPathParameterSpec):
+    dtype: Literal["QCrBox.data_file"]
+
+
 class BaseCifFileParameterSpec(BaseFilesystemPathParameterSpec):
     required_entries: list[CifEntryLiteral | OneOfCifEntrySpec] = []
     optional_entries: list[CifEntryLiteral | OneOfCifEntrySpec] = []
@@ -58,8 +65,8 @@ class BaseCifFileParameterSpec(BaseFilesystemPathParameterSpec):
         return v
 
 
-class DataFileParameterSpec(BaseCifFileParameterSpec):
-    dtype: Literal["QCrBox.data_file"]
+class CifDataFileParameterSpec(BaseCifFileParameterSpec):
+    dtype: Literal["QCrBox.cif_data_file"]
 
 
 class InputCifParameterSpec(BaseCifFileParameterSpec):
