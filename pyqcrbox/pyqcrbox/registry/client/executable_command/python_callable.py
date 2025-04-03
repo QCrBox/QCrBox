@@ -78,7 +78,8 @@ class PythonCallable(BaseCommand):
             nonlocal calc_finished_event
             traceback_str = "\n".join(traceback.format_exception(exc))
             logger.error(
-                f"Error: {exc=} ({multiprocessing.process.current_process().name})\n\nTraceback:\n\n{traceback_str}"
+                f"PythonCallable Error: {exc=} ({multiprocessing.process.current_process().name})\n\n"
+                + f"Traceback:\n\n{traceback_str}"
             )
             calc_finished_event.set()
             calc_finished_event = None

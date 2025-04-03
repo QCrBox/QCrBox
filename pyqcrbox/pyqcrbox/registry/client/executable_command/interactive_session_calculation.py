@@ -42,35 +42,40 @@ class InteractiveSessionCalculation(BaseCalculation):
         return None
 
     async def wait_until_finished(self):
+        logger.debug("InteractiveSessionCalculation: entered wait_until_finished()")
+
         if self.prepare_calc:
-            logger.debug("Running 'prepare' command")
             assert isinstance(
                 self.prepare_calc, PythonCallableCalculation
             ), "Only Python callables are supported for 'prepare_command' at the moment"
+            logger.debug(f"Waiting for 'prepare' command to finish: {self.prepare_calc.calculation_id!r}")
             await self.prepare_calc.wait_until_finished()
 
-        logger.debug("Running the main interactive command")
         await self.run_calc.wait_until_finished()
 
         logger.debug(f"Waiting for interactive session to complete: {self.calculation_id!r}")
         await self.calc_finished_event.wait()
 
         if self.finalise_calc:
-            logger.debug("Running the 'finalise' command")
             assert isinstance(
                 self.finalise_calc, PythonCallableCalculation
             ), "Only Python callables are supported for 'finalise_command' at the moment"
+            logger.debug(f"Waiting for 'finalise' command to finish: {self.finalise_calc.calculation_id!r}")
             await self.finalise_calc.wait_until_finished()
 
             # TODO: we can expect a list here of data files to put into the dataset
             output_file = self.finalise_calc.return_value
-            data_manager = await get_data_file_manager()
-            output_data_file_id = await data_manager.import_local_file(output_file)
-            self.output_dataset_id = await data_manager.create_dataset_from_data_file(output_data_file_id)
+
+            try:
+                data_manager = await get_data_file_manager()
+                output_data_file_id = await data_manager.import_local_file(output_file)
+                self.output_dataset_id = await data_manager.create_dataset_from_data_file(output_data_file_id)
+            except FileNotFoundError:
+                logger.exception("Failed to create dataset for output from 'finalise' command")
 
         self.is_closed = True
         self.session_closed_event.set()
-        logger.debug(f"Interactive session finished: {self.calculation_id!r}")
+        logger.debug(f"InteractiveSessionCalculation: interactive session finished: {self.calculation_id!r}")
 
     async def close_interactive_session(self):
         if self.calc_finished_event.is_set():

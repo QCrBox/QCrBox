@@ -132,7 +132,9 @@ class QCrBoxClient(QCrBoxServerClientBase):
         self.status.set_busy()
 
         if msg.command_name == "interactive_session":
-            # TODO: this does not belong here - it should be handled by the interactive session itself
+            # TODO: this does not belong here - it should be handled by the interactive session itself.
+            # TODO: this does not belong here - it should be handled by the interactive session itself.
+            #       We will require the message to be sent to each command and the private inbox of the client
             interactive_session_info = InteractiveSessionInfo(
                 session_id=msg.calculation_id,
                 client_private_inbox=self.private_inbox,
@@ -150,12 +152,11 @@ class QCrBoxClient(QCrBoxServerClientBase):
             #   - parse each argument as the correct type
             parsed_args = {}
             for param_name, value in msg.arguments.items():
-                logger.debug(f"Argument: {param_name!r} = {value!r}")
                 param_dtype_str = cmd.cmd_spec.get_parameter_by_name(param_name).dtype
                 parsed_args[param_name] = parse_parameter_as_its_dtype(value, param_dtype_str)
 
-            logger.debug(f"Parsed arguments: {parsed_args}")
-            logger.debug(f"Executing command in working dir cwd={self.working_dir!r}")
+            logger.debug(f"InteractiveSession: Parsed arguments: {parsed_args}")
+            logger.debug(f"InteractiveSession: Executing command in working dir cwd={self.working_dir!r}")
 
             calc = await cmd.execute_in_background(
                 **parsed_args, _calculation_id=msg.calculation_id, _cwd=self.working_dir
