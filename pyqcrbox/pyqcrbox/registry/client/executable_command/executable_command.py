@@ -6,22 +6,19 @@ if TYPE_CHECKING:
 from pyqcrbox.sql_models.command_spec import ImplementedAs
 
 from .cli_command import CLICommand
-from .interactive_command import InteractiveCommand
 from .interactive_session import InteractiveSession
 from .python_callable import PythonCallable
 
 __all__ = ["ExecutableCommand"]
 
 
-def ExecutableCommand(cmd_spec: "CommandSpecDiscriminatedUnion"):
+def ExecutableCommand(cmd_spec: "CommandSpecDiscriminatedUnion", **kwargs):
     match cmd_spec.implemented_as:
         case ImplementedAs.python_callable:
             return PythonCallable(cmd_spec)
         case ImplementedAs.cli_command:
             return CLICommand(cmd_spec)
-        case ImplementedAs.interactive:
-            return InteractiveCommand(cmd_spec)
         case ImplementedAs.interactive_session:
-            return InteractiveSession(cmd_spec)
+            return InteractiveSession(cmd_spec, **kwargs)
         case _:
             raise ValueError(f"Invalid value for 'implemented_as': {cmd_spec.implemented_as}")
