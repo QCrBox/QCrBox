@@ -17,64 +17,48 @@ YAML_PATH = "./config_olex2.yaml"
 
 
 def prepare__interactive(input_file):
-    input_file = Path(input_file)
-    work_cif_path = input_file.parent / "qcrbox_work.cif"
+    input_cif_path = Path(input_file)
+    work_cif_path = input_cif_path.parent / "qcrbox_work.cif"
 
     # create a cif file using the requested cif entries in olex2 format
-    # will most likely be handled internally by QCrBox in the future
-    # cif_file_to_specific_by_yml(input_cif_path, work_cif_path, YAML_PATH, "interactive", "input_cif_path")
-    shutil.copy(input_file, work_cif_path)
-
-    return work_cif_path.absolute()
-
-
-# def finalise__interactive(input_cif_path):
-#     input_cif_path = Path(input_cif_path)
-#     output_cif_path = input_cif_path.parent / "qcrbox_output.cif"
-#     work_folder = input_cif_path.parent
-
-#     newest_cif_path = next(
-#         reversed(
-#             sorted(
-#                 (file_path for file_path in work_folder.glob("*.cif") if file_path.name != "output.cif"),
-#                 key=os.path.getmtime,
-#             )
-#         )
-#     )
-
-#     # TODO if not existing, rerun newest res with ACTA
-#     # Go to unified keywords and split SUs into separate entries
-#     cif_file_merge_to_unified_by_yml(
-#         newest_cif_path,
-#         output_cif_path,
-#         input_cif_path,
-#         YAML_PATH,
-#         "interactive",
-#         "output_cif_path",
-#     )
-
-#     return newest_cif_path.absolute()
+    # try:
+    #     cif_file_to_specific_by_yml(
+    #         input_cif_path,
+    #         work_cif_path,
+    #         YAML_PATH,
+    #         "interactive_session",
+    #         "input_file",
+    #     )
+    # except ValueError:
+    #     logger.exception(f"Failed to create work file {work_cif_path}")
+    #     os.remove(input_cif_path)
+    #
+    # backup the input file and copy the work file to the original input as a
+    # crude hack for now
+    shutil.copyfile(input_cif_path, input_cif_path.with_suffix(".cif.bak"))
+    shutil.copyfile(work_cif_path, input_cif_path)
 
 
 def finalise__interactive(input_file):
     input_file = Path(input_file)
     work_folder = input_file.parent
 
-    newest_cif_path = next(
-        reversed(
-            sorted(
-                (
-                    file_path
-                    for file_path in work_folder.glob("*.cif")
-                    if file_path.name != "output.cif" and file_path != input_file
-                ),
-                key=os.path.getmtime,
+    try:
+        newest_cif_path = next(
+            reversed(
+                sorted(
+                    (
+                        file_path
+                        for file_path in work_folder.glob("*.cif")
+                        if file_path.name != "output.cif" and file_path != input_file
+                    ),
+                    key=os.path.getmtime,
+                )
             )
         )
-    )
-    logger.debug(f"[DDD] {input_file=!r}")
-    logger.debug(f"[DDD] {work_folder=!r}")
-    logger.debug(f"[DDD] {newest_cif_path=!r}")
+    except StopIteration:
+        logger.error("No new CIF files found in work folder, returning input file")
+        newest_cif_path = input_file
 
     # TODO if not existing, rerun newest res with ACTA
     #
