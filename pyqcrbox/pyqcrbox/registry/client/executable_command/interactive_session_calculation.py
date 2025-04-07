@@ -50,11 +50,15 @@ class InteractiveSessionCalculation(BaseCalculation):
             ), "Only Python callables are supported for 'prepare_command' at the moment"
             logger.debug(f"Waiting for 'prepare' command to finish: {self.prepare_calc.calculation_id!r}")
             await self.prepare_calc.wait_until_finished()
+            logger.debug(f"Prepare command finished: {self.prepare_calc.calculation_id!r}")
 
+        logger.debug("Waiting for 'run' command to finish")
         await self.run_calc.wait_until_finished()
+        logger.debug(f"Run command finished: {self.run_calc.calculation_id!r}")
 
-        logger.debug(f"Waiting for interactive session to complete: {self.calculation_id!r}")
+        logger.debug("Waiting for 'calc_finished' event to be set")
         await self.calc_finished_event.wait()
+        logger.debug(f"Waiting for 'calc_finished' event to be set: {self.calc_finished_event}")
 
         if self.finalise_calc:
             assert isinstance(
@@ -63,15 +67,20 @@ class InteractiveSessionCalculation(BaseCalculation):
             logger.debug(f"Waiting for 'finalise' command to finish: {self.finalise_calc.calculation_id!r}")
             await self.finalise_calc.wait_until_finished()
 
-            # TODO: we can expect a list here of data files to put into the dataset
             output_file = self.finalise_calc.return_value
-
-            try:
+            if output_file is None:
+                logger.info("No output file from interactive session")
+            else:
                 data_manager = await get_data_file_manager()
-                output_data_file_id = await data_manager.import_local_file(output_file)
-                self.output_dataset_id = await data_manager.create_dataset_from_data_file(output_data_file_id)
-            except FileNotFoundError:
-                logger.exception("Failed to create dataset for output from 'finalise' command")
+                try:
+                    output_data_file_id = await data_manager.import_local_file(output_file)
+                    self.output_dataset_id = await data_manager.create_dataset_from_data_file(output_data_file_id)
+                except FileNotFoundError:
+                    logger.error(f"Failed to create dataset for output from 'finalise' command, {output_file=!r}")
+                    raise
+                logger.info(
+                    "The output from the interactive session has been placed into dataset %s", self.output_dataset_id
+                )
 
         self.is_closed = True
         self.session_closed_event.set()
@@ -89,7 +98,7 @@ class InteractiveSessionCalculation(BaseCalculation):
 
         # TODO: should we set the calc_finished_event for the run command?
         #       might be safer in case it doesn't terminate on its own.
-        logger.debug("Sending 'calc_finished' event to run_calc")
+        logger.debug("Sending 'calc_finished' event to run_cal, this will wait for the finalise command to finish")
         self.run_calc.calc_finished_event.set()
 
         # Todo: terminate run_calc

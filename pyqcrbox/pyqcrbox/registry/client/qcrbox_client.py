@@ -131,20 +131,15 @@ class QCrBoxClient(QCrBoxServerClientBase):
         logger.info(f"Received command execution request: {msg!r} (current status: {self.status})")
         self.status.set_busy()
 
-        if msg.command_name == "interactive_session":
-            # TODO: this does not belong here - it should be handled by the interactive session itself.
-            # TODO: this does not belong here - it should be handled by the interactive session itself.
-            #       We will require the message to be sent to each command and the private inbox of the client
-            interactive_session_info = InteractiveSessionInfo(
-                session_id=msg.calculation_id,
-                client_private_inbox=self.private_inbox,
-                cmd_execution_request=msg,
-            )
-            data_manager = await get_data_file_manager()
-            await data_manager.store_interactive_session_info(interactive_session_info)
+        # We are unsure if this should belong here, but it makes the code far less
+        # complicated and resolves some data coupling. Ideally we would want the
+        # interactive session (and eventually non-interactive command) to deal
+        # with this, rather than the client.
+        await self._update_interactive_session_info(msg)
 
         try:
             cmd = self.get_executable_command(msg.command_name)
+            logger.debug(f"InteractiveSession: Retrieved command {cmd!r} ")
 
             # Parse each argument in `msg.arguments` as the correct parameter type
             # Steps:
@@ -154,7 +149,6 @@ class QCrBoxClient(QCrBoxServerClientBase):
             for param_name, value in msg.arguments.items():
                 param_dtype_str = cmd.cmd_spec.get_parameter_by_name(param_name).dtype
                 parsed_args[param_name] = parse_parameter_as_its_dtype(value, param_dtype_str)
-
             logger.debug(f"InteractiveSession: Parsed arguments: {parsed_args}")
             logger.debug(f"InteractiveSession: Executing command in working dir cwd={self.working_dir!r}")
 
@@ -167,7 +161,6 @@ class QCrBoxClient(QCrBoxServerClientBase):
         except Exception as exc:
             error_msg = f"Command execution failed: {exc!r}"
             logger.error(error_msg)
-            # await update_calculation_status_in_nats_kv(msg.calculation_id, CalculationStatusEnum.FAILED)
             status_details = CalculationStatusDetails(
                 calculation_id=msg.calculation_id,
                 status=CalculationStatusEnum.FAILED,
@@ -179,15 +172,15 @@ class QCrBoxClient(QCrBoxServerClientBase):
             self.status.set_idle()
             return
 
-        # logger.debug(f"Storing calculation details: {calc!r}")
         self.calculations[msg.calculation_id] = calc
-        # logger.debug(f"Storing KV value for {msg.calculation_id=}")
         await update_calculation_status_in_nats_kv_NEW(await calc.get_status_details())
 
         await calc.wait_until_finished()
         await update_calculation_status_in_nats_kv_NEW(await calc.get_status_details())
 
-        self.status.set_idle()
+        # EP: we should not need to set the client status to idle, as this is
+        # handled by close_interactive_session.
+        # self.status.set_idle()
 
     async def get_calculation_status(
         self, msg: msg_specs.GetCalculationStatusNATS
@@ -199,6 +192,8 @@ class QCrBoxClient(QCrBoxServerClientBase):
         response = msg_specs.CalculationStatusResponseNATS(calculation_id=msg.calculation_id, status=status)
         return response
 
+    # Following from previous comments, shouldn't this belong to the InteractiveSession
+    # or InteractiveSessionCalculation instead?
     async def close_interactive_session(
         self, msg: msg_specs.CloseInteractiveSessionNATS
     ) -> msg_specs.CloseInteractiveSessionResponseNATS | None:
@@ -214,6 +209,8 @@ class QCrBoxClient(QCrBoxServerClientBase):
             return response
 
         calc = self.calculations[session_id]
+        logger.debug(f"Received request to close interactive session: {calc!r}")
+
         try:
             await calc.close_interactive_session()
             session_status = calc.status
@@ -225,17 +222,18 @@ class QCrBoxClient(QCrBoxServerClientBase):
             session_status = CalculationStatusEnum.FAILED
             output_dataset_id = None
 
-        logger.debug(f"Current client status: {self.status}")
         logger.debug("Setting client status to 'idle'")
         self.status.set_idle()
-        logger.debug(f"Client status now: {self.status}")
 
-        response = msg_specs.CloseInteractiveSessionResponseNATS(
+        return msg_specs.CloseInteractiveSessionResponseNATS(
             session_id=session_id,
             status=session_status,
             output_dataset_id=output_dataset_id,
         )
-        return response
+
+    def get_executable_command(self, command_name, **kwargs):
+        cmd_spec = self.application_spec.get_command_by_name(command_name)
+        return ExecutableCommand(cmd_spec, private_inbox=self.private_inbox)
 
     def _set_up_asgi_server(self) -> None:
         self.asgi_server = create_client_asgi_server(self.lifespan_context)
@@ -246,9 +244,17 @@ class QCrBoxClient(QCrBoxServerClientBase):
         for calc in self._calculations:
             await calc.terminate()
 
-    def get_executable_command(self, command_name):
-        cmd_spec = self.application_spec.get_command_by_name(command_name)
-        return ExecutableCommand(cmd_spec)
+    async def _update_interactive_session_info(self, msg):
+        if msg.command_name == "interactive_session":
+            interactive_session_info = InteractiveSessionInfo(
+                session_id=msg.calculation_id,
+                client_private_inbox=self.private_inbox,
+                cmd_execution_request=msg,
+            )
+            data_manager = await get_data_file_manager()
+            await data_manager.store_interactive_session_info(interactive_session_info)
+        else:
+            raise ValueError(f"Unknown command type: {msg.command_name}")
 
     # @on_qcrbox_startup
     # async def send_registration_request(self):
