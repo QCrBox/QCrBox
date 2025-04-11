@@ -205,6 +205,8 @@ jinjax==0.46
     # via pyqcrbox (pyproject.toml)
 json5==0.9.25
     # via jupyterlab-server
+jsonpath-ng==1.7.0
+    # via robotframework-jsonlibrary
 jsonpointer==3.0.0
     # via jsonschema
 jsonschema==4.23.0
@@ -212,6 +214,7 @@ jsonschema==4.23.0
     #   jupyter-events
     #   jupyterlab-server
     #   nbformat
+    #   robotframework-jsonlibrary
 jsonschema-specifications==2023.12.1
     # via jsonschema
 jupyter-client==8.6.3
@@ -388,6 +391,8 @@ pluggy==1.5.0
     # via
     #   hatchling
     #   pytest
+ply==3.11
+    # via jsonpath-ng
 polyfactory==2.17.0
     # via litestar
 pre-commit==3.8.0
@@ -492,6 +497,7 @@ requests==2.32.3
     #   cookiecutter
     #   jupyterlab-server
     #   mkdocs-material
+    #   robotframework-requests
 reuse==4.0.3
     # via pyqcrbox (pyproject.toml)
 rfc3339-validator==0.1.4
@@ -511,6 +517,15 @@ rich==13.9.1
     #   rich-click
 rich-click==1.8.3
     # via litestar
+robotframework==7.2.2
+    # via
+    #   pyqcrbox (pyproject.toml)
+    #   robotframework-jsonlibrary
+    #   robotframework-requests
+robotframework-jsonlibrary==0.5
+    # via pyqcrbox (pyproject.toml)
+robotframework-requests==0.9.7
+    # via pyqcrbox (pyproject.toml)
 rpds-py==0.20.0
     # via
     #   jsonschema
@@ -628,9 +643,7 @@ urllib3==2.2.3
 userpath==1.9.2
     # via hatch
 uv==0.4.18
-    # via
-    #   pyqcrbox (pyproject.toml)
-    #   hatch
+    # via hatch
 uvicorn==0.31.0
     # via pyqcrbox (pyproject.toml)
 uvloop==0.20.0

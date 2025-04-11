@@ -62,6 +62,9 @@ dev = [
     "pytest-cov",
     "pytest-cases",
     "pytest-hot-reloading",
+    "robotframework",
+    "robotframework-requests",
+    "robotframework-jsonlibrary",
 ]
 
 docs = [
