@@ -233,7 +233,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
 
     def get_executable_command(self, command_name, **kwargs):
         cmd_spec = self.application_spec.get_command_by_name(command_name)
-        return ExecutableCommand(cmd_spec, private_inbox=self.private_inbox)
+        return ExecutableCommand(cmd_spec)
 
     def _set_up_asgi_server(self) -> None:
         self.asgi_server = create_client_asgi_server(self.lifespan_context)
