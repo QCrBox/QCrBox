@@ -40,6 +40,7 @@ class Application:
     def _process_log_file(self, log_file: Path) -> list[str]:
         """Process a single log file."""
         logger.debug(f"Processing log file: {log_file}")
+        component = log_file.stem.replace("qcrbox-", "")
 
         with open(log_file, "rt") as infile:
             lines = infile.readlines()
@@ -47,9 +48,11 @@ class Application:
         processed_lines = []
         for line in lines:
             event_dict = json.loads(line)
-            processed_lines.append(
-                f"{event_dict['timestamp']} | {event_dict['level']:>8} | {event_dict['event']} {event_dict['extra']}\n"
-            )
+            line = f"{event_dict['timestamp']} | {component} | {event_dict['level']} | {event_dict['event']}"
+            if event_dict["extra"]:
+                line += f" {event_dict['extra']}"
+            line += "\n"
+            processed_lines.append(line)
 
         return processed_lines
 
