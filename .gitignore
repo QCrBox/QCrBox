@@ -96,3 +96,6 @@ services/applications/mopro/Import2MoPro-2024-07.zip
 pyqcrbox/robot_tests/output.xml
 pyqcrbox/robot_tests/log.html
 pyqcrbox/robot_tests/report.html
+
+# Log files
+*.log
