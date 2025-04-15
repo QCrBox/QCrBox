@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 
 import nats.js.errors
 
+from pyqcrbox.logging import logger
 from pyqcrbox.sql_models import ApplicationSpecDB
 
 from .helper_functions import get_nats_key_value
@@ -23,7 +24,7 @@ class NatsPersistenceAdapter(BasePersistenceAdapter):
         nats_key = application_spec.nats_key
         try:
             existing_application_spec = await kv_applications.get(nats_key)
-            print(
+            logger.warning(
                 "TODO: an application with the same slug and version was registered before. "
                 f"Verify that the new spec is consistent with the existing one: {existing_application_spec=}"
             )

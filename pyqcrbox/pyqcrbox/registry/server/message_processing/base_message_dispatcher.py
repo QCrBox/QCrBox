@@ -1,9 +1,8 @@
 import functools
 import textwrap
 
-from loguru import logger
-
 from pyqcrbox import msg_specs
+from pyqcrbox.logging import logger
 
 
 @functools.singledispatch

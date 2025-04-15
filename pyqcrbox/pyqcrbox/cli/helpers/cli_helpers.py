@@ -5,16 +5,14 @@ from typing import Optional
 import click
 from loguru import logger
 
-from pyqcrbox.logging import set_log_level
-
 
 def add_verbose_option(f):
     @functools.wraps(f)
     def wrapper(ctx, verbose, *args, **kwargs):
         ctx.ensure_object(dict)  # ensure that ctx.obj exists and is a dict
         ctx.obj["VERBOSE"] = verbose or ctx.obj.get("VERBOSE", False)
-        if ctx.obj["VERBOSE"]:
-            set_log_level("DEBUG")
+        # if ctx.obj["VERBOSE"]:
+        #     set_log_level("DEBUG")
         return f(*args, **kwargs)
 
     wrapper = click.option(

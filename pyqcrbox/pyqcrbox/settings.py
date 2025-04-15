@@ -6,7 +6,6 @@ from typing import Any, Optional
 
 import sqlalchemy
 import sqlmodel
-from loguru import logger
 from pydantic import computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlmodel import Session, create_engine
@@ -31,6 +30,7 @@ def create_sqlmodel_engine(url: Optional[SQLiteDsn], echo: bool, connect_args: t
 
 @functools.lru_cache
 def _create_db_tables(engine, purge_existing: bool):
+    from pyqcrbox.logging import logger
     from pyqcrbox.sql_models import QCrBoxBaseSQLModel  # import here to avoid a circular import
 
     logger.debug(f"Initialising the database for engine: {engine}")
@@ -127,7 +127,8 @@ class StructlogRendererEnum(Enum):
 
 
 class LoggingSettings(QCrBoxSettingsBaseModel):
-    log_level: str = "INFO" if not IS_RUNNING_INSIDE_TESTS else "DEBUG"
+    # log_level: str = "INFO" if not IS_RUNNING_INSIDE_TESTS else "DEBUG"
+    log_level: str = "DEBUG"
     renderer: StructlogRendererEnum = StructlogRendererEnum.CONSOLE
 
     @property

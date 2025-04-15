@@ -13,9 +13,9 @@ from anyio.abc import TaskStatus
 from faststream.nats import NatsBroker
 from litestar import Litestar
 from litestar.testing import AsyncTestClient, TestClient
-from loguru import logger
 
 from pyqcrbox import QCRBOX_SVCS_REGISTRY
+from pyqcrbox.logging import logger
 from pyqcrbox.svcs import NatsPersistenceAdapter, SQLitePersistenceAdapter
 from pyqcrbox.svcs.helper_functions import _create_nats_broker_instance
 
@@ -139,7 +139,7 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
             func = getattr(self, name)
             if inspect.ismethod(func) and hasattr(func, "_is_qcrbox_startup_hook"):
                 cur_kwargs = {name: value for (name, value) in kwargs.items() if name in func._param_names}
-                logger.trace(f"Executing startup hook {func.__name__!r} with kwargs={cur_kwargs}")
+                logger.debug(f"Executing startup hook {func.__name__!r} with kwargs={cur_kwargs}")
                 if not inspect.iscoroutinefunction(func):
                     func(**cur_kwargs)
                 else:
@@ -147,7 +147,7 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
 
     @contextlib.asynccontextmanager
     async def lifespan_context(self, _: Litestar) -> AsyncContextManager:
-        logger.trace(f"==> Entering {self.clsname} lifespan function...")
+        logger.debug(f"==> Entering {self.clsname} lifespan function...")
 
         # for attempt in stamina.retry_context(on=aiormq.exceptions.AMQPConnectionError, timeout=60.0, attempts=None):
         #     with attempt:
@@ -161,27 +161,27 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
         await self.execute_startup_hooks(**self._run_kwargs)
 
         try:
-            logger.trace("Yielding control to ASGI server ...")
+            logger.debug("Yielding control to ASGI server ...")
             yield
-            logger.trace("Received control back from ASGI server ...")
+            logger.debug("Received control back from ASGI server ...")
         finally:
             with contextlib.suppress(KeyError):
                 # with anyio.CancelScope(shield=True):
-                logger.trace("Closing broker.")
+                logger.debug("Closing broker.")
                 # await self.broker.close()
                 await self.nats_broker.close()
-                logger.trace("Done (broker is closed).")
+                logger.debug("Done (broker is closed).")
 
-                logger.trace("Closing SVCS registry.")
+                logger.debug("Closing SVCS registry.")
                 await self.svcs_registry.aclose()
-                logger.trace("Done (SVCS registry is closed).")
+                logger.debug("Done (SVCS registry is closed).")
 
-        logger.trace(f"<== Exiting from {self.clsname} lifespan function.")
+        logger.debug(f"<== Exiting from {self.clsname} lifespan function.")
 
     def run(self, host: Optional[str] = None, port: Optional[int] = None, **kwargs):
         self.host = host or "127.0.0.1"
         self.port = port or 8000
-        logger.trace(f"Running {self.clsname} with {kwargs=}")
+        logger.debug(f"Running {self.clsname} with {kwargs=}")
         self._run_kwargs = kwargs
         try:
             anyio.run(self.serve)
@@ -191,7 +191,7 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
     async def serve(self, task_status: TaskStatus[None] = TASK_STATUS_IGNORED):
         self._set_up_uvicorn_server()
 
-        logger.trace(f"Entering {self.clsname}.serve()...")
+        logger.debug(f"Entering {self.clsname}.serve()...")
 
         try:
             async with anyio.create_task_group() as tg:
@@ -201,7 +201,7 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
                 while not self.uvicorn_server.started:
                     await anyio.sleep(0.01)
                 task_status.started()
-            logger.trace("Exited task group that served uvicorn...")
+            logger.debug("Exited task group that served uvicorn...")
         except ExceptionGroup as e:  # pragma: no cover
             logger.error(f"[EEE] Exception group: {e}")
             for ex in e.exceptions:
@@ -209,15 +209,15 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
                 raise ex from None
 
     def shutdown(self):
-        logger.trace("Setting shutdown event")
+        logger.debug("Setting shutdown event")
         self._shutdown_event.set()
-        logger.trace("Done, exiting shutdown()")
+        logger.debug("Done, exiting shutdown()")
 
     async def _wait_for_and_handle_shutdown_request(self, cancel_scope: anyio.CancelScope):
         # Wait for shutdown event to be set. This can happen, for example, when the
         # user terminates the process presses (e.g. via Ctrl+C) or when the maximum
         # number of messages has been processed.
-        logger.trace("Waiting for shutdown event to be set...")
+        logger.debug("Waiting for shutdown event to be set...")
         await self._shutdown_event.wait()
         logger.info(f"Received shutdown request, shutting down {self.clsname}.")
         await self._run_custom_shutdown_tasks()
@@ -240,7 +240,7 @@ class TestQCrBoxServerClientBase(QCrBoxServerClientBase):
         self._run_kwargs = kwargs
         self._set_up_uvicorn_server()
 
-        logger.trace(f"Entering {self.clsname}.serve()...")
+        logger.debug(f"Entering {self.clsname}.serve()...")
 
         try:
             async with anyio.create_task_group() as tg:
@@ -252,7 +252,7 @@ class TestQCrBoxServerClientBase(QCrBoxServerClientBase):
                 task_status.started()
                 yield self
                 self.shutdown()
-            logger.trace("Exited task group that served uvicorn...")
+            logger.debug("Exited task group that served uvicorn...")
         except ExceptionGroup as e:  # pragma: no cover
             for ex in e.exceptions:
                 raise ex from None
