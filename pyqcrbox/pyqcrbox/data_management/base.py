@@ -56,6 +56,19 @@ class DataFileManager(ABC):
         session_info_as_bytes = await self._retrieve_from_kv("interactive_sessions", session_id)
         return InteractiveSessionInfo.model_validate_json(session_info_as_bytes.decode())
 
+    async def get_datasets(self) -> list[Dataset]:
+        datasets = []
+        for dataset_id in await self._get_kv_keys("datasets"):
+            try:
+                dataset_info_as_bytes = await self._retrieve_from_kv("datasets", dataset_id)
+            except KeyError:
+                logger.warning(f"Dataset not found: {dataset_id!r}")
+                continue
+            dataset = Dataset.model_validate_json(dataset_info_as_bytes.decode())
+            datasets.append(dataset)
+
+        return datasets
+
     async def store_dataset_info(self, dataset_info: Dataset) -> None:
         await self._store_in_kv("datasets", dataset_info.dataset_id, dataset_info.model_dump_json().encode())
 

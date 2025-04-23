@@ -13,7 +13,7 @@ from sqlalchemy.orm import joinedload
 from sqlmodel import select
 
 from pyqcrbox import QCRBOX_SVCS_REGISTRY, logger, msg_specs, settings, sql_models
-from pyqcrbox.data_management import Dataset
+from pyqcrbox.data_management import DatasetResponse
 from pyqcrbox.services import get_data_file_manager, get_nats_broker
 from pyqcrbox.svcs import get_nats_key_value
 
@@ -228,7 +228,7 @@ async def _import_dataset(data: Annotated[UploadFile, Body(media_type=RequestEnc
     return qcrbox_dataset_id
 
 
-async def _get_dataset_info(dataset_id: str) -> Dataset:
+async def _get_dataset_info(dataset_id: str) -> DatasetResponse:
     data_file_manager = await get_data_file_manager()
     dataset_info = await data_file_manager.get_dataset_info(dataset_id)
     return dataset_info

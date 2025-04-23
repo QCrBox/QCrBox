@@ -1,6 +1,6 @@
 from pyqcrbox.sql_models import QCrBoxPydanticBaseModel
 
-__all__ = ["DataFileMetadata", "DataFileMetadataResponse"]
+__all__ = ["DataFileMetadata", "DataFileMetadataResponse", "Dataset", "DatasetResponse"]
 
 
 class DataFileMetadata(QCrBoxPydanticBaseModel):
