@@ -14,8 +14,6 @@ certifi==2024.8.30
     #   httpcore
     #   httpx
     #   requests
-cffi==1.17.1
-    # via cryptography
 charset-normalizer==3.3.2
     # via requests
 click==8.1.7
@@ -24,8 +22,6 @@ click==8.1.7
     #   userpath
 cloudpickle==3.0.0
     # via doit
-cryptography==43.0.1
-    # via secretstorage
 distlib==0.3.8
     # via virtualenv
 doit==0.36.0
@@ -40,8 +36,6 @@ gitdb==4.0.11
     # via gitpython
 gitpython==3.1.43
     # via pyqcrbox (pyproject.toml)
-greenlet==3.1.1
-    # via sqlalchemy
 h11==0.14.0
     # via httpcore
 hatch==1.12.0
@@ -68,10 +62,6 @@ jaraco-context==6.0.1
     # via keyring
 jaraco-functools==4.1.0
     # via keyring
-jeepney==0.8.0
-    # via
-    #   keyring
-    #   secretstorage
 keyring==25.4.1
     # via hatch
 loguru==0.7.2
@@ -103,8 +93,6 @@ pluggy==1.5.0
     # via hatchling
 ptyprocess==0.7.0
     # via pexpect
-pycparser==2.22
-    # via cffi
 pydantic==2.9.2
     # via
     #   pyqcrbox (pyproject.toml)
@@ -125,8 +113,6 @@ rich==13.9.1
     # via
     #   pyqcrbox (pyproject.toml)
     #   hatch
-secretstorage==3.3.3
-    # via keyring
 setuptools==75.1.0
     # via setuptools-scm
 setuptools-scm==8.1.0

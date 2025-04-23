@@ -65,6 +65,7 @@ dev = [
     "robotframework",
     "robotframework-requests",
     "robotframework-jsonlibrary",
+    "robotframework-seleniumlibrary",
 ]
 
 docs = [
