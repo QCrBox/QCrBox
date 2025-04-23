@@ -1,4 +1,5 @@
 import json
+import sys
 from pathlib import Path
 from subprocess import run
 
@@ -19,6 +20,11 @@ class Application:
         self.log_files = []
 
     @staticmethod
+    def _set_log_level():
+        logger.remove(0)
+        logger.add(sys.stderr, level="INFO")
+
+    @staticmethod
     def _copy_from_docker(container_name: str, source: str, destination: str) -> None:
         command = ["docker", "cp", f"{container_name}:{source}", f"{destination}"]
         logger.debug(f"Executing command: {' '.join(command)}")
@@ -37,7 +43,8 @@ class Application:
             self._copy_from_docker(container, "/opt/qcrbox/app.log", str(destination))
             self.log_files.append(destination)
 
-    def _process_log_file(self, log_file: Path) -> list[str]:
+    @staticmethod
+    def _process_log_file(log_file: Path) -> list[str]:
         """Process a single log file."""
         logger.debug(f"Processing log file: {log_file}")
         component = log_file.stem.replace("qcrbox-", "")
@@ -45,14 +52,22 @@ class Application:
         with open(log_file, "rt") as infile:
             lines = infile.readlines()
 
+        failed_lines = 0
         processed_lines = []
         for line in lines:
-            event_dict = json.loads(line)
+            try:
+                event_dict = json.loads(line)
+            except json.decoder.JSONDecodeError:
+                failed_lines += 1
+                continue
             line = f"{event_dict['timestamp']} | {component} | {event_dict['level']} | {event_dict['event']}"
             if event_dict["extra"]:
                 line += f" {event_dict['extra']}"
             line += "\n"
             processed_lines.append(line)
+
+        if failed_lines > 0:
+            logger.warning(f"Failed to process {failed_lines} lines in {log_file.name}")
 
         return processed_lines
 

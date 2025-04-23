@@ -10,10 +10,8 @@ from pydantic import computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlmodel import Session, create_engine
 
-__all__ = ["settings"]
+__all__ = ["StructlogRendererEnum", "get_log_level_as_int", "settings"]
 
-sys._qcrbox_running_inside_tests = True
-IS_RUNNING_INSIDE_TESTS = hasattr(sys, "_qcrbox_running_inside_tests")
 
 SQLiteDsn = str  # alias for readability
 
@@ -126,10 +124,13 @@ class StructlogRendererEnum(Enum):
     JSON = "json"
 
 
+sys._qcrbox_running_inside_tests = True
+IS_RUNNING_INSIDE_TESTS = hasattr(sys, "_qcrbox_running_inside_tests")
+
+
 class LoggingSettings(QCrBoxSettingsBaseModel):
-    # log_level: str = "INFO" if not IS_RUNNING_INSIDE_TESTS else "DEBUG"
-    log_level: str = "DEBUG"
-    renderer: StructlogRendererEnum = StructlogRendererEnum.CONSOLE
+    log_level: str = "INFO" if not IS_RUNNING_INSIDE_TESTS else "DEBUG"
+    renderer: StructlogRendererEnum = StructlogRendererEnum.JSON
 
     @property
     def log_level_as_int(self):

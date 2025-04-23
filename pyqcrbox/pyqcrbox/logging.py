@@ -1,10 +1,28 @@
 # SPDX-License-Identifier: MPL-2.0
+import logging
+import sys
 from pathlib import Path
+from typing import assert_never
 
 import structlog
 from faststream import context
 
-from pyqcrbox.settings import get_log_level_as_int, settings
+from pyqcrbox.settings import StructlogRendererEnum, get_log_level_as_int, settings
+
+# ------------------------------------------------------------------------------
+# This sets up the basic logging level so only QCrBox should appear as JSON
+# ------------------------------------------------------------------------------
+
+logging.basicConfig(
+    format="(name)s | %(message)s",
+    stream=sys.stdout,
+    level=logging.INFO,
+)
+
+# ------------------------------------------------------------------------------
+# This sets up the structlog logger, which is used by QCrBox to output
+# structured log messages
+# ------------------------------------------------------------------------------
 
 
 def get_log_level(level):
@@ -45,36 +63,30 @@ shared_processors = [
     structlog.dev.set_exc_info,
 ]
 
-# match settings.logging.renderer:
-#     case StructlogRendererEnum.CONSOLE:
-#         # E.g. terminal session
-#         processors = [
-#             *shared_processors,
-#             structlog.dev.ConsoleRenderer(),
-#         ]
-#     case StructlogRendererEnum.JSON:
-#         print("[DDD] Case 2: Docker container session")
-#         # E.g. docker container session
-#         processors = [
-#             *shared_processors,
-#             structlog.processors.dict_tracebacks,
-#             structlog.processors.JSONRenderer(),
-#         ]
-#     case _:
-#         processors = []
-#         assert_never(settings.logging.renderer)
+match settings.logging.renderer:
+    case StructlogRendererEnum.CONSOLE:
+        # E.g. terminal session
+        processors = [
+            *shared_processors,
+            structlog.dev.ConsoleRenderer(),
+        ]
+    case StructlogRendererEnum.JSON:
+        # E.g. docker container session
+        processors = [
+            *shared_processors,
+            structlog.processors.dict_tracebacks,
+            structlog.processors.JSONRenderer(),
+        ]
+    case _:
+        processors = []
+        assert_never(settings.logging.renderer)
 
-processors = [
-    *shared_processors,
-    structlog.processors.dict_tracebacks,
-    structlog.processors.JSONRenderer(),
-]
 
+log_file = Path("qcrbox_app").with_suffix(".log")
 structlog.configure(
     processors=processors,
-    logger_factory=structlog.WriteLoggerFactory(file=Path("app").with_suffix(".log").open("wt")),
+    logger_factory=structlog.WriteLoggerFactory(file=log_file.open("wt")),
     wrapper_class=structlog.make_filtering_bound_logger(get_log_level(settings.logging.log_level_as_int)),
     cache_logger_on_first_use=False,
 )
-
 logger = structlog.get_logger()
