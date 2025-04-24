@@ -12,8 +12,8 @@ Test Timeout    2 minutes
 *** Variables ***
 
 ${ENDPOINTS_API}    http://127.0.0.1:11000/api
-${WEB_URL}  http://127.0.0.1:11000/views/index
-${TEST_CIF_FILE}  ${CURDIR}/test_data/test.cif
+${WEB_URL}    http://127.0.0.1:11000/views/index
+${TEST_CIF_FILE}    ${CURDIR}/test_data/robot_test_cif.cif
 
 *** Test Cases ***
 
@@ -26,7 +26,20 @@ Test user can upload a CIF file
     Wait Until Element Is Enabled    id=btn_data_file_upload    timeout=5s
     Click Button    id=btn_data_file_upload
     Close Browser
-    Call GET API   /datasets
+    
+    # Check if the CIF file is uploaded
+    ${response}=    Call GET API    /datasets
+    ${datasets}=    Evaluate    [d for d in ${response.json()} if "robot_test_cif.cif" in d["data_files"]]    json
+    Length Should Be    ${datasets}    1
+    ${dataset_id}=    Set Variable    ${datasets[0]["dataset_id"]}
+
+    # Delete the CIF file
+    Call DELETE API    /datasets/delete/${dataset_id}
+    
+    # Check if the CIF file is deleted
+    ${response}=    Call GET API    /datasets
+    ${datasets}=    Evaluate    [d for d in ${response.json()} if "robot_test_cif.cif" in d["data_files"]]    json
+    Length Should Be    ${datasets}    0
 
 *** Keywords ***
 
@@ -47,6 +60,14 @@ Call GET API
     [Arguments]    ${api}
 	${response}=    GET On Session    api_endpoints    ${api}
     Status Should Be    200    ${response}
+    Log    ${response}
+    Log    ${response.content}
+    RETURN    ${response}
+
+Call DELETE API
+    [Arguments]    ${api}
+    ${response}=    DELETE On Session    api_endpoints    ${api}
+    Status Should Be    204    ${response}
     Log    ${response}
     Log    ${response.content}
     RETURN    ${response}
