@@ -7,8 +7,6 @@ Library    JSONLibrary
 
 Log Response
     [Arguments]    ${response}
-    Log    ${response.status_code}
-    Log    ${response.content}
 
 Create API Session
     [Arguments]    ${session_alias}    ${base_url}
@@ -19,19 +17,23 @@ Call GET API
     [Arguments]    ${session_alias}    ${base_url}
 	${response}=    GET On Session    ${session_alias}    ${base_url}
     Status Should Be    200    ${response}
-    Log Response    ${response}
+    Log    ${response.status_code}
+    Log    ${response.content}
     RETURN    ${response}
 
 Call POST API
-    [Arguments]    ${session_alias}    ${base_url}
-	${response}=    POST On Session    ${session_alias}    ${base_url}
+    [Arguments]    ${session_alias}    ${base_url}    ${file_path}=None
+    ${data}=    Create Dictionary    test_file=${file_path}
+	${response}=    POST On Session    ${session_alias}    ${base_url}    files=${data}
     Status Should Be    200    ${response}
-    Log Response    ${response}
+    Log    ${response.status_code}
+    Log    ${response.content}
     RETURN    ${response}
 
 Call DELETE API
     [Arguments]    ${session_alias}    ${base_url}
 	${response}=    DELETE On Session    ${session_alias}    ${base_url}
     Status Should Be    204    ${response}
-    Log Response    ${response}
+    Log    ${response.status_code}
+    Log    ${response.content}
     RETURN    ${response}

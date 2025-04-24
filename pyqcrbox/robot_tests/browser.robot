@@ -3,7 +3,7 @@ Documentation
 ...  Test suite for the Web UI
 Suite Setup    Setup suite
 Suite Teardown    Teardown suite
-Resource    ../api_keywords.resource
+Resource    resources/api.resource
 Library    DateTime
 Library    SeleniumLibrary
 Test Timeout    2 minutes
@@ -13,7 +13,7 @@ Test Timeout    2 minutes
 ${ENDPOINTS_API}    http://127.0.0.1:11000/api
 ${WEB_URL}    http://127.0.0.1:11000/views/index
 ${TEST_CIF_FILE_NAME}    robot_test_cif.cif
-${TEST_CIF_FILE}    Normalize Path    ${CURDIR}/test_data/${TEST_CIF_FILE_NAME}
+${TEST_CIF_FILE}    ${CURDIR}/test_data/${TEST_CIF_FILE_NAME}
 
 *** Test Cases ***
 

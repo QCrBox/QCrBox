@@ -3,7 +3,7 @@ Documentation
 ...    Test suite for the registry view handler API
 Suite Setup    Setup suite
 Suite Teardown    Teardown suite
-Resource    ../api_keywords.resource
+Resource    resources/api.resource
 Library    DateTime
 Test Timeout    2 minutes
 
