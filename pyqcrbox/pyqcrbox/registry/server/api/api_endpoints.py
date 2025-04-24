@@ -1,7 +1,7 @@
 from typing import Annotated, Any
 
 import sqlalchemy.exc
-from litestar import MediaType, Request, Response, Router, get, post
+from litestar import MediaType, Request, Response, Router, delete, get, post
 
 __all__ = ["api_router"]
 
@@ -86,6 +86,11 @@ async def get_datasets() -> list[dict]:
     return await api_helpers._get_datasets()
 
 
+@delete(path="/datasets/delete/{dataset_id:str}")
+async def remove_dataset(dataset_id: str) -> None:
+    await api_helpers._delete_dataset(dataset_id)
+
+
 async def _get_data_files() -> list[dict]:
     data_file_manager = await get_data_file_manager()
     data_files = await data_file_manager.get_data_files()
@@ -126,5 +131,6 @@ api_router = Router(
         get_data_files,
         get_datasets,
         handle_data_file_upload,
+        remove_dataset,
     ],
 )

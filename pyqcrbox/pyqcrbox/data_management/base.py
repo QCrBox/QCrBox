@@ -148,3 +148,16 @@ class DataFileManager(ABC):
         dataset_info = Dataset(dataset_id=dataset_id, data_files={f.filename: f for f in data_files})
         await self.store_dataset_info(dataset_info)
         return dataset_id
+
+    async def delete_dataset(self, dataset_id: str) -> None:
+        logger.debug(f"Removing dataset {dataset_id}")
+        try:
+            dataset_as_bytes = await self._retrieve_from_kv("datasets", dataset_id)
+        except KeyError:
+            logger.error(f"No dataset found for id: {dataset_id}")
+            raise
+        dataset = Dataset.model_validate_json(dataset_as_bytes.decode())
+
+        for filename, file_metadata in dataset.data_files.items():
+            await self.delete_data_file(file_metadata.qcrbox_file_id)
+        await self._delete_from_kv("datasets", dataset_id)

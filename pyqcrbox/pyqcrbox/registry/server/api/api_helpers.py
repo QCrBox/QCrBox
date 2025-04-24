@@ -232,3 +232,8 @@ async def _get_dataset_info(dataset_id: str) -> DatasetResponse:
     data_file_manager = await get_data_file_manager()
     dataset_info = await data_file_manager.get_dataset_info(dataset_id)
     return dataset_info
+
+
+async def _delete_dataset(dataset_id: str) -> None:
+    data_file_manager = await get_data_file_manager()
+    await data_file_manager.delete_dataset(dataset_id)
