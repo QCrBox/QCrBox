@@ -13,7 +13,6 @@ from litestar.params import Body
 from pyqcrbox import logger, msg_specs, sql_models
 from pyqcrbox.data_management import DatasetResponse
 from pyqcrbox.data_management.data_file import DataFileMetadataResponse
-from pyqcrbox.services import get_data_file_manager
 
 from . import api_helpers
 
@@ -88,7 +87,7 @@ async def get_datasets() -> list[DatasetResponse]:
     return await api_helpers.get_datasets()
 
 
-@post(path="/datasets/new", media_type=MediaType.JSON)
+@post(path="/datasets/upload", media_type=MediaType.JSON)
 async def handle_dataset_upload(
     data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)],
 ) -> Response:
@@ -106,12 +105,6 @@ async def handle_dataset_upload(
 @delete(path="/datasets/delete/{dataset_id:str}")
 async def handle_dataset_delete(dataset_id: str) -> None:
     await api_helpers.delete_dataset(dataset_id)
-
-
-async def _get_data_files() -> list[dict]:
-    data_file_manager = await get_data_file_manager()
-    data_files = await data_file_manager.get_data_files()
-    return [f.to_response_model() for f in data_files]
 
 
 @post(path="/commands/invoke", media_type=MediaType.JSON)
