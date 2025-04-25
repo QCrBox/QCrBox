@@ -11,6 +11,7 @@ from litestar.exceptions import ClientException
 from litestar.params import Body
 
 from pyqcrbox import logger, msg_specs, sql_models
+from pyqcrbox.data_management import DatasetResponse
 from pyqcrbox.services import get_data_file_manager
 
 from . import api_helpers
@@ -30,42 +31,42 @@ async def health_check() -> dict:
 async def retrieve_applications(
     # slug: str | None = None, version: str | None = None
 ) -> list[sql_models.ApplicationSpecWithCommands]:
-    return api_helpers._retrieve_applications()
+    return api_helpers.retrieve_applications()
 
 
 @get(path="/commands", media_type=MediaType.JSON)
 async def retrieve_commands(
     # name: str | None, application_slug: str | None, application_version: str | None
 ) -> list[sql_models.CommandSpecWithParameters]:
-    return api_helpers._retrieve_commands()
+    return api_helpers.retrieve_commands()
 
 
 @get(path="/commands/{cmd_id:int}", media_type=MediaType.JSON)
 async def retrieve_command_by_id(cmd_id: int) -> sql_models.CommandSpecWithParameters | Response[dict]:
     try:
-        return api_helpers._retrieve_command_by_id(cmd_id)
+        return api_helpers.retrieve_command_by_id(cmd_id)
     except sqlalchemy.exc.NoResultFound:
         return Response({"status": "error", "msg": f"Command not found: id={cmd_id!r}"}, status_code=404)
 
 
 @get(path="/calculations", media_type=MediaType.JSON)
 async def get_calculation_info() -> list[sql_models.CalculationResponseModel]:
-    return api_helpers._get_calculation_info()
+    return api_helpers.get_calculation_info()
 
 
 @get(path="/calculations/{calculation_id:str}", media_type=MediaType.JSON, name="get_calculation_details")
 async def get_calculation_info_by_calculation_id(calculation_id: str) -> dict | Response[dict]:
     try:
-        return await api_helpers._get_calculation_info_by_calculation_id(calculation_id)
+        return await api_helpers.get_calculation_info_by_calculation_id(calculation_id)
     except api_helpers.CalculationNotFoundError:
         return Response({"status": "error", "msg": f"Calculation not found: {calculation_id!r}"}, status_code=404)
 
 
-@post(path="/data_files/upload", media_type=MediaType.TEXT)
+@post(path="/data_files/upload", media_type=MediaType.JSON)
 async def handle_data_file_upload(
     data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)],
 ) -> Response:
-    qcrbox_data_file_id = await api_helpers._import_data_file(data)
+    qcrbox_data_file_id = await api_helpers.import_data_file(data)
     return Response(
         {
             "status": "success",
@@ -78,17 +79,32 @@ async def handle_data_file_upload(
 
 @get(path="/data_files", media_type=MediaType.JSON)
 async def get_data_files() -> list[dict]:
-    return await api_helpers._get_data_files()
+    return await api_helpers.get_data_files()
 
 
 @get(path="/datasets", media_type=MediaType.JSON)
-async def get_datasets() -> list[dict]:
-    return await api_helpers._get_datasets()
+async def get_datasets() -> list[DatasetResponse]:
+    return await api_helpers.get_datasets()
+
+
+@post(path="/datasets/new", media_type=MediaType.JSON)
+async def handle_dataset_upload(
+    data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)],
+) -> Response:
+    qcrbox_dataset_id = await api_helpers.import_dataset(data)
+    return Response(
+        {
+            "status": "success",
+            "msg": f"Imported dataset: {data.filename!r}",
+            "payload": {"qcrbox_dataset_id": qcrbox_dataset_id},
+        },
+        status_code=200,
+    )
 
 
 @delete(path="/datasets/delete/{dataset_id:str}")
-async def remove_dataset(dataset_id: str) -> None:
-    await api_helpers._delete_dataset(dataset_id)
+async def handle_dataset_delete(dataset_id: str) -> None:
+    await api_helpers.delete_dataset(dataset_id)
 
 
 async def _get_data_files() -> list[dict]:
@@ -101,7 +117,7 @@ async def _get_data_files() -> list[dict]:
 async def commands_invoke(data: sql_models.CommandInvocationCreate, request: Request) -> dict:
     logger.info(f"Received command invocation via API: {data=}")
 
-    response_json = await api_helpers._invoke_command(data)
+    response_json = await api_helpers.invoke_command(data)
     response = msg_specs.QCrBoxGenericResponse(**response_json)
 
     if response.status == msg_specs.ResponseStatusEnum.ERROR:
@@ -131,6 +147,7 @@ api_router = Router(
         get_data_files,
         get_datasets,
         handle_data_file_upload,
-        remove_dataset,
+        handle_dataset_upload,
+        handle_dataset_delete,
     ],
 )

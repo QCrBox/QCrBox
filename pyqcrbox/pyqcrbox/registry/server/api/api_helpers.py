@@ -26,7 +26,7 @@ class CommandNotFoundError(Exception):
     pass
 
 
-def _retrieve_applications() -> list[sql_models.ApplicationSpecWithCommands]:
+def retrieve_applications() -> list[sql_models.ApplicationSpecWithCommands]:
     """
     Retrieves list of registered applications from the database.
     """
@@ -41,7 +41,7 @@ def _retrieve_applications() -> list[sql_models.ApplicationSpecWithCommands]:
     return applications_response_models
 
 
-def _retrieve_commands() -> list[sql_models.CommandSpecWithParameters]:
+def retrieve_commands() -> list[sql_models.CommandSpecWithParameters]:
     """
     Retrieves list of commands from the database.
     """
@@ -65,9 +65,7 @@ def _retrieve_commands() -> list[sql_models.CommandSpecWithParameters]:
     return commands
 
 
-def _retrieve_command_by_id(
-    cmd_id: int, raise_if_not_found: bool = True
-) -> sql_models.CommandSpecWithParameters | None:
+def retrieve_command_by_id(cmd_id: int, raise_if_not_found: bool = True) -> sql_models.CommandSpecWithParameters | None:
     """
     Retrieves details of a command from the database.
     """
@@ -86,7 +84,7 @@ def _retrieve_command_by_id(
     return cmd_response_model
 
 
-def verify_command_exists(
+def _verify_command_exists(
     application_slug: str, application_version: str | None, command_name: str | None
 ) -> sql_models.CommandSpecDB:
     with settings.db.get_session() as session:
@@ -122,7 +120,7 @@ def verify_command_exists(
     return cmd_spec_db
 
 
-def validate_arguments_against_command_parameters(cmd_spec_db: sql_models.CommandSpecDB, arguments: dict) -> None:
+def _validate_arguments_against_command_parameters(cmd_spec_db: sql_models.CommandSpecDB, arguments: dict) -> None:
     params = list(cmd_spec_db.parameters.values())
     required_param_names = set(p["name"] for p in params if p["required"] is True)
     all_param_names = set(cmd_spec_db.parameters.keys())
@@ -143,13 +141,13 @@ def validate_arguments_against_command_parameters(cmd_spec_db: sql_models.Comman
         raise ClientException(error_msg)
 
 
-async def _invoke_command(data: sql_models.CommandInvocationCreate) -> dict:
+async def invoke_command(data: sql_models.CommandInvocationCreate) -> dict:
     with svcs.Container(QCRBOX_SVCS_REGISTRY) as con:
         nats_broker = await con.aget(NatsBroker)
 
-    cmd_spec_db = verify_command_exists(data.application_slug, data.application_version, data.command_name)
+    cmd_spec_db = _verify_command_exists(data.application_slug, data.application_version, data.command_name)
     logger.debug("Command found: %s", cmd_spec_db)
-    validate_arguments_against_command_parameters(cmd_spec_db, data.arguments)
+    _validate_arguments_against_command_parameters(cmd_spec_db, data.arguments)
 
     msg = msg_specs.InvokeCommandNATS(
         application_slug=cmd_spec_db.application.slug,
@@ -162,13 +160,13 @@ async def _invoke_command(data: sql_models.CommandInvocationCreate) -> dict:
     return response_json
 
 
-def _get_calculation_info() -> list[sql_models.CalculationResponseModel]:
+def get_calculation_info() -> list[sql_models.CalculationResponseModel]:
     with settings.db.get_session() as session:
         calculations_db = session.exec(select(sql_models.CalculationDB)).all()
         return [c.to_response_model() for c in calculations_db]
 
 
-async def _get_calculation_info_by_calculation_id(calculation_id: str) -> dict:
+async def get_calculation_info_by_calculation_id(calculation_id: str) -> dict:
     # with settings.db.get_session() as session:
     #     try:
     #         calc = session.exec(
@@ -188,7 +186,7 @@ async def _get_calculation_info_by_calculation_id(calculation_id: str) -> dict:
         raise CalculationNotFoundError(calculation_id)
 
 
-async def _close_interactive_session(session_id: str) -> msg_specs.CloseInteractiveSessionResponseNATS:
+async def close_interactive_session(session_id: str) -> msg_specs.CloseInteractiveSessionResponseNATS:
     nats_broker = await get_nats_broker()
     data_manager = await get_data_file_manager()
     session_info = await data_manager.get_interactive_session_info(session_id)
@@ -203,37 +201,37 @@ async def _close_interactive_session(session_id: str) -> msg_specs.CloseInteract
     return response
 
 
-async def _get_data_files() -> list[dict]:
+async def get_data_files() -> list[dict]:
     data_file_manager = await get_data_file_manager()
     data_files = await data_file_manager.get_data_files()
     return [f.to_response_model() for f in data_files]
 
 
-async def _get_datasets() -> list[dict]:
+async def get_datasets() -> list[DatasetResponse]:
     data_file_manager = await get_data_file_manager()
     datasets = await data_file_manager.get_datasets()
     return [d.to_response_model() for d in datasets]
 
 
-async def _import_data_file(data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)]) -> str:
+async def import_data_file(data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)]) -> str:
     data_file_manager = await get_data_file_manager()
     qcrbox_data_file_id = await data_file_manager.import_bytes(await data.read(), filename=data.filename)
     return qcrbox_data_file_id
 
 
-async def _import_dataset(data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)]) -> str:
+async def import_dataset(data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)]) -> str:
     data_file_manager = await get_data_file_manager()
     qcrbox_data_file_id = await data_file_manager.import_bytes(await data.read(), filename=data.filename)
     qcrbox_dataset_id = await data_file_manager.create_dataset_from_data_file(qcrbox_data_file_id)
     return qcrbox_dataset_id
 
 
-async def _get_dataset_info(dataset_id: str) -> DatasetResponse:
+async def get_dataset_info(dataset_id: str) -> DatasetResponse:
     data_file_manager = await get_data_file_manager()
     dataset_info = await data_file_manager.get_dataset_info(dataset_id)
     return dataset_info
 
 
-async def _delete_dataset(dataset_id: str) -> None:
+async def delete_dataset(dataset_id: str) -> None:
     data_file_manager = await get_data_file_manager()
     await data_file_manager.delete_dataset(dataset_id)

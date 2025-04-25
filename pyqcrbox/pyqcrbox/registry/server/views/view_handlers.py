@@ -37,8 +37,8 @@ async def serve_qcrbox_homepage() -> Response:
 
 @get(path="/applications")
 async def serve_applications_page() -> Response:
-    applications = api_helpers._retrieve_applications()
-    commands = api_helpers._retrieve_commands()
+    applications = api_helpers.retrieve_applications()
+    commands = api_helpers.retrieve_commands()
     return render(
         "ApplicationsPage",
         applications=applications,
@@ -48,30 +48,30 @@ async def serve_applications_page() -> Response:
 
 @get(path="/command/{cmd_id:int}", media_type=MediaType.HTML)
 async def get_command_details(cmd_id: int) -> Response:
-    command = api_helpers._retrieve_command_by_id(cmd_id, raise_if_not_found=False)
+    command = api_helpers.retrieve_command_by_id(cmd_id, raise_if_not_found=False)
     return render("CommandDetails", command=command)
 
 
 @get(path="/data_files")
 async def serve_data_files_page() -> Response:
-    return render("DataFilesPage", data_files=await api_helpers._get_data_files())
+    return render("DataFilesPage", data_files=await api_helpers.get_data_files())
 
 
 @post(path="/data_files/upload", media_type=MediaType.TEXT)
 async def handle_data_file_upload(
     data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)],
 ) -> Response:
-    _qcrbox_data_file_id = await api_helpers._import_data_file(data)
-    return render("DataFilesList", data_files=await api_helpers._get_data_files())
+    _qcrbox_data_file_id = await api_helpers.import_data_file(data)
+    return render("DataFilesList", data_files=await api_helpers.get_data_files())
 
 
 @post(path="/datasets/new", media_type=MediaType.TEXT)
 async def handle_dataset_upload(
     data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)],
 ) -> Response:
-    dataset_id = await api_helpers._import_dataset(data)
-    dataset_info = await api_helpers._get_dataset_info(dataset_id)
-    applications = api_helpers._retrieve_applications()
+    dataset_id = await api_helpers.import_dataset(data)
+    dataset_info = await api_helpers.get_dataset_info(dataset_id)
+    applications = api_helpers.retrieve_applications()
     return render("DatasetUploadResponse", dataset_info=dataset_info, applications=applications)
 
 
@@ -86,7 +86,7 @@ async def start_interactive_session_with_data_file(
         arguments={"input_file": {"data_file_id": data_file_id}},
     )
 
-    response_json = await api_helpers._invoke_command(cmd)
+    response_json = await api_helpers.invoke_command(cmd)
     interactive_session_id = response_json["payload"]["calculation_id"]
     return render(
         "StartInteractiveSessionResponse",
@@ -97,14 +97,14 @@ async def start_interactive_session_with_data_file(
 
 @post(path="/interactive/close_session")
 async def close_interactive_session(session_id: str) -> Response:
-    response_json = await api_helpers._close_interactive_session(session_id)
+    response_json = await api_helpers.close_interactive_session(session_id)
     data_manager = await get_data_file_manager()
     try:
         output_dataset_info = await data_manager.get_dataset_info(response_json.output_dataset_id)
     except DatasetNotFoundError:
         return render("StopInteractiveSessionResponseNoOutputDataset", _status_code=HTTP_206_PARTIAL_CONTENT)
 
-    applications = api_helpers._retrieve_applications()
+    applications = api_helpers.retrieve_applications()
     return render(
         "StopInteractiveSessionResponse",
         dataset_info=output_dataset_info,
