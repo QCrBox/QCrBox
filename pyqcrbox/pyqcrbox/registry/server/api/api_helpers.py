@@ -15,6 +15,7 @@ from sqlmodel import select
 from pyqcrbox import QCRBOX_SVCS_REGISTRY, logger, msg_specs, settings, sql_models
 from pyqcrbox.data_management import DatasetResponse
 from pyqcrbox.data_management.data_file import DataFileMetadataResponse
+from pyqcrbox.debug import log_entry_exit
 from pyqcrbox.services import get_data_file_manager, get_nats_broker
 from pyqcrbox.svcs import get_nats_key_value
 
@@ -27,6 +28,7 @@ class CommandNotFoundError(Exception):
     pass
 
 
+@log_entry_exit
 def retrieve_applications() -> list[sql_models.ApplicationSpecWithCommands]:
     """
     Retrieves list of registered applications from the database.
@@ -42,6 +44,7 @@ def retrieve_applications() -> list[sql_models.ApplicationSpecWithCommands]:
     return applications_response_models
 
 
+@log_entry_exit
 def retrieve_commands() -> list[sql_models.CommandSpecWithParameters]:
     """
     Retrieves list of commands from the database.
@@ -66,6 +69,7 @@ def retrieve_commands() -> list[sql_models.CommandSpecWithParameters]:
     return commands
 
 
+@log_entry_exit
 def retrieve_command_by_id(cmd_id: int, raise_if_not_found: bool = True) -> sql_models.CommandSpecWithParameters | None:
     """
     Retrieves details of a command from the database.
@@ -85,6 +89,7 @@ def retrieve_command_by_id(cmd_id: int, raise_if_not_found: bool = True) -> sql_
     return cmd_response_model
 
 
+@log_entry_exit
 def _verify_command_exists(
     application_slug: str, application_version: str | None, command_name: str | None
 ) -> sql_models.CommandSpecDB:
@@ -121,6 +126,7 @@ def _verify_command_exists(
     return cmd_spec_db
 
 
+@log_entry_exit
 def _validate_arguments_against_command_parameters(cmd_spec_db: sql_models.CommandSpecDB, arguments: dict) -> None:
     params = list(cmd_spec_db.parameters.values())
     required_param_names = set(p["name"] for p in params if p["required"] is True)
@@ -142,6 +148,7 @@ def _validate_arguments_against_command_parameters(cmd_spec_db: sql_models.Comma
         raise ClientException(error_msg)
 
 
+@log_entry_exit
 async def invoke_command(data: sql_models.CommandInvocationCreate) -> dict:
     with svcs.Container(QCRBOX_SVCS_REGISTRY) as con:
         nats_broker = await con.aget(NatsBroker)
@@ -161,24 +168,15 @@ async def invoke_command(data: sql_models.CommandInvocationCreate) -> dict:
     return response_json
 
 
+@log_entry_exit
 def get_calculation_info() -> list[sql_models.CalculationResponseModel]:
     with settings.db.get_session() as session:
         calculations_db = session.exec(select(sql_models.CalculationDB)).all()
         return [c.to_response_model() for c in calculations_db]
 
 
+@log_entry_exit
 async def get_calculation_info_by_calculation_id(calculation_id: str) -> dict:
-    # with settings.db.get_session() as session:
-    #     try:
-    #         calc = session.exec(
-    #             select(sql_models.CalculationDB).where(sql_models.CalculationDB.calculation_id == calculation_id)
-    #         ).one()
-    #         pass
-    #     except sqlalchemy.orm.exc.NoResultFound:
-    #         return Response(
-    #             {"msg": f"No calculation exists with id={calculation_id}"},
-    #             status_code=404)
-
     try:
         kv_calculation_status = await get_nats_key_value(bucket="calculation_status")
         calc_status_info_str = (await kv_calculation_status.get(calculation_id)).value
@@ -187,6 +185,7 @@ async def get_calculation_info_by_calculation_id(calculation_id: str) -> dict:
         raise CalculationNotFoundError(calculation_id)
 
 
+@log_entry_exit
 async def close_interactive_session(session_id: str) -> msg_specs.CloseInteractiveSessionResponseNATS:
     nats_broker = await get_nats_broker()
     data_manager = await get_data_file_manager()
@@ -202,24 +201,28 @@ async def close_interactive_session(session_id: str) -> msg_specs.CloseInteracti
     return response
 
 
+@log_entry_exit
 async def get_data_files() -> list[DataFileMetadataResponse]:
     data_file_manager = await get_data_file_manager()
     data_files = await data_file_manager.get_data_files()
     return [f.to_response_model() for f in data_files]
 
 
+@log_entry_exit
 async def get_datasets() -> list[DatasetResponse]:
     data_file_manager = await get_data_file_manager()
     datasets = await data_file_manager.get_datasets()
     return [d.to_response_model() for d in datasets]
 
 
+@log_entry_exit
 async def import_data_file(data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)]) -> str:
     data_file_manager = await get_data_file_manager()
     qcrbox_data_file_id = await data_file_manager.import_bytes(await data.read(), filename=data.filename)
     return qcrbox_data_file_id
 
 
+@log_entry_exit
 async def import_dataset(data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)]) -> str:
     data_file_manager = await get_data_file_manager()
     qcrbox_data_file_id = await data_file_manager.import_bytes(await data.read(), filename=data.filename)
@@ -227,12 +230,14 @@ async def import_dataset(data: Annotated[UploadFile, Body(media_type=RequestEnco
     return qcrbox_dataset_id
 
 
+@log_entry_exit
 async def get_dataset_info(dataset_id: str) -> DatasetResponse:
     data_file_manager = await get_data_file_manager()
     dataset_info = await data_file_manager.get_dataset_info(dataset_id)
     return dataset_info
 
 
+@log_entry_exit
 async def delete_dataset(dataset_id: str) -> None:
     data_file_manager = await get_data_file_manager()
     await data_file_manager.delete_dataset(dataset_id)
