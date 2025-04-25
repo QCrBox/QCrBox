@@ -27,8 +27,8 @@ Check calculations API returns calculations
 Check commands API returns commands
     Call GET API    api_endpoints    /commands
 
-#Check data_files API returns data_files
-#    Call GET API    api_endpoints    /data_files
+Check data_files API returns data_files
+    Call GET API    api_endpoints    /data_files
 
 Check dataset can be uploaded via API
     ${dataset_id}=    Upload Dataset    ${TEST_CIF_FILE}

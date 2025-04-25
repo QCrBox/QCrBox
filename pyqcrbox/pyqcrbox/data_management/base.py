@@ -56,18 +56,17 @@ class DataFileManager(ABC):
         session_info_as_bytes = await self._retrieve_from_kv("interactive_sessions", session_id)
         return InteractiveSessionInfo.model_validate_json(session_info_as_bytes.decode())
 
-    async def get_datasets(self) -> list[Dataset]:
-        datasets = []
-        for dataset_id in await self._get_kv_keys("datasets"):
-            try:
-                dataset_info_as_bytes = await self._retrieve_from_kv("datasets", dataset_id)
-            except KeyError:
-                logger.warning(f"Dataset not found: {dataset_id!r}")
-                continue
-            dataset = Dataset.model_validate_json(dataset_info_as_bytes.decode())
-            datasets.append(dataset)
+    async def get_data_files(self) -> list[DataFileMetadata]:
+        keys = await self._get_kv_keys("data_file_metadata")
+        values = [await self.get_file_metadata(key) for key in keys]
+        return values
 
-        return datasets
+    async def get_datasets(self) -> list[Dataset]:
+        dataset_ids = await self._get_kv_keys("datasets")
+        return [
+            Dataset.model_validate_json(await self._retrieve_from_kv("datasets", dataset_id))
+            for dataset_id in dataset_ids
+        ]
 
     async def store_dataset_info(self, dataset_info: Dataset) -> None:
         await self._store_in_kv("datasets", dataset_info.dataset_id, dataset_info.model_dump_json().encode())
@@ -78,11 +77,6 @@ class DataFileManager(ABC):
         except KeyError:
             raise DatasetNotFoundError(f"Dataset not found: {dataset_id!r}")
         return Dataset.model_validate_json(dataset_info_as_bytes.decode()).to_response_model()
-
-    async def get_data_files_metadata(self) -> list[DataFileMetadata]:
-        keys = await self._get_kv_keys("data_file_metadata")
-        values = [await self.get_file_metadata(key) for key in keys]
-        return values
 
     async def store_file_contents(self, key: str, file_contents: bytes) -> None:
         await self._store_in_object_store("data_file_contents", key, file_contents)

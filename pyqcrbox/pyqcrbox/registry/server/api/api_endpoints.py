@@ -12,6 +12,7 @@ from litestar.params import Body
 
 from pyqcrbox import logger, msg_specs, sql_models
 from pyqcrbox.data_management import DatasetResponse
+from pyqcrbox.data_management.data_file import DataFileMetadataResponse
 from pyqcrbox.services import get_data_file_manager
 
 from . import api_helpers
@@ -78,7 +79,7 @@ async def handle_data_file_upload(
 
 
 @get(path="/data_files", media_type=MediaType.JSON)
-async def get_data_files() -> list[dict]:
+async def get_data_files() -> list[DataFileMetadataResponse]:
     return await api_helpers.get_data_files()
 
 

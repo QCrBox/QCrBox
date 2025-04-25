@@ -14,6 +14,7 @@ from sqlmodel import select
 
 from pyqcrbox import QCRBOX_SVCS_REGISTRY, logger, msg_specs, settings, sql_models
 from pyqcrbox.data_management import DatasetResponse
+from pyqcrbox.data_management.data_file import DataFileMetadataResponse
 from pyqcrbox.services import get_data_file_manager, get_nats_broker
 from pyqcrbox.svcs import get_nats_key_value
 
@@ -201,7 +202,7 @@ async def close_interactive_session(session_id: str) -> msg_specs.CloseInteracti
     return response
 
 
-async def get_data_files() -> list[dict]:
+async def get_data_files() -> list[DataFileMetadataResponse]:
     data_file_manager = await get_data_file_manager()
     data_files = await data_file_manager.get_data_files()
     return [f.to_response_model() for f in data_files]
