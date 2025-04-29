@@ -25,6 +25,7 @@ Test user can upload a CIF file
     Choose File    id=file_selector    ${TEST_CIF_FILE}
     Wait Until Element Is Enabled    id=btn_data_file_upload    timeout=5s
     Click Button    id=btn_data_file_upload
+    Wait Until Element Is Not Visible    id=btn_data_file_upload    timeout=5s
 
     # Now check that the file has been uploaded and delete it
     ${dataset_id}=    Check that file uploaded to dataset    ${TEST_CIF_FILE_NAME}
