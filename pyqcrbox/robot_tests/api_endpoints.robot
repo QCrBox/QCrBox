@@ -5,6 +5,8 @@ Suite Setup    Setup suite
 Suite Teardown    Teardown suite
 Resource    resources/api.resource
 Library    DateTime
+Library    Collections
+Library    JSONLibrary
 Test Timeout    2 minutes
 
 *** Variables ***
@@ -35,7 +37,24 @@ Check dataset can be uploaded via API
     Set Global Variable    ${dataset_id}
 
 Check datasets API returns datasets
-    Call GET API    api_endpoints    /datasets
+    ${response}=    Call GET API    api_endpoints    /datasets
+    ${length}=    Get Length    ${response.json()}
+    Should Be True    ${length} > 0
+
+Check a dataset can be retrieved via API
+    ${response}=    Call GET API    api_endpoints    /datasets/${dataset_id}
+    ${dataset}=    Set Variable    ${response.json()['payload']}
+
+    Should Contain    ${dataset}    dataset_id
+    Should Contain    ${dataset}    data_files
+    ${data_files}=    Get From Dictionary    ${dataset}    data_files
+
+    FOR    ${file_key}    IN    @{data_files.keys()}
+        ${file_data}=    Get From Dictionary    ${data_files}    ${file_key}
+        Should Contain    ${file_data}    qcrbox_file_id
+        Should Contain    ${file_data}    filename
+        Should Contain    ${file_data}    filetype
+    END
 
 Check dataset can be deleted via API
     Call DELETE API    api_endpoints    /datasets/delete/${dataset_id}

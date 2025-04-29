@@ -5,7 +5,7 @@ __all__ = ["DataFileManager"]
 from pathlib import Path
 
 from pyqcrbox import logger
-from pyqcrbox.data_management.data_file import DataFileMetadata, Dataset, DatasetResponse
+from pyqcrbox.data_management.data_file import DataFileMetadata, Dataset
 from pyqcrbox.helpers import generate_data_file_id, generate_dataset_id
 from pyqcrbox.sql_models.interactive_session_info import InteractiveSessionInfo
 
@@ -71,12 +71,12 @@ class DataFileManager(ABC):
     async def store_dataset_info(self, dataset_info: Dataset) -> None:
         await self._store_in_kv("datasets", dataset_info.dataset_id, dataset_info.model_dump_json().encode())
 
-    async def get_dataset_info(self, dataset_id: str) -> DatasetResponse:
+    async def get_dataset_info(self, dataset_id: str) -> Dataset:
         try:
             dataset_info_as_bytes = await self._retrieve_from_kv("datasets", dataset_id)
         except KeyError:
             raise DatasetNotFoundError(f"Dataset not found: {dataset_id!r}")
-        return Dataset.model_validate_json(dataset_info_as_bytes.decode()).to_response_model()
+        return Dataset.model_validate_json(dataset_info_as_bytes.decode())
 
     async def store_file_contents(self, key: str, file_contents: bytes) -> None:
         await self._store_in_object_store("data_file_contents", key, file_contents)

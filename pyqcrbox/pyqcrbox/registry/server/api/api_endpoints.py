@@ -11,16 +11,17 @@ from litestar.exceptions import ClientException
 from litestar.params import Body
 
 from pyqcrbox import logger, msg_specs, sql_models
-from pyqcrbox.data_management import DatasetResponse
-from pyqcrbox.data_management.data_file import DataFileMetadataResponse
-from pyqcrbox.services import get_data_file_manager
+from pyqcrbox.data_management import DatasetNotFoundError
 
 from . import api_helpers
 
 
 @get("/", media_type=MediaType.JSON, include_in_schema=False)
 async def api_root_handler() -> dict[str, Any]:
-    return {"message": "Hello from QCrBox!"}
+    return Response(
+        {"status": "success", "msg": "Hello from QCrBox!"},
+        status_code=200,
+    )
 
 
 @get(path="/healthz", media_type=MediaType.JSON, skip_logging=False)
@@ -31,28 +32,66 @@ async def health_check() -> dict:
 @get(path="/applications", media_type=MediaType.JSON)
 async def retrieve_applications(
     # slug: str | None = None, version: str | None = None
-) -> list[sql_models.ApplicationSpecWithCommands]:
-    return api_helpers.retrieve_applications()
+) -> Response:
+    applications = api_helpers.retrieve_applications()
+    return Response(
+        {
+            "status": "success",
+            "msg": "Retrieved applications",
+            "payload": {
+                "applications": applications,
+            },
+        },
+        status_code=200,
+    )
 
 
 @get(path="/commands", media_type=MediaType.JSON)
 async def retrieve_commands(
     # name: str | None, application_slug: str | None, application_version: str | None
 ) -> list[sql_models.CommandSpecWithParameters]:
-    return api_helpers.retrieve_commands()
+    commands = api_helpers.retrieve_commands()
+    return Response(
+        {
+            "status": "success",
+            "msg": "Retrieved commands",
+            "payload": {
+                "commands": commands,
+            },
+        },
+        status_code=200,
+    )
 
 
 @get(path="/commands/{cmd_id:int}", media_type=MediaType.JSON)
 async def retrieve_command_by_id(cmd_id: int) -> sql_models.CommandSpecWithParameters | Response[dict]:
     try:
-        return api_helpers.retrieve_command_by_id(cmd_id)
+        command = api_helpers.retrieve_command_by_id(cmd_id)
+        return Response(
+            {
+                "status": "success",
+                "msg": f"Retrieved command: {cmd_id!r}",
+                "payload": {
+                    "command": command,
+                },
+            }
+        )
     except sqlalchemy.exc.NoResultFound:
         return Response({"status": "error", "msg": f"Command not found: id={cmd_id!r}"}, status_code=404)
 
 
 @get(path="/calculations", media_type=MediaType.JSON)
 async def get_calculation_info() -> list[sql_models.CalculationResponseModel]:
-    return api_helpers.get_calculation_info()
+    calculations = api_helpers.get_calculation_info()
+    return Response(
+        {
+            "status": "success",
+            "msg": "Retrieved calculations",
+            "payload": {
+                "calculations": calculations,
+            },
+        }
+    )
 
 
 @get(path="/calculations/{calculation_id:str}", media_type=MediaType.JSON, name="get_calculation_details")
@@ -79,13 +118,33 @@ async def handle_data_file_upload(
 
 
 @get(path="/data_files", media_type=MediaType.JSON)
-async def get_data_files() -> list[DataFileMetadataResponse]:
-    return await api_helpers.get_data_files()
+async def get_data_files() -> Response:
+    data_files = await api_helpers.get_data_files()
+    return Response(
+        {
+            "status": "success",
+            "msg": "Retrieved data files",
+            "payload": {
+                "data_files": data_files,
+            },
+        },
+        status_code=200,
+    )
 
 
 @get(path="/datasets", media_type=MediaType.JSON)
-async def get_datasets() -> list[DatasetResponse]:
-    return await api_helpers.get_datasets()
+async def get_datasets() -> Response:
+    datasets = await api_helpers.get_datasets()
+    return Response(
+        {
+            "status": "success",
+            "msg": "Retrieved datasets",
+            "payload": {
+                "datasets": datasets,
+            },
+        },
+        status_code=200,
+    )
 
 
 @post(path="/datasets/new", media_type=MediaType.JSON)
@@ -104,18 +163,45 @@ async def handle_dataset_upload(
 
 
 @delete(path="/datasets/delete/{dataset_id:str}")
-async def handle_dataset_delete(dataset_id: str) -> None:
-    await api_helpers.delete_dataset(dataset_id)
+async def handle_dataset_delete(dataset_id: str) -> Response:
+    try:
+        await api_helpers.delete_dataset(dataset_id)
+        return Response(
+            {
+                "status": "success",
+                "msg": f"Deleted dataset: {dataset_id!r}",
+            }
+        )
+    except (KeyError, DatasetNotFoundError):
+        return Response(
+            {
+                "status": "error",
+                "msg": f"Dataset not found: {dataset_id!r}",
+            },
+            status_code=404,
+        )
 
 
-async def _get_data_files() -> list[dict]:
-    data_file_manager = await get_data_file_manager()
-    data_files = await data_file_manager.get_data_files()
-    return [f.to_response_model() for f in data_files]
+@get(path="/datasets/{dataset_id:str}", media_type=MediaType.JSON)
+async def handle_get_dataset_by_dataset_id(dataset_id: str) -> Response:
+    try:
+        dataset = await api_helpers.get_dataset_info(dataset_id)
+        return Response(
+            {
+                "status": "success",
+                "msg": f"Retrieved dataset: {dataset_id!r}",
+                "payload": dataset,
+            }
+        )
+    except DatasetNotFoundError:
+        return Response(
+            {"status": "error", "msg": f"Dataset not found: {dataset_id!r}"},
+            status_code=404,
+        )
 
 
 @post(path="/commands/invoke", media_type=MediaType.JSON)
-async def commands_invoke(data: sql_models.CommandInvocationCreate, request: Request) -> dict:
+async def commands_invoke(data: sql_models.CommandInvocationCreate, request: Request) -> Response:
     logger.info(f"Received command invocation via API: {data=}")
 
     response_json = await api_helpers.invoke_command(data)
@@ -124,13 +210,15 @@ async def commands_invoke(data: sql_models.CommandInvocationCreate, request: Req
     if response.status == msg_specs.ResponseStatusEnum.ERROR:
         raise ClientException(detail=response.msg, extra=response.payload)
 
-    return dict(
-        msg="Accepted command invocation request",
-        status="ok",
-        payload={
-            "calculation_id": response.payload.calculation_id,
-            "href": request.url_for("get_calculation_details", calculation_id=response.payload.calculation_id),
-        },
+    return Response(
+        {
+            "status": "success",
+            "msg": f"Command invocation accepted: {data.command_name!r}",
+            "payload": {
+                "calculation_id": response.payload.calculation_id,
+                "href": request.url_for("get_calculation_details", calculation_id=response.payload.calculation_id),
+            },
+        }
     )
 
 
@@ -150,5 +238,6 @@ api_router = Router(
         handle_data_file_upload,
         handle_dataset_upload,
         handle_dataset_delete,
+        handle_get_dataset_by_dataset_id,
     ],
 )

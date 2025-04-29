@@ -230,7 +230,7 @@ async def import_dataset(data: Annotated[UploadFile, Body(media_type=RequestEnco
 async def get_dataset_info(dataset_id: str) -> DatasetResponse:
     data_file_manager = await get_data_file_manager()
     dataset_info = await data_file_manager.get_dataset_info(dataset_id)
-    return dataset_info
+    return dataset_info.to_response_model()
 
 
 async def delete_dataset(dataset_id: str) -> None:

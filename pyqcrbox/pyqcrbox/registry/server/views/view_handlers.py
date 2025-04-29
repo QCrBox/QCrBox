@@ -11,7 +11,7 @@ from litestar.status_codes import HTTP_200_OK, HTTP_206_PARTIAL_CONTENT
 from pyqcrbox.data_management import DatasetNotFoundError
 from pyqcrbox.helpers import as_bool
 from pyqcrbox.logging import logger
-from pyqcrbox.services import get_data_file_manager, get_nats_broker
+from pyqcrbox.services import get_nats_broker
 from pyqcrbox.sql_models import CommandInvocationCreate
 
 from ..api import api_helpers
@@ -98,9 +98,8 @@ async def start_interactive_session_with_data_file(
 @post(path="/interactive/close_session")
 async def close_interactive_session(session_id: str) -> Response:
     response_json = await api_helpers.close_interactive_session(session_id)
-    data_manager = await get_data_file_manager()
     try:
-        output_dataset_info = await data_manager.get_dataset_info(response_json.output_dataset_id)
+        output_dataset_info = await api_helpers.get_dataset_info(response_json.output_dataset_id)
     except DatasetNotFoundError:
         return render("StopInteractiveSessionResponseNoOutputDataset", _status_code=HTTP_206_PARTIAL_CONTENT)
 
