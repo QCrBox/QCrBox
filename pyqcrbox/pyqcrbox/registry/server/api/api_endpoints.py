@@ -12,11 +12,13 @@ from litestar.params import Body
 
 from pyqcrbox import logger, msg_specs, sql_models
 from pyqcrbox.data_management import DatasetNotFoundError
+from pyqcrbox.debug import log_entry_exit
 
 from . import api_helpers
 
 
 @get("/", media_type=MediaType.JSON, include_in_schema=False)
+@log_entry_exit
 async def api_root_handler() -> dict[str, Any]:
     return Response(
         {"status": "success", "msg": "Hello from QCrBox!"},
@@ -25,11 +27,13 @@ async def api_root_handler() -> dict[str, Any]:
 
 
 @get(path="/healthz", media_type=MediaType.JSON, skip_logging=False)
+@log_entry_exit
 async def health_check() -> dict:
     return {"status": "ok"}
 
 
 @get(path="/applications", media_type=MediaType.JSON)
+@log_entry_exit
 async def retrieve_applications(
     # slug: str | None = None, version: str | None = None
 ) -> Response:
@@ -47,6 +51,7 @@ async def retrieve_applications(
 
 
 @get(path="/commands", media_type=MediaType.JSON)
+@log_entry_exit
 async def retrieve_commands(
     # name: str | None, application_slug: str | None, application_version: str | None
 ) -> list[sql_models.CommandSpecWithParameters]:
@@ -64,6 +69,7 @@ async def retrieve_commands(
 
 
 @get(path="/commands/{cmd_id:int}", media_type=MediaType.JSON)
+@log_entry_exit
 async def retrieve_command_by_id(cmd_id: int) -> sql_models.CommandSpecWithParameters | Response[dict]:
     try:
         command = api_helpers.retrieve_command_by_id(cmd_id)
@@ -81,6 +87,7 @@ async def retrieve_command_by_id(cmd_id: int) -> sql_models.CommandSpecWithParam
 
 
 @get(path="/calculations", media_type=MediaType.JSON)
+@log_entry_exit
 async def get_calculation_info() -> list[sql_models.CalculationResponseModel]:
     calculations = api_helpers.get_calculation_info()
     return Response(
@@ -95,6 +102,7 @@ async def get_calculation_info() -> list[sql_models.CalculationResponseModel]:
 
 
 @get(path="/calculations/{calculation_id:str}", media_type=MediaType.JSON, name="get_calculation_details")
+@log_entry_exit
 async def get_calculation_info_by_calculation_id(calculation_id: str) -> dict | Response[dict]:
     try:
         return await api_helpers.get_calculation_info_by_calculation_id(calculation_id)
@@ -103,6 +111,7 @@ async def get_calculation_info_by_calculation_id(calculation_id: str) -> dict | 
 
 
 @post(path="/data_files/upload", media_type=MediaType.JSON)
+@log_entry_exit
 async def handle_data_file_upload(
     data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)],
 ) -> Response:
@@ -118,6 +127,7 @@ async def handle_data_file_upload(
 
 
 @get(path="/data_files", media_type=MediaType.JSON)
+@log_entry_exit
 async def get_data_files() -> Response:
     data_files = await api_helpers.get_data_files()
     return Response(
@@ -133,6 +143,7 @@ async def get_data_files() -> Response:
 
 
 @get(path="/datasets", media_type=MediaType.JSON)
+@log_entry_exit
 async def get_datasets() -> Response:
     datasets = await api_helpers.get_datasets()
     return Response(
@@ -147,7 +158,8 @@ async def get_datasets() -> Response:
     )
 
 
-@post(path="/datasets/new", media_type=MediaType.JSON)
+@post(path="/datasets/upload", media_type=MediaType.JSON)
+@log_entry_exit
 async def handle_dataset_upload(
     data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)],
 ) -> Response:
@@ -163,6 +175,7 @@ async def handle_dataset_upload(
 
 
 @delete(path="/datasets/delete/{dataset_id:str}")
+@log_entry_exit
 async def handle_dataset_delete(dataset_id: str) -> Response:
     try:
         await api_helpers.delete_dataset(dataset_id)
@@ -201,6 +214,7 @@ async def handle_get_dataset_by_dataset_id(dataset_id: str) -> Response:
 
 
 @post(path="/commands/invoke", media_type=MediaType.JSON)
+@log_entry_exit
 async def commands_invoke(data: sql_models.CommandInvocationCreate, request: Request) -> Response:
     logger.info(f"Received command invocation via API: {data=}")
 

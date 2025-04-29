@@ -96,7 +96,7 @@ Verify Application Data
 *** Keywords ***
 Upload Dataset
     [Arguments]    ${file_path}
-    ${response}=    Call Post API    api_endpoints    /datasets/new    file_path=${file_path}
+    ${response}=    Call Post API    api_endpoints    /datasets/upload    file_path=${file_path}
     Log    Response: ${response.json()}
     ${dataset_id}=    Set Variable    ${response.json()['payload']['qcrbox_dataset_id']}
     Log    Dataset ID: ${dataset_id}
