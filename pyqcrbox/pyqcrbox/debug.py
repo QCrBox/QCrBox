@@ -1,19 +1,16 @@
 import inspect
-import itertools
 from functools import wraps
 from typing import Callable
 
 from pyqcrbox import logger
 
-_global_count = itertools.count()  # Thread-safe unique ID generator
+
+def _log_enter(func_name: str) -> None:
+    logger.debug(f"[EEL:Enter] {func_name}")
 
 
-def _log_enter(call_id: int, func_name: str) -> None:
-    logger.debug(f"[EEL:Enter {call_id}] {func_name}")
-
-
-def _log_exit(call_id: int, full_name: str) -> None:
-    logger.debug(f"[EEL:Exit {call_id}] {full_name}")
+def _log_exit(full_name: str) -> None:
+    logger.debug(f"[EEL:Exit ] {full_name}")
 
 
 def log_entry_exit(func: Callable) -> Callable:
@@ -40,23 +37,21 @@ def log_entry_exit(func: Callable) -> Callable:
 
     @wraps(func)
     async def _async_wrapper(*args, **kwargs):
-        call_id = next(_global_count)
         func_name = _get_func_name(args)
 
-        _log_enter(call_id, func_name)
+        _log_enter(func_name)
         result = await func(*args, **kwargs)
-        _log_exit(call_id, func_name)
+        _log_exit(func_name)
 
         return result
 
     @wraps(func)
     def _sync_wrapper(*args, **kwargs):
-        call_id = next(_global_count)
         func_name = _get_func_name(args)
 
-        _log_enter(call_id, func_name)
+        _log_enter(func_name)
         result = func(*args, **kwargs)
-        _log_exit(call_id, func_name)
+        _log_exit(func_name)
 
         return result
 
