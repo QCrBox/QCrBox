@@ -206,20 +206,8 @@ async def handle_dataset_upload(
 
 @delete(path="/datasets/delete/{dataset_id:str}")
 @log_entry_exit
-async def handle_dataset_delete(dataset_id: str) -> None | QCrBoxResponse:
-    try:
-        await api_helpers.delete_dataset(dataset_id)
-    except (KeyError, DatasetNotFoundError):
-        return QCrBoxResponse(
-            {
-                "status": "error",
-                "error": {
-                    "code": 404,
-                    "message": f"Dataset not found: {dataset_id!r}",
-                },
-            },
-            status_code=404,
-        )
+async def handle_dataset_delete(dataset_id: str) -> None:
+    await api_helpers.delete_dataset(dataset_id)
 
 
 @get(path="/datasets/{dataset_id:str}", media_type=MediaType.JSON)
