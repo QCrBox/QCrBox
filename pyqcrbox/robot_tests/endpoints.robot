@@ -19,7 +19,8 @@ ${TEST_CIF_FILE}    ${CURDIR}/test_data/${TEST_CIF_FILE_NAME}
 
 Check applications API returns list of registered applications
     ${response}=    Call GET API    api_endpoints    /applications
-    FOR    ${app}    IN    @{response.json()}
+    ${applications}=    Set Variable    ${response.json()['data']['applications']}
+    FOR    ${app}    IN    @{applications}
         Verify Application Data    ${app}
     END
 
@@ -43,7 +44,7 @@ Check datasets API returns datasets
 
 Check a dataset can be retrieved via API
     ${response}=    Call GET API    api_endpoints    /datasets/${dataset_id}
-    ${dataset}=    Set Variable    ${response.json()['payload']}
+    ${dataset}=    Set Variable    ${response.json()['data']}
 
     Should Contain    ${dataset}    dataset_id
     Should Contain    ${dataset}    data_files
@@ -98,6 +99,6 @@ Upload Dataset
     [Arguments]    ${file_path}
     ${response}=    Call Post API    api_endpoints    /datasets/upload    file_path=${file_path}
     Log    Response: ${response.json()}
-    ${dataset_id}=    Set Variable    ${response.json()['payload']['qcrbox_dataset_id']}
+    ${dataset_id}=    Set Variable    ${response.json()['data']['qcrbox_dataset_id']}
     Log    Dataset ID: ${dataset_id}
     RETURN    ${dataset_id}
