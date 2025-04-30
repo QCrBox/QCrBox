@@ -18,8 +18,8 @@ structlog_plugin = StructlogPlugin(
         ),
         middleware_logging_config=LoggingMiddlewareConfig(
             exclude_opt_key="skip_logging",
-            # request_log_fields=["method", "path", "path_params", "query"],
-            # response_log_fields=["status_code"],
+            request_log_fields=["method", "path", "path_params", "query"],
+            response_log_fields=["status_code", "body"],
         ),
     )
 )

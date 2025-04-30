@@ -45,9 +45,7 @@ responses. This is defined in `pyqcrbox.registry.shared.qcrbox_response`.
   "error": {
     "code": 400,
     "message": "Bad request",
-    "details": {
-      ...
-    }
+    "details": null
   },
   "timestamp": "2025-04-29T15:08:30.188939+00:00Z"
 }

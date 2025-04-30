@@ -9,7 +9,7 @@ from litestar.params import Body
 from litestar.status_codes import HTTP_200_OK, HTTP_206_PARTIAL_CONTENT
 
 from pyqcrbox.data_management import DatasetNotFoundError
-from pyqcrbox.debug import log_entry_exit
+from pyqcrbox.debug import eel_logging
 from pyqcrbox.helpers import as_bool
 from pyqcrbox.logging import logger
 from pyqcrbox.services import get_nats_broker
@@ -26,20 +26,20 @@ catalog.add_folder(here / "components")
 catalog.jinja_env.filters["as_bool"] = as_bool
 
 
-@log_entry_exit
+@eel_logging
 def render(*args, _status_code=HTTP_200_OK, **kwargs) -> Response:
     rendered_content = catalog.render(*args, **kwargs)
     return Response(content=rendered_content, media_type=MediaType.HTML, status_code=_status_code)
 
 
 @get(path="/index", media_type=MediaType.HTML)
-@log_entry_exit
+@eel_logging
 async def serve_qcrbox_homepage() -> Response:
     return render("QCrBoxHomePage")
 
 
 @get(path="/applications")
-@log_entry_exit
+@eel_logging
 async def serve_applications_page() -> Response:
     applications = api_helpers.retrieve_applications()
     commands = api_helpers.retrieve_commands()
@@ -51,20 +51,20 @@ async def serve_applications_page() -> Response:
 
 
 @get(path="/command/{cmd_id:int}", media_type=MediaType.HTML)
-@log_entry_exit
+@eel_logging
 async def get_command_details(cmd_id: int) -> Response:
     command = api_helpers.retrieve_command_by_id(cmd_id, raise_if_not_found=False)
     return render("CommandDetails", command=command)
 
 
 @get(path="/data_files")
-@log_entry_exit
+@eel_logging
 async def serve_data_files_page() -> Response:
     return render("DataFilesPage", data_files=await api_helpers.get_data_files())
 
 
 @post(path="/data_files/upload", media_type=MediaType.TEXT)
-@log_entry_exit
+@eel_logging
 async def handle_data_file_upload(
     data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)],
 ) -> Response:
@@ -73,7 +73,7 @@ async def handle_data_file_upload(
 
 
 @post(path="/datasets/new", media_type=MediaType.TEXT)
-@log_entry_exit
+@eel_logging
 async def handle_dataset_upload(
     data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)],
 ) -> Response:
@@ -84,7 +84,7 @@ async def handle_dataset_upload(
 
 
 @post(path="/interactive/start_session")
-@log_entry_exit
+@eel_logging
 async def start_interactive_session_with_data_file(
     application_name: str, application_slug: str, application_version: str, data_file_id: str
 ) -> Response:
@@ -105,7 +105,7 @@ async def start_interactive_session_with_data_file(
 
 
 @post(path="/interactive/close_session")
-@log_entry_exit
+@eel_logging
 async def close_interactive_session(session_id: str) -> Response:
     response_json = await api_helpers.close_interactive_session(session_id)
     try:
@@ -122,13 +122,13 @@ async def close_interactive_session(session_id: str) -> Response:
 
 
 @post(path="/start_olex2_session")
-@log_entry_exit
+@eel_logging
 async def start_olex2_interactive_session() -> Response:
     return render("StartOlexSessionResponse")
 
 
 @get(path="/view_start_session_button")
-@log_entry_exit
+@eel_logging
 async def view_interactive_session_button(
     data_file_id: str, application_name: str, application_slug: str, application_version: str
 ) -> Response:
@@ -142,25 +142,25 @@ async def view_interactive_session_button(
 
 
 @get(path="/view_start_crystal_explorer_session_button")
-@log_entry_exit
+@eel_logging
 async def view_crystal_explorer_interactive_session_button() -> Response:
     return render("StartCrystalExplorerButton")
 
 
 @post(path="/start_crystal_explorer_session")
-@log_entry_exit
+@eel_logging
 async def start_crystal_explorer_interactive_session() -> Response:
     return render("StartCrystalExplorerSessionResponse")
 
 
 @post(path="/close_crystal_explorer_session")
-@log_entry_exit
+@eel_logging
 async def close_crystal_explorer_session() -> Response:
     return render("StopCrystalExplorerSessionResponse")
 
 
 @get(path="/restart")
-@log_entry_exit
+@eel_logging
 async def serve_restart_docker_containers_page() -> Response:
     return render("RestartDockerContainersPage")
 
@@ -170,7 +170,7 @@ async def serve_restart_docker_containers_page() -> Response:
     media_type=MediaType.HTML,
     response_headers=[ResponseHeader(name="HX-Refresh", value="true")],
 )
-@log_entry_exit
+@eel_logging
 async def restart_docker_containers() -> None:
     logger.debug("Sending NATS message to restart docker containers")
 

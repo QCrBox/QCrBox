@@ -13,7 +13,7 @@ def _log_exit(full_name: str) -> None:
     logger.debug(f"[EEL:Exit ] {full_name}")
 
 
-def log_entry_exit(func: Callable) -> Callable:
+def eel_logging(func: Callable) -> Callable:
     """Log entry and exit for a function.
 
     Both synchronous and asynchronous functions are supported.

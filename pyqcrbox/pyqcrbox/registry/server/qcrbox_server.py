@@ -12,7 +12,7 @@ from pydantic import BaseModel
 from sqlmodel import select
 
 from pyqcrbox import helpers, logger, msg_specs, settings, sql_models
-from pyqcrbox.debug import log_entry_exit
+from pyqcrbox.debug import eel_logging
 from pyqcrbox.registry.shared.calculation_status import update_calculation_status_in_nats_kv_NEW
 from pyqcrbox.sql_models import CalculationStatusDetails, CalculationStatusEnum
 
@@ -53,7 +53,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
     #     # )
     #     pass
 
-    @log_entry_exit
+    @eel_logging
     def _set_up_nats_broker(self) -> None:
         self.nats_broker.subscriber("register-application")(self.handle_application_registration)
         self.nats_broker.subscriber("server.cmd.handle_command_invocation_by_user")(
@@ -65,7 +65,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
         self.nats_broker.subscriber("server.calc.get_status")(self.get_calculation_status)
         self.nats_broker.subscriber("*", kv_watch="calculation_status")(self.update_calculation_status_in_db)
 
-    @log_entry_exit
+    @eel_logging
     async def handle_application_registration(self, msg: msg_specs.RegisterApplication):
         logger.info(
             f"Received registration for application: {msg.payload.application_spec.slug!r} "
@@ -74,7 +74,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
         await self.nats_persistence_adapter.save_application_spec(msg.payload.application_spec)
         await self.sqlite_persistence_adapter.save_application_spec(msg.payload.application_spec)
 
-    @log_entry_exit
+    @eel_logging
     async def handle_command_invocation_by_user(self, msg: msg_specs.InvokeCommandNATS):
         logger.info(f"Received command invocation from user: {msg!r}")
 
@@ -125,7 +125,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
             payload={"calculation_id": calculation_id},
         )
 
-    @log_entry_exit
+    @eel_logging
     async def handle_command_invocation_client_response(self, msg: msg_specs.CommandInvocationClientResponseNATS):
         logger.info(f"Received client response: {msg!r}")
         if not msg.client_is_available:
@@ -168,7 +168,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
             )
             await self.nats_broker.publish(response_to_client, subject=subject)
 
-    @log_entry_exit
+    @eel_logging
     async def get_calculation_status(self, msg: msg_specs.GetCalculationStatusNATS):
         logger.debug(f"Retrieving status for {msg.calculation_id!r}")
         executing_client = self.calculations[msg.calculation_id].executing_client
@@ -181,7 +181,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
         logger.debug(f"Calculation status in nats KV store is: {status_nats_kv!r}")
         return response
 
-    @log_entry_exit
+    @eel_logging
     async def update_calculation_status_in_db(
         self, status_details: CalculationStatusDetails, calculation_id: str = Context("message.raw_message.key")
     ):
@@ -195,7 +195,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
             calculation_db.update_status(status_details.status, comment="NATS notification")
             logger.debug("Updated calculation status in the database.")
 
-    @log_entry_exit
+    @eel_logging
     def _set_up_asgi_server(self) -> None:
         self.asgi_server = Litestar(
             route_handlers=[
@@ -211,7 +211,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
         )
 
     @on_qcrbox_startup
-    @log_entry_exit
+    @eel_logging
     async def init_database(self, purge_existing_db_tables: bool) -> None:
         logger.info("Initialising database...")
         logger.debug(f"Database url: {settings.db.url}")
@@ -219,7 +219,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
         logger.info("Finished initialising database...")
 
     @on_qcrbox_startup
-    @log_entry_exit
+    @eel_logging
     async def restore_previously_registered_applications(self) -> None:
         try:
             # TODO: cross-check NATS KV entries with the database
@@ -248,7 +248,7 @@ class TestQCrBoxServer(TestQCrBoxServerClientBase, QCrBoxServer):
     pass
 
 
-@log_entry_exit
+@eel_logging
 def main():
     qcrbox_server = QCrBoxServer()
     qcrbox_server.run(

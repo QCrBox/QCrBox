@@ -9,7 +9,7 @@ from litestar import Litestar
 
 from pyqcrbox import helpers, logger, msg_specs, settings, sql_models
 from pyqcrbox.cli.helpers import get_repo_root
-from pyqcrbox.debug import log_entry_exit
+from pyqcrbox.debug import eel_logging
 from pyqcrbox.helpers import generate_private_routing_key
 from pyqcrbox.registry.client.executable_command.base_calculation import BaseCalculation
 from pyqcrbox.registry.shared.calculation_status import update_calculation_status_in_nats_kv_NEW
@@ -67,7 +67,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
     #         message_dispatcher=client_side_message_dispatcher,
     #     )
 
-    @log_entry_exit
+    @eel_logging
     def _set_up_nats_broker(self) -> None:
         logger.warning("TODO: set up NATS broker for client")
 
@@ -107,7 +107,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         #     )
         #     logger.debug(f"Received response from server: {server_response}")
 
-    @log_entry_exit
+    @eel_logging
     async def handle_command_invocation_request_from_server(self, msg: msg_specs.CommandInvocationRequestNATS):
         # logger.info(f"Received command invocation request: {msg!r} (current client status: {self.status})")
         logger.info(f"Received command invocation request: {msg!r} (current client status: TODO)")
@@ -126,12 +126,12 @@ class QCrBoxClient(QCrBoxServerClientBase):
 
         return response_msg
 
-    @log_entry_exit
+    @eel_logging
     async def handle_discard_command_invocation(self, msg: msg_specs.DiscardCommandInvocationNATS):
         logger.info(f"Received request to discard command invocation: {msg!r} (current status: {self.status})")
         self.status.set_idle()
 
-    @log_entry_exit
+    @eel_logging
     async def handle_command_execution(self, msg: msg_specs.CommandExecutionRequestNATS):
         logger.info(f"Received command execution request: {msg!r} (current status: {self.status})")
         self.status.set_busy()
@@ -187,7 +187,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         # handled by close_interactive_session.
         # self.status.set_idle()
 
-    @log_entry_exit
+    @eel_logging
     async def get_calculation_status(
         self, msg: msg_specs.GetCalculationStatusNATS
     ) -> msg_specs.CalculationStatusResponseNATS:
@@ -200,7 +200,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
 
     # Following from previous comments, shouldn't this belong to the InteractiveSession
     # or InteractiveSessionCalculation instead?
-    @log_entry_exit
+    @eel_logging
     async def close_interactive_session(
         self, msg: msg_specs.CloseInteractiveSessionNATS
     ) -> msg_specs.CloseInteractiveSessionResponseNATS | None:
@@ -219,7 +219,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         logger.debug(f"Received request to close interactive session: {calc!r}")
 
         try:
-            await calc.close_interactive_session()
+            await calc.interactive_close_session()
             session_status = calc.status
             output_dataset_id = calc.output_dataset_id
             logger.info(f"Closed interactive session: {session_id!r}")
@@ -238,23 +238,23 @@ class QCrBoxClient(QCrBoxServerClientBase):
             output_dataset_id=output_dataset_id,
         )
 
-    @log_entry_exit
+    @eel_logging
     def get_executable_command(self, command_name, **kwargs):
         cmd_spec = self.application_spec.get_command_by_name(command_name)
         return ExecutableCommand(cmd_spec)
 
-    @log_entry_exit
+    @eel_logging
     def _set_up_asgi_server(self) -> None:
         self.asgi_server = create_client_asgi_server(self.lifespan_context)
 
-    @log_entry_exit
+    @eel_logging
     async def _run_custom_shutdown_tasks(self):
         logger.debug("Terminating running calculations...")
         logger.warning("TODO: actually terminate any running calculations...")
         for calc in self._calculations:
             await calc.terminate()
 
-    @log_entry_exit
+    @eel_logging
     async def _update_interactive_session_info(self, msg):
         if msg.command_name == "interactive_session":
             interactive_session_info = InteractiveSessionInfo(
@@ -290,7 +290,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
     #     logger.error(f"Received response to registration request: {resp=}")
 
     @on_qcrbox_startup
-    @log_entry_exit
+    @eel_logging
     async def send_registration_request_via_nats(self):
         logger.debug("Sending registration request to QCrBox server")
         msg = msg_specs.RegisterApplication(
@@ -318,7 +318,7 @@ class TestQCrBoxClient(TestQCrBoxServerClientBase, QCrBoxClient):
     pass
 
 
-@log_entry_exit
+@eel_logging
 def main():
     repo_root = get_repo_root(__file__)
 
