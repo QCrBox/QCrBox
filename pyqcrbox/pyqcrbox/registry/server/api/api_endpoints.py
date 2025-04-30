@@ -54,7 +54,7 @@ async def get_calculations() -> QCrBoxResponse:
     )
 
 
-@get(path="/calculations/{calculation_id:str}", media_type=MediaType.JSON, name="get_calculation_details")
+@get(path="/calculations/{calculation_id:str}", media_type=MediaType.JSON)
 @eel_logging
 async def get_calculations_by_calculation_id(calculation_id: str) -> QCrBoxResponse:
     try:
@@ -186,7 +186,7 @@ async def get_datasets_by_dataset_id(dataset_id: str) -> QCrBoxResponse:
         )
 
 
-@get(path="/healthz", media_type=MediaType.JSON, skip_logging=False)
+@get(path="/healthz", media_type=MediaType.JSON)
 @eel_logging
 async def healthz() -> QCrBoxResponse:
     return QCrBoxResponse(
