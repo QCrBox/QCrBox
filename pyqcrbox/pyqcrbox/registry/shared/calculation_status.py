@@ -41,4 +41,6 @@ __all__ = ["update_calculation_status_in_nats_kv_NEW"]
 async def update_calculation_status_in_nats_kv_NEW(status_details: CalculationStatusDetails):
     kv = await get_nats_key_value(bucket="calculation_status")
     await kv.put(status_details.calculation_id, json.dumps(status_details.model_dump()).encode())
-    logger.debug(f"Updated calculation status details in NATS key-value store: {status_details!r}")
+    logger.debug(
+        f"Updated calculation status details in NATS key-value store for calculation {status_details.calculation_id!r}"
+    )

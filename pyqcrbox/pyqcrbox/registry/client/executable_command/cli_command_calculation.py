@@ -4,6 +4,7 @@ import asyncio
 import anyio
 
 from pyqcrbox import logger
+from pyqcrbox.debug import eel_logging
 from pyqcrbox.sql_models import CalculationStatusEnum
 
 from .base_calculation import BaseCalculation
@@ -19,6 +20,7 @@ class CLICmdCalculation(BaseCalculation):
         self.retrieved_stdout_stderr = False
         self.calc_finished_event = calc_finished_event
 
+    @eel_logging
     async def wait_until_finished(self):
         logger.debug(f"Waiting for calculation to finish: {self!r}")
         # logger.debug("Waiting for process to exit...")

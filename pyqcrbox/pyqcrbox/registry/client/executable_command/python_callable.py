@@ -10,6 +10,7 @@ import anyio
 from pydantic._internal._validate_call import ValidateCallWrapper
 
 from pyqcrbox import logger
+from pyqcrbox.debug import eel_logging
 from pyqcrbox.sql_models import PythonCallableSpec
 
 from . import BaseCommand
@@ -55,6 +56,7 @@ class PythonCallable(BaseCommand):
     def __repr__(self):
         return f"<{self.__class__.__name__}: {self.fn.__name__}{self.signature!s}>"
 
+    @eel_logging
     async def execute_in_background(
         self,
         *args,
@@ -107,6 +109,7 @@ class PythonCallable(BaseCommand):
             calc_finished_event=calc_finished_event,
         )
 
+    @eel_logging
     async def terminate(self):
         logger.debug(f"Terminating {self}")
         self.pool.terminate()

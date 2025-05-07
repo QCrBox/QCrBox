@@ -3,6 +3,7 @@ import os
 import anyio
 
 from pyqcrbox import helpers, logger
+from pyqcrbox.debug import eel_logging
 from pyqcrbox.registry.client.executable_command import BaseCommand
 from pyqcrbox.registry.client.executable_command.python_callable import PythonCallable
 from pyqcrbox.sql_models import InteractiveSessionSpec
@@ -20,6 +21,7 @@ class InteractiveSession(BaseCommand):
         self.run_cmd_spec = cmd_spec.interactive_lifecycle.run
         self.finalise_cmd_spec = cmd_spec.interactive_lifecycle.finalise
 
+    @eel_logging
     async def execute_in_background(
         self,
         _calculation_id: str,
@@ -91,5 +93,6 @@ class InteractiveSession(BaseCommand):
             finalise_calc=finalise_calc,
         )
 
+    @eel_logging
     def terminate(self):
         raise NotImplementedError("TODO: implement terminate() for interactive commands")

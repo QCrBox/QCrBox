@@ -3,6 +3,7 @@ import re
 
 import anyio
 
+from pyqcrbox.debug import eel_logging
 from pyqcrbox.sql_models import CLICommandSpec
 
 __all__ = ["CLICommand"]
@@ -97,6 +98,7 @@ class CLICommand(BaseCommand):
     async def bind(self, working_dir: str, **param_values):
         return self.call_pattern.format(**param_values)
 
+    @eel_logging
     async def execute_in_background(
         self,
         _calculation_id: str,
@@ -128,6 +130,7 @@ class CLICommand(BaseCommand):
 
         return CLICmdCalculation(self.proc, calculation_id=_calculation_id, calc_finished_event=calc_finished_event)
 
+    @eel_logging
     async def terminate(self):
         if self.proc:
             logger.debug("Terminating process running CLI command.")

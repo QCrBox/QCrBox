@@ -56,17 +56,6 @@ class QCrBoxClient(QCrBoxServerClientBase):
     def working_dir(self) -> Path:
         return self.application_spec.yaml_file_dir or Path.cwd()
 
-    # def _set_up_rabbitmq_broker(self) -> None:
-    #     self.set_up_message_dispatcher(
-    #         queue_name=self.private_routing_key,
-    #         message_dispatcher=client_side_message_dispatcher,
-    #     )
-    #     self.set_up_message_dispatcher(
-    #         queue_name=self.routing_key_command_invocation,
-    #         # TODO: use separate dispatcher from the one for private routing key
-    #         message_dispatcher=client_side_message_dispatcher,
-    #     )
-
     @eel_logging
     def _set_up_nats_broker(self) -> None:
         logger.warning("TODO: set up NATS broker for client")
@@ -80,32 +69,6 @@ class QCrBoxClient(QCrBoxServerClientBase):
         self.nats_broker.subscriber(f"{self.private_inbox}.cmd.execute")(self.handle_command_execution)
         self.nats_broker.subscriber(f"{self.private_inbox}.calc.status")(self.get_calculation_status)
         self.nats_broker.subscriber(f"{self.private_inbox}.interactive_session.close")(self.close_interactive_session)
-
-        # # Subscriber for command invocation requests
-        # subject = f"cmd-invocation.request.{self.application_spec.nats_subject}"
-        # # self.nats_broker.subscriber(subject)(handle_command_invocation_request_via_nats)
-        #
-        # @self.nats_broker.subscriber(subject)
-        # async def handle_command_invocation_request_via_nats(msg: msg_specs.CommandInvocationRequest):
-        #     assert msg.action == "command_invocation_request"
-        #     logger.debug(f"Received command invocation request: {msg}")
-        #
-        #     msg_indicate_availability = msg_specs.ClientIndicatesAvailabilityToExecuteCommand(
-        #         action="client_is_available_to_execute_command",
-        #         payload=msg_specs.PayloadForClientIsAvailableToExecuteCommand(
-        #             cmd_invocation_payload=msg.payload,
-        #             # private_routing_key=self.private_routing_key,
-        #         ),
-        #     )
-        #
-        #     server_response = await self.nats_broker.publish(
-        #         msg_indicate_availability,
-        #         f"cmd-invocation.response.{msg.payload.correlation_id}",
-        #         rpc=True,
-        #         rpc_timeout=settings.nats.rpc_timeout,
-        #         raise_timeout=True,
-        #     )
-        #     logger.debug(f"Received response from server: {server_response}")
 
     @eel_logging
     async def handle_command_invocation_request_from_server(self, msg: msg_specs.CommandInvocationRequestNATS):
@@ -128,12 +91,12 @@ class QCrBoxClient(QCrBoxServerClientBase):
 
     @eel_logging
     async def handle_discard_command_invocation(self, msg: msg_specs.DiscardCommandInvocationNATS):
-        logger.info(f"Received request to discard command invocation: {msg!r} (current status: {self.status})")
+        logger.info(f"Received request to discard command invocation: {msg!r} (current status: {self.status.status})")
         self.status.set_idle()
 
     @eel_logging
     async def handle_command_execution(self, msg: msg_specs.CommandExecutionRequestNATS):
-        logger.info(f"Received command execution request: {msg!r} (current status: {self.status})")
+        logger.info(f"Received command execution request: {msg!r} (current status: {self.status.status})")
         self.status.set_busy()
 
         # We are unsure if this should belong here, but it makes the code far less
@@ -144,7 +107,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
 
         try:
             cmd = self.get_executable_command(msg.command_name)
-            logger.debug(f"InteractiveSession: Retrieved command {cmd!r} ")
+            logger.debug(f"InteractiveSession: Retrieved command {cmd.cmd_spec!r} ")
 
             # Parse each argument in `msg.arguments` as the correct parameter type
             # Steps:
@@ -162,8 +125,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
             )
             if not isinstance(calc, BaseCalculation):
                 raise RuntimeError("Command execution did not return a calculation object.")
-
-        except Exception as exc:
+        except Exception as exc:  # TODO: this isn't triggered when an async command fails?
             error_msg = f"Command execution failed: {exc!r}"
             logger.error(error_msg)
             status_details = CalculationStatusDetails(
@@ -264,6 +226,10 @@ class QCrBoxClient(QCrBoxServerClientBase):
             )
             data_manager = await get_data_file_manager()
             await data_manager.store_interactive_session_info(interactive_session_info)
+            logger.debug(
+                f"Added interactive session to NATS key-value store: session_id={interactive_session_info.session_id}"
+                + f" calculation_id={msg.calculation_id}"
+            )
         else:
             raise ValueError(f"Unknown command type: {msg.command_name}")
 
