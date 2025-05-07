@@ -20,6 +20,9 @@ def prepare__interactive(input_file):
     input_cif_path = Path(input_file)
     work_cif_path = input_cif_path.parent / "qcrbox_work.cif"
 
+    print(f"olex2 prepare__interactive: input cif path: {input_cif_path}")
+    print(f"olex2 prepare__interactive: work cif path: {work_cif_path}")
+
     # create a cif file using the requested cif entries in olex2 format
     # try:
     #     cif_file_to_specific_by_yml(
@@ -33,10 +36,13 @@ def prepare__interactive(input_file):
     #     logger.exception(f"Failed to create work file {work_cif_path}")
     #     os.remove(input_cif_path)
     #
-    # backup the input file and copy the work file to the original input as a
-    # crude hack for now
+
+    # Create a backup of the original input file
     shutil.copyfile(input_cif_path, input_cif_path.with_suffix(".cif.bak"))
-    shutil.copyfile(work_cif_path, input_cif_path)
+
+    # XXX HACK!!!!
+    # Copy the input file to the work file
+    shutil.copyfile(input_cif_path, work_cif_path)
 
 
 def finalise__interactive(input_file):
