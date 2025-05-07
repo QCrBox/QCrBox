@@ -51,7 +51,7 @@ Log datetime information
 Check that file uploaded to dataset
     [Arguments]    ${filename}
     ${response}=    Call GET API    api_endpoints    /datasets
-    ${data}=    Set Variable    ${response.json()['data']['datasets']}
+    ${data}=    Set Variable    ${response.json()['payload']['datasets']}
     ${datasets}=    Evaluate    [d for d in ${data} if "${filename}" in d["data_files"]]    json
     Length Should Be    ${datasets}    1
     ${dataset_id}=    Set Variable    ${datasets[0]["dataset_id"]}

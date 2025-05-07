@@ -17,12 +17,18 @@ ${TEST_CIF_FILE}    ${CURDIR}/test_data/${TEST_CIF_FILE_NAME}
 
 *** Test Cases ***
 
+Check healthz API returns healthz
+    Call GET API    api_endpoints    /healthz
+
 Check applications API returns list of registered applications
     ${response}=    Call GET API    api_endpoints    /applications
-    ${applications}=    Set Variable    ${response.json()['data']['applications']}
+    ${applications}=    Set Variable    ${response.json()['payload']['applications']}
     FOR    ${app}    IN    @{applications}
         Verify Application Data    ${app}
     END
+
+Check interactive sessions API returns interactive sessions
+    Call GET API    api_endpoints     /interactive_sessions
 
 Check calculations API returns calculations
     Call GET API    api_endpoints    /calculations
@@ -34,7 +40,7 @@ Check data_files API returns data_files
     Call GET API    api_endpoints    /data_files
 
 Check dataset can be uploaded via API
-    ${dataset_id}=    Upload Dataset    ${TEST_CIF_FILE}
+    ${dataset_id}=    Upload Test Dataset
     Set Global Variable    ${dataset_id}
 
 Check datasets API returns datasets
@@ -44,7 +50,7 @@ Check datasets API returns datasets
 
 Check a dataset can be retrieved via API
     ${response}=    Call GET API    api_endpoints    /datasets/${dataset_id}
-    ${dataset}=    Set Variable    ${response.json()['data']}
+    ${dataset}=    Set Variable    ${response.json()['payload']}
 
     Should Contain    ${dataset}    dataset_id
     Should Contain    ${dataset}    data_files
@@ -57,11 +63,24 @@ Check a dataset can be retrieved via API
         Should Contain    ${file_data}    filetype
     END
 
+Check an interactive session can be created
+    # We need to get the data_file_id from the test dataset
+    ${response}=    Call GET API   api_endpoints    /datasets/${dataset_id}
+    ${data_files}=    Set Variable    ${response.json()['payload']['data_files']}
+    ${data_file}=    Get From Dictionary    ${data_files}    ${TEST_CIF_FILE_NAME}
+    ${data_file_id}=    Set Variable    ${data_file['qcrbox_file_id']}
+
+    # Call the API to create a session, which should return the calculation id
+    ${response}=    Call POST API    api_endpoints    /commands/interactive/open?application_slug=olex2&application_version=1.5-alpha&data_file_id=${data_file_id}
+    ${interactive_session_id}=    Set Variable    ${response.json()['payload']['calculation_id']}
+    Set Global Variable    ${interactive_session_id}
+    
+Check an interactive session can be closed
+    Sleep    2s    "Wait for the interactive session to be added to the database"
+    Call POST API    api_endpoints    /commands/interactive/close?interactive_session_id=${interactive_session_id}
+
 Check dataset can be deleted via API
     Call DELETE API    api_endpoints    /datasets/delete/${dataset_id}
-
-Check healthz API returns healthz
-    Call GET API    api_endpoints    /healthz
 
 *** Keywords ***
 
@@ -95,10 +114,10 @@ Verify Application Data
     END
 
 *** Keywords ***
-Upload Dataset
-    [Arguments]    ${file_path}
-    ${response}=    Call Post API    api_endpoints    /datasets/upload    file_path=${file_path}
-    Log    Response: ${response.json()}
-    ${dataset_id}=    Set Variable    ${response.json()['data']['qcrbox_dataset_id']}
-    Log    Dataset ID: ${dataset_id}
+Upload Test Dataset
+    ${files}=    Create Dictionary    ${TEST_CIF_FILE_NAME}=${TEST_CIF_FILE}
+    ${response}=    Call POST API With File    api_endpoints    /datasets/upload    files=${files}
+    ${dataset_id}=    Set Variable    ${response.json()['payload']['qcrbox_dataset_id']}
+    Log    "Response: ${response.json()}"
+    Log    "Dataset ID: ${dataset_id}"
     RETURN    ${dataset_id}

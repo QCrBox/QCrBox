@@ -12,6 +12,7 @@ from litestar.params import Body
 from pyqcrbox.data_management import DatasetNotFoundError
 from pyqcrbox.debug import eel_logging
 from pyqcrbox.registry.shared.qcrbox_response import QCrBoxResponse
+from pyqcrbox.sql_models import CommandInvocationCreate
 
 from . import api_helpers
 
@@ -30,7 +31,7 @@ async def get_applications() -> QCrBoxResponse:
         {
             "status": "success",
             "message": "Retrieved applications",
-            "data": {
+            "payload": {
                 "applications": applications,
             },
         },
@@ -46,7 +47,7 @@ async def get_calculations() -> QCrBoxResponse:
         {
             "status": "success",
             "message": "Retrieved calculations",
-            "data": {
+            "payload": {
                 "calculations": calculations,
             },
         },
@@ -63,7 +64,7 @@ async def get_calculations_by_calculation_id(calculation_id: str) -> QCrBoxRespo
             {
                 "status": "success",
                 "message": f"Retrieved calculation: {calculation_id!r}",
-                "data": {
+                "payload": {
                     "calculation_id": calculation_id,
                     "calculations": calculations,
                 },
@@ -91,7 +92,7 @@ async def get_commands() -> QCrBoxResponse:
         {
             "status": "success",
             "message": "Retrieved commands",
-            "data": {
+            "payload": {
                 "commands": _commands,
             },
         },
@@ -108,7 +109,7 @@ async def get_commands_by_cmd_id(cmd_id: int) -> QCrBoxResponse:
             {
                 "status": "success",
                 "message": f"Retrieved command: {cmd_id!r}",
-                "data": {
+                "payload": {
                     "command_id": cmd_id,
                     "command": command,
                 },
@@ -136,7 +137,7 @@ async def get_data_files() -> QCrBoxResponse:
         {
             "status": "success",
             "message": "Retrieved data files",
-            "data": {
+            "payload": {
                 "data_files": data_files,
             },
         },
@@ -152,7 +153,7 @@ async def get_datasets() -> QCrBoxResponse:
         {
             "status": "success",
             "message": "Retrieved datasets",
-            "data": {
+            "payload": {
                 "datasets": datasets,
             },
         },
@@ -169,7 +170,7 @@ async def get_datasets_by_dataset_id(dataset_id: str) -> QCrBoxResponse:
             {
                 "status": "success",
                 "message": f"Retrieved dataset: {dataset_id!r}",
-                "data": dataset,
+                "payload": dataset,
             },
             status_code=200,
         )
@@ -180,6 +181,52 @@ async def get_datasets_by_dataset_id(dataset_id: str) -> QCrBoxResponse:
                 "error": {
                     "code": 404,
                     "message": f"Dataset not found: {dataset_id!r}",
+                },
+            },
+            status_code=404,
+        )
+
+
+@get(path="/interactive_sessions", media_type=MediaType.JSON)
+@eel_logging
+async def get_interactive_sessions() -> QCrBoxResponse:
+    data_file_manager = await api_helpers.get_data_file_manager()
+    interactive_sessions = await data_file_manager.get_interactive_sessions()
+    return QCrBoxResponse(
+        {
+            "status": "success",
+            "message": "Retrieved interactive sessions",
+            "payload": {
+                "interactive_sessions": interactive_sessions,
+            },
+        },
+        status_code=200,
+    )
+
+
+@get(path="/interactive_sessions/{session_id:str}", media_type=MediaType.JSON)
+@eel_logging
+async def get_interactive_sessions_by_session_id(session_id: str) -> QCrBoxResponse:
+    data_file_manager = await api_helpers.get_data_file_manager()
+    try:
+        interactive_session = await data_file_manager.get_interactive_session_info(session_id)
+        return QCrBoxResponse(
+            {
+                "status": "success",
+                "message": f"Retrieved interactive session: {session_id!r}",
+                "payload": {
+                    "interactive_session": interactive_session,
+                },
+            },
+            status_code=200,
+        )
+    except DatasetNotFoundError:
+        return QCrBoxResponse(
+            {
+                "status": "error",
+                "error": {
+                    "code": 404,
+                    "message": f"Interactive session not found: {session_id!r}",
                 },
             },
             status_code=404,
@@ -209,28 +256,59 @@ async def index() -> QCrBoxResponse:
     )
 
 
-# @post(path="/commands/invoke", media_type=MediaType.JSON)
-# @eel_logging
-# async def post_commands_invoke(data: sql_models.CommandInvocationCreate, request: Request) -> QCrBoxResponse:
-#     logger.info(f"Received command invocation via API: {data=}")
-#
-#     response_json = await api_helpers.invoke_command(data)
-#     response = msg_specs.QCrBoxGenericQCrBoxResponse(**response_json)
-#
-#     if response.status == msg_specs.QCrBoxResponseStatusEnum.ERROR:
-#         raise ClientException(detail=response.msg, extra=response.payload)
-#
-#     return QCrBoxResponse(
-#         {
-#             "status": "success",
-#             "message": f"Command invocation accepted: {data.command_name!r}",
-#             "data": {
-#                 "calculation_id": response.payload.calculation_id,
-#                 "href": request.url_for("get_calculation_details", calculation_id=response.payload.calculation_id),
-#             },
-#         },
-#         status_code=200,
-#     )
+@post(path="/commands/interactive/close")
+@eel_logging
+async def post_commands_interactive_session_close(interactive_session_id: str) -> QCrBoxResponse:
+    try:
+        response = await api_helpers.close_interactive_session(interactive_session_id)
+        return QCrBoxResponse(
+            {
+                "status": "success",
+                "message": f"Closed interactive session: {interactive_session_id!r}",
+                "payload": {
+                    "calculation_id": response.session_id,
+                    "output_dataset_id": response.output_dataset_id,
+                },
+            },
+            status_code=200,
+        )
+    except KeyError:
+        return QCrBoxResponse(
+            {
+                "status": "error",
+                "error": {
+                    "code": 404,
+                    "message": f"Interactive session not found: {interactive_session_id!r}",
+                },
+            },
+            status_code=404,
+        )
+
+
+@post(path="/commands/interactive/open", media_type=MediaType.JSON)
+@eel_logging
+async def post_commands_interactive_session_open(
+    application_slug: str, application_version: str, data_file_id: str
+) -> QCrBoxResponse:
+    command = CommandInvocationCreate(
+        application_slug=application_slug,
+        application_version=application_version,
+        command_name="interactive_session",
+        arguments={"input_file": {"data_file_id": data_file_id}},
+    )
+    command_response = await api_helpers.invoke_command(command)
+    interactive_session_id = command_response["payload"]["calculation_id"]
+
+    return QCrBoxResponse(
+        {
+            "status": "success",
+            "message": f"Command invocation accepted: {application_slug!r}-{application_version!r}",
+            "payload": {
+                "calculation_id": interactive_session_id,
+            },
+        },
+        status_code=200,
+    )
 
 
 @post(path="/data_files/upload", media_type=MediaType.JSON)
@@ -243,7 +321,7 @@ async def post_data_files_upload(
         {
             "status": "success",
             "message": f"Imported data file: {data.filename!r}",
-            "data": {
+            "payload": {
                 "qcrbox_id": qcrbox_data_file_id,
             },
         },
@@ -261,7 +339,7 @@ async def post_datasets_upload(
         {
             "status": "success",
             "message": f"Imported dataset: {data.filename!r}",
-            "data": {
+            "payload": {
                 "qcrbox_dataset_id": qcrbox_dataset_id,
             },
         },
@@ -281,9 +359,12 @@ api_router = Router(
         get_data_files,
         get_datasets,
         get_datasets_by_dataset_id,
+        get_interactive_sessions,
+        get_interactive_sessions_by_session_id,
         healthz,
         index,
-        # post_commands_invoke,
+        post_commands_interactive_session_close,
+        post_commands_interactive_session_open,
         post_data_files_upload,
         post_datasets_upload,
     ],

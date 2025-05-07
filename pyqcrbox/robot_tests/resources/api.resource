@@ -22,9 +22,16 @@ Call GET API
     RETURN    ${response}
 
 Call POST API
-    [Arguments]    ${session_alias}    ${base_url}    ${file_path}=None
-    ${data}=    Create Dictionary    test_file=${file_path}
-	${response}=    POST On Session    ${session_alias}    ${base_url}    files=${data}
+    [Arguments]    ${session_alias}    ${base_url}
+	${response}=    POST On Session    ${session_alias}    ${base_url}
+    Status Should Be    200    ${response}
+    Log    ${response.status_code}
+    Log    ${response.content}
+    RETURN    ${response}
+
+Call POST API with file
+    [Arguments]    ${session_alias}    ${base_url}    ${files}
+	${response}=    POST On Session    ${session_alias}    ${base_url}    files=${files}
     Status Should Be    200    ${response}
     Log    ${response.status_code}
     Log    ${response.content}

@@ -29,64 +29,25 @@ class CommandNotFoundError(Exception):
 
 
 @eel_logging
-def retrieve_applications() -> list[sql_models.ApplicationSpecWithCommands]:
-    """
-    Retrieves list of registered applications from the database.
-    """
-    model_cls = sql_models.ApplicationSpecDB
-    # filter_clauses = construct_filter_clauses(model_cls, slug=slug, version=version)
+def _validate_arguments_against_command_parameters(cmd_spec_db: sql_models.CommandSpecDB, arguments: dict) -> None:
+    params = list(cmd_spec_db.parameters.values())
+    required_param_names = set(p["name"] for p in params if p["required"] is True)
+    all_param_names = set(cmd_spec_db.parameters.keys())
+    arg_names = set(arguments.keys())
 
-    with settings.db.get_session() as session:
-        # applications = session.scalars(select(model_cls).where(*filter_clauses)).all()
-        applications = session.scalars(select(model_cls)).all()
-        applications_response_models = [app.to_response_model() for app in applications]
+    if not required_param_names.issubset(arg_names):
+        params_not_supplied = required_param_names.difference(arg_names)
+        missing_args = ", ".join(repr(name) for name in params_not_supplied)
+        error_msg = f"The following required arguments are missing: {missing_args}"
+        logger.error(error_msg)
+        raise ClientException(error_msg)
 
-    return applications_response_models
-
-
-@eel_logging
-def retrieve_commands() -> list[sql_models.CommandSpecWithParameters]:
-    """
-    Retrieves list of commands from the database.
-    """
-    # model_cls = sql_models.CommandSpecDB
-    # filter_clauses = [
-    #     (name is None) or (model_cls.name == name),
-    #     (application_slug is None) or (sql_models.ApplicationSpecDB.slug == application_slug),
-    #     (application_version is None) or (sql_models.ApplicationSpecDB.version == application_version),
-    # ]
-    stmt = select(
-        sql_models.CommandSpecDB, sql_models.ApplicationSpecDB.slug, sql_models.ApplicationSpecDB.version
-    ).join(
-        sql_models.CommandSpecDB.application,
-    )
-
-    with settings.db.get_session() as session:
-        # commands = session.scalars(select(model_cls).where(*filter_clauses)).all()
-        commands = session.scalars(stmt).all()
-        commands = [cmd.to_response_model() for cmd in commands]
-
-    return commands
-
-
-@eel_logging
-def retrieve_command_by_id(cmd_id: int, raise_if_not_found: bool = True) -> sql_models.CommandSpecWithParameters | None:
-    """
-    Retrieves details of a command from the database.
-    """
-    query = select(sql_models.CommandSpecDB).where(sql_models.CommandSpecDB.id == cmd_id)
-
-    with settings.db.get_session() as session:
-        try:
-            cmd = session.scalars(query).one()
-        except sqlalchemy.exc.NoResultFound:
-            if raise_if_not_found:
-                raise CommandNotFoundError(cmd_id)
-            else:
-                return None
-        cmd_response_model = cmd.to_response_model()
-
-    return cmd_response_model
+    if not arg_names.issubset(all_param_names):
+        invalid_args = arg_names.difference(all_param_names)
+        invalid_args_str = ", ".join(repr(name) for name in invalid_args)
+        error_msg = f"Invalid arguments: {invalid_args_str}"
+        logger.error(error_msg)
+        raise ClientException(error_msg)
 
 
 @eel_logging
@@ -127,25 +88,94 @@ def _verify_command_exists(
 
 
 @eel_logging
-def _validate_arguments_against_command_parameters(cmd_spec_db: sql_models.CommandSpecDB, arguments: dict) -> None:
-    params = list(cmd_spec_db.parameters.values())
-    required_param_names = set(p["name"] for p in params if p["required"] is True)
-    all_param_names = set(cmd_spec_db.parameters.keys())
-    arg_names = set(arguments.keys())
+async def close_interactive_session(session_id: str) -> msg_specs.CloseInteractiveSessionResponseNATS:
+    nats_broker = await get_nats_broker()
+    data_manager = await get_data_file_manager()
+    session_info = await data_manager.get_interactive_session_info(session_id)
 
-    if not required_param_names.issubset(arg_names):
-        params_not_supplied = required_param_names.difference(arg_names)
-        missing_args = ", ".join(repr(name) for name in params_not_supplied)
-        error_msg = f"The following required arguments are missing: {missing_args}"
-        logger.error(error_msg)
-        raise ClientException(error_msg)
+    msg = msg_specs.CloseInteractiveSessionNATS(session_id=session_id)
+    response_json = await nats_broker.publish(
+        msg,
+        f"{session_info.client_private_inbox}.interactive_session.close",
+        rpc=True,
+    )
+    response = msg_specs.CloseInteractiveSessionResponseNATS(**response_json)
+    return response
 
-    if not arg_names.issubset(all_param_names):
-        invalid_args = arg_names.difference(all_param_names)
-        invalid_args_str = ", ".join(repr(name) for name in invalid_args)
-        error_msg = f"Invalid arguments: {invalid_args_str}"
-        logger.error(error_msg)
-        raise ClientException(error_msg)
+
+@eel_logging
+async def delete_dataset(dataset_id: str) -> None:
+    data_file_manager = await get_data_file_manager()
+    await data_file_manager.delete_dataset(dataset_id)
+
+
+@eel_logging
+def get_calculation_info() -> list[sql_models.CalculationResponseModel]:
+    with settings.db.get_session() as session:
+        calculations_db = session.exec(select(sql_models.CalculationDB)).all()
+        return [c.to_response_model() for c in calculations_db]
+
+
+@eel_logging
+async def get_calculation_info_by_calculation_id(calculation_id: str) -> dict:
+    try:
+        kv_calculation_status = await get_nats_key_value(bucket="calculation_status")
+        calc_status_info_str = (await kv_calculation_status.get(calculation_id)).value
+        return json.loads(calc_status_info_str)
+    except nats.js.errors.KeyNotFoundError:
+        raise CalculationNotFoundError(calculation_id)
+
+
+@eel_logging
+async def get_data_files() -> list[DataFileMetadataResponse]:
+    data_file_manager = await get_data_file_manager()
+    data_files = await data_file_manager.get_data_files()
+    return [f.to_response_model() for f in data_files]
+
+
+@eel_logging
+async def get_dataset_info(dataset_id: str) -> DatasetResponse:
+    data_file_manager = await get_data_file_manager()
+    dataset_info = await data_file_manager.get_dataset_info(dataset_id)
+    return dataset_info.to_response_model()
+
+
+@eel_logging
+async def get_datasets() -> list[DatasetResponse]:
+    data_file_manager = await get_data_file_manager()
+    datasets = await data_file_manager.get_datasets()
+    return [d.to_response_model() for d in datasets]
+
+
+@eel_logging
+async def get_interactive_session_info(session_id: str):
+    data_file_manager = await get_data_file_manager()
+    session_info = await data_file_manager.get_interactive_session_info(session_id)
+    return session_info.to_response_model()
+
+
+@eel_logging
+async def get_interactive_sessions():
+    data_file_manager = await get_data_file_manager()
+    session_info = await data_file_manager.get_interactive_sessions()
+    return [s.to_response_model() for s in session_info]
+
+
+@eel_logging
+async def import_data_file(data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)]) -> str:
+    data_file_manager = await get_data_file_manager()
+    qcrbox_data_file_id = await data_file_manager.import_bytes(await data.read(), filename=data.filename)
+    logger.info(f"Data file imported: filename={data.filename!r} id={qcrbox_data_file_id!r}")
+    return qcrbox_data_file_id
+
+
+@eel_logging
+async def import_dataset(data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)]) -> str:
+    data_file_manager = await get_data_file_manager()
+    qcrbox_data_file_id = await data_file_manager.import_bytes(await data.read(), filename=data.filename)
+    qcrbox_dataset_id = await data_file_manager.create_dataset_from_data_file(qcrbox_data_file_id)
+    logger.info(f"Dataset imported: id={qcrbox_dataset_id}, files=[id={qcrbox_data_file_id} filename={data.filename}]")
+    return qcrbox_dataset_id
 
 
 @eel_logging
@@ -169,75 +199,37 @@ async def invoke_command(data: sql_models.CommandInvocationCreate) -> dict:
 
 
 @eel_logging
-def get_calculation_info() -> list[sql_models.CalculationResponseModel]:
+def retrieve_applications() -> list[sql_models.ApplicationSpecWithCommands]:
+    model_cls = sql_models.ApplicationSpecDB
     with settings.db.get_session() as session:
-        calculations_db = session.exec(select(sql_models.CalculationDB)).all()
-        return [c.to_response_model() for c in calculations_db]
+        applications = session.scalars(select(model_cls)).all()
+        applications_response_models = [app.to_response_model() for app in applications]
+    return applications_response_models
 
 
 @eel_logging
-async def get_calculation_info_by_calculation_id(calculation_id: str) -> dict:
-    try:
-        kv_calculation_status = await get_nats_key_value(bucket="calculation_status")
-        calc_status_info_str = (await kv_calculation_status.get(calculation_id)).value
-        return json.loads(calc_status_info_str)
-    except nats.js.errors.KeyNotFoundError:
-        raise CalculationNotFoundError(calculation_id)
+def retrieve_command_by_id(cmd_id: int, raise_if_not_found: bool = True) -> sql_models.CommandSpecWithParameters | None:
+    query = select(sql_models.CommandSpecDB).where(sql_models.CommandSpecDB.id == cmd_id)
+    with settings.db.get_session() as session:
+        try:
+            cmd = session.scalars(query).one()
+        except sqlalchemy.exc.NoResultFound:
+            if raise_if_not_found:
+                raise CommandNotFoundError(cmd_id)
+            else:
+                return None
+        cmd_response_model = cmd.to_response_model()
+    return cmd_response_model
 
 
 @eel_logging
-async def close_interactive_session(session_id: str) -> msg_specs.CloseInteractiveSessionResponseNATS:
-    nats_broker = await get_nats_broker()
-    data_manager = await get_data_file_manager()
-    session_info = await data_manager.get_interactive_session_info(session_id)
-
-    msg = msg_specs.CloseInteractiveSessionNATS(session_id=session_id)
-    response_json = await nats_broker.publish(
-        msg,
-        f"{session_info.client_private_inbox}.interactive_session.close",
-        rpc=True,
+def retrieve_commands() -> list[sql_models.CommandSpecWithParameters]:
+    stmt = select(
+        sql_models.CommandSpecDB, sql_models.ApplicationSpecDB.slug, sql_models.ApplicationSpecDB.version
+    ).join(
+        sql_models.CommandSpecDB.application,
     )
-    response = msg_specs.CloseInteractiveSessionResponseNATS(**response_json)
-    return response
-
-
-@eel_logging
-async def get_data_files() -> list[DataFileMetadataResponse]:
-    data_file_manager = await get_data_file_manager()
-    data_files = await data_file_manager.get_data_files()
-    return [f.to_response_model() for f in data_files]
-
-
-@eel_logging
-async def get_datasets() -> list[DatasetResponse]:
-    data_file_manager = await get_data_file_manager()
-    datasets = await data_file_manager.get_datasets()
-    return [d.to_response_model() for d in datasets]
-
-
-@eel_logging
-async def import_data_file(data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)]) -> str:
-    data_file_manager = await get_data_file_manager()
-    qcrbox_data_file_id = await data_file_manager.import_bytes(await data.read(), filename=data.filename)
-    return qcrbox_data_file_id
-
-
-@eel_logging
-async def import_dataset(data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)]) -> str:
-    data_file_manager = await get_data_file_manager()
-    qcrbox_data_file_id = await data_file_manager.import_bytes(await data.read(), filename=data.filename)
-    qcrbox_dataset_id = await data_file_manager.create_dataset_from_data_file(qcrbox_data_file_id)
-    return qcrbox_dataset_id
-
-
-@eel_logging
-async def get_dataset_info(dataset_id: str) -> DatasetResponse:
-    data_file_manager = await get_data_file_manager()
-    dataset_info = await data_file_manager.get_dataset_info(dataset_id)
-    return dataset_info.to_response_model()
-
-
-@eel_logging
-async def delete_dataset(dataset_id: str) -> None:
-    data_file_manager = await get_data_file_manager()
-    await data_file_manager.delete_dataset(dataset_id)
+    with settings.db.get_session() as session:
+        commands = session.scalars(stmt).all()
+        commands = [cmd.to_response_model() for cmd in commands]
+    return commands
