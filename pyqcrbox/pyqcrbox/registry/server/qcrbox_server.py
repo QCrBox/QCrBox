@@ -129,7 +129,17 @@ class QCrBoxServer(QCrBoxServerClientBase):
     async def handle_command_invocation_client_response(self, msg: msg_specs.CommandInvocationClientResponseNATS):
         logger.info(f"Received client response: {msg!r}")
         if not msg.client_is_available:
-            logger.debug(f"Client is not available: {msg.client_id}")
+            logger.debug(
+                "Client is not available, telling client to discard the invocation request:"
+                + " client_id={msg.client_id} calculation_id={msg.calculation_id}"
+            )
+            subject = f"{msg.private_inbox_prefix}.cmd.discard"
+            response_to_client = msg_specs.DiscardCommandInvocationNATS(calculation_id=msg.calculation_id)
+            logger.debug(
+                f"Telling client {msg.client_id!r} to discard the invocation request "
+                f"(private inbox prefix: {msg.private_inbox_prefix!r})"
+            )
+            await self.nats_broker.publish(response_to_client, subject=subject)
             return
 
         logger.debug(f"Retrieving details for calculation: {msg.calculation_id!r}")
