@@ -28,7 +28,7 @@ Check applications API returns list of registered applications
     END
 
 Check interactive sessions API returns interactive sessions
-    Call GET API    api_endpoints     /interactive_sessions
+    Call GET API    api_endpoints     /interactive-sessions
 
 Check calculations API returns calculations
     Call GET API    api_endpoints    /calculations
@@ -37,7 +37,7 @@ Check commands API returns commands
     Call GET API    api_endpoints    /commands
 
 Check data_files API returns data_files
-    Call GET API    api_endpoints    /data_files
+    Call GET API    api_endpoints    /data-files
 
 Check dataset can be uploaded via API
     ${dataset_id}=    Upload Test Dataset
@@ -71,16 +71,20 @@ Check an interactive session can be created
     ${data_file_id}=    Set Variable    ${data_file['qcrbox_file_id']}
 
     # Call the API to create a session, which should return the calculation id
-    ${response}=    Call POST API    api_endpoints    /commands/interactive/open?application_slug=olex2&application_version=1.5-alpha&data_file_id=${data_file_id}
+    ${payload}=     Create Dictionary
+    ...             application_slug=olex2
+    ...             application_version=1.5-alpha
+    ...             data_file_id=${data_file_id}
+    ${response}=    Call POST API with json    api_endpoints    /interactive-sessions/create    ${payload}
     ${interactive_session_id}=    Set Variable    ${response.json()['payload']['calculation_id']}
     Set Global Variable    ${interactive_session_id}
-    
+
 Check an interactive session can be closed
-    Sleep    2s    "Wait for the interactive session to be added to the database"
-    Call POST API    api_endpoints    /commands/interactive/close?interactive_session_id=${interactive_session_id}
+    Sleep    5s    "Wait for the interactive session to be added to the database"
+    Call POST API    api_endpoints    /interactive-sessions/close/${interactive_session_id}
 
 Check dataset can be deleted via API
-    Call DELETE API    api_endpoints    /datasets/delete/${dataset_id}
+    Call DELETE API    api_endpoints    /datasets/${dataset_id}
 
 *** Keywords ***
 
@@ -116,7 +120,7 @@ Verify Application Data
 *** Keywords ***
 Upload Test Dataset
     ${files}=    Create Dictionary    ${TEST_CIF_FILE_NAME}=${TEST_CIF_FILE}
-    ${response}=    Call POST API With File    api_endpoints    /datasets/upload    files=${files}
+    ${response}=    Call POST API With File    api_endpoints    /datasets    files=${files}
     ${dataset_id}=    Set Variable    ${response.json()['payload']['qcrbox_dataset_id']}
     Log    "Response: ${response.json()}"
     Log    "Dataset ID: ${dataset_id}"

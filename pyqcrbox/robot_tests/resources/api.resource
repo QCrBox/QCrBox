@@ -37,6 +37,14 @@ Call POST API with file
     Log    ${response.content}
     RETURN    ${response}
 
+Call POST API with json
+    [Arguments]    ${session_alias}    ${base_url}    ${json}
+	${response}=    POST On Session    ${session_alias}    ${base_url}    json=${json}
+    Status Should Be    200    ${response}
+    Log    ${response.status_code}
+    Log    ${response.content}
+    RETURN    ${response}
+
 Call DELETE API
     [Arguments]    ${session_alias}    ${base_url}
 	${response}=    DELETE On Session    ${session_alias}    ${base_url}
