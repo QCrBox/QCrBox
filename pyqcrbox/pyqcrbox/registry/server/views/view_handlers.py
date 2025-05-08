@@ -198,4 +198,5 @@ views_router = Router(
         serve_restart_docker_containers_page,
         restart_docker_containers,
     ],
+    include_in_schema=False,
 )
