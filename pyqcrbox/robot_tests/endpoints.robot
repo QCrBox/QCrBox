@@ -14,42 +14,40 @@ Test Timeout    2 minutes
 ${ENDPOINTS_API}    http://127.0.0.1:11000/api
 ${TEST_CIF_FILE_NAME}    robot_test_cif.cif
 ${TEST_CIF_FILE}    ${CURDIR}/test_data/${TEST_CIF_FILE_NAME}
+${SESSION_ALIAS}    api_endpoints
 
 *** Test Cases ***
 
 Check healthz API returns healthz
-    Call GET API    api_endpoints    /healthz
+    Call GET API    ${SESSION_ALIAS}    /healthz
 
 Check applications API returns list of registered applications
-    ${response}=    Call GET API    api_endpoints    /applications
+    ${response}=    Call GET API    ${SESSION_ALIAS}    /applications
     ${applications}=    Set Variable    ${response.json()['payload']['applications']}
     FOR    ${app}    IN    @{applications}
         Verify Application Data    ${app}
     END
 
-Check interactive sessions API returns interactive sessions
-    Call GET API    api_endpoints     /interactive-sessions
-
 Check calculations API returns calculations
-    Call GET API    api_endpoints    /calculations
+    Call GET API    ${SESSION_ALIAS}    /calculations
 
 Check commands API returns commands
-    Call GET API    api_endpoints    /commands
+    Call GET API    ${SESSION_ALIAS}    /commands
 
 Check data_files API returns data_files
-    Call GET API    api_endpoints    /data-files
+    Call GET API    ${SESSION_ALIAS}    /data-files
 
 Check dataset can be uploaded via API
     ${dataset_id}=    Upload Test Dataset
     Set Global Variable    ${dataset_id}
 
 Check datasets API returns datasets
-    ${response}=    Call GET API    api_endpoints    /datasets
+    ${response}=    Call GET API    ${SESSION_ALIAS}    /datasets
     ${length}=    Get Length    ${response.json()}
     Should Be True    ${length} > 0
 
 Check a dataset can be retrieved via API
-    ${response}=    Call GET API    api_endpoints    /datasets/${dataset_id}
+    ${response}=    Call GET API    ${SESSION_ALIAS}    /datasets/${dataset_id}
     ${dataset}=    Set Variable    ${response.json()['payload']}
 
     Should Contain    ${dataset}    dataset_id
@@ -65,40 +63,54 @@ Check a dataset can be retrieved via API
 
 Check an interactive session can be created
     # We need to get the data_file_id from the test dataset
-    ${response}=    Call GET API   api_endpoints    /datasets/${dataset_id}
+    ${response}=    Call GET API   ${SESSION_ALIAS}    /datasets/${dataset_id}
     ${data_files}=    Set Variable    ${response.json()['payload']['data_files']}
     ${data_file}=    Get From Dictionary    ${data_files}    ${TEST_CIF_FILE_NAME}
     ${data_file_id}=    Set Variable    ${data_file['qcrbox_file_id']}
+    Set Global Variable    ${data_file_id}
 
     # Call the API to create a session, which should return the calculation id
     ${payload}=     Create Dictionary
     ...             application_slug=olex2
     ...             application_version=1.5-alpha
     ...             data_file_id=${data_file_id}
-    ${response}=    Call POST API with json    api_endpoints    /interactive-sessions    ${payload}
+    ${response}=    Call POST API with json    ${SESSION_ALIAS}    /interactive-sessions    ${payload}
     ${interactive_session_id}=    Set Variable    ${response.json()['payload']['calculation_id']}
+    Log    "Interactive session ID: ${interactive_session_id}"
     Set Global Variable    ${interactive_session_id}
     Sleep    5s    "Wait for the interactive session to be added to the database"
+    
+Check interactive sessions API returns interactive sessions 
+    Call GET API    ${SESSION_ALIAS}    /interactive-sessions
 
 Check interactive session can be retrieved via API
-    ${response}=    Call GET API    api_endpoints    /interactive-sessions/${interactive_session_id}
-    ${interactive_session}=    Set Variable    ${response.json()['payload']}
-    Should Contain    ${interactive_session}    calculation_id
-    Should Contain    ${interactive_session}    application
-    Should Contain    ${interactive_session}    data_file
-    Should Contain    ${interactive_session}    status
-    Should Contain    ${interactive_session}    created_at
+    ${response}=    Call GET API    ${SESSION_ALIAS}    /interactive-sessions/${interactive_session_id}
+    ${payload}=    Set Variable    ${response.json()['payload']}
+    Should Contain    ${payload}    interactive_session
+    ${interactive_session}=    Get From Dictionary    ${payload}    interactive_session
+    Should Contain    ${interactive_session}    session_id
+    Should Contain    ${interactive_session}    client_private_inbox
+    Should Contain    ${interactive_session}    application_slug
+    Should Contain    ${interactive_session}    application_version
+    Should Contain    ${interactive_session}    command_name
+    Should Contain    ${interactive_session}    arguments
+
+    Should Be Equal    ${interactive_session['session_id']}    ${interactive_session_id}
+    Should Be Equal    ${interactive_session['command_name']}    interactive_session
+    Should Be Equal    ${interactive_session['application_slug']}    olex2
+    Should Be Equal    ${interactive_session['application_version']}    1.5-alpha
+    Should Be Equal    ${interactive_session['arguments']['input_file']['data_file_id']}    ${data_file_id}
 
 Check an interactive session can be closed
-    Call DELETE API    api_endpoints    /interactive-sessions/${interactive_session_id}
+    Call DELETE API    ${SESSION_ALIAS}    /interactive-sessions/${interactive_session_id}
 
 Check dataset can be deleted via API
-    Call DELETE API    api_endpoints    /datasets/${dataset_id}
+    Call DELETE API    ${SESSION_ALIAS}    /datasets/${dataset_id}
 
 *** Keywords ***
 
 Setup suite
-    ${api_session}=    Create API Session    api_endpoints    ${ENDPOINTS_API}
+    ${api_session}=    Create API Session    ${SESSION_ALIAS}    ${ENDPOINTS_API}
     Log datetime information
     Log    Starting test suite
 
@@ -129,7 +141,7 @@ Verify Application Data
 *** Keywords ***
 Upload Test Dataset
     ${files}=    Create Dictionary    ${TEST_CIF_FILE_NAME}=${TEST_CIF_FILE}
-    ${response}=    Call POST API With File    api_endpoints    /datasets    files=${files}
+    ${response}=    Call POST API With File    ${SESSION_ALIAS}    /datasets    files=${files}
     ${dataset_id}=    Set Variable    ${response.json()['payload']['qcrbox_dataset_id']}
     Log    "Response: ${response.json()}"
     Log    "Dataset ID: ${dataset_id}"

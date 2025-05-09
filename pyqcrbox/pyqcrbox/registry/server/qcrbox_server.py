@@ -104,6 +104,13 @@ class QCrBoxServer(QCrBoxServerClientBase):
             arguments=msg.arguments,
             calculation_id=calculation_id,
         )
+        await self.nats_broker.publish(
+            msg_to_client,
+            subject=f"client.cmd.handle_invocation_request.{msg_to_client.nats_subject_parts}",
+            reply_to="server.cmd.handle_command_invocation_client_response",
+        )
+
+        # TODO: we need to check to see if the command was discarded and handle appropriately
 
         status_details = CalculationStatusDetails(
             calculation_id=calculation_id,
@@ -113,12 +120,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
             extra_info={},
         )
         await update_calculation_status_in_nats_kv_NEW(status_details)
-        # await self.kv_calculation_status.put(calculation_id, CalculationStatusEnum.SUBMITTED.encode())
-        await self.nats_broker.publish(
-            msg_to_client,
-            subject=f"client.cmd.handle_invocation_request.{msg_to_client.nats_subject_parts}",
-            reply_to="server.cmd.handle_command_invocation_client_response",
-        )
+
         return msg_specs.QCrBoxGenericResponse(
             response_to="server.cmd.handle_command_invocation_by_user",
             status=CalculationStatusEnum.SUBMITTED,

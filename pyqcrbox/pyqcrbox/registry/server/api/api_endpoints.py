@@ -32,7 +32,7 @@ from pyqcrbox.registry.server.api.response_spec import (
     QCrBoxResponseSpec,
 )
 from pyqcrbox.registry.shared.qcrbox_response import QCrBoxResponse
-from pyqcrbox.sql_models import CommandInvocationCreate
+from pyqcrbox.sql_models import CalculationStatusEnum, CommandInvocationCreate
 
 from . import api_helpers
 
@@ -351,12 +351,12 @@ async def list_interactive_sessions() -> QCrBoxResponse:
 @eel_logging
 async def get_interactive_session_by_id(id: str) -> QCrBoxResponse:
     try:
-        session = await api_helpers.get_interactive_session_info(id)
+        session_info = await api_helpers.get_interactive_session_info(id)
         return QCrBoxResponse(
             {
                 "status": "success",
                 "message": f"Retrieved interactive session: {id!r}",
-                "payload": {"interactive_session": session},
+                "payload": {"interactive_session": session_info},
             },
             status_code=200,
         )
@@ -389,6 +389,10 @@ async def create_interactive_session_with_data_file(
         arguments={"input_file": {"data_file_id": data.data_file_id}},
     )
     response = await api_helpers.invoke_command(command_spec)
+
+    if response["status"] != CalculationStatusEnum.SUBMITTED:
+        raise HTTPException(status_code=500, detail="Failed to create interactive session")
+
     return QCrBoxResponse(
         {
             "status": "success",
