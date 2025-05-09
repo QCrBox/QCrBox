@@ -5,21 +5,33 @@ Organised API routes for QCrBox, grouped by resource.
 from typing import Annotated
 
 import sqlalchemy.exc
-from litestar import MediaType, Router, delete, get, post
+from litestar import MediaType, Request, Router, delete, get, post
 from litestar.datastructures import UploadFile
 from litestar.enums import RequestEncodingType
+from litestar.exceptions import (
+    HTTPException,
+    InternalServerException,
+    NotFoundException,
+    ServiceUnavailableException,
+    ValidationException,
+)
 from litestar.openapi.datastructures import ResponseSpec
 from litestar.params import Body, Parameter
+from litestar.status_codes import HTTP_500_INTERNAL_SERVER_ERROR
 from pydantic import BaseModel
 
 from pyqcrbox.data_management import DatasetNotFoundError
 from pyqcrbox.debug import eel_logging
-from pyqcrbox.registry.shared.qcrbox_response import (
-    ApplicationsResponse,
-    CalculationsResponse,
-    QCrBoxResponse,
+from pyqcrbox.registry.server.api.response_spec import (
+    ApplicationsResponseSpec,
+    CalculationsResponseSpec,
+    DatasetCreateResponseSpec,
+    DatasetResponseSpec,
+    DatasetsResponseSpec,
+    QCrBoxErrorResponseSpec,
     QCrBoxResponseSpec,
 )
+from pyqcrbox.registry.shared.qcrbox_response import QCrBoxResponse
 from pyqcrbox.sql_models import CommandInvocationCreate
 
 from . import api_helpers
@@ -27,54 +39,125 @@ from . import api_helpers
 __all__ = ["api_router"]
 
 
-class InteractiveSessionCreate(BaseModel):
+class InteractiveSessionCreateWithDataFileData(BaseModel):
     application_slug: str
     application_version: str
     data_file_id: str
 
 
-# ----- Dataset Endpoints -----
+# Datasets -------------------------------------------------------------------------------------------------------------
+
+
 @delete(
     path="/datasets/{id:str}",
+    summary="Delete a dataset",
     description="Removes a dataset, of the given ID, and all of its associated data files from the QCrBox datastore.",
+    responses={
+        204: ResponseSpec(
+            data_container=None,
+            description="Dataset deleted successfully.",
+            generate_examples=False,
+        ),
+        400: ResponseSpec(
+            data_container=QCrBoxErrorResponseSpec,
+            description="Bad request, invalid dataset ID",
+            generate_examples=False,
+        ),
+    },
 )
 @eel_logging
 async def delete_dataset_by_id(
-    id: str = Parameter(title="Dataset ID", description="The ID of the dataset to delete."),
+    id: str = Parameter(title="Dataset ID", description="The ID of the dataset to delete"),
 ) -> None:
     await api_helpers.delete_dataset(id)
 
 
-@get(path="/datasets", media_type=MediaType.JSON, summary="List all datasets")
+@get(
+    path="/datasets",
+    media_type=MediaType.JSON,
+    summary="List all datasets",
+    description="Retrieves a list of all datasets in the QCrBox datastore.",
+    responses={
+        200: ResponseSpec(
+            data_container=QCrBoxResponseSpec[DatasetsResponseSpec],
+            description="Successfully retrieved datasets",
+            generate_examples=False,
+        )
+    },
+)
 @eel_logging
 async def list_datasets() -> QCrBoxResponse:
     datasets = await api_helpers.get_datasets()
     return QCrBoxResponse(
-        {"status": "success", "message": "Retrieved datasets", "payload": {"datasets": datasets}},
+        {
+            "status": "success",
+            "message": "Retrieved datasets",
+            "payload": {"datasets": datasets},
+        },
         status_code=200,
     )
 
 
-@get(path="/datasets/{id:str}", media_type=MediaType.JSON, summary="Get dataset by ID")
+@get(
+    path="/datasets/{id:str}",
+    media_type=MediaType.JSON,
+    summary="Get dataset by ID",
+    description="Retrieves a dataset by its ID, including metadata of linked data files.",
+    responses={
+        200: ResponseSpec(
+            data_container=QCrBoxResponseSpec[DatasetResponseSpec],
+            description="Successfully retrieved dataset",
+            generate_examples=False,
+        ),
+        404: ResponseSpec(
+            data_container=QCrBoxErrorResponseSpec,
+            description="Dataset not found",
+            generate_examples=False,
+        ),
+    },
+)
 @eel_logging
-async def get_dataset_by_id(id: str) -> QCrBoxResponse:
+async def get_dataset_by_id(
+    id: str = Parameter(description="The ID of the dataset to retrieve"),
+) -> QCrBoxResponse:
     try:
         dataset = await api_helpers.get_dataset_info(id)
         return QCrBoxResponse(
-            {"status": "success", "message": f"Retrieved dataset: {id!r}", "payload": dataset},
+            {
+                "status": "success",
+                "message": f"Retrieved dataset: {id!r}",
+                "payload": dataset,
+            },
             status_code=200,
         )
-    except DatasetNotFoundError:
+    except (KeyError, DatasetNotFoundError):
         return QCrBoxResponse(
-            {"status": "error", "error": {"code": 404, "message": f"Dataset not found: {id!r}"}},
+            {
+                "status": "error",
+                "error": {"code": 404, "message": f"Dataset not found: {id!r}"},
+            },
             status_code=404,
         )
 
 
-@post(path="/datasets", media_type=MediaType.JSON, summary="Create a new dataset")
+@post(
+    path="/datasets",
+    media_type=MediaType.JSON,
+    summary="Create a new dataset",
+    description="Create a new dataset by uploading a data file.",
+    responses={
+        201: ResponseSpec(
+            data_container=QCrBoxResponseSpec[DatasetCreateResponseSpec],
+            description="Dataset created successfully",
+            generate_examples=False,
+        )
+    },
+)
 @eel_logging
 async def create_dataset(
-    data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)],
+    data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)] = Parameter(
+        description="The data file to upload"
+    ),
 ) -> QCrBoxResponse:
     qcrbox_dataset_id = await api_helpers.import_dataset(data)
     return QCrBoxResponse(
@@ -83,17 +166,23 @@ async def create_dataset(
             "message": f"Imported dataset: {data.filename!r}",
             "payload": {"qcrbox_dataset_id": qcrbox_dataset_id},
         },
-        status_code=200,
+        status_code=201,
     )
 
 
-# ----- Data-File Endpoints -----
+# Data files -----------------------------------------------------------------------------------------------------------
+
+
 @get(path="/data-files", media_type=MediaType.JSON, summary="List all data files")
 @eel_logging
 async def list_data_files() -> QCrBoxResponse:
     data_files = await api_helpers.get_data_files()
     return QCrBoxResponse(
-        {"status": "success", "message": "Retrieved data files", "payload": {"data_files": data_files}},
+        {
+            "status": "success",
+            "message": "Retrieved data files",
+            "payload": {"data_files": data_files},
+        },
         status_code=200,
     )
 
@@ -114,14 +203,17 @@ async def create_data_file(
     )
 
 
-# ----- Application Endpoints -----
+# Applications ---------------------------------------------------------------------------------------------------------
+
+
 @get(
     path="/applications",
     media_type=MediaType.JSON,
     summary="Get the registered applications",
     responses={
         200: ResponseSpec(
-            data_container=QCrBoxResponseSpec[ApplicationsResponse], description="Successfully retrieved applications"
+            data_container=QCrBoxResponseSpec[ApplicationsResponseSpec],
+            description="Successfully retrieved applications",
         )
     },
 )
@@ -129,19 +221,26 @@ async def create_data_file(
 async def list_applications() -> QCrBoxResponse:
     apps = api_helpers.retrieve_applications()
     return QCrBoxResponse(
-        {"status": "success", "message": f"Retrieved {len(apps)} applications.", "payload": {"applications": apps}},
+        {
+            "status": "success",
+            "message": f"Retrieved {len(apps)} applications.",
+            "payload": {"applications": apps},
+        },
         status_code=200,
     )
 
 
-# ----- Calculation Endpoints -----
+# Calculations ---------------------------------------------------------------------------------------------------------
+
+
 @get(
     path="/calculations",
     media_type=MediaType.JSON,
     summary="Retrieve all calculations",
     responses={
         200: ResponseSpec(
-            data_container=QCrBoxResponseSpec[CalculationsResponse], description="Successfully retrieved calculations"
+            data_container=QCrBoxResponseSpec[CalculationsResponseSpec],
+            description="Successfully retrieved calculations",
         )
     },
 )
@@ -149,12 +248,20 @@ async def list_applications() -> QCrBoxResponse:
 async def list_calculations() -> QCrBoxResponse:
     calcs = api_helpers.get_calculation_info()
     return QCrBoxResponse(
-        {"status": "success", "message": "Retrieved calculations", "payload": {"calculations": calcs}},
+        {
+            "status": "success",
+            "message": "Retrieved calculations",
+            "payload": {"calculations": calcs},
+        },
         status_code=200,
     )
 
 
-@get(path="/calculations/{id:str}", media_type=MediaType.JSON, summary="Get calculation by ID")
+@get(
+    path="/calculations/{id:str}",
+    media_type=MediaType.JSON,
+    summary="Get calculation by ID",
+)
 @eel_logging
 async def get_calculation_by_id(id: str) -> QCrBoxResponse:
     try:
@@ -169,18 +276,27 @@ async def get_calculation_by_id(id: str) -> QCrBoxResponse:
         )
     except api_helpers.CalculationNotFoundError:
         return QCrBoxResponse(
-            {"status": "error", "error": {"code": 404, "message": f"Calculation not found: {id!r}"}},
+            {
+                "status": "error",
+                "error": {"code": 404, "message": f"Calculation not found: {id!r}"},
+            },
             status_code=404,
         )
 
 
-# ----- Command Endpoints -----
+# Commands -------------------------------------------------------------------------------------------------------------
+
+
 @get(path="/commands", media_type=MediaType.JSON, summary="List all commands")
 @eel_logging
 async def list_commands() -> QCrBoxResponse:
     cmds = api_helpers.retrieve_commands()
     return QCrBoxResponse(
-        {"status": "success", "message": "Retrieved commands", "payload": {"commands": cmds}},
+        {
+            "status": "success",
+            "message": "Retrieved commands",
+            "payload": {"commands": cmds},
+        },
         status_code=200,
     )
 
@@ -200,19 +316,25 @@ async def get_command_by_id(id: int) -> QCrBoxResponse:
         )
     except sqlalchemy.exc.NoResultFound:
         return QCrBoxResponse(
-            {"status": "error", "error": {"code": 404, "message": f"Command not found: id={id!r}"}},
+            {
+                "status": "error",
+                "error": {"code": 404, "message": f"Command not found: id={id!r}"},
+            },
             status_code=404,
         )
 
 
-# ----- Interactive Session Endpoints -----
+# Interactive sessions -------------------------------------------------------------------------------------------------
 
 
-@get(path="/interactive-sessions", media_type=MediaType.JSON, summary="List interactive sessions")
+@get(
+    path="/interactive-sessions",
+    media_type=MediaType.JSON,
+    summary="List interactive sessions",
+)
 @eel_logging
 async def list_interactive_sessions() -> QCrBoxResponse:
-    mgr = await api_helpers.get_data_file_manager()
-    sessions = await mgr.get_interactive_sessions()
+    sessions = await api_helpers.get_interactive_sessions()
     return QCrBoxResponse(
         {
             "status": "success",
@@ -223,43 +345,52 @@ async def list_interactive_sessions() -> QCrBoxResponse:
     )
 
 
-@get(path="/interactive-sessions/{id:str}", media_type=MediaType.JSON, summary="Get interactive session by ID")
+@get(
+    path="/interactive-sessions/{id:str}",
+    media_type=MediaType.JSON,
+    summary="Get interactive session by ID",
+)
 @eel_logging
 async def get_interactive_session_by_id(id: str) -> QCrBoxResponse:
-    mgr = await api_helpers.get_data_file_manager()
     try:
-        sess = await mgr.get_interactive_session_info(id)
+        session = await api_helpers.get_interactive_session_info(id)
         return QCrBoxResponse(
             {
                 "status": "success",
                 "message": f"Retrieved interactive session: {id!r}",
-                "payload": {"interactive_session": sess},
+                "payload": {"interactive_session": session},
             },
             status_code=200,
         )
-    except DatasetNotFoundError:
+    except KeyError:
         return QCrBoxResponse(
-            {"status": "error", "error": {"code": 404, "message": f"Interactive session not found: {id!r}"}},
+            {
+                "status": "error",
+                "error": {
+                    "code": 404,
+                    "message": f"Interactive session not found: {id!r}",
+                },
+            },
             status_code=404,
         )
 
 
 @post(
-    path="/interactive-sessions/create",
+    path="/interactive-sessions",
     media_type=MediaType.JSON,
     summary="Create interactive session",
 )
 @eel_logging
-async def create_interactive_session(
-    data: Annotated[InteractiveSessionCreate, Body()],
+async def create_interactive_session_with_data_file(
+    data: Annotated[InteractiveSessionCreateWithDataFileData, Body()],
 ) -> QCrBoxResponse:
-    cmd = CommandInvocationCreate(
+    command_spec = CommandInvocationCreate(
         application_slug=data.application_slug,
         application_version=data.application_version,
         command_name="interactive_session",
         arguments={"input_file": {"data_file_id": data.data_file_id}},
     )
-    response = await api_helpers.invoke_command(cmd)
+    response = await api_helpers.invoke_command(command_spec)
     return QCrBoxResponse(
         {
             "status": "success",
@@ -270,40 +401,59 @@ async def create_interactive_session(
     )
 
 
-@post(path="/interactive-sessions/close/{id:str}", media_type=MediaType.JSON, summary="Close interactive session")
+@delete(
+    path="/interactive-sessions/{id:str}",
+    media_type=MediaType.JSON,
+    summary="Close interactive session",
+)
 @eel_logging
-async def close_interactive_session(id: str) -> QCrBoxResponse:
+async def close_interactive_session(id: str) -> None:
     try:
-        response = await api_helpers.close_interactive_session(id)
-        return QCrBoxResponse(
-            {
-                "status": "success",
-                "message": f"Closed interactive session: {id!r}",
-                "payload": {"calculation_id": response.session_id, "output_dataset_id": response.output_dataset_id},
-            },
-            status_code=200,
-        )
+        await api_helpers.close_interactive_session(id)
     except KeyError:
-        return QCrBoxResponse(
-            {"status": "error", "error": {"code": 404, "message": f"Interactive session not found: {id!r}"}},
-            status_code=404,
-        )
+        raise HTTPException(status_code=404, detail=f"Interactive session not found: {id!r}")
 
 
-# ----- Health & Root -----
+# Health and root ------------------------------------------------------------------------------------------------------
+
+
 @get(path="/healthz", media_type=MediaType.JSON, summary="Health check")
 @eel_logging
 async def healthz() -> QCrBoxResponse:
     return QCrBoxResponse({"status": "ok"}, status_code=200)
 
 
-@get(path="/", media_type=MediaType.JSON, include_in_schema=False, summary="Root handler")
+@get(path="/", media_type=MediaType.JSON, summary="Root handler")
 @eel_logging
 async def index() -> QCrBoxResponse:
     return QCrBoxResponse({"status": "success", "message": "Hello from QCrBox!"}, status_code=200)
 
 
-# ----- Router Aggregation -----
+# Exception handlers ---------------------------------------------------------------------------------------------------
+# https://docs.litestar.dev/2/usage/exceptions.html#configuration-exceptions
+
+
+def handle_uncaught_exception(_: Request, exc: Exception) -> QCrBoxResponse:
+    """Handle uncaught exceptions."""
+    media_type = getattr(exc, "media_type", MediaType.JSON)
+    status_code = getattr(exc, "status_code", HTTP_500_INTERNAL_SERVER_ERROR)
+    detail = getattr(exc, "detail", "There has been an unspecified error")
+    return QCrBoxResponse(
+        {
+            "status": "error",
+            "error": {
+                "code": status_code,
+                "message": detail,
+            },
+        },
+        status_code=status_code,
+        media_type=media_type,
+    )
+
+
+# Router aggregation ---------------------------------------------------------------------------------------------------
+
+
 api_router = Router(
     path="/api",
     route_handlers=[
@@ -326,10 +476,17 @@ api_router = Router(
         # Interactive sessions
         list_interactive_sessions,
         get_interactive_session_by_id,
-        create_interactive_session,
+        create_interactive_session_with_data_file,
         close_interactive_session,
         # Health & Root
         healthz,
         index,
     ],
+    exception_handlers={
+        HTTPException: handle_uncaught_exception,
+        ValidationException: handle_uncaught_exception,
+        NotFoundException: handle_uncaught_exception,
+        InternalServerException: handle_uncaught_exception,
+        ServiceUnavailableException: handle_uncaught_exception,
+    },
 )

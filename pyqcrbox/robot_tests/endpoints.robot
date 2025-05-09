@@ -75,13 +75,22 @@ Check an interactive session can be created
     ...             application_slug=olex2
     ...             application_version=1.5-alpha
     ...             data_file_id=${data_file_id}
-    ${response}=    Call POST API with json    api_endpoints    /interactive-sessions/create    ${payload}
+    ${response}=    Call POST API with json    api_endpoints    /interactive-sessions    ${payload}
     ${interactive_session_id}=    Set Variable    ${response.json()['payload']['calculation_id']}
     Set Global Variable    ${interactive_session_id}
+    Sleep    5s    "Wait for the interactive session to be added to the database"
+
+Check interactive session can be retrieved via API
+    ${response}=    Call GET API    api_endpoints    /interactive-sessions/${interactive_session_id}
+    ${interactive_session}=    Set Variable    ${response.json()['payload']}
+    Should Contain    ${interactive_session}    calculation_id
+    Should Contain    ${interactive_session}    application
+    Should Contain    ${interactive_session}    data_file
+    Should Contain    ${interactive_session}    status
+    Should Contain    ${interactive_session}    created_at
 
 Check an interactive session can be closed
-    Sleep    5s    "Wait for the interactive session to be added to the database"
-    Call POST API    api_endpoints    /interactive-sessions/close/${interactive_session_id}
+    Call DELETE API    api_endpoints    /interactive-sessions/${interactive_session_id}
 
 Check dataset can be deleted via API
     Call DELETE API    api_endpoints    /datasets/${dataset_id}

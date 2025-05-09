@@ -24,7 +24,7 @@ Call GET API
 Call POST API
     [Arguments]    ${session_alias}    ${base_url}
 	${response}=    POST On Session    ${session_alias}    ${base_url}
-    Status Should Be    200    ${response}
+    Status Should Be    201    ${response}
     Log    ${response.status_code}
     Log    ${response.content}
     RETURN    ${response}
@@ -32,7 +32,7 @@ Call POST API
 Call POST API with file
     [Arguments]    ${session_alias}    ${base_url}    ${files}
 	${response}=    POST On Session    ${session_alias}    ${base_url}    files=${files}
-    Status Should Be    200    ${response}
+    Status Should Be    201    ${response}
     Log    ${response.status_code}
     Log    ${response.content}
     RETURN    ${response}
@@ -40,7 +40,7 @@ Call POST API with file
 Call POST API with json
     [Arguments]    ${session_alias}    ${base_url}    ${json}
 	${response}=    POST On Session    ${session_alias}    ${base_url}    json=${json}
-    Status Should Be    200    ${response}
+    Status Should Be    201    ${response}
     Log    ${response.status_code}
     Log    ${response.content}
     RETURN    ${response}
