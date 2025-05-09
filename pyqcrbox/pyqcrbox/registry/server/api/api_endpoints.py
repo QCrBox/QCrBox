@@ -155,9 +155,7 @@ async def get_dataset_by_id(
 )
 @eel_logging
 async def create_dataset(
-    data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)] = Parameter(
-        description="The data file to upload"
-    ),
+    data: UploadFile = Body(media_type=RequestEncodingType.MULTI_PART, description="The data file to upload"),
 ) -> QCrBoxResponse:
     qcrbox_dataset_id = await api_helpers.import_dataset(data)
     return QCrBoxResponse(
@@ -199,7 +197,7 @@ async def create_data_file(
             "message": f"Imported data file: {data.filename!r}",
             "payload": {"qcrbox_id": qcrbox_data_file_id},
         },
-        status_code=200,
+        status_code=201,
     )
 
 
@@ -397,7 +395,7 @@ async def create_interactive_session_with_data_file(
             "message": f"Command invocation accepted: {data.application_slug!r}-{data.application_version!r}",
             "payload": {"calculation_id": response["payload"]["calculation_id"]},
         },
-        status_code=200,
+        status_code=201,
     )
 
 
@@ -433,11 +431,10 @@ async def index() -> QCrBoxResponse:
 # https://docs.litestar.dev/2/usage/exceptions.html#configuration-exceptions
 
 
-def handle_uncaught_exception(_: Request, exc: Exception) -> QCrBoxResponse:
+def handle_uncaught_exception(_request: Request, exception: Exception) -> QCrBoxResponse:
     """Handle uncaught exceptions."""
-    media_type = getattr(exc, "media_type", MediaType.JSON)
-    status_code = getattr(exc, "status_code", HTTP_500_INTERNAL_SERVER_ERROR)
-    detail = getattr(exc, "detail", "There has been an unspecified error")
+    status_code = getattr(exception, "status_code", HTTP_500_INTERNAL_SERVER_ERROR)
+    detail = getattr(exception, "detail", "There has been an unspecified error")
     return QCrBoxResponse(
         {
             "status": "error",
@@ -447,7 +444,6 @@ def handle_uncaught_exception(_: Request, exc: Exception) -> QCrBoxResponse:
             },
         },
         status_code=status_code,
-        media_type=media_type,
     )
 
 
