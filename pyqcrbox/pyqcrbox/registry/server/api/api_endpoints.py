@@ -289,12 +289,12 @@ async def list_calculations() -> QCrBoxResponse:
 @eel_logging
 async def get_calculation_by_id(id: str) -> QCrBoxResponse:
     try:
-        calcs = await api_helpers.get_calculation_info_by_calculation_id(id)
+        calculation = await api_helpers.get_calculation_info_by_calculation_id(id)
         return QCrBoxResponse(
             {
                 "status": "success",
                 "message": f"Retrieved calculation: {id!r}",
-                "payload": {"calculation_id": id, "calculations": calcs},
+                "payload": {"calculation_id": id, "calculation": calculation},
             },
             status_code=200,
         )

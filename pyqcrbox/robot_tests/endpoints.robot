@@ -71,7 +71,6 @@ Check dataset can be downloaded via API
     ${response}=    Call GET API    ${SESSION_ALIAS}    /datasets/${dataset_id}/download
     Compare Downloaded File With Uploaded    ${response.content}    ${response}
 
-
 Check an interactive session can be created
     # We need to get the data_file_id from the test dataset
     ${response}=    Call GET API   ${SESSION_ALIAS}    /datasets/${dataset_id}
@@ -94,11 +93,12 @@ Check an interactive session can be created
 Check interactive sessions API returns interactive sessions 
     Call GET API    ${SESSION_ALIAS}    /interactive-sessions
 
-Check interactive session can be retrieved via API
+Check interactive session can be retrieved via interactive-sessions API
     ${response}=    Call GET API    ${SESSION_ALIAS}    /interactive-sessions/${interactive_session_id}
     ${payload}=    Set Variable    ${response.json()['payload']}
+
     Should Contain    ${payload}    interactive_session
-    ${interactive_session}=    Get From Dictionary    ${payload}    interactive_session
+    ${interactive_session}=    Get From Dictionary    ${payload}   calculation
     Should Contain    ${interactive_session}    session_id
     Should Contain    ${interactive_session}    client_private_inbox
     Should Contain    ${interactive_session}    application_slug
@@ -111,6 +111,18 @@ Check interactive session can be retrieved via API
     Should Be Equal    ${interactive_session['application_slug']}    olex2
     Should Be Equal    ${interactive_session['application_version']}    1.5-alpha
     Should Be Equal    ${interactive_session['arguments']['input_file']['data_file_id']}    ${data_file_id}
+
+Check interactive session can be retrieved via calculations API
+    ${response}=    Call GET API    ${SESSION_ALIAS}    /calculations/${interactive_session_id}
+    ${payload}=    Set Variable    ${response.json()['payload']}
+
+    Should Contain    ${payload}    calculation
+    ${interactive_session_calculation}=    Get From Dictionary    ${payload}   calculation
+    Should Contain    ${interactive_session_calculation}    calculation_id
+    Should Contain    ${interactive_session_calculation}    status
+    Should Contain    ${interactive_session_calculation}    stdout
+    Should Contain    ${interactive_session_calculation}    stderr
+    Should Contain    ${interactive_session_calculation}    extra_info
 
 Check an interactive session can be closed
     Call DELETE API    ${SESSION_ALIAS}    /interactive-sessions/${interactive_session_id}

@@ -149,6 +149,7 @@ def get_calculation_info() -> list[sql_models.CalculationResponseModel]:
 
 @eel_logging
 async def get_calculation_info_by_calculation_id(calculation_id: str) -> dict:
+    # TODO: this should return a custom a response model
     try:
         kv_calculation_status = await get_nats_key_value(bucket="calculation_status")
         calc_status_info_str = (await kv_calculation_status.get(calculation_id)).value
