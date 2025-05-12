@@ -65,11 +65,11 @@ Check a dataset metadata can be retrieved via API
     
 Check data file can be downloaded via API
     ${response}=    Call GET API    ${SESSION_ALIAS}    /data-files/${data_file_id}/download
+    Compare Downloaded File With Uploaded    ${response.content}    ${response}
 
 Check dataset can be downloaded via API
     ${response}=    Call GET API    ${SESSION_ALIAS}    /datasets/${dataset_id}/download
-#    ${filename}=    Get From Dictionary    ${response.json()}    filename
-#    Should Be Equal As Strings    ${filename}    ${TEST_CIF_FILE_NAME}
+    Compare Downloaded File With Uploaded    ${response.content}    ${response}
 
 
 Check an interactive session can be created
@@ -149,8 +149,6 @@ Verify Application Data
         Should Contain    ${command}    parameters
     END
 
-*** Keywords ***
-
 Upload Test Dataset
     ${file_content}=    Get Binary File    ${TEST_CIF_FILE}
     
@@ -160,3 +158,10 @@ Upload Test Dataset
     Log    "Response: ${response.json()}"
     Log    "Dataset ID: ${dataset_id}"
     RETURN    ${dataset_id}
+
+Compare Downloaded File With Uploaded
+    [Arguments]    ${downloaded_bytes}    ${response}
+    ${original_bytes}=    Get Binary File    ${TEST_CIF_FILE}
+    Should Be Equal As Strings    ${downloaded_bytes}    ${original_bytes}
+    ${content_disposition}=    Get From Dictionary    ${response.headers}    content-disposition
+    Should Contain    ${content_disposition}    filename='${TEST_CIF_FILE_NAME}'

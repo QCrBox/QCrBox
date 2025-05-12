@@ -156,9 +156,7 @@ async def get_dataset_by_id(
 )
 @eel_logging
 async def create_dataset(
-    data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)] = Parameter(
-        description="The data file to upload"
-    ),
+    data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)],
 ) -> QCrBoxResponse:
     qcrbox_dataset_id = await api_helpers.import_dataset(data)
     return QCrBoxResponse(
@@ -176,12 +174,13 @@ async def create_dataset(
     summary="Download a dataset",
     description="Download the data files of dataset a zip file.",
 )
-async def download_dataset_by_id(id: str) -> Response:
+async def download_dataset_by_id(id: str) -> QCrBoxResponse:
     dataset_contents_as_bytes, output_filename = await api_helpers.export_dataset(id)
-    return Response(
+    return QCrBoxResponse(
         content=dataset_contents_as_bytes,
         media_type="application/octet-stream",
-        headers={"Content-Disposition": f"attachment; filename={output_filename}"},
+        headers={"Content-Disposition": f"attachment; filename={output_filename!r}"},
+        status_code=200,
     )
 
 
@@ -202,7 +201,7 @@ async def list_data_files() -> QCrBoxResponse:
     )
 
 
-@post(path="/data-files", media_type=MediaType.JSON, summary="Upload a data file")
+@post(path="/data-files", media_type=MediaType.TEXT, summary="Upload a data file")
 @eel_logging
 async def create_data_file(
     data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)],
