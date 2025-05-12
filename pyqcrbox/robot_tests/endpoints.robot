@@ -7,6 +7,7 @@ Resource    resources/api.resource
 Library    DateTime
 Library    Collections
 Library    JSONLibrary
+Library    OperatingSystem
 Test Timeout    2 minutes
 
 *** Variables ***
@@ -46,7 +47,7 @@ Check datasets API returns datasets
     ${length}=    Get Length    ${response.json()}
     Should Be True    ${length} > 0
 
-Check a dataset can be retrieved via API
+Check a dataset metadata can be retrieved via API
     ${response}=    Call GET API    ${SESSION_ALIAS}    /datasets/${dataset_id}
     ${dataset}=    Set Variable    ${response.json()['payload']}
 
@@ -59,7 +60,17 @@ Check a dataset can be retrieved via API
         Should Contain    ${file_data}    qcrbox_file_id
         Should Contain    ${file_data}    filename
         Should Contain    ${file_data}    filetype
+        Set Global Variable    ${data_file_id}    ${file_data['qcrbox_file_id']}
     END
+    
+Check data file can be downloaded via API
+    ${response}=    Call GET API    ${SESSION_ALIAS}    /data-files/${data_file_id}/download
+
+Check dataset can be downloaded via API
+    ${response}=    Call GET API    ${SESSION_ALIAS}    /datasets/${dataset_id}/download
+#    ${filename}=    Get From Dictionary    ${response.json()}    filename
+#    Should Be Equal As Strings    ${filename}    ${TEST_CIF_FILE_NAME}
+
 
 Check an interactive session can be created
     # We need to get the data_file_id from the test dataset
@@ -139,8 +150,11 @@ Verify Application Data
     END
 
 *** Keywords ***
+
 Upload Test Dataset
-    ${files}=    Create Dictionary    ${TEST_CIF_FILE_NAME}=${TEST_CIF_FILE}
+    ${file_content}=    Get Binary File    ${TEST_CIF_FILE}
+    
+    ${files}=    Create Dictionary    ${TEST_CIF_FILE_NAME}=${file_content}
     ${response}=    Call POST API With File    ${SESSION_ALIAS}    /datasets    files=${files}
     ${dataset_id}=    Set Variable    ${response.json()['payload']['qcrbox_dataset_id']}
     Log    "Response: ${response.json()}"

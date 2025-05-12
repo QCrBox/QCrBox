@@ -17,6 +17,7 @@ from litestar.exceptions import (
 )
 from litestar.openapi.datastructures import ResponseSpec
 from litestar.params import Body, Parameter
+from litestar.response import Response
 from litestar.status_codes import HTTP_500_INTERNAL_SERVER_ERROR
 from pydantic import BaseModel
 
@@ -142,7 +143,7 @@ async def get_dataset_by_id(
 
 @post(
     path="/datasets",
-    media_type=MediaType.JSON,
+    media_type=MediaType.TEXT,
     summary="Create a new dataset",
     description="Create a new dataset by uploading a data file.",
     responses={
@@ -155,7 +156,9 @@ async def get_dataset_by_id(
 )
 @eel_logging
 async def create_dataset(
-    data: UploadFile = Body(media_type=RequestEncodingType.MULTI_PART, description="The data file to upload"),
+    data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)] = Parameter(
+        description="The data file to upload"
+    ),
 ) -> QCrBoxResponse:
     qcrbox_dataset_id = await api_helpers.import_dataset(data)
     return QCrBoxResponse(
@@ -165,6 +168,20 @@ async def create_dataset(
             "payload": {"qcrbox_dataset_id": qcrbox_dataset_id},
         },
         status_code=201,
+    )
+
+
+@get(
+    path="/datasets/{id:str}/download",
+    summary="Download a dataset",
+    description="Download the data files of dataset a zip file.",
+)
+async def download_dataset_by_id(id: str) -> Response:
+    dataset_contents_as_bytes, output_filename = await api_helpers.export_dataset(id)
+    return Response(
+        content=dataset_contents_as_bytes,
+        media_type="application/octet-stream",
+        headers={"Content-Disposition": f"attachment; filename={output_filename}"},
     )
 
 
@@ -198,6 +215,16 @@ async def create_data_file(
             "payload": {"qcrbox_id": qcrbox_data_file_id},
         },
         status_code=201,
+    )
+
+
+@get(path="/data-files/{id:str}/download", summary="Download a data file")
+async def download_data_file_by_id(id: str) -> Response:
+    data_file_contents_as_bytes, data_file_name = await api_helpers.export_data_file(id)
+    return Response(
+        content=data_file_contents_as_bytes,
+        media_type="application/octet-stream",
+        headers={"Content-Disposition": f"attachment; filename={data_file_name!r}"},
     )
 
 
@@ -382,6 +409,7 @@ async def get_interactive_session_by_id(id: str) -> QCrBoxResponse:
 async def create_interactive_session_with_data_file(
     data: Annotated[InteractiveSessionCreateWithDataFileData, Body()],
 ) -> QCrBoxResponse:
+    # TODO: we should have the arguments/data_files be in the InteractiveSessionCreateWithDataFileData model instead
     command_spec = CommandInvocationCreate(
         application_slug=data.application_slug,
         application_version=data.application_version,
@@ -462,9 +490,11 @@ api_router = Router(
         list_datasets,
         get_dataset_by_id,
         create_dataset,
+        download_dataset_by_id,
         # Data files
         list_data_files,
         create_data_file,
+        download_data_file_by_id,
         # Applications
         list_applications,
         # Calculations

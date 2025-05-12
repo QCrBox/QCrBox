@@ -104,6 +104,40 @@ async def close_interactive_session(session_id: str) -> msg_specs.CloseInteracti
 
 
 @eel_logging
+async def export_data_file(data_file_id: str) -> tuple[bytes, str]:
+    data_file_manager = await get_data_file_manager()
+    data_file = await data_file_manager.get_file_contents(data_file_id)
+    file_name = (await data_file_manager.get_file_metadata(data_file_id)).filename
+
+    logger.debug(f"Retrieved {file_name}: {data_file}")
+
+    return data_file, file_name
+
+
+@eel_logging
+async def export_dataset(dataset_id: str) -> tuple[bytes, str]:
+    data_file_manager = await get_data_file_manager()
+    dataset_info = await data_file_manager.get_dataset_info(dataset_id)
+
+    if dataset_info.is_empty:
+        msg = f"Dataset {dataset_id} is empty"
+        raise ValueError(msg)
+
+    if dataset_info.contains_multiple_files:
+        msg = "Downloading datasets with multiple files is not supported yet"
+        raise NotImplementedError(msg)
+    else:
+        data_file = dataset_info.first_data_file
+        file_name = data_file.filename
+        file_contents = await data_file_manager.get_file_contents(data_file.qcrbox_file_id)
+
+    logger.debug("Dataset contents retrieved: %s", file_name)
+    logger.debug("Dataset file contents: %s", file_contents)  # TODO: should remove this line when it works
+
+    return file_contents, file_name
+
+
+@eel_logging
 async def delete_dataset(dataset_id: str) -> None:
     data_file_manager = await get_data_file_manager()
     await data_file_manager.delete_dataset(dataset_id)
