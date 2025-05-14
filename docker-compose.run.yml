@@ -1,19 +1,18 @@
 services:
 
   qcrbox-syslog:
-    image: lscr.io/linuxserver/syslog-ng:latest
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Etc/UTC
-      - LOG_TO_STDOUT=true
+    image: balabit/syslog-ng:latest
     volumes:
-      - ./services/core/qcrbox-syslog/config:/config
-      - ./logs:/var/log
+      - ./services/core/qcrbox_syslog/syslog-ng.conf:/etc/syslog-ng/syslog-ng.conf:ro
+      - ./services/core/qcrbox_syslog/logs/:/var/log/
+    healthcheck:
+      test: [ "CMD", "/usr/sbin/syslog-ng-ctl", "stats" ]
+      interval: 60s
+      start_period: 30s
+      start_interval: 1s
     ports:
-      - "514:5514/udp"
-      - "601:6601/tcp"
-      - "6514:6514/tcp"
+      - "514:514/udp"
+      - "601:601/tcp"
     networks:
       - qcrbox-net
     restart: unless-stopped
@@ -86,7 +85,7 @@ services:
       qcrbox-reverse-proxy:
         condition: service_healthy
       qcrbox-syslog:
-        condition: service_started
+        condition: service_healthy
     environment:
       QCRBOX__NATS__HOST: "qcrbox-nats"
       #QCRBOX__DB__URL: "sqlite:///${QCRBOX_REGISTRY_DB_DIR}/db.sqlite"
