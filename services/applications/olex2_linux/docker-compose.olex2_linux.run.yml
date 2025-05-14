@@ -32,3 +32,8 @@ services:
 
       traefik.http.services.olex2-service.loadbalancer.server.scheme: http
       traefik.http.services.olex2-service.loadbalancer.server.port: 8080
+    logging:
+      driver: "syslog"
+      options:
+        syslog-address: udp://localhost:514
+        tag: "olex2-linux"

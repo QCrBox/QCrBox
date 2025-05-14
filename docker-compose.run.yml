@@ -1,4 +1,23 @@
 services:
+
+  qcrbox-syslog:
+    image: lscr.io/linuxserver/syslog-ng:latest
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+      - LOG_TO_STDOUT=true
+    volumes:
+      - ./services/core/qcrbox-syslog/config:/config
+      - ./logs:/var/log
+    ports:
+      - "514:5514/udp"
+      - "601:6601/tcp"
+      - "6514:6514/tcp"
+    networks:
+      - qcrbox-net
+    restart: unless-stopped
+
   qcrbox-nats:
     image: "nats:2.10.16-alpine"
     command: ["nats-server", "--jetstream", "-m", "8222", "--store_dir", "/mnt/nats/", "--server_name", "qcrbox-nats"]
@@ -16,6 +35,11 @@ services:
       - "${QCRBOX_BIND_ADDRESS:?Must set env var QCRBOX_BIND_ADDRESS}:${QCRBOX__NATS__PORT:?Must set env var QCRBOX__NATS__PORT}:4222"
       - "${QCRBOX_BIND_ADDRESS:?Must set env var QCRBOX_BIND_ADDRESS}:${QCRBOX__NATS__MANAGEMENT_PORT:?Must set env var QCRBOX__NATS__MANAGEMENT_PORT}:8222"
     restart: unless-stopped
+    logging:
+      driver: "syslog"
+      options:
+        syslog-address: udp://localhost:514
+        tag: "qcrbox-nats"
 
   qcrbox-reverse-proxy:
     image: traefik:v3.1.1
@@ -43,6 +67,11 @@ services:
     volumes:
       # So that Traefik can listen to the Docker events
       - /var/run/docker.sock:/var/run/docker.sock:ro
+    logging:
+      driver: "syslog"
+      options:
+        syslog-address: udp://localhost:514
+        tag: "qcrbox-reverse-proxy"
 
   qcrbox-registry:
     image: "qcrbox/registry:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
@@ -56,12 +85,19 @@ services:
         condition: service_healthy
       qcrbox-reverse-proxy:
         condition: service_healthy
+      qcrbox-syslog:
+        condition: service_started
     environment:
       QCRBOX__NATS__HOST: "qcrbox-nats"
       #QCRBOX__DB__URL: "sqlite:///${QCRBOX_REGISTRY_DB_DIR}/db.sqlite"
     networks:
       - qcrbox-net
     restart: "unless-stopped"
+    logging:
+      driver: "syslog"
+      options:
+        syslog-address: udp://localhost:514
+        tag: "qcrbox-registry"
 
   qcrbox-nextflow:
     image: "qcrbox/nextflow:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
@@ -83,7 +119,11 @@ services:
     networks:
       - qcrbox-net
     restart: "unless-stopped"
-
+    logging:
+      driver: "syslog"
+      options:
+        syslog-address: udp://localhost:514
+        tag: "qcrbox-nextflow"
 networks:
   qcrbox-net:
 

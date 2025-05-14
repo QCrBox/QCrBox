@@ -1,5 +1,3 @@
-from pathlib import Path
-
 import structlog
 from litestar.logging import StructLoggingConfig
 from litestar.middleware.logging import LoggingMiddlewareConfig
@@ -12,7 +10,8 @@ structlog_plugin = StructlogPlugin(
     config=StructlogConfig(
         structlog_logging_config=StructLoggingConfig(
             processors=processors,
-            logger_factory=structlog.WriteLoggerFactory(Path("app").with_suffix(".log").open("a")),
+            logger_factory=structlog.PrintLoggerFactory(),
+            # logger_factory=structlog.WriteLoggerFactory(Path("app").with_suffix(".log").open("a")),
             wrapper_class=structlog.make_filtering_bound_logger(get_log_level(settings.logging.log_level_as_int)),
             cache_logger_on_first_use=False,
         ),
