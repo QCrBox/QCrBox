@@ -4,7 +4,7 @@ services:
     image: balabit/syslog-ng:latest
     volumes:
       - ./services/core/qcrbox_syslog/syslog-ng.conf:/etc/syslog-ng/syslog-ng.conf:ro
-      - ./services/core/qcrbox_syslog/logs/:/var/log/
+      - ./services/core/qcrbox_syslog/logs:/var/log
     healthcheck:
       test: [ "CMD", "/usr/sbin/syslog-ng-ctl", "stats" ]
       interval: 60s
