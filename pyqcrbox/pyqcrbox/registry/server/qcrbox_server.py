@@ -21,7 +21,9 @@ from .api import api_router
 from .views import views_router
 
 static_files_dir = Path(__file__).parent / "assets"
-static_files_router = create_static_files_router(path="/static", directories=[static_files_dir])
+static_files_router = create_static_files_router(
+    path="/static", directories=[static_files_dir], include_in_schema=False
+)
 
 
 class ExecutingClientDetails(BaseModel):
@@ -38,7 +40,7 @@ class CalculationDetails(BaseModel):
     executing_client: ExecutingClientDetails | None = None
 
 
-@get(path="/", media_type=MediaType.HTML)
+@get(path="/", media_type=MediaType.HTML, include_in_schema=False)
 async def web_root_handler() -> Redirect:
     return Redirect(path="/views/index")
 
@@ -219,7 +221,12 @@ class QCrBoxServer(QCrBoxServerClientBase):
             lifespan=[self.lifespan_context],
             debug=True,
             plugins=[structlog_plugin],
-            openapi_config=OpenAPIConfig(title="QCrBox Server API", version="0.1"),
+            openapi_config=OpenAPIConfig(
+                title="QCrBox",
+                version="0.1",
+                # root_schema_site="swagger",
+                use_handler_docstrings=True,
+            ),
         )
 
     @on_qcrbox_startup

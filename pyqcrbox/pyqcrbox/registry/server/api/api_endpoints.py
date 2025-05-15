@@ -8,14 +8,7 @@ import sqlalchemy.exc
 from litestar import MediaType, Request, Router, delete, get, post
 from litestar.datastructures import UploadFile
 from litestar.enums import RequestEncodingType
-from litestar.exceptions import (
-    HTTPException,
-    InternalServerException,
-    NotFoundException,
-    ServiceUnavailableException,
-    ValidationException,
-)
-from litestar.openapi.datastructures import ResponseSpec
+from litestar.exceptions import HTTPException
 from litestar.params import Body, Parameter
 from litestar.response import Response
 from litestar.status_codes import HTTP_500_INTERNAL_SERVER_ERROR
@@ -23,15 +16,7 @@ from pydantic import BaseModel
 
 from pyqcrbox.data_management import DatasetNotFoundError
 from pyqcrbox.debug import eel_logging
-from pyqcrbox.registry.server.api.response_spec import (
-    ApplicationsResponseSpec,
-    CalculationsResponseSpec,
-    DatasetCreateResponseSpec,
-    DatasetResponseSpec,
-    DatasetsResponseSpec,
-    QCrBoxErrorResponseSpec,
-    QCrBoxResponseSpec,
-)
+from pyqcrbox.registry.server.api import api_schema as schema
 from pyqcrbox.registry.shared.qcrbox_response import QCrBoxResponse
 from pyqcrbox.sql_models import CalculationStatusEnum, CommandInvocationCreate
 
@@ -46,137 +31,85 @@ class InteractiveSessionCreateWithDataFileData(BaseModel):
     data_file_id: str
 
 
+class QCrBoxAPIException(HTTPException):
+    pass
+
+
 # Datasets -------------------------------------------------------------------------------------------------------------
 
 
-@delete(
-    path="/datasets/{id:str}",
-    summary="Delete a dataset",
-    description="Removes a dataset, of the given ID, and all of its associated data files from the QCrBox datastore.",
-    responses={
-        204: ResponseSpec(
-            data_container=None,
-            description="Dataset deleted successfully.",
-            generate_examples=False,
-        ),
-        400: ResponseSpec(
-            data_container=QCrBoxErrorResponseSpec,
-            description="Bad request, invalid dataset ID",
-            generate_examples=False,
-        ),
-    },
-)
+@delete(path="/datasets/{id:str}", summary="Delete a dataset")
 @eel_logging
-async def delete_dataset_by_id(
-    id: str = Parameter(title="Dataset ID", description="The ID of the dataset to delete"),
-) -> None:
+async def delete_dataset_by_id(id: str = Parameter(title="Dataset ID")) -> None:
+    """Remove a dataset and associated data files from the data store."""
     await api_helpers.delete_dataset(id)
 
 
-@get(
-    path="/datasets",
-    media_type=MediaType.JSON,
-    summary="List all datasets",
-    description="Retrieves a list of all datasets in the QCrBox datastore.",
-    responses={
-        200: ResponseSpec(
-            data_container=QCrBoxResponseSpec[DatasetsResponseSpec],
-            description="Successfully retrieved datasets",
-            generate_examples=False,
-        )
-    },
-)
+@get(path="/datasets", media_type=MediaType.JSON, summary="List all datasets")
 @eel_logging
-async def list_datasets() -> QCrBoxResponse:
+async def list_datasets() -> schema.QCrBoxResponse[list[schema.DatasetsResponse]]:
+    """Retrieve a list of all datasets in the data store."""
     datasets = await api_helpers.get_datasets()
     return QCrBoxResponse(
-        {
+        content={
             "status": "success",
             "message": "Retrieved datasets",
-            "payload": {"datasets": datasets},
+            "payload": {
+                "datasets": datasets,
+            },
         },
         status_code=200,
     )
 
 
-@get(
-    path="/datasets/{id:str}",
-    media_type=MediaType.JSON,
-    summary="Get dataset by ID",
-    description="Retrieves a dataset by its ID, including metadata of linked data files.",
-    responses={
-        200: ResponseSpec(
-            data_container=QCrBoxResponseSpec[DatasetResponseSpec],
-            description="Successfully retrieved dataset",
-            generate_examples=False,
-        ),
-        404: ResponseSpec(
-            data_container=QCrBoxErrorResponseSpec,
-            description="Dataset not found",
-            generate_examples=False,
-        ),
-    },
-)
+@get(path="/datasets/{id:str}", media_type=MediaType.JSON, summary="Get dataset by ID")
 @eel_logging
 async def get_dataset_by_id(
-    id: str = Parameter(description="The ID of the dataset to retrieve"),
-) -> QCrBoxResponse:
+    id: str = Parameter(title="Dataset ID"),
+) -> schema.QCrBoxResponse[list[schema.DatasetsResponse]]:
+    """Retrieve a dataset by its ID, including metadata of linked data files."""
     try:
         dataset = await api_helpers.get_dataset_info(id)
         return QCrBoxResponse(
-            {
+            content={
                 "status": "success",
                 "message": f"Retrieved dataset: {id!r}",
-                "payload": dataset,
+                "payload": {
+                    "datasets": [dataset],
+                },
             },
             status_code=200,
         )
     except (KeyError, DatasetNotFoundError):
-        return QCrBoxResponse(
-            {
-                "status": "error",
-                "error": {"code": 404, "message": f"Dataset not found: {id!r}"},
-            },
-            status_code=404,
-        )
+        raise QCrBoxAPIException(detail=f"Dataset not found: {id!r}", status_code=404)
 
 
-@post(
-    path="/datasets",
-    media_type=MediaType.TEXT,
-    summary="Create a new dataset",
-    description="Create a new dataset by uploading a data file.",
-    responses={
-        201: ResponseSpec(
-            data_container=QCrBoxResponseSpec[DatasetCreateResponseSpec],
-            description="Dataset created successfully",
-            generate_examples=False,
-        )
-    },
-)
+@post(path="/datasets", media_type=MediaType.TEXT, summary="Create a new dataset")
 @eel_logging
 async def create_dataset(
-    data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)],
-) -> QCrBoxResponse:
+    data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART, title="The file contents to upload")],
+) -> schema.QCrBoxResponse[schema.DatasetsResponse]:
+    """Create a new dataset by uploading data files."""
     qcrbox_dataset_id = await api_helpers.import_dataset(data)
+    dataset = await api_helpers.get_dataset_info(qcrbox_dataset_id)
     return QCrBoxResponse(
-        {
+        content={
             "status": "success",
-            "message": f"Imported dataset: {data.filename!r}",
-            "payload": {"qcrbox_dataset_id": qcrbox_dataset_id},
+            "message": f"Created dataset: {qcrbox_dataset_id!r}",
+            "payload": {
+                "datasets": [dataset],
+            },
         },
         status_code=201,
     )
 
 
-@get(
-    path="/datasets/{id:str}/download",
-    summary="Download a dataset",
-    description="Download the data files of dataset a zip file.",
-)
-async def download_dataset_by_id(id: str) -> QCrBoxResponse:
+@get(path="/datasets/{id:str}/download", media_type="application/octet-stream", summary="Download a dataset")
+@eel_logging
+async def download_dataset_by_id(id: str = Parameter(title="Dataset ID")) -> Response[bytes]:
+    """Download the data files of a datast as a Zip file."""
     dataset_contents_as_bytes, output_filename = await api_helpers.export_dataset(id)
-    return QCrBoxResponse(
+    return Response(
         content=dataset_contents_as_bytes,
         media_type="application/octet-stream",
         headers={"Content-Disposition": f"attachment; filename={output_filename!r}"},
@@ -189,36 +122,66 @@ async def download_dataset_by_id(id: str) -> QCrBoxResponse:
 
 @get(path="/data-files", media_type=MediaType.JSON, summary="List all data files")
 @eel_logging
-async def list_data_files() -> QCrBoxResponse:
+async def list_data_files() -> schema.QCrBoxResponse[schema.DataFilesResponse]:
+    """Retrieve a list of all data files in the data store."""
     data_files = await api_helpers.get_data_files()
     return QCrBoxResponse(
-        {
+        content={
             "status": "success",
             "message": "Retrieved data files",
-            "payload": {"data_files": data_files},
+            "payload": {
+                "data_files": data_files,
+            },
         },
         status_code=200,
     )
 
 
+@get(path="/data-files/{id:str}", media_type=MediaType.JSON, summary="Get a data file")
+@eel_logging
+async def get_data_file_by_id(
+    id: str = Parameter(title="Data file ID"),
+) -> schema.QCrBoxResponse[schema.DataFilesResponse]:
+    """Retrieve a data files by it's ID."""
+    try:
+        data_file = await api_helpers.get_data_file_info(id)
+        return QCrBoxResponse(
+            content={
+                "status": "success",
+                "message": f"Retrieved data file: {id!r}",
+                "payload": {
+                    "data_files": [data_file],
+                },
+            },
+            status_code=200,
+        )
+    except KeyError:
+        raise QCrBoxAPIException(detail=f"Data file not found: {id!r}", status_code=404)
+
+
 @post(path="/data-files", media_type=MediaType.TEXT, summary="Upload a data file")
 @eel_logging
 async def create_data_file(
-    data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)],
-) -> QCrBoxResponse:
+    data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART, title="The file to upload")],
+) -> schema.QCrBoxResponse[schema.DataFilesResponse]:
+    """Upload a new data file to the data store."""
     qcrbox_data_file_id = await api_helpers.import_data_file(data)
+    data_file = await api_helpers.get_data_file_info(qcrbox_data_file_id)
     return QCrBoxResponse(
-        {
+        content={
             "status": "success",
             "message": f"Imported data file: {data.filename!r}",
-            "payload": {"qcrbox_id": qcrbox_data_file_id},
+            "payload": {
+                "data_files": [data_file],
+            },
         },
         status_code=201,
     )
 
 
-@get(path="/data-files/{id:str}/download", summary="Download a data file")
-async def download_data_file_by_id(id: str) -> Response:
+@get(path="/data-files/{id:str}/download", media_type="application/octet-stream", summary="Download a data file")
+async def download_data_file_by_id(id: str = Parameter(title="Data file ID")) -> Response[bytes]:
+    """Download a data file from the data store."""
     data_file_contents_as_bytes, data_file_name = await api_helpers.export_data_file(id)
     return Response(
         content=data_file_contents_as_bytes,
@@ -234,12 +197,6 @@ async def download_data_file_by_id(id: str) -> Response:
     path="/applications",
     media_type=MediaType.JSON,
     summary="Get the registered applications",
-    responses={
-        200: ResponseSpec(
-            data_container=QCrBoxResponseSpec[ApplicationsResponseSpec],
-            description="Successfully retrieved applications",
-        )
-    },
 )
 @eel_logging
 async def list_applications() -> QCrBoxResponse:
@@ -261,12 +218,6 @@ async def list_applications() -> QCrBoxResponse:
     path="/calculations",
     media_type=MediaType.JSON,
     summary="Retrieve all calculations",
-    responses={
-        200: ResponseSpec(
-            data_container=QCrBoxResponseSpec[CalculationsResponseSpec],
-            description="Successfully retrieved calculations",
-        )
-    },
 )
 @eel_logging
 async def list_calculations() -> QCrBoxResponse:
@@ -492,6 +443,7 @@ api_router = Router(
         download_dataset_by_id,
         # Data files
         list_data_files,
+        get_data_file_by_id,
         create_data_file,
         download_data_file_by_id,
         # Applications
@@ -513,9 +465,10 @@ api_router = Router(
     ],
     exception_handlers={
         HTTPException: handle_uncaught_exception,
-        ValidationException: handle_uncaught_exception,
-        NotFoundException: handle_uncaught_exception,
-        InternalServerException: handle_uncaught_exception,
-        ServiceUnavailableException: handle_uncaught_exception,
+        # ValidationException: handle_uncaught_exception,
+        # NotFoundException: handle_uncaught_exception,
+        # InternalServerException: handle_uncaught_exception,
+        # ServiceUnavailableException: handle_uncaught_exception,
     },
+    response_class=QCrBoxResponse,
 )

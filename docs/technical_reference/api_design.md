@@ -28,10 +28,8 @@ responses. This is defined in `pyqcrbox.registry.shared.qcrbox_response`.
 {
   "status": "success",
   "message": "Retrieved applications",
-  "data": {
-    "applications": [
-      ...
-    ]
+  "payload": {
+    "applications": [ { ... } ]
   },
   "timestamp": "2025-04-29T15:08:30.188939+00:00Z"
 }

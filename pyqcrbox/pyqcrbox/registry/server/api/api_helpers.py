@@ -159,6 +159,13 @@ async def get_calculation_info_by_calculation_id(calculation_id: str) -> dict:
 
 
 @eel_logging
+async def get_data_file_info(data_file_id: str) -> DataFileMetadataResponse:
+    data_file_manager = await get_data_file_manager()
+    data_file = await data_file_manager.get_file_metadata(data_file_id)
+    return data_file.to_response_model()
+
+
+@eel_logging
 async def get_data_files() -> list[DataFileMetadataResponse]:
     data_file_manager = await get_data_file_manager()
     data_files = await data_file_manager.get_data_files()
