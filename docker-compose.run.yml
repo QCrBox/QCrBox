@@ -37,7 +37,7 @@ services:
     logging:
       driver: "syslog"
       options:
-        syslog-address: udp://localhost:514
+        syslog-address: udp://127.0.0.1:514
         tag: "qcrbox-nats"
 
   qcrbox-reverse-proxy:
@@ -69,7 +69,7 @@ services:
     logging:
       driver: "syslog"
       options:
-        syslog-address: udp://localhost:514
+        syslog-address: udp://127.0.0.1:514
         tag: "qcrbox-reverse-proxy"
 
   qcrbox-registry:
@@ -95,7 +95,7 @@ services:
     logging:
       driver: "syslog"
       options:
-        syslog-address: udp://localhost:514
+        syslog-address: udp://127.0.0.1:514
         tag: "qcrbox-registry"
 
   qcrbox-nextflow:
@@ -121,7 +121,7 @@ services:
     logging:
       driver: "syslog"
       options:
-        syslog-address: udp://localhost:514
+        syslog-address: udp://127.0.0.1:514
         tag: "qcrbox-nextflow"
 networks:
   qcrbox-net:
