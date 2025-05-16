@@ -290,7 +290,7 @@ async def download_dataset_by_id(id: str = Parameter(title="Dataset ID")) -> Res
 
 @get(path="/interactive-sessions", media_type=MediaType.JSON, summary="List all interactive sessions")
 @eel_logging
-async def list_interactive_sessions() -> schema.QCrBoxResponse[schema.InteractiveSessionInfoResponse]:
+async def list_interactive_sessions() -> schema.QCrBoxResponse[schema.InteractiveSessionsResponse]:
     """Retrieve a list of interactive sessions, past and present."""
     interactive_sessions = await api_helpers.get_interactive_sessions()
     return QCrBoxResponse(
@@ -318,7 +318,7 @@ async def get_interactive_session_by_id(
                 "status": "success",
                 "message": f"Retrieved interactive session: {id!r}",
                 "payload": {
-                    "interactive_session": [interactive_session],
+                    "interactive_sessions": [interactive_session],
                 },
             },
             status_code=200,
@@ -376,7 +376,9 @@ async def close_interactive_session(id: str = Parameter(title="Interactive sessi
 async def healthz() -> QCrBoxResponse:
     """Check the health of the QCrBox registry."""
     return QCrBoxResponse(
-        content={"status": "ok"},
+        content={
+            "status": "ok",
+        },
         status_code=200,
     )
 
@@ -397,16 +399,18 @@ async def index() -> QCrBoxResponse:
 # https://docs.litestar.dev/2/usage/exceptions.html#configuration-exceptions
 
 
-def handle_uncaught_exception(_request: Request, exception: Exception) -> QCrBoxResponse:
+def handle_uncaught_exception(_request: Request, exception: Exception) -> schema.QCrBoxErrorResponse:
     """Handle uncaught exceptions."""
     status_code = getattr(exception, "status_code", HTTP_500_INTERNAL_SERVER_ERROR)
-    detail = getattr(exception, "detail", "There has been an unspecified error")
+    message = getattr(exception, "detail", "There has been an unspecified error")
+    details = getattr(exception, "extra", None)
     return QCrBoxResponse(
         {
             "status": "error",
             "error": {
                 "code": status_code,
-                "message": detail,
+                "message": message,
+                "details": details,
             },
         },
         status_code=status_code,

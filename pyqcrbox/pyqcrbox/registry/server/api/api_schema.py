@@ -16,7 +16,6 @@ T = TypeVar("T")
 class InteractiveSessionCreate(BaseModel):
     application_slug: str
     application_version: str
-    data_file_id: str
     arguments: dict[str, Any]
 
 
@@ -66,9 +65,10 @@ class InteractiveSessionIDResponse(BaseModel):
 class ErrorResponse(BaseModel):
     code: int
     message: str
+    details: str | list[str]
 
 
-class QCrBoxErrorResponseSpec(BaseModel):
+class QCrBoxErrorResponse(BaseModel):
     """Pydantic model for QCrBox API error response specification."""
 
     status: str

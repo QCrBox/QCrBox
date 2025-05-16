@@ -49,9 +49,9 @@ Check datasets API returns datasets
 
 Check a dataset metadata can be retrieved via API
     ${response}=    Call GET API    ${SESSION_ALIAS}    /datasets/${dataset_id}
-    ${dataset}=    Set Variable    ${response.json()['payload']}
+    ${dataset}=    Set Variable    ${response.json()['payload']["datasets"][0]}
 
-    Should Contain    ${dataset}    dataset_id
+    Should Contain    ${dataset}    qcrbox_dataset_id
     Should Contain    ${dataset}    data_files
     ${data_files}=    Get From Dictionary    ${dataset}    data_files
 
@@ -62,7 +62,7 @@ Check a dataset metadata can be retrieved via API
         Should Contain    ${file_data}    filetype
         Set Global Variable    ${data_file_id}    ${file_data['qcrbox_file_id']}
     END
-    
+
 Check data file can be downloaded via API
     ${response}=    Call GET API    ${SESSION_ALIAS}    /data-files/${data_file_id}/download
     Compare Downloaded File With Uploaded    ${response.content}    ${response}
@@ -74,31 +74,32 @@ Check dataset can be downloaded via API
 Check an interactive session can be created
     # We need to get the data_file_id from the test dataset
     ${response}=    Call GET API   ${SESSION_ALIAS}    /datasets/${dataset_id}
-    ${data_files}=    Set Variable    ${response.json()['payload']['data_files']}
+    ${data_files}=    Set Variable    ${response.json()['payload']['datasets'][0]["data_files"]}
     ${data_file}=    Get From Dictionary    ${data_files}    ${TEST_CIF_FILE_NAME}
     ${data_file_id}=    Set Variable    ${data_file['qcrbox_file_id']}
     Set Global Variable    ${data_file_id}
 
     # Call the API to create a session, which should return the calculation id
+    ${input_file}=    Create Dictionary    data_file_id=${data_file_id}
+    ${arguments}=    Create Dictionary    input_file=${input_file}
     ${payload}=     Create Dictionary
     ...             application_slug=olex2
     ...             application_version=1.5-alpha
-    ...             data_file_id=${data_file_id}
+    ...             arguments=${arguments}
     ${response}=    Call POST API with json    ${SESSION_ALIAS}    /interactive-sessions    ${payload}
-    ${interactive_session_id}=    Set Variable    ${response.json()['payload']['calculation_id']}
-    Log    "Interactive session ID: ${interactive_session_id}"
+    ${interactive_session_id}=    Set Variable    ${response.json()['payload']['interactive_session_id']}
     Set Global Variable    ${interactive_session_id}
     Sleep    5s    "Wait for the interactive session to be added to the database"
-    
-Check interactive sessions API returns interactive sessions 
+
+Check interactive sessions API returns interactive sessions
     Call GET API    ${SESSION_ALIAS}    /interactive-sessions
 
 Check interactive session can be retrieved via interactive-sessions API
     ${response}=    Call GET API    ${SESSION_ALIAS}    /interactive-sessions/${interactive_session_id}
     ${payload}=    Set Variable    ${response.json()['payload']}
 
-    Should Contain    ${payload}    interactive_session
-    ${interactive_session}=    Get From Dictionary    ${payload}   calculation
+    Should Contain    ${payload}    interactive_sessions
+    ${interactive_session}=    Set Variable    ${response.json()['payload']['interactive_sessions'][0]}
     Should Contain    ${interactive_session}    session_id
     Should Contain    ${interactive_session}    client_private_inbox
     Should Contain    ${interactive_session}    application_slug
@@ -116,8 +117,8 @@ Check interactive session can be retrieved via calculations API
     ${response}=    Call GET API    ${SESSION_ALIAS}    /calculations/${interactive_session_id}
     ${payload}=    Set Variable    ${response.json()['payload']}
 
-    Should Contain    ${payload}    calculation
-    ${interactive_session_calculation}=    Get From Dictionary    ${payload}   calculation
+    Should Contain    ${payload}    calculations
+    ${interactive_session_calculation}=    Set Variable   ${response.json()['payload']['calculations'][0]}
     Should Contain    ${interactive_session_calculation}    calculation_id
     Should Contain    ${interactive_session_calculation}    status
     Should Contain    ${interactive_session_calculation}    stdout
@@ -163,10 +164,10 @@ Verify Application Data
 
 Upload Test Dataset
     ${file_content}=    Get Binary File    ${TEST_CIF_FILE}
-    
+
     ${files}=    Create Dictionary    ${TEST_CIF_FILE_NAME}=${file_content}
     ${response}=    Call POST API With File    ${SESSION_ALIAS}    /datasets    files=${files}
-    ${dataset_id}=    Set Variable    ${response.json()['payload']['qcrbox_dataset_id']}
+    ${dataset_id}=    Set Variable    ${response.json()['payload']['datasets'][0]['qcrbox_dataset_id']}
     Log    "Response: ${response.json()}"
     Log    "Dataset ID: ${dataset_id}"
     RETURN    ${dataset_id}
