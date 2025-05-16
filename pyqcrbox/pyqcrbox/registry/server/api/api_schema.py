@@ -1,12 +1,24 @@
-from typing import Generic, TypeVar
+from typing import Any, Generic, TypeVar
 
 from pydantic import BaseModel
 
 from pyqcrbox.data_management.data_file import DataFileMetadataResponse, DatasetResponse
 from pyqcrbox.sql_models.application_spec import ApplicationSpecWithCommands
 from pyqcrbox.sql_models.calculation import CalculationResponseModel
+from pyqcrbox.sql_models.command_spec import CommandSpecWithParameters
+from pyqcrbox.sql_models.interactive_session_info import InteractiveSessionInfoResponse
 
 T = TypeVar("T")
+
+# Requests
+
+
+class InteractiveSessionCreate(BaseModel):
+    application_slug: str
+    application_version: str
+    data_file_id: str
+    arguments: dict[str, Any]
+
 
 # Success response
 
@@ -28,12 +40,24 @@ class CalculationsResponse(BaseModel):
     calculations: list[CalculationResponseModel]
 
 
+class CommandsResponse(BaseModel):
+    commands: list[CommandSpecWithParameters]
+
+
 class DataFilesResponse(BaseModel):
     data_files: list[DataFileMetadataResponse]
 
 
 class DatasetsResponse(BaseModel):
     datasets: list[DatasetResponse]
+
+
+class InteractiveSessionsResponse(BaseModel):
+    interactive_sessions: list[InteractiveSessionInfoResponse]
+
+
+class InteractiveSessionIDResponse(BaseModel):
+    interactive_session_id: str
 
 
 # Error response
