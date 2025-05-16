@@ -395,6 +395,11 @@ async def index() -> QCrBoxResponse:
     )
 
 
+@get(path="/openapi-schema", media_type=MediaType.JSON, include_in_schema=False)
+async def openapi_schema(request: Request) -> dict:
+    return request.app.openapi_schema.to_schema()
+
+
 # Exception handlers ---------------------------------------------------------------------------------------------------
 # https://docs.litestar.dev/2/usage/exceptions.html#configuration-exceptions
 
@@ -450,6 +455,7 @@ api_router = Router(
         # Health & Root
         healthz,
         index,
+        openapi_schema,
     ],
     exception_handlers={
         HTTPException: handle_uncaught_exception,
