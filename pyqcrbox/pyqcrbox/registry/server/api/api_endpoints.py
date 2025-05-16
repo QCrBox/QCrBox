@@ -31,7 +31,13 @@ class QCrBoxAPIException(HTTPException):
 # Applications ---------------------------------------------------------------------------------------------------------
 
 
-@get(path="/applications", media_type=MediaType.JSON)
+@get(
+    path="/applications",
+    media_type=MediaType.JSON,
+    summary="List all applications",
+    tags=["applications"],
+    operation_id="list_applications",
+)
 @eel_logging
 async def list_applications() -> schema.QCrBoxResponse[schema.ApplicationsResponse]:
     """Retrieve a list of registered applications."""
@@ -51,7 +57,13 @@ async def list_applications() -> schema.QCrBoxResponse[schema.ApplicationsRespon
 # Calculations ---------------------------------------------------------------------------------------------------------
 
 
-@get(path="/calculations", media_type=MediaType.JSON)
+@get(
+    path="/calculations",
+    media_type=MediaType.JSON,
+    summary="List all calculations",
+    tags=["calculations"],
+    operation_id="list_calculations",
+)
 @eel_logging
 async def list_calculations() -> schema.QCrBoxResponse[schema.CalculationsResponse]:
     """Retrieve a list of all calculations, past and present."""
@@ -68,7 +80,13 @@ async def list_calculations() -> schema.QCrBoxResponse[schema.CalculationsRespon
     )
 
 
-@get(path="/calculations/{id:str}", media_type=MediaType.JSON)
+@get(
+    path="/calculations/{id:str}",
+    media_type=MediaType.JSON,
+    summary="Get calculation by ID",
+    tags=["calculations"],
+    operation_id="get_calculation_by_id",
+)
 @eel_logging
 async def get_calculation_by_id(
     id: str = Parameter(title="Calculation ID"),
@@ -93,7 +111,13 @@ async def get_calculation_by_id(
 # Commands -------------------------------------------------------------------------------------------------------------
 
 
-@get(path="/commands", media_type=MediaType.JSON, summary="List all commands")
+@get(
+    path="/commands",
+    media_type=MediaType.JSON,
+    summary="List all commands",
+    tags=["commands"],
+    operation_id="list_commands",
+)
 @eel_logging
 async def list_commands() -> schema.QCrBoxResponse[schema.CommandsResponse]:
     """Retrieve a list of commands, which are registered to applications."""
@@ -110,7 +134,13 @@ async def list_commands() -> schema.QCrBoxResponse[schema.CommandsResponse]:
     )
 
 
-@get(path="/commands/{id:int}", media_type=MediaType.JSON, summary="Get command by ID")
+@get(
+    path="/commands/{id:int}",
+    media_type=MediaType.JSON,
+    summary="Get command by ID",
+    tags=["commands"],
+    operation_id="get_command_by_id",
+)
 @eel_logging
 async def get_command_by_id(id: int) -> schema.QCrBoxResponse[schema.CommandsResponse]:
     """Retrieve a command of the given ID."""
@@ -133,7 +163,13 @@ async def get_command_by_id(id: int) -> schema.QCrBoxResponse[schema.CommandsRes
 # Data files -----------------------------------------------------------------------------------------------------------
 
 
-@get(path="/data-files", media_type=MediaType.JSON, summary="List all data files")
+@get(
+    path="/data-files",
+    media_type=MediaType.JSON,
+    summary="List all data files",
+    tags=["data_files", "file_management"],
+    operation_id="list_data_files",
+)
 @eel_logging
 async def list_data_files() -> schema.QCrBoxResponse[schema.DataFilesResponse]:
     """Retrieve a list of all data files in the data store."""
@@ -150,7 +186,13 @@ async def list_data_files() -> schema.QCrBoxResponse[schema.DataFilesResponse]:
     )
 
 
-@get(path="/data-files/{id:str}", media_type=MediaType.JSON, summary="Get a data file")
+@get(
+    path="/data-files/{id:str}",
+    media_type=MediaType.JSON,
+    summary="Get a data file",
+    tags=["data_files", "file_management"],
+    operation_id="get_data_file_by_id",
+)
 @eel_logging
 async def get_data_file_by_id(
     id: str = Parameter(title="Data file ID"),
@@ -172,7 +214,13 @@ async def get_data_file_by_id(
         raise QCrBoxAPIException(detail=f"Data file not found: {id!r}", status_code=404)
 
 
-@post(path="/data-files", media_type=MediaType.TEXT, summary="Upload a data file")
+@post(
+    path="/data-files",
+    media_type=MediaType.TEXT,
+    summary="Upload a data file",
+    tags=["data_files", "file_management"],
+    operation_id="create_data_file",
+)
 @eel_logging
 async def create_data_file(
     data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART, title="The file to upload")],
@@ -192,7 +240,13 @@ async def create_data_file(
     )
 
 
-@get(path="/data-files/{id:str}/download", media_type="application/octet-stream", summary="Download a data file")
+@get(
+    path="/data-files/{id:str}/download",
+    media_type="application/octet-stream",
+    summary="Download a data file",
+    tags=["data_files", "file_management"],
+    operation_id="download_data_file_by_id",
+)
 async def download_data_file_by_id(id: str = Parameter(title="Data file ID")) -> Response[bytes]:
     """Download a data file from the data store."""
     data_file_contents_as_bytes, data_file_name = await api_helpers.export_data_file(id)
@@ -206,14 +260,25 @@ async def download_data_file_by_id(id: str = Parameter(title="Data file ID")) ->
 # Datasets -------------------------------------------------------------------------------------------------------------
 
 
-@delete(path="/datasets/{id:str}", summary="Delete a dataset")
+@delete(
+    path="/datasets/{id:str}",
+    summary="Delete a dataset",
+    tags=["datasets", "file_management"],
+    operation_id="delete_dataset_by_id",
+)
 @eel_logging
 async def delete_dataset_by_id(id: str = Parameter(title="Dataset ID")) -> None:
     """Remove a dataset and associated data files from the data store."""
     await api_helpers.delete_dataset(id)
 
 
-@get(path="/datasets", media_type=MediaType.JSON, summary="List all datasets")
+@get(
+    path="/datasets",
+    media_type=MediaType.JSON,
+    summary="List all datasets",
+    tags=["datasets", "file_management"],
+    operation_id="list_datasets",
+)
 @eel_logging
 async def list_datasets() -> schema.QCrBoxResponse[schema.DatasetsResponse]:
     """Retrieve a list of all datasets in the data store."""
@@ -230,7 +295,13 @@ async def list_datasets() -> schema.QCrBoxResponse[schema.DatasetsResponse]:
     )
 
 
-@get(path="/datasets/{id:str}", media_type=MediaType.JSON, summary="Get dataset by ID")
+@get(
+    path="/datasets/{id:str}",
+    media_type=MediaType.JSON,
+    summary="Get dataset by ID",
+    tags=["datasets", "file_management"],
+    operation_id="get_dataset_by_id",
+)
 @eel_logging
 async def get_dataset_by_id(
     id: str = Parameter(title="Dataset ID"),
@@ -252,7 +323,13 @@ async def get_dataset_by_id(
         raise QCrBoxAPIException(detail=f"Dataset not found: {id!r}", status_code=404)
 
 
-@post(path="/datasets", media_type=MediaType.TEXT, summary="Create a new dataset")
+@post(
+    path="/datasets",
+    media_type=MediaType.TEXT,
+    summary="Create a new dataset",
+    tags=["datasets", "file_management"],
+    operation_id="create_dataset",
+)
 @eel_logging
 async def create_dataset(
     data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART, title="The file contents to upload")],
@@ -272,7 +349,13 @@ async def create_dataset(
     )
 
 
-@get(path="/datasets/{id:str}/download", media_type="application/octet-stream", summary="Download a dataset")
+@get(
+    path="/datasets/{id:str}/download",
+    media_type="application/octet-stream",
+    summary="Download a dataset",
+    tags=["datasets", "file_management"],
+    operation_id="download_dataset_by_id",
+)
 @eel_logging
 async def download_dataset_by_id(id: str = Parameter(title="Dataset ID")) -> Response[bytes]:
     """Download the data files of a datast as a Zip file."""
@@ -288,7 +371,13 @@ async def download_dataset_by_id(id: str = Parameter(title="Dataset ID")) -> Res
 # Interactive sessions -------------------------------------------------------------------------------------------------
 
 
-@get(path="/interactive-sessions", media_type=MediaType.JSON, summary="List all interactive sessions")
+@get(
+    path="/interactive-sessions",
+    media_type=MediaType.JSON,
+    summary="List all interactive sessions",
+    tags=["interactive_sessions"],
+    operation_id="list_interactive_sessions",
+)
 @eel_logging
 async def list_interactive_sessions() -> schema.QCrBoxResponse[schema.InteractiveSessionsResponse]:
     """Retrieve a list of interactive sessions, past and present."""
@@ -305,7 +394,13 @@ async def list_interactive_sessions() -> schema.QCrBoxResponse[schema.Interactiv
     )
 
 
-@get(path="/interactive-sessions/{id:str}", media_type=MediaType.JSON, summary="Get interactive session by ID")
+@get(
+    path="/interactive-sessions/{id:str}",
+    media_type=MediaType.JSON,
+    summary="Get interactive session by ID",
+    tags=["interactive_sessions"],
+    operation_id="get_interactive_session_by_id",
+)
 @eel_logging
 async def get_interactive_session_by_id(
     id: str = Parameter(title="Interactive session ID"),
@@ -327,7 +422,13 @@ async def get_interactive_session_by_id(
         raise QCrBoxAPIException(detail=f"Interactive session not found: {id!r}", status_code=404)
 
 
-@post(path="/interactive-sessions", media_type=MediaType.JSON, summary="Create interactive session")
+@post(
+    path="/interactive-sessions",
+    media_type=MediaType.JSON,
+    summary="Create interactive session",
+    tags=["interactive-sessions"],
+    operation_id="create_interactive_session_with_arguments",
+)
 @eel_logging
 async def create_interactive_session_with_arguments(
     data: Annotated[schema.InteractiveSessionCreate, Body()],
@@ -358,7 +459,13 @@ async def create_interactive_session_with_arguments(
     )
 
 
-@delete(path="/interactive-sessions/{id:str}", media_type=MediaType.JSON, summary="Close interactive session")
+@delete(
+    path="/interactive-sessions/{id:str}",
+    media_type=MediaType.JSON,
+    summary="Close interactive session",
+    tags=["interactive-sessions"],
+    operation_id="close_interactive_session",
+)
 @eel_logging
 async def close_interactive_session(id: str = Parameter(title="Interactive session ID")) -> None:
     """Close, potentially prematurely, an interactive session."""
@@ -371,7 +478,7 @@ async def close_interactive_session(id: str = Parameter(title="Interactive sessi
 # Health and root ------------------------------------------------------------------------------------------------------
 
 
-@get(path="/healthz", media_type=MediaType.JSON, summary="Health check")
+@get(path="/healthz", media_type=MediaType.JSON, summary="Health check", tags=["health"], operation_id="healthz")
 @eel_logging
 async def healthz() -> QCrBoxResponse:
     """Check the health of the QCrBox registry."""
