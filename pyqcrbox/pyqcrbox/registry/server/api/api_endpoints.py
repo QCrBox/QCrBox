@@ -426,7 +426,7 @@ async def get_interactive_session_by_id(
     path="/interactive-sessions",
     media_type=MediaType.JSON,
     summary="Create interactive session",
-    tags=["interactive-sessions"],
+    tags=["interactive_sessions"],
     operation_id="create_interactive_session_with_arguments",
 )
 @eel_logging
@@ -463,7 +463,7 @@ async def create_interactive_session_with_arguments(
     path="/interactive-sessions/{id:str}",
     media_type=MediaType.JSON,
     summary="Close interactive session",
-    tags=["interactive-sessions"],
+    tags=["interactive_sessions"],
     operation_id="close_interactive_session",
 )
 @eel_logging
