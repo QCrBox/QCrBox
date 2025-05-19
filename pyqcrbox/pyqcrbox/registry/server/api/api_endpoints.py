@@ -37,6 +37,7 @@ class QCrBoxAPIException(HTTPException):
     summary="List all applications",
     tags=["applications"],
     operation_id="list_applications",
+    responses={400: schema.BAD_REQUEST_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
 @eel_logging
 async def list_applications() -> schema.QCrBoxResponse[schema.ApplicationsResponse]:
@@ -63,6 +64,7 @@ async def list_applications() -> schema.QCrBoxResponse[schema.ApplicationsRespon
     summary="List all calculations",
     tags=["calculations"],
     operation_id="list_calculations",
+    responses={400: schema.BAD_REQUEST_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
 @eel_logging
 async def list_calculations() -> schema.QCrBoxResponse[schema.CalculationsResponse]:
@@ -86,6 +88,7 @@ async def list_calculations() -> schema.QCrBoxResponse[schema.CalculationsRespon
     summary="Get calculation by ID",
     tags=["calculations"],
     operation_id="get_calculation_by_id",
+    responses={400: schema.BAD_REQUEST_ERROR, 404: schema.NOT_FOUND_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
 @eel_logging
 async def get_calculation_by_id(
@@ -117,6 +120,7 @@ async def get_calculation_by_id(
     summary="List all commands",
     tags=["commands"],
     operation_id="list_commands",
+    responses={400: schema.BAD_REQUEST_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
 @eel_logging
 async def list_commands() -> schema.QCrBoxResponse[schema.CommandsResponse]:
@@ -140,6 +144,7 @@ async def list_commands() -> schema.QCrBoxResponse[schema.CommandsResponse]:
     summary="Get command by ID",
     tags=["commands"],
     operation_id="get_command_by_id",
+    responses={400: schema.BAD_REQUEST_ERROR, 404: schema.NOT_FOUND_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
 @eel_logging
 async def get_command_by_id(id: int) -> schema.QCrBoxResponse[schema.CommandsResponse]:
@@ -167,8 +172,9 @@ async def get_command_by_id(id: int) -> schema.QCrBoxResponse[schema.CommandsRes
     path="/data-files",
     media_type=MediaType.JSON,
     summary="List all data files",
-    tags=["data_files", "file_management"],
+    tags=["data-files"],
     operation_id="list_data_files",
+    responses={400: schema.BAD_REQUEST_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
 @eel_logging
 async def list_data_files() -> schema.QCrBoxResponse[schema.DataFilesResponse]:
@@ -190,8 +196,9 @@ async def list_data_files() -> schema.QCrBoxResponse[schema.DataFilesResponse]:
     path="/data-files/{id:str}",
     media_type=MediaType.JSON,
     summary="Get a data file",
-    tags=["data_files", "file_management"],
+    tags=["data-files"],
     operation_id="get_data_file_by_id",
+    responses={400: schema.BAD_REQUEST_ERROR, 404: schema.NOT_FOUND_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
 @eel_logging
 async def get_data_file_by_id(
@@ -218,8 +225,9 @@ async def get_data_file_by_id(
     path="/data-files",
     media_type=MediaType.TEXT,
     summary="Upload a data file",
-    tags=["data_files", "file_management"],
+    tags=["data-files"],
     operation_id="create_data_file",
+    responses={400: schema.BAD_REQUEST_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
 @eel_logging
 async def create_data_file(
@@ -244,8 +252,9 @@ async def create_data_file(
     path="/data-files/{id:str}/download",
     media_type="application/octet-stream",
     summary="Download a data file",
-    tags=["data_files", "file_management"],
+    tags=["data-files"],
     operation_id="download_data_file_by_id",
+    responses={400: schema.BAD_REQUEST_ERROR, 404: schema.NOT_FOUND_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
 async def download_data_file_by_id(id: str = Parameter(title="Data file ID")) -> Response[bytes]:
     """Download a data file from the data store."""
@@ -263,8 +272,9 @@ async def download_data_file_by_id(id: str = Parameter(title="Data file ID")) ->
 @delete(
     path="/datasets/{id:str}",
     summary="Delete a dataset",
-    tags=["datasets", "file_management"],
+    tags=["datasets"],
     operation_id="delete_dataset_by_id",
+    responses={400: schema.BAD_REQUEST_ERROR, 404: schema.NOT_FOUND_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
 @eel_logging
 async def delete_dataset_by_id(id: str = Parameter(title="Dataset ID")) -> None:
@@ -276,8 +286,9 @@ async def delete_dataset_by_id(id: str = Parameter(title="Dataset ID")) -> None:
     path="/datasets",
     media_type=MediaType.JSON,
     summary="List all datasets",
-    tags=["datasets", "file_management"],
+    tags=["datasets"],
     operation_id="list_datasets",
+    responses={400: schema.BAD_REQUEST_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
 @eel_logging
 async def list_datasets() -> schema.QCrBoxResponse[schema.DatasetsResponse]:
@@ -299,8 +310,9 @@ async def list_datasets() -> schema.QCrBoxResponse[schema.DatasetsResponse]:
     path="/datasets/{id:str}",
     media_type=MediaType.JSON,
     summary="Get dataset by ID",
-    tags=["datasets", "file_management"],
+    tags=["datasets"],
     operation_id="get_dataset_by_id",
+    responses={400: schema.BAD_REQUEST_ERROR, 404: schema.NOT_FOUND_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
 @eel_logging
 async def get_dataset_by_id(
@@ -327,8 +339,9 @@ async def get_dataset_by_id(
     path="/datasets",
     media_type=MediaType.TEXT,
     summary="Create a new dataset",
-    tags=["datasets", "file_management"],
+    tags=["datasets"],
     operation_id="create_dataset",
+    responses={400: schema.BAD_REQUEST_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
 @eel_logging
 async def create_dataset(
@@ -353,8 +366,9 @@ async def create_dataset(
     path="/datasets/{id:str}/download",
     media_type="application/octet-stream",
     summary="Download a dataset",
-    tags=["datasets", "file_management"],
+    tags=["datasets"],
     operation_id="download_dataset_by_id",
+    responses={400: schema.BAD_REQUEST_ERROR, 404: schema.NOT_FOUND_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
 @eel_logging
 async def download_dataset_by_id(id: str = Parameter(title="Dataset ID")) -> Response[bytes]:
@@ -375,8 +389,9 @@ async def download_dataset_by_id(id: str = Parameter(title="Dataset ID")) -> Res
     path="/interactive-sessions",
     media_type=MediaType.JSON,
     summary="List all interactive sessions",
-    tags=["interactive_sessions"],
+    tags=["interactive-sessions"],
     operation_id="list_interactive_sessions",
+    responses={400: schema.BAD_REQUEST_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
 @eel_logging
 async def list_interactive_sessions() -> schema.QCrBoxResponse[schema.InteractiveSessionsResponse]:
@@ -398,8 +413,9 @@ async def list_interactive_sessions() -> schema.QCrBoxResponse[schema.Interactiv
     path="/interactive-sessions/{id:str}",
     media_type=MediaType.JSON,
     summary="Get interactive session by ID",
-    tags=["interactive_sessions"],
+    tags=["interactive-sessions"],
     operation_id="get_interactive_session_by_id",
+    responses={400: schema.BAD_REQUEST_ERROR, 404: schema.NOT_FOUND_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
 @eel_logging
 async def get_interactive_session_by_id(
@@ -426,8 +442,9 @@ async def get_interactive_session_by_id(
     path="/interactive-sessions",
     media_type=MediaType.JSON,
     summary="Create interactive session",
-    tags=["interactive_sessions"],
+    tags=["interactive-sessions"],
     operation_id="create_interactive_session_with_arguments",
+    responses={400: schema.BAD_REQUEST_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
 @eel_logging
 async def create_interactive_session_with_arguments(
@@ -463,8 +480,9 @@ async def create_interactive_session_with_arguments(
     path="/interactive-sessions/{id:str}",
     media_type=MediaType.JSON,
     summary="Close interactive session",
-    tags=["interactive_sessions"],
+    tags=["interactive-sessions"],
     operation_id="close_interactive_session",
+    responses={400: schema.BAD_REQUEST_ERROR, 404: schema.NOT_FOUND_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
 @eel_logging
 async def close_interactive_session(id: str = Parameter(title="Interactive session ID")) -> None:

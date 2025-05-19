@@ -1,5 +1,6 @@
 from typing import Any, Generic, TypeVar
 
+from litestar.openapi.datastructures import ResponseSpec
 from pydantic import BaseModel
 
 from pyqcrbox.data_management.data_file import DataFileMetadataResponse, DatasetResponse
@@ -73,3 +74,8 @@ class QCrBoxErrorResponse(BaseModel):
 
     status: str
     error: ErrorResponse
+
+
+INTERNAL_SERVER_ERROR = ResponseSpec(QCrBoxErrorResponse, generate_examples=False, description="Internal server error")
+BAD_REQUEST_ERROR = ResponseSpec(QCrBoxErrorResponse, generate_examples=False, description="Bad request syntax")
+NOT_FOUND_ERROR = ResponseSpec(QCrBoxErrorResponse, generate_examples=False, description="Object not found")
