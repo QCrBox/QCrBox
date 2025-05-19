@@ -1,24 +1,26 @@
 *** Settings ***
 Documentation
-...    Test suite for the registry API endpoints
-Suite Setup    Setup suite
-Suite Teardown    Teardown suite
-Resource    resources/api.resource
-Library    DateTime
-Library    Collections
-Library    JSONLibrary
-Library    OperatingSystem
-Test Timeout    2 minutes
+...                 Test suite for the registry API endpoints
+
+Resource            resources/api.resource
+Library             DateTime
+Library             Collections
+Library             JSONLibrary
+Library             OperatingSystem
+
+Suite Setup         Setup suite
+Suite Teardown      Teardown suite
+Test Timeout        2 minutes
+
 
 *** Variables ***
+${ENDPOINTS_API}            http://127.0.0.1:11000/api
+${TEST_CIF_FILE_NAME}       robot_test_cif.cif
+${TEST_CIF_FILE}            ${CURDIR}/test_data/${TEST_CIF_FILE_NAME}
+${SESSION_ALIAS}            api_endpoints
 
-${ENDPOINTS_API}    http://127.0.0.1:11000/api
-${TEST_CIF_FILE_NAME}    robot_test_cif.cif
-${TEST_CIF_FILE}    ${CURDIR}/test_data/${TEST_CIF_FILE_NAME}
-${SESSION_ALIAS}    api_endpoints
 
 *** Test Cases ***
-
 Check healthz API returns healthz
     Call GET API    ${SESSION_ALIAS}    /healthz
 
@@ -73,7 +75,7 @@ Check dataset can be downloaded via API
 
 Check an interactive session can be created
     # We need to get the data_file_id from the test dataset
-    ${response}=    Call GET API   ${SESSION_ALIAS}    /datasets/${dataset_id}
+    ${response}=    Call GET API    ${SESSION_ALIAS}    /datasets/${dataset_id}
     ${data_files}=    Set Variable    ${response.json()['payload']['datasets'][0]["data_files"]}
     ${data_file}=    Get From Dictionary    ${data_files}    ${TEST_CIF_FILE_NAME}
     ${data_file_id}=    Set Variable    ${data_file['qcrbox_file_id']}
@@ -82,10 +84,10 @@ Check an interactive session can be created
     # Call the API to create a session, which should return the calculation id
     ${input_file}=    Create Dictionary    data_file_id=${data_file_id}
     ${arguments}=    Create Dictionary    input_file=${input_file}
-    ${payload}=     Create Dictionary
-    ...             application_slug=olex2
-    ...             application_version=1.5-alpha
-    ...             arguments=${arguments}
+    ${payload}=    Create Dictionary
+    ...    application_slug=olex2
+    ...    application_version=1.5-alpha
+    ...    arguments=${arguments}
     ${response}=    Call POST API with json    ${SESSION_ALIAS}    /interactive-sessions    ${payload}
     ${interactive_session_id}=    Set Variable    ${response.json()['payload']['interactive_session_id']}
     Set Global Variable    ${interactive_session_id}
@@ -118,7 +120,7 @@ Check interactive session can be retrieved via calculations API
     ${payload}=    Set Variable    ${response.json()['payload']}
 
     Should Contain    ${payload}    calculations
-    ${interactive_session_calculation}=    Set Variable   ${response.json()['payload']['calculations'][0]}
+    ${interactive_session_calculation}=    Set Variable    ${response.json()['payload']['calculations'][0]}
     Should Contain    ${interactive_session_calculation}    calculation_id
     Should Contain    ${interactive_session_calculation}    status
     Should Contain    ${interactive_session_calculation}    stdout
@@ -131,8 +133,8 @@ Check an interactive session can be closed
 Check dataset can be deleted via API
     Call DELETE API    ${SESSION_ALIAS}    /datasets/${dataset_id}
 
-*** Keywords ***
 
+*** Keywords ***
 Setup suite
     ${api_session}=    Create API Session    ${SESSION_ALIAS}    ${ENDPOINTS_API}
     Log datetime information

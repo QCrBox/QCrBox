@@ -1,13 +1,9 @@
 *** Settings ***
+Library     RequestsLibrary
+Library     JSONLibrary
 
-Library    RequestsLibrary
-Library    JSONLibrary
 
 *** Keywords ***
-
-Log Response
-    [Arguments]    ${response}
-
 Create API Session
     [Arguments]    ${session_alias}    ${base_url}
     Create Session    ${session_alias}    ${base_url}    verify=True
@@ -15,7 +11,7 @@ Create API Session
 
 Call GET API
     [Arguments]    ${session_alias}    ${base_url}
-	${response}=    GET On Session    ${session_alias}    ${base_url}
+    ${response}=    GET On Session    ${session_alias}    ${base_url}
     Status Should Be    200    ${response}
     Log    ${response.status_code}
     Log    ${response.content}
@@ -23,7 +19,7 @@ Call GET API
 
 Call POST API
     [Arguments]    ${session_alias}    ${base_url}
-	${response}=    POST On Session    ${session_alias}    ${base_url}
+    ${response}=    POST On Session    ${session_alias}    ${base_url}
     Status Should Be    201    ${response}
     Log    ${response.status_code}
     Log    ${response.content}
@@ -31,7 +27,7 @@ Call POST API
 
 Call POST API with file
     [Arguments]    ${session_alias}    ${base_url}    ${files}
-	${response}=    POST On Session    ${session_alias}    ${base_url}    files=${files}
+    ${response}=    POST On Session    ${session_alias}    ${base_url}    files=${files}
     Status Should Be    201    ${response}
     Log    ${response.status_code}
     Log    ${response.content}
@@ -39,7 +35,7 @@ Call POST API with file
 
 Call POST API with json
     [Arguments]    ${session_alias}    ${base_url}    ${json}
-	${response}=    POST On Session    ${session_alias}    ${base_url}    json=${json}
+    ${response}=    POST On Session    ${session_alias}    ${base_url}    json=${json}
     Status Should Be    201    ${response}
     Log    ${response.status_code}
     Log    ${response.content}
@@ -47,7 +43,7 @@ Call POST API with json
 
 Call DELETE API
     [Arguments]    ${session_alias}    ${base_url}
-	${response}=    DELETE On Session    ${session_alias}    ${base_url}
+    ${response}=    DELETE On Session    ${session_alias}    ${base_url}
     Status Should Be    204    ${response}
     Log    ${response.status_code}
     Log    ${response.content}
