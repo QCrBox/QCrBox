@@ -63,6 +63,7 @@ dev = [
     "pytest-cases",
     "pytest-hot-reloading",
     "robotframework",
+    "robotframework-tidy",
     "robotframework-requests",
     "robotframework-jsonlibrary",
     "robotframework-seleniumlibrary",
