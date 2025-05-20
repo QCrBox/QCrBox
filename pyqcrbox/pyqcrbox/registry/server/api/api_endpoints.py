@@ -553,6 +553,14 @@ def handle_uncaught_exception(_request: Request, exception: Exception) -> schema
 api_router = Router(
     path="/api",
     route_handlers=[
+        # Applications
+        list_applications,
+        # Calculations
+        list_calculations,
+        get_calculation_by_id,
+        # Commands
+        list_commands,
+        get_command_by_id,
         # Datasets
         delete_dataset_by_id,
         list_datasets,
@@ -564,14 +572,6 @@ api_router = Router(
         get_data_file_by_id,
         create_data_file,
         download_data_file_by_id,
-        # Applications
-        list_applications,
-        # Calculations
-        list_calculations,
-        get_calculation_by_id,
-        # Commands
-        list_commands,
-        get_command_by_id,
         # Interactive sessions
         list_interactive_sessions,
         get_interactive_session_by_id,
