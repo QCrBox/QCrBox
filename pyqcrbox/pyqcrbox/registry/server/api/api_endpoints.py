@@ -28,6 +28,38 @@ class QCrBoxAPIException(HTTPException):
     pass
 
 
+# Admin ----------------------------------------------------------------------------------------------------------------
+
+
+@get(path="/healthz", media_type=MediaType.JSON, summary="Health check", tags=["admin"], operation_id="healthz")
+@eel_logging
+async def healthz() -> schema.QCrBoxHealthResponse:
+    """Check the health of the QCrBox registry."""
+    return QCrBoxResponse(
+        content={
+            "status": "ok",
+        },
+        status_code=200,
+    )
+
+
+@get(path="/", media_type=MediaType.JSON, include_in_schema=False)
+@eel_logging
+async def index() -> Response:
+    return Response(
+        content={
+            "status": "success",
+            "message": "Hello from QCrBox!",
+        },
+        status_code=200,
+    )
+
+
+@get(path="/openapi-schema", media_type=MediaType.JSON, include_in_schema=False)
+async def openapi_schema(request: Request) -> dict:
+    return request.app.openapi_schema.to_schema()
+
+
 # Applications ---------------------------------------------------------------------------------------------------------
 
 
@@ -493,38 +525,6 @@ async def close_interactive_session(id: str = Parameter(title="Interactive sessi
         raise QCrBoxAPIException(detail=f"Interactive session not found: {id!r}", status_code=404)
 
 
-# Health and root ------------------------------------------------------------------------------------------------------
-
-
-@get(path="/healthz", media_type=MediaType.JSON, summary="Health check", tags=["health"], operation_id="healthz")
-@eel_logging
-async def healthz() -> QCrBoxResponse:
-    """Check the health of the QCrBox registry."""
-    return QCrBoxResponse(
-        content={
-            "status": "ok",
-        },
-        status_code=200,
-    )
-
-
-@get(path="/", media_type=MediaType.JSON, include_in_schema=False)
-@eel_logging
-async def index() -> QCrBoxResponse:
-    return QCrBoxResponse(
-        content={
-            "status": "success",
-            "message": "Hello from QCrBox!",
-        },
-        status_code=200,
-    )
-
-
-@get(path="/openapi-schema", media_type=MediaType.JSON, include_in_schema=False)
-async def openapi_schema(request: Request) -> dict:
-    return request.app.openapi_schema.to_schema()
-
-
 # Exception handlers ---------------------------------------------------------------------------------------------------
 # https://docs.litestar.dev/2/usage/exceptions.html#configuration-exceptions
 
@@ -553,6 +553,10 @@ def handle_uncaught_exception(_request: Request, exception: Exception) -> schema
 api_router = Router(
     path="/api",
     route_handlers=[
+        # admin
+        healthz,
+        index,
+        openapi_schema,
         # Applications
         list_applications,
         # Calculations
@@ -577,17 +581,7 @@ api_router = Router(
         get_interactive_session_by_id,
         create_interactive_session_with_arguments,
         close_interactive_session,
-        # Health & Root
-        healthz,
-        index,
-        openapi_schema,
     ],
-    exception_handlers={
-        HTTPException: handle_uncaught_exception,
-        # ValidationException: handle_uncaught_exception,
-        # NotFoundException: handle_uncaught_exception,
-        # InternalServerException: handle_uncaught_exception,
-        # ServiceUnavailableException: handle_uncaught_exception,
-    },
+    exception_handlers={HTTPException: handle_uncaught_exception},
     response_class=QCrBoxResponse,
 )

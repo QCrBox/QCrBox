@@ -11,7 +11,7 @@ from pyqcrbox.sql_models.interactive_session_info import InteractiveSessionInfoR
 
 T = TypeVar("T")
 
-# Requests
+# Request bodies
 
 
 class InteractiveSessionCreate(BaseModel):
@@ -20,12 +20,14 @@ class InteractiveSessionCreate(BaseModel):
     arguments: dict[str, Any]
 
 
-# Success response
+# Success responses
+
+
+class QCrBoxHealthResponse:
+    status: str
 
 
 class QCrBoxResponse(BaseModel, Generic[T]):
-    """Pydantic model for QCrBox API response specification."""
-
     status: str
     message: str
     timestamp: str
@@ -60,7 +62,7 @@ class InteractiveSessionIDResponse(BaseModel):
     interactive_session_id: str
 
 
-# Error response
+# Error responses
 
 
 class ErrorResponse(BaseModel):
@@ -70,8 +72,6 @@ class ErrorResponse(BaseModel):
 
 
 class QCrBoxErrorResponse(BaseModel):
-    """Pydantic model for QCrBox API error response specification."""
-
     status: str
     error: ErrorResponse
 
