@@ -255,7 +255,7 @@ async def get_data_file_by_id(
 
 @post(
     path="/data-files",
-    media_type=MediaType.TEXT,
+    media_type=MediaType.JSON,
     summary="Upload a data file",
     tags=["data-files"],
     operation_id="create_data_file",
@@ -369,7 +369,7 @@ async def get_dataset_by_id(
 
 @post(
     path="/datasets",
-    media_type=MediaType.TEXT,
+    media_type=MediaType.JSON,
     summary="Create a new dataset",
     tags=["datasets"],
     operation_id="create_dataset",
@@ -377,7 +377,7 @@ async def get_dataset_by_id(
 )
 @eel_logging
 async def create_dataset(
-    data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART, title="The file contents to upload")],
+    data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)],
 ) -> schema.QCrBoxResponse[schema.DatasetsResponse]:
     """Create a new dataset by uploading data files."""
     qcrbox_dataset_id = await api_helpers.import_dataset(data)
