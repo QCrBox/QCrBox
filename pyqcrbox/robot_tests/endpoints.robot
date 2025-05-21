@@ -2,22 +2,26 @@
 Documentation
 ...                 Test suite for the registry API endpoints
 
-Resource            resources/api.resource
+# Standard libraries
 Library             DateTime
 Library             Collections
 Library             JSONLibrary
 Library             OperatingSystem
+# Keywords implemented in Robot
+Resource            resources/api.resource
 
 Suite Setup         Setup suite
 Suite Teardown      Teardown suite
 Test Timeout        2 minutes
 
-
 *** Variables ***
-${ENDPOINTS_API}            http://127.0.0.1:11000/api
-${TEST_CIF_FILE_NAME}       robot_test_cif.cif
-${TEST_CIF_FILE}            ${CURDIR}/test_data/${TEST_CIF_FILE_NAME}
-${SESSION_ALIAS}            api_endpoints
+${ENDPOINTS_API}                    http://127.0.0.1:11000/api
+${TEST_CIF_FILE_NAME}               robot_test_cif.cif
+${TEST_CIF_FILE}                    ${CURDIR}/test_data/${TEST_CIF_FILE_NAME}
+${SESSION_ALIAS}                    api_endpoints
+${TEST_INTERACTIVE_SESSION_ID}      ${EMPTY}
+${TEST_DATA_FILE_ID}                ${EMPTY}
+${TEST_DATASET_ID}                  ${EMPTY}
 
 
 *** Test Cases ***
@@ -42,7 +46,7 @@ Check data_files API returns data_files
 
 Check dataset can be uploaded via API
     ${dataset_id}=    Upload Test Dataset
-    Set Global Variable    ${dataset_id}
+    Set Suite Variable    ${TEST_DATASET_ID}    ${dataset_id}
 
 Check datasets API returns datasets
     ${response}=    Call GET API    ${SESSION_ALIAS}    /datasets
@@ -50,7 +54,7 @@ Check datasets API returns datasets
     Should Be True    ${length} > 0
 
 Check a dataset metadata can be retrieved via API
-    ${response}=    Call GET API    ${SESSION_ALIAS}    /datasets/${dataset_id}
+    ${response}=    Call GET API    ${SESSION_ALIAS}    /datasets/${TEST_DATASET_ID}
     ${dataset}=    Set Variable    ${response.json()['payload']["datasets"][0]}
 
     Should Contain    ${dataset}    qcrbox_dataset_id
@@ -62,20 +66,20 @@ Check a dataset metadata can be retrieved via API
         Should Contain    ${file_data}    qcrbox_file_id
         Should Contain    ${file_data}    filename
         Should Contain    ${file_data}    filetype
-        Set Global Variable    ${data_file_id}    ${file_data['qcrbox_file_id']}
+        Set Suite Variable    ${TEST_DATA_FILE_ID}    ${file_data['qcrbox_file_id']}
     END
 
 Check data file can be downloaded via API
-    ${response}=    Call GET API    ${SESSION_ALIAS}    /data-files/${data_file_id}/download
+    ${response}=    Call GET API    ${SESSION_ALIAS}    /data-files/${TEST_DATA_FILE_ID}/download
     Compare Downloaded File With Uploaded    ${response.content}    ${response}
 
 Check dataset can be downloaded via API
-    ${response}=    Call GET API    ${SESSION_ALIAS}    /datasets/${dataset_id}/download
+    ${response}=    Call GET API    ${SESSION_ALIAS}    /datasets/${TEST_DATASET_ID}/download
     Compare Downloaded File With Uploaded    ${response.content}    ${response}
 
 Check an interactive session can be created
     # We need to get the data_file_id from the test dataset
-    ${response}=    Call GET API    ${SESSION_ALIAS}    /datasets/${dataset_id}
+    ${response}=    Call GET API    ${SESSION_ALIAS}    /datasets/${TEST_DATASET_ID}
     ${data_files}=    Set Variable    ${response.json()['payload']['datasets'][0]["data_files"]}
     ${data_file}=    Get From Dictionary    ${data_files}    ${TEST_CIF_FILE_NAME}
     ${data_file_id}=    Set Variable    ${data_file['qcrbox_file_id']}
@@ -90,14 +94,14 @@ Check an interactive session can be created
     ...    arguments=${arguments}
     ${response}=    Call POST API with json    ${SESSION_ALIAS}    /interactive-sessions    ${payload}
     ${interactive_session_id}=    Set Variable    ${response.json()['payload']['interactive_session_id']}
-    Set Global Variable    ${interactive_session_id}
+    Set Suite Variable    ${TEST_INTERACTIVE_SESSION_ID}    ${interactive_session_id}
     Sleep    5s    "Wait for the interactive session to be added to the database"
 
 Check interactive sessions API returns interactive sessions
     Call GET API    ${SESSION_ALIAS}    /interactive-sessions
 
 Check interactive session can be retrieved via interactive-sessions API
-    ${response}=    Call GET API    ${SESSION_ALIAS}    /interactive-sessions/${interactive_session_id}
+    ${response}=    Call GET API    ${SESSION_ALIAS}    /interactive-sessions/${TEST_INTERACTIVE_SESSION_ID}
     ${payload}=    Set Variable    ${response.json()['payload']}
 
     Should Contain    ${payload}    interactive_sessions
@@ -109,14 +113,14 @@ Check interactive session can be retrieved via interactive-sessions API
     Should Contain    ${interactive_session}    command_name
     Should Contain    ${interactive_session}    arguments
 
-    Should Be Equal    ${interactive_session['session_id']}    ${interactive_session_id}
+    Should Be Equal    ${interactive_session['session_id']}    ${TEST_INTERACTIVE_SESSION_ID}
     Should Be Equal    ${interactive_session['command_name']}    interactive_session
     Should Be Equal    ${interactive_session['application_slug']}    olex2
     Should Be Equal    ${interactive_session['application_version']}    1.5-alpha
-    Should Be Equal    ${interactive_session['arguments']['input_file']['data_file_id']}    ${data_file_id}
+    Should Be Equal    ${interactive_session['arguments']['input_file']['data_file_id']}    ${TEST_INTERACTIVE_SESSION_ID}
 
 Check interactive session can be retrieved via calculations API
-    ${response}=    Call GET API    ${SESSION_ALIAS}    /calculations/${interactive_session_id}
+    ${response}=    Call GET API    ${SESSION_ALIAS}    /calculations/${TEST_INTERACTIVE_SESSION_ID}
     ${payload}=    Set Variable    ${response.json()['payload']}
 
     Should Contain    ${payload}    calculations
@@ -128,10 +132,10 @@ Check interactive session can be retrieved via calculations API
     Should Contain    ${interactive_session_calculation}    extra_info
 
 Check an interactive session can be closed
-    Call DELETE API    ${SESSION_ALIAS}    /interactive-sessions/${interactive_session_id}
+    Call DELETE API    ${SESSION_ALIAS}    /interactive-sessions/${TEST_INTERACTIVE_SESSION_ID}
 
 Check dataset can be deleted via API
-    Call DELETE API    ${SESSION_ALIAS}    /datasets/${dataset_id}
+    Call DELETE API    ${SESSION_ALIAS}    /datasets/${TEST_DATASET_ID}
 
 
 *** Keywords ***
