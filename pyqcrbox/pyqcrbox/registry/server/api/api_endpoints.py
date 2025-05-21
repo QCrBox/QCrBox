@@ -329,7 +329,7 @@ async def list_datasets() -> schema.QCrBoxResponse[schema.DatasetsResponse]:
     return QCrBoxResponse(
         content={
             "status": "success",
-            "message": "Retrieved datasets",
+            "message": f"Retrieved {len(datasets)} datasets",
             "payload": {
                 "datasets": datasets,
             },
@@ -480,7 +480,7 @@ async def get_interactive_session_by_id(
 )
 @eel_logging
 async def create_interactive_session_with_arguments(
-    data: Annotated[schema.InteractiveSessionCreate, Body()],
+    data: Annotated[schema.CreateInteractiveSession, Body()],
 ) -> schema.QCrBoxResponse[schema.InteractiveSessionIDResponse]:
     """Create an interactive session with the provided arguments arguments."""
     command_spec = CommandInvocationCreate(

@@ -1,4 +1,4 @@
-from typing import Any, Generic, TypeVar
+from typing import Any, Dict, Generic, TypeVar
 
 from litestar.openapi.datastructures import ResponseSpec
 from pydantic import BaseModel
@@ -14,10 +14,10 @@ T = TypeVar("T")
 # Request bodies
 
 
-class InteractiveSessionCreate(BaseModel):
+class CreateInteractiveSession(BaseModel):
     application_slug: str
     application_version: str
-    arguments: dict[str, Any]
+    arguments: Dict[str, Any]
 
 
 # Success responses
