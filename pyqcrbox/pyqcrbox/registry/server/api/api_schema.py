@@ -23,7 +23,7 @@ class CreateInteractiveSession(BaseModel):
 # Success responses
 
 
-class QCrBoxHealthResponse:
+class QCrBoxHealthResponse(BaseModel):
     status: str
 
 
