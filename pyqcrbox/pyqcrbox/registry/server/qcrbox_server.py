@@ -5,6 +5,16 @@ from typing import Any
 import nats.js.errors
 from faststream import Context
 from litestar import Litestar, MediaType, get
+from litestar.exceptions import (
+    HTTPException,
+    ImproperlyConfiguredException,
+    InternalServerException,
+    NotAuthorizedException,
+    NotFoundException,
+    PermissionDeniedException,
+    ServiceUnavailableException,
+    ValidationException,
+)
 from litestar.openapi import OpenAPIConfig
 from litestar.response import Redirect
 from litestar.static_files import create_static_files_router
@@ -13,6 +23,7 @@ from sqlmodel import select
 
 from pyqcrbox import helpers, logger, msg_specs, settings, sql_models
 from pyqcrbox.debug import eel_logging
+from pyqcrbox.registry.server.api.api_endpoints import handle_uncaught_exception
 from pyqcrbox.registry.shared.calculation_status import update_calculation_status_in_nats_kv_NEW
 from pyqcrbox.sql_models import CalculationStatusDetails, CalculationStatusEnum
 
@@ -227,6 +238,16 @@ class QCrBoxServer(QCrBoxServerClientBase):
                 # root_schema_site="swagger",
                 use_handler_docstrings=True,
             ),
+            exception_handlers={
+                HTTPException: handle_uncaught_exception,
+                ImproperlyConfiguredException: handle_uncaught_exception,
+                ValidationException: handle_uncaught_exception,
+                PermissionDeniedException: handle_uncaught_exception,
+                NotAuthorizedException: handle_uncaught_exception,
+                NotFoundException: handle_uncaught_exception,
+                InternalServerException: handle_uncaught_exception,
+                ServiceUnavailableException: handle_uncaught_exception,
+            },
         )
 
     @on_qcrbox_startup

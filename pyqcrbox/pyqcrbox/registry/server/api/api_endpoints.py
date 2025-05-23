@@ -4,11 +4,18 @@ Organised API routes for QCrBox, grouped by resource.
 
 from typing import Annotated
 
-import sqlalchemy.exc
 from litestar import MediaType, Request, Router, delete, get, post
 from litestar.datastructures import UploadFile
 from litestar.enums import RequestEncodingType
-from litestar.exceptions import HTTPException
+from litestar.exceptions import (
+    HTTPException,
+    ImproperlyConfiguredException,
+    InternalServerException,
+    NotFoundException,
+    PermissionDeniedException,
+    ServiceUnavailableException,
+    ValidationException,
+)
 from litestar.params import Body, Parameter
 from litestar.response import Response
 from litestar.status_codes import HTTP_500_INTERNAL_SERVER_ERROR
@@ -193,7 +200,7 @@ async def get_command_by_id(id: int) -> schema.QCrBoxResponse[schema.CommandsRes
             },
             status_code=200,
         )
-    except sqlalchemy.exc.NoResultFound:
+    except api_helpers.CommandNotFoundError:
         raise QCrBoxAPIException(detail=f"Command not found: {id!r}", status_code=404)
 
 
@@ -535,7 +542,7 @@ def handle_uncaught_exception(_request: Request, exception: Exception) -> schema
     message = getattr(exception, "detail", "There has been an unspecified error")
     details = getattr(exception, "extra", None)
     return QCrBoxResponse(
-        {
+        content={
             "status": "error",
             "error": {
                 "code": status_code,
@@ -582,6 +589,14 @@ api_router = Router(
         create_interactive_session_with_arguments,
         close_interactive_session,
     ],
-    exception_handlers={HTTPException: handle_uncaught_exception},
+    exception_handlers={
+        HTTPException: handle_uncaught_exception,
+        ImproperlyConfiguredException: handle_uncaught_exception,
+        ValidationException: handle_uncaught_exception,
+        PermissionDeniedException: handle_uncaught_exception,
+        NotFoundException: handle_uncaught_exception,
+        InternalServerException: handle_uncaught_exception,
+        ServiceUnavailableException: handle_uncaught_exception,
+    },
     response_class=QCrBoxResponse,
 )
