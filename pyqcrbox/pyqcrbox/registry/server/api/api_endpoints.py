@@ -260,31 +260,35 @@ async def get_data_file_by_id(
         raise QCrBoxAPIException(detail=f"Data file not found: {id!r}", status_code=404)
 
 
-@post(
-    path="/data-files",
-    media_type=MediaType.JSON,
-    summary="Upload a data file",
-    tags=["data-files"],
-    operation_id="create_data_file",
-    responses={400: schema.BAD_REQUEST_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
-)
-@eel_logging
-async def create_data_file(
-    data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART, title="The file to upload")],
-) -> schema.QCrBoxResponse[schema.DataFilesResponse]:
-    """Upload a new data file to the data store."""
-    qcrbox_data_file_id = await api_helpers.import_data_file(data)
-    data_file = await api_helpers.get_data_file_info(qcrbox_data_file_id)
-    return QCrBoxResponse(
-        content={
-            "status": "success",
-            "message": f"Imported data file: {data.filename!r}",
-            "payload": {
-                "data_files": [data_file],
-            },
-        },
-        status_code=201,
-    )
+# ----------------------------------------------------------------------------------------------------------------------
+# Removed for now, as there SHOULD NOT be any mechanism to upload a data file which is not associated to a dataset.
+# ----------------------------------------------------------------------------------------------------------------------
+# @post(
+#     path="/data-files",
+#     media_type=MediaType.JSON,
+#     summary="Upload a data file",
+#     tags=["data-files"],
+#     operation_id="create_data_file",
+#     responses={400: schema.BAD_REQUEST_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
+# )
+# @eel_logging
+# async def create_data_file(
+#     data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART, title="The file to upload")],
+# ) -> schema.QCrBoxResponse[schema.DataFilesResponse]:
+#     """Upload a new data file to the data store."""
+#     qcrbox_data_file_id = await api_helpers.import_data_file(data)
+#     data_file = await api_helpers.get_data_file_info(qcrbox_data_file_id)
+#     return QCrBoxResponse(
+#         content={
+#             "status": "success",
+#             "message": f"Imported data file: {data.filename!r}",
+#             "payload": {
+#                 "data_files": [data_file],
+#             },
+#         },
+#         status_code=201,
+#     )
+# ----------------------------------------------------------------------------------------------------------------------
 
 
 @get(
@@ -585,7 +589,7 @@ api_router = Router(
         # Data files
         list_data_files,
         get_data_file_by_id,
-        create_data_file,
+        # create_data_file,
         download_data_file_by_id,
         # Interactive sessions
         list_interactive_sessions,
