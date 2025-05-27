@@ -1,7 +1,5 @@
-import json
 from typing import Annotated
 
-import nats.js.errors
 import sqlalchemy.exc
 import svcs
 from faststream.nats import NatsBroker
@@ -17,7 +15,6 @@ from pyqcrbox.data_management import DatasetResponse
 from pyqcrbox.data_management.data_file import DataFileMetadataResponse
 from pyqcrbox.debug import eel_logging
 from pyqcrbox.services import get_data_file_manager, get_nats_broker
-from pyqcrbox.svcs import get_nats_key_value
 
 
 class CalculationNotFoundError(Exception):
@@ -148,14 +145,24 @@ def get_calculation_info() -> list[sql_models.CalculationResponseModel]:
 
 
 @eel_logging
-async def get_calculation_info_by_calculation_id(calculation_id: str) -> dict:
+async def get_calculation_info_by_calculation_id(calculation_id: str) -> sql_models.CalculationResponseModel:
     # TODO: this should return a custom a response model
-    try:
-        kv_calculation_status = await get_nats_key_value(bucket="calculation_status")
-        calc_status_info_str = (await kv_calculation_status.get(calculation_id)).value
-        return json.loads(calc_status_info_str)
-    except nats.js.errors.KeyNotFoundError:
+    with settings.db.get_session() as session:
+        calculation = session.exec(
+            select(sql_models.CalculationDB).where(sql_models.CalculationDB.calculation_id == calculation_id)
+        ).first()
+
+    if calculation is None:
         raise CalculationNotFoundError(calculation_id)
+
+    return calculation.to_response_model()
+
+    # try:
+    #     kv_calculation_status = await get_nats_key_value(bucket="calculation_status")
+    #     calc_status_info_str = (await kv_calculation_status.get(calculation_id)).value
+    #     return json.loads(calc_status_info_str)
+    # except nats.js.errors.KeyNotFoundError:
+    #     raise CalculationNotFoundError(calculation_id)
 
 
 @eel_logging
