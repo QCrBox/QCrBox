@@ -412,7 +412,11 @@ async def create_dataset(
 @eel_logging
 async def download_dataset_by_id(id: str = Parameter(title="Dataset ID")) -> Response[bytes]:
     """Download the data files of a datast as a Zip file."""
-    dataset_contents_as_bytes, output_filename = await api_helpers.export_dataset(id)
+    try:
+        dataset_contents_as_bytes, output_filename = await api_helpers.export_dataset(id)
+    except DatasetNotFoundError:
+        raise QCrBoxAPIException(detail=f"Dataset not found: {id!r}", status_code=404)
+
     return Response(
         content=dataset_contents_as_bytes,
         media_type="application/octet-stream",
@@ -597,6 +601,7 @@ api_router = Router(
         NotFoundException: handle_uncaught_exception,
         InternalServerException: handle_uncaught_exception,
         ServiceUnavailableException: handle_uncaught_exception,
+        Exception: handle_uncaught_exception,
     },
     response_class=QCrBoxResponse,
 )

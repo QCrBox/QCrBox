@@ -247,6 +247,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
                 NotFoundException: handle_uncaught_exception,
                 InternalServerException: handle_uncaught_exception,
                 ServiceUnavailableException: handle_uncaught_exception,
+                Exception: handle_uncaught_exception,
             },
         )
 
