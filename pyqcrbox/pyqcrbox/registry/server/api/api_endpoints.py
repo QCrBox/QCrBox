@@ -4,6 +4,7 @@ Organised API routes for QCrBox, grouped by resource.
 
 from typing import Annotated
 
+import nats.js.errors
 from litestar import MediaType, Request, Router, delete, get, post
 from litestar.datastructures import UploadFile
 from litestar.enums import RequestEncodingType
@@ -301,7 +302,11 @@ async def get_data_file_by_id(
 )
 async def download_data_file_by_id(id: str = Parameter(title="Data file ID")) -> Response[bytes]:
     """Download a data file from the data store."""
-    data_file_contents_as_bytes, data_file_name = await api_helpers.export_data_file(id)
+    try:
+        data_file_contents_as_bytes, data_file_name = await api_helpers.export_data_file(id)
+    except nats.js.errors.NotFoundError:
+        raise QCrBoxAPIException(detail=f"Data file not found: {id!r}", status_code=404)
+
     return Response(
         content=data_file_contents_as_bytes,
         media_type="application/octet-stream",
