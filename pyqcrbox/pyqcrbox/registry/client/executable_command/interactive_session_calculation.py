@@ -18,7 +18,7 @@ class InteractiveSessionCalculation(BaseCalculation):
         prepare_calc: BaseCalculation | None,
         run_calc: BaseCalculation,
         finalise_calc: BaseCalculation | None,
-    ):
+    ) -> None:
         super().__init__(calculation_id=calculation_id, calc_finished_event=calc_finished_event)
         self.prepare_calc = prepare_calc
         self.run_calc = run_calc
@@ -43,9 +43,24 @@ class InteractiveSessionCalculation(BaseCalculation):
         return None
 
     @eel_logging
-    async def wait_until_finished(self):
-        logger.debug("InteractiveSessionCalculation: entered wait_until_finished()")
+    async def wait_until_finished(self) -> None:
+        """Asynchronously wait for all calculation phases to complete.
 
+        This method sequentially waits for the 'prepare', 'run', and 'finalise'
+        calculation commands to finish, if they are present. It also waits for
+        the 'calc_finished' event to be set, indicating that the calculation
+        has terminated. Upon successful completion of the 'finalise' phase, it
+        imports the output file into the data store and create a dataset from
+        it. The method sets the session as closed and signals the session
+        closure event.
+
+        Raises
+        ------
+        AssertionError
+            If 'prepare_calc' or 'finalise_calc' are not instances of PythonCallableCalculation.
+        FileNotFoundError
+            If the output file from the 'finalise' command cannot be found during import.
+        """
         if self.prepare_calc:
             assert isinstance(
                 self.prepare_calc, PythonCallableCalculation
@@ -56,11 +71,11 @@ class InteractiveSessionCalculation(BaseCalculation):
 
         logger.debug("Waiting for 'run' command to finish")
         await self.run_calc.wait_until_finished()
-        logger.debug(f"Run command finished: {self.run_calc.calculation_id!r}")
 
-        logger.debug("Waiting for 'calc_finished' event to be set")
+        # We wait for this event flag to be set (in terminate) before we run
+        # the finalise calculation and import the output into the data store
+        logger.debug("Waiting for 'calc_finished' event to be set upon calculation termination")
         await self.calc_finished_event.wait()
-        logger.debug(f"Waiting for 'calc_finished' event to be set: {self.calc_finished_event}")
 
         if self.finalise_calc:
             assert isinstance(
@@ -89,24 +104,30 @@ class InteractiveSessionCalculation(BaseCalculation):
         logger.debug(f"InteractiveSessionCalculation: interactive session finished: {self.calculation_id!r}")
 
     @eel_logging
-    async def close_interactive_session(self):
+    async def terminate(self) -> None:
+        """Terminate the interactive session.
+
+        If the calculation is already finished, logs the session state and
+        returns. Otherwise, it signals the calculation to finish, waits for
+        session closure.
+        """
         if self.calc_finished_event.is_set():
             if self.is_closed:
-                logger.debug("Interactive session already closed")
+                logger.warning(f"Interactive session {self.calculation_id!r} already closed")
             else:
-                logger.warning("Interactive session is being closed.")
+                logger.warning(f"Interactive session {self.calculation_id!r} is already being closed.")
             return
 
         logger.debug("Closing interactive session")
 
-        # TODO: should we set the calc_finished_event for the run command?
-        #       might be safer in case it doesn't terminate on its own.
-        logger.debug("Sending 'calc_finished' event to run_cal, this will wait for the finalise command to finish")
+        # Sending 'calc_finished' event to run_cal, this will cause run_calc.wait_until_finished()
+        # to exit
         self.run_calc.calc_finished_event.set()
 
-        # Todo: terminate run_calc
-
-        logger.debug("Sending 'calc_finished' event to interactive session calculation")
+        # When the run calc is finished, this flag is used to communicate with the interactive
+        # session wait_until_finished() that the finalise command can be run
         self.calc_finished_event.set()
+
+        # Keep waiting until the finalise calculation has finished and the output has been added to
+        # the data store
         await self.session_closed_event.wait()
-        logger.debug("Done. The session should finish now.")
