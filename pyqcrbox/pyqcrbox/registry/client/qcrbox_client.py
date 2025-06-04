@@ -36,7 +36,6 @@ class QCrBoxClient(QCrBoxServerClientBase):
         client_id: str = "anonymous_client",
         private_routing_key: Optional[str] = None,
         work_root_dir: Optional[Path] = None,
-        # broker: Optional[RabbitBroker] = None,
         nats_broker: Optional[NatsBroker] = None,
         asgi_server: Optional[Litestar] = None,
     ):
@@ -44,10 +43,9 @@ class QCrBoxClient(QCrBoxServerClientBase):
         self.application_spec = application_spec
         self.client_id = client_id
         self.private_routing_key = private_routing_key or generate_private_routing_key()
-        # self.routing_key_command_invocation = application_spec.routing_key_command_invocation
         self.work_root_dir = work_root_dir or self._create_work_root_dir()
         self._calculations: list[BaseCommand] = []
-        self.status = ClientStatus(ClientStatusEnum.IDLE)
+        self.status = ClientStatus(client_id, ClientStatusEnum.IDLE)
 
     def _create_work_root_dir(self):
         return TemporaryDirectory(prefix=f"work_root_{self.client_id}_")
@@ -58,14 +56,12 @@ class QCrBoxClient(QCrBoxServerClientBase):
 
     @eel_logging
     def _set_up_nats_broker(self) -> None:
-        logger.warning("TODO: set up NATS broker for client")
-
         slug_sanitized = helpers.sanitize_for_nats_subject(self.application_spec.slug)
         version_sanitized = helpers.sanitize_for_nats_subject(self.application_spec.version)
-
         self.nats_broker.subscriber(f"client.cmd.handle_invocation_request.{slug_sanitized}.{version_sanitized}")(
             self.handle_command_invocation_request_from_server
         )
+        self.nats_broker.subscriber(f"{self.private_inbox}.cmd.discard")(self.handle_discard_command_invocation)
         self.nats_broker.subscriber(f"{self.private_inbox}.cmd.execute")(self.handle_command_execution)
         self.nats_broker.subscriber(f"{self.private_inbox}.calc.status")(self.get_calculation_status)
         self.nats_broker.subscriber(f"{self.private_inbox}.interactive_session.close")(self.close_interactive_session)
@@ -92,18 +88,23 @@ class QCrBoxClient(QCrBoxServerClientBase):
     @eel_logging
     async def handle_discard_command_invocation(self, msg: msg_specs.DiscardCommandInvocationNATS):
         logger.info(f"Received request to discard command invocation: {msg!r} (current status: {self.status.status})")
-        self.status.set_idle()
+        status_details = CalculationStatusDetails(
+            calculation_id=msg.calculation_id,
+            status=CalculationStatusEnum.FAILED,
+            stdout=None,
+            stderr=None,
+            extra_info={
+                "error_msg": f"Discarded calculation {msg.calculation_id!r} due to client status {self.status.status}",
+            },
+        )
+        await update_calculation_status_in_nats_kv_NEW(status_details)
 
     @eel_logging
     async def handle_command_execution(self, msg: msg_specs.CommandExecutionRequestNATS):
         logger.info(f"Received command execution request: {msg!r} (current status: {self.status.status})")
         self.status.set_busy()
 
-        # We are unsure if this should belong here, but it makes the code far less
-        # complicated and resolves some data coupling. Ideally we would want the
-        # interactive session (and eventually non-interactive command) to deal
-        # with this, rather than the client.
-        await self._update_interactive_session_info(msg)
+        await self._store_interactive_session(msg)
 
         try:
             cmd = self.get_executable_command(msg.command_name)
@@ -125,7 +126,9 @@ class QCrBoxClient(QCrBoxServerClientBase):
             )
             if not isinstance(calc, BaseCalculation):
                 raise RuntimeError("Command execution did not return a calculation object.")
-        except Exception as exc:  # TODO: this isn't triggered when an async command fails?
+
+        # TODO: this isn't triggered when an async command fails?
+        except Exception as exc:
             error_msg = f"Command execution failed: {exc!r}"
             logger.error(error_msg)
             status_details = CalculationStatusDetails(
@@ -145,31 +148,16 @@ class QCrBoxClient(QCrBoxServerClientBase):
         await calc.wait_until_finished()
         await update_calculation_status_in_nats_kv_NEW(await calc.get_status_details())
 
-        # EP: we should not need to set the client status to idle, as this is
-        # handled by close_interactive_session.
-        # self.status.set_idle()
-
-    @eel_logging
-    async def get_calculation_status(
-        self, msg: msg_specs.GetCalculationStatusNATS
-    ) -> msg_specs.CalculationStatusResponseNATS:
-        logger.debug(f"Current contents of self.calculations: {self.calculations.items()!r}")
-        logger.debug(f"Retrieving calculation details for calculation_id={msg.calculation_id!r}")
-        status = self.calculations[msg.calculation_id].status
-        logger.debug(f"Current calculation status: {status!r}")
-        response = msg_specs.CalculationStatusResponseNATS(calculation_id=msg.calculation_id, status=status)
-        return response
-
-    # Following from previous comments, shouldn't this belong to the InteractiveSession
-    # or InteractiveSessionCalculation instead?
     @eel_logging
     async def close_interactive_session(
         self, msg: msg_specs.CloseInteractiveSessionNATS
     ) -> msg_specs.CloseInteractiveSessionResponseNATS | None:
-        logger.debug(f"Received request to close interactive session: {msg!r}")
+        logger.info(f"Received request to close interactive session: {msg!r}")
+
         session_id = msg.session_id
+
         if session_id not in self.calculations:
-            logger.warning(f"No calculation found for interactive session ID {session_id!r}")
+            logger.error(f"No calculation on client found for id={session_id!r}")
             response = msg_specs.CloseInteractiveSessionResponseNATS(
                 session_id=session_id,
                 status=CalculationStatusEnum.FAILED,
@@ -178,21 +166,17 @@ class QCrBoxClient(QCrBoxServerClientBase):
             return response
 
         calc = self.calculations[session_id]
-        logger.debug(f"Received request to close interactive session: {calc!r}")
 
         try:
-            await calc.interactive_close_session()
+            await calc.close_interactive_session()
             session_status = calc.status
             output_dataset_id = calc.output_dataset_id
-            logger.info(f"Closed interactive session: {session_id!r}")
-            logger.info(f"Output dataset id: {output_dataset_id!r}")
+            logger.debug(f"Closed interactive session: id={session_id!r} dataset_id={output_dataset_id!r}")
+            self.status.set_idle()
         except AttributeError:
-            logger.warning(f"Calculation for{session_id!r} does not seem to represent an interactive session")
+            logger.error(f"Calculation {session_id!r} is not an interactive session")
             session_status = CalculationStatusEnum.FAILED
             output_dataset_id = None
-
-        logger.debug("Setting client status to 'idle'")
-        self.status.set_idle()
 
         return msg_specs.CloseInteractiveSessionResponseNATS(
             session_id=session_id,
@@ -201,9 +185,19 @@ class QCrBoxClient(QCrBoxServerClientBase):
         )
 
     @eel_logging
-    def get_executable_command(self, command_name, **kwargs):
-        cmd_spec = self.application_spec.get_command_by_name(command_name)
-        return ExecutableCommand(cmd_spec)
+    async def get_calculation_status(
+        self, msg: msg_specs.GetCalculationStatusNATS
+    ) -> msg_specs.CalculationStatusResponseNATS:
+        logger.debug(f"Retrieving calculation details for calculation_id={msg.calculation_id!r}")
+        status = self.calculations[msg.calculation_id].status
+        logger.debug(f"Current calculation status: {status!r}")
+        response = msg_specs.CalculationStatusResponseNATS(calculation_id=msg.calculation_id, status=status)
+        return response
+
+    @eel_logging
+    def get_executable_command(self, command_name):
+        command_spec = self.application_spec.get_command_spec_by_name(command_name)
+        return ExecutableCommand(command_spec)
 
     @eel_logging
     def _set_up_asgi_server(self) -> None:
@@ -217,43 +211,20 @@ class QCrBoxClient(QCrBoxServerClientBase):
             await calc.terminate()
 
     @eel_logging
-    async def _update_interactive_session_info(self, msg):
-        if msg.command_name == "interactive_session":
-            interactive_session_info = InteractiveSessionInfo(
-                session_id=msg.calculation_id,
-                client_private_inbox=self.private_inbox,
-                cmd_execution_request=msg,
-            )
-            data_manager = await get_data_file_manager()
-            await data_manager.store_interactive_session_info(interactive_session_info)
-            logger.debug(
-                f"Added interactive session to NATS key-value store: session_id={interactive_session_info.session_id}"
-                + f" calculation_id={msg.calculation_id}"
-            )
-        else:
-            raise ValueError(f"Unknown command type: {msg.command_name}")
-
-    # @on_qcrbox_startup
-    # async def send_registration_request(self):
-    #     logger.debug("Sending registration request to QCrBox server")
-    #     msg = msg_specs.RegisterApplication(
-    #         action="register_application",
-    #         payload=msg_specs.PayloadForRegisterApplication(
-    #             application_spec=self.application_spec,
-    #             private_routing_key=self.private_routing_key,
-    #         ),
-    #     )
-    #     await self.broker.publish(
-    #         msg,
-    #         settings.rabbitmq.routing_key_qcrbox_registry,
-    #         # rpc=True,
-    #         reply_to=self.private_routing_key,
-    #     )
-    #
-    #     resp = await self.nats_broker.publish(
-    #         msg, "register-application", rpc=True, rpc_timeout=settings.nats.rpc_timeout, raise_timeout=True
-    #     )
-    #     logger.error(f"Received response to registration request: {resp=}")
+    async def _store_interactive_session(self, msg: msg_specs.CommandExecutionRequestNATS):
+        if msg.command_name != "interactive_session":
+            return
+        interactive_session_info = InteractiveSessionInfo(
+            session_id=msg.calculation_id,
+            client_private_inbox=self.private_inbox,
+            cmd_execution_request=msg,
+        )
+        data_manager = await get_data_file_manager()
+        await data_manager.store_interactive_session_info(interactive_session_info)
+        logger.debug(
+            f"Added interactive session to NATS key-value store: session_id={interactive_session_info.session_id!r}"
+            + f" calculation_id={msg.calculation_id}"
+        )
 
     @on_qcrbox_startup
     @eel_logging
@@ -275,9 +246,6 @@ class QCrBoxClient(QCrBoxServerClientBase):
         except TimeoutError:
             logger.error("Application registration failed (no response from server)")
             self.shutdown()
-
-    # async def publish(self, queue, msg):
-    #     await self.broker.publish(msg, queue)
 
 
 class TestQCrBoxClient(TestQCrBoxServerClientBase, QCrBoxClient):

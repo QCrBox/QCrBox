@@ -117,6 +117,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
             arguments=msg.arguments,
             calculation_id=calculation_id,
         )
+
         await self.nats_broker.publish(
             msg_to_client,
             subject=f"client.cmd.handle_invocation_request.{msg_to_client.nats_subject_parts}",
@@ -143,6 +144,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
     @eel_logging
     async def handle_command_invocation_client_response(self, msg: msg_specs.CommandInvocationClientResponseNATS):
         logger.info(f"Received client response: {msg!r}")
+
         if not msg.client_is_available:
             logger.debug(
                 "Client is not available, telling client to discard the invocation request:"
