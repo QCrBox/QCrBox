@@ -511,7 +511,8 @@ async def create_interactive_session_with_arguments(
     )
     response = await api_helpers.invoke_command(command_spec)
     if response["status"] != CalculationStatusEnum.SUBMITTED:
-        raise QCrBoxAPIException(detail=f"Failed to create interactive session: {data}", status_code=500)
+        error_msg = response["payload"].get("error", "an unknown error occurred")
+        raise QCrBoxAPIException(detail=f"Failed to create interactive session: {error_msg}", status_code=500)
 
     # TODO: we should respond with the created object, rather than the ID. But we can't do that just yet.
     # interactive_session = api_helpers.get_calculation_info_by_calculation_id(response["payload"]["calculation_id"])
