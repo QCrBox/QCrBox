@@ -100,5 +100,6 @@ pyqcrbox/robot_tests/output.xml
 pyqcrbox/robot_tests/log.html
 pyqcrbox/robot_tests/report.html
 
-# Log files
+# Log files and rotated log files
 *.log
+*.log.*.gz
