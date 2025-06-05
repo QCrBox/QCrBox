@@ -8,7 +8,6 @@ from pyqcrbox.registry.client.executable_command import BaseCommand
 from pyqcrbox.registry.client.executable_command.python_callable import PythonCallable
 from pyqcrbox.sql_models import InteractiveSessionSpec
 
-from .executable_command import ExecutableCommand
 from .interactive_session_calculation import InteractiveSessionCalculation
 
 __all__ = ["InteractiveSession"]
@@ -32,6 +31,8 @@ class InteractiveSession(BaseCommand):
         _cwd=None,
         **kwargs,
     ) -> InteractiveSessionCalculation:
+        from .executable_command import ExecutableCommand
+
         working_dir = _cwd or os.getcwd()
         calc_finished_event = anyio.Event()
 
