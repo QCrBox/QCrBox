@@ -8,6 +8,7 @@ from pyqcrbox.registry.client.executable_command import BaseCommand
 from pyqcrbox.registry.client.executable_command.python_callable import PythonCallable
 from pyqcrbox.sql_models import InteractiveSessionSpec
 
+from .executable_command import ExecutableCommand
 from .interactive_session_calculation import InteractiveSessionCalculation
 
 __all__ = ["InteractiveSession"]
@@ -31,9 +32,6 @@ class InteractiveSession(BaseCommand):
         _cwd=None,
         **kwargs,
     ) -> InteractiveSessionCalculation:
-        from .executable_command import ExecutableCommand
-
-        logger.debug("InteractiveSession: entered execute_in_background()")
         working_dir = _cwd or os.getcwd()
         calc_finished_event = anyio.Event()
 
@@ -48,7 +46,6 @@ class InteractiveSession(BaseCommand):
         param_values = {
             name: await param.prepare_for_execution(target_dir=working_dir) for name, param in param_values.items()
         }
-        logger.debug("InteractiveSession.execute_in_background: prepared parameters %s", param_values)
 
         if self.prepare_cmd_spec:
             prepare_cmd = ExecutableCommand(self.prepare_cmd_spec)

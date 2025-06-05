@@ -118,16 +118,13 @@ class QCrBoxClient(QCrBoxServerClientBase):
             for param_name, value in msg.arguments.items():
                 param_dtype_str = cmd.cmd_spec.get_parameter_by_name(param_name).dtype
                 parsed_args[param_name] = parse_parameter_as_its_dtype(value, param_dtype_str)
-            logger.debug(f"InteractiveSession: Parsed arguments: {parsed_args}")
-            logger.debug(f"InteractiveSession: Executing command in working dir cwd={self.working_dir!r}")
 
             calc = await cmd.execute_in_background(
                 **parsed_args, _calculation_id=msg.calculation_id, _cwd=self.working_dir
             )
             if not isinstance(calc, BaseCalculation):
                 raise RuntimeError("Command execution did not return a calculation object.")
-
-        # TODO: this isn't triggered when an async command fails?
+            logger.debug("Calculation executing in the background")
         except Exception as exc:
             error_msg = f"Command execution failed: {exc!r}"
             logger.error(error_msg)
@@ -143,6 +140,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
             return
 
         self.calculations[msg.calculation_id] = calc
+        logger.debug(f"Added calculation id={msg.calculation_id!r} to client calculations")
         await update_calculation_status_in_nats_kv_NEW(await calc.get_status_details())
 
         await calc.wait_until_finished()
@@ -158,6 +156,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
 
         if session_id not in self.calculations:
             logger.error(f"No calculation on client found for id={session_id!r}")
+            logger.debug(f"Calculations in client: {self.calculations.keys()}")
             response = msg_specs.CloseInteractiveSessionResponseNATS(
                 session_id=session_id,
                 status=CalculationStatusEnum.FAILED,
