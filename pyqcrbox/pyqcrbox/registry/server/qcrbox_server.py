@@ -92,23 +92,8 @@ class QCrBoxServer(QCrBoxServerClientBase):
         logger.info(f"Received command invocation from user: {msg!r}")
 
         calculation_id = helpers.generate_calculation_id()
-        calculation_details = CalculationDetails(
-            calculation_id=calculation_id,
-            **msg.model_dump(),
-        )
+        calculation_details = CalculationDetails(calculation_id=calculation_id, **msg.model_dump())
         self.calculations[calculation_id] = calculation_details
-
-        calculation_db = sql_models.CalculationDB(
-            application_slug=msg.application_slug,
-            application_version=msg.application_version,
-            command_name=msg.command_name,
-            arguments=msg.arguments,
-            calculation_id=calculation_id,
-        )
-        try:
-            calculation_db.save_to_db()
-        except sql_models.QCrBoxDBError as exc:
-            return msg_specs.InvokeCommandResponse(response_to=msg.action, status="error", msg=exc.message)
 
         msg_to_client = msg_specs.CommandInvocationRequestNATS(
             application_slug=msg.application_slug,
@@ -118,28 +103,49 @@ class QCrBoxServer(QCrBoxServerClientBase):
             calculation_id=calculation_id,
         )
 
-        await self.nats_broker.publish(
-            msg_to_client,
+        msg_from_client = await self.nats_broker.publish(
+            message=msg_to_client,
             subject=f"client.cmd.handle_invocation_request.{msg_to_client.nats_subject_parts}",
-            reply_to="server.cmd.handle_command_invocation_client_response",
+            rpc=True,
+        )
+        msg_from_client = msg_specs.CommandInvocationClientResponseNATS(**msg_from_client)
+        await self.nats_broker.publish(
+            message=msg_from_client, subject="server.cmd.handle_command_invocation_client_response"
         )
 
-        # TODO: we need to check to see if the command was discarded and handle appropriately
+        if msg_from_client.client_is_available:
+            calculation_db = sql_models.CalculationDB(
+                application_slug=msg.application_slug,
+                application_version=msg.application_version,
+                command_name=msg.command_name,
+                arguments=msg.arguments,
+                calculation_id=calculation_id,
+            )
+            try:
+                calculation_db.save_to_db()
+            except sql_models.QCrBoxDBError as exc:
+                return msg_specs.InvokeCommandResponse(response_to=msg.action, status="error", msg=exc.message)
 
-        status_details = CalculationStatusDetails(
-            calculation_id=calculation_id,
-            status=CalculationStatusEnum.SUBMITTED,
-            stdout="",
-            stderr="",
-            extra_info={},
-        )
-        await update_calculation_status_in_nats_kv_NEW(status_details)
+            status_details = CalculationStatusDetails(
+                calculation_id=calculation_id,
+                status=CalculationStatusEnum.SUBMITTED,
+                stdout="",
+                stderr="",
+                extra_info={},
+            )
+            await update_calculation_status_in_nats_kv_NEW(status_details)
 
-        return msg_specs.QCrBoxGenericResponse(
-            response_to="server.cmd.handle_command_invocation_by_user",
-            status=CalculationStatusEnum.SUBMITTED,
-            payload={"calculation_id": calculation_id},
-        )
+            return msg_specs.QCrBoxGenericResponse(
+                response_to="server.cmd.handle_command_invocation_by_user",
+                status=CalculationStatusEnum.SUBMITTED,
+                payload={"calculation_id": calculation_id},
+            )
+        else:
+            return msg_specs.QCrBoxGenericResponse(
+                response_to="server.cmd.handle_command_invocation_by_user",
+                status=CalculationStatusEnum.FAILED,
+                payload={},
+            )
 
     @eel_logging
     async def handle_command_invocation_client_response(self, msg: msg_specs.CommandInvocationClientResponseNATS):
