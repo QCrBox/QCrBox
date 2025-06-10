@@ -100,11 +100,13 @@ class QCrBoxServer(QCrBoxServerClientBase):
             rpc=True,
         )
         msg_from_client = msg_specs.CommandInvocationClientResponseNATS(**msg_from_client)
+
         await self.nats_broker.publish(
             message=msg_from_client, subject="server.cmd.handle_command_invocation_client_response"
         )
 
-        command_status = await self.add_command_request_to_calculation_db(msg, msg_to_client)
+        command_status = await self.add_command_request_to_calculation_db(msg_to_client, msg_from_client)
+        logger.debug(f"Command invocation final status: {command_status}")
 
         return command_status
 
@@ -176,21 +178,24 @@ class QCrBoxServer(QCrBoxServerClientBase):
 
     @eel_logging
     async def add_command_request_to_calculation_db(
-        msg: msg_specs.InvokeCommandNATS, msg_from_client: msg_specs.CommandInvocationClientResponseNATS
+        self,
+        msg_to_client: msg_specs.CommandInvocationRequestNATS,
+        msg_from_client: msg_specs.CommandInvocationClientResponseNATS,
     ):
         if not msg_from_client.client_is_available:
+            logger.error("Requested a client which is not available")
             return msg_specs.QCrBoxGenericResponse(
                 response_to="server.cmd.handle_command_invocation_by_user",
                 status=CalculationStatusEnum.FAILED,
-                payload={"error": "Chosen client is not available"},
+                payload={"error": f"Chosen client {msg_from_client.private_inbox_prefix} is not available"},
             )
 
         calculation_db = sql_models.CalculationDB(
-            application_slug=msg.application_slug,
-            application_version=msg.application_version,
-            command_name=msg.command_name,
-            arguments=msg.arguments,
-            calculation_id=msg_from_client.calculation_id,
+            application_slug=msg_to_client.application_slug,
+            application_version=msg_to_client.application_version,
+            command_name=msg_to_client.command_name,
+            arguments=msg_to_client.arguments,
+            calculation_id=msg_to_client.calculation_id,
         )
         try:
             calculation_db.save_to_db()
@@ -202,7 +207,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
             )
 
         status_details = CalculationStatusDetails(
-            calculation_id=msg_from_client.calculation_id,
+            calculation_id=msg_to_client.calculation_id,
             status=CalculationStatusEnum.SUBMITTED,
             stdout="",
             stderr="",
@@ -210,10 +215,12 @@ class QCrBoxServer(QCrBoxServerClientBase):
         )
         await update_calculation_status_in_nats_kv_NEW(status_details)
 
+        logger.debug(f"Added calculation={msg_to_client.calculation_id!r} to database")
+
         return msg_specs.QCrBoxGenericResponse(
             response_to="server.cmd.handle_command_invocation_by_user",
             status=CalculationStatusEnum.SUBMITTED,
-            payload={"calculation_id": msg_from_client.calculation_id},
+            payload={"calculation_id": msg_to_client.calculation_id},
         )
 
     @eel_logging
