@@ -145,6 +145,7 @@ class QCrBoxSettings(QCrBoxSettingsBaseModel):
         env_prefix="QCRBOX__",
     )
 
+    debug_mode: bool = False if not IS_RUNNING_INSIDE_TESTS else True
     nats: NATSSettings = NATSSettings()
     registry: RegistrySettings = RegistrySettings()
     db: DatabaseSettings = DatabaseSettings()
