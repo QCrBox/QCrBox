@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 
 from pyqcrbox.sql_models.application_spec import ApplicationSpec
+from pyqcrbox.sql_models.calculation_status_event import CalculationStatusDetails
 
 __all__ = ["DataFileManager"]
 
@@ -179,3 +180,11 @@ class DataFileManager(ABC):
     async def get_applications(self) -> list[ApplicationSpec]:
         keys = await self._get_kv_keys("applications")
         return [await self.get_application_info(key) for key in keys]
+
+    async def get_calculation_status_details(self, key: str) -> CalculationStatusDetails:
+        status_as_bytes = await self._retrieve_from_kv("calculation_status", key)
+        return CalculationStatusDetails.model_validate_json(status_as_bytes.decode())
+
+    async def get_calculation_statuses(self) -> list[CalculationStatusDetails]:
+        keys = await self._get_kv_keys("calculation_status")
+        return [await self.get_calculation_status_details(key) for key in keys]
