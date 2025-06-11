@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
 
+from pyqcrbox.sql_models.application_spec import ApplicationSpec
+
 __all__ = ["DataFileManager"]
 
 from pyqcrbox import logger
@@ -169,3 +171,11 @@ class DataFileManager(ABC):
         await self._store_in_kv(
             "interactive_sessions", session_info.session_id, session_info.model_dump_json().encode()
         )
+
+    async def get_application_info(self, key: str) -> ApplicationSpec:
+        spec_as_bytes = await self._retrieve_from_kv("applications", key)
+        return ApplicationSpec.model_validate_json(spec_as_bytes.decode())
+
+    async def get_applications(self) -> list[ApplicationSpec]:
+        keys = await self._get_kv_keys("applications")
+        return [await self.get_application_info(key) for key in keys]
