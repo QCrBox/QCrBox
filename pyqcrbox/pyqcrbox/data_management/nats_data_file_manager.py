@@ -2,7 +2,7 @@ import nats.js.errors
 import nats.js.kv
 import nats.js.object_store
 
-from .base import DataFileManager
+from .data_file_manager import DataFileManager
 
 
 class NatsDataFileManager(DataFileManager):
