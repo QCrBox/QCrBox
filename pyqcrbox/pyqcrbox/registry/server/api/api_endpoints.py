@@ -21,6 +21,7 @@ from litestar.params import Body, Parameter
 from litestar.response import Response
 from litestar.status_codes import HTTP_500_INTERNAL_SERVER_ERROR
 
+from pyqcrbox import settings
 from pyqcrbox.data_management import DatasetNotFoundError
 from pyqcrbox.debug import eel_logging
 from pyqcrbox.registry.server.api import api_schema as schema
@@ -612,6 +613,8 @@ api_router = Router(
         InternalServerException: handle_uncaught_exception,
         ServiceUnavailableException: handle_uncaught_exception,
         Exception: handle_uncaught_exception,
-    },
+    }
+    if settings.debug_mode
+    else {},
     response_class=QCrBoxResponse,
 )

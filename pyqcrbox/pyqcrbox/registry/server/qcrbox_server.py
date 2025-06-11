@@ -264,7 +264,9 @@ class QCrBoxServer(QCrBoxServerClientBase):
                 InternalServerException: handle_uncaught_exception,
                 ServiceUnavailableException: handle_uncaught_exception,
                 Exception: handle_uncaught_exception,
-            },
+            }
+            if settings.debug_mode
+            else {},
         )
 
     @on_qcrbox_startup
