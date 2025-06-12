@@ -1,13 +1,13 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
 
-from pyqcrbox.sql_models.application_spec import ApplicationSpec
 from pyqcrbox.sql_models.calculation_status_event import CalculationStatusDetails
 
 __all__ = ["DataFileManager"]
 
 from pyqcrbox import logger
 from pyqcrbox.data_management.data_file import DataFileMetadata, Dataset
+from pyqcrbox.debug import eel_logging
 from pyqcrbox.helpers import generate_data_file_id, generate_dataset_id
 from pyqcrbox.sql_models.interactive_session_info import InteractiveSessionInfo
 
@@ -49,6 +49,47 @@ class DataFileManager(ABC):
     async def _store_in_object_store(self, bucket: str, key: str, value: bytes) -> None:
         pass
 
+    @eel_logging
+    async def _store_dataset_info(self, metadata: Dataset) -> None:
+        """Add metadata about a dataset into the data manager.
+
+        Parameters
+        ----------
+        dataset_info : Dataset
+            A Dataset object containing metadata about the dataset.
+
+        """
+        await self._store_in_kv("datasets", metadata.dataset_id, metadata.model_dump_json().encode())
+
+    @eel_logging
+    async def _store_file_contents(self, key: str, file_contents: bytes) -> None:
+        """Add the contents of a file to the data manager.
+
+        Parameters
+        ----------
+        key : str
+            The key to associate with the file contents.
+        file_contents : bytes
+            The contents of the file, as a bytes stream.
+
+        """
+        await self._store_in_object_store("data_file_contents", key, file_contents)
+
+    @eel_logging
+    async def _store_file_metadata(self, key: str, metadata: DataFileMetadata) -> None:
+        """Add metadata about a data file into the data manager.
+
+        Parameters
+        ----------
+        key : str
+            The key to associate with the file metadata.
+        metadata : DataFileMetadata
+            A DataFileMetadata object containing metadata about the data file.
+        """
+
+        await self._store_in_kv("data_file_metadata", key, metadata.model_dump_json().encode())
+
+    @eel_logging
     async def create_dataset_from_data_file(self, data_file_id: str) -> str:
         """Create a new dataset from a data file.
 
@@ -66,10 +107,11 @@ class DataFileManager(ABC):
         dataset_id = generate_dataset_id()
         data_files = [await self.get_file_metadata(data_file_id)]
         dataset_info = Dataset(dataset_id=dataset_id, data_files={f.filename: f for f in data_files})
-        await self.store_dataset_info(dataset_info)
+        await self._store_dataset_info(dataset_info)
 
         return dataset_id
 
+    @eel_logging
     async def data_file_exists(self, data_file_id: str) -> bool:
         """Check that a data file exists for the given ID.
 
@@ -86,6 +128,7 @@ class DataFileManager(ABC):
         """
         return await self._kv_key_exists("data_file_metadata", data_file_id)
 
+    @eel_logging
     async def delete_data_file(self, data_file_id: str) -> None:
         """Delete a data file from the data manager.
 
@@ -99,6 +142,7 @@ class DataFileManager(ABC):
         await self._delete_from_kv("data_file_metadata", data_file_id)
         await self._delete_from_object_store("data_file_contents", data_file_id)
 
+    @eel_logging
     async def delete_dataset(self, dataset_id: str) -> None:
         """Delete a dataset and its data files from the data manager.
 
@@ -120,6 +164,7 @@ class DataFileManager(ABC):
             await self.delete_data_file(file_metadata.qcrbox_file_id)
         await self._delete_from_kv("datasets", dataset_id)
 
+    @eel_logging
     async def export_data_file(self, data_file_id: str, output_dir: str, output_filename: str | None = None) -> Path:
         """Export a data file from the NATS object store to the file system.
 
@@ -153,6 +198,7 @@ class DataFileManager(ABC):
 
         return output_path
 
+    @eel_logging
     async def get_file_metadata(self, data_file_id: str) -> DataFileMetadata:
         """Get the metadata for a data file.
 
@@ -170,6 +216,7 @@ class DataFileManager(ABC):
 
         return DataFileMetadata.model_validate_json(metadata_as_bytes.decode())
 
+    @eel_logging
     async def get_data_files(self) -> list[DataFileMetadata]:
         """Get the metadata for all the data files.
 
@@ -183,6 +230,7 @@ class DataFileManager(ABC):
 
         return values
 
+    @eel_logging
     async def get_dataset_info(self, dataset_id: str) -> Dataset:
         """Get metadata about a dataset.
 
@@ -204,6 +252,7 @@ class DataFileManager(ABC):
 
         return Dataset.model_validate_json(dataset_info_as_bytes.decode())
 
+    @eel_logging
     async def get_datasets(self) -> list[Dataset]:
         """Get metadata for each dataset in the data manager.
 
@@ -219,6 +268,7 @@ class DataFileManager(ABC):
             for dataset_id in dataset_ids
         ]
 
+    @eel_logging
     async def get_file_contents(self, data_file_id: str) -> bytes:
         """Get the contents of a data file.
 
@@ -237,6 +287,7 @@ class DataFileManager(ABC):
 
         return file_contents
 
+    @eel_logging
     async def get_interactive_session_info(self, session_id: str) -> InteractiveSessionInfo:
         """Get metadata about an interactive session.
 
@@ -254,19 +305,41 @@ class DataFileManager(ABC):
 
         return InteractiveSessionInfo.model_validate_json(session_info_as_bytes.decode())
 
+    @eel_logging
     async def get_interactive_sessions(self) -> list[InteractiveSessionInfo]:
         keys = await self._get_kv_keys("interactive_sessions")
         values = [await self.get_interactive_session_info(key) for key in keys]
 
         return values
 
+    @eel_logging
     async def import_bytes(
         self,
         file_contents: bytes,
+        filename: str,
         *,
-        filename: str | None = None,
         _qcrbox_file_id: str | None = None,
     ) -> str:
+        """Import a byte stream as a data file into the data manager.
+
+        This function will add both the contents of the file, in bytes, and metadata
+        associated with the file.
+
+        Parameters
+        ----------
+        file_contents : bytes
+            The contents of the file, in binary.
+        filename : str | None
+            The name of the file to store as metadata.
+        _qcrbox_file_id : str
+            An ID to use. If an ID is not passed, an ID will be generated.
+
+        Returns
+        -------
+        str
+            The ID of the data file
+
+        """
         qcrbox_file_id = _qcrbox_file_id or generate_data_file_id()
         file_extension = Path(filename).suffix[1:]
         data_file_info = DataFileMetadata(
@@ -274,48 +347,65 @@ class DataFileManager(ABC):
             filename=filename,
             filetype=file_extension,
         )
-        await self.store_file_contents(qcrbox_file_id, file_contents)
-        await self.store_file_metadata(qcrbox_file_id, data_file_info)
+        await self._store_file_contents(qcrbox_file_id, file_contents)
+        await self._store_file_metadata(qcrbox_file_id, data_file_info)
 
         return qcrbox_file_id
 
-    async def import_local_file(self, file_path: str | Path, _qcrbox_file_id: str | None = None) -> str:
+    @eel_logging
+    async def import_local_file(self, file_path: str | Path, *, _qcrbox_file_id: str | None = None) -> str:
+        """Import a data file into the data manager, from a local file system.
+
+        This function will add both the contents of the file, in bytes, and metadata
+        associated with the file. It will only work with files on a local file
+        system.
+
+        Parameters
+        ----------
+        file_path : str | pathlib.Path
+            The file path to the file to add to the data manager.
+        _qcrbox_file_id : str
+            An ID to use. If an ID is not passed, an ID will be generated.
+
+        Returns
+        -------
+        str
+            The ID of the data file
+
+        """
         file_path = Path(file_path)
+        qcrbox_file_id = _qcrbox_file_id or generate_data_file_id()
+
         with file_path.open("rb") as f:
-            qcrbox_file_id = await self.import_bytes(f.read(), filename=file_path.name, _qcrbox_file_id=_qcrbox_file_id)
+            qcrbox_file_id = await self.import_bytes(f.read(), filename=file_path.name, _qcrbox_file_id=qcrbox_file_id)
 
         return qcrbox_file_id
 
-    async def store_dataset_info(self, dataset_info: Dataset) -> None:
-        await self._store_in_kv("datasets", dataset_info.dataset_id, dataset_info.model_dump_json().encode())
-
-    async def store_file_contents(self, key: str, file_contents: bytes) -> None:
-        await self._store_in_object_store("data_file_contents", key, file_contents)
-
-    async def store_file_metadata(self, key: str, metadata: DataFileMetadata) -> None:
-        await self._store_in_kv("data_file_metadata", key, metadata.model_dump_json().encode())
-
+    @eel_logging
     async def store_interactive_session_info(self, session_info: InteractiveSessionInfo) -> None:
+        """Add metadata about an interactive session to the data manager.
+
+        Parameters
+        ----------
+        session_info : InteractiveSessionInfo
+            An InteractiveSessionInfo object containing metadata about the interactive
+            session.
+
+        """
         await self._store_in_kv(
             "interactive_sessions", session_info.session_id, session_info.model_dump_json().encode()
         )
 
-    async def get_application_info(self, key: str) -> ApplicationSpec:
-        spec_as_bytes = await self._retrieve_from_kv("applications", key)
-
-        return ApplicationSpec.model_validate_json(spec_as_bytes.decode())
-
-    async def get_applications(self) -> list[ApplicationSpec]:
-        keys = await self._get_kv_keys("applications")
-
-        return [await self.get_application_info(key) for key in keys]
-
+    @eel_logging
     async def get_calculation_status_details(self, key: str) -> CalculationStatusDetails:
+        """TODO - do we need this?"""
         status_as_bytes = await self._retrieve_from_kv("calculation_status", key)
 
         return CalculationStatusDetails.model_validate_json(status_as_bytes.decode())
 
+    @eel_logging
     async def get_calculation_statuses(self) -> list[CalculationStatusDetails]:
+        """TODO - do we need this?"""
         keys = await self._get_kv_keys("calculation_status")
 
         return [await self.get_calculation_status_details(key) for key in keys]
