@@ -75,7 +75,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
             f"Received registration for application: {msg.payload.application_spec.slug!r} "
             f"(version: {msg.payload.application_spec.version!r})"
         )
-        await self.nats_persistence_adapter.save_application_spec(msg.payload.application_spec)
+        # await self.nats_persistence_adapter.save_application_spec(msg.payload.application_spec)
         await self.sqlite_persistence_adapter.save_application_spec(msg.payload.application_spec)
 
     @eel_logging
