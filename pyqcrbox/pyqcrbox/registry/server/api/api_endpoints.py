@@ -2,21 +2,14 @@
 Organised API routes for QCrBox, grouped by resource.
 """
 
+import traceback
 from typing import Annotated
 
 import nats.js.errors
 from litestar import MediaType, Request, Router, delete, get, post
 from litestar.datastructures import UploadFile
 from litestar.enums import RequestEncodingType
-from litestar.exceptions import (
-    HTTPException,
-    ImproperlyConfiguredException,
-    InternalServerException,
-    NotFoundException,
-    PermissionDeniedException,
-    ServiceUnavailableException,
-    ValidationException,
-)
+from litestar.exceptions import HTTPException
 from litestar.params import Body, Parameter
 from litestar.response import Response
 from litestar.status_codes import HTTP_500_INTERNAL_SERVER_ERROR
@@ -555,7 +548,11 @@ def handle_uncaught_exception(_request: Request, exception: Exception) -> schema
     """Handle uncaught exceptions."""
     status_code = getattr(exception, "status_code", HTTP_500_INTERNAL_SERVER_ERROR)
     message = getattr(exception, "detail", "There has been an unspecified error")
-    details = getattr(exception, "extra", None)
+    if settings.debug_mode:
+        details = "".join(traceback.format_exception(type(exception), exception, exception.__traceback__))
+    else:
+        details = getattr(exception, "extra", None)
+
     return QCrBoxResponse(
         content={
             "status": "error",
@@ -606,15 +603,7 @@ api_router = Router(
     ],
     exception_handlers={
         HTTPException: handle_uncaught_exception,
-        ImproperlyConfiguredException: handle_uncaught_exception,
-        ValidationException: handle_uncaught_exception,
-        PermissionDeniedException: handle_uncaught_exception,
-        NotFoundException: handle_uncaught_exception,
-        InternalServerException: handle_uncaught_exception,
-        ServiceUnavailableException: handle_uncaught_exception,
         Exception: handle_uncaught_exception,
-    }
-    if settings.debug_mode
-    else {},
+    },
     response_class=QCrBoxResponse,
 )
