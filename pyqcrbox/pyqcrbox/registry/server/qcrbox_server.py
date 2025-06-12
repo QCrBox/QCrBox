@@ -23,8 +23,13 @@ from sqlmodel import select
 
 from pyqcrbox import helpers, logger, msg_specs, settings, sql_models
 from pyqcrbox.debug import eel_logging
+from pyqcrbox.msg_specs.base import QCrBoxGenericResponse
+from pyqcrbox.nats_models.calculation import CalculationNatsDB
 from pyqcrbox.registry.server.api.api_endpoints import handle_uncaught_exception
-from pyqcrbox.registry.shared.calculation_status import update_calculation_status_in_nats_kv_NEW
+from pyqcrbox.registry.shared.calculation_status import (
+    NatsCalculationAlreadyExists,
+    add_calculation_to_nats_kv,
+)
 from pyqcrbox.sql_models import CalculationStatusDetails, CalculationStatusEnum
 
 from ..shared import QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup, structlog_plugin
@@ -79,7 +84,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
         await self.sqlite_persistence_adapter.save_application_spec(msg.payload.application_spec)
 
     @eel_logging
-    async def handle_command_invocation_by_user(self, msg: msg_specs.InvokeCommandNATS):
+    async def handle_command_invocation_by_user(self, msg: msg_specs.InvokeCommandNATS) -> QCrBoxGenericResponse:
         logger.info(f"Received command invocation from user: {msg!r}")
 
         calculation_id = helpers.generate_calculation_id()
@@ -100,7 +105,6 @@ class QCrBoxServer(QCrBoxServerClientBase):
             rpc=True,
         )
         msg_from_client = msg_specs.CommandInvocationClientResponseNATS(**msg_from_client)
-
         await self.nats_broker.publish(
             message=msg_from_client, subject="server.cmd.handle_command_invocation_client_response"
         )
@@ -176,7 +180,6 @@ class QCrBoxServer(QCrBoxServerClientBase):
         logger.debug(f"Calculation status in nats KV store is: {status_nats_kv!r}")
         return response
 
-    @eel_logging
     async def add_command_request_to_calculation_db(
         self,
         msg_to_client: msg_specs.CommandInvocationRequestNATS,
@@ -188,6 +191,23 @@ class QCrBoxServer(QCrBoxServerClientBase):
                 response_to="server.cmd.handle_command_invocation_by_user",
                 status=CalculationStatusEnum.FAILED,
                 payload={"error": f"Chosen client {msg_from_client.private_inbox_prefix} is not available"},
+            )
+
+        calculation_nats = CalculationNatsDB(
+            calculation_id=msg_to_client.calculation_id,
+            application_slug=msg_to_client.application_slug,
+            application_version=msg_to_client.application_version,
+            command_name=msg_to_client.command_name,
+            arguments=msg_to_client.arguments,
+        )
+
+        try:
+            await add_calculation_to_nats_kv(calculation_nats)
+        except NatsCalculationAlreadyExists:
+            return msg_specs.QCrBoxGenericResponse(
+                response_to="server.cmd.handle_command_invocation_by_user",
+                status=CalculationStatusEnum.FAILED,
+                payload={"error": "Tried to add a new calculation to one which already exists"},
             )
 
         calculation_db = sql_models.CalculationDB(
@@ -206,14 +226,14 @@ class QCrBoxServer(QCrBoxServerClientBase):
                 payload={"error": exc},
             )
 
-        status_details = CalculationStatusDetails(
-            calculation_id=msg_to_client.calculation_id,
-            status=CalculationStatusEnum.SUBMITTED,
-            stdout="",
-            stderr="",
-            extra_info={},
-        )
-        await update_calculation_status_in_nats_kv_NEW(status_details)
+        # status_details = CalculationStatusDetails(
+        #     calculation_id=msg_to_client.calculation_id,
+        #     status=CalculationStatusEnum.SUBMITTED,
+        #     stdout="",
+        #     stderr="",
+        #     extra_info={},
+        # )
+        # await update_calculation_status_in_nats_kv_NEW(status_details)
 
         logger.debug(f"Added calculation={msg_to_client.calculation_id!r} to database")
 
