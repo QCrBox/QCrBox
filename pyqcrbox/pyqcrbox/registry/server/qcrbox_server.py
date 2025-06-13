@@ -19,9 +19,8 @@ from litestar.openapi import OpenAPIConfig
 from litestar.response import Redirect
 from litestar.static_files import create_static_files_router
 from pydantic import BaseModel
-from sqlmodel import select
 
-from pyqcrbox import helpers, logger, msg_specs, settings, sql_models
+from pyqcrbox import helpers, logger, msg_specs, settings
 from pyqcrbox.debug import eel_logging
 from pyqcrbox.msg_specs.base import QCrBoxGenericResponse
 from pyqcrbox.registry.server.api.api_endpoints import handle_exception
@@ -72,7 +71,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
         self.nats_broker.subscriber("server.cmd.handle_command_invocation_client_response")(
             self.handle_command_invocation_client_response
         )
-        self.nats_broker.subscriber("server.calc.get_status")(self.get_calculation_status)
+        self.nats_broker.subscriber("server.calc.get_status")(self.get_calculation_status_from_client)
         self.nats_broker.subscriber("*", kv_watch="calculation_status")(self.update_calculation_status_in_db)
 
     @eel_logging
@@ -81,7 +80,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
             f"Received registration for application: {msg.payload.application_spec.slug!r} "
             f"(version: {msg.payload.application_spec.version!r})"
         )
-        # await self.nats_persistence_adapter.save_application_spec(msg.payload.application_spec)
+        await self.nats_persistence_adapter.save_application_spec(msg.payload.application_spec)
         await self.sqlite_persistence_adapter.save_application_spec(msg.payload.application_spec)
 
     @eel_logging
@@ -170,15 +169,17 @@ class QCrBoxServer(QCrBoxServerClientBase):
             await self.nats_broker.publish(response_to_client, subject=subject)
 
     @eel_logging
-    async def get_calculation_status(self, msg: msg_specs.GetCalculationStatusNATS):
+    async def get_calculation_status_from_client(self, msg: msg_specs.GetCalculationStatusNATS):
         logger.debug(f"Retrieving status for {msg.calculation_id!r}")
-        executing_client = self.calculations[msg.calculation_id].executing_client
-        client_inbox_prefix = executing_client.private_inbox_prefix
-        subject = f"{client_inbox_prefix}.calc.status"
-        response = await self.nats_broker.publish(msg, subject, rpc=True)
-        logger.debug(f"{executing_client.client_id} responded with {response=!r}")
-        status_nats_kv = json.loads((await self.kv_calculation_status.get(msg.calculation_id)).value)
-        logger.debug(f"Calculation status in nats KV store is: {status_nats_kv!r}")
+        client = self.calculations[msg.calculation_id].executing_client
+        client_inbox_prefix = client.private_inbox_prefix
+        response = await self.nats_broker.publish(
+            msg,
+            f"{client_inbox_prefix}.calc.status",
+            rpc=True,
+        )
+        logger.debug(f"{client.client_id} responded with {response=!r}")
+
         return response
 
     async def add_command_request_to_calculation_db(
@@ -191,7 +192,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
             return msg_specs.QCrBoxGenericResponse(
                 response_to="server.cmd.handle_command_invocation_by_user",
                 status=CalculationStatusEnum.FAILED,
-                payload={"error": f"Chosen client {msg_from_client.private_inbox_prefix} is not available"},
+                payload={"error": f"Chosen client {msg_from_client.client_id!r} is not available"},
             )
 
         calculation_nats = CalculationNatsDB(
@@ -211,22 +212,6 @@ class QCrBoxServer(QCrBoxServerClientBase):
                 payload={"error": "Tried to add a new calculation to one which already exists"},
             )
 
-        calculation_db = sql_models.CalculationDB(
-            application_slug=msg_to_client.application_slug,
-            application_version=msg_to_client.application_version,
-            command_name=msg_to_client.command_name,
-            arguments=msg_to_client.arguments,
-            calculation_id=msg_to_client.calculation_id,
-        )
-        try:
-            calculation_db.save_to_db()
-        except sql_models.QCrBoxDBError as exc:
-            return msg_specs.QCrBoxGenericResponse(
-                response_to="server.cmd.handle_command_invocation_by_user",
-                status=CalculationStatusEnum.FAILED,
-                payload={"error": exc},
-            )
-
         status_details = CalculationStatusDetails(
             calculation_id=msg_to_client.calculation_id,
             status=CalculationStatusEnum.SUBMITTED,
@@ -236,8 +221,6 @@ class QCrBoxServer(QCrBoxServerClientBase):
         )
         await update_calculation_status_in_nats_kv(status_details)
 
-        logger.debug(f"Calculation {msg_to_client.calculation_id!r} added to database")
-
         return msg_specs.QCrBoxGenericResponse(
             response_to="server.cmd.handle_command_invocation_by_user",
             status=CalculationStatusEnum.SUBMITTED,
@@ -246,17 +229,10 @@ class QCrBoxServer(QCrBoxServerClientBase):
 
     @eel_logging
     async def update_calculation_status_in_db(
-        self, status_details: CalculationStatusDetails, calculation_id: str = Context("message.raw_message.key")
+        self, status_details: CalculationStatusDetails, _calculation_id: str = Context("message.raw_message.key")
     ):
-        logger.debug(
-            f"Received NATS notification about calculation status update: {status_details!r} ({calculation_id=!r})"
-        )
-        with settings.db.get_session() as session:
-            calculation_db: sql_models.CalculationDB = session.exec(
-                select(sql_models.CalculationDB).where(sql_models.CalculationDB.calculation_id == calculation_id)
-            ).one()
-            calculation_db.update_status(status_details.status, comment="NATS notification")
-            logger.debug("Updated calculation status in the database.")
+        logger.debug(f"Received NATS notification about calculation status update: {status_details!r}")
+        await update_calculation_status_in_nats_kv(status_details)
 
     @eel_logging
     def _set_up_asgi_server(self) -> None:

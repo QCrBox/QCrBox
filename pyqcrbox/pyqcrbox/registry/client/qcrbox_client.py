@@ -68,7 +68,6 @@ class QCrBoxClient(QCrBoxServerClientBase):
 
     @eel_logging
     async def handle_command_invocation_request_from_server(self, msg: msg_specs.CommandInvocationRequestNATS):
-        # logger.info(f"Received command invocation request: {msg!r} (current client status: {self.status})")
         logger.info(f"Received command invocation request: {msg!r} (current client status: TODO)")
 
         response_msg = msg_specs.CommandInvocationClientResponseNATS(
@@ -190,7 +189,10 @@ class QCrBoxClient(QCrBoxServerClientBase):
         logger.debug(f"Retrieving calculation details for calculation_id={msg.calculation_id!r}")
         status = self.calculations[msg.calculation_id].status
         logger.debug(f"Current calculation status: {status!r}")
-        response = msg_specs.CalculationStatusResponseNATS(calculation_id=msg.calculation_id, status=status)
+        response = msg_specs.CalculationStatusResponseNATS(
+            calculation_id=msg.calculation_id,
+            status=status,
+        )
         return response
 
     @eel_logging
