@@ -15,6 +15,7 @@ from pyqcrbox.data_management import DatasetResponse
 from pyqcrbox.data_management.data_file import DataFileMetadataResponse
 from pyqcrbox.debug import eel_logging
 from pyqcrbox.services import get_data_file_manager, get_nats_broker
+from pyqcrbox.sql_models.calculation_nats import CalculationNatsResponseModel
 
 
 class CalculationNotFoundError(Exception):
@@ -138,31 +139,22 @@ async def delete_dataset(dataset_id: str) -> None:
 
 
 @eel_logging
-def get_calculation_info() -> list[sql_models.CalculationResponseModel]:
-    with settings.db.get_session() as session:
-        calculations_db = session.exec(select(sql_models.CalculationDB)).all()
-        return [c.to_response_model() for c in calculations_db]
+async def get_calculations() -> list[CalculationNatsResponseModel]:
+    data_file_manager = await get_data_file_manager()
+    calculations = await data_file_manager.get_calculations()
+
+    return [c.to_response_model() for c in calculations]
 
 
 @eel_logging
-async def get_calculation_info_by_calculation_id(calculation_id: str) -> sql_models.CalculationResponseModel:
-    # TODO: this should return a custom a response model
-    with settings.db.get_session() as session:
-        calculation = session.exec(
-            select(sql_models.CalculationDB).where(sql_models.CalculationDB.calculation_id == calculation_id)
-        ).first()
+async def get_calculation_by_calculation_id(calculation_id: str) -> CalculationNatsResponseModel:
+    data_file_manager = await get_data_file_manager()
+    try:
+        calculation = await data_file_manager.get_calculation_details(calculation_id)
+    except KeyError as exc:
+        raise CalculationNotFoundError from exc
 
-    if calculation is None:
-        raise CalculationNotFoundError(calculation_id)
-
-    return calculation.to_response_model()
-
-    # try:
-    #     kv_calculation_status = await get_nats_key_value(bucket="calculation_status")
-    #     calc_status_info_str = (await kv_calculation_status.get(calculation_id)).value
-    #     return json.loads(calc_status_info_str)
-    # except nats.js.errors.KeyNotFoundError:
-    #     raise CalculationNotFoundError(calculation_id)
+    return calculation
 
 
 @eel_logging
@@ -230,7 +222,6 @@ async def invoke_command(data: sql_models.CommandInvocationCreate) -> dict:
         nats_broker = await con.aget(NatsBroker)
 
     cmd_spec_db = _verify_command_exists(data.application_slug, data.application_version, data.command_name)
-    logger.debug("Command found: %s", cmd_spec_db)
     _validate_arguments_against_command_parameters(cmd_spec_db, data.arguments)
 
     msg = msg_specs.InvokeCommandNATS(
@@ -239,8 +230,12 @@ async def invoke_command(data: sql_models.CommandInvocationCreate) -> dict:
         command_name=cmd_spec_db.name,
         arguments=data.arguments,
     )
-
     response_json = await nats_broker.publish(msg, "server.cmd.handle_command_invocation_by_user", rpc=True)
+
+    if not response_json:
+        exc_msg = "No response from server when trying to invoke command"
+        raise ValueError(exc_msg)
+
     return response_json
 
 

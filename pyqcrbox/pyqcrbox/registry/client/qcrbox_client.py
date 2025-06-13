@@ -12,7 +12,7 @@ from pyqcrbox.cli.helpers import get_repo_root
 from pyqcrbox.debug import eel_logging
 from pyqcrbox.helpers import generate_private_routing_key
 from pyqcrbox.registry.client.executable_command.base_calculation import BaseCalculation
-from pyqcrbox.registry.shared.calculation_status import update_calculation_status_in_nats_kv_NEW
+from pyqcrbox.registry.shared.calculation_status import update_calculation_status_in_nats_kv
 from pyqcrbox.services import get_data_file_manager
 from pyqcrbox.sql_models import CalculationStatusDetails, CalculationStatusEnum
 from pyqcrbox.sql_models.interactive_session_info import InteractiveSessionInfo
@@ -97,7 +97,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
                 "error_msg": f"Discarded calculation {msg.calculation_id!r} due to client status {self.status.status}",
             },
         )
-        await update_calculation_status_in_nats_kv_NEW(status_details)
+        await update_calculation_status_in_nats_kv(status_details)
 
     @eel_logging
     async def handle_command_execution(self, msg: msg_specs.CommandExecutionRequestNATS):
@@ -135,16 +135,16 @@ class QCrBoxClient(QCrBoxServerClientBase):
                 stderr=None,
                 extra_info={"error_msg": error_msg},
             )
-            await update_calculation_status_in_nats_kv_NEW(status_details)
+            await update_calculation_status_in_nats_kv(status_details)
             self.status.set_idle()
             return
 
         self.calculations[msg.calculation_id] = calc
         logger.debug(f"Added calculation id={msg.calculation_id!r} to client calculations")
-        await update_calculation_status_in_nats_kv_NEW(await calc.get_status_details())
+        await update_calculation_status_in_nats_kv(await calc.get_status_details())
 
         await calc.wait_until_finished()
-        await update_calculation_status_in_nats_kv_NEW(await calc.get_status_details())
+        await update_calculation_status_in_nats_kv(await calc.get_status_details())
 
     @eel_logging
     async def close_interactive_session(

@@ -103,7 +103,7 @@ async def list_applications() -> schema.QCrBoxResponse[schema.ApplicationsRespon
 @eel_logging
 async def list_calculations() -> schema.QCrBoxResponse[schema.CalculationsResponse]:
     """Retrieve a list of all calculations, past and present."""
-    calculations = api_helpers.get_calculation_info()
+    calculations = await api_helpers.get_calculations()
     return QCrBoxResponse(
         content={
             "status": "success",
@@ -130,7 +130,7 @@ async def get_calculation_by_id(
 ) -> schema.QCrBoxResponse[schema.CalculationsResponse]:
     """Retrieve a calculation by its ID."""
     try:
-        calculation = await api_helpers.get_calculation_info_by_calculation_id(id)
+        calculation = await api_helpers.get_calculation_by_calculation_id(id)
         return QCrBoxResponse(
             content={
                 "status": "success",
@@ -551,7 +551,7 @@ async def close_interactive_session(id: str = Parameter(title="Interactive sessi
 # https://docs.litestar.dev/2/usage/exceptions.html#configuration-exceptions
 
 
-def handle_uncaught_exception(_request: Request, exception: Exception) -> schema.QCrBoxErrorResponse:
+def handle_exception(_request: Request, exception: Exception) -> schema.QCrBoxErrorResponse:
     """Handle uncaught exceptions."""
     status_code = getattr(exception, "status_code", HTTP_500_INTERNAL_SERVER_ERROR)
     message = getattr(exception, "detail", "There has been an unspecified error")
@@ -609,8 +609,8 @@ api_router = Router(
         close_interactive_session,
     ],
     exception_handlers={
-        HTTPException: handle_uncaught_exception,
-        Exception: handle_uncaught_exception,
+        HTTPException: handle_exception,
+        Exception: handle_exception,
     },
     response_class=QCrBoxResponse,
 )

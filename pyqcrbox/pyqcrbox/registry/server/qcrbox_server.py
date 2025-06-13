@@ -24,14 +24,14 @@ from sqlmodel import select
 from pyqcrbox import helpers, logger, msg_specs, settings, sql_models
 from pyqcrbox.debug import eel_logging
 from pyqcrbox.msg_specs.base import QCrBoxGenericResponse
-from pyqcrbox.nats_models.calculation import CalculationNatsDB
-from pyqcrbox.registry.server.api.api_endpoints import handle_uncaught_exception
+from pyqcrbox.registry.server.api.api_endpoints import handle_exception
 from pyqcrbox.registry.shared.calculation_status import (
     NatsCalculationAlreadyExists,
     add_calculation_to_nats_kv,
-    update_calculation_status_in_nats_kv_NEW,
+    update_calculation_status_in_nats_kv,
 )
 from pyqcrbox.sql_models import CalculationStatusDetails, CalculationStatusEnum
+from pyqcrbox.sql_models.calculation_nats import CalculationNatsDB
 
 from ..shared import QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup, structlog_plugin
 from .api import api_router
@@ -234,9 +234,9 @@ class QCrBoxServer(QCrBoxServerClientBase):
             stderr="",
             extra_info={},
         )
-        await update_calculation_status_in_nats_kv_NEW(status_details)
+        await update_calculation_status_in_nats_kv(status_details)
 
-        logger.debug(f"Added calculation {msg_to_client.calculation_id!r} to database")
+        logger.debug(f"Calculation {msg_to_client.calculation_id!r} added to database")
 
         return msg_specs.QCrBoxGenericResponse(
             response_to="server.cmd.handle_command_invocation_by_user",
@@ -276,15 +276,15 @@ class QCrBoxServer(QCrBoxServerClientBase):
                 use_handler_docstrings=True,
             ),
             exception_handlers={
-                HTTPException: handle_uncaught_exception,
-                ImproperlyConfiguredException: handle_uncaught_exception,
-                ValidationException: handle_uncaught_exception,
-                PermissionDeniedException: handle_uncaught_exception,
-                NotAuthorizedException: handle_uncaught_exception,
-                NotFoundException: handle_uncaught_exception,
-                InternalServerException: handle_uncaught_exception,
-                ServiceUnavailableException: handle_uncaught_exception,
-                Exception: handle_uncaught_exception,
+                HTTPException: handle_exception,
+                ImproperlyConfiguredException: handle_exception,
+                ValidationException: handle_exception,
+                PermissionDeniedException: handle_exception,
+                NotAuthorizedException: handle_exception,
+                NotFoundException: handle_exception,
+                InternalServerException: handle_exception,
+                ServiceUnavailableException: handle_exception,
+                Exception: handle_exception,
             },
         )
 
