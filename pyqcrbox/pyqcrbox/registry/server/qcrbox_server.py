@@ -29,6 +29,7 @@ from pyqcrbox.registry.server.api.api_endpoints import handle_uncaught_exception
 from pyqcrbox.registry.shared.calculation_status import (
     NatsCalculationAlreadyExists,
     add_calculation_to_nats_kv,
+    update_calculation_status_in_nats_kv_NEW,
 )
 from pyqcrbox.sql_models import CalculationStatusDetails, CalculationStatusEnum
 
@@ -226,16 +227,16 @@ class QCrBoxServer(QCrBoxServerClientBase):
                 payload={"error": exc},
             )
 
-        # status_details = CalculationStatusDetails(
-        #     calculation_id=msg_to_client.calculation_id,
-        #     status=CalculationStatusEnum.SUBMITTED,
-        #     stdout="",
-        #     stderr="",
-        #     extra_info={},
-        # )
-        # await update_calculation_status_in_nats_kv_NEW(status_details)
+        status_details = CalculationStatusDetails(
+            calculation_id=msg_to_client.calculation_id,
+            status=CalculationStatusEnum.SUBMITTED,
+            stdout="",
+            stderr="",
+            extra_info={},
+        )
+        await update_calculation_status_in_nats_kv_NEW(status_details)
 
-        logger.debug(f"Added calculation={msg_to_client.calculation_id!r} to database")
+        logger.debug(f"Added calculation {msg_to_client.calculation_id!r} to database")
 
         return msg_specs.QCrBoxGenericResponse(
             response_to="server.cmd.handle_command_invocation_by_user",

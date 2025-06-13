@@ -23,24 +23,31 @@ class NatsCalculationAlreadyExists(Exception):
 
 
 async def update_calculation_status_in_nats_kv_NEW(status_details: CalculationStatusDetails) -> None:
-    key = status_details.calculation_id
+    """Append a new status to the the calculation status events for a calculation.
 
-    bucket = await get_nats_key_value(bucket="calculation_status")
+    Parameters
+    ----------
+    status_details : CalculationStatusDetails
+        The calculation status details to append to the calculation.
+
+    """
+    logger.debug(
+        f"Updating statuses for calculation id={status_details.calculation_id!r}: status={status_details!r}",
+    )
+
+    key = status_details.calculation_id
+    bucket = await get_nats_key_value(bucket="calculations")
     try:
         calc_as_bytes = await bucket.get(key)
     except nats.js.errors.KeyNotFoundError:
         logger.error(f"Can't find calculation {key!r} to update calculation status")
         raise
 
-    calculation = CalculationNatsDB.model_validate_json(calc_as_bytes.decode())
+    calculation = CalculationNatsDB.model_validate_json(calc_as_bytes.value.decode())
     calculation.status_events.append(status_details)
-
     await bucket.put(
         key,
         json.dumps(calculation.model_dump(mode="json")).encode(),
-    )
-    logger.debug(
-        f"Updated calculation status details in NATS key-value store for calculation {status_details.calculation_id!r}"
     )
 
 
@@ -63,12 +70,12 @@ async def add_calculation_to_nats_kv(calculation: CalculationNatsDB) -> None:
     key = calculation.calculation_id
 
     bucket = await get_nats_key_value(bucket="calculations")
-    # try:
-    #     bucket_keys = await bucket.keys()
-    # except nats.js.errors.NoKeysError:
-    #     bucket_keys = []
-    # if key in bucket_keys:
-    #     raise KeyError(f"Calculation {key!r} already in NATS, can't create new calculation")
+    try:
+        bucket_keys = await bucket.keys()
+    except nats.js.errors.NoKeysError:
+        bucket_keys = []
+    if key in bucket_keys:
+        raise KeyError(f"Calculation {key!r} already in NATS, can't create new calculation")
     await bucket.put(
         key,
         json.dumps(calculation.model_dump()).encode(),

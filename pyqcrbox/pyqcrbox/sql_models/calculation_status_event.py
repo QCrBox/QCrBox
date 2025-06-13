@@ -37,5 +37,5 @@ class CalculationStatusEventDB(QCrBoxBaseSQLModel, table=True):
     status: CalculationStatusEnum
     comment: str = ""
 
-    calculation_id: int = Field(foreign_key="calculation.id")
+    calculation_id: str = Field(foreign_key="calculation.id")
     calculation: "CalculationDB" = Relationship(back_populates="status_events")
