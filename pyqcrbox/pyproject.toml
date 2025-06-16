@@ -178,7 +178,7 @@ select = [
     # isort
     "I",
     # Pydocstyle
-    "D",
+    # "D",
 ]
 
 # Ignore `F401`, `F403` (unused imports and * imports) in all `__init__.py` files
