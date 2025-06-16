@@ -178,7 +178,13 @@ select = [
     # isort
     "I",
     # Pydocstyle
-    # "D",
+    "D",
+    "D413",
+]
+ignore = [
+    "D100",
+    "D101",
+    "D102"
 ]
 
 # Ignore `F401`, `F403` (unused imports and * imports) in all `__init__.py` files
@@ -196,7 +202,7 @@ select = [
 exclude = ["services/applications/*/configure_*.py"]
 
 [tool.ruff.lint.pydocstyle]
-convention = "google"
+convention = "numpy"
 
 
 [tool.importlinter]
