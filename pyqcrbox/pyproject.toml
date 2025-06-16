@@ -161,6 +161,7 @@ disallow_any_unimported = false
 [tool.ruff]
 line-length = 120
 exclude = ["_version.py"]
+target-version = "py311"
 
 [tool.ruff.lint]
 select = [
@@ -168,14 +169,16 @@ select = [
     "E",
     # Pyflakes
     "F",
-#    # pyupgrade
-#    "UP",
-#    # flake8-bugbear
-#    "B",
-#    # flake8-simplify
-#    "SIM",
+   # pyupgrade
+   "UP",
+   # flake8-bugbear
+   "B",
+   # flake8-simplify
+   "SIM",
     # isort
     "I",
+    # Pydocstyle
+    "D",
 ]
 
 # Ignore `F401`, `F403` (unused imports and * imports) in all `__init__.py` files
