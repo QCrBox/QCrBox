@@ -2,21 +2,14 @@
 Organised API routes for QCrBox, grouped by resource.
 """
 
+import traceback
 from typing import Annotated
 
 import nats.js.errors
 from litestar import MediaType, Request, Router, delete, get, post
 from litestar.datastructures import UploadFile
 from litestar.enums import RequestEncodingType
-from litestar.exceptions import (
-    HTTPException,
-    ImproperlyConfiguredException,
-    InternalServerException,
-    NotFoundException,
-    PermissionDeniedException,
-    ServiceUnavailableException,
-    ValidationException,
-)
+from litestar.exceptions import HTTPException
 from litestar.params import Body, Parameter
 from litestar.response import Response
 from litestar.status_codes import HTTP_500_INTERNAL_SERVER_ERROR
@@ -110,7 +103,7 @@ async def list_applications() -> schema.QCrBoxResponse[schema.ApplicationsRespon
 @eel_logging
 async def list_calculations() -> schema.QCrBoxResponse[schema.CalculationsResponse]:
     """Retrieve a list of all calculations, past and present."""
-    calculations = api_helpers.get_calculation_info()
+    calculations = await api_helpers.get_calculations()
     return QCrBoxResponse(
         content={
             "status": "success",
@@ -137,7 +130,7 @@ async def get_calculation_by_id(
 ) -> schema.QCrBoxResponse[schema.CalculationsResponse]:
     """Retrieve a calculation by its ID."""
     try:
-        calculation = await api_helpers.get_calculation_info_by_calculation_id(id)
+        calculation = await api_helpers.get_calculation_by_calculation_id(id)
         return QCrBoxResponse(
             content={
                 "status": "success",
@@ -510,7 +503,14 @@ async def create_interactive_session_with_arguments(
         command_name="interactive_session",
         arguments=data.arguments,
     )
-    response = await api_helpers.invoke_command(command_spec)
+
+    try:
+        response = await api_helpers.invoke_command(command_spec)
+    except Exception as exc:
+        raise QCrBoxAPIException(
+            detail=f"Failed to invoke command due to exception {str(exc)}", status_code=500
+        ) from exc
+
     if response["status"] != CalculationStatusEnum.SUBMITTED:
         error_msg = response["payload"].get("error", "an unknown error occurred")
         raise QCrBoxAPIException(detail=f"Failed to create interactive session: {error_msg}", status_code=500)
@@ -551,11 +551,15 @@ async def close_interactive_session(id: str = Parameter(title="Interactive sessi
 # https://docs.litestar.dev/2/usage/exceptions.html#configuration-exceptions
 
 
-def handle_uncaught_exception(_request: Request, exception: Exception) -> schema.QCrBoxErrorResponse:
+def handle_exception(_request: Request, exception: Exception) -> schema.QCrBoxErrorResponse:
     """Handle uncaught exceptions."""
     status_code = getattr(exception, "status_code", HTTP_500_INTERNAL_SERVER_ERROR)
     message = getattr(exception, "detail", "There has been an unspecified error")
-    details = getattr(exception, "extra", None)
+    if settings.debug_mode:
+        details = "".join(traceback.format_exception(type(exception), exception, exception.__traceback__))
+    else:
+        details = getattr(exception, "extra", None)
+
     return QCrBoxResponse(
         content={
             "status": "error",
@@ -605,16 +609,8 @@ api_router = Router(
         close_interactive_session,
     ],
     exception_handlers={
-        HTTPException: handle_uncaught_exception,
-        ImproperlyConfiguredException: handle_uncaught_exception,
-        ValidationException: handle_uncaught_exception,
-        PermissionDeniedException: handle_uncaught_exception,
-        NotFoundException: handle_uncaught_exception,
-        InternalServerException: handle_uncaught_exception,
-        ServiceUnavailableException: handle_uncaught_exception,
-        Exception: handle_uncaught_exception,
-    }
-    if settings.debug_mode
-    else {},
+        HTTPException: handle_exception,
+        Exception: handle_exception,
+    },
     response_class=QCrBoxResponse,
 )

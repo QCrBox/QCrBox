@@ -132,7 +132,6 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
     @eel_logging
     async def set_up_key_value_store(self):
         self.kv_applications = await self.nats_broker.key_value(bucket="applications")
-        self.kv_calculation_status = await self.nats_broker.key_value(bucket="calculation_status")
 
     @eel_logging
     async def _run_custom_shutdown_tasks(self):

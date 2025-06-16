@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
 
-from pyqcrbox.sql_models.calculation_status_event import CalculationStatusDetails
+from pyqcrbox.sql_models.calculation_nats import CalculationNatsDB
 
 __all__ = ["DataFileManager"]
 
@@ -396,16 +396,36 @@ class DataFileManager(ABC):
             "interactive_sessions", session_info.session_id, session_info.model_dump_json().encode()
         )
 
-    @eel_logging
-    async def get_calculation_status_details(self, key: str) -> CalculationStatusDetails:
-        """TODO - do we need this?"""
-        status_as_bytes = await self._retrieve_from_kv("calculation_status", key)
+    # @eel_logging
+    async def get_calculation_details(self, key: str) -> CalculationNatsDB:
+        """Get metadata about a calculation from the data manager.
 
-        return CalculationStatusDetails.model_validate_json(status_as_bytes.decode())
+        Parameters
+        ----------
+        key : str
+            The key for the calculation in the data manager.
 
-    @eel_logging
-    async def get_calculation_statuses(self) -> list[CalculationStatusDetails]:
-        """TODO - do we need this?"""
-        keys = await self._get_kv_keys("calculation_status")
+        Returns
+        -------
+        CalculationNatsDB
+            A CalculationNatsDB object containing metadata about the calculation.
 
-        return [await self.get_calculation_status_details(key) for key in keys]
+        """
+        calc_as_bytes = await self._retrieve_from_kv("calculations", key)
+        calculation = CalculationNatsDB.model_validate_json(calc_as_bytes.decode())
+
+        return calculation
+
+    # @eel_logging
+    async def get_calculations(self) -> list[CalculationNatsDB]:
+        """Get metadata about all the calculations in the data manager.
+
+        Returns
+        -------
+        list[CalculationNatsDB]
+            A list of CalculationNatsDB which contain metadata about a calculation.
+        """
+        keys = await self._get_kv_keys("calculations")
+        calculations = [await self.get_calculation_details(key) for key in keys]
+
+        return calculations

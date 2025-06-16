@@ -76,7 +76,7 @@ class CalculationDB(CalculationBase, table=True):
             if event:
                 status = event.status
             else:
-                logger.warning(f"Unknown calculation status: {self.calculation_id!r}")
+                logger.warning(f"Unknown calculation status for calculation {self.calculation_id!r}")
                 status = CalculationStatusEnum.UNKNOWN
         return status
 
