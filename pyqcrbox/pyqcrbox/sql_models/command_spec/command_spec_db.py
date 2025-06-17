@@ -41,15 +41,31 @@ class CommandSpecDB(QCrBoxBaseSQLModel, table=True):
 
     calculations: list["CalculationDB"] = Relationship(back_populates="command")
 
+    def _as_comparison_dict(self) -> dict[str, Any]:
+        return self.model_dump(as_response_model=True)
+
+    def __eq__(self, other: "CommandSpecDB") -> bool:
+        if not isinstance(other, CommandSpecDB):
+            exc_msg = f"Cannot compare CommandSpecDB to object of type {type(object)}"
+            raise TypeError(exc_msg)
+        return self._as_comparison_dict() == other._as_comparison_dict()
+
+    def __hash__(self) -> int:
+        return hash(tuple(self._as_comparison_dict().items()))
+
     def model_dump(self, as_response_model=False, **kwargs):
         if as_response_model:
             assert "exclude" not in kwargs
             kwargs["exclude"] = ["call_pattern", "callable_name", "import_path"]
 
         data = super().model_dump(**kwargs)
+        data["implemented_as"] = (  # before this is committed to the database, this is an enum instead of an str
+            self.implemented_as.value if isinstance(self.implemented_as, ImplementedAs) else self.implemented_as
+        )
         data["application"] = self.application.slug
         data["version"] = self.application.version
         data["cmd_name"] = data["name"]  # alias
+
         return data
 
     @classmethod

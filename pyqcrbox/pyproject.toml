@@ -184,7 +184,8 @@ select = [
 ignore = [
     "D100",
     "D101",
-    "D102"
+    "D102",
+    "D105",
 ]
 
 # Ignore `F401`, `F403` (unused imports and * imports) in all `__init__.py` files

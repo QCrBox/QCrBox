@@ -84,7 +84,9 @@ class ApplicationSpecDB(ApplicationSpecBase, SQLModel, table=True):
         """Save this ApplicationSpecDB instance to the database.
 
         If an entry with the same slug, version and commands exists, the entry
-        is returned. Otherwise, adds the current instance to the database.
+        is returned. Otherwise, adds the current instance to the database. If the
+        current data does not agree with what is in the database, then the database
+        entry is updated to reflect the data contained within this instance.
 
         Parameters
         ----------
@@ -111,12 +113,23 @@ class ApplicationSpecDB(ApplicationSpecBase, SQLModel, table=True):
                     "Loading details from the previously stored data."
                 )
 
-                if result.commands != self.commands:
+                new_commands_dump = [cmd._as_comparison_dict() for cmd in self.commands]
+                result_commands_dump = [cmd._as_comparison_dict() for cmd in result.commands]
+                logger.debug(f"New commands: {new_commands_dump}")
+                logger.debug(f"Result commands: {result_commands_dump}")
+
+                # So the issue here is that the commands in self.commands are not linked to an application nor do they
+                # have an id associated with them. therefore they fail the equality check, even if they are otherwise
+                # identical. The application id could be easily fixed, but the id for the command instead created until
+                # we commit the command to the database
+
+                if self.commands != result.commands:
                     logger.warning(
                         "The previously registered application does not have the same commands as the current "
                         "application specification. The registered application will be updated to match the "
                         "application specification",
                     )
+
                     result.commands = self.commands
                     session.commit()
                     session.refresh(result)
