@@ -48,9 +48,9 @@ class CommandSpecDB(QCrBoxBaseSQLModel, table=True):
         data["implemented_as"] = (  # before this is committed to the database, this is an enum instead of an str
             self.implemented_as.value if isinstance(self.implemented_as, ImplementedAs) else self.implemented_as
         )
-        data["application"] = self.application.slug
-        data["version"] = self.application.version
-        data["cmd_name"] = data["name"]  # alias
+        # data["application"] = self.application.slug
+        # data["version"] = self.application.version
+        # data["cmd_name"] = data["name"]  # alias
 
         return data
 

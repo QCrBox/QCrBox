@@ -2,13 +2,12 @@ import typing
 from datetime import datetime
 
 from sqlalchemy import UniqueConstraint
-from sqlmodel import Field, Relationship, SQLModel, select
+from sqlmodel import Field, Relationship, Session, SQLModel, select
 
 from pyqcrbox.logging import logger
 from pyqcrbox.settings import settings
 
 from .application_spec import ApplicationSpec, ApplicationSpecBase
-from .calculation import CalculationDB
 from .command_spec import CommandSpecDB
 
 if typing.TYPE_CHECKING:
@@ -79,6 +78,45 @@ class ApplicationSpecDB(ApplicationSpecBase, SQLModel, table=True):
 
         return cls(**data)
 
+    def merge_commands(self, current_app: "ApplicationSpecDB", session: Session) -> None:
+        """Synchronise commands of this instance with a database entry.
+
+        This performs an in-place merge update:
+        - Updates existing CommandSpecDB entries in the database which match by
+          name.
+        - Adds new commands found in this instance but missing in the database.
+        - Removes any commands in the database which are not present in this instance.
+
+        Parameters
+        ----------
+        current_app : ApplicationSpecDB
+            The existing application instance from the database.
+        session : Session
+            The SQLModel database session.
+
+        """
+        existing_cmds_by_name = {cmd.name: cmd for cmd in current_app.commands}
+
+        for new_cmd in self.commands:
+            # Update fields on existing command OR create and append a new command
+            # entry
+            if new_cmd.name in existing_cmds_by_name:
+                existing_cmd = existing_cmds_by_name[new_cmd.name]
+                updates = new_cmd.model_dump(exclude={"id", "application", "application_id"})
+                for key, value in updates.items():
+                    setattr(existing_cmd, key, value)
+            else:
+                cmd_copy = CommandSpecDB.from_pydantic_model(new_cmd)
+                cmd_copy.application_id = current_app.id
+                current_app.commands.append(cmd_copy)
+
+        # Remove commands from the database which aren't in self.commands
+        new_cmd_names = {cmd.name for cmd in self.commands}
+        to_remove = [cmd for cmd in current_app.commands if cmd.name not in new_cmd_names]
+        for cmd in to_remove:
+            session.delete(cmd)
+            current_app.commands.remove(cmd)  # Not sure if I need this, but ensures consistency
+
     def save_to_db(self, init_db: bool = False) -> "ApplicationSpecDB":
         """Save this ApplicationSpecDB instance to the database.
 
@@ -111,23 +149,27 @@ class ApplicationSpecDB(ApplicationSpecBase, SQLModel, table=True):
                     f"An application was registered before with slug={self.slug!r}, version={self.version!r}. "
                     "Loading details from the previously stored data."
                 )
+                logger.debug(
+                    f"Currently registered application: {result!r}",
+                )
 
                 excluded_fields = ["call_pattern", "callable_name", "import_path", "id", "application_id"]
                 result_commands = [cmd.model_dump(exclude=excluded_fields) for cmd in result.commands]
                 self_commands = [cmd.model_dump(exclude=excluded_fields) for cmd in self.commands]
-                logger.debug(f"Self commands   : {self_commands}")
-                logger.debug(f"Result commands : {result_commands}")
 
-                if self_commands != result_commands:
+                if self_commands == result_commands:
                     logger.warning(
                         "The previously registered application does not have the same commands as the current "
                         "application specification. The registered application will be updated to match the "
                         "latest application specification.",
                     )
+                    self.merge_commands(result, session)
 
-                    # result.commands = self.commands
-                    # session.commit()
-                    # session.refresh(result)
+                    session.commit()
+                    session.refresh(result)
+                    logger.debug(
+                        f"Newly registered application: {result}",
+                    )
 
                 return result
 
