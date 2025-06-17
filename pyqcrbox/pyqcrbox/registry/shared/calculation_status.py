@@ -66,7 +66,9 @@ async def add_calculation_to_nats_kv(calculation: CalculationNatsDB) -> None:
         calculation id.
 
     """
-    logger.debug(f"Adding calculation id={calculation.calculation_id!r} to NATS: calculation=f{calculation!r}")
+    logger.debug(
+        f"Adding calculation id={calculation.calculation_id!r} to NATS: calculation=f{calculation!r}",
+    )
     key = calculation.calculation_id
 
     bucket = await get_nats_key_value(bucket="calculations")

@@ -25,7 +25,6 @@ class ApplicationSpecDB(ApplicationSpecBase, SQLModel, table=True):
     private_routing_key: str
 
     commands: list[CommandSpecDB] = Relationship(back_populates="application")
-    calculations: list[CalculationDB] = Relationship(back_populates="application")
 
     def model_dump(self, as_response_model: bool = False, **kwargs: dict[str, typing.Any]) -> dict:
         """Serialise the model to a dictionary representation.

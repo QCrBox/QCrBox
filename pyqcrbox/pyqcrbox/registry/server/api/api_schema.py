@@ -1,11 +1,11 @@
-from typing import Any, Dict, Generic, TypeVar
+from typing import Any, Generic, TypeVar
 
 from litestar.openapi.datastructures import ResponseSpec
 from pydantic import BaseModel
 
 from pyqcrbox.data_management.data_file import DataFileMetadataResponse, DatasetResponse
 from pyqcrbox.sql_models.application_spec import ApplicationSpecWithCommands
-from pyqcrbox.sql_models.calculation import CalculationResponseModel
+from pyqcrbox.sql_models.calculation_nats import CalculationNatsResponseModel
 from pyqcrbox.sql_models.command_spec import CommandSpecWithParameters
 from pyqcrbox.sql_models.interactive_session_info import InteractiveSessionInfoResponse
 
@@ -17,7 +17,7 @@ T = TypeVar("T")
 class CreateInteractiveSession(BaseModel):
     application_slug: str
     application_version: str
-    arguments: Dict[str, Any]
+    arguments: dict[str, Any]
 
 
 # Success responses
@@ -39,7 +39,7 @@ class ApplicationsResponse(BaseModel):
 
 
 class CalculationsResponse(BaseModel):
-    calculations: list[CalculationResponseModel]
+    calculations: list[CalculationNatsResponseModel]
 
 
 class CommandsResponse(BaseModel):
