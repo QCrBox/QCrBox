@@ -81,26 +81,26 @@ class ApplicationSpecDB(ApplicationSpecBase, SQLModel, table=True):
         return cls(**data)
 
     def save_to_db(self, init_db: bool = False) -> "ApplicationSpecDB":
+        """Save this ApplicationSpecDB instance to the database.
+
+        If an entry with the same slug, version and commands exists, the entry
+        is returned. Otherwise, adds the current instance to the database.
+
+        Parameters
+        ----------
+        init_db : bool, optional
+            If True, initialises the database session before saving.
+
+        Returns
+        -------
+        ApplicationSpecDB
+            The stored ApplicationSpedDB instance (either already existing or
+            newly created).
+
+        """
         cls = self.__class__
 
         with settings.db.get_session(init_db=init_db) as session:
-            """Save this ApplicationSpecDB instance to the database.
-
-            If an entry with the same slug, version and commands exists, the entry
-            is returned. Otherwise, adds the current instance to the database.
-
-            Parameters
-            ----------
-            init_db : bool, optional
-                If True, initialises the database session before saving.
-
-            Returns
-            -------
-            ApplicationSpecDB
-                The stored ApplicationSpedDB instance (either already existing or
-                newly created).
-
-            """
             # Using the first should be sufficient as slug and version are unique keys, so there can
             # only be one entry with the same slug and version
             result = session.exec(select(cls).where(cls.slug == self.slug, cls.version == self.version)).first()
@@ -114,14 +114,21 @@ class ApplicationSpecDB(ApplicationSpecBase, SQLModel, table=True):
                 if result.commands != self.commands:
                     logger.warning(
                         "The previously registered application does not have the same commands as the current "
+                        "application specification. The registered application will be updated to match the "
                         "application specification",
                     )
+                    result.commands = self.commands
+                    session.commit()
+                    session.refresh(result)
 
                 return result
 
             session.add(self)
             session.commit()
             session.refresh(self)
+            logger.info(
+                f"Registered a new application with slug={self.slug!r}, version={self.version!r}",
+            )
 
             return self
 

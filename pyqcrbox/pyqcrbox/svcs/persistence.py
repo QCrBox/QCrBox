@@ -1,12 +1,7 @@
 from abc import ABCMeta, abstractmethod
 from typing import TYPE_CHECKING
 
-import nats.js.errors
-
-from pyqcrbox.logging import logger
 from pyqcrbox.sql_models import ApplicationSpecDB
-
-from .helper_functions import get_nats_key_value
 
 if TYPE_CHECKING:
     from pyqcrbox.sql_models import ApplicationSpec
@@ -20,20 +15,22 @@ class BasePersistenceAdapter(metaclass=ABCMeta):
 
 class NatsPersistenceAdapter(BasePersistenceAdapter):
     async def save_application_spec(self, application_spec: "ApplicationSpec") -> None:
-        kv_applications = await get_nats_key_value(bucket="applications")
-        nats_key = application_spec.nats_key
-        try:
-            existing_application_spec = await kv_applications.get(nats_key)
-            logger.warning(
-                "TODO: an application with the same slug and version was registered before. "
-                f"Verify that the new spec is consistent with the existing one: {existing_application_spec=}"
-            )
-            return
-        except nats.js.errors.KeyNotFoundError:
-            pass
+        # kv_applications = await get_nats_key_value(bucket="applications")
+        # nats_key = application_spec.nats_key
+        # try:
+        #     existing_application_spec = await kv_applications.get(nats_key)
+        #     logger.warning(
+        #         "TODO: an application with the same slug and version was registered before. "
+        #         f"Verify that the new spec is consistent with the existing one: {existing_application_spec=}"
+        #     )
+        #     return
+        # except nats.js.errors.KeyNotFoundError:
+        #     pass
 
-        nats_value = application_spec.model_dump_json().encode()
-        await kv_applications.put(nats_key, nats_value)
+        # nats_value = application_spec.model_dump_json().encode()
+        # await kv_applications.put(nats_key, nats_value)
+        exc_msg = "Storing applications in NATS is not currently supported"
+        raise NotImplementedError(exc_msg)
 
 
 class SQLitePersistenceAdapter(BasePersistenceAdapter):
