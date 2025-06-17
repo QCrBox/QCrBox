@@ -113,26 +113,22 @@ class ApplicationSpecDB(ApplicationSpecBase, SQLModel, table=True):
                     "Loading details from the previously stored data."
                 )
 
-                new_commands_dump = [cmd._as_comparison_dict() for cmd in self.commands]
-                result_commands_dump = [cmd._as_comparison_dict() for cmd in result.commands]
-                logger.debug(f"New commands: {new_commands_dump}")
-                logger.debug(f"Result commands: {result_commands_dump}")
+                excluded_fields = ["call_pattern", "callable_name", "import_path", "id", "application_id"]
+                result_commands = [cmd.model_dump(exclude=excluded_fields) for cmd in result.commands]
+                self_commands = [cmd.model_dump(exclude=excluded_fields) for cmd in self.commands]
+                logger.debug(f"Self commands   : {self_commands}")
+                logger.debug(f"Result commands : {result_commands}")
 
-                # So the issue here is that the commands in self.commands are not linked to an application nor do they
-                # have an id associated with them. therefore they fail the equality check, even if they are otherwise
-                # identical. The application id could be easily fixed, but the id for the command instead created until
-                # we commit the command to the database
-
-                if self.commands != result.commands:
+                if self_commands != result_commands:
                     logger.warning(
                         "The previously registered application does not have the same commands as the current "
                         "application specification. The registered application will be updated to match the "
-                        "application specification",
+                        "latest application specification.",
                     )
 
-                    result.commands = self.commands
-                    session.commit()
-                    session.refresh(result)
+                    # result.commands = self.commands
+                    # session.commit()
+                    # session.refresh(result)
 
                 return result
 
