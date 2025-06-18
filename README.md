@@ -1,7 +1,4 @@
 [![License: MPL 2.0](https://img.shields.io/badge/License-MPL_2.0-blue.svg)](https://opensource.org/licenses/MPL-2.0)
-<a href="https://discord.com/invite/eU2ya5psxH" target="_blank">
-      <img alt="Discord" src="https://img.shields.io/discord/1219613211209240637?logo=discord">
-</a>
 
 # Quantum Crystallography Toolbox
 
@@ -21,8 +18,12 @@ is always welcome.
 
 
 ## QCrBox Project Team
+
 | Project Member                                                                         | Role  | Unit   |
 |----------------------------------------------------------------------------------------|-------|--------|
+| Dr. [Edward Parkinson](https://github.com/Edward-RSE)                                  |  Senior Research Software Engineer (RSE) | [Research Software Group, University of Southampton ](https://rsgsoton.net/)                       |
+| Dr. [James Court](https://github.com/jmcourt)                                                 |  Research Software Engineer (RSE) | [Research Software Group, University of Southampton ](https://rsgsoton.net/)                       |
+| Dr. [Steve Crouch](https://github.com/steve-crouch)                                    |  Software Architect | [Research Software Group, University of Southampton ](https://rsgsoton.net/)                       |
 | Dr. [Maximilian Albert](https://github.com/maxalbert)                                  |  Research Software Engineer (RSE) | [Research Software Group, University of Southampton ](https://rsgsoton.net/)                       |
 | Dr. [Paul Niklas Ruth](https://github.com/Niolon)                                      |  Research Software Engineer (RSE) | [Advanced Research Computing, Durham University](https://www.durham.ac.uk/research/institutes-and-centres/advanced-research-computing/)                       |
 | Prof. [Simon Coles](https://www.southampton.ac.uk/people/5wzkxv/professor-simon-coles) | Principal Investigator      | [Department of Chemistry, University of Southampton](https://www.southampton.ac.uk/research/areas/chemistry) |
@@ -38,6 +39,7 @@ distribute the underlying Docker containers fully built.
 
 
 ## Documentation
+
 The documentation can be accessed [here](https://qcrbox.github.io/QCrBox/). This includes
 [examples](https://qcrbox.github.io/QCrBox/tutorials/contents/) on how to interact with QCrBox
 from the outside. These examples are converted from Jupyter notebooks. If you'd like to run
@@ -51,12 +53,11 @@ code, please fork the repository, create your own branch and submit a pull reque
 very welcome to [contact us](#get-in-touch).
 
 
-## Get in touch
+## Get in Touch
 
-Do you have any questions, suggestions, want to get involved, or are simply curious to learn more?
+Do you have any questions, suggestions, want to get involved, or are simply curious to learn more? Email [John Robinson](J.S.Robinson@soton.ac.uk), [Steve Crouch](sc16@soton.ac.uk).
 
-- Join our [Discord server](https://discord.com/invite/eU2ya5psxH) to come and chat with us!
-- You can also show your support by giving our [GitHub repository](https://github.com/QCrBox/QCrBox) a star
+You can also show your support by giving our [GitHub repository](https://github.com/QCrBox/QCrBox) a star.
 
 
 ## Release Notes
@@ -65,4 +66,5 @@ Please refer to the [Changelog](https://qcrbox.github.io/QCrBox/CHANGELOG/) for 
 current and past releases.
 
 ## Licence
+
 The software is distributed under the MPL2.0 licence. See [LICENSE](./LICENSE) for more information.
