@@ -157,7 +157,7 @@ class ApplicationSpecDB(ApplicationSpecBase, SQLModel, table=True):
                 result_commands = [cmd.model_dump(exclude=excluded_fields) for cmd in result.commands]
                 self_commands = [cmd.model_dump(exclude=excluded_fields) for cmd in self.commands]
 
-                if self_commands == result_commands:
+                if self_commands != result_commands:
                     logger.warning(
                         "The previously registered application does not have the same commands as the current "
                         "application specification. The registered application will be updated to match the "
