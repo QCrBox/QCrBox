@@ -1,6 +1,4 @@
-"""
-Organised API routes for QCrBox, grouped by resource.
-"""
+"""API endpoints for QCrBox, grouped by resource."""
 
 import traceback
 from typing import Annotated
@@ -141,8 +139,8 @@ async def get_calculation_by_id(
             },
             status_code=200,
         )
-    except api_helpers.CalculationNotFoundError:
-        raise QCrBoxAPIException(detail=f"Calculation not found: {id!r}", status_code=404)
+    except api_helpers.CalculationNotFoundError as exc:
+        raise QCrBoxAPIException(detail=f"Calculation not found: {id!r}", status_code=404) from exc
 
 
 # Commands -------------------------------------------------------------------------------------------------------------
@@ -195,8 +193,8 @@ async def get_command_by_id(id: int) -> schema.QCrBoxResponse[schema.CommandsRes
             },
             status_code=200,
         )
-    except api_helpers.CommandNotFoundError:
-        raise QCrBoxAPIException(detail=f"Command not found: {id!r}", status_code=404)
+    except api_helpers.CommandNotFoundError as exc:
+        raise QCrBoxAPIException(detail=f"Command not found: {id!r}", status_code=404) from exc
 
 
 # Data files -----------------------------------------------------------------------------------------------------------
@@ -251,8 +249,8 @@ async def get_data_file_by_id(
             },
             status_code=200,
         )
-    except KeyError:
-        raise QCrBoxAPIException(detail=f"Data file not found: {id!r}", status_code=404)
+    except KeyError as exc:
+        raise QCrBoxAPIException(detail=f"Data file not found: {id!r}", status_code=404) from exc
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -298,8 +296,8 @@ async def download_data_file_by_id(id: str = Parameter(title="Data file ID")) ->
     """Download a data file from the data store."""
     try:
         data_file_contents_as_bytes, data_file_name = await api_helpers.export_data_file(id)
-    except nats.js.errors.NotFoundError:
-        raise QCrBoxAPIException(detail=f"Data file not found: {id!r}", status_code=404)
+    except nats.js.errors.NotFoundError as exc:
+        raise QCrBoxAPIException(detail=f"Data file not found: {id!r}", status_code=404) from exc
 
     return Response(
         content=data_file_contents_as_bytes,
@@ -373,8 +371,8 @@ async def get_dataset_by_id(
             },
             status_code=200,
         )
-    except (KeyError, DatasetNotFoundError):
-        raise QCrBoxAPIException(detail=f"Dataset not found: {id!r}", status_code=404)
+    except (KeyError, DatasetNotFoundError) as exc:
+        raise QCrBoxAPIException(detail=f"Dataset not found: {id!r}", status_code=404) from exc
 
 
 @post(
@@ -417,8 +415,8 @@ async def download_dataset_by_id(id: str = Parameter(title="Dataset ID")) -> Res
     """Download the data files of a datast as a Zip file."""
     try:
         dataset_contents_as_bytes, output_filename = await api_helpers.export_dataset(id)
-    except DatasetNotFoundError:
-        raise QCrBoxAPIException(detail=f"Dataset not found: {id!r}", status_code=404)
+    except DatasetNotFoundError as exc:
+        raise QCrBoxAPIException(detail=f"Dataset not found: {id!r}", status_code=404) from exc
 
     return Response(
         content=dataset_contents_as_bytes,
@@ -480,8 +478,8 @@ async def get_interactive_session_by_id(
             },
             status_code=200,
         )
-    except KeyError:
-        raise QCrBoxAPIException(detail=f"Interactive session not found: {id!r}", status_code=404)
+    except KeyError as exc:
+        raise QCrBoxAPIException(detail=f"Interactive session not found: {id!r}", status_code=404) from exc
 
 
 @post(
@@ -530,21 +528,37 @@ async def create_interactive_session_with_arguments(
     )
 
 
-@delete(
-    path="/interactive-sessions/{id:str}",
+@post(
+    path="/interactive-sessions/{id:str}/close",
     media_type=MediaType.JSON,
     summary="Close interactive session",
     tags=["interactive-sessions"],
     operation_id="close_interactive_session",
+    status_code=200,
     responses={400: schema.BAD_REQUEST_ERROR, 404: schema.NOT_FOUND_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
 @eel_logging
-async def close_interactive_session(id: str = Parameter(title="Interactive session ID")) -> None:
+async def close_interactive_session(
+    id: str = Parameter(title="Interactive session ID"),
+) -> schema.QCrBoxResponse[schema.InteractiveSessionClosedResponse]:
     """Close, potentially prematurely, an interactive session."""
     try:
-        await api_helpers.close_interactive_session(id)
-    except KeyError:
-        raise QCrBoxAPIException(detail=f"Interactive session not found: {id!r}", status_code=404)
+        closed_session = await api_helpers.close_interactive_session(id)
+    except KeyError as exc:
+        raise QCrBoxAPIException(detail=f"Interactive session not found: {id!r}", status_code=404) from exc
+
+    return QCrBoxResponse(
+        content={
+            "status": "success",
+            "message": f"Closed interactive session: {id!r}",
+            "payload": {
+                "interactive_sessions": [
+                    closed_session,
+                ]
+            },
+        },
+        status_code=200,
+    )
 
 
 # Exception handlers ---------------------------------------------------------------------------------------------------

@@ -1,9 +1,14 @@
-from typing import Any, Dict, Generic, TypeVar
+"""Models defining the response and request types for the QCrBox API."""
+
+from typing import Any, Generic, TypeVar
 
 from litestar.openapi.datastructures import ResponseSpec
 from pydantic import BaseModel
 
 from pyqcrbox.data_management.data_file import DataFileMetadataResponse, DatasetResponse
+from pyqcrbox.msg_specs.msg_types.client_side.get_calculation_status import (
+    CloseInteractiveSessionResponseNATS,
+)
 from pyqcrbox.sql_models.application_spec import ApplicationSpecWithCommands
 from pyqcrbox.sql_models.calculation import CalculationResponseModel
 from pyqcrbox.sql_models.command_spec import CommandSpecWithParameters
@@ -15,9 +20,25 @@ T = TypeVar("T")
 
 
 class CreateInteractiveSession(BaseModel):
+    """Request body for invoking an interactive session.
+
+    Attributes:
+    ----------
+    application_slug : str
+        The slug of the application to invoke, as defined in the application
+        specification.
+    application_version : str
+        The version number of the application to invoke, as defined in the application
+        specification.
+    arguments : dict
+        Arguments required to invoke the interactive session for the application
+        requested.
+
+    """
+
     application_slug: str
     application_version: str
-    arguments: Dict[str, Any]
+    arguments: dict[str, Any]
 
 
 # Success responses
@@ -60,6 +81,10 @@ class InteractiveSessionsResponse(BaseModel):
 
 class InteractiveSessionIDResponse(BaseModel):
     interactive_session_id: str
+
+
+class InteractiveSessionClosedResponse(BaseModel):
+    interactive_sessions: list[CloseInteractiveSessionResponseNATS]
 
 
 # Error responses
