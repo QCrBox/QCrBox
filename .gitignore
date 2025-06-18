@@ -103,3 +103,6 @@ pyqcrbox/robot_tests/report.html
 # Log files and rotated log files
 *.log
 *.log.*.gz
+
+# Favourites extension in VSCode
+.favorites.json
