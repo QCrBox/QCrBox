@@ -2,6 +2,7 @@
 name = "pyqcrbox"
 authors = [
   { name="Maximilian Albert", email="maximilian.albert@gmail.com" },
+  { name="Edward J. Parkinson", email="e.parkinson@soton.ac.uk" },
 ]
 description = "Quantum Crystallography Toolbox"
 readme = "README.md"
@@ -179,6 +180,14 @@ select = [
     "I",
     # Pydocstyle
     "D",
+    "D413",
+]
+ignore = [
+    "D100",
+    "D101",
+    "D102",
+    "D104",
+    "D105",
 ]
 
 # Ignore `F401`, `F403` (unused imports and * imports) in all `__init__.py` files
@@ -196,7 +205,7 @@ select = [
 exclude = ["services/applications/*/configure_*.py"]
 
 [tool.ruff.lint.pydocstyle]
-convention = "google"
+convention = "numpy"
 
 
 [tool.importlinter]
