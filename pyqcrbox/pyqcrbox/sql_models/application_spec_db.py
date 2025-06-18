@@ -15,6 +15,8 @@ if typing.TYPE_CHECKING:
 
 
 class ApplicationSpecDB(ApplicationSpecBase, SQLModel, table=True):
+    """Model for storing application specifications."""
+
     __tablename__ = "application"
     __table_args__ = (UniqueConstraint("slug", "version"),)
     __pydantic_model_cls__ = ApplicationSpec
