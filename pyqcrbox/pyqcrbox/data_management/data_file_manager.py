@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
 
-from pyqcrbox.sql_models.calculation_nats import CalculationNatsDB
+from pyqcrbox.sql_models.calculation import CalculationNatsDB
 
 __all__ = ["DataFileManager"]
 
@@ -85,8 +85,8 @@ class DataFileManager(ABC):
             The key to associate with the file metadata.
         metadata : DataFileMetadata
             A DataFileMetadata object containing metadata about the data file.
-        """
 
+        """
         await self._store_in_kv("data_file_metadata", key, metadata.model_dump_json().encode())
 
     @eel_logging
@@ -211,6 +211,7 @@ class DataFileManager(ABC):
         -------
         DataFileMetadata
             A DataFileMetadata object containing metadata about the data file.
+
         """
         metadata_as_bytes = await self._retrieve_from_kv("data_file_metadata", data_file_id)
 
@@ -224,6 +225,7 @@ class DataFileManager(ABC):
         -------
         list[DataFileMetadata]
             A list of DataFileMetadata objects.
+
         """
         keys = await self._get_kv_keys("data_file_metadata")
         values = [await self.get_file_metadata(key) for key in keys]
@@ -261,6 +263,7 @@ class DataFileManager(ABC):
         -------
         list[Dataset]
             A list of Dataset objects.
+
         """
         dataset_ids = await self._get_kv_keys("datasets")
 
@@ -301,6 +304,7 @@ class DataFileManager(ABC):
         -------
         InteractiveSessionInfo
             An interactiveSessionInfo containing data about the interactive session.
+
         """
         session_info_as_bytes = await self._retrieve_from_kv("interactive_sessions", session_id)
 

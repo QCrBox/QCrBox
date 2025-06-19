@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 import nats.js.errors
 
 from pyqcrbox import logger
-from pyqcrbox.sql_models.calculation_nats import CalculationNatsDB
+from pyqcrbox.sql_models.calculation import CalculationNatsDB
 from pyqcrbox.sql_models.calculation_status_event import CalculationStatusDetails
 from pyqcrbox.svcs import get_nats_key_value
 

@@ -15,7 +15,7 @@ from pyqcrbox.data_management import DatasetResponse
 from pyqcrbox.data_management.data_file import DataFileMetadataResponse
 from pyqcrbox.debug import eel_logging
 from pyqcrbox.services import get_data_file_manager, get_nats_broker
-from pyqcrbox.sql_models.calculation_nats import CalculationNatsResponseModel
+from pyqcrbox.sql_models.calculation import CalculationNatsResponseModel
 
 
 class CalculationNotFoundError(Exception):
@@ -64,7 +64,7 @@ def _verify_command_exists(
                     sql_models.CommandSpecDB.name == command_name,
                 )
             ).one()
-        except sqlalchemy.exc.NoResultFound:
+        except sqlalchemy.exc.NoResultFound as exc:
             error_msg = (
                 f"Command or application not found: "
                 f"command={command_name!r}, "
@@ -72,15 +72,15 @@ def _verify_command_exists(
                 f"version: {application_version!r}"
             )
             logger.error(error_msg)
-            raise ClientException(error_msg)
-        except sqlalchemy.exc.MultipleResultsFound:
+            raise ClientException(error_msg) from exc
+        except sqlalchemy.exc.MultipleResultsFound as exc:
             error_msg = (
                 f"Found multiple candidates for command: {command_name}. "
                 f"Please supply the application's slug (and version if needed) "
                 f"to disambiguate between the matching commands."
             )
             logger.error(error_msg)
-            raise ClientException(error_msg)
+            raise ClientException(error_msg) from exc
 
     return cmd_spec_db
 
@@ -254,9 +254,9 @@ def retrieve_command_by_id(cmd_id: int, raise_if_not_found: bool = True) -> sql_
     with settings.db.get_session() as session:
         try:
             cmd = session.scalars(query).one()
-        except sqlalchemy.exc.NoResultFound:
+        except sqlalchemy.exc.NoResultFound as exc:
             if raise_if_not_found:
-                raise CommandNotFoundError(cmd_id)
+                raise CommandNotFoundError(cmd_id) from exc
             else:
                 return None
         cmd_response_model = cmd.to_response_model()
