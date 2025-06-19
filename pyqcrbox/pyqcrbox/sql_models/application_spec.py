@@ -76,7 +76,7 @@ class ApplicationSpecBase(QCrBoxPydanticBaseModel):
     def command_names(self) -> list[str]:
         return list(self.cmds_by_name.keys())
 
-    def get_command_by_name(self, cmd_name: str) -> CommandSpecDiscriminatedUnion:
+    def get_command_spec_by_name(self, cmd_name: str) -> CommandSpecDiscriminatedUnion:
         return self.cmds_by_name[cmd_name]
 
 

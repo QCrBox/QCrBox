@@ -4,6 +4,7 @@ import asyncio
 import anyio
 
 from pyqcrbox import logger
+from pyqcrbox.debug import eel_logging
 from pyqcrbox.sql_models import CalculationStatusEnum
 
 from .base_calculation import BaseCalculation
@@ -19,15 +20,13 @@ class CLICmdCalculation(BaseCalculation):
         self.retrieved_stdout_stderr = False
         self.calc_finished_event = calc_finished_event
 
+    @eel_logging
     async def wait_until_finished(self):
         logger.debug(f"Waiting for calculation to finish: {self!r}")
-        # logger.debug("Waiting for process to exit...")
         await self.proc.wait()
-        # logger.debug("Process finished.")
-        self.calc_finished_event.set()
-        logger.debug(f"Calculation finished: {self!r} (status: {self.status!r})")
+        self.calc_finished_event.wait()
         if self.status == CalculationStatusEnum.FAILED:
-            logger.debug(f"\nStdout:\n\n{await self.stdout}\n\nStderr:\n\n{await self.stderr}")
+            logger.error(f"CLI Command failed:\nStdout:\n\n{await self.stdout}\n\nStderr:\n\n{await self.stderr}")
 
     @property
     def status(self) -> CalculationStatusEnum:
@@ -41,6 +40,7 @@ class CLICmdCalculation(BaseCalculation):
 
         return status
 
+    @eel_logging
     def _get_status_details_extra_info(self):
         return {"returncode": self.returncode}
 
@@ -58,9 +58,18 @@ class CLICmdCalculation(BaseCalculation):
         await self.retrieve_stdout_stderr()
         return self._stderr
 
+    @eel_logging
     async def retrieve_stdout_stderr(self):
         if self.status != CalculationStatusEnum.RUNNING and not self.retrieved_stdout_stderr:
             stdout, stderr = await self.proc.communicate()
             self._stdout = stdout.decode()
             self._stderr = stderr.decode()
             self.retrieved_stdout_stderr = True
+
+    @eel_logging
+    async def terminate(self):
+        if self.proc:
+            self.proc.terminate()
+            logger.info(f"Terminated process for calculation {self!r}")
+        else:
+            logger.error(f"No process running for calculation {self!r} - nothing to terminate.")

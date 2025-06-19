@@ -45,6 +45,7 @@ _builtin_dtypes = {
 
 _custom_dtypes = {
     "QCrBox.data_file": DataFileParameter,
+    "QCrBox.cif_data_file": DataFileParameter,
 }
 
 _known_dtypes = _builtin_dtypes | _custom_dtypes

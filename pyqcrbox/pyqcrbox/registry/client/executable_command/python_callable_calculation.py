@@ -4,6 +4,7 @@ import multiprocessing.pool
 import anyio
 
 from pyqcrbox import logger
+from pyqcrbox.debug import eel_logging
 from pyqcrbox.sql_models import CalculationStatusEnum
 
 from .base_calculation import BaseCalculation
@@ -24,6 +25,7 @@ class PythonCallableCalculation(BaseCalculation):
         # self._status_details = None
         self.return_value = None
 
+    @eel_logging
     async def wait_until_finished(self):
         logger.debug(f"Waiting for calculation to finish: {self!r}")
         await self.calc_finished_event.wait()
@@ -60,6 +62,7 @@ class PythonCallableCalculation(BaseCalculation):
         else:
             return "Retrieval of STDERR not implemented yet for PythonCallableCalculation"
 
+    @eel_logging
     async def terminate(self):
         logger.debug("Terminating multiprocessing pool (any running workers will be stopped immediately).")
         self.pool.terminate()

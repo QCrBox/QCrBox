@@ -3,6 +3,7 @@ import re
 
 import anyio
 
+from pyqcrbox.debug import eel_logging
 from pyqcrbox.sql_models import CLICommandSpec
 
 __all__ = ["CLICommand"]
@@ -97,6 +98,7 @@ class CLICommand(BaseCommand):
     async def bind(self, working_dir: str, **param_values):
         return self.call_pattern.format(**param_values)
 
+    @eel_logging
     async def execute_in_background(
         self,
         _calculation_id: str,
@@ -109,15 +111,14 @@ class CLICommand(BaseCommand):
         calc_finished_event = anyio.Event()
 
         working_dir = _cwd or os.getcwd()
-        param_values = self.cmd_spec.parameter_default_values | kwargs
-        param_values = {
-            name: await param.prepare_for_execution(target_dir=working_dir) for name, param in param_values.items()
-        }
+        param_values = {k: kwargs[k] for k in self.parameter_names if k in kwargs}
 
         try:
             cmd_with_bound_args = await self.bind(working_dir, **param_values)
         except KeyError as exc:
             raise QCrBoxCmdArgumentMismatch(exc.args[0])
+
+        logger.debug(f"cmd_with_bounds_args {cmd_with_bound_args}")
 
         self.proc = await asyncio.create_subprocess_shell(
             cmd_with_bound_args,
@@ -129,6 +130,7 @@ class CLICommand(BaseCommand):
 
         return CLICmdCalculation(self.proc, calculation_id=_calculation_id, calc_finished_event=calc_finished_event)
 
+    @eel_logging
     async def terminate(self):
         if self.proc:
             logger.debug("Terminating process running CLI command.")

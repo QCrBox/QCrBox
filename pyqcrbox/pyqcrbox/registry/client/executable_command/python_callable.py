@@ -3,7 +3,6 @@ import importlib
 import inspect
 import multiprocessing.pool
 import multiprocessing.process
-import os
 import traceback
 from typing import Union
 
@@ -11,6 +10,7 @@ import anyio
 from pydantic._internal._validate_call import ValidateCallWrapper
 
 from pyqcrbox import logger
+from pyqcrbox.debug import eel_logging
 from pyqcrbox.sql_models import PythonCallableSpec
 
 from . import BaseCommand
@@ -56,6 +56,7 @@ class PythonCallable(BaseCommand):
     def __repr__(self):
         return f"<{self.__class__.__name__}: {self.fn.__name__}{self.signature!s}>"
 
+    @eel_logging
     async def execute_in_background(
         self,
         *args,
@@ -79,7 +80,8 @@ class PythonCallable(BaseCommand):
             nonlocal calc_finished_event
             traceback_str = "\n".join(traceback.format_exception(exc))
             logger.error(
-                f"Error: {exc=} ({multiprocessing.process.current_process().name})\n\nTraceback:\n\n{traceback_str}"
+                f"PythonCallable Error: {exc=} ({multiprocessing.process.current_process().name})\n\n"
+                + f"Traceback:\n\n{traceback_str}"
             )
             calc_finished_event.set()
             calc_finished_event = None
@@ -90,12 +92,7 @@ class PythonCallable(BaseCommand):
                 "TODO: Change into working directory before executing "
                 "the python callable (and switch back afterwards)!"
             )
-
-        working_dir = _cwd or os.getcwd()
-        param_values = self.cmd_spec.parameter_default_values | kwargs
-        param_values = {
-            name: await param.prepare_for_execution(target_dir=working_dir) for name, param in param_values.items()
-        }
+        param_values = {k: kwargs[k] for k in self.parameter_names if k in kwargs}
 
         pending_result = self.pool.apply_async(
             self._fn_with_call_args_validation,
@@ -112,6 +109,7 @@ class PythonCallable(BaseCommand):
             calc_finished_event=calc_finished_event,
         )
 
+    @eel_logging
     async def terminate(self):
         logger.debug(f"Terminating {self}")
         self.pool.terminate()

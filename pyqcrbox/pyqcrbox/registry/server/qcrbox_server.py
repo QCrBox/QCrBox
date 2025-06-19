@@ -1,26 +1,34 @@
-import json
-from pathlib import Path
 from typing import Any
 
-import nats.js.errors
 from faststream import Context
 from litestar import Litestar, MediaType, get
+from litestar.exceptions import (
+    HTTPException,
+    ImproperlyConfiguredException,
+    InternalServerException,
+    NotAuthorizedException,
+    NotFoundException,
+    PermissionDeniedException,
+    ServiceUnavailableException,
+    ValidationException,
+)
 from litestar.openapi import OpenAPIConfig
 from litestar.response import Redirect
-from litestar.static_files import create_static_files_router
 from pydantic import BaseModel
-from sqlmodel import select
 
-from pyqcrbox import helpers, logger, msg_specs, settings, sql_models
-from pyqcrbox.registry.shared.calculation_status import update_calculation_status_in_nats_kv_NEW
-from pyqcrbox.sql_models import CalculationStatusDetails, CalculationStatusEnum
+from pyqcrbox import helpers, logger, msg_specs, settings
+from pyqcrbox.debug import eel_logging
+from pyqcrbox.msg_specs.base import QCrBoxGenericResponse
+from pyqcrbox.registry.server.api.api_endpoints import handle_exception
+from pyqcrbox.registry.shared.calculation_status import (
+    NatsCalculationAlreadyExists,
+    add_calculation_to_nats_kv,
+    update_calculation_status_in_nats_kv,
+)
+from pyqcrbox.sql_models import CalculationNatsDB, CalculationStatusDetails, CalculationStatusEnum
 
 from ..shared import QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup, structlog_plugin
 from .api import api_router
-from .views import views_router
-
-static_files_dir = Path(__file__).parent / "assets"
-static_files_router = create_static_files_router(path="/static", directories=[static_files_dir])
 
 
 class ExecutingClientDetails(BaseModel):
@@ -37,21 +45,13 @@ class CalculationDetails(BaseModel):
     executing_client: ExecutingClientDetails | None = None
 
 
-@get(path="/", media_type=MediaType.HTML)
+@get(path="/", media_type=MediaType.HTML, include_in_schema=False)
 async def web_root_handler() -> Redirect:
-    return Redirect(path="/views/index")
+    return Redirect(path="/api")
 
 
 class QCrBoxServer(QCrBoxServerClientBase):
-    # def _set_up_rabbitmq_broker(self) -> None:
-    #     # self.set_up_message_dispatcher(
-    #     #     queue_name=settings.rabbitmq.routing_key_qcrbox_registry,
-    #     #     message_dispatcher=server_side_message_dispatcher,
-    #     #     exchange_type=ExchangeType.DIRECT,
-    #     #     routing_key="",
-    #     # )
-    #     pass
-
+    @eel_logging
     def _set_up_nats_broker(self) -> None:
         self.nats_broker.subscriber("register-application")(self.handle_application_registration)
         self.nats_broker.subscriber("server.cmd.handle_command_invocation_by_user")(
@@ -60,38 +60,40 @@ class QCrBoxServer(QCrBoxServerClientBase):
         self.nats_broker.subscriber("server.cmd.handle_command_invocation_client_response")(
             self.handle_command_invocation_client_response
         )
-        self.nats_broker.subscriber("server.calc.get_status")(self.get_calculation_status)
+        self.nats_broker.subscriber("server.calc.get_status")(self.get_calculation_status_from_client)
         self.nats_broker.subscriber("*", kv_watch="calculation_status")(self.update_calculation_status_in_db)
 
-    async def handle_application_registration(self, msg: msg_specs.RegisterApplication):
+    @eel_logging
+    async def handle_application_registration(self, msg: msg_specs.RegisterApplication) -> None:
+        """Handle application registration requests.
+
+        This is a handler for the `register-application` inbox in the NATS broker.
+        For an application to be available to a user, it must register itself and
+        its commands using this handler.
+
+        Applications are added to the in-memory SQL database and were historically
+        also added into NATS.
+
+        Parameters
+        ----------
+        msg : msg_specs.RegisterApplication
+            The NATS message sent by the application requesting to be registered.
+
+        """
         logger.info(
             f"Received registration for application: {msg.payload.application_spec.slug!r} "
             f"(version: {msg.payload.application_spec.version!r})"
         )
-        await self.nats_persistence_adapter.save_application_spec(msg.payload.application_spec)
+        # await self.nats_persistence_adapter.save_application_spec(msg.payload.application_spec)
         await self.sqlite_persistence_adapter.save_application_spec(msg.payload.application_spec)
 
-    async def handle_command_invocation_by_user(self, msg: msg_specs.InvokeCommandNATS):
+    @eel_logging
+    async def handle_command_invocation_by_user(self, msg: msg_specs.InvokeCommandNATS) -> QCrBoxGenericResponse:
         logger.info(f"Received command invocation from user: {msg!r}")
 
         calculation_id = helpers.generate_calculation_id()
-        calculation_details = CalculationDetails(
-            calculation_id=calculation_id,
-            **msg.model_dump(),
-        )
+        calculation_details = CalculationDetails(calculation_id=calculation_id, **msg.model_dump())
         self.calculations[calculation_id] = calculation_details
-
-        calculation_db = sql_models.CalculationDB(
-            application_slug=msg.application_slug,
-            application_version=msg.application_version,
-            command_name=msg.command_name,
-            arguments=msg.arguments,
-            calculation_id=calculation_id,
-        )
-        try:
-            calculation_db.save_to_db()
-        except sql_models.QCrBoxDBError as exc:
-            return msg_specs.InvokeCommandResponse(response_to=msg.action, status="error", msg=exc.message)
 
         msg_to_client = msg_specs.CommandInvocationRequestNATS(
             application_slug=msg.application_slug,
@@ -101,39 +103,46 @@ class QCrBoxServer(QCrBoxServerClientBase):
             calculation_id=calculation_id,
         )
 
-        status_details = CalculationStatusDetails(
-            calculation_id=calculation_id,
-            status=CalculationStatusEnum.SUBMITTED,
-            stdout="",
-            stderr="",
-            extra_info={},
-        )
-        await update_calculation_status_in_nats_kv_NEW(status_details)
-        # await self.kv_calculation_status.put(calculation_id, CalculationStatusEnum.SUBMITTED.encode())
-        await self.nats_broker.publish(
-            msg_to_client,
+        msg_from_client = await self.nats_broker.publish(
+            message=msg_to_client,
             subject=f"client.cmd.handle_invocation_request.{msg_to_client.nats_subject_parts}",
-            reply_to="server.cmd.handle_command_invocation_client_response",
+            rpc=True,
         )
-        return msg_specs.QCrBoxGenericResponse(
-            response_to="server.cmd.handle_command_invocation_by_user",
-            status=CalculationStatusEnum.SUBMITTED,
-            payload={"calculation_id": calculation_id},
+        msg_from_client = msg_specs.CommandInvocationClientResponseNATS(**msg_from_client)
+        await self.nats_broker.publish(
+            message=msg_from_client, subject="server.cmd.handle_command_invocation_client_response"
         )
 
+        command_status = await self.add_command_request_to_calculation_db(msg_to_client, msg_from_client)
+        logger.debug(f"Command invocation final status: {command_status}")
+
+        return command_status
+
+    @eel_logging
     async def handle_command_invocation_client_response(self, msg: msg_specs.CommandInvocationClientResponseNATS):
         logger.info(f"Received client response: {msg!r}")
+
         if not msg.client_is_available:
-            logger.debug(f"Client is not available: {msg.client_id}")
+            logger.debug(
+                "Client is not available, telling client to discard the invocation request:"
+                + " client_id={msg.client_id} calculation_id={msg.calculation_id}"
+            )
+            subject = f"{msg.private_inbox_prefix}.cmd.discard"
+            response_to_client = msg_specs.DiscardCommandInvocationNATS(calculation_id=msg.calculation_id)
+            logger.debug(
+                f"Telling client {msg.client_id!r} to discard the invocation request "
+                f"(private inbox prefix: {msg.private_inbox_prefix!r})"
+            )
+            await self.nats_broker.publish(response_to_client, subject=subject)
             return
 
         logger.debug(f"Retrieving details for calculation: {msg.calculation_id!r}")
         try:
             calc = self.calculations[msg.calculation_id]
-        except KeyError:
+        except KeyError as exc:
             error_msg = f"Calculation not found: {msg.calculation_id!r}"
             logger.error(error_msg)
-            raise RuntimeError(error_msg)
+            raise RuntimeError(error_msg) from exc
 
         if calc.executing_client is None:
             response_to_client = msg_specs.CommandExecutionRequestNATS(
@@ -163,81 +172,114 @@ class QCrBoxServer(QCrBoxServerClientBase):
             )
             await self.nats_broker.publish(response_to_client, subject=subject)
 
-    async def get_calculation_status(self, msg: msg_specs.GetCalculationStatusNATS):
+    @eel_logging
+    async def get_calculation_status_from_client(self, msg: msg_specs.GetCalculationStatusNATS):
         logger.debug(f"Retrieving status for {msg.calculation_id!r}")
-        executing_client = self.calculations[msg.calculation_id].executing_client
-        client_inbox_prefix = executing_client.private_inbox_prefix
-        subject = f"{client_inbox_prefix}.calc.status"
-        response = await self.nats_broker.publish(msg, subject, rpc=True)
-        logger.debug(f"{executing_client.client_id} responded with {response=!r}")
-        # status = response["status"]
-        status_nats_kv = json.loads((await self.kv_calculation_status.get(msg.calculation_id)).value)
-        logger.debug(f"Calculation status in nats KV store is: {status_nats_kv!r}")
+        client = self.calculations[msg.calculation_id].executing_client
+        client_inbox_prefix = client.private_inbox_prefix
+        response = await self.nats_broker.publish(
+            msg,
+            f"{client_inbox_prefix}.calc.status",
+            rpc=True,
+        )
+        logger.debug(f"{client.client_id} responded with {response=!r}")
+
         return response
 
-    async def update_calculation_status_in_db(
-        self, status_details: CalculationStatusDetails, calculation_id: str = Context("message.raw_message.key")
+    async def add_command_request_to_calculation_db(
+        self,
+        msg_to_client: msg_specs.CommandInvocationRequestNATS,
+        msg_from_client: msg_specs.CommandInvocationClientResponseNATS,
     ):
-        logger.debug(
-            f"Received NATS notification about calculation status update: {status_details!r} ({calculation_id=!r})"
-        )
-        with settings.db.get_session() as session:
-            calculation_db: sql_models.CalculationDB = session.exec(
-                select(sql_models.CalculationDB).where(sql_models.CalculationDB.calculation_id == calculation_id)
-            ).one()
-            calculation_db.update_status(status_details.status, comment="NATS notification")
-            logger.debug("Updated calculation status in the database.")
+        if not msg_from_client.client_is_available:
+            logger.error("Requested a client which is not available")
+            return msg_specs.QCrBoxGenericResponse(
+                response_to="server.cmd.handle_command_invocation_by_user",
+                status=CalculationStatusEnum.FAILED,
+                payload={"error": f"Chosen client {msg_from_client.client_id!r} is not available"},
+            )
 
+        calculation_nats = CalculationNatsDB(
+            calculation_id=msg_to_client.calculation_id,
+            application_slug=msg_to_client.application_slug,
+            application_version=msg_to_client.application_version,
+            command_name=msg_to_client.command_name,
+            arguments=msg_to_client.arguments,
+        )
+
+        try:
+            await add_calculation_to_nats_kv(calculation_nats)
+        except NatsCalculationAlreadyExists:
+            return msg_specs.QCrBoxGenericResponse(
+                response_to="server.cmd.handle_command_invocation_by_user",
+                status=CalculationStatusEnum.FAILED,
+                payload={"error": "Tried to add a new calculation to one which already exists"},
+            )
+
+        status_details = CalculationStatusDetails(
+            calculation_id=msg_to_client.calculation_id,
+            status=CalculationStatusEnum.SUBMITTED,
+            stdout="",
+            stderr="",
+            extra_info={},
+        )
+        await update_calculation_status_in_nats_kv(status_details)
+
+        return msg_specs.QCrBoxGenericResponse(
+            response_to="server.cmd.handle_command_invocation_by_user",
+            status=CalculationStatusEnum.SUBMITTED,
+            payload={"calculation_id": msg_to_client.calculation_id},
+        )
+
+    @eel_logging
+    async def update_calculation_status_in_db(
+        self, status_details: CalculationStatusDetails, _calculation_id: str = Context("message.raw_message.key")
+    ):
+        logger.debug(f"Received NATS notification about calculation status update: {status_details!r}")
+        await update_calculation_status_in_nats_kv(status_details)
+
+    @eel_logging
     def _set_up_asgi_server(self) -> None:
         self.asgi_server = Litestar(
             route_handlers=[
-                static_files_router,
                 api_router,
-                views_router,
                 web_root_handler,
             ],
             lifespan=[self.lifespan_context],
-            debug=True,
+            debug=settings.debug_mode,
             plugins=[structlog_plugin],
-            openapi_config=OpenAPIConfig(title="QCrBox Server API", version="0.1"),
+            openapi_config=OpenAPIConfig(
+                title="QCrBox",
+                version="0.2",
+                use_handler_docstrings=True,
+            ),
+            exception_handlers={
+                HTTPException: handle_exception,
+                ImproperlyConfiguredException: handle_exception,
+                ValidationException: handle_exception,
+                PermissionDeniedException: handle_exception,
+                NotAuthorizedException: handle_exception,
+                NotFoundException: handle_exception,
+                InternalServerException: handle_exception,
+                ServiceUnavailableException: handle_exception,
+                Exception: handle_exception,
+            },
         )
 
     @on_qcrbox_startup
+    @eel_logging
     async def init_database(self, purge_existing_db_tables: bool) -> None:
         logger.info("Initialising database...")
         logger.debug(f"Database url: {settings.db.url}")
         settings.db.create_db_and_tables(purge_existing_tables=purge_existing_db_tables)
         logger.info("Finished initialising database...")
 
-    @on_qcrbox_startup
-    async def restore_previously_registered_applications(self) -> None:
-        try:
-            # TODO: cross-check NATS KV entries with the database
-            #       (check for consistency and add any missing applications)
-            application_slugs = await self.kv_applications.keys()
-        except nats.js.errors.NoKeysError:
-            application_slugs = []
-
-        for app_slug in application_slugs:
-            logger.info(f"Restoring previously registered application: {app_slug!r}")
-            kv_entry = await self.kv_applications.get(app_slug)
-            app_spec = json.loads(kv_entry.value)
-            msg = msg_specs.RegisterApplication(
-                payload=msg_specs.PayloadForRegisterApplication(
-                    application_spec=app_spec,
-                    private_routing_key="N/A",
-                )
-            )
-            await self.handle_application_registration(msg)
-
-    # async def publish(self, queue, msg):
-    #     await self.broker.publish(msg, queue)
-
 
 class TestQCrBoxServer(TestQCrBoxServerClientBase, QCrBoxServer):
     pass
 
 
+@eel_logging
 def main():
     qcrbox_server = QCrBoxServer()
     qcrbox_server.run(

@@ -1,5 +1,0 @@
-{# def text = "" #}
-
-<div id="datafile-text" class="box" style="border: 2px solid #417890; padding: 10px;">
-    {{ text }}
-</div>

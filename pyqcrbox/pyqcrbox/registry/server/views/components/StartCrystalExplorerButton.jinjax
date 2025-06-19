@@ -1,8 +1,0 @@
-<button 
-    class="button is-dark m-3" style="background-color: #417890;" 
-    hx-post="/views/start_crystal_explorer_session"
-    hx-target="#stop-button"
-    hx-swap="innerHTML"
-    onclick="openCrystalExplorerTab()">
-    Start Interactive Session
-</button>

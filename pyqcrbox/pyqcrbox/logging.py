@@ -6,8 +6,23 @@ from faststream import context
 
 from pyqcrbox.settings import StructlogRendererEnum, get_log_level_as_int, settings
 
+# ------------------------------------------------------------------------------
+# This sets up the basic logging level so only QCrBox should appear as JSON
+# ------------------------------------------------------------------------------
 
-def set_log_level(level):
+# logging.basicConfig(
+#     format="(name)s | %(message)s",
+#     stream=sys.stdout,
+#     level=logging.INFO,
+# )
+
+# ------------------------------------------------------------------------------
+# This sets up the structlog logger, which is used by QCrBox to output
+# structured log messages
+# ------------------------------------------------------------------------------
+
+
+def get_log_level(level):
     if isinstance(level, str):
         level_as_int = get_log_level_as_int(level)
     elif isinstance(level, int):
@@ -17,12 +32,17 @@ def set_log_level(level):
             f"Argument 'level' must be a string or integer representing a valid logging level, got: {level!r}"
         )
 
+    return level_as_int
+
+
+def set_log_level(level):
+    level_as_int = get_log_level(level)
     structlog.configure(wrapper_class=structlog.make_filtering_bound_logger(level_as_int))
 
 
 def merge_faststream_contextvars(
-    _logger: structlog.types.WrappedLogger,
-    _method_name: str,
+    _: structlog.types.WrappedLogger,
+    __: str,
     event_dict: structlog.types.EventDict,
 ) -> structlog.types.EventDict:
     event_dict["extra"] = event_dict.get(
@@ -48,7 +68,6 @@ match settings.logging.renderer:
             structlog.dev.ConsoleRenderer(),
         ]
     case StructlogRendererEnum.JSON:
-        print("[DDD] Case 2: Docker container session")
         # E.g. docker container session
         processors = [
             *shared_processors,
@@ -63,9 +82,7 @@ match settings.logging.renderer:
 structlog.configure(
     processors=processors,
     logger_factory=structlog.PrintLoggerFactory(),
+    wrapper_class=structlog.make_filtering_bound_logger(get_log_level(settings.logging.log_level_as_int)),
     cache_logger_on_first_use=False,
 )
-
-# set_log_level(settings.logging.log_level_as_int)
-#
 logger = structlog.get_logger()
