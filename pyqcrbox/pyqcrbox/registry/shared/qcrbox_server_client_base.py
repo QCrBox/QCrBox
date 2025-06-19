@@ -1,7 +1,7 @@
 import contextlib
 import inspect
 from abc import ABCMeta, abstractmethod
-from typing import AsyncContextManager, Optional, assert_never
+from typing import AsyncContextManager, assert_never  # noqa: UP035
 
 import anyio
 import nats.errors
@@ -26,7 +26,7 @@ __all__ = ["QCrBoxServerClientBase", "TestQCrBoxServerClientBase"]
 def on_qcrbox_startup(func):
     func._is_qcrbox_startup_hook = True
     sig = inspect.signature(func)
-    func._param_names = [name for name in sig.parameters.keys() if name != "self"]
+    func._param_names = [name for name in sig.parameters if name != "self"]
     return func
 
 
@@ -34,20 +34,13 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
     def __init__(
         self,
         *,
-        # broker: Optional[RabbitBroker] = None,
-        nats_broker: Optional[NatsBroker] = None,
-        asgi_server: Optional[Litestar] = None,
-        svcs_registry: Optional[svcs.Registry] = None,
+        nats_broker: NatsBroker | None = None,
+        asgi_server: Litestar | None = None,
+        svcs_registry: svcs.Registry | None = None,
     ):
-        # self.broker = broker or RabbitBroker(settings.rabbitmq.url, graceful_timeout=10)
         self.nats_broker = nats_broker or _create_nats_broker_instance()
         self.nats_persistence_adapter = NatsPersistenceAdapter()
         self.sqlite_persistence_adapter = SQLitePersistenceAdapter()
-
-        # self.rabbit_exchanges = {
-        #     ExchangeType.DIRECT: RabbitExchange("qcrbox.direct", type=ExchangeType.DIRECT),
-        #     ExchangeType.TOPIC: RabbitExchange("qcrbox.topic", type=ExchangeType.TOPIC),
-        # }
 
         self.svcs_registry = svcs_registry or QCRBOX_SVCS_REGISTRY
         # self.svcs_registry.register_value(RabbitBroker, self.broker)
@@ -73,10 +66,6 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
     @abstractmethod
     def _set_up_nats_broker(self):
         assert_never(self)
-
-    # @abstractmethod
-    # def _set_up_rabbitmq_broker(self):
-    #     assert_never(self)
 
     @abstractmethod
     def _set_up_asgi_server(self) -> None:
@@ -133,13 +122,13 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
     async def set_up_key_value_store(self):
         self.kv_applications = await self.nats_broker.key_value(bucket="applications")
 
-    @eel_logging
+    @eel_logging  # noqa: B027
     async def _run_custom_shutdown_tasks(self):
+        """Run custom shutdown tasks.
+
+        This is a no-op by default but can be used by derived classes to run
+        tasks when the shutdown signal is received.
         """
-        Run custom shutdown tasks. This is a no-op by default but can be used
-        by derived classes to run tasks when the shutdown signal is received.
-        """
-        pass
 
     @eel_logging
     async def execute_startup_hooks(self, **kwargs):
@@ -188,7 +177,7 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
         logger.debug(f"<== Exiting from {self.clsname} lifespan function.")
 
     @eel_logging
-    def run(self, host: Optional[str] = None, port: Optional[int] = None, **kwargs):
+    def run(self, host: str | None = None, port: int | None = None, **kwargs):
         self.host = host or "127.0.0.1"
         self.port = port or 8000
         logger.debug(f"Running {self.clsname} with {kwargs=}")
@@ -243,8 +232,8 @@ class TestQCrBoxServerClientBase(QCrBoxServerClientBase):
     @contextlib.asynccontextmanager
     async def run(
         self,
-        host: Optional[str] = None,
-        port: Optional[str] = None,
+        host: str | None = None,
+        port: str | None = None,
         task_status: TaskStatus[None] = TASK_STATUS_IGNORED,
         **kwargs,
     ):
