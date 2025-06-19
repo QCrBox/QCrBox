@@ -63,18 +63,22 @@ class CommandSpecDB(QCrBoxBaseSQLModel, table=True):
                 raise ValueError(exc_msg)
             kwargs["exclude"] = ["call_pattern", "callable_name", "import_path"]
         else:
-            exclude = kwargs.get("exclude", [])  # noqa: F841
+            kwargs.setdefault("exclude", [])
 
         data = super().model_dump(**kwargs)
         data["implemented_as"] = (  # before this is committed to the database, this is an enum instead of an str
             self.implemented_as.value if isinstance(self.implemented_as, ImplementedAs) else self.implemented_as
         )
 
-        # if "application" not in exclude:
-        #     data["application"] = self.application.slug
-        # if "version" not in exclude:
-        #     data["version"] = self.application.version
-        # data["cmd_name"] = data["name"]  # alias
+        if "application" not in kwargs["exclude"]:
+            data["application"] = self.application.slug
+        if "cmd_name" not in kwargs["exclude"]:
+            data["cmd_name"] = data["name"]  # alias
+
+        # Kludge for how CommandSpecDB handles making response models for API requests.
+        # For some reason this model_dump method has a as_response_model flag
+        if as_response_model and "version" not in kwargs["exclude"]:
+            data["version"] = self.application.version
 
         return data
 

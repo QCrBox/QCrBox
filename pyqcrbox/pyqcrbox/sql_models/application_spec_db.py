@@ -103,11 +103,13 @@ class ApplicationSpecDB(ApplicationSpecBase, SQLModel, table=True):
             # Update fields on existing command OR create and append a new command
             # entry
             if new_cmd.name in existing_cmds_by_name:
+                logger.debug(f"Updating {new_cmd.name} {new_cmd!r}")
                 existing_cmd = existing_cmds_by_name[new_cmd.name]
-                updates = new_cmd.model_dump(exclude={"id", "application", "application_id"})
+                updates = new_cmd.model_dump(exclude={"id", "application", "application_id", "cmd_name"})
                 for key, value in updates.items():
                     setattr(existing_cmd, key, value)
             else:
+                logger.debug(f"Adding {new_cmd.name} {new_cmd!r}")
                 cmd_copy = CommandSpecDB.from_pydantic_model(new_cmd)
                 cmd_copy.application_id = current_app.id
                 current_app.commands.append(cmd_copy)
