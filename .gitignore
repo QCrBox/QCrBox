@@ -5,6 +5,9 @@
 # Misc
 .ackrc
 .tool-versions
+.import_linter_cache
+.ruff_cache
+.devbox
 
 # Local tweaks to QCrBox settings
 .env.local
@@ -47,9 +50,6 @@ qcrbox_wrapper/qcrbox_wrapper/_version.py
 
 # qcrboxtools Python package
 services/base_images/base_ancestor/qcrbox_dist/qcrboxtools-*.whl
-
-# qcrbox-syslog
-services/core/qcrbox-syslog/config
 
 # ShelX
 services/applications/shelx/shelx_executables/2018_shelxl
