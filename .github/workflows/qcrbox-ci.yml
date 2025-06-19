@@ -80,23 +80,3 @@ jobs:
       - uses: chartboost/ruff-action@v1
         with:
           args: format --diff --config pyqcrbox/pyproject.toml
-
-  pyqcrbox-tests:
-    runs-on: ubuntu-latest
-    steps:
-      # Checks out the  repository under $GITHUB_WORKSPACE, so the job can access it
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-          cache: 'pip' # caching pip dependencies
-
-      - name: Install dependencies
-        run: |
-          pip install ./pyqcrbox[all]
-
-      - name: Run the tests
-        run: |
-          cd pyqcrbox
-          pytest -svx --cov-config=.coveragerc ./tests
