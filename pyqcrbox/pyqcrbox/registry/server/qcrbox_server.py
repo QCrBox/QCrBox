@@ -1,7 +1,7 @@
 from typing import Any
 
 from faststream import Context
-from litestar import Litestar
+from litestar import Litestar, MediaType, get
 from litestar.exceptions import (
     HTTPException,
     ImproperlyConfiguredException,
@@ -13,6 +13,7 @@ from litestar.exceptions import (
     ValidationException,
 )
 from litestar.openapi import OpenAPIConfig
+from litestar.response import Redirect
 from pydantic import BaseModel
 
 from pyqcrbox import helpers, logger, msg_specs, settings
@@ -24,8 +25,7 @@ from pyqcrbox.registry.shared.calculation_status import (
     add_calculation_to_nats_kv,
     update_calculation_status_in_nats_kv,
 )
-from pyqcrbox.sql_models import CalculationStatusDetails, CalculationStatusEnum
-from pyqcrbox.sql_models.calculation import CalculationNatsDB
+from pyqcrbox.sql_models import CalculationNatsDB, CalculationStatusDetails, CalculationStatusEnum
 
 from ..shared import QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup, structlog_plugin
 from .api import api_router
@@ -43,6 +43,11 @@ class CalculationDetails(BaseModel):
     command_name: str
     arguments: dict[str, Any]
     executing_client: ExecutingClientDetails | None = None
+
+
+@get(path="/", media_type=MediaType.HTML, include_in_schema=False)
+async def web_root_handler() -> Redirect:
+    return Redirect(path="/api")
 
 
 class QCrBoxServer(QCrBoxServerClientBase):
@@ -238,6 +243,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
         self.asgi_server = Litestar(
             route_handlers=[
                 api_router,
+                web_root_handler,
             ],
             lifespan=[self.lifespan_context],
             debug=settings.debug_mode,
