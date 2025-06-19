@@ -2,7 +2,6 @@ import os
 import sys
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Optional
 
 from faststream.nats import NatsBroker
 from litestar import Litestar
@@ -34,10 +33,10 @@ class QCrBoxClient(QCrBoxServerClientBase):
         *,
         application_spec: sql_models.ApplicationSpec,
         client_id: str = "anonymous_client",
-        private_routing_key: Optional[str] = None,
-        work_root_dir: Optional[Path] = None,
-        nats_broker: Optional[NatsBroker] = None,
-        asgi_server: Optional[Litestar] = None,
+        private_routing_key: str | None = None,
+        work_root_dir: Path | None = None,
+        nats_broker: NatsBroker | None = None,
+        asgi_server: Litestar | None = None,
     ):
         super().__init__(nats_broker=nats_broker, asgi_server=asgi_server)
         self.application_spec = application_spec
@@ -164,9 +163,10 @@ class QCrBoxClient(QCrBoxServerClientBase):
             return response
 
         calc = self.calculations[session_id]
+        logger.debug(f"Retrieved calculation [{type(calc)}]: {calc!r}")
 
         try:
-            await calc.close_interactive_session()
+            await calc.terminate()
             session_status = calc.status
             output_dataset_id = calc.output_dataset_id
             logger.debug(f"Closed interactive session: id={session_id!r} dataset_id={output_dataset_id!r}")
