@@ -2,6 +2,7 @@
 name = "pyqcrbox"
 authors = [
   { name="Maximilian Albert", email="maximilian.albert@gmail.com" },
+  { name="Edward J. Parkinson", email="e.parkinson@soton.ac.uk" },
 ]
 description = "Quantum Crystallography Toolbox"
 readme = "README.md"
