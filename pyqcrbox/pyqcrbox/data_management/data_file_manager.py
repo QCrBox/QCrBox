@@ -247,8 +247,9 @@ class DataFileManager(ABC):
         """
         try:
             dataset_info_as_bytes = await self._retrieve_from_kv("datasets", dataset_id)
-        except KeyError:
-            raise DatasetNotFoundError(f"Dataset not found: {dataset_id!r}")
+        except KeyError as exc:
+            exc_msg = f"Dataset not found: {dataset_id!r}"
+            raise DatasetNotFoundError(exc_msg) from exc
 
         return Dataset.model_validate_json(dataset_info_as_bytes.decode())
 
@@ -424,6 +425,7 @@ class DataFileManager(ABC):
         -------
         list[CalculationNatsDB]
             A list of CalculationNatsDB which contain metadata about a calculation.
+
         """
         keys = await self._get_kv_keys("calculations")
         calculations = [await self.get_calculation_details(key) for key in keys]

@@ -1,8 +1,6 @@
-import json
 from pathlib import Path
 from typing import Any
 
-import nats.js.errors
 from faststream import Context
 from litestar import Litestar, MediaType, get
 from litestar.exceptions import (
@@ -75,12 +73,27 @@ class QCrBoxServer(QCrBoxServerClientBase):
         self.nats_broker.subscriber("*", kv_watch="calculation_status")(self.update_calculation_status_in_db)
 
     @eel_logging
-    async def handle_application_registration(self, msg: msg_specs.RegisterApplication):
+    async def handle_application_registration(self, msg: msg_specs.RegisterApplication) -> None:
+        """Handle application registration requests.
+
+        This is a handler for the `register-application` inbox in the NATS broker.
+        For an application to be available to a user, it must register itself and
+        its commands using this handler.
+
+        Applications are added to the in-memory SQL database and were historically
+        also added into NATS.
+
+        Parameters
+        ----------
+        msg : msg_specs.RegisterApplication
+            The NATS message sent by the application requesting to be registered.
+
+        """
         logger.info(
             f"Received registration for application: {msg.payload.application_spec.slug!r} "
             f"(version: {msg.payload.application_spec.version!r})"
         )
-        await self.nats_persistence_adapter.save_application_spec(msg.payload.application_spec)
+        # await self.nats_persistence_adapter.save_application_spec(msg.payload.application_spec)
         await self.sqlite_persistence_adapter.save_application_spec(msg.payload.application_spec)
 
     @eel_logging
@@ -135,10 +148,10 @@ class QCrBoxServer(QCrBoxServerClientBase):
         logger.debug(f"Retrieving details for calculation: {msg.calculation_id!r}")
         try:
             calc = self.calculations[msg.calculation_id]
-        except KeyError:
+        except KeyError as exc:
             error_msg = f"Calculation not found: {msg.calculation_id!r}"
             logger.error(error_msg)
-            raise RuntimeError(error_msg)
+            raise RuntimeError(error_msg) from exc
 
         if calc.executing_client is None:
             response_to_client = msg_specs.CommandExecutionRequestNATS(
@@ -271,28 +284,6 @@ class QCrBoxServer(QCrBoxServerClientBase):
         logger.debug(f"Database url: {settings.db.url}")
         settings.db.create_db_and_tables(purge_existing_tables=purge_existing_db_tables)
         logger.info("Finished initialising database...")
-
-    @on_qcrbox_startup
-    @eel_logging
-    async def restore_previously_registered_applications(self) -> None:
-        try:
-            # TODO: cross-check NATS KV entries with the database
-            #       (check for consistency and add any missing applications)
-            application_slugs = await self.kv_applications.keys()
-        except nats.js.errors.NoKeysError:
-            application_slugs = []
-
-        for app_slug in application_slugs:
-            logger.info(f"Restoring previously registered application: {app_slug!r}")
-            kv_entry = await self.kv_applications.get(app_slug)
-            app_spec = json.loads(kv_entry.value)
-            msg = msg_specs.RegisterApplication(
-                payload=msg_specs.PayloadForRegisterApplication(
-                    application_spec=app_spec,
-                    private_routing_key="N/A",
-                )
-            )
-            await self.handle_application_registration(msg)
 
 
 class TestQCrBoxServer(TestQCrBoxServerClientBase, QCrBoxServer):

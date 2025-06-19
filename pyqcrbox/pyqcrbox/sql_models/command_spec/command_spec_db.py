@@ -6,13 +6,13 @@ from ..base import QCrBoxBaseSQLModel
 from .base_command_spec import ImplementedAs
 from .command_spec import CommandSpec
 
-# from .interactive_command_spec import InteractiveLifecycleSteps, NonInteractiveCommandSpec
-
 if TYPE_CHECKING:
-    from pyqcrbox.sql_models import ApplicationSpecDB, CalculationDB
+    from pyqcrbox.sql_models import ApplicationSpecDB, CommandSpecWithParameters
 
 
 class CommandSpecDB(QCrBoxBaseSQLModel, table=True):
+    """Model for storing command specifications associated with an application."""
+
     __tablename__ = "command"
     __table_args__ = (UniqueConstraint("name", "application_id"),)
     __pydantic_model_cls__ = CommandSpec
@@ -31,40 +31,85 @@ class CommandSpecDB(QCrBoxBaseSQLModel, table=True):
     import_path: str | None = None
     callable_name: str | None = None
 
-    # interactive_lifecycle: InteractiveLifecycleSteps
-    # non_interactive_equivalent: NonInteractiveCommandSpec
-
     id: int | None = Field(default=None, primary_key=True)
 
     application_id: int | None = Field(default=None, foreign_key="application.id")
     application: "ApplicationSpecDB" = Relationship(back_populates="commands")
 
-    calculations: list["CalculationDB"] = Relationship(back_populates="command")
+    def model_dump(self, as_response_model: bool = False, **kwargs: dict[str, Any]) -> dict:
+        """Serialise the CommandSpecDB model to a dictionary representation.
 
-    def model_dump(self, as_response_model=False, **kwargs):
+        Parameters
+        ----------
+        as_response_model : bool, optional
+            If True, excludes certain fields that should not be returned in API responses.
+        **kwargs : dict, optional
+            Additional keyword arguments passed to the parent class's `model_dump` method.
+
+        Returns
+        -------
+        dict
+            The serialised representation of the CommandSpecDB model.
+
+        Raises
+        ------
+        ValueError
+            If `exclude` is provided in kwargs when `as_response_model` is True.
+
+        """
         if as_response_model:
-            assert "exclude" not in kwargs
+            if "exclude" in kwargs:
+                exc_msg = "Cannot use `exclude` with mode as_response_model=True"
+                raise ValueError(exc_msg)
             kwargs["exclude"] = ["call_pattern", "callable_name", "import_path"]
+        else:
+            exclude = kwargs.get("exclude", [])  # noqa: F841
 
         data = super().model_dump(**kwargs)
-        data["application"] = self.application.slug
-        data["version"] = self.application.version
-        data["cmd_name"] = data["name"]  # alias
+        data["implemented_as"] = (  # before this is committed to the database, this is an enum instead of an str
+            self.implemented_as.value if isinstance(self.implemented_as, ImplementedAs) else self.implemented_as
+        )
+
+        # if "application" not in exclude:
+        #     data["application"] = self.application.slug
+        # if "version" not in exclude:
+        #     data["version"] = self.application.version
+        # data["cmd_name"] = data["name"]  # alias
+
         return data
 
     @classmethod
-    def from_pydantic_model(cls, command):
-        # pydantic_model_cls = getattr(cls, "__pydantic_model_cls__")
-        # assert isinstance(command, pydantic_model_cls)
-        # breakpoint()
+    def from_pydantic_model(cls, command: CommandSpec) -> "CommandSpecDB":
+        """Create a CommandSpecDB instance from a Pydantic model.
+
+        Parameters
+        ----------
+        command : CommandSpec
+            An instance of a CommandSpec Pydantic model to convert into a CommandSpecDB
+            instance.
+
+        Returns
+        -------
+        CommandSpecDB
+            A new CommandSpecDB instance
+
+        """
         data = command.model_dump(exclude={"parameters"})
-        # data["parameters"] = [ParameterSpecDB.from_pydantic_model(param) for param in command.parameters]
         data["parameters"] = {param.name: param.model_dump() for param in command.parameters}
-        # logger.debug(f"{command.name=}: {data=}")
+
         return cls(**data)
 
-    def to_response_model(self):
+    def to_response_model(self) -> "CommandSpecWithParameters":
+        """Convert this instance into a response model for API responses.
+
+        Returns
+        -------
+        CommandSpecWithParameters
+            The response model
+
+        """
         from .command_spec import CommandSpecWithParameters
 
         data = self.model_dump(as_response_model=True)
+
         return CommandSpecWithParameters(**data)
