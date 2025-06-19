@@ -87,6 +87,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
         ----------
         msg : msg_specs.RegisterApplication
             The NATS message sent by the application requesting to be registered.
+
         """
         logger.info(
             f"Received registration for application: {msg.payload.application_spec.slug!r} "
@@ -283,28 +284,6 @@ class QCrBoxServer(QCrBoxServerClientBase):
         logger.debug(f"Database url: {settings.db.url}")
         settings.db.create_db_and_tables(purge_existing_tables=purge_existing_db_tables)
         logger.info("Finished initialising database...")
-
-    # @on_qcrbox_startup
-    # @eel_logging
-    # async def restore_previously_registered_applications(self) -> None:
-    #     try:
-    #         # TODO: cross-check NATS KV entries with the database
-    #         #       (check for consistency and add any missing applications)
-    #         application_slugs = await self.kv_applications.keys()
-    #     except nats.js.errors.NoKeysError:
-    #         application_slugs = []
-
-    #     for app_slug in application_slugs:
-    #         logger.info(f"Restoring previously registered application: {app_slug!r}")
-    #         kv_entry = await self.kv_applications.get(app_slug)
-    #         app_spec = json.loads(kv_entry.value)
-    #         msg = msg_specs.RegisterApplication(
-    #             payload=msg_specs.PayloadForRegisterApplication(
-    #                 application_spec=app_spec,
-    #                 private_routing_key="N/A",
-    #             )
-    #         )
-    #         await self.handle_application_registration(msg)
 
 
 class TestQCrBoxServer(TestQCrBoxServerClientBase, QCrBoxServer):
