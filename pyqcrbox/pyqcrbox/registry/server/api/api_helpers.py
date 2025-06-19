@@ -97,6 +97,8 @@ async def close_interactive_session(session_id: str) -> msg_specs.CloseInteracti
         f"{session_info.client_private_inbox}.interactive_session.close",
         rpc=True,
     )
+    logger.debug(f"{session_info.client_private_inbox}.interactive_session.close response: {response_json}")
+
     response = msg_specs.CloseInteractiveSessionResponseNATS(**response_json)
     return response
 
