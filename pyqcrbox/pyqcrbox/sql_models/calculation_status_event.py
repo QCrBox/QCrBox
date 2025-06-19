@@ -1,6 +1,6 @@
 from enum import StrEnum
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 
 class CalculationStatusEnum(StrEnum):
@@ -16,6 +16,11 @@ class CalculationStatusEnum(StrEnum):
 class CalculationStatusDetails(BaseModel):
     calculation_id: str
     status: CalculationStatusEnum
-    stdout: str = ""
-    stderr: str = ""
+    stdout: str | None = ""
+    stderr: str | None = ""
     extra_info: dict = {}
+
+    @field_validator("stdout", "stderr", mode="before")
+    @classmethod
+    def none_to_empty_str(cls, v):
+        return "" if v is None else v

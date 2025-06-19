@@ -312,6 +312,15 @@ class DataFileManager(ABC):
 
     @eel_logging
     async def get_interactive_sessions(self) -> list[InteractiveSessionInfo]:
+        """Get metadata about all interactive sessions.
+
+        Returns
+        -------
+        list[InteractiveSessionInfo]
+            A list of InteractiveSessionInfo containing metadata about the interactive
+            sessions
+
+        """
         keys = await self._get_kv_keys("interactive_sessions")
         values = [await self.get_interactive_session_info(key) for key in keys]
 

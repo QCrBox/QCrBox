@@ -89,8 +89,8 @@ class QCrBoxClient(QCrBoxServerClientBase):
         status_details = CalculationStatusDetails(
             calculation_id=msg.calculation_id,
             status=CalculationStatusEnum.FAILED,
-            stdout=None,
-            stderr=None,
+            stdout="",
+            stderr="",
             extra_info={
                 "error_msg": f"Discarded calculation {msg.calculation_id!r} due to client status {self.status.status}",
             },
@@ -129,8 +129,8 @@ class QCrBoxClient(QCrBoxServerClientBase):
             status_details = CalculationStatusDetails(
                 calculation_id=msg.calculation_id,
                 status=CalculationStatusEnum.FAILED,
-                stdout=None,
-                stderr=None,
+                stdout="",
+                stderr="",
                 extra_info={"error_msg": error_msg},
             )
             await update_calculation_status_in_nats_kv(status_details)
@@ -176,11 +176,14 @@ class QCrBoxClient(QCrBoxServerClientBase):
             session_status = CalculationStatusEnum.FAILED
             output_dataset_id = None
 
-        return msg_specs.CloseInteractiveSessionResponseNATS(
+        msg = msg_specs.CloseInteractiveSessionResponseNATS(
             session_id=session_id,
             status=session_status,
             output_dataset_id=output_dataset_id,
         )
+        logger.debug(f"Close interactive session msg via nats: {msg}")
+
+        return msg
 
     @eel_logging
     async def get_calculation_status(

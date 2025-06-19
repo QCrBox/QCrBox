@@ -60,6 +60,7 @@ class InteractiveSessionCalculation(BaseCalculation):
             If 'prepare_calc' or 'finalise_calc' are not instances of PythonCallableCalculation.
         FileNotFoundError
             If the output file from the 'finalise' command cannot be found during import.
+
         """
         if self.prepare_calc:
             assert isinstance(
@@ -85,7 +86,7 @@ class InteractiveSessionCalculation(BaseCalculation):
             await self.finalise_calc.wait_until_finished()
 
             output_file = self.finalise_calc.return_value
-            if output_file is None:
+            if not output_file:
                 logger.info("No output file from interactive session")
             else:
                 data_manager = await get_data_file_manager()
@@ -126,11 +127,15 @@ class InteractiveSessionCalculation(BaseCalculation):
         if self.run_calc.status == CalculationStatusEnum.RUNNING:
             await self.run_calc.terminate()
         self.run_calc.calc_finished_event.set()
+        logger.debug("Set run_calc.calc_finished_event")
 
         # When the run calc is finished, this flag is used to communicate with the interactive
         # session wait_until_finished() that the finalise command can be run
         self.calc_finished_event.set()
+        logger.debug("Set calc_finished_event")
 
         # Keep waiting until the finalise calculation has finished and the output has been added to
         # the data store
+        logger.debug("Waiting for session_closed_event")
         await self.session_closed_event.wait()
+        logger.debug("Closed interactive session")
