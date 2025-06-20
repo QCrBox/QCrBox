@@ -28,10 +28,6 @@ ${TEST_CALCULATION_ID}              ${EMPTY}
 ${TEST_DATA_FILE_ID}                ${EMPTY}
 ${TEST_DATASET_ID}                  ${EMPTY}
 
-# Check /commands returns a list of commands
-#    ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /commands    200
-#    ${payload}=    Check Response And Get Payload    ${response}
-
 
 *** Test Cases ***
 #
@@ -320,68 +316,6 @@ Check /calculations/id returns 404 for incorrect id
     Check Response Has Attributes    ${error_payload}    code    message    details
     Should Be Equal As Integers    ${error_payload["code"]}    404
 
-# Check an interactive session can be created
-#    # We need to get the data_file_id from the test dataset
-#    ${response}=    Call GET API    ${SESSION_ALIAS}    /datasets/${TEST_DATASET_ID}
-#    ${data_files}=    Set Variable    ${response.json()['payload']['datasets'][0]["data_files"]}
-#    ${data_file}=    Get From Dictionary    ${data_files}    ${TEST_CIF_FILE_NAME}
-#    ${data_file_id}=    Set Variable    ${data_file['qcrbox_file_id']}
-#    Set Global Variable    ${data_file_id}
-
-#    # Call the API to create a session, which should return the calculation id
-#    ${input_file}=    Create Dictionary    data_file_id=${data_file_id}
-#    ${arguments}=    Create Dictionary    input_file=${input_file}
-#    ${payload}=    Create Dictionary
-#    ...    application_slug=olex2
-#    ...    application_version=1.5-alpha
-#    ...    arguments=${arguments}
-#    ${response}=    Call POST API with json    ${SESSION_ALIAS}    /interactive-sessions    ${payload}
-#    ${interactive_session_id}=    Set Variable    ${response.json()['payload']['interactive_session_id']}
-#    Set Suite Variable    ${TEST_INTERACTIVE_SESSION_ID}    ${interactive_session_id}
-#    Sleep    5s    "Wait for the interactive session to be added to the database"
-
-# Check interactive sessions API returns interactive sessions
-#    Call GET API    ${SESSION_ALIAS}    /interactive-sessions
-
-# Check interactive session can be retrieved via interactive-sessions API
-#    ${response}=    Call GET API    ${SESSION_ALIAS}    /interactive-sessions/${TEST_INTERACTIVE_SESSION_ID}
-#    ${payload}=    Set Variable    ${response.json()['payload']}
-
-#    Should Contain    ${payload}    interactive_sessions
-#    ${interactive_session}=    Set Variable    ${response.json()['payload']['interactive_sessions'][0]}
-#    Should Contain    ${interactive_session}    session_id
-#    Should Contain    ${interactive_session}    client_private_inbox
-#    Should Contain    ${interactive_session}    application_slug
-#    Should Contain    ${interactive_session}    application_version
-#    Should Contain    ${interactive_session}    command_name
-#    Should Contain    ${interactive_session}    arguments
-
-#    Should Be Equal    ${interactive_session['session_id']}    ${TEST_INTERACTIVE_SESSION_ID}
-#    Should Be Equal    ${interactive_session['command_name']}    interactive_session
-#    Should Be Equal    ${interactive_session['application_slug']}    olex2
-#    Should Be Equal    ${interactive_session['application_version']}    1.5-alpha
-#    Should Be Equal
-#    ...    ${interactive_session['arguments']['input_file']['data_file_id']}
-#    ...    ${TEST_INTERACTIVE_SESSION_ID}
-
-# Check interactive session can be retrieved via calculations API
-#    ${response}=    Call GET API    ${SESSION_ALIAS}    /calculations/${TEST_INTERACTIVE_SESSION_ID}
-#    ${payload}=    Set Variable    ${response.json()['payload']}
-
-#    Should Contain    ${payload}    calculations
-#    ${interactive_session_calculation}=    Set Variable    ${response.json()['payload']['calculations'][0]}
-#    Should Contain    ${interactive_session_calculation}    calculation_id
-#    Should Contain    ${interactive_session_calculation}    status
-#    Should Contain    ${interactive_session_calculation}    stdout
-#    Should Contain    ${interactive_session_calculation}    stderr
-#    Should Contain    ${interactive_session_calculation}    extra_info
-
-# Check an interactive session can be closed
-#    Call DELETE API    ${SESSION_ALIAS}    /interactive-sessions/${TEST_INTERACTIVE_SESSION_ID}
-
-# Check dataset can be deleted via API
-#    Call DELETE API    ${SESSION_ALIAS}    /datasets/${TEST_DATASET_ID}
-
 
 *** Keywords ***
 Setup suite
@@ -458,20 +392,3 @@ Check Interactive Sessions Structure
         ...    command_name
         ...    arguments
     END
-
-# Upload Test Dataset
-#    ${file_content}=    Get Binary File    ${TEST_CIF_FILE}
-
-#    ${files}=    Create Dictionary    ${TEST_CIF_FILE_NAME}=${file_content}
-#    ${response}=    Call POST API With File    ${SESSION_ALIAS}    /datasets    files=${files}
-#    ${dataset_id}=    Set Variable    ${response.json()['payload']['datasets'][0]['qcrbox_dataset_id']}
-#    Log    "Response: ${response.json()}"
-#    Log    "Dataset ID: ${dataset_id}"
-#    RETURN    ${dataset_id}
-
-# Compare Downloaded File With Uploaded
-#    [Arguments]    ${downloaded_bytes}    ${response}
-#    ${original_bytes}=    Get Binary File    ${TEST_CIF_FILE}
-#    Should Be Equal As Strings    ${downloaded_bytes}    ${original_bytes}
-#    ${content_disposition}=    Get From Dictionary    ${response.headers}    content-disposition
-#    Should Contain    ${content_disposition}    filename='${TEST_CIF_FILE_NAME}'
