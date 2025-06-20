@@ -35,6 +35,7 @@ class ApplicationSpecBase(QCrBoxPydanticBaseModel):
     email: str | None = None
     doi: str | None = None
     yaml_file_path: str | None = Field(exclude=True, default=None)
+    # gui_port: str | None = None
 
     _cmds_by_name: Namespace = PrivateAttr
 

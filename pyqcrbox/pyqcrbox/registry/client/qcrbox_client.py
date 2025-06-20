@@ -234,6 +234,10 @@ class QCrBoxClient(QCrBoxServerClientBase):
     @eel_logging
     async def send_registration_request_via_nats(self):
         logger.debug("Sending registration request to QCrBox server")
+
+        gui_port = os.getenv("QCRBOX__GUI__PORT")
+        logger.debug(f"GUI port for {self.application_spec.name} is {gui_port}")
+
         msg = msg_specs.RegisterApplication(
             action="register_application",
             payload=msg_specs.PayloadForRegisterApplication(
