@@ -1,50 +1,56 @@
 *** Settings ***
 Library     RequestsLibrary
 Library     JSONLibrary
-
+Library    Collections
 
 *** Keywords ***
 Create API Session
+    [Documentation]    Create a new HTTP session with SSL verification
     [Arguments]    ${session_alias}    ${base_url}
+
     Create Session    ${session_alias}    ${base_url}    verify=True
-    RETURN    ${session_alias}
 
-Call GET API
-    [Arguments]    ${session_alias}    ${base_url}
-    ${response}=    GET On Session    ${session_alias}    ${base_url}
-    Status Should Be    200    ${response}
-    Log    ${response.status_code}
-    Log    ${response.content}
-    RETURN    ${response}
+Send API Request
+    [Documentation]    Make a HTTP request using the specified method.
+    [Arguments]
+    ...    ${method}
+    ...    ${session_alias}
+    ...    ${endpoint}
+    ...    ${expected_status}
+    ...    ${json_data}=${None}
+    ...    ${files}=${None}
+    ...    ${headers}=${None}
 
-Call POST API
-    [Arguments]    ${session_alias}    ${base_url}
-    ${response}=    POST On Session    ${session_alias}    ${base_url}
-    Status Should Be    201    ${response}
-    Log    ${response.status_code}
-    Log    ${response.content}
-    RETURN    ${response}
+    ${kwargs}=    Create Dictionary
+    IF    $json_data is not None
+        Set To Dictionary    ${kwargs}    json=${json_data}
+    END
+    IF    $files is not None    Set To Dictionary    ${kwargs}    files=${files}
+    IF    $headers is not None
+        Set To Dictionary    ${kwargs}    headers=${headers}
+    END
 
-Call POST API with file
-    [Arguments]    ${session_alias}    ${base_url}    ${files}
-    ${response}=    POST On Session    ${session_alias}    ${base_url}    files=${files}
-    Status Should Be    201    ${response}
-    Log    ${response.status_code}
-    Log    ${response.content}
-    RETURN    ${response}
-
-Call POST API with json
-    [Arguments]    ${session_alias}    ${base_url}    ${json}
-    ${response}=    POST On Session    ${session_alias}    ${base_url}    json=${json}
-    Status Should Be    201    ${response}
-    Log    ${response.status_code}
-    Log    ${response.content}
-    RETURN    ${response}
-
-Call DELETE API
-    [Arguments]    ${session_alias}    ${base_url}
-    ${response}=    DELETE On Session    ${session_alias}    ${base_url}
-    Status Should Be    204    ${response}
+    IF    '${method}' == 'GET'
+        ${response}=    GET On Session
+        ...    ${session_alias}
+        ...    ${endpoint}
+        ...    expected_status=${expected_status}
+        ...    &{kwargs}
+    ELSE IF    '${method}' == 'POST'
+        ${response}=    POST On Session
+        ...    ${session_alias}
+        ...    ${endpoint}
+        ...    expected_status=${expected_status}
+        ...    &{kwargs}
+    ELSE IF    '${method}' == 'DELETE'
+        ${response}=    DELETE On Session
+        ...    ${session_alias}
+        ...    ${endpoint}
+        ...    expected_status=${expected_status}
+        ...    &{kwargs}
+    ELSE
+        Fail    Unsupported method: ${method}
+    END
     Log    ${response.status_code}
     Log    ${response.content}
     RETURN    ${response}
