@@ -330,12 +330,17 @@ Teardown suite
 Check Application Response Structure
     [Arguments]    ${application}
 
+    Log    ${application}
+
     Check Response Has Attributes
     ...    ${application}
     ...    name
     ...    slug
     ...    version
     ...    description
+    ...    email
+    ...    doi
+    ...    gui_port
     ...    url
     ...    registered_at
     ...    commands
@@ -345,6 +350,8 @@ Check Application Response Structure
 
 Check Command Response Structure
     [Arguments]    ${command}
+
+    Log    ${command}
 
     Check Response Has Attributes
     ...    ${command}
