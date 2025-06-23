@@ -1,5 +1,5 @@
+import argparse
 import os
-import sys
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -7,7 +7,6 @@ from faststream.nats import NatsBroker
 from litestar import Litestar
 
 from pyqcrbox import helpers, logger, msg_specs, settings, sql_models
-from pyqcrbox.cli.helpers import get_repo_root
 from pyqcrbox.debug import eel_logging
 from pyqcrbox.helpers import generate_private_routing_key
 from pyqcrbox.registry.client.executable_command.base_calculation import BaseCalculation
@@ -233,10 +232,8 @@ class QCrBoxClient(QCrBoxServerClientBase):
     @on_qcrbox_startup
     @eel_logging
     async def send_registration_request_via_nats(self):
-        logger.debug("Sending registration request to QCrBox server")
-
-        gui_port = os.getenv("QCRBOX__GUI__PORT")
-        logger.debug(f"GUI port for {self.application_spec.name} is {gui_port}")
+        self.application_spec.gui_port = os.getenv("QCRBOX__GUI__PORT", None)
+        logger.debug(f"Sending registration request to QCrBox server: {self.application_spec!r}")
 
         msg = msg_specs.RegisterApplication(
             action="register_application",
@@ -262,13 +259,11 @@ class TestQCrBoxClient(TestQCrBoxServerClientBase, QCrBoxClient):
 
 @eel_logging
 def main():
-    repo_root = get_repo_root(__file__)
+    ap = argparse.ArgumentParser(description="Launch a QCrBox compatible application.")
+    ap.add_argument("config_file", help="File path to the application specification file")
+    args = ap.parse_args()
 
-    try:
-        application_config_file = Path(sys.argv[1])
-    except IndexError:
-        application_config_file = repo_root.joinpath("services/applications/olex2_linux/config_olex2.yaml")
-
+    application_config_file = Path(args.config_file)
     application_spec = sql_models.ApplicationSpec.from_yaml_file(application_config_file)
 
     # Add the directory containing the application config file to PATH so that any scripts
