@@ -162,7 +162,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
             return response
 
         calc = self.calculations[session_id]
-        logger.debug(f"Retrieved calculation [{type(calc)}]: {calc!r}")
+        logger.debug(f"Retrieved calculation {calc!r}")
 
         try:
             await calc.terminate()

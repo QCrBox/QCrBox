@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: MPL-2.0
 import asyncio
+import os
+import signal
 
 import anyio
 
@@ -23,8 +25,10 @@ class CLICmdCalculation(BaseCalculation):
     @eel_logging
     async def wait_until_finished(self):
         logger.debug(f"Waiting for calculation to finish: {self!r}")
-        await self.proc.wait()
-        self.calc_finished_event.wait()
+        # await self.proc.wait()
+        logger.debug(f"Process finished running: {self!r}")
+        await self.calc_finished_event.wait()
+        logger.debug(f"calc_finished_event has been set: {self!r}")
         if self.status == CalculationStatusEnum.FAILED:
             logger.error(f"CLI Command failed:\nStdout:\n\n{await self.stdout}\n\nStderr:\n\n{await self.stderr}")
 
@@ -69,7 +73,8 @@ class CLICmdCalculation(BaseCalculation):
     @eel_logging
     async def terminate(self):
         if self.proc:
-            self.proc.terminate()
+            # self.proc.terminate()
+            os.killpg(self.proc.pid, signal.SIGTERM)
             logger.info(f"Terminated process for calculation {self!r}")
         else:
             logger.error(f"No process running for calculation {self!r} - nothing to terminate.")

@@ -121,9 +121,11 @@ class InteractiveSessionCalculation(BaseCalculation):
 
         logger.debug("Closing interactive session")
 
-        # Terminate the run calculation if it is still running. Then we need to set the 'calc_finished'
+        # Terminate the prepare and run calculation if still running. Then we need to set the 'calc_finished'
         # event which *should* cause run_calc.wait_until_finished() to exit. If this flag isn't set, then
         # execution will hang
+        if self.prepare_calc == CalculationStatusEnum.RUNNING:
+            await self.prepare_calc.terminate()
         if self.run_calc.status == CalculationStatusEnum.RUNNING:
             await self.run_calc.terminate()
         self.run_calc.calc_finished_event.set()

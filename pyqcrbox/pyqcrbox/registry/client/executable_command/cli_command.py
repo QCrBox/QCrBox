@@ -116,16 +116,12 @@ class CLICommand(BaseCommand):
         try:
             cmd_with_bound_args = await self.bind(working_dir, **param_values)
         except KeyError as exc:
-            raise QCrBoxCmdArgumentMismatch(exc.args[0])
+            raise QCrBoxCmdArgumentMismatch(exc.args[0]) from None
 
         logger.debug(f"cmd_with_bounds_args {cmd_with_bound_args}")
 
         self.proc = await asyncio.create_subprocess_shell(
-            cmd_with_bound_args,
-            stdin=_stdin,
-            stdout=_stdout,
-            stderr=_stderr,
-            cwd=working_dir,
+            cmd_with_bound_args, stdin=_stdin, stdout=_stdout, stderr=_stderr, cwd=working_dir, preexec_fn=os.setsid
         )
 
         return CLICmdCalculation(self.proc, calculation_id=_calculation_id, calc_finished_event=calc_finished_event)
