@@ -548,6 +548,10 @@ async def close_interactive_session(
         closed_session = await api_helpers.close_interactive_session(id)
     except KeyError as exc:
         raise QCrBoxAPIException(detail=f"Interactive session not found: {id!r}", status_code=404) from exc
+    except TypeError as exc:
+        raise QCrBoxAPIException(
+            detail="There was an internal server error when processing your request", status_code=500
+        ) from exc
 
     return QCrBoxResponse(
         content={
