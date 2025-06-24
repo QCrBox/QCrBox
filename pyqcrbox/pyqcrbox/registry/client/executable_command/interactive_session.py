@@ -6,7 +6,6 @@ from typing import Any
 import anyio
 
 from pyqcrbox import helpers, logger
-from pyqcrbox.debug import eel_logging
 from pyqcrbox.registry.client.executable_command import BaseCommand
 from pyqcrbox.registry.client.executable_command.python_callable import PythonCallable
 from pyqcrbox.sql_models import InteractiveSessionSpec
@@ -61,7 +60,6 @@ class InteractiveSession(BaseCommand):
 
         return param_values
 
-    @eel_logging
     async def execute_in_background(
         self,
         _calculation_id: str,
@@ -100,10 +98,13 @@ class InteractiveSession(BaseCommand):
             or terminated while the session is running.
 
         """
+        from .executable_command import ExecutableCommand
+
         working_dir = _cwd or os.getcwd()
         calc_finished_event = anyio.Event()
         param_values = await self.prepare_parameters_for_command_execution(working_dir, **kwargs)
-        calculation = InteractiveSessionCalculation(
+
+        interactive_session_calc = InteractiveSessionCalculation(
             calculation_id=_calculation_id,
             calc_finished_event=calc_finished_event,
             prepare_calc=None,  # the following three will be set after the task begins
@@ -111,55 +112,49 @@ class InteractiveSession(BaseCommand):
             finalise_calc=None,
         )
 
+        run_cmd = ExecutableCommand(self.run_cmd_spec)
+        prepare_cmd = ExecutableCommand(self.prepare_cmd_spec) if self.prepare_cmd_spec else None
+        finalise_cmd = ExecutableCommand(self.finalise_cmd_spec) if self.finalise_cmd_spec else None
+
         # Bit of a terrible hack to do this, but it seems to be OK. Essentially we are
         # creating a task to run which we then use anyio.create_task to run asynchronously
         # in the background. By doing this we can return an InteractiveSessionCalculation
         # before the run_calc has finished and thus should be able to terminate the
         # calculation.
         async def session_tasks():
-            from .executable_command import ExecutableCommand
+            nonlocal run_cmd, prepare_cmd, finalise_cmd
 
-            if self.prepare_cmd_spec:
-                prepare_cmd = ExecutableCommand(self.prepare_cmd_spec)
-                assert isinstance(
-                    prepare_cmd, PythonCallable
-                ), "Only Python callables are supported for 'prepare_command' at the moment"
-                prepare_calc_id = helpers.generate_calculation_id()
-                logger.debug("Running 'prepare' command")
-                prepare_calc = await prepare_cmd.execute_in_background(
-                    _calculation_id=prepare_calc_id, _cwd=_cwd, **param_values
+            if prepare_cmd:
+                assert isinstance(prepare_cmd, PythonCallable)
+                logger.debug(f"Executing prepare command in background and waiting for it to finish: {prepare_cmd}")
+                interactive_session_calc.prepare_calc = await prepare_cmd.execute_in_background(
+                    _calculation_id=helpers.generate_calculation_id(),
+                    _cwd=_cwd,
+                    **param_values,
                 )
-                calculation.prepare_calc = prepare_calc
-                await prepare_calc.wait_until_finished()
-            else:
-                prepare_calc = None
+                await interactive_session_calc.prepare_calc.wait_until_finished()
 
-            run_cmd = ExecutableCommand(self.run_cmd_spec)
-            run_calc_id = helpers.generate_calculation_id()
-            logger.debug("Running the main interactive command")
-            run_calc = await run_cmd.execute_in_background(_calculation_id=run_calc_id, _cwd=_cwd, **param_values)
-            calculation.run_calc = run_calc
-            await run_calc.wait_until_finished()
+            logger.debug(f"Executing run command in background and waiting for it to finish: {run_cmd}")
+            interactive_session_calc.run_calc = await run_cmd.execute_in_background(
+                _calculation_id=helpers.generate_calculation_id(),
+                _cwd=_cwd,
+                **param_values,
+            )
+            await interactive_session_calc.run_calc.wait_until_finished()
 
-            if self.finalise_cmd_spec:
-                finalise_cmd = ExecutableCommand(self.finalise_cmd_spec)
-                assert isinstance(
-                    finalise_cmd, PythonCallable
-                ), "Only Python callables are supported for 'finalise_command' at the moment"
-                finalise_calc_id = helpers.generate_calculation_id()
-                logger.debug("Running the 'finalise' command")
-                finalise_calc = await finalise_cmd.execute_in_background(
-                    _calculation_id=finalise_calc_id, _cwd=_cwd, **param_values
+            if finalise_cmd:
+                assert isinstance(finalise_cmd, PythonCallable)
+                logger.debug(f"Execute finalise command in background: {finalise_cmd}")
+                interactive_session_calc.finalise_calc = await finalise_cmd.execute_in_background(
+                    _calculation_id=helpers.generate_calculation_id(),
+                    _cwd=_cwd,
+                    **param_values,
                 )
-                calculation.finalise_calc = finalise_calc
-            else:
-                finalise_calc = None
 
         asyncio.create_task(session_tasks())
 
-        return calculation
+        return interactive_session_calc
 
-    @eel_logging
     def terminate(self) -> None:
         """Terminate the interactive session command."""
         raise NotImplementedError("TODO: implement terminate() for interactive commands")

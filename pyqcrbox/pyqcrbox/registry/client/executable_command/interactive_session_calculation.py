@@ -26,6 +26,9 @@ class InteractiveSessionCalculation(BaseCalculation):
         self.is_closed = False
         self.output_dataset_id = None
         self.session_closed_event = anyio.Event()
+        logger.debug(
+            f"Created new InteractiveSessionCalculation: {self!r}",
+        )
 
     @property
     def status(self) -> CalculationStatusEnum:
@@ -62,27 +65,19 @@ class InteractiveSessionCalculation(BaseCalculation):
             If the output file from the 'finalise' command cannot be found during import.
 
         """
-        if self.prepare_calc:
-            assert isinstance(
-                self.prepare_calc, PythonCallableCalculation
-            ), "Only Python callables are supported for 'prepare_command' at the moment"
-            logger.debug(f"Waiting for 'prepare' command to finish: {self.prepare_calc.calculation_id!r}")
-            await self.prepare_calc.wait_until_finished()
-            logger.debug(f"Prepare command finished: {self.prepare_calc.calculation_id!r}")
+        logger.debug(f"Entered InteractiveSessionCalculation.wait_until_finished: {self!r}")
+        logger.debug(f"InteractiveSessionCalculation.prepare_calc: {self.prepare_calc!r}")
+        logger.debug(f"InteractiveSessionCalculation.run_calc: {self.run_calc!r}")
+        logger.debug(f"InteractiveSessionCalculation.finalise_calc: {self.finalise_calc!r}")
 
-        logger.debug("Waiting for 'run' command to finish")
-        await self.run_calc.wait_until_finished()
-
-        # We wait for this event flag to be set (in terminate) before we run
-        # the finalise calculation and import the output into the data store
+        # We have to wait for the "calc_finished" event to be set, which only can happen
+        # when we try and close the interactive session
         logger.debug("Waiting for 'calc_finished' event to be set upon calculation termination")
         await self.calc_finished_event.wait()
 
         if self.finalise_calc:
-            assert isinstance(
-                self.finalise_calc, PythonCallableCalculation
-            ), "Only Python callables are supported for 'finalise_command' at the moment"
-            logger.debug(f"Waiting for 'finalise' command to finish: {self.finalise_calc.calculation_id!r}")
+            assert isinstance(self.finalise_calc, PythonCallableCalculation)
+            logger.debug(f"Waiting for 'finalise' command to finish: {self.finalise_calc!r}")
             await self.finalise_calc.wait_until_finished()
 
             output_file = self.finalise_calc.return_value
@@ -118,18 +113,19 @@ class InteractiveSessionCalculation(BaseCalculation):
             else:
                 logger.warning(f"Interactive session {self.calculation_id!r} is already being closed.")
             return
-
         logger.debug("Closing interactive session")
 
         # Terminate the prepare and run calculation if still running. Then we need to set the 'calc_finished'
         # event which *should* cause run_calc.wait_until_finished() to exit. If this flag isn't set, then
         # execution will hang
         if self.prepare_calc == CalculationStatusEnum.RUNNING:
+            logger.debug("Terminating prepare command")
             await self.prepare_calc.terminate()
         if self.run_calc.status == CalculationStatusEnum.RUNNING:
+            logger.debug("Terminating run command")
             await self.run_calc.terminate()
+        logger.debug("Setting run command calc_finished_event flag")
         self.run_calc.calc_finished_event.set()
-        logger.debug("Set run_calc.calc_finished_event")
 
         # When the run calc is finished, this flag is used to communicate with the interactive
         # session wait_until_finished() that the finalise command can be run
