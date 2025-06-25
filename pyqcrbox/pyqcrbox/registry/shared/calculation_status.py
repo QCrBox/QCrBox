@@ -30,10 +30,6 @@ async def update_calculation_status_in_nats_kv(status_details: CalculationStatus
         The calculation status details to append to the calculation.
 
     """
-    logger.debug(
-        f"Updating statuses for calculation id={status_details.calculation_id!r}: status={status_details!r}",
-    )
-
     key = status_details.calculation_id
     bucket = await get_nats_key_value(bucket="calculations")
     try:
@@ -45,6 +41,9 @@ async def update_calculation_status_in_nats_kv(status_details: CalculationStatus
 
     calculation = CalculationNatsDB.model_validate_json(calc_as_bytes.decode())
     calculation.status_events.append(status_details)
+    logger.debug(
+        f"Appending status {status_details!r} to calculation {calculation!r}",
+    )
     await bucket.put(
         key,
         calculation.model_dump_json(exclude=["status"]).encode(),
@@ -67,7 +66,7 @@ async def add_calculation_to_nats_kv(calculation: CalculationNatsDB) -> None:
 
     """
     logger.debug(
-        f"Adding calculation id={calculation.calculation_id!r} to NATS: calculation=f{calculation!r}",
+        f"Adding calculation id={calculation.calculation_id!r} to NATS: {calculation!r}",
     )
     key = calculation.calculation_id
 

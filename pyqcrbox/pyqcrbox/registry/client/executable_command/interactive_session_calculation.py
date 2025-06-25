@@ -65,11 +65,6 @@ class InteractiveSessionCalculation(BaseCalculation):
             If the output file from the 'finalise' command cannot be found during import.
 
         """
-        logger.debug(f"Entered InteractiveSessionCalculation.wait_until_finished: {self!r}")
-        logger.debug(f"InteractiveSessionCalculation.prepare_calc: {self.prepare_calc!r}")
-        logger.debug(f"InteractiveSessionCalculation.run_calc: {self.run_calc!r}")
-        logger.debug(f"InteractiveSessionCalculation.finalise_calc: {self.finalise_calc!r}")
-
         # We have to wait for the "calc_finished" event to be set, which only can happen
         # when we try and close the interactive session
         logger.debug("Waiting for 'calc_finished' event to be set upon calculation termination")
@@ -97,7 +92,7 @@ class InteractiveSessionCalculation(BaseCalculation):
 
         self.is_closed = True
         self.session_closed_event.set()
-        logger.debug(f"InteractiveSessionCalculation: interactive session finished: {self.calculation_id!r}")
+        logger.debug(f"InteractiveSessionCalculation: interactive session finished: {self}")
 
     @eel_logging
     async def terminate(self) -> None:
@@ -109,11 +104,11 @@ class InteractiveSessionCalculation(BaseCalculation):
         """
         if self.calc_finished_event.is_set():
             if self.is_closed:
-                logger.warning(f"Interactive session {self.calculation_id!r} already closed")
+                logger.warning(f"Interactive session {self} already closed")
             else:
-                logger.warning(f"Interactive session {self.calculation_id!r} is already being closed.")
+                logger.warning(f"Interactive session {self} is already being closed.")
             return
-        logger.debug("Closing interactive session")
+        logger.debug(f"Closing interactive session {self}")
 
         # Terminate the prepare and run calculation if still running. Then we need to set the 'calc_finished'
         # event which *should* cause run_calc.wait_until_finished() to exit. If this flag isn't set, then
@@ -124,16 +119,12 @@ class InteractiveSessionCalculation(BaseCalculation):
         if self.run_calc.status == CalculationStatusEnum.RUNNING:
             logger.debug("Terminating run command")
             await self.run_calc.terminate()
-        logger.debug("Setting run command calc_finished_event flag")
         self.run_calc.calc_finished_event.set()
 
         # When the run calc is finished, this flag is used to communicate with the interactive
         # session wait_until_finished() that the finalise command can be run
         self.calc_finished_event.set()
-        logger.debug("Set calc_finished_event")
 
         # Keep waiting until the finalise calculation has finished and the output has been added to
         # the data store
-        logger.debug("Waiting for session_closed_event")
         await self.session_closed_event.wait()
-        logger.debug("Closed interactive session")
