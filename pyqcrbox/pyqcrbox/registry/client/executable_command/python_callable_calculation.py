@@ -2,6 +2,7 @@
 import multiprocessing.pool
 
 import anyio
+import psutil
 
 from pyqcrbox import logger
 from pyqcrbox.debug import eel_logging
@@ -65,6 +66,19 @@ class PythonCallableCalculation(BaseCalculation):
     @eel_logging
     async def terminate(self):
         logger.debug("Terminating multiprocessing pool (any running workers will be stopped immediately).")
-        self.pool.terminate()
-        self.pool.join()
-        logger.trace("Multiprocessing pool terminated.")
+        logger.debug("This is a test debug message..............")
+
+        for worker in self.pool._pool:
+            logger.debug(f"{worker!r} is alive: {worker.is_alive()}")
+            if worker.is_alive():
+                parent = psutil.Process(worker.pid)
+                children = parent.children(recursive=True)
+                for child in children:
+                    logger.debug(f"Terminating child process: {child.pid}")
+                    child.terminate()
+                logger.debug(f"Terminating parent process: {parent.pid}")
+                parent.terminate()
+
+        # self.pool.terminate()
+        # self.pool.join()
+        logger.debug("Multiprocessing pool terminated.")
