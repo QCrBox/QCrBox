@@ -13,7 +13,6 @@ from sqlmodel import select
 from pyqcrbox import QCRBOX_SVCS_REGISTRY, logger, msg_specs, settings, sql_models
 from pyqcrbox.data_management import DatasetResponse
 from pyqcrbox.data_management.data_file import DataFileMetadataResponse
-from pyqcrbox.debug import eel_logging
 from pyqcrbox.services import get_data_file_manager, get_nats_broker
 from pyqcrbox.sql_models.calculation import CalculationNatsResponseModel
 
