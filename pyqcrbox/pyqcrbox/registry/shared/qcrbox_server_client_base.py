@@ -15,7 +15,6 @@ from litestar import Litestar
 from litestar.testing import AsyncTestClient, TestClient
 
 from pyqcrbox import QCRBOX_SVCS_REGISTRY
-from pyqcrbox.debug import eel_logging
 from pyqcrbox.logging import logger
 from pyqcrbox.svcs import NatsPersistenceAdapter, SQLitePersistenceAdapter
 from pyqcrbox.svcs.helper_functions import _create_nats_broker_instance
@@ -71,7 +70,6 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
     def _set_up_asgi_server(self) -> None:
         assert_never(self)
 
-    @eel_logging
     def _set_up_uvicorn_server(self) -> None:
         if self.uvicorn_server is not None:
             raise RuntimeError("Uvicorn server has already been set up (unexpectedly).")
@@ -90,17 +88,14 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
         )
         self.uvicorn_server = uvicorn.Server(uvicorn_config)
 
-    @eel_logging
     async def start_broker(self):
         for attempt in stamina.retry_context(on=nats.errors.NoServersError, timeout=10.0, attempts=None):
             with attempt:
                 await self.nats_broker.start()
 
-    @eel_logging
     async def close_broker(self):
         await self.nats_broker.close()
 
-    @eel_logging
     async def _create_private_nats_inbox(self):
         await self.start_broker()
         self._private_inbox = await self.nats_broker.new_inbox()
@@ -108,7 +103,6 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
         await self.close_broker()
 
     @property
-    @eel_logging
     def private_inbox(self):
         if self._private_inbox is not None:
             return self._private_inbox
@@ -118,19 +112,17 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
             "to retrieve a unique inbox name from NATS server)."
         )
 
-    @eel_logging
     async def set_up_key_value_store(self):
         self.kv_applications = await self.nats_broker.key_value(bucket="applications")
 
-    @eel_logging  # noqa: B027
-    async def _run_custom_shutdown_tasks(self):
+    async def _run_custom_shutdown_tasks(self):  # noqa: B027
         """Run custom shutdown tasks.
 
         This is a no-op by default but can be used by derived classes to run
         tasks when the shutdown signal is received.
         """
+        pass
 
-    @eel_logging
     async def execute_startup_hooks(self, **kwargs):
         for name in dir(self):
             func = getattr(self, name)
@@ -143,16 +135,9 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
                     await func(**cur_kwargs)
 
     @contextlib.asynccontextmanager
-    @eel_logging
     async def lifespan_context(self, _: Litestar) -> AsyncContextManager:
         logger.debug(f"==> Entering {self.clsname} lifespan function...")
-
-        # for attempt in stamina.retry_context(on=aiormq.exceptions.AMQPConnectionError, timeout=60.0, attempts=None):
-        #     with attempt:
-        #         await self.broker.start()
-
         await self._create_private_nats_inbox()
-        # self._set_up_rabbitmq_broker()
         self._set_up_nats_broker()
         await self.start_broker()
         await self.set_up_key_value_store()
@@ -176,7 +161,6 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
 
         logger.debug(f"<== Exiting from {self.clsname} lifespan function.")
 
-    @eel_logging
     def run(self, host: str | None = None, port: int | None = None, **kwargs):
         self.host = host or "127.0.0.1"
         self.port = port or 8000
@@ -187,7 +171,6 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
         except KeyboardInterrupt:
             logger.info("Received KeyboardInterrupt. Shutting down.")
 
-    @eel_logging
     async def serve(self, task_status: TaskStatus[None] = TASK_STATUS_IGNORED):
         self._set_up_uvicorn_server()
 
@@ -208,13 +191,11 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
                 logger.error(f"      Exception: {ex}")
                 raise ex from None
 
-    @eel_logging
     def shutdown(self):
         logger.debug("Setting shutdown event")
         self._shutdown_event.set()
         logger.debug("Done, exiting shutdown()")
 
-    @eel_logging
     async def _wait_for_and_handle_shutdown_request(self, cancel_scope: anyio.CancelScope):
         # Wait for shutdown event to be set. This can happen, for example, when the
         # user terminates the process presses (e.g. via Ctrl+C) or when the maximum

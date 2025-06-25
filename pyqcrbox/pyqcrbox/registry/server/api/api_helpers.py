@@ -25,7 +25,6 @@ class CommandNotFoundError(Exception):
     pass
 
 
-@eel_logging
 def _validate_arguments_against_command_parameters(cmd_spec_db: sql_models.CommandSpecDB, arguments: dict) -> None:
     params = list(cmd_spec_db.parameters.values())
     required_param_names = set(p["name"] for p in params if p["required"] is True)
@@ -47,7 +46,6 @@ def _validate_arguments_against_command_parameters(cmd_spec_db: sql_models.Comma
         raise ClientException(error_msg)
 
 
-@eel_logging
 def _verify_command_exists(
     application_slug: str, application_version: str | None, command_name: str | None
 ) -> sql_models.CommandSpecDB:
@@ -84,7 +82,6 @@ def _verify_command_exists(
     return cmd_spec_db
 
 
-@eel_logging
 async def close_interactive_session(session_id: str) -> msg_specs.CloseInteractiveSessionResponseNATS:
     nats_broker = await get_nats_broker()
     data_manager = await get_data_file_manager()
@@ -102,7 +99,6 @@ async def close_interactive_session(session_id: str) -> msg_specs.CloseInteracti
     return response
 
 
-@eel_logging
 async def export_data_file(data_file_id: str) -> tuple[bytes, str]:
     # TODO: Create response model instead of Tuple
     data_file_manager = await get_data_file_manager()
@@ -112,7 +108,6 @@ async def export_data_file(data_file_id: str) -> tuple[bytes, str]:
     return data_file, file_name
 
 
-@eel_logging
 async def export_dataset(dataset_id: str) -> tuple[bytes, str]:
     # TODO: Create response model instead of Tuple
     data_file_manager = await get_data_file_manager()
@@ -133,13 +128,11 @@ async def export_dataset(dataset_id: str) -> tuple[bytes, str]:
     return file_contents, file_name
 
 
-@eel_logging
 async def delete_dataset(dataset_id: str) -> None:
     data_file_manager = await get_data_file_manager()
     await data_file_manager.delete_dataset(dataset_id)
 
 
-@eel_logging
 async def get_calculations() -> list[CalculationNatsResponseModel]:
     data_file_manager = await get_data_file_manager()
     calculations = await data_file_manager.get_calculations()
@@ -147,7 +140,6 @@ async def get_calculations() -> list[CalculationNatsResponseModel]:
     return [c.to_response_model() for c in calculations]
 
 
-@eel_logging
 async def get_calculation_by_calculation_id(calculation_id: str) -> CalculationNatsResponseModel:
     data_file_manager = await get_data_file_manager()
     try:
@@ -158,49 +150,42 @@ async def get_calculation_by_calculation_id(calculation_id: str) -> CalculationN
     return calculation
 
 
-@eel_logging
 async def get_data_file_info(data_file_id: str) -> DataFileMetadataResponse:
     data_file_manager = await get_data_file_manager()
     data_file = await data_file_manager.get_file_metadata(data_file_id)
     return data_file.to_response_model()
 
 
-@eel_logging
 async def get_data_files() -> list[DataFileMetadataResponse]:
     data_file_manager = await get_data_file_manager()
     data_files = await data_file_manager.get_data_files()
     return [f.to_response_model() for f in data_files]
 
 
-@eel_logging
 async def get_dataset_info(dataset_id: str) -> DatasetResponse:
     data_file_manager = await get_data_file_manager()
     dataset_info = await data_file_manager.get_dataset_info(dataset_id)
     return dataset_info.to_response_model()
 
 
-@eel_logging
 async def get_datasets() -> list[DatasetResponse]:
     data_file_manager = await get_data_file_manager()
     datasets = await data_file_manager.get_datasets()
     return [d.to_response_model() for d in datasets]
 
 
-@eel_logging
 async def get_interactive_session_info(session_id: str):
     data_file_manager = await get_data_file_manager()
     session_info = await data_file_manager.get_interactive_session_info(session_id)
     return session_info.to_response_model()
 
 
-@eel_logging
 async def get_interactive_sessions():
     data_file_manager = await get_data_file_manager()
     session_info = await data_file_manager.get_interactive_sessions()
     return [s.to_response_model() for s in session_info]
 
 
-@eel_logging
 async def import_data_file(data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)]) -> str:
     data_file_manager = await get_data_file_manager()
     qcrbox_data_file_id = await data_file_manager.import_bytes(await data.read(), filename=data.filename)
@@ -208,7 +193,6 @@ async def import_data_file(data: Annotated[UploadFile, Body(media_type=RequestEn
     return qcrbox_data_file_id
 
 
-@eel_logging
 async def import_dataset(data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)]) -> str:
     data_file_manager = await get_data_file_manager()
     qcrbox_data_file_id = await data_file_manager.import_bytes(await data.read(), filename=data.filename)
@@ -217,7 +201,6 @@ async def import_dataset(data: Annotated[UploadFile, Body(media_type=RequestEnco
     return qcrbox_dataset_id
 
 
-@eel_logging
 async def invoke_command(data: sql_models.CommandInvocationCreate) -> dict:
     with svcs.Container(QCRBOX_SVCS_REGISTRY) as con:
         nats_broker = await con.aget(NatsBroker)
@@ -240,7 +223,6 @@ async def invoke_command(data: sql_models.CommandInvocationCreate) -> dict:
     return response_json
 
 
-@eel_logging
 def retrieve_applications() -> list[sql_models.ApplicationSpecWithCommands]:
     model_cls = sql_models.ApplicationSpecDB
     with settings.db.get_session() as session:
@@ -249,7 +231,6 @@ def retrieve_applications() -> list[sql_models.ApplicationSpecWithCommands]:
     return applications_response_models
 
 
-@eel_logging
 def retrieve_command_by_id(cmd_id: int, raise_if_not_found: bool = True) -> sql_models.CommandSpecWithParameters | None:
     query = select(sql_models.CommandSpecDB).where(sql_models.CommandSpecDB.id == cmd_id)
     with settings.db.get_session() as session:
@@ -264,7 +245,6 @@ def retrieve_command_by_id(cmd_id: int, raise_if_not_found: bool = True) -> sql_
     return cmd_response_model
 
 
-@eel_logging
 def retrieve_commands() -> list[sql_models.CommandSpecWithParameters]:
     stmt = select(
         sql_models.CommandSpecDB, sql_models.ApplicationSpecDB.slug, sql_models.ApplicationSpecDB.version
