@@ -16,6 +16,10 @@ Check Response And Get Payload
     Check Response Structure    ${content}
     ${payload}=    Set Variable    ${content["payload"]}
 
+    Log    ${response}
+    Log    ${content}
+    Log    ${payload}
+
     RETURN    ${payload}
 
 Check Response Structure

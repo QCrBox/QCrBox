@@ -94,8 +94,8 @@ ${TEST_DATASET_ID}                  ${EMPTY}
 #
 
 Check /datasets can upload a data file to a dataset
-    ${file_content}=    Get Binary File    ${TEST_CIF_FILE}
-    ${files}=    Create Dictionary    ${TEST_CIF_FILE}=${file_content}
+    ${file_contents}=    Get Binary File    ${TEST_CIF_FILE}
+    ${files}=    Create Dictionary    ${TEST_CIF_FILE_NAME}=${file_contents}
 
     ${response}=    Send API Request    POST    ${SESSION_ALIAS}    /datasets    201    files=${files}
     ${payload}=    Check Response And Get Payload    ${response}
@@ -112,7 +112,7 @@ Check /datasets can upload a data file to a dataset
     Set Suite Variable    ${TEST_DATASET_ID}    ${test_dataset_id}
     Set Suite Variable
     ...    ${TEST_DATA_FILE_ID}
-    ...    ${datasets[0]["data_files"]["${TEST_CIF_FILE}"]["qcrbox_file_id"]}
+    ...    ${datasets[0]["data_files"]["${TEST_CIF_FILE_NAME}"]["qcrbox_file_id"]}
     Check Datasets Structure    @{datasets}
 
 # Check /datasets returns a list of datasets
@@ -149,11 +149,7 @@ Check /datasets can upload a data file to a dataset
 #    Should Be Equal    ${original_file_content}    ${response.content}
 
 #
-#    Data files
-#
-
-#
-#    Interactive sessions
+# Interactive sessions
 #
 
 # Check /interactive-sessions returns a list of sessions
@@ -181,7 +177,7 @@ Check /interactive-sessions can create an interactive session
     ...    json_data=${request_body}
     ${payload}=    Check Response And Get Payload    ${response}
 
-    Sleep    3s    "Waiting for interactive session to be registered"
+    Sleep    5s    "Waiting for interactive session to be registered and start"
 
     Check Response Has Attributes    ${payload}    interactive_session_id
     Set Suite Variable    ${TEST_INTERACTIVE_SESSION_ID}    ${payload["interactive_session_id"]}
@@ -252,6 +248,9 @@ Check /interactive-sessions can create an interactive session
 #    Should Be Equal As Integers    ${error_payload["code"]}    404
 
 Check /interactive-sessions/id can close an interactive session
+    Should Not Be Empty
+    ...    ${TEST_INTERACTIVE_SESSION_ID}
+    ...    Earlier test to start an interactive session failed. Cannot run this test.
     ${response}=    Send API Request
     ...    POST
     ...    ${SESSION_ALIAS}
