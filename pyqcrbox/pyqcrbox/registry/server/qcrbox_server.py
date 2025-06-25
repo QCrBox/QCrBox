@@ -192,11 +192,12 @@ class QCrBoxServer(QCrBoxServerClientBase):
         msg_from_client: msg_specs.CommandInvocationClientResponseNATS,
     ):
         if not msg_from_client.client_is_available:
+            client_id = msg_from_client.client_id
             logger.error("Requested a client which is not available")
             return msg_specs.QCrBoxGenericResponse(
                 response_to="server.cmd.handle_command_invocation_by_user",
                 status=CalculationStatusEnum.FAILED,
-                payload={"error": f"Chosen client {msg_from_client.client_id!r} is not available"},
+                payload={"error": f"The client {client_id!r} is not available to execute the command request"},
             )
 
         calculation_nats = CalculationNatsDB(

@@ -78,7 +78,10 @@ class QCrBoxClient(QCrBoxServerClientBase):
         )
 
         if self.status.is_available:
+            logger.info("Client is free, able to accept new command request")
             self.status.set_pending()
+        else:
+            logger.info("Client is busy, unable to accept new command request")
 
         return response_msg
 
