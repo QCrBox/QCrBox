@@ -15,10 +15,21 @@ __all__ = ["CLICommand"]
 
 
 class QCrBoxCmdArgumentMismatch(Exception):
+    """Exception raised when command arguments do not match the expected pattern."""
+
     pass
 
 
 class CLICommand(BaseCommand):
+    """Command class for executing CLI commands as background calculations.
+
+    Parameters
+    ----------
+    cmd_spec : CLICommandSpec
+        The command specification for the CLI command.
+
+    """
+
     def __init__(self, cmd_spec: CLICommandSpec):
         assert cmd_spec.implemented_as == "cli_command"
         super().__init__(cmd_spec)
@@ -32,12 +43,43 @@ class CLICommand(BaseCommand):
         self.proc: asyncio.subprocess.Process | None = None
 
     def __repr__(self):
+        """Return a string representation of the CLICommand instance.
+
+        Returns
+        -------
+        str
+            String representation of the object.
+
+        """
         return f"<{self.__class__.__name__}: '{str(self)}'>"
 
     def __str__(self):
+        """Return the call pattern string for the CLI command.
+
+        Returns
+        -------
+        str
+            The call pattern string.
+
+        """
         return self.call_pattern
 
     async def bind(self, working_dir: str, **param_values):
+        """Bind parameter values to the call pattern for the CLI command.
+
+        Parameters
+        ----------
+        working_dir : str
+            The working directory for the command.
+        **param_values
+            Parameter values to bind to the call pattern.
+
+        Returns
+        -------
+        str
+            The formatted command string with bound arguments.
+
+        """
         return self.call_pattern.format(**param_values)
 
     async def execute_in_background(
@@ -49,6 +91,29 @@ class CLICommand(BaseCommand):
         _cwd=None,
         **kwargs,
     ) -> CLICmdCalculation:
+        """Execute the CLI command asynchronously in the background.
+
+        Parameters
+        ----------
+        _calculation_id : str
+            Unique identifier for the calculation instance.
+        _stdin : Any, optional
+            Standard input stream or data (default is None).
+        _stdout : Any, optional
+            Standard output stream or handler (default is subprocess.PIPE).
+        _stderr : Any, optional
+            Standard error stream or handler (default is subprocess.PIPE).
+        _cwd : str, optional
+            Working directory for command execution (default is None).
+        **kwargs
+            Additional keyword arguments for command execution.
+
+        Returns
+        -------
+        CLICmdCalculation
+            An instance representing the background calculation.
+
+        """
         calc_finished_event = anyio.Event()
 
         working_dir = _cwd or os.getcwd()

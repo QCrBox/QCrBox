@@ -11,6 +11,21 @@ from .base_calculation import BaseCalculation
 
 
 class PythonCallableCalculation(BaseCalculation):
+    """Calculation class for tracking the status of a Python callable execution.
+
+    Parameters
+    ----------
+    result : multiprocessing.pool.ApplyResult
+        The result object for the asynchronous callable execution.
+    pool : multiprocessing.pool.Pool
+        The multiprocessing pool used for execution.
+    calculation_id : str
+        Unique identifier for the calculation.
+    calc_finished_event : anyio.Event
+        Event that signals when the calculation is finished.
+
+    """
+
     def __init__(
         self,
         result: multiprocessing.pool.ApplyResult,
@@ -25,11 +40,20 @@ class PythonCallableCalculation(BaseCalculation):
         self.return_value = None
 
     async def wait_until_finished(self):
+        """Wait until the calculation is finished."""
         await self.calc_finished_event.wait()
         _ = self.status  # FIXME: This is a workaround to ensure the return value is set.
 
     @property
     def status(self) -> CalculationStatusEnum:
+        """Get the current status of the calculation.
+
+        Returns
+        -------
+        CalculationStatusEnum
+            The current status of the calculation.
+
+        """
         if self._apply_result.ready():
             if self._apply_result.successful():
                 self.return_value = self._apply_result.get()
@@ -49,6 +73,14 @@ class PythonCallableCalculation(BaseCalculation):
 
     @property
     async def stdout(self) -> str | None:
+        """Retrieve the standard output of the calculation.
+
+        Returns
+        -------
+        str or None
+            The standard output, or None if not available.
+
+        """
         if self.status == CalculationStatusEnum.RUNNING:
             return None
         else:
@@ -56,12 +88,21 @@ class PythonCallableCalculation(BaseCalculation):
 
     @property
     async def stderr(self) -> str | None:
+        """Retrieve the standard error of the calculation.
+
+        Returns
+        -------
+        str or None
+            The standard error, or None if not available.
+
+        """
         if self.status == CalculationStatusEnum.RUNNING:
             return None
         else:
             return "Retrieval of STDERR not implemented yet for PythonCallableCalculation"
 
     async def terminate(self):
+        """Terminate the calculation."""
         logger.debug(
             "Terminating multiprocessing pool (any running workers will be stopped immediately).",
         )
