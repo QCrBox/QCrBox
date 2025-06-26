@@ -1,82 +1,35 @@
+import asyncio
 import os
 import re
+import subprocess
 
 import anyio
 
-from pyqcrbox.debug import eel_logging
-from pyqcrbox.sql_models import CLICommandSpec
-
-__all__ = ["CLICommand"]
-
-
-# SPDX-License-Identifier: MPL-2.0
-
-import asyncio
-import inspect
-import subprocess
-
 from pyqcrbox import logger
+from pyqcrbox.sql_models import CLICommandSpec
 
 from .base_command import BaseCommand
 from .cli_command_calculation import CLICmdCalculation
 
-
-class Param:
-    def __init__(self, name, default=None):
-        self.name = name
-        self.default = default
-        self._python_param = inspect.Parameter(name=name, kind=inspect.Parameter.KEYWORD_ONLY, default=default)
-
-    def __repr__(self):
-        return f"<{self.__class__.__name__}: {self._python_param!s}>"
-
-    def __str__(self):
-        return f"<{self.name}>"
-
-    def bind(self, bound_args: inspect.BoundArguments):
-        return bound_args.arguments[self.name]
-
-
-class FormattedParam(Param):
-    def __init__(self, name, default=None, format_string=None):
-        super().__init__(name=name, default=default)
-        self.format_string = format_string
-
-    def bind(self, bound_args: inspect.BoundArguments):
-        arg_val = super().bind(bound_args)
-        if self.format_string is not None:
-            return self.format_string.format(arg_val)
-        return arg_val
-
-
-class CmdLiteral:
-    def __init__(self, text):
-        self.text = text
-
-    def __repr__(self):
-        return f"<{self.__class__.__name__}: {self.text!s}>"
-
-    def __str__(self):
-        return self.text
-
-    def bind(self, bound_args: inspect.BoundArguments):
-        return self.text
-
-
-def _make_cmd_constituent(x):
-    if isinstance(x, Param):
-        return x
-    elif isinstance(x, str):
-        return CmdLiteral(x)
-    else:
-        raise TypeError(f"Invalid constituent of CLI command: {x!r} (type: {type(x)})")
+__all__ = ["CLICommand"]
 
 
 class QCrBoxCmdArgumentMismatch(Exception):
+    """Exception raised when command arguments do not match the expected pattern."""
+
     pass
 
 
 class CLICommand(BaseCommand):
+    """Command class for executing CLI commands as background calculations.
+
+    Parameters
+    ----------
+    cmd_spec : CLICommandSpec
+        The command specification for the CLI command.
+
+    """
+
     def __init__(self, cmd_spec: CLICommandSpec):
         assert cmd_spec.implemented_as == "cli_command"
         super().__init__(cmd_spec)
@@ -90,15 +43,45 @@ class CLICommand(BaseCommand):
         self.proc: asyncio.subprocess.Process | None = None
 
     def __repr__(self):
+        """Return a string representation of the CLICommand instance.
+
+        Returns
+        -------
+        str
+            String representation of the object.
+
+        """
         return f"<{self.__class__.__name__}: '{str(self)}'>"
 
     def __str__(self):
+        """Return the call pattern string for the CLI command.
+
+        Returns
+        -------
+        str
+            The call pattern string.
+
+        """
         return self.call_pattern
 
     async def bind(self, working_dir: str, **param_values):
+        """Bind parameter values to the call pattern for the CLI command.
+
+        Parameters
+        ----------
+        working_dir : str
+            The working directory for the command.
+        **param_values
+            Parameter values to bind to the call pattern.
+
+        Returns
+        -------
+        str
+            The formatted command string with bound arguments.
+
+        """
         return self.call_pattern.format(**param_values)
 
-    @eel_logging
     async def execute_in_background(
         self,
         _calculation_id: str,
@@ -108,6 +91,29 @@ class CLICommand(BaseCommand):
         _cwd=None,
         **kwargs,
     ) -> CLICmdCalculation:
+        """Execute the CLI command asynchronously in the background.
+
+        Parameters
+        ----------
+        _calculation_id : str
+            Unique identifier for the calculation instance.
+        _stdin : Any, optional
+            Standard input stream or data (default is None).
+        _stdout : Any, optional
+            Standard output stream or handler (default is subprocess.PIPE).
+        _stderr : Any, optional
+            Standard error stream or handler (default is subprocess.PIPE).
+        _cwd : str, optional
+            Working directory for command execution (default is None).
+        **kwargs
+            Additional keyword arguments for command execution.
+
+        Returns
+        -------
+        CLICmdCalculation
+            An instance representing the background calculation.
+
+        """
         calc_finished_event = anyio.Event()
 
         working_dir = _cwd or os.getcwd()
@@ -116,25 +122,10 @@ class CLICommand(BaseCommand):
         try:
             cmd_with_bound_args = await self.bind(working_dir, **param_values)
         except KeyError as exc:
-            raise QCrBoxCmdArgumentMismatch(exc.args[0])
-
-        logger.debug(f"cmd_with_bounds_args {cmd_with_bound_args}")
+            raise QCrBoxCmdArgumentMismatch(exc.args[0]) from None
 
         self.proc = await asyncio.create_subprocess_shell(
-            cmd_with_bound_args,
-            stdin=_stdin,
-            stdout=_stdout,
-            stderr=_stderr,
-            cwd=working_dir,
+            cmd_with_bound_args, stdin=_stdin, stdout=_stdout, stderr=_stderr, cwd=working_dir, preexec_fn=os.setsid
         )
 
         return CLICmdCalculation(self.proc, calculation_id=_calculation_id, calc_finished_event=calc_finished_event)
-
-    @eel_logging
-    async def terminate(self):
-        if self.proc:
-            logger.debug("Terminating process running CLI command.")
-            self.proc.terminate()
-            logger.trace("Process terminated.")
-        else:
-            logger.trace(f"No process running for {self} - nothing to terminate.")

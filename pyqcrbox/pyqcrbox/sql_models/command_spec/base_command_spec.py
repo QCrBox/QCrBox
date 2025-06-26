@@ -43,4 +43,4 @@ class BaseCommandSpec(QCrBoxPydanticBaseModel):
 
     def get_parameter_by_name(self, param_name) -> ParameterSpecDiscriminatedUnion:
         # TODO: handle case where parameter is not found
-        return next((param for param in self.parameters if param.name == param_name))
+        return next(param for param in self.parameters if param.name == param_name)

@@ -14,7 +14,6 @@ from litestar.status_codes import HTTP_500_INTERNAL_SERVER_ERROR
 
 from pyqcrbox import settings
 from pyqcrbox.data_management import DatasetNotFoundError
-from pyqcrbox.debug import eel_logging
 from pyqcrbox.registry.server.api import api_schema as schema
 from pyqcrbox.registry.shared.qcrbox_response import QCrBoxResponse
 from pyqcrbox.sql_models import CalculationStatusEnum, CommandInvocationCreate
@@ -32,7 +31,6 @@ class QCrBoxAPIException(HTTPException):
 
 
 @get(path="/healthz", media_type=MediaType.JSON, summary="Health check", tags=["admin"], operation_id="healthz")
-@eel_logging
 async def healthz() -> schema.QCrBoxHealthResponse:
     """Check the health of the QCrBox registry."""
     return QCrBoxResponse(
@@ -44,7 +42,6 @@ async def healthz() -> schema.QCrBoxHealthResponse:
 
 
 @get(path="/", media_type=MediaType.JSON, include_in_schema=False)
-@eel_logging
 async def index() -> Response:
     return Response(
         content={
@@ -71,7 +68,6 @@ async def openapi_schema(request: Request) -> dict:
     operation_id="list_applications",
     responses={400: schema.BAD_REQUEST_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
-@eel_logging
 async def list_applications() -> schema.QCrBoxResponse[schema.ApplicationsResponse]:
     """Retrieve a list of registered applications."""
     applications = api_helpers.retrieve_applications()
@@ -98,7 +94,6 @@ async def list_applications() -> schema.QCrBoxResponse[schema.ApplicationsRespon
     operation_id="list_calculations",
     responses={400: schema.BAD_REQUEST_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
-@eel_logging
 async def list_calculations() -> schema.QCrBoxResponse[schema.CalculationsResponse]:
     """Retrieve a list of all calculations, past and present."""
     calculations = await api_helpers.get_calculations()
@@ -122,7 +117,6 @@ async def list_calculations() -> schema.QCrBoxResponse[schema.CalculationsRespon
     operation_id="get_calculation_by_id",
     responses={400: schema.BAD_REQUEST_ERROR, 404: schema.NOT_FOUND_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
-@eel_logging
 async def get_calculation_by_id(
     id: str = Parameter(title="Calculation ID"),
 ) -> schema.QCrBoxResponse[schema.CalculationsResponse]:
@@ -154,7 +148,6 @@ async def get_calculation_by_id(
     operation_id="list_commands",
     responses={400: schema.BAD_REQUEST_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
-@eel_logging
 async def list_commands() -> schema.QCrBoxResponse[schema.CommandsResponse]:
     """Retrieve a list of commands, which are registered to applications."""
     commands = api_helpers.retrieve_commands()
@@ -178,7 +171,6 @@ async def list_commands() -> schema.QCrBoxResponse[schema.CommandsResponse]:
     operation_id="get_command_by_id",
     responses={400: schema.BAD_REQUEST_ERROR, 404: schema.NOT_FOUND_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
-@eel_logging
 async def get_command_by_id(id: int) -> schema.QCrBoxResponse[schema.CommandsResponse]:
     """Retrieve a command of the given ID."""
     try:
@@ -208,7 +200,6 @@ async def get_command_by_id(id: int) -> schema.QCrBoxResponse[schema.CommandsRes
     operation_id="list_data_files",
     responses={400: schema.BAD_REQUEST_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
-@eel_logging
 async def list_data_files() -> schema.QCrBoxResponse[schema.DataFilesResponse]:
     """Retrieve a list of all data files in the data store."""
     data_files = await api_helpers.get_data_files()
@@ -232,7 +223,6 @@ async def list_data_files() -> schema.QCrBoxResponse[schema.DataFilesResponse]:
     operation_id="get_data_file_by_id",
     responses={400: schema.BAD_REQUEST_ERROR, 404: schema.NOT_FOUND_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
-@eel_logging
 async def get_data_file_by_id(
     id: str = Parameter(title="Data file ID"),
 ) -> schema.QCrBoxResponse[schema.DataFilesResponse]:
@@ -264,7 +254,7 @@ async def get_data_file_by_id(
 #     operation_id="create_data_file",
 #     responses={400: schema.BAD_REQUEST_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 # )
-# @eel_logging
+#
 # async def create_data_file(
 #     data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART, title="The file to upload")],
 # ) -> schema.QCrBoxResponse[schema.DataFilesResponse]:
@@ -316,7 +306,6 @@ async def download_data_file_by_id(id: str = Parameter(title="Data file ID")) ->
     operation_id="delete_dataset_by_id",
     responses={400: schema.BAD_REQUEST_ERROR, 404: schema.NOT_FOUND_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
-@eel_logging
 async def delete_dataset_by_id(id: str = Parameter(title="Dataset ID")) -> None:
     """Remove a dataset and associated data files from the data store."""
     await api_helpers.delete_dataset(id)
@@ -330,7 +319,6 @@ async def delete_dataset_by_id(id: str = Parameter(title="Dataset ID")) -> None:
     operation_id="list_datasets",
     responses={400: schema.BAD_REQUEST_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
-@eel_logging
 async def list_datasets() -> schema.QCrBoxResponse[schema.DatasetsResponse]:
     """Retrieve a list of all datasets in the data store."""
     datasets = await api_helpers.get_datasets()
@@ -354,7 +342,6 @@ async def list_datasets() -> schema.QCrBoxResponse[schema.DatasetsResponse]:
     operation_id="get_dataset_by_id",
     responses={400: schema.BAD_REQUEST_ERROR, 404: schema.NOT_FOUND_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
-@eel_logging
 async def get_dataset_by_id(
     id: str = Parameter(title="Dataset ID"),
 ) -> schema.QCrBoxResponse[schema.DatasetsResponse]:
@@ -383,7 +370,6 @@ async def get_dataset_by_id(
     operation_id="create_dataset",
     responses={400: schema.BAD_REQUEST_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
-@eel_logging
 async def create_dataset(
     data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)],
 ) -> schema.QCrBoxResponse[schema.DatasetsResponse]:
@@ -410,7 +396,6 @@ async def create_dataset(
     operation_id="download_dataset_by_id",
     responses={400: schema.BAD_REQUEST_ERROR, 404: schema.NOT_FOUND_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
-@eel_logging
 async def download_dataset_by_id(id: str = Parameter(title="Dataset ID")) -> Response[bytes]:
     """Download the data files of a datast as a Zip file."""
     try:
@@ -437,7 +422,6 @@ async def download_dataset_by_id(id: str = Parameter(title="Dataset ID")) -> Res
     operation_id="list_interactive_sessions",
     responses={400: schema.BAD_REQUEST_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
-@eel_logging
 async def list_interactive_sessions() -> schema.QCrBoxResponse[schema.InteractiveSessionsResponse]:
     """Retrieve a list of interactive sessions, past and present."""
     interactive_sessions = await api_helpers.get_interactive_sessions()
@@ -461,7 +445,6 @@ async def list_interactive_sessions() -> schema.QCrBoxResponse[schema.Interactiv
     operation_id="get_interactive_session_by_id",
     responses={400: schema.BAD_REQUEST_ERROR, 404: schema.NOT_FOUND_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
-@eel_logging
 async def get_interactive_session_by_id(
     id: str = Parameter(title="Interactive session ID"),
 ) -> schema.QCrBoxResponse[schema.InteractiveSessionsResponse]:
@@ -490,7 +473,6 @@ async def get_interactive_session_by_id(
     operation_id="create_interactive_session_with_arguments",
     responses={400: schema.BAD_REQUEST_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
-@eel_logging
 async def create_interactive_session_with_arguments(
     data: Annotated[schema.CreateInteractiveSession, Body()],
 ) -> schema.QCrBoxResponse[schema.InteractiveSessionIDResponse]:
@@ -539,7 +521,6 @@ async def create_interactive_session_with_arguments(
     status_code=200,
     responses={400: schema.BAD_REQUEST_ERROR, 404: schema.NOT_FOUND_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
-@eel_logging
 async def close_interactive_session(
     id: str = Parameter(title="Interactive session ID"),
 ) -> schema.QCrBoxResponse[schema.InteractiveSessionClosedResponse]:
@@ -548,6 +529,10 @@ async def close_interactive_session(
         closed_session = await api_helpers.close_interactive_session(id)
     except KeyError as exc:
         raise QCrBoxAPIException(detail=f"Interactive session not found: {id!r}", status_code=404) from exc
+    except TypeError as exc:
+        raise QCrBoxAPIException(
+            detail="There was an internal server error when processing your request", status_code=500
+        ) from exc
 
     return QCrBoxResponse(
         content={

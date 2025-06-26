@@ -23,7 +23,7 @@ class DataFileParameter(QCrBoxPydanticBaseModel):
     async def prepare_for_execution(self, target_dir: str, target_filename: str | None = None) -> str:
         from pyqcrbox.services import get_data_file_manager
 
-        logger.debug(f"Preparing data file for execution: {self.data_file_id=}")
+        logger.debug(f"Preparing data file for execution: {self!r}")
         data_file_manager = await get_data_file_manager()
         exported_file_path = await data_file_manager.export_data_file(self.data_file_id, target_dir, target_filename)
         return str(exported_file_path)
@@ -71,10 +71,7 @@ def parse_parameter_as_its_dtype(v: Any, dtype_str) -> Any:
         return BuiltinParameter(dtype=dtype, value=v)
 
     try:
-        if isinstance(v, dict):
-            result = _known_dtypes[dtype_str](**v)
-        else:
-            result = _known_dtypes[dtype_str](v)
+        result = _known_dtypes[dtype_str](**v) if isinstance(v, dict) else _known_dtypes[dtype_str](v)
     except Exception as exc:
         logger.warning(
             f"Could not convert value to its declared type - leaving unchanged: value={v!r}\n\n"

@@ -7,7 +7,6 @@ __all__ = ["DataFileManager"]
 
 from pyqcrbox import logger
 from pyqcrbox.data_management.data_file import DataFileMetadata, Dataset
-from pyqcrbox.debug import eel_logging
 from pyqcrbox.helpers import generate_data_file_id, generate_dataset_id
 from pyqcrbox.sql_models.interactive_session_info import InteractiveSessionInfo
 
@@ -49,7 +48,6 @@ class DataFileManager(ABC):
     async def _store_in_object_store(self, bucket: str, key: str, value: bytes) -> None:
         pass
 
-    @eel_logging
     async def _store_dataset_info(self, metadata: Dataset) -> None:
         """Add metadata about a dataset into the data manager.
 
@@ -61,7 +59,6 @@ class DataFileManager(ABC):
         """
         await self._store_in_kv("datasets", metadata.dataset_id, metadata.model_dump_json().encode())
 
-    @eel_logging
     async def _store_file_contents(self, key: str, file_contents: bytes) -> None:
         """Add the contents of a file to the data manager.
 
@@ -75,7 +72,6 @@ class DataFileManager(ABC):
         """
         await self._store_in_object_store("data_file_contents", key, file_contents)
 
-    @eel_logging
     async def _store_file_metadata(self, key: str, metadata: DataFileMetadata) -> None:
         """Add metadata about a data file into the data manager.
 
@@ -89,7 +85,6 @@ class DataFileManager(ABC):
         """
         await self._store_in_kv("data_file_metadata", key, metadata.model_dump_json().encode())
 
-    @eel_logging
     async def create_dataset_from_data_file(self, data_file_id: str) -> str:
         """Create a new dataset from a data file.
 
@@ -111,7 +106,6 @@ class DataFileManager(ABC):
 
         return dataset_id
 
-    @eel_logging
     async def data_file_exists(self, data_file_id: str) -> bool:
         """Check that a data file exists for the given ID.
 
@@ -128,7 +122,6 @@ class DataFileManager(ABC):
         """
         return await self._kv_key_exists("data_file_metadata", data_file_id)
 
-    @eel_logging
     async def delete_data_file(self, data_file_id: str) -> None:
         """Delete a data file from the data manager.
 
@@ -142,7 +135,6 @@ class DataFileManager(ABC):
         await self._delete_from_kv("data_file_metadata", data_file_id)
         await self._delete_from_object_store("data_file_contents", data_file_id)
 
-    @eel_logging
     async def delete_dataset(self, dataset_id: str) -> None:
         """Delete a dataset and its data files from the data manager.
 
@@ -164,7 +156,6 @@ class DataFileManager(ABC):
             await self.delete_data_file(file_metadata.qcrbox_file_id)
         await self._delete_from_kv("datasets", dataset_id)
 
-    @eel_logging
     async def export_data_file(self, data_file_id: str, output_dir: str, output_filename: str | None = None) -> Path:
         """Export a data file from the NATS object store to the file system.
 
@@ -191,14 +182,15 @@ class DataFileManager(ABC):
         output_dir.mkdir(parents=True, exist_ok=True)
         output_filename = output_filename or object_store_filename
         output_path = output_dir / output_filename
+
+        logger.debug(f"Writing {data_file_id!r} to {output_path}")
         with output_path.open("wb") as f:
             f.write(file_contents)
 
-        logger.info(f"Exported data file {output_path.resolve()}")
+        logger.info(f"Exported data file {output_filename} to {output_path.resolve()}")
 
         return output_path
 
-    @eel_logging
     async def get_file_metadata(self, data_file_id: str) -> DataFileMetadata:
         """Get the metadata for a data file.
 
@@ -217,7 +209,6 @@ class DataFileManager(ABC):
 
         return DataFileMetadata.model_validate_json(metadata_as_bytes.decode())
 
-    @eel_logging
     async def get_data_files(self) -> list[DataFileMetadata]:
         """Get the metadata for all the data files.
 
@@ -232,7 +223,6 @@ class DataFileManager(ABC):
 
         return values
 
-    @eel_logging
     async def get_dataset_info(self, dataset_id: str) -> Dataset:
         """Get metadata about a dataset.
 
@@ -255,7 +245,6 @@ class DataFileManager(ABC):
 
         return Dataset.model_validate_json(dataset_info_as_bytes.decode())
 
-    @eel_logging
     async def get_datasets(self) -> list[Dataset]:
         """Get metadata for each dataset in the data manager.
 
@@ -272,7 +261,6 @@ class DataFileManager(ABC):
             for dataset_id in dataset_ids
         ]
 
-    @eel_logging
     async def get_file_contents(self, data_file_id: str) -> bytes:
         """Get the contents of a data file.
 
@@ -291,7 +279,6 @@ class DataFileManager(ABC):
 
         return file_contents
 
-    @eel_logging
     async def get_interactive_session_info(self, session_id: str) -> InteractiveSessionInfo:
         """Get metadata about an interactive session.
 
@@ -310,7 +297,6 @@ class DataFileManager(ABC):
 
         return InteractiveSessionInfo.model_validate_json(session_info_as_bytes.decode())
 
-    @eel_logging
     async def get_interactive_sessions(self) -> list[InteractiveSessionInfo]:
         """Get metadata about all interactive sessions.
 
@@ -326,7 +312,6 @@ class DataFileManager(ABC):
 
         return values
 
-    @eel_logging
     async def import_bytes(
         self,
         file_contents: bytes,
@@ -366,7 +351,6 @@ class DataFileManager(ABC):
 
         return qcrbox_file_id
 
-    @eel_logging
     async def import_local_file(self, file_path: str | Path, *, _qcrbox_file_id: str | None = None) -> str:
         """Import a data file into the data manager, from a local file system.
 
@@ -395,7 +379,6 @@ class DataFileManager(ABC):
 
         return qcrbox_file_id
 
-    @eel_logging
     async def store_interactive_session_info(self, session_info: InteractiveSessionInfo) -> None:
         """Add metadata about an interactive session to the data manager.
 
@@ -410,7 +393,7 @@ class DataFileManager(ABC):
             "interactive_sessions", session_info.session_id, session_info.model_dump_json().encode()
         )
 
-    # @eel_logging
+    #
     async def get_calculation_details(self, key: str) -> CalculationNatsDB:
         """Get metadata about a calculation from the data manager.
 
@@ -430,7 +413,7 @@ class DataFileManager(ABC):
 
         return calculation
 
-    # @eel_logging
+    #
     async def get_calculations(self) -> list[CalculationNatsDB]:
         """Get metadata about all the calculations in the data manager.
 
