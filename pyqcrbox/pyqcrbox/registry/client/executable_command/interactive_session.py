@@ -125,7 +125,8 @@ class InteractiveSession(BaseCommand):
             nonlocal run_cmd, prepare_cmd, finalise_cmd
 
             if prepare_cmd:
-                assert isinstance(prepare_cmd, PythonCallable)
+                if not isinstance(prepare_cmd, PythonCallable):
+                    raise TypeError("Only `PythonCallable` is supported for 'prepare_cmd'")
                 logger.debug(f"Executing prepare command in background and waiting for it to finish: {prepare_cmd}")
                 interactive_session_calc.prepare_calc = await prepare_cmd.execute_in_background(
                     _calculation_id=helpers.generate_calculation_id(),
@@ -133,6 +134,7 @@ class InteractiveSession(BaseCommand):
                     **param_values,
                 )
                 await interactive_session_calc.prepare_calc.wait_until_finished()
+                logger.debug("Prepare command has finished executing")
 
             logger.debug(f"Executing run command in background and waiting for it to finish: {run_cmd}")
             interactive_session_calc.run_calc = await run_cmd.execute_in_background(
@@ -141,10 +143,12 @@ class InteractiveSession(BaseCommand):
                 **param_values,
             )
             await interactive_session_calc.run_calc.wait_until_finished()
+            logger.debug("Run command has finished executing")
 
             if finalise_cmd:
-                assert isinstance(finalise_cmd, PythonCallable)
-                logger.debug(f"Execute finalise command in background: {finalise_cmd}")
+                if not isinstance(finalise_cmd, PythonCallable):
+                    raise TypeError("Only `PythonCallable` is supported for 'finalise_cmd'")
+                logger.debug(f"Executing finalise command in background: {finalise_cmd}")
                 interactive_session_calc.finalise_calc = await finalise_cmd.execute_in_background(
                     _calculation_id=helpers.generate_calculation_id(),
                     _cwd=_cwd,
@@ -154,7 +158,3 @@ class InteractiveSession(BaseCommand):
         asyncio.create_task(session_tasks())
 
         return interactive_session_calc
-
-    def terminate(self) -> None:
-        """Terminate the interactive session command."""
-        raise NotImplementedError("TODO: implement terminate() for interactive commands")

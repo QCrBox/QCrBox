@@ -5,7 +5,6 @@ import anyio
 import psutil
 
 from pyqcrbox import logger
-from pyqcrbox.debug import eel_logging
 from pyqcrbox.sql_models import CalculationStatusEnum
 
 from .base_calculation import BaseCalculation
@@ -23,14 +22,10 @@ class PythonCallableCalculation(BaseCalculation):
         super().__init__(calculation_id=calculation_id, calc_finished_event=calc_finished_event)
         self._apply_result = result
         self.pool = pool
-        # self._status_details = None
         self.return_value = None
 
-    @eel_logging
     async def wait_until_finished(self):
-        logger.debug(f"Waiting for calculation to finish: {self!r}")
         await self.calc_finished_event.wait()
-        logger.debug(f"Calculation finished: {self!r}")
         _ = self.status  # FIXME: This is a workaround to ensure the return value is set.
 
     @property
@@ -42,6 +37,9 @@ class PythonCallableCalculation(BaseCalculation):
             else:
                 calc_status = CalculationStatusEnum.FAILED
             logger.debug("Calculation finished, closing multiprocessing pool.")
+            # When the result is ready, we can close the pool normally without
+            # having to forcefully terminate the process and child processes
+            # by hand
             self.pool.close()
             self.pool.join()
         else:
@@ -63,22 +61,18 @@ class PythonCallableCalculation(BaseCalculation):
         else:
             return "Retrieval of STDERR not implemented yet for PythonCallableCalculation"
 
-    @eel_logging
     async def terminate(self):
-        logger.debug("Terminating multiprocessing pool (any running workers will be stopped immediately).")
-        logger.debug("This is a test debug message..............")
-
-        for worker in self.pool._pool:
-            logger.debug(f"{worker!r} is alive: {worker.is_alive()}")
-            if worker.is_alive():
-                parent = psutil.Process(worker.pid)
-                children = parent.children(recursive=True)
-                for child in children:
-                    logger.debug(f"Terminating child process: {child.pid}")
-                    child.terminate()
-                logger.debug(f"Terminating parent process: {parent.pid}")
-                parent.terminate()
-
-        # self.pool.terminate()
-        # self.pool.join()
+        logger.debug(
+            "Terminating multiprocessing pool (any running workers will be stopped immediately).",
+        )
+        # If this launched an app with a GUI, it probably has other processes it
+        # spawned which need to be killed. Unfortunately pool.terminate() doesn't
+        # do this, so we have to find the parent processes in the pool and kill their
+        # child processes too
+        processes = [psutil.Process(worker.pid) for worker in self.pool._pool if worker.is_alive()]
+        for process in processes:
+            child_processes = process.children(recursive=True)
+            for child in child_processes:
+                child.terminate()
+            process.terminate()
         logger.debug("Multiprocessing pool terminated.")

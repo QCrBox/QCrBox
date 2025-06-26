@@ -4,13 +4,11 @@ import inspect
 import multiprocessing.pool
 import multiprocessing.process
 import traceback
-from typing import Union
 
 import anyio
 from pydantic._internal._validate_call import ValidateCallWrapper
 
 from pyqcrbox import logger
-from pyqcrbox.debug import eel_logging
 from pyqcrbox.sql_models import PythonCallableSpec
 
 from . import BaseCommand
@@ -47,7 +45,7 @@ class PythonCallable(BaseCommand):
             validate_return=False,
             namespace=None,
         )
-        self.pool: Union[multiprocessing.pool.Pool, None] = None
+        self.pool: multiprocessing.pool.Pool | None = None
         self.calc_finished_event = None
 
     def _extract_parameters_from_callable_signature(self) -> dict:
@@ -56,18 +54,17 @@ class PythonCallable(BaseCommand):
     def __repr__(self):
         return f"<{self.__class__.__name__}: {self.fn.__name__}{self.signature!s}>"
 
-    @eel_logging
     async def execute_in_background(
         self,
         *args,
         _calculation_id: str,
-        # _stdin=None,
-        # _stdout=subprocess.PIPE,
-        # _stderr=subprocess.PIPE,
-        _num_processes=1,
+        _stdin=None,
+        _stdout=None,
+        _stderr=None,
         _cwd=None,
+        _num_processes=1,
         **kwargs,
-    ):
+    ) -> PythonCallableCalculation:
         calc_finished_event = anyio.Event()
 
         def success_callback(result):
@@ -89,8 +86,7 @@ class PythonCallable(BaseCommand):
         self.pool = multiprocessing.pool.Pool(_num_processes)
         if _cwd:
             logger.warning(
-                "TODO: Change into working directory before executing "
-                "the python callable (and switch back afterwards)!"
+                "TODO: Change into working directory before executing the python callable (and switch back afterwards)!"
             )
         param_values = {k: kwargs[k] for k in self.parameter_names if k in kwargs}
 
@@ -108,8 +104,3 @@ class PythonCallable(BaseCommand):
             calculation_id=_calculation_id,
             calc_finished_event=calc_finished_event,
         )
-
-    @eel_logging
-    async def terminate(self):
-        logger.debug(f"Terminating {self}")
-        self.pool.terminate()

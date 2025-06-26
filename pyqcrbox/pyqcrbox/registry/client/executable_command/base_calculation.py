@@ -45,3 +45,7 @@ class BaseCalculation(metaclass=ABCMeta):
     @abstractmethod
     async def stderr(self) -> str | None:
         pass
+
+    @abstractmethod
+    async def terminate(self):
+        pass

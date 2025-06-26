@@ -1,5 +1,8 @@
 from abc import ABCMeta, abstractmethod
-from typing import TYPE_CHECKING
+from pathlib import Path
+from typing import TYPE_CHECKING, Any
+
+from pyqcrbox.registry.client.executable_command.base_calculation import BaseCalculation
 
 if TYPE_CHECKING:
     from pyqcrbox.sql_models import CommandSpecDiscriminatedUnion
@@ -16,5 +19,13 @@ class BaseCommand(metaclass=ABCMeta):
         return f"<{clsname}: {self.cmd_spec.name!r}>"
 
     @abstractmethod
-    async def terminate(self):
+    async def execute_in_background(
+        self,
+        _calculation_id: str,
+        _stdin: Any = None,
+        _stdout: Any = None,
+        _stderr: Any = None,
+        _cwd: str | Path = None,
+        **kwargs,
+    ) -> BaseCalculation:
         pass

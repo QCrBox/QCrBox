@@ -1,13 +1,13 @@
 from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from pyqcrbox.sql_models.command_spec.command_spec import CommandSpecDiscriminatedUnion
-
 from pyqcrbox.sql_models.command_spec import ImplementedAs
 
 from .cli_command import CLICommand
 from .interactive_session import InteractiveSession
 from .python_callable import PythonCallable
+
+if TYPE_CHECKING:
+    from pyqcrbox.sql_models.command_spec.command_spec import CommandSpecDiscriminatedUnion
 
 __all__ = ["ExecutableCommand"]
 

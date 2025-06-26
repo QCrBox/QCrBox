@@ -1,7 +1,6 @@
 import anyio
 
 from pyqcrbox import logger
-from pyqcrbox.debug import eel_logging
 from pyqcrbox.services import get_data_file_manager
 from pyqcrbox.sql_models import CalculationStatusEnum
 
@@ -45,7 +44,6 @@ class InteractiveSessionCalculation(BaseCalculation):
     async def stderr(self) -> None:
         return None
 
-    @eel_logging
     async def wait_until_finished(self) -> None:
         """Asynchronously wait for all calculation phases to complete.
 
@@ -94,7 +92,6 @@ class InteractiveSessionCalculation(BaseCalculation):
         self.session_closed_event.set()
         logger.debug(f"InteractiveSessionCalculation: interactive session finished: {self}")
 
-    @eel_logging
     async def terminate(self) -> None:
         """Terminate the interactive session.
 
