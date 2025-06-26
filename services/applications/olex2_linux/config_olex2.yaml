@@ -27,9 +27,14 @@ commands:
         import_path: "configure_olex2"
         callable_name: "prepare__interactive"
         used_basecommand_parameters: ["input_file"]
+      # run:
+      #   implemented_as: "cli_command"
+      #   call_pattern: "/bin/bash /opt/olex2/start {input_file}"
+      #   used_basecommand_parameters: ["input_file"]
       run:
-        implemented_as: "cli_command"
-        call_pattern: "/bin/bash /opt/olex2/start {input_file}"
+        implemented_as: "python_callable"
+        import_path: "configure_olex2"
+        callable_name: "run__interactive"
         used_basecommand_parameters: ["input_file"]
       finalise:
         implemented_as: "python_callable"

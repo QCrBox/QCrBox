@@ -1,12 +1,10 @@
 import json
 import os
 import shutil
+import subprocess
 from pathlib import Path
 
-from qcrboxtools.cif.cif2cif import (
-    cif_file_merge_to_unified_by_yml,
-    cif_file_to_specific_by_yml,
-)
+from qcrboxtools.cif.cif2cif import cif_file_merge_to_unified_by_yml, cif_file_to_specific_by_yml
 from qcrboxtools.cif.merge import replace_structure_from_cif
 from qcrboxtools.robots.olex2 import Olex2Socket
 
@@ -15,13 +13,21 @@ from pyqcrbox.registry.client import QCrBoxClient
 
 YAML_PATH = "./config_olex2.yaml"
 
+def run__interactive(input_file):
+    logger.info("XXX DEBUG MODE: Running Olex2 via PythonCallable")
+    input_cif_path = Path(input_file)
+    work_cif_path = input_cif_path.parent / "qcrbox_work.cif"
+    subprocess.run(
+        ["/bin/bash", "/opt/olex2/start", f"{work_cif_path}"],
+    )
+
 
 def prepare__interactive(input_file):
     input_cif_path = Path(input_file)
     work_cif_path = input_cif_path.parent / "qcrbox_work.cif"
-
-    print(f"olex2 prepare__interactive: input cif path: {input_cif_path}")
-    print(f"olex2 prepare__interactive: work cif path: {work_cif_path}")
+    logger.info(
+        f"XXX DEBUG MODE: prepare__interactive: input_file={input_cif_path} work_file={work_cif_path}",
+    )
 
     # create a cif file using the requested cif entries in olex2 format
     # try:
@@ -37,12 +43,16 @@ def prepare__interactive(input_file):
     #     os.remove(input_cif_path)
     #
 
+    # XXX WORKAROUND: we are going to do some file management by hand
     # Create a backup of the original input file
     shutil.copyfile(input_cif_path, input_cif_path.with_suffix(".cif.bak"))
-
-    # XXX HACK!!!!
     # Copy the input file to the work file
-    shutil.copyfile(input_cif_path, work_cif_path)
+    try:
+        shutil.copyfile(input_cif_path, work_cif_path)
+    except shutil.SameFileError:
+        logger.error(
+            f"XXX DEBUG MODE: same file error probably due to a previous workflow failure: path={input_cif_path}",
+        )
 
 
 def finalise__interactive(input_file):
@@ -122,7 +132,7 @@ def redo__interactive(redo_input_cif_path, redo_output_cif_path, parameter_json_
     redo_input_cif_path = Path(redo_input_cif_path)
     work_folder = redo_input_cif_path.parent
     parameter_folder = Path(parameter_folder)
-    with open(parameter_json_path, "r", encoding="UTF-8") as fobj:
+    with open(parameter_json_path, encoding="UTF-8") as fobj:
         par_dict = json.load(fobj)
     for key in par_dict:
         if isinstance(par_dict[key], str):

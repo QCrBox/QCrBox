@@ -1,6 +1,5 @@
 import argparse
 import hashlib
-import subprocess
 from pathlib import Path
 
 from qcrboxtools.cif.cif2cif import cif_file_merge_to_unified_by_yml, cif_file_to_specific_by_yml
@@ -12,10 +11,7 @@ YAML_PATH = "/opt/qcrbox/config_olex2.yaml"
 def refine(args):
     work_cif_path = args.input_cif_path.parent / "qcrbox_work.cif"
 
-    if args.tsc_path:
-        command_name = "refine_tsc"
-    else:
-        command_name = "refine_iam"
+    command_name = "refine_tsc" if args.tsc_path else "refine_iam"
 
     cif_file_to_specific_by_yml(args.input_cif_path, work_cif_path, YAML_PATH, command_name, "input_cif_path")
 
@@ -55,56 +51,9 @@ def run_commands(args):
         )
 
 
-def prepare_interactive(args):
-    """Prepare a CIF data file for Olex2.
-
-    Parameters
-    ----------
-    args : argparse.Namespace
-        The parsed command-line arguments, including input_cif_path.
-    """
-    # We'll create a work file, which will be used to run the interactive
-    # program too. This file will be in the same parent directory as the
-    # input file
-    input_cif_path = Path(args.input_cif_path)
-    work_cif_path = input_cif_path.parent / "qcrbox_work.cif"
-
-    # Create a new CIF file, at work_cif_path, with the required entries defined
-    # in the Olex2 YAML configuration
-    cif_file_to_specific_by_yml(
-        input_cif_path,
-        work_cif_path,
-        YAML_PATH,
-        "interactive_session",
-        "input_file",
-    )
-
-
-def run_interactive(args):
-    input_cif_path = Path(args.input_cif_path)
-    work_cif_path = input_cif_path.parent / "qcrbox_work.cif"
-    print(f"running interactive with work file {work_cif_path}")
-    subprocess.run(["/bin/bash", "/opt/olex2/start", f"{work_cif_path}"])
-
-
 def main():
     parser = argparse.ArgumentParser()
-
     subparsers = parser.add_subparsers(required=True)
-
-    parser_prepare = subparsers.add_parser(
-        "prepare",
-        description="CLI for preparing Olex2 input files.",
-    )
-    parser_prepare.add_argument("--input_cif_path", help="Path to the structure file", type=Path, required=True)
-    parser_prepare.set_defaults(func=prepare_interactive)
-
-    parser_run = subparsers.add_parser(
-        "run",
-        description="CLI for running Olex2.",
-    )
-    parser_run.add_argument("--input_cif_path", help="Path to the structure file", type=Path, required=True)
-    parser_run.set_defaults(func=run_interactive)
 
     parser_refine = subparsers.add_parser(
         "refine",
