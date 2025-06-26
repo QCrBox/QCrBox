@@ -60,6 +60,12 @@ class PythonCallableCalculation(BaseCalculation):
                 calc_status = CalculationStatusEnum.SUCCESSFUL
             else:
                 calc_status = CalculationStatusEnum.FAILED
+                # This is less than ideal, but seems to be the only way to get the exception
+                # that was raised inside the pool.
+                try:
+                    self._apply_result.get()
+                except Exception as exc:
+                    self.return_value = exc
             logger.debug("Calculation finished, closing multiprocessing pool.")
             # When the result is ready, we can close the pool normally without
             # having to forcefully terminate the process and child processes

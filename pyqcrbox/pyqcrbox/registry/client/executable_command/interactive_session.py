@@ -1,5 +1,6 @@
 import asyncio
 import os
+import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -9,6 +10,7 @@ from pyqcrbox import helpers, logger
 from pyqcrbox.registry.client.executable_command import BaseCommand
 from pyqcrbox.registry.client.executable_command.python_callable import PythonCallable
 from pyqcrbox.sql_models import InteractiveSessionSpec
+from pyqcrbox.sql_models.calculation_status_event import CalculationStatusEnum
 
 from .interactive_session_calculation import InteractiveSessionCalculation
 
@@ -135,6 +137,15 @@ class InteractiveSession(BaseCommand):
                 )
                 await interactive_session_calc.prepare_calc.wait_until_finished()
                 logger.debug("Prepare command has finished executing")
+                if interactive_session_calc.prepare_calc.status == CalculationStatusEnum.FAILED:
+                    logger.error(
+                        f"Exception raised by prepare_cmd: {interactive_session_calc.prepare_calc.return_value}"
+                    )
+                    subprocess.run(
+                        ["/bin/bash", "xmessage", "Prepare command failed!"],
+                        env={**os.environ, "DISPLAY": ":0"},
+                    )
+                    return
 
             logger.debug(f"Executing run command in background and waiting for it to finish: {run_cmd}")
             interactive_session_calc.run_calc = await run_cmd.execute_in_background(
