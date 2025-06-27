@@ -38,13 +38,20 @@ RUN sed -i 's|^#! /bin/sh|#! /bin/bash|' /opt/olex2/start && \
 
 RUN mkdir -p ${QCRBOX_HOME}/.local/share && \
     mkdir -p ${QCRBOX_HOME}/.olex2/data/ && \
-    echo "QCRBOX" >> ${QCRBOX_HOME}/.olex2/data/app.token
+    # suppress usage statistics question
+    echo "QCRBOX" >> ${QCRBOX_HOME}/.olex2/data/app.token && \
+    echo "ask_update=false" >> ${QCRBOX_HOME}/.olex2/data/usesettings.dat && \
+    echo "confirm_on_close=false" >> ${QCRBOX_HOME}/.olex2/data/.options
+
+ENV OLEX2_DATADIR=${QCRBOX_HOME}/.olex2/data
+ENV OLEX2_DATADIR_STATIC=true
 
 COPY ./.idesktop ${QCRBOX_HOME}/.idesktop
 
 COPY ./configure_olex2.py ${QCRBOX_HOME}/
 COPY ./olex2_glue_cli.py ${QCRBOX_HOME}
 COPY ./config_olex2.yaml ${QCRBOX_HOME}
+
 
 ENV QCRBOX_USER=${QCRBOX_USER}
 ENV QCRBOX_HOME=${QCRBOX_HOME}
