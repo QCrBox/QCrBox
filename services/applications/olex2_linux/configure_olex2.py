@@ -54,6 +54,21 @@ def prepare__interactive(input_file):
             f"XXX DEBUG MODE: same file error probably due to a previous workflow failure: path={input_cif_path}",
         )
 
+    # Remove files that might trigger Olex2 crash detection
+    olex2_datadir = Path(os.getenv("OLEX2_DATADIR"))
+    cache_file = olex2_datadir / "olx.cache"
+    if cache_file.exists():
+        cache_file.unlink()
+
+    ready_files = olex2_datadir.glob("*.ready")
+    for ready_file in ready_files:
+        ready_file.unlink()
+
+    pid_files = olex2_datadir.glob("*.olex2_pid")
+    for pid_file in pid_files:
+        pid_file.unlink()
+
+
 
 def finalise__interactive(input_file):
     input_file = Path(input_file)
