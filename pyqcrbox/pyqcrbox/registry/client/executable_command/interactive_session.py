@@ -7,7 +7,7 @@ import anyio
 
 from pyqcrbox import helpers, logger
 from pyqcrbox.registry.client.executable_command import BaseCommand
-from pyqcrbox.registry.client.executable_command.error import error_dialog_box
+from pyqcrbox.registry.client.executable_command.error import PrepareCommandFailure, RunCommandFailure, error_dialog_box
 from pyqcrbox.registry.client.executable_command.python_callable import PythonCallable
 from pyqcrbox.sql_models import InteractiveSessionSpec
 
@@ -144,7 +144,9 @@ class InteractiveSession(BaseCommand):
                         f"Exception raised by prepare_cmd (calc status {calc_status}): {raised_exception}",
                     )
                     error_dialog_box(f"An error occurred in the prepare command: {raised_exception}")
-                    raise RuntimeError("Prepare command failed") from interactive_session_calc.prepare_calc.exception
+                    raise PrepareCommandFailure(
+                        "Prepare command failed"
+                    ) from interactive_session_calc.prepare_calc.exception
                 logger.debug("Prepare command has finished executing")
 
             # Run the main interactive command (run command), wait for it to finish
@@ -163,7 +165,7 @@ class InteractiveSession(BaseCommand):
                     f"Exception raised by run_cmd (calc status {calc_status}): {raised_exception}",
                 )
                 error_dialog_box(f"An error occurred in the run command: {raised_exception}")
-                raise RuntimeError("Run command failed") from interactive_session_calc.run_calc.exception
+                raise RunCommandFailure("Run command failed") from interactive_session_calc.run_calc.exception
             logger.debug("Run command has finished executing")
 
             # Launch finalise command, but don't wait for it to finish. We wait for this

@@ -3,7 +3,7 @@ import asyncio
 import anyio
 
 from pyqcrbox import logger
-from pyqcrbox.registry.client.executable_command.error import error_dialog_box
+from pyqcrbox.registry.client.executable_command.error import FinaliseCommandFailure, error_dialog_box
 from pyqcrbox.services import get_data_file_manager
 from pyqcrbox.sql_models import CalculationStatusEnum
 
@@ -84,8 +84,8 @@ class InteractiveSessionCalculation(BaseCalculation):
             if self.finalise_calc.exception:
                 calc_status = self.finalise_calc.status
                 logger.error(f"Exception raised by finalise_cmd ({calc_status}): {self.finalise_calc.exception!r}")
-                error_dialog_box(f"An error occured in the finalise command: {self.finalise_calc.exception}")
-                raise RuntimeError("Finalise command failed") from self.finalise_calc.exception
+                error_dialog_box(f"An error occurred in the finalise command: {self.finalise_calc.exception}")
+                raise FinaliseCommandFailure("Finalise command failed") from self.finalise_calc.exception
             logger.debug("Finalise command has finished")
 
             output_file = self.finalise_calc.return_value

@@ -3,6 +3,18 @@ import tkinter
 import tkinter.messagebox
 
 
+class PrepareCommandFailure(Exception):
+    pass
+
+
+class RunCommandFailure(Exception):
+    pass
+
+
+class FinaliseCommandFailure(Exception):
+    pass
+
+
 def error_dialog_box(message: str) -> multiprocessing.Process:
     """Display an error dialog with the given message using tkinter messagebox.
 
