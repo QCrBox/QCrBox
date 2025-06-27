@@ -25,6 +25,7 @@ dependencies = [
     "pydantic-settings",
     "requests",
     "rich",
+    "rich_click",
     "setuptools_scm",
     "sqlmodel",
     "svcs",
