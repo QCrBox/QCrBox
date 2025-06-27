@@ -41,7 +41,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         self.client_id = client_id
         self.private_routing_key = private_routing_key or generate_private_routing_key()
         self.work_root_dir = work_root_dir or self._create_work_root_dir()
-        self._calculations: list[BaseCommand] = []
+        self._calculations: list[BaseCalculation] = []
         self.status = ClientStatus(client_id, ClientStatusEnum.IDLE)
 
     def _create_work_root_dir(self) -> None:
@@ -153,7 +153,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
 
         if self.status.status != ClientStatusEnum.PENDING:
             logger.error(
-                f"Trying to execute a command when client is not PENDING. Current status: {self.status.status}"
+                f"Trying to execute a command when client is not PENDING (current status: {self.status.status})"
             )
             return
         self.status.set_busy()
@@ -162,7 +162,6 @@ class QCrBoxClient(QCrBoxServerClientBase):
 
         try:
             cmd = self.get_executable_command(msg.command_name)
-            logger.debug(f"InteractiveSession: Retrieved command {cmd.cmd_spec!r} ")
             # Parse each argument in `msg.arguments` as the correct parameter type
             # Steps:
             #   - get the command spec and look up parameter types for each argument
@@ -179,17 +178,10 @@ class QCrBoxClient(QCrBoxServerClientBase):
                 raise RuntimeError("Command execution did not return a calculation object.")
             logger.debug(f"Executing command has returned calculation: {calc!r}")
         except Exception as exc:
-            error_msg = f"Command execution has failed: {exc!r}"
-            logger.error(error_msg)
-            status_details = CalculationStatusDetails(
-                calculation_id=msg.calculation_id,
-                status=CalculationStatusEnum.FAILED,
-                stdout="",
-                stderr="",
-                extra_info={"error_msg": error_msg},
+            logger.error(
+                f"Command (either prepare or run) failed in background task with exception: {exc!r}",
             )
-            await update_calculation_status_in_nats_kv(status_details)
-            self.status.set_idle()  # Should we set it back to idle? There could be a zombie process
+            await self.handle_command_execution_exception(msg.calculation_id, exc)
             return
 
         # Keep track of the calculation, which should still be running
@@ -197,8 +189,43 @@ class QCrBoxClient(QCrBoxServerClientBase):
         await update_calculation_status_in_nats_kv(await calc.get_status_details())
 
         # Wait until its finished and when finished, updated the details
-        await calc.wait_until_finished()
+        try:
+            await calc.wait_until_finished()
+        except Exception as exc:
+            logger.error(
+                f"Command (finalise) failed in background task with exception: {exc!r}",
+            )
+            await self.handle_command_execution_exception(msg.calculation_id, exc)
+            return
+
         await update_calculation_status_in_nats_kv(await calc.get_status_details())
+
+    async def handle_command_execution_exception(self, calculation_id: str, exception: Exception) -> None:
+        """Handle a command execution error.
+
+        This updates the calculation status to FAILED and sets the client back to
+        being idle. You therefore need to return from ASAP `handle_command_execution`
+        after calling this function.
+
+        Parameters
+        ----------
+        calculation_id : str
+            The calculation ID of the command.
+        exception : Exception
+            The exception raised by the command.
+
+        """
+        status_details = CalculationStatusDetails(
+            calculation_id=calculation_id,
+            status=CalculationStatusEnum.FAILED,
+            stdout="",
+            stderr="",
+            extra_info={"error_msg": f"Exception raised in background task: {exception!r}"},
+        )
+        await update_calculation_status_in_nats_kv(status_details)
+        # Set client back to being idle, otherwise we wouldn't be able to request
+        # new commands
+        self.status.set_idle()
 
     async def close_interactive_session(
         self, msg: msg_specs.CloseInteractiveSessionNATS
@@ -236,24 +263,33 @@ class QCrBoxClient(QCrBoxServerClientBase):
             )
             return response
 
-        calc = self.calculations[session_id]
+        try:
+            calc = self.calculations[session_id]
+        except KeyError:
+            logger.error(f"Unable to find calculation with session_id={session_id!r}")
+            response = msg_specs.CloseInteractiveSessionResponseNATS(
+                session_id=session_id, status=CalculationStatusEnum.FAILED, output_dataset_id=None
+            )
+            return response
+
+        logger.debug(f"Attempting to close interactive session: {calc}")
         try:
             await calc.terminate()
             self.status.set_idle()  # Set status to idle so container can be re-used
         except AttributeError:
             logger.error(f"Calculation {session_id!r} is not an interactive session")
-            response = msg_specs.CloseInteractiveSessionNATS(
+            response = msg_specs.CloseInteractiveSessionResponseNATS(
                 session_id=session_id, status=CalculationStatusEnum.FAILED, output_dataset_id=None
             )
             return response
 
-        msg = msg_specs.CloseInteractiveSessionResponseNATS(
+        response = msg_specs.CloseInteractiveSessionResponseNATS(
             session_id=session_id,
             status=calc.status,
             output_dataset_id=calc.output_dataset_id,
         )
 
-        return msg
+        return response
 
     async def get_calculation_status(
         self, msg: msg_specs.GetCalculationStatusNATS
@@ -280,7 +316,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         )
         return response
 
-    def get_executable_command(self, command_name):
+    def get_executable_command(self, command_name: str) -> BaseCommand:
         """Retrieve an executable command object by its name.
 
         Parameters

@@ -38,6 +38,7 @@ class PythonCallableCalculation(BaseCalculation):
         self._apply_result = result
         self.pool = pool
         self.return_value = None
+        self.exception = None
 
     async def wait_until_finished(self):
         """Wait until the calculation is finished."""
@@ -65,7 +66,7 @@ class PythonCallableCalculation(BaseCalculation):
                 try:
                     self._apply_result.get()
                 except Exception as exc:
-                    self.return_value = exc
+                    self.exception = exc
             logger.debug("Calculation finished, closing multiprocessing pool.")
             # When the result is ready, we can close the pool normally without
             # having to forcefully terminate the process and child processes

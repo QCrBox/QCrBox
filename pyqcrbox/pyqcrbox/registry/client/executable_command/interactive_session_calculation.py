@@ -1,3 +1,5 @@
+import asyncio
+
 import anyio
 
 from pyqcrbox import logger
@@ -14,6 +16,7 @@ class InteractiveSessionCalculation(BaseCalculation):
         *,
         calculation_id: str,
         calc_finished_event: anyio.Event,
+        async_task: asyncio.Task,
         prepare_calc: BaseCalculation | None,
         run_calc: BaseCalculation,
         finalise_calc: BaseCalculation | None,
@@ -22,12 +25,10 @@ class InteractiveSessionCalculation(BaseCalculation):
         self.prepare_calc = prepare_calc
         self.run_calc = run_calc
         self.finalise_calc = finalise_calc
+        self.background_task = async_task
         self.is_closed = False
         self.output_dataset_id = None
         self.session_closed_event = anyio.Event()
-        logger.debug(
-            f"Created new InteractiveSessionCalculation: {self!r}",
-        )
 
     @property
     def status(self) -> CalculationStatusEnum:
@@ -63,6 +64,13 @@ class InteractiveSessionCalculation(BaseCalculation):
             If the output file from the 'finalise' command cannot be found during import.
 
         """
+        # await the background task so we can capture any exceptions which were raised
+        # in it and re-raise them to propagate them back up
+        try:
+            await self.background_task
+        except Exception:
+            raise
+
         # We have to wait for the "calc_finished" event to be set, which only can happen
         # when we try and close the interactive session
         logger.debug("Waiting for 'calc_finished' event to be set upon calculation termination")

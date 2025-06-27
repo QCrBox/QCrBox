@@ -1,6 +1,5 @@
 import asyncio
 import os
-import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -8,6 +7,7 @@ import anyio
 
 from pyqcrbox import helpers, logger
 from pyqcrbox.registry.client.executable_command import BaseCommand
+from pyqcrbox.registry.client.executable_command.error import error_dialog_box
 from pyqcrbox.registry.client.executable_command.python_callable import PythonCallable
 from pyqcrbox.sql_models import InteractiveSessionSpec
 from pyqcrbox.sql_models.calculation_status_event import CalculationStatusEnum
@@ -68,7 +68,7 @@ class InteractiveSession(BaseCommand):
         _stdin_stream: asyncio.StreamWriter | None = None,
         _stdout_stream: asyncio.StreamReader | None = None,
         _stderr_stream: asyncio.StreamReader | None = None,
-        _cwd: str | Path = None,
+        _cwd: str | Path | None = None,
         **kwargs,
     ) -> InteractiveSessionCalculation:
         """Launch an interactive session calculation asynchronously.
@@ -109,7 +109,8 @@ class InteractiveSession(BaseCommand):
         interactive_session_calc = InteractiveSessionCalculation(
             calculation_id=_calculation_id,
             calc_finished_event=calc_finished_event,
-            prepare_calc=None,  # the following three will be set after the task begins
+            async_task=None,  # the following will be set after the task begins
+            prepare_calc=None,
             run_calc=None,
             finalise_calc=None,
         )
@@ -136,16 +137,14 @@ class InteractiveSession(BaseCommand):
                     **param_values,
                 )
                 await interactive_session_calc.prepare_calc.wait_until_finished()
-                logger.debug("Prepare command has finished executing")
                 if interactive_session_calc.prepare_calc.status == CalculationStatusEnum.FAILED:
+                    raised_exception = interactive_session_calc.prepare_calc.exception
                     logger.error(
-                        f"Exception raised by prepare_cmd: {interactive_session_calc.prepare_calc.return_value}"
+                        f"Exception raised by prepare_cmd: {raised_exception}",
                     )
-                    subprocess.run(
-                        ["/bin/bash", "xmessage", "Prepare command failed!"],
-                        env={**os.environ, "DISPLAY": ":0"},
-                    )
-                    return
+                    error_dialog_box(f"An error occurred in the prepare command: {raised_exception}")
+                    raise RuntimeError("Prepare command failed") from interactive_session_calc.prepare_calc.exception
+                logger.debug("Prepare command has finished executing")
 
             logger.debug(f"Executing run command in background and waiting for it to finish: {run_cmd}")
             interactive_session_calc.run_calc = await run_cmd.execute_in_background(
@@ -166,6 +165,6 @@ class InteractiveSession(BaseCommand):
                     **param_values,
                 )
 
-        asyncio.create_task(session_tasks())
+        interactive_session_calc.background_task = asyncio.create_task(session_tasks())
 
         return interactive_session_calc

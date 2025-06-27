@@ -1,9 +1,8 @@
 from typing import TYPE_CHECKING
 
-from click import BaseCommand
-
 from pyqcrbox.sql_models.command_spec import ImplementedAs
 
+from .base_command import BaseCommand
 from .cli_command import CLICommand
 from .interactive_session import InteractiveSession
 from .python_callable import PythonCallable
