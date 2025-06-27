@@ -36,10 +36,15 @@ class CLICmdCalculation(BaseCalculation):
 
     async def wait_until_finished(self):
         """Wait until the calculation is finished."""
-        # await self.proc.wait()
-        await self.calc_finished_event.wait()
+        await self.proc.wait()
         if self.status == CalculationStatusEnum.FAILED:
-            logger.error(f"CLI Command failed:\nStdout:\n\n{await self.stdout}\n\nStderr:\n\n{await self.stderr}")
+            logger.error(
+                f"CLI Command failed:\nStdout:\n\n{await self.stdout}\n\nStderr:\n\n{await self.stderr}",
+            )
+            self.exception = RuntimeError(
+                f"CLI command failed with return code {self.proc.returncode}: {await self.stderr}"
+            )
+        self.calc_finished_event.set()
 
     @property
     def status(self) -> CalculationStatusEnum:
