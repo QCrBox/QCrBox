@@ -3,6 +3,7 @@ import asyncio
 import anyio
 
 from pyqcrbox import logger
+from pyqcrbox.registry.client.executable_command.error import error_dialog_box
 from pyqcrbox.services import get_data_file_manager
 from pyqcrbox.sql_models import CalculationStatusEnum
 
@@ -69,8 +70,6 @@ class InteractiveSessionCalculation(BaseCalculation):
         try:
             await self.background_task
         except Exception:
-            self.is_closed = True
-            self.session_closed_event.set()
             raise
 
         # We have to wait for the "calc_finished" event to be set, which only can happen
@@ -82,6 +81,11 @@ class InteractiveSessionCalculation(BaseCalculation):
             assert isinstance(self.finalise_calc, PythonCallableCalculation)
             logger.debug(f"Waiting for 'finalise' command to finish: {self.finalise_calc!r}")
             await self.finalise_calc.wait_until_finished()
+            if self.finalise_calc.exception:
+                calc_status = self.finalise_calc.status
+                logger.error(f"Exception raised by finalise_cmd ({calc_status}): {self.finalise_calc.exception!r}")
+                error_dialog_box(f"An error occured in the finalise command: {self.finalise_calc.exception}")
+                raise RuntimeError("Finalise command failed") from self.finalise_calc.exception
             logger.debug("Finalise command has finished")
 
             output_file = self.finalise_calc.return_value

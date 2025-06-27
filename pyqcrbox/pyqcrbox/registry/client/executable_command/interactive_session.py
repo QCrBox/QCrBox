@@ -163,7 +163,6 @@ class InteractiveSession(BaseCommand):
                     f"Exception raised by run_cmd (calc status {calc_status}): {raised_exception}",
                 )
                 error_dialog_box(f"An error occurred in the run command: {raised_exception}")
-                await interactive_session_calc.run_calc.terminate()
                 raise RuntimeError("Run command failed") from interactive_session_calc.run_calc.exception
             logger.debug("Run command has finished executing")
 

@@ -9,6 +9,7 @@ from litestar import Litestar
 from pyqcrbox import helpers, logger, msg_specs, settings, sql_models
 from pyqcrbox.helpers import generate_private_routing_key
 from pyqcrbox.registry.client.executable_command.base_calculation import BaseCalculation
+from pyqcrbox.registry.client.executable_command.interactive_session_calculation import InteractiveSessionCalculation
 from pyqcrbox.registry.shared.calculation_status import update_calculation_status_in_nats_kv
 from pyqcrbox.services import get_data_file_manager
 from pyqcrbox.sql_models import CalculationStatusDetails, CalculationStatusEnum
@@ -197,6 +198,9 @@ class QCrBoxClient(QCrBoxServerClientBase):
             logger.error(
                 f"Calculation failed in background task with exception: {exc!r}",
             )
+            if isinstance(calc, InteractiveSessionCalculation):
+                calc.is_closed = True
+                calc.session_closed_event.set()
             await self.handle_command_execution_exception(msg.calculation_id, exc)
             return
 
