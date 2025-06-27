@@ -15,8 +15,9 @@ certifi==2024.8.30
     # via
     #   httpcore
     #   httpx
-cffi==1.17.1
-    # via cryptography
+    #   requests
+charset-normalizer==3.4.2
+    # via requests
 click==8.1.7
     # via
     #   hatch
@@ -26,8 +27,6 @@ click==8.1.7
     #   uvicorn
 cloudpickle==3.0.0
     # via doit
-cryptography==43.0.1
-    # via secretstorage
 distlib==0.3.8
     # via virtualenv
 doit==0.36.0
@@ -44,8 +43,6 @@ gitdb==4.0.11
     # via gitpython
 gitpython==3.1.43
     # via pyqcrbox (pyproject.toml)
-greenlet==3.1.1
-    # via sqlalchemy
 h11==0.14.0
     # via
     #   httpcore
@@ -69,6 +66,7 @@ idna==3.10
     #   anyio
     #   httpx
     #   hyperlink
+    #   requests
 importlib-metadata==8.5.0
     # via doit
 jaraco-classes==3.4.0
@@ -77,10 +75,6 @@ jaraco-context==6.0.1
     # via keyring
 jaraco-functools==4.1.0
     # via keyring
-jeepney==0.8.0
-    # via
-    #   keyring
-    #   secretstorage
 keyring==25.4.1
     # via hatch
 litestar==2.12.1
@@ -105,6 +99,7 @@ packaging==24.1
     # via
     #   hatch
     #   hatchling
+    #   setuptools-scm
 pathspec==0.12.1
     # via hatchling
 pexpect==4.9.0
@@ -119,8 +114,6 @@ polyfactory==2.17.0
     # via litestar
 ptyprocess==0.7.0
     # via pexpect
-pycparser==2.22
-    # via cffi
 pydantic==2.9.2
     # via
     #   pyqcrbox (pyproject.toml)
@@ -143,6 +136,8 @@ pyyaml==6.0.2
     # via
     #   litestar
     #   uvicorn
+requests==2.32.3
+    # via pyqcrbox (pyproject.toml)
 rich==13.9.1
     # via
     #   pyqcrbox (pyproject.toml)
@@ -151,8 +146,10 @@ rich==13.9.1
     #   rich-click
 rich-click==1.8.3
     # via litestar
-secretstorage==3.3.3
-    # via keyring
+setuptools==80.7.1
+    # via setuptools-scm
+setuptools-scm==8.3.1
+    # via pyqcrbox (pyproject.toml)
 shellingham==1.5.4
     # via hatch
 six==1.16.0
@@ -195,6 +192,8 @@ typing-extensions==4.12.2
     #   pydantic-core
     #   rich-click
     #   sqlalchemy
+urllib3==2.4.0
+    # via requests
 userpath==1.9.2
     # via hatch
 uv==0.4.18

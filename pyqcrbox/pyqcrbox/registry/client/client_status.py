@@ -11,7 +11,8 @@ class ClientStatusEnum(StrEnum):
 
 
 class ClientStatus:
-    def __init__(self, initial_status: ClientStatusEnum | str = ClientStatusEnum.IDLE):
+    def __init__(self, client_id: str, initial_status: ClientStatusEnum | str = ClientStatusEnum.IDLE):
+        self._client_id = client_id
         self._status = ClientStatusEnum(initial_status)
 
     @property
@@ -24,16 +25,20 @@ class ClientStatus:
 
     def set_pending(self) -> None:
         if self.status != ClientStatusEnum.IDLE:
-            raise RuntimeError(f"Cannot set status to 'pending' from '{self.status} (current status must be 'idle').")
-        logger.debug("Setting client status to 'pending'")
+            raise RuntimeError(
+                f"Cannot set status to 'pending' from '{self.status} for {self._client_id} (status must be 'idle')."
+            )
+        logger.debug(f"Setting client status to 'pending' for {self._client_id}")
         self._status = ClientStatusEnum.PENDING
 
     def set_idle(self) -> None:
-        logger.debug("Setting client status to 'idle'")
+        logger.debug(f"Setting client status to 'idle' for {self._client_id}")
         self._status = ClientStatusEnum.IDLE
 
     def set_busy(self) -> None:
         if self.status != ClientStatusEnum.PENDING:
-            raise RuntimeError(f"Cannot set status to 'busy' from '{self.status} (current status must be 'pending').")
-        logger.debug("Setting client status to 'busy'")
+            raise RuntimeError(
+                f"Cannot set status to 'busy' from '{self.status} for {self._client_id} (status must be 'pending')."
+            )
+        logger.debug(f"Setting client status to 'busy' for {self._client_id}")
         self._status = ClientStatusEnum.BUSY

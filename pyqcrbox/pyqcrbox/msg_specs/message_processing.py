@@ -5,9 +5,9 @@ import json
 from functools import singledispatch
 
 import pydantic
-from loguru import logger  # TODO: switch to FastStream logger
 
 from pyqcrbox import msg_specs
+from pyqcrbox.logging import logger
 
 from .base import InvalidQCrBoxAction, QCrBoxGenericResponse, look_up_action_class
 

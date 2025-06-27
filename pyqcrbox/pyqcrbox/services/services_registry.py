@@ -3,6 +3,7 @@ from faststream.nats import NatsBroker
 
 from pyqcrbox import settings
 from pyqcrbox.data_management import DataFileManager, NatsDataFileManager
+from pyqcrbox.logging import logger
 
 
 class DevelopmentServicesRegistry(svcs.Registry):
@@ -14,7 +15,7 @@ class DevelopmentServicesRegistry(svcs.Registry):
         self.register_factory(NatsBroker, self.create_nats_broker)
 
     def create_nats_broker(self):
-        return NatsBroker(settings.nats.url, graceful_timeout=10, max_reconnect_attempts=1)
+        return NatsBroker(settings.nats.url, graceful_timeout=10, max_reconnect_attempts=1, logger=logger)
 
 
 def get_qcrbox_services_registry():

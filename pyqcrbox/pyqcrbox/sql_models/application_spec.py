@@ -35,6 +35,7 @@ class ApplicationSpecBase(QCrBoxPydanticBaseModel):
     email: str | None = None
     doi: str | None = None
     yaml_file_path: str | None = Field(exclude=True, default=None)
+    gui_port: str | None = None
 
     _cmds_by_name: Namespace = PrivateAttr
 
@@ -76,7 +77,7 @@ class ApplicationSpecBase(QCrBoxPydanticBaseModel):
     def command_names(self) -> list[str]:
         return list(self.cmds_by_name.keys())
 
-    def get_command_by_name(self, cmd_name: str) -> CommandSpecDiscriminatedUnion:
+    def get_command_spec_by_name(self, cmd_name: str) -> CommandSpecDiscriminatedUnion:
         return self.cmds_by_name[cmd_name]
 
 

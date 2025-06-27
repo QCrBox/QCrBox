@@ -4,6 +4,7 @@ __all__ = ["QCRBOX_SVCS_REGISTRY", "get_nats_broker", "get_nats_key_value"]
 
 from faststream.nats import NatsBroker
 
+from pyqcrbox.logging import logger
 from pyqcrbox.settings import settings
 
 QCRBOX_SVCS_REGISTRY = svcs.Registry()
@@ -13,7 +14,7 @@ def _create_nats_broker_instance():
     """
     Convenience function to create a NatsBroker instance with the correct settings.
     """
-    return NatsBroker(settings.nats.url, graceful_timeout=10, max_reconnect_attempts=1)
+    return NatsBroker(settings.nats.url, graceful_timeout=10, max_reconnect_attempts=1, logger=logger)
 
 
 async def get_nats_broker(connect=False):

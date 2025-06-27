@@ -11,10 +11,7 @@ YAML_PATH = "/opt/qcrbox/config_olex2.yaml"
 def refine(args):
     work_cif_path = args.input_cif_path.parent / "qcrbox_work.cif"
 
-    if args.tsc_path:
-        command_name = "refine_tsc"
-    else:
-        command_name = "refine_iam"
+    command_name = "refine_tsc" if args.tsc_path else "refine_iam"
 
     cif_file_to_specific_by_yml(args.input_cif_path, work_cif_path, YAML_PATH, command_name, "input_cif_path")
 
@@ -56,7 +53,6 @@ def run_commands(args):
 
 def main():
     parser = argparse.ArgumentParser()
-
     subparsers = parser.add_subparsers(required=True)
 
     parser_refine = subparsers.add_parser(
@@ -87,6 +83,7 @@ def main():
 
     # Parse arguments
     args = parser.parse_args()
+    print(args)
 
     args.func(args)
 

@@ -6,14 +6,12 @@ from typing import Any, Optional
 
 import sqlalchemy
 import sqlmodel
-from loguru import logger
 from pydantic import computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlmodel import Session, create_engine
 
-__all__ = ["settings"]
+__all__ = ["StructlogRendererEnum", "get_log_level_as_int", "settings"]
 
-IS_RUNNING_INSIDE_TESTS = hasattr(sys, "_qcrbox_running_inside_tests")
 
 SQLiteDsn = str  # alias for readability
 
@@ -30,6 +28,7 @@ def create_sqlmodel_engine(url: Optional[SQLiteDsn], echo: bool, connect_args: t
 
 @functools.lru_cache
 def _create_db_tables(engine, purge_existing: bool):
+    from pyqcrbox.logging import logger
     from pyqcrbox.sql_models import QCrBoxBaseSQLModel  # import here to avoid a circular import
 
     logger.debug(f"Initialising the database for engine: {engine}")
@@ -125,9 +124,13 @@ class StructlogRendererEnum(Enum):
     JSON = "json"
 
 
+sys._qcrbox_running_inside_tests = True
+IS_RUNNING_INSIDE_TESTS = hasattr(sys, "_qcrbox_running_inside_tests")
+
+
 class LoggingSettings(QCrBoxSettingsBaseModel):
     log_level: str = "INFO" if not IS_RUNNING_INSIDE_TESTS else "DEBUG"
-    renderer: StructlogRendererEnum = StructlogRendererEnum.CONSOLE
+    renderer: StructlogRendererEnum = StructlogRendererEnum.JSON
 
     @property
     def log_level_as_int(self):
@@ -142,6 +145,7 @@ class QCrBoxSettings(QCrBoxSettingsBaseModel):
         env_prefix="QCRBOX__",
     )
 
+    debug_mode: bool = False if not IS_RUNNING_INSIDE_TESTS else True
     nats: NATSSettings = NATSSettings()
     registry: RegistrySettings = RegistrySettings()
     db: DatabaseSettings = DatabaseSettings()

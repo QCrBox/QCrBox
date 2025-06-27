@@ -1,3 +1,4 @@
 nav:
   - Contents: contents.md
+  - Architecture & key components: architecture.md
   - ...

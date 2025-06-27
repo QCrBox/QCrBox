@@ -9,30 +9,26 @@ url: "https://crystalexplorer.net/"
 doi: 10.1107/S1600576721002910
 
 commands:
-  - name: "interactive"
-    implemented_as: "interactive"
+  - name: "interactive_session"
+    implemented_as: "interactive_session"
     description: "Run Crystal Explorer interactively"
     parameters:
-      - name: "input_cif_path"
-        dtype: "QCrBox.input_cif"
-        default_value: None
-        description: "Path to the CIF file to be analyzed"
-        required_entry_sets: ["cif_structure_ddl1"]
-        merge_su: Yes
-        custom_categories: ["iucr", "shelx"]
-      - name: "work_cif_path"
-        dtype: "QCrBox.work_cif"
-        description: "Path used for creating the specific cif file in Crystal Explorer compatible format."
+      - name: "input_file"
+        dtype: "QCrBox.cif_data_file"
+        description: "The CIF file to be analyzed"
+        #required_entry_sets: ["cif_structure_ddl1"]
+        #merge_su: Yes
+        #custom_categories: ["iucr", "shelx"]
     interactive_lifecycle:
-      prepare:
-        implemented_as: "python_callable"
-        import_path: "configure_crystal_explorer"
-        callable_name: "prepare__interactive"
-        used_basecommand_parameters: ["input_cif_path", "work_cif_path"]
+      #prepare:
+      #  implemented_as: "python_callable"
+      #  import_path: "configure_crystal_explorer"
+      #  callable_name: "prepare__interactive"
+      #  used_basecommand_parameters: ["input_cif_path", "work_cif_path"]
       run:
         implemented_as: "cli_command"
-        call_pattern: "/usr/bin/CrystalExplorer --open {work_cif_path}"
-        used_basecommand_parameters: ["work_cif_path"]
+        call_pattern: "/usr/bin/CrystalExplorer --open {input_file}"
+        used_basecommand_parameters: ["input_file"]
 
 cif_entry_sets:
   - name: cif_structure_ddl1

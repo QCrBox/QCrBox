@@ -16,6 +16,7 @@ services:
       QCRBOX__NATS__HOST: "qcrbox-nats"
       QCRBOX__REGISTRY__SERVER__HOST: "qcrbox-registry"
       QCRBOX__REGISTRY__SERVER__PORT: "8000"
+      QCRBOX__GUI__PORT: ${QCRBOX_CRYSTAL_EXPLORER_PORT}
     labels:
       traefik.enable: true
       traefik.http.routers.to-crystal-explorer-path-prefix.rule: Path(`/gui/crystal-explorer`)
@@ -32,4 +33,8 @@ services:
 
       traefik.http.services.crystal-explorer-service.loadbalancer.server.scheme: http
       traefik.http.services.crystal-explorer-service.loadbalancer.server.port: 8080
-
+    logging:
+      driver: "syslog"
+      options:
+        syslog-address: udp://127.0.0.1:514
+        tag: "crystal-explorer"

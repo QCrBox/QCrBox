@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-from .base import DataFileManager
+from .data_file_manager import DataFileManager
 
 
 class DummyDataFileManager(DataFileManager):

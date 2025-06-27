@@ -22,6 +22,16 @@ prompt_for_confirmation() {
 }
 
 
+abort_if_not_running_within_devbox_shell() {
+    local devbox_shell_enabled=${DEVBOX_SHELL_ENABLED:-}
+
+    if [ "${devbox_shell_enabled}" = "" ]; then
+        echo "This script must be run from within a devbox shell."
+        echo "Please run 'devbox shell' and then execute it again."
+        exit 1
+    fi
+}
+
 print_planned_actions() {
     local qcrbox_repo=$1
     local branch=$2
@@ -35,17 +45,25 @@ print_planned_actions() {
 }
 
 
+remove_docker_volumes() {
+    echo "Removing Docker volumes for NATS storage and QCrBox server db"
+    docker volume rm -f qcrbox_qcrbox-nats-storage qcrbox_qcrbox-registry-db
+}
+
+
 main() {
+    abort_if_not_running_within_devbox_shell
     print_planned_actions "${QCRBOX_REPO}" "${QCRBOX_BRANCH}" "${QCRBOX_COMPONENTS}"
     prompt_for_confirmation
 
     cd $QCRBOX_REPO
-    devbox run qcb down
-    devbox run git checkout $QCRBOX_BRANCH
-    devbox run git pull
-    devbox run qcb build $QCRBOX_COMPONENTS
-    devbox run qcb up --no-build $QCRBOX_COMPONENTS
+    qcb down
+    remove_docker_volumes
+    git checkout $QCRBOX_BRANCH
+    git pull
+    qcb build $QCRBOX_COMPONENTS
+    qcb up --no-build $QCRBOX_COMPONENTS
 
-    echo "Deployment successful"
+    echo "Successfully deployed branch: ${QCRBOX_BRANCH}"
 }
 main

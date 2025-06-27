@@ -5,16 +5,14 @@ from typing import Optional
 import click
 from loguru import logger
 
-from pyqcrbox.logging import set_log_level
-
 
 def add_verbose_option(f):
     @functools.wraps(f)
     def wrapper(ctx, verbose, *args, **kwargs):
         ctx.ensure_object(dict)  # ensure that ctx.obj exists and is a dict
         ctx.obj["VERBOSE"] = verbose or ctx.obj.get("VERBOSE", False)
-        if ctx.obj["VERBOSE"]:
-            set_log_level("DEBUG")
+        # if ctx.obj["VERBOSE"]:
+        #     set_log_level("DEBUG")
         return f(*args, **kwargs)
 
     wrapper = click.option(
@@ -30,7 +28,7 @@ def add_verbose_option(f):
 
 
 def add_cli_option_to_enable_or_disable_components(f):
-    DEFAULT_ALL_COMPONENTS = ("olex2", "crystal-explorer", "xharpy-gpaw", "qcrboxtools")
+    DEFAULT_ALL_COMPONENTS = ("olex2", "crystal-explorer")
     DEFAULT_EXPLICITLY_ENABLED_COMPONENTS = ()
     DEFAULT_EXPLICITLY_DISABLED_COMPONENTS = ("shelx", "qcrbox-nextflow", "eval1x")
 

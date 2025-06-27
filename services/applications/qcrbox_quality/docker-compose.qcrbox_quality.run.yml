@@ -1,0 +1,31 @@
+services:
+  qcrbox_quality:
+    image: "qcrbox/qcrbox_quality:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
+    build:
+      context: services/applications/qcrbox_quality/
+      args:
+        QCRBOX_DOCKER_TAG: ${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}
+    depends_on:
+      qcrbox-registry:
+        condition: service_healthy
+    volumes:
+      - ${QCRBOX_SHARED_FILES_DIR_HOST_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_HOST_PATH}:${QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH}
+    networks:
+      - qcrbox-net
+    restart: unless-stopped
+    labels:
+      traefik.enable: true
+      traefik.http.routers.to-path-prefix.rule: Path(`/gui/qcrbox_quality`)
+      traefik.http.routers.to-path-prefix.middlewares: redirect-gui-path
+      traefik.http.routers.to-path-prefix.service: qcrbox_quality-service
+      traefik.http.middlewares.redirect-gui-path.redirectregex.regex: ^http://(.+)/gui/qcrbox_quality(/?)$$
+      traefik.http.middlewares.redirect-gui-path.redirectregex.replacement: http://qcrbox_quality.gui.$$1/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true
+
+      traefik.http.routers.to-subdomain.rule: HostRegexp(`^qcrbox_quality\.gui\..+$$`)
+      traefik.http.routers.to-subdomain.middlewares: redirect-gui-subdomain
+      traefik.http.routers.to-subdomain.service: qcrbox_quality-service
+      traefik.http.middlewares.redirect-gui-subdomain.redirectregex.regex: ^http://qcrbox_quality\.gui\.([^/]+)(/?)$$
+      traefik.http.middlewares.redirect-gui-subdomain.redirectregex.replacement: http://qcrbox_quality.gui.$$1/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true
+
+      traefik.http.services.qcrbox_quality-service.loadbalancer.server.scheme: http
+      traefik.http.services.qcrbox_quality-service.loadbalancer.server.port: 8080

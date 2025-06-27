@@ -1,7 +1,7 @@
 import contextlib
 import inspect
 from abc import ABCMeta, abstractmethod
-from typing import AsyncContextManager, Optional, assert_never
+from typing import AsyncContextManager, assert_never  # noqa: UP035
 
 import anyio
 import nats.errors
@@ -13,9 +13,9 @@ from anyio.abc import TaskStatus
 from faststream.nats import NatsBroker
 from litestar import Litestar
 from litestar.testing import AsyncTestClient, TestClient
-from loguru import logger
 
 from pyqcrbox import QCRBOX_SVCS_REGISTRY
+from pyqcrbox.logging import logger
 from pyqcrbox.svcs import NatsPersistenceAdapter, SQLitePersistenceAdapter
 from pyqcrbox.svcs.helper_functions import _create_nats_broker_instance
 
@@ -25,7 +25,7 @@ __all__ = ["QCrBoxServerClientBase", "TestQCrBoxServerClientBase"]
 def on_qcrbox_startup(func):
     func._is_qcrbox_startup_hook = True
     sig = inspect.signature(func)
-    func._param_names = [name for name in sig.parameters.keys() if name != "self"]
+    func._param_names = [name for name in sig.parameters if name != "self"]
     return func
 
 
@@ -33,20 +33,13 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
     def __init__(
         self,
         *,
-        # broker: Optional[RabbitBroker] = None,
-        nats_broker: Optional[NatsBroker] = None,
-        asgi_server: Optional[Litestar] = None,
-        svcs_registry: Optional[svcs.Registry] = None,
+        nats_broker: NatsBroker | None = None,
+        asgi_server: Litestar | None = None,
+        svcs_registry: svcs.Registry | None = None,
     ):
-        # self.broker = broker or RabbitBroker(settings.rabbitmq.url, graceful_timeout=10)
         self.nats_broker = nats_broker or _create_nats_broker_instance()
         self.nats_persistence_adapter = NatsPersistenceAdapter()
         self.sqlite_persistence_adapter = SQLitePersistenceAdapter()
-
-        # self.rabbit_exchanges = {
-        #     ExchangeType.DIRECT: RabbitExchange("qcrbox.direct", type=ExchangeType.DIRECT),
-        #     ExchangeType.TOPIC: RabbitExchange("qcrbox.topic", type=ExchangeType.TOPIC),
-        # }
 
         self.svcs_registry = svcs_registry or QCRBOX_SVCS_REGISTRY
         # self.svcs_registry.register_value(RabbitBroker, self.broker)
@@ -72,10 +65,6 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
     @abstractmethod
     def _set_up_nats_broker(self):
         assert_never(self)
-
-    # @abstractmethod
-    # def _set_up_rabbitmq_broker(self):
-    #     assert_never(self)
 
     @abstractmethod
     def _set_up_asgi_server(self) -> None:
@@ -125,12 +114,12 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
 
     async def set_up_key_value_store(self):
         self.kv_applications = await self.nats_broker.key_value(bucket="applications")
-        self.kv_calculation_status = await self.nats_broker.key_value(bucket="calculation_status")
 
-    async def _run_custom_shutdown_tasks(self):
-        """
-        Run custom shutdown tasks. This is a no-op by default but can be used
-        by derived classes to run tasks when the shutdown signal is received.
+    async def _run_custom_shutdown_tasks(self):  # noqa: B027
+        """Run custom shutdown tasks.
+
+        This is a no-op by default but can be used by derived classes to run
+        tasks when the shutdown signal is received.
         """
         pass
 
@@ -139,7 +128,7 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
             func = getattr(self, name)
             if inspect.ismethod(func) and hasattr(func, "_is_qcrbox_startup_hook"):
                 cur_kwargs = {name: value for (name, value) in kwargs.items() if name in func._param_names}
-                logger.trace(f"Executing startup hook {func.__name__!r} with kwargs={cur_kwargs}")
+                logger.debug(f"Executing startup hook {func.__name__!r} with kwargs={cur_kwargs}")
                 if not inspect.iscoroutinefunction(func):
                     func(**cur_kwargs)
                 else:
@@ -147,41 +136,35 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
 
     @contextlib.asynccontextmanager
     async def lifespan_context(self, _: Litestar) -> AsyncContextManager:
-        logger.trace(f"==> Entering {self.clsname} lifespan function...")
-
-        # for attempt in stamina.retry_context(on=aiormq.exceptions.AMQPConnectionError, timeout=60.0, attempts=None):
-        #     with attempt:
-        #         await self.broker.start()
-
+        logger.debug(f"==> Entering {self.clsname} lifespan function...")
         await self._create_private_nats_inbox()
-        # self._set_up_rabbitmq_broker()
         self._set_up_nats_broker()
         await self.start_broker()
         await self.set_up_key_value_store()
         await self.execute_startup_hooks(**self._run_kwargs)
 
         try:
-            logger.trace("Yielding control to ASGI server ...")
+            logger.debug("Yielding control to ASGI server ...")
             yield
-            logger.trace("Received control back from ASGI server ...")
+            logger.debug("Received control back from ASGI server ...")
         finally:
             with contextlib.suppress(KeyError):
                 # with anyio.CancelScope(shield=True):
-                logger.trace("Closing broker.")
+                logger.debug("Closing broker.")
                 # await self.broker.close()
                 await self.nats_broker.close()
-                logger.trace("Done (broker is closed).")
+                logger.debug("Done (broker is closed).")
 
-                logger.trace("Closing SVCS registry.")
+                logger.debug("Closing SVCS registry.")
                 await self.svcs_registry.aclose()
-                logger.trace("Done (SVCS registry is closed).")
+                logger.debug("Done (SVCS registry is closed).")
 
-        logger.trace(f"<== Exiting from {self.clsname} lifespan function.")
+        logger.debug(f"<== Exiting from {self.clsname} lifespan function.")
 
-    def run(self, host: Optional[str] = None, port: Optional[int] = None, **kwargs):
+    def run(self, host: str | None = None, port: int | None = None, **kwargs):
         self.host = host or "127.0.0.1"
         self.port = port or 8000
-        logger.trace(f"Running {self.clsname} with {kwargs=}")
+        logger.debug(f"Running {self.clsname} with {kwargs=}")
         self._run_kwargs = kwargs
         try:
             anyio.run(self.serve)
@@ -191,7 +174,7 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
     async def serve(self, task_status: TaskStatus[None] = TASK_STATUS_IGNORED):
         self._set_up_uvicorn_server()
 
-        logger.trace(f"Entering {self.clsname}.serve()...")
+        logger.debug(f"Entering {self.clsname}.serve()...")
 
         try:
             async with anyio.create_task_group() as tg:
@@ -201,7 +184,7 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
                 while not self.uvicorn_server.started:
                     await anyio.sleep(0.01)
                 task_status.started()
-            logger.trace("Exited task group that served uvicorn...")
+            logger.debug("Exited task group that served uvicorn...")
         except ExceptionGroup as e:  # pragma: no cover
             logger.error(f"[EEE] Exception group: {e}")
             for ex in e.exceptions:
@@ -209,15 +192,15 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
                 raise ex from None
 
     def shutdown(self):
-        logger.trace("Setting shutdown event")
+        logger.debug("Setting shutdown event")
         self._shutdown_event.set()
-        logger.trace("Done, exiting shutdown()")
+        logger.debug("Done, exiting shutdown()")
 
     async def _wait_for_and_handle_shutdown_request(self, cancel_scope: anyio.CancelScope):
         # Wait for shutdown event to be set. This can happen, for example, when the
         # user terminates the process presses (e.g. via Ctrl+C) or when the maximum
         # number of messages has been processed.
-        logger.trace("Waiting for shutdown event to be set...")
+        logger.debug("Waiting for shutdown event to be set...")
         await self._shutdown_event.wait()
         logger.info(f"Received shutdown request, shutting down {self.clsname}.")
         await self._run_custom_shutdown_tasks()
@@ -230,8 +213,8 @@ class TestQCrBoxServerClientBase(QCrBoxServerClientBase):
     @contextlib.asynccontextmanager
     async def run(
         self,
-        host: Optional[str] = None,
-        port: Optional[str] = None,
+        host: str | None = None,
+        port: str | None = None,
         task_status: TaskStatus[None] = TASK_STATUS_IGNORED,
         **kwargs,
     ):
@@ -240,7 +223,7 @@ class TestQCrBoxServerClientBase(QCrBoxServerClientBase):
         self._run_kwargs = kwargs
         self._set_up_uvicorn_server()
 
-        logger.trace(f"Entering {self.clsname}.serve()...")
+        logger.debug(f"Entering {self.clsname}.serve()...")
 
         try:
             async with anyio.create_task_group() as tg:
@@ -252,7 +235,7 @@ class TestQCrBoxServerClientBase(QCrBoxServerClientBase):
                 task_status.started()
                 yield self
                 self.shutdown()
-            logger.trace("Exited task group that served uvicorn...")
+            logger.debug("Exited task group that served uvicorn...")
         except ExceptionGroup as e:  # pragma: no cover
             for ex in e.exceptions:
                 raise ex from None
