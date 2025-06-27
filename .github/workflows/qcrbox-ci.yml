@@ -6,6 +6,7 @@ on:
     branches:
       - dev
       - main
+      - 472-fix-build-docs
   pull_request:
     branches:
       - dev
