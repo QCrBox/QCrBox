@@ -47,13 +47,12 @@ def prepare__interactive(input_file):
     # Create a backup of the original input file
     shutil.copyfile(input_cif_path, input_cif_path.with_suffix(".cif.bak"))
     # Copy the input file to the work file
-    # try:
-    #     shutil.copyfile(input_cif_path, work_cif_path)
-    # except shutil.SameFileError:
-    #     logger.error(
-    #         f"XXX DEBUG MODE: same file error probably due to a previous workflow failure: path={input_cif_path}",
-    #     )
-    shutil.copyfile(input_cif_path, input_cif_path)
+    try:
+        shutil.copyfile(input_cif_path, work_cif_path)
+    except shutil.SameFileError:
+        logger.error(
+            f"XXX DEBUG MODE: same file error probably due to a previous workflow failure: path={input_cif_path}",
+        )
 
 
 def finalise__interactive(input_file):

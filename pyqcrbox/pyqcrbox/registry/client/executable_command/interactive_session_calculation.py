@@ -35,6 +35,8 @@ class InteractiveSessionCalculation(BaseCalculation):
     def status(self) -> CalculationStatusEnum:
         if not self.is_closed:
             return CalculationStatusEnum.RUNNING
+        elif self.exception:
+            return CalculationStatusEnum.FAILED
         else:
             return CalculationStatusEnum.SUCCESSFUL
 
@@ -69,11 +71,15 @@ class InteractiveSessionCalculation(BaseCalculation):
         # in it and re-raise them to propagate them back up
         try:
             await self.background_task
-        except Exception:
+        except Exception as exc:
+            self.exception = exc
             raise
 
         # We have to wait for the "calc_finished" event to be set, which only can happen
-        # when we try and close the interactive session
+        # when we try and close the interactive session. If we didn't wait then due to
+        # how this is set up, we would run the finalise command before we've finished
+        # interacting with the main run command. If we did everything in the foreground,
+        # then we wouldn't have to wait because the run_calc would be blocking.
         logger.debug("Waiting for 'calc_finished' event to be set upon calculation termination")
         await self.calc_finished_event.wait()
 
@@ -85,7 +91,8 @@ class InteractiveSessionCalculation(BaseCalculation):
                 calc_status = self.finalise_calc.status
                 logger.error(f"Exception raised by finalise_cmd ({calc_status}): {self.finalise_calc.exception!r}")
                 error_dialog_box(f"An error occurred in the finalise command: {self.finalise_calc.exception}")
-                raise FinaliseCommandFailure("Finalise command failed") from self.finalise_calc.exception
+                self.exception = FinaliseCommandFailure("Finalise command failed")
+                raise self.exception from self.finalise_calc.exception
             logger.debug("Finalise command has finished")
 
             output_file = self.finalise_calc.return_value
