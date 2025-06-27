@@ -67,10 +67,12 @@ class PythonCallableCalculation(BaseCalculation):
                     self._apply_result.get()
                 except Exception as exc:
                     self.exception = exc
-            logger.debug("Calculation finished, closing multiprocessing pool.")
             # When the result is ready, we can close the pool normally without
             # having to forcefully terminate the process and child processes
             # by hand
+            logger.debug(
+                f"Calculation {self.calculation_id} finished with status {calc_status}, closing multiprocessing pool",
+            )
             self.pool.close()
             self.pool.join()
         else:

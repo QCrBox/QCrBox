@@ -10,7 +10,6 @@ from pyqcrbox.registry.client.executable_command import BaseCommand
 from pyqcrbox.registry.client.executable_command.error import error_dialog_box
 from pyqcrbox.registry.client.executable_command.python_callable import PythonCallable
 from pyqcrbox.sql_models import InteractiveSessionSpec
-from pyqcrbox.sql_models.calculation_status_event import CalculationStatusEnum
 
 from .interactive_session_calculation import InteractiveSessionCalculation
 
@@ -127,6 +126,7 @@ class InteractiveSession(BaseCommand):
         async def session_tasks():
             nonlocal run_cmd, prepare_cmd, finalise_cmd
 
+            # Run prepare command, wait for it to finish, and handle errors
             if prepare_cmd:
                 if not isinstance(prepare_cmd, PythonCallable):
                     raise TypeError("Only `PythonCallable` is supported for 'prepare_cmd'")
@@ -137,15 +137,18 @@ class InteractiveSession(BaseCommand):
                     **param_values,
                 )
                 await interactive_session_calc.prepare_calc.wait_until_finished()
-                if interactive_session_calc.prepare_calc.status == CalculationStatusEnum.FAILED:
+                if interactive_session_calc.prepare_calc.exception:
+                    calc_status = interactive_session_calc.prepare_calc.status
                     raised_exception = interactive_session_calc.prepare_calc.exception
                     logger.error(
-                        f"Exception raised by prepare_cmd: {raised_exception}",
+                        f"Exception raised by prepare_cmd (calc status {calc_status}): {raised_exception}",
                     )
                     error_dialog_box(f"An error occurred in the prepare command: {raised_exception}")
                     raise RuntimeError("Prepare command failed") from interactive_session_calc.prepare_calc.exception
                 logger.debug("Prepare command has finished executing")
 
+            # Run the main interactive command (run command), wait for it to finish
+            # and handle errors
             logger.debug(f"Executing run command in background and waiting for it to finish: {run_cmd}")
             interactive_session_calc.run_calc = await run_cmd.execute_in_background(
                 _calculation_id=helpers.generate_calculation_id(),
@@ -153,8 +156,19 @@ class InteractiveSession(BaseCommand):
                 **param_values,
             )
             await interactive_session_calc.run_calc.wait_until_finished()
+            if interactive_session_calc.run_calc.exception:
+                calc_status = interactive_session_calc.run_calc.status
+                raised_exception = interactive_session_calc.run_calc.exception
+                logger.error(
+                    f"Exception raised by run_cmd (calc status {calc_status}): {raised_exception}",
+                )
+                error_dialog_box(f"An error occurred in the run command: {raised_exception}")
+                await interactive_session_calc.run_calc.terminate()
+                raise RuntimeError("Run command failed") from interactive_session_calc.run_calc.exception
             logger.debug("Run command has finished executing")
 
+            # Launch finalise command, but don't wait for it to finish. We wait for this
+            # to finish in the interactive session calculation
             if finalise_cmd:
                 if not isinstance(finalise_cmd, PythonCallable):
                     raise TypeError("Only `PythonCallable` is supported for 'finalise_cmd'")

@@ -178,8 +178,9 @@ class QCrBoxClient(QCrBoxServerClientBase):
                 raise RuntimeError("Command execution did not return a calculation object.")
             logger.debug(f"Executing command has returned calculation: {calc!r}")
         except Exception as exc:
+            logger.debug("cmd.execute_in_background() raised an exception")
             logger.error(
-                f"Command (either prepare or run) failed in background task with exception: {exc!r}",
+                f"Command failed in background task with exception: {exc!r}",
             )
             await self.handle_command_execution_exception(msg.calculation_id, exc)
             return
@@ -188,12 +189,13 @@ class QCrBoxClient(QCrBoxServerClientBase):
         self.calculations[msg.calculation_id] = calc
         await update_calculation_status_in_nats_kv(await calc.get_status_details())
 
-        # Wait until its finished and when finished, updated the details
+        # Wait until its finished and when finished, update the details
         try:
             await calc.wait_until_finished()
         except Exception as exc:
+            logger.debug("calc.wait_until_finished() raised an exception")
             logger.error(
-                f"Command (finalise) failed in background task with exception: {exc!r}",
+                f"Calculation failed in background task with exception: {exc!r}",
             )
             await self.handle_command_execution_exception(msg.calculation_id, exc)
             return
@@ -225,6 +227,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         await update_calculation_status_in_nats_kv(status_details)
         # Set client back to being idle, otherwise we wouldn't be able to request
         # new commands
+        logger.debug("Setting client status to idle in handle_command_execution_exception")
         self.status.set_idle()
 
     async def close_interactive_session(

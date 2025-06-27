@@ -69,6 +69,8 @@ class InteractiveSessionCalculation(BaseCalculation):
         try:
             await self.background_task
         except Exception:
+            self.is_closed = True
+            self.session_closed_event.set()
             raise
 
         # We have to wait for the "calc_finished" event to be set, which only can happen
@@ -80,6 +82,7 @@ class InteractiveSessionCalculation(BaseCalculation):
             assert isinstance(self.finalise_calc, PythonCallableCalculation)
             logger.debug(f"Waiting for 'finalise' command to finish: {self.finalise_calc!r}")
             await self.finalise_calc.wait_until_finished()
+            logger.debug("Finalise command has finished")
 
             output_file = self.finalise_calc.return_value
             if not output_file:
@@ -96,6 +99,7 @@ class InteractiveSessionCalculation(BaseCalculation):
                     "The output from the interactive session has been placed into dataset %s", self.output_dataset_id
                 )
 
+        logger.debug("All commands have finished, waiting for session close")
         self.is_closed = True
         self.session_closed_event.set()
         logger.debug(f"InteractiveSessionCalculation: interactive session finished: {self}")
@@ -119,10 +123,10 @@ class InteractiveSessionCalculation(BaseCalculation):
         # event which *should* cause run_calc.wait_until_finished() to exit. If this flag isn't set, then
         # execution will hang
         if self.prepare_calc == CalculationStatusEnum.RUNNING:
-            logger.debug("Terminating prepare command")
+            logger.debug("Terminating prepare command in InteractiveSessionCalculation.terminate()")
             await self.prepare_calc.terminate()
         if self.run_calc.status == CalculationStatusEnum.RUNNING:
-            logger.debug("Terminating run command")
+            logger.debug("Terminating run command in InteractiveSessionCalculation.terminate()")
             await self.run_calc.terminate()
         self.run_calc.calc_finished_event.set()
 
