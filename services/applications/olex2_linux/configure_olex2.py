@@ -84,6 +84,11 @@ def finalise__interactive(input_file):
     #     newest_cif_path, output_cif_path, input_cif_path, YAML_PATH, "interactive", "output_cif_path"
     # )
 
+    olex2_datadir = Path(os.getenv("OLEX2_DATADIR"))
+    cache_file = olex2_datadir / "olx.cache"
+    if cache_file.exists():
+        cache_file.unlink()
+
     return newest_cif_path
 
 
