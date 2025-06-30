@@ -265,7 +265,7 @@ Check /interactive-sessions/id can close an interactive session
     Should Be Equal As Integers    ${n_sessions}    1    "Close interactive session should return the closed session"
 
     ${closed_session}=    Set Variable    ${interactive_sessions[0]}
-    Check Response Has Attributes    ${closed_session}    session_id    status    output_dataset_id
+    Check Response Has Attributes    ${closed_session}    session_id    status    output_dataset_id    error_msg
     Should Be Equal    ${closed_session["session_id"]}    ${TEST_INTERACTIVE_SESSION_ID}
 
 Check /interactive-sessions can open a new session after the last was closed
@@ -301,7 +301,7 @@ Check /interactive-sessions can open a new session after the last was closed
     Should Be Equal As Integers    ${n_sessions}    1    "Close interactive session should return the closed session"
 
     ${closed_session}=    Set Variable    ${interactive_sessions[0]}
-    Check Response Has Attributes    ${closed_session}    session_id    status    output_dataset_id
+    Check Response Has Attributes    ${closed_session}    session_id    status    output_dataset_id    error_msg
     Should Be Equal    ${closed_session["session_id"]}    ${invoke_payload['interactive_session_id']}
 
 #

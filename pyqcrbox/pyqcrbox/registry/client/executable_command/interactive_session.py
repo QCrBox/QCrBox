@@ -145,7 +145,7 @@ class InteractiveSession(BaseCommand):
                     )
                     error_dialog_box(f"An error occurred in the prepare command: {raised_exception}")
                     raise PrepareCommandFailure(
-                        "Prepare command failed"
+                        "Prepare command failed", interactive_session_calc.prepare_calc.exception
                     ) from interactive_session_calc.prepare_calc.exception
                 logger.debug("Prepare command has finished executing")
 
@@ -165,7 +165,9 @@ class InteractiveSession(BaseCommand):
                     f"Exception raised by run_cmd (calc status {calc_status}): {raised_exception}",
                 )
                 error_dialog_box(f"An error occurred in the run command: {raised_exception}")
-                raise RunCommandFailure("Run command failed") from interactive_session_calc.run_calc.exception
+                raise RunCommandFailure(
+                    "Run command failed", interactive_session_calc.run_calc.exception
+                ) from interactive_session_calc.run_calc.exception
             logger.debug("Run command has finished executing")
 
             # Launch finalise command, but don't wait for it to finish. We wait for this

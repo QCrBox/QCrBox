@@ -9,6 +9,11 @@ from litestar import Litestar
 from pyqcrbox import helpers, logger, msg_specs, settings, sql_models
 from pyqcrbox.helpers import generate_private_routing_key
 from pyqcrbox.registry.client.executable_command.base_calculation import BaseCalculation
+from pyqcrbox.registry.client.executable_command.error import (
+    FinaliseCommandFailure,
+    PrepareCommandFailure,
+    RunCommandFailure,
+)
 from pyqcrbox.registry.client.executable_command.interactive_session_calculation import InteractiveSessionCalculation
 from pyqcrbox.registry.shared.calculation_status import update_calculation_status_in_nats_kv
 from pyqcrbox.services import get_data_file_manager
@@ -290,10 +295,23 @@ class QCrBoxClient(QCrBoxServerClientBase):
             )
             return response
 
+        if calc.exception:
+            if isinstance(calc.exception, PrepareCommandFailure):
+                error_msg = f"Prepare step failed: {calc.exception.original_exception}"
+            elif isinstance(calc.exception, RunCommandFailure):
+                error_msg = f"Run step failed: {calc.exception.original_exception}"
+            elif isinstance(calc.exception, FinaliseCommandFailure):
+                error_msg = f"Fianalise step failed: {calc.exception.original_exception}"
+            else:
+                error_msg = f"Command failed: {calc.exception}"
+        else:
+            error_msg = None
+
         response = msg_specs.CloseInteractiveSessionResponseNATS(
             session_id=session_id,
             status=calc.status,
             output_dataset_id=calc.output_dataset_id,
+            error_msg=error_msg,
         )
 
         return response

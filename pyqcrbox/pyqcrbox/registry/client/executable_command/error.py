@@ -3,15 +3,21 @@ import tkinter
 import tkinter.messagebox
 
 
-class PrepareCommandFailure(Exception):
+class CommandFailure(Exception):
+    def __init__(self, message: str, original_exception: Exception | None = None) -> None:
+        super().__init__(message)
+        self.original_exception = original_exception
+
+
+class PrepareCommandFailure(CommandFailure):
     pass
 
 
-class RunCommandFailure(Exception):
+class RunCommandFailure(CommandFailure):
     pass
 
 
-class FinaliseCommandFailure(Exception):
+class FinaliseCommandFailure(CommandFailure):
     pass
 
 

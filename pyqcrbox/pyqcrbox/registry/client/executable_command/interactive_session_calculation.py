@@ -91,10 +91,12 @@ class InteractiveSessionCalculation(BaseCalculation):
                 calc_status = self.finalise_calc.status
                 logger.error(f"Exception raised by finalise_cmd ({calc_status}): {self.finalise_calc.exception!r}")
                 error_dialog_box(f"An error occurred in the finalise command: {self.finalise_calc.exception}")
-                self.exception = FinaliseCommandFailure("Finalise command failed")
+                self.exception = FinaliseCommandFailure("Finalise command failed", self.finalise_calc.exception)
                 raise self.exception from self.finalise_calc.exception
             logger.debug("Finalise command has finished")
 
+            # The above will only run if the finalise calc finished successfully, e.g.
+            # we didn't raise an exception in the above step
             output_file = self.finalise_calc.return_value
             if not output_file:
                 logger.info("No output file from interactive session")
