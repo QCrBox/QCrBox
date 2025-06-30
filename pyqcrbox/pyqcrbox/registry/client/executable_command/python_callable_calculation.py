@@ -38,6 +38,7 @@ class PythonCallableCalculation(BaseCalculation):
         self._apply_result = result
         self.pool = pool
         self.return_value = None
+        self.exception = None
 
     async def wait_until_finished(self):
         """Wait until the calculation is finished."""
@@ -60,10 +61,18 @@ class PythonCallableCalculation(BaseCalculation):
                 calc_status = CalculationStatusEnum.SUCCESSFUL
             else:
                 calc_status = CalculationStatusEnum.FAILED
-            logger.debug("Calculation finished, closing multiprocessing pool.")
+                # This is less than ideal, but seems to be the only way to get the exception
+                # that was raised inside the pool.
+                try:
+                    self._apply_result.get()
+                except Exception as exc:
+                    self.exception = exc
             # When the result is ready, we can close the pool normally without
             # having to forcefully terminate the process and child processes
             # by hand
+            logger.debug(
+                f"Calculation {self.calculation_id} finished with status {calc_status}, closing multiprocessing pool",
+            )
             self.pool.close()
             self.pool.join()
         else:

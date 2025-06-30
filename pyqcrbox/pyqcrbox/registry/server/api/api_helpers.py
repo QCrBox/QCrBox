@@ -217,7 +217,8 @@ async def invoke_command(data: sql_models.CommandInvocationCreate) -> dict:
     response_json = await nats_broker.publish(msg, "server.cmd.handle_command_invocation_by_user", rpc=True)
 
     if not response_json:
-        exc_msg = "No response from server when trying to invoke command"
+        exc_msg = f"No response from server when trying to invoke command: response_json {response_json}"
+        logger.error(f"{exc_msg}")
         raise ValueError(exc_msg)
 
     return response_json

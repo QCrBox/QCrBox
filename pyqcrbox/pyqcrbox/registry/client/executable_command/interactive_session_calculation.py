@@ -1,6 +1,9 @@
+import asyncio
+
 import anyio
 
 from pyqcrbox import logger
+from pyqcrbox.registry.client.executable_command.error import FinaliseCommandFailure, error_dialog_box
 from pyqcrbox.services import get_data_file_manager
 from pyqcrbox.sql_models import CalculationStatusEnum
 
@@ -14,6 +17,7 @@ class InteractiveSessionCalculation(BaseCalculation):
         *,
         calculation_id: str,
         calc_finished_event: anyio.Event,
+        async_task: asyncio.Task,
         prepare_calc: BaseCalculation | None,
         run_calc: BaseCalculation,
         finalise_calc: BaseCalculation | None,
@@ -22,17 +26,17 @@ class InteractiveSessionCalculation(BaseCalculation):
         self.prepare_calc = prepare_calc
         self.run_calc = run_calc
         self.finalise_calc = finalise_calc
+        self.background_task = async_task
         self.is_closed = False
         self.output_dataset_id = None
         self.session_closed_event = anyio.Event()
-        logger.debug(
-            f"Created new InteractiveSessionCalculation: {self!r}",
-        )
 
     @property
     def status(self) -> CalculationStatusEnum:
         if not self.is_closed:
             return CalculationStatusEnum.RUNNING
+        elif self.exception:
+            return CalculationStatusEnum.FAILED
         else:
             return CalculationStatusEnum.SUCCESSFUL
 
@@ -63,8 +67,19 @@ class InteractiveSessionCalculation(BaseCalculation):
             If the output file from the 'finalise' command cannot be found during import.
 
         """
+        # await the background task so we can capture any exceptions which were raised
+        # in it and re-raise them to propagate them back up
+        try:
+            await self.background_task
+        except Exception as exc:
+            self.exception = exc
+            raise
+
         # We have to wait for the "calc_finished" event to be set, which only can happen
-        # when we try and close the interactive session
+        # when we try and close the interactive session. If we didn't wait then due to
+        # how this is set up, we would run the finalise command before we've finished
+        # interacting with the main run command. If we did everything in the foreground,
+        # then we wouldn't have to wait because the run_calc would be blocking.
         logger.debug("Waiting for 'calc_finished' event to be set upon calculation termination")
         await self.calc_finished_event.wait()
 
@@ -72,7 +87,16 @@ class InteractiveSessionCalculation(BaseCalculation):
             assert isinstance(self.finalise_calc, PythonCallableCalculation)
             logger.debug(f"Waiting for 'finalise' command to finish: {self.finalise_calc!r}")
             await self.finalise_calc.wait_until_finished()
+            if self.finalise_calc.exception:
+                calc_status = self.finalise_calc.status
+                logger.error(f"Exception raised by finalise_cmd ({calc_status}): {self.finalise_calc.exception!r}")
+                error_dialog_box(f"An error occurred in the finalise command: {self.finalise_calc.exception}")
+                self.exception = FinaliseCommandFailure("Finalise command failed", self.finalise_calc.exception)
+                raise self.exception from self.finalise_calc.exception
+            logger.debug("Finalise command has finished")
 
+            # The above will only run if the finalise calc finished successfully, e.g.
+            # we didn't raise an exception in the above step
             output_file = self.finalise_calc.return_value
             if not output_file:
                 logger.info("No output file from interactive session")
@@ -88,6 +112,7 @@ class InteractiveSessionCalculation(BaseCalculation):
                     "The output from the interactive session has been placed into dataset %s", self.output_dataset_id
                 )
 
+        logger.debug("All commands have finished, waiting for session close")
         self.is_closed = True
         self.session_closed_event.set()
         logger.debug(f"InteractiveSessionCalculation: interactive session finished: {self}")
@@ -111,10 +136,10 @@ class InteractiveSessionCalculation(BaseCalculation):
         # event which *should* cause run_calc.wait_until_finished() to exit. If this flag isn't set, then
         # execution will hang
         if self.prepare_calc == CalculationStatusEnum.RUNNING:
-            logger.debug("Terminating prepare command")
+            logger.debug("Terminating prepare command in InteractiveSessionCalculation.terminate()")
             await self.prepare_calc.terminate()
         if self.run_calc.status == CalculationStatusEnum.RUNNING:
-            logger.debug("Terminating run command")
+            logger.debug("Terminating run command in InteractiveSessionCalculation.terminate()")
             await self.run_calc.terminate()
         self.run_calc.calc_finished_event.set()
 
