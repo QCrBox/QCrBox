@@ -335,7 +335,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
             plugins=[structlog_plugin],
             openapi_config=OpenAPIConfig(
                 title="QCrBox",
-                version="0.2.1",
+                version="0.2.2",
                 use_handler_docstrings=True,
             ),
             exception_handlers={
