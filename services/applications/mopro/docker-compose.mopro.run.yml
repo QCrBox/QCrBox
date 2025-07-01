@@ -16,6 +16,7 @@ services:
       QCRBOX__NATS__HOST: "qcrbox-nats"
       QCRBOX__REGISTRY__SERVER__HOST: "qcrbox-registry"
       QCRBOX__REGISTRY__SERVER__PORT: "8000"
+      QCRBOX__GUI__PORT: ${QCRBOX_MOPRO_PORT}
     labels:
       traefik.enable: true
       traefik.http.routers.to-mopro-path-prefix.rule: Path(`/gui/mopro`)
