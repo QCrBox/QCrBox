@@ -21,7 +21,11 @@ class BaseCalculation(metaclass=ABCMeta):
     def __init__(self, *, calculation_id: str, calc_finished_event: anyio.Event) -> None:
         self.calculation_id = calculation_id
         self.calc_finished_event = calc_finished_event
-        self.exception = None
+
+        # These are for error tracking, specifically for recording the exception
+        # raised in an async sub-process and if the calculation was manually
+        # terminated
+        self.exception_raised = None
 
     def __repr__(self):
         """Return a string representation of the calculation instance.

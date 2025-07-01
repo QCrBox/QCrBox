@@ -3,7 +3,10 @@ import asyncio
 import anyio
 
 from pyqcrbox import logger
-from pyqcrbox.registry.client.executable_command.error import FinaliseCommandFailure, error_dialog_box
+from pyqcrbox.registry.client.executable_command.error import (
+    FinaliseCommandFailure,
+    error_dialog_box,
+)
 from pyqcrbox.services import get_data_file_manager
 from pyqcrbox.sql_models import CalculationStatusEnum
 
@@ -31,11 +34,14 @@ class InteractiveSessionCalculation(BaseCalculation):
         self.output_dataset_id = None
         self.session_closed_event = anyio.Event()
 
+        # for keeping track of error pop ups
+        self._error_dialog_process = None
+
     @property
     def status(self) -> CalculationStatusEnum:
         if not self.is_closed:
             return CalculationStatusEnum.RUNNING
-        elif self.exception:
+        elif self.exception_raised:
             return CalculationStatusEnum.FAILED
         else:
             return CalculationStatusEnum.SUCCESSFUL
@@ -87,12 +93,16 @@ class InteractiveSessionCalculation(BaseCalculation):
             assert isinstance(self.finalise_calc, PythonCallableCalculation)
             logger.debug(f"Waiting for 'finalise' command to finish: {self.finalise_calc!r}")
             await self.finalise_calc.wait_until_finished()
-            if self.finalise_calc.exception:
+            if self.finalise_calc.exception_raised:
                 calc_status = self.finalise_calc.status
-                logger.error(f"Exception raised by finalise_cmd ({calc_status}): {self.finalise_calc.exception!r}")
-                error_dialog_box(f"An error occurred in the finalise command: {self.finalise_calc.exception}")
-                self.exception = FinaliseCommandFailure("Finalise command failed", self.finalise_calc.exception)
-                raise self.exception from self.finalise_calc.exception
+                logger.error(
+                    f"Exception raised by finalise_cmd ({calc_status}): {self.finalise_calc.exception_raised!r}"
+                )
+                self._error_dialog_process = error_dialog_box(
+                    f"An error occurred in the finalise command: {self.finalise_calc.exception_raised}"
+                )
+                self.exception = FinaliseCommandFailure("Finalise command failed", self.finalise_calc.exception_raised)
+                raise self.exception from self.finalise_calc.exception_raised
             logger.debug("Finalise command has finished")
 
             # The above will only run if the finalise calc finished successfully, e.g.
@@ -124,6 +134,7 @@ class InteractiveSessionCalculation(BaseCalculation):
         returns. Otherwise, it signals the calculation to finish, waits for
         session closure.
         """
+        self.terminated_manually = True
         if self.calc_finished_event.is_set():
             if self.is_closed:
                 logger.warning(f"Interactive session {self} already closed")
@@ -150,3 +161,8 @@ class InteractiveSessionCalculation(BaseCalculation):
         # Keep waiting until the finalise calculation has finished and the output has been added to
         # the data store
         await self.session_closed_event.wait()
+
+        # Close any error dialog we have open, otherwise it gets confusing
+        if self._error_dialog_process:
+            self._error_dialog_process.terminate()
+            self._error_dialog_process.join()

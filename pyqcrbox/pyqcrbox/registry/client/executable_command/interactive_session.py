@@ -137,16 +137,18 @@ class InteractiveSession(BaseCommand):
                     **param_values,
                 )
                 await interactive_session_calc.prepare_calc.wait_until_finished()
-                if interactive_session_calc.prepare_calc.exception:
+                if interactive_session_calc.prepare_calc.exception_raised:
                     calc_status = interactive_session_calc.prepare_calc.status
-                    raised_exception = interactive_session_calc.prepare_calc.exception
+                    raised_exception = interactive_session_calc.prepare_calc.exception_raised
                     logger.error(
                         f"Exception raised by prepare_cmd (calc status {calc_status}): {raised_exception}",
                     )
-                    error_dialog_box(f"An error occurred in the prepare command: {raised_exception}")
+                    interactive_session_calc._error_dialog_process = error_dialog_box(
+                        f"An error occurred in the prepare command: {raised_exception}"
+                    )
                     raise PrepareCommandFailure(
-                        "Prepare command failed", interactive_session_calc.prepare_calc.exception
-                    ) from interactive_session_calc.prepare_calc.exception
+                        "Prepare command failed", interactive_session_calc.prepare_calc.exception_raised
+                    ) from interactive_session_calc.prepare_calc.exception_raised
                 logger.debug("Prepare command has finished executing")
 
             # Run the main interactive command (run command), wait for it to finish
@@ -158,16 +160,18 @@ class InteractiveSession(BaseCommand):
                 **param_values,
             )
             await interactive_session_calc.run_calc.wait_until_finished()
-            if interactive_session_calc.run_calc.exception:
+            if interactive_session_calc.run_calc.exception_raised:
                 calc_status = interactive_session_calc.run_calc.status
-                raised_exception = interactive_session_calc.run_calc.exception
+                raised_exception = interactive_session_calc.run_calc.exception_raised
                 logger.error(
                     f"Exception raised by run_cmd (calc status {calc_status}): {raised_exception}",
                 )
-                error_dialog_box(f"An error occurred in the run command: {raised_exception}")
+                interactive_session_calc._error_dialog_process = error_dialog_box(
+                    f"An error occurred in the run command: {raised_exception}"
+                )
                 raise RunCommandFailure(
-                    "Run command failed", interactive_session_calc.run_calc.exception
-                ) from interactive_session_calc.run_calc.exception
+                    "Run command failed", interactive_session_calc.run_calc.exception_raised
+                ) from interactive_session_calc.run_calc.exception_raised
             logger.debug("Run command has finished executing")
 
             # Launch finalise command, but don't wait for it to finish. We wait for this

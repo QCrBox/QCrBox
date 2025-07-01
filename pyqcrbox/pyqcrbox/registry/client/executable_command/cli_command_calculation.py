@@ -34,6 +34,8 @@ class CLICmdCalculation(BaseCalculation):
         self.retrieved_stdout_stderr = False
         self.calc_finished_event = calc_finished_event
 
+        self._terminated = False
+
     async def wait_until_finished(self):
         """Wait until the calculation is finished."""
         await self.proc.wait()
@@ -56,6 +58,11 @@ class CLICmdCalculation(BaseCalculation):
             The current status of the calculation.
 
         """
+        # If the process was terminated by the user, we will return the status
+        # SUCCESSFUL.
+        if self._terminated:
+            return CalculationStatusEnum.SUCCESSFUL
+
         match self.proc.returncode:
             case None:
                 status = CalculationStatusEnum.RUNNING
@@ -127,6 +134,7 @@ class CLICmdCalculation(BaseCalculation):
         """Terminate the calculation."""
         if self.proc:
             os.killpg(self.proc.pid, signal.SIGTERM)
+            self._terminated = True
             logger.debug(f"Terminated process for calculation {self!r}")
         else:
             logger.debug(f"No process running for calculation {self!r} - nothing to terminate.")

@@ -295,15 +295,15 @@ class QCrBoxClient(QCrBoxServerClientBase):
             )
             return response
 
-        if calc.exception:
-            if isinstance(calc.exception, PrepareCommandFailure):
-                error_msg = f"Prepare step failed: {calc.exception.original_exception}"
-            elif isinstance(calc.exception, RunCommandFailure):
-                error_msg = f"Run step failed: {calc.exception.original_exception}"
-            elif isinstance(calc.exception, FinaliseCommandFailure):
-                error_msg = f"Fianalise step failed: {calc.exception.original_exception}"
+        if calc.exception_raised:
+            if isinstance(calc.exception_raised, PrepareCommandFailure):
+                error_msg = f"Prepare step failed: {calc.exception_raised.original_exception}"
+            elif isinstance(calc.exception_raised, RunCommandFailure):
+                error_msg = f"Run step failed: {calc.exception_raised.original_exception}"
+            elif isinstance(calc.exception_raised, FinaliseCommandFailure):
+                error_msg = f"Fianalise step failed: {calc.exception_raised.original_exception}"
             else:
-                error_msg = f"Command failed: {calc.exception}"
+                error_msg = f"Command failed: {calc.exception_raised}"
         else:
             error_msg = None
 
