@@ -14,7 +14,7 @@ commands:
     description: "qad"
     parameters:
       - name: "input_file"
-        dtype: "QCrBox.data_file"
+        dtype: "QCrBox.cif_data_file"
         description: "The CIF file to open in MoPro"
     interactive_lifecycle:
       run:

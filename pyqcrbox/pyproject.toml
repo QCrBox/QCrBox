@@ -2,6 +2,7 @@
 name = "pyqcrbox"
 authors = [
   { name="Maximilian Albert", email="maximilian.albert@gmail.com" },
+  { name="Edward J. Parkinson", email="e.parkinson@soton.ac.uk" },
 ]
 description = "Quantum Crystallography Toolbox"
 readme = "README.md"
@@ -24,6 +25,7 @@ dependencies = [
     "pydantic-settings",
     "requests",
     "rich",
+    "rich_click",
     "setuptools_scm",
     "sqlmodel",
     "svcs",
@@ -62,6 +64,11 @@ dev = [
     "pytest-cov",
     "pytest-cases",
     "pytest-hot-reloading",
+    "robotframework",
+    "robotframework-tidy",
+    "robotframework-requests",
+    "robotframework-jsonlibrary",
+    "robotframework-seleniumlibrary",
 ]
 
 docs = [
@@ -156,6 +163,7 @@ disallow_any_unimported = false
 [tool.ruff]
 line-length = 120
 exclude = ["_version.py"]
+target-version = "py311"
 
 [tool.ruff.lint]
 select = [
@@ -163,14 +171,25 @@ select = [
     "E",
     # Pyflakes
     "F",
-#    # pyupgrade
-#    "UP",
-#    # flake8-bugbear
-#    "B",
-#    # flake8-simplify
-#    "SIM",
+   # pyupgrade
+   "UP",
+   # flake8-bugbear
+   "B",
+   # flake8-simplify
+   "SIM",
     # isort
     "I",
+    # Pydocstyle
+    "D",
+    "D413",
+]
+ignore = [
+    "D100",
+    "D101",
+    "D102",
+    "D103",
+    "D104",
+    "D105",
 ]
 
 # Ignore `F401`, `F403` (unused imports and * imports) in all `__init__.py` files
@@ -188,7 +207,7 @@ select = [
 exclude = ["services/applications/*/configure_*.py"]
 
 [tool.ruff.lint.pydocstyle]
-convention = "google"
+convention = "numpy"
 
 
 [tool.importlinter]

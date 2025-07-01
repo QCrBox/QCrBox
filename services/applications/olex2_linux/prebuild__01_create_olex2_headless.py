@@ -70,12 +70,12 @@ else
   $bin_dir/unirun "$update_path" -run
 fi
 
-if [ ! -x olex2c-linux64 ]
+if [ ! -x olex2c ]
 then
-  chmod +x olex2c-linux64
+  chmod +x olex2c
 fi
 
-./olex2c-linux64 "$@"
+./olex2c "$@"
 """
 
 macrox_string = """<xl_macro
@@ -154,9 +154,9 @@ macrox_string = """<xl_macro
     <cmd
       <cmd1  "if strcmp(%4,'none') then none else spy.saveHistory()">
       <cmd2  "spy.SaveStructureParams()">
-      <cmd4  "@reap %1 %2">
+      <cmd4  "@reap %1">
       <cmd4  "echo 'loading'">
-      <cmd9  "spy.OnStructureLoaded(%7)">
+      <cmd9  "spy.OnStructureLoaded(%4)">
       <cmd4  "echo 'loaded'">
       <cmd7  "SetVar(snum_refinement_sg,sg(%n))">
       <cmd10 "if File.Exists(strdir()/filename().vvd) then none else 'SetVar(snum_refinement_original_formula,xf.GetFormula())'">
@@ -449,8 +449,6 @@ def create_new_olex2_zip_file():
     zip_file = zipfile.ZipFile(zip_io, "a")
     zip_file.writestr("olex2/startc", startc_str)
     zip_file.writestr("olex2/macrox.xld", macrox_string)
-    r2 = requests.get(url_exe, timeout=600)
-    zip_file.writestr("olex2/olex2c-linux64", r2.content)
     zip_file.close()
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with open(output_path, "wb") as fobj:

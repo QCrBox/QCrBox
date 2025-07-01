@@ -14,8 +14,7 @@ commands:
     description: "Run Crystal Explorer interactively"
     parameters:
       - name: "input_file"
-        dtype: "QCrBox.data_file"
-        default_value: None
+        dtype: "QCrBox.cif_data_file"
         description: "The CIF file to be analyzed"
         #required_entry_sets: ["cif_structure_ddl1"]
         #merge_su: Yes

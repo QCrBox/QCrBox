@@ -1,13 +1,8 @@
 import functools
 import textwrap
 
-# from typing import TYPE_CHECKING
-from loguru import logger
-
 from pyqcrbox import msg_specs
-
-# if TYPE_CHECKING:
-#     from pyqcrbox.registry import QCrBoxClient
+from pyqcrbox.logging import logger
 
 
 @functools.singledispatch

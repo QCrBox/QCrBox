@@ -12,6 +12,8 @@ anyio==4.6.0
     #   jupyter-server
     #   litestar
     #   watchfiles
+appnope==0.1.4
+    # via ipykernel
 argon2-cffi==23.1.0
     # via jupyter-server
 argon2-cffi-bindings==21.2.0
@@ -27,9 +29,11 @@ async-lru==2.0.4
 attrs==24.2.0
     # via
     #   jsonschema
+    #   outcome
     #   referencing
     #   reuse
     #   svcs
+    #   trio
 babel==2.16.0
     # via
     #   jupyterlab-server
@@ -57,10 +61,9 @@ certifi==2024.8.30
     #   httpcore
     #   httpx
     #   requests
+    #   selenium
 cffi==1.17.1
-    # via
-    #   argon2-cffi-bindings
-    #   cryptography
+    # via argon2-cffi-bindings
 cfgv==3.4.0
     # via pre-commit
 chardet==5.2.0
@@ -77,6 +80,8 @@ click==8.1.7
     #   litestar
     #   mkdocs
     #   rich-click
+    #   robotframework-seleniumlibrary
+    #   robotframework-tidy
     #   userpath
     #   uvicorn
 cloudpickle==3.0.0
@@ -84,15 +89,15 @@ cloudpickle==3.0.0
 codefind==0.1.7
     # via jurigged
 colorama==0.4.6
-    # via mkdocs-material
+    # via
+    #   mkdocs-material
+    #   robotframework-tidy
 comm==0.2.2
     # via ipykernel
 cookiecutter==2.6.0
     # via pyqcrbox (pyproject.toml)
 coverage==7.6.1
     # via pytest-cov
-cryptography==43.0.1
-    # via secretstorage
 debugpy==1.8.6
     # via ipykernel
 decopatch==1.4.10
@@ -127,14 +132,13 @@ gitdb==4.0.11
     # via gitpython
 gitpython==3.1.43
     # via pyqcrbox (pyproject.toml)
-greenlet==3.1.1
-    # via sqlalchemy
 grimp==3.4.1
     # via import-linter
 h11==0.14.0
     # via
     #   httpcore
     #   uvicorn
+    #   wsproto
 hatch==1.12.0
     # via pyqcrbox (pyproject.toml)
 hatchling==1.25.0
@@ -159,6 +163,7 @@ idna==3.10
     #   hyperlink
     #   jsonschema
     #   requests
+    #   trio
 import-linter==2.0
     # via pyqcrbox (pyproject.toml)
 importlib-metadata==8.5.0
@@ -186,10 +191,6 @@ jaraco-functools==4.1.0
     # via keyring
 jedi==0.19.1
     # via ipython
-jeepney==0.8.0
-    # via
-    #   keyring
-    #   secretstorage
 jinja2==3.1.4
     # via
     #   cookiecutter
@@ -201,10 +202,13 @@ jinja2==3.1.4
     #   mkdocs-material
     #   nbconvert
     #   reuse
+    #   robotframework-tidy
 jinjax==0.46
     # via pyqcrbox (pyproject.toml)
 json5==0.9.25
     # via jupyterlab-server
+jsonpath-ng==1.7.0
+    # via robotframework-jsonlibrary
 jsonpointer==3.0.0
     # via jsonschema
 jsonschema==4.23.0
@@ -212,6 +216,7 @@ jsonschema==4.23.0
     #   jupyter-events
     #   jupyterlab-server
     #   nbformat
+    #   robotframework-jsonlibrary
 jsonschema-specifications==2023.12.1
     # via jsonschema
 jupyter-client==8.6.3
@@ -346,6 +351,10 @@ nodeenv==1.9.1
     # via pre-commit
 notebook-shim==0.2.4
     # via jupyterlab
+outcome==1.3.0.post0
+    # via
+    #   trio
+    #   trio-websocket
 overrides==7.7.0
     # via jupyter-server
 ovld==0.3.9
@@ -374,6 +383,7 @@ pathspec==0.12.1
     # via
     #   hatchling
     #   mkdocs
+    #   robotframework-tidy
 pexpect==4.9.0
     # via
     #   hatch
@@ -388,6 +398,8 @@ pluggy==1.5.0
     # via
     #   hatchling
     #   pytest
+ply==3.11
+    # via jsonpath-ng
 polyfactory==2.17.0
     # via litestar
 pre-commit==3.8.0
@@ -431,6 +443,8 @@ pymdown-extensions==10.11.2
     #   pyqcrbox (pyproject.toml)
     #   markdown-exec
     #   mkdocs-material
+pysocks==1.7.1
+    # via urllib3
 pytest==8.3.3
     # via
     #   pyqcrbox (pyproject.toml)
@@ -492,6 +506,7 @@ requests==2.32.3
     #   cookiecutter
     #   jupyterlab-server
     #   mkdocs-material
+    #   robotframework-requests
 reuse==4.0.3
     # via pyqcrbox (pyproject.toml)
 rfc3339-validator==0.1.4
@@ -510,15 +525,34 @@ rich==13.9.1
     #   litestar
     #   rich-click
 rich-click==1.8.3
-    # via litestar
+    # via
+    #   litestar
+    #   robotframework-tidy
+robotframework==7.2.2
+    # via
+    #   pyqcrbox (pyproject.toml)
+    #   robotframework-jsonlibrary
+    #   robotframework-requests
+    #   robotframework-seleniumlibrary
+    #   robotframework-tidy
+robotframework-jsonlibrary==0.5
+    # via pyqcrbox (pyproject.toml)
+robotframework-pythonlibcore==4.4.1
+    # via robotframework-seleniumlibrary
+robotframework-requests==0.9.7
+    # via pyqcrbox (pyproject.toml)
+robotframework-seleniumlibrary==6.7.1
+    # via pyqcrbox (pyproject.toml)
+robotframework-tidy==4.17.0
+    # via pyqcrbox (pyproject.toml)
 rpds-py==0.20.0
     # via
     #   jsonschema
     #   referencing
 ruff==0.6.8
     # via pyqcrbox (pyproject.toml)
-secretstorage==3.3.3
-    # via keyring
+selenium==4.31.0
+    # via robotframework-seleniumlibrary
 send2trash==1.8.3
     # via jupyter-server
 setuptools==75.1.0
@@ -543,6 +577,9 @@ sniffio==1.3.1
     #   aioresult
     #   anyio
     #   httpx
+    #   trio
+sortedcontainers==2.4.0
+    # via trio
 soupsieve==2.6
     # via beautifulsoup4
 sqlalchemy==2.0.35
@@ -571,6 +608,8 @@ text-unidecode==1.3
     # via python-slugify
 tinycss2==1.3.0
     # via nbconvert
+tomli==2.2.1
+    # via robotframework-tidy
 tomli-w==1.0.0
     # via hatch
 tomlkit==0.13.2
@@ -598,6 +637,12 @@ traitlets==5.14.3
     #   nbclient
     #   nbconvert
     #   nbformat
+trio==0.30.0
+    # via
+    #   selenium
+    #   trio-websocket
+trio-websocket==0.12.2
+    # via selenium
 trove-classifiers==2024.9.12
     # via hatchling
 types-python-dateutil==2.9.0.20240906
@@ -620,17 +665,18 @@ typing-extensions==4.12.2
     #   pydantic
     #   pydantic-core
     #   rich-click
+    #   selenium
     #   sqlalchemy
 uri-template==1.3.0
     # via jsonschema
 urllib3==2.2.3
-    # via requests
+    # via
+    #   requests
+    #   selenium
 userpath==1.9.2
     # via hatch
 uv==0.4.18
-    # via
-    #   pyqcrbox (pyproject.toml)
-    #   hatch
+    # via hatch
 uvicorn==0.31.0
     # via pyqcrbox (pyproject.toml)
 uvloop==0.20.0
@@ -658,11 +704,15 @@ webencodings==0.5.1
     #   bleach
     #   tinycss2
 websocket-client==1.8.0
-    # via jupyter-server
+    # via
+    #   jupyter-server
+    #   selenium
 websockets==13.1
     # via uvicorn
 whitenoise==6.7.0
     # via jinjax
+wsproto==1.2.0
+    # via trio-websocket
 zipp==3.20.2
     # via importlib-metadata
 zstandard==0.23.0

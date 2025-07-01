@@ -1,6 +1,6 @@
 from pyqcrbox.sql_models import QCrBoxPydanticBaseModel
 
-__all__ = ["DataFileMetadata", "DataFileMetadataResponse"]
+__all__ = ["DataFileMetadata", "DataFileMetadataResponse", "Dataset", "DatasetResponse"]
 
 
 class DataFileMetadata(QCrBoxPydanticBaseModel):
@@ -46,11 +46,11 @@ class Dataset(DatasetBase):
 
     def to_response_model(self) -> "DatasetResponse":
         return DatasetResponse(
-            dataset_id=self.dataset_id,
+            qcrbox_dataset_id=self.dataset_id,
             data_files={key: f.to_response_model() for key, f in self.data_files.items()},
         )
 
 
 class DatasetResponse(DatasetBase):
-    dataset_id: str
+    qcrbox_dataset_id: str
     data_files: dict[str, DataFileMetadataResponse]

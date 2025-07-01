@@ -35,6 +35,7 @@ click==8.1.7
     # via
     #   hatch
     #   mkdocs
+    #   rich-click
     #   userpath
 cloudpickle==3.0.0
     # via doit
@@ -42,7 +43,7 @@ colorama==0.4.6
     # via mkdocs-material
 comm==0.2.2
     # via ipykernel
-cryptography==43.0.1
+cryptography==45.0.4
     # via secretstorage
 debugpy==1.8.6
     # via ipykernel
@@ -70,7 +71,7 @@ gitdb==4.0.11
     # via gitpython
 gitpython==3.1.43
     # via pyqcrbox (pyproject.toml)
-greenlet==3.1.1
+greenlet==3.2.3
     # via sqlalchemy
 h11==0.14.0
     # via httpcore
@@ -104,7 +105,7 @@ jaraco-functools==4.1.0
     # via keyring
 jedi==0.19.1
     # via ipython
-jeepney==0.8.0
+jeepney==0.9.0
     # via
     #   keyring
     #   secretstorage
@@ -212,6 +213,7 @@ packaging==24.1
     #   jupytext
     #   mkdocs
     #   nbconvert
+    #   setuptools-scm
 paginate==0.5.7
     # via mkdocs-material
 pandocfilters==1.5.1
@@ -295,19 +297,26 @@ referencing==0.35.1
 regex==2024.9.11
     # via mkdocs-material
 requests==2.32.3
-    # via mkdocs-material
+    # via
+    #   pyqcrbox (pyproject.toml)
+    #   mkdocs-material
 rich==13.9.1
     # via
     #   pyqcrbox (pyproject.toml)
     #   hatch
-rich-click==1.8.3
-    # via litestar
+    #   rich-click
+rich-click==1.8.9
+    # via pyqcrbox (pyproject.toml)
 rpds-py==0.20.0
     # via
     #   jsonschema
     #   referencing
 secretstorage==3.3.3
     # via keyring
+setuptools==80.7.1
+    # via setuptools-scm
+setuptools-scm==8.3.1
+    # via pyqcrbox (pyproject.toml)
 shellingham==1.5.4
     # via hatch
 six==1.16.0
@@ -367,6 +376,7 @@ typing-extensions==4.12.2
     #   faststream
     #   pydantic
     #   pydantic-core
+    #   rich-click
     #   sqlalchemy
 urllib3==2.2.3
     # via requests

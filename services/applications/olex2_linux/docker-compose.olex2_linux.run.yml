@@ -16,6 +16,7 @@ services:
       QCRBOX__NATS__HOST: "qcrbox-nats"
       QCRBOX__REGISTRY__SERVER__HOST: "qcrbox-registry"
       QCRBOX__REGISTRY__SERVER__PORT: "8000"
+      QCRBOX__GUI__PORT: ${QCRBOX_OLEX2_LINUX_PORT}
     labels:
       traefik.enable: true
       traefik.http.routers.to-olex2-path-prefix.rule: Path(`/gui/olex2`)
@@ -32,3 +33,8 @@ services:
 
       traefik.http.services.olex2-service.loadbalancer.server.scheme: http
       traefik.http.services.olex2-service.loadbalancer.server.port: 8080
+    logging:
+      driver: "syslog"
+      options:
+        syslog-address: udp://127.0.0.1:514
+        tag: "olex2-linux"

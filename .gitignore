@@ -5,6 +5,9 @@
 # Misc
 .ackrc
 .tool-versions
+.import_linter_cache
+.ruff_cache
+.devbox
 
 # Local tweaks to QCrBox settings
 .env.local
@@ -92,3 +95,15 @@ services/applications/xharpy_gpaw/XHARPy
 services/applications/mopro/MoProSuite_*.zip
 services/applications/mopro/Import2MoPro-2024-07.zip
 services/applications/qcrbox_quality/cifvis.umd.js
+
+# Robot Framework
+pyqcrbox/robot_tests/output.xml
+pyqcrbox/robot_tests/log.html
+pyqcrbox/robot_tests/report.html
+
+# Log files and rotated log files
+*.log
+*.log.*.gz
+
+# Favourites extension in VSCode
+.favorites.json

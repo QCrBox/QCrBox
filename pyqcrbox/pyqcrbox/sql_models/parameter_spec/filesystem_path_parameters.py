@@ -12,6 +12,9 @@ __all__ = [
     "OutputCifParameterSpec",
     "WorkCifParameterSpec",
     "DataFileParameterSpec",
+    "CifDataFileParameterSpec",
+    "GenericOutputPathParameterSpec",
+    "InputFolderParameterSpec",
 ]
 
 
@@ -60,6 +63,10 @@ class BaseCifFileParameterSpec(BaseFilesystemPathParameterSpec):
                 for item in v
             ]
         return v
+
+
+class CifDataFileParameterSpec(BaseCifFileParameterSpec):
+    dtype: Literal["QCrBox.cif_data_file"]
 
 
 class InputCifParameterSpec(BaseCifFileParameterSpec):
