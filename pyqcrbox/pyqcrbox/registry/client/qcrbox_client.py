@@ -276,14 +276,14 @@ class QCrBoxClient(QCrBoxServerClientBase):
         logger.debug(f"Attempting to close interactive session: {calc}")
         try:
             await calc.terminate()
-            self.status.set_idle()  # Set status to idle so container can be re-used
         except AttributeError:
             logger.exception(f"Unable to terminate interactive session: {calc!r}")
             response = msg_specs.CloseInteractiveSessionResponseNATS(
                 session_id=session_id, status=CalculationStatusEnum.FAILED, output_dataset_id=None
             )
             return response
-        logger.debug("Interactive session has been closed")
+        self.status.set_idle()
+        logger.debug("Interactive session has been closed and client set to idle")
 
         response = msg_specs.CloseInteractiveSessionResponseNATS(
             session_id=session_id,
