@@ -21,7 +21,7 @@ from qcrboxtools.cif.uncertainties import split_su_cif
 def read_cif_text_as_unified(input_cif_text):
     """Read a CIF text string and return a unified CIF model."""
     cif_model = reader(input_string=input_cif_text).model()
-    cif_model = cif_to_unified_keywords(cif_model)
+    cif_model = cif_to_unified_keywords(cif_model, custom_categories=["iucr", "olex2"])
     cif_model = split_su_cif(cif_model)
     return cif_model
 
@@ -48,19 +48,19 @@ def basic_model_quality_indicators(cif_text):
         QualityIndicatorBox(
             name=r"$\rho_\mathrm{max}$",
             value=cif_block["_refine.diff_density_max"],
-            unit=r"$e\,\unicode{x212B}^{-3}$",
+            unit=r"$e\,\mathrm{Ang}^{-3}$",
             quality_level=from_entry(cif_block, "_refine.diff_density_max"),
         ),
         QualityIndicatorBox(
             name=r"$\rho_\mathrm{min}$",
             value=cif_block["_refine.diff_density_min"],
-            unit=r"$e\,\unicode{x212B}^{-3}$",
+            unit=r"$e\,\mathrm{Ang}^{-3}$",
             quality_level=from_entry(cif_block, "_refine.diff_density_min"),
         ),
         QualityIndicatorBox(
             name=r"$d_\mathrm{min}$",
             value=cif_block["_refine_ls.d_res_high"],
-            unit=r"$\unicode{x212B}$",
+            unit=r"$\mathrm{Ang}$",
             quality_level=from_entry(cif_block, "_refine_ls.d_res_high"),
         ),
         QualityIndicatorBox(
@@ -78,7 +78,8 @@ def basic_model_quality_indicators(cif_text):
         </script>
     """
     ).strip()
-    body_snippet = quality_div_group(indicators)
+
+    body_snippet = '<div class="section indicators">\n' + quality_div_group(indicators) + "\n</div>"
 
     css_template_path = Path(__file__).parent / "templates" / "quality.css"
 
@@ -114,10 +115,9 @@ def create_hkl_labels(cif_block):
     return None
 
 
-def fobs_div_fcalc_bokeh(input_cif_path):
-    input_cif_path = Path(input_cif_path)
-
-    cif_block = fobs_calc_block_from_cif(input_cif_path, "bokeh")
+def fobs_div_fcalc(cif_text):
+    cif_block = fobs_calc_block_from_cif(cif_text)
+    print(cif_block.keys())
 
     f_calc_sq = np.array(cif_block["_refln.f_squared_calc"], dtype=np.float64)
     f_obs_sq = np.array(cif_block["_refln.f_squared_meas"], dtype=np.float64)
@@ -154,21 +154,21 @@ def fobs_div_fcalc_bokeh(input_cif_path):
     css_resources = INLINE.render_css()
 
     header_snippet = js_resources
-    body_snippet = plot_script + "\n" + plot_div
+    body_snippet = '<div class="section plot">\n' + plot_script + "\n" + plot_div + "\n</div>"
     css_snippet = css_resources
 
     return header_snippet, body_snippet, css_snippet
 
 
-def ortep_cifvis_3d(cif_model):
-    ciftext = str(cif_model)
-
+def ortep_cifvis_3d(cif_text):
     with open("cifvis.alldeps.umd.cjs") as fobj:
         js_code = fobj.read()
 
-    cif_b64 = base64.b64encode(ciftext.encode()).decode()
+    cif_b64 = base64.b64encode(cif_text.encode()).decode()
 
-    fragment = dedent(
+    css_path = Path(__file__).parent / "templates" / "ortep.css"
+    css_snippet = css_path.read_text(encoding="utf-8").strip()
+    inner_html_snippet = dedent(
         f"""
     <div class="cifvis-container" style="width: 100%; height: 100%;">
                 
@@ -194,112 +194,6 @@ def ortep_cifvis_3d(cif_model):
     </div>
     """
     )
+    html_snippet = '<div class="section ortep">\n' + inner_html_snippet + "\n</div>"
 
-    return fragment
-
-
-def prepare__interactive(input_file):
-    output_html_folder = Path(".") / "html"
-    output_html_folder.mkdir(exist_ok=True)
-    input_file = Path(input_file)
-
-    basic_model_snippet = basic_model_quality_indicators(input_file)
-    fobs_fcalc_snippet = fobs_div_fcalc_bokeh(input_file)
-    ortep_snippet = ortep_cifvis_3d(input_file)
-
-    html_template = dedent(
-        f"""
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Crystal Structure Visualization</title>
-            
-            <style>
-                body {{
-                    margin: 0;
-                    padding: 20px;
-                    background-color: #f5f5f5;
-                }}
-
-                .outer-container {{
-                    width: 1000px;
-                    margin: 0 auto;
-                    display: flex;
-                    flex-direction: column;
-                    gap: 24px;
-                }}
-                
-                .section {{
-                    width: 100%;
-                    border: 1px solid #ddd;
-                    border-radius: 8px;
-                    padding: 24px;
-                    background-color: #fff;
-                    box-sizing: border-box;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-                }}
-
-                /* Indicators section */
-                .section.indicators {{
-                    height: 150px; /* Reduced height for metrics display */
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                }}
-
-                /* Plot section */
-                .section.plot {{
-                    height: 400px; /* Increased height for better plot visibility */
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                }}
-
-                /* ORTEP section */
-                .section.ortep {{
-                    height: 800px; /* Increased height for 3D model */
-                }}
-                
-                .loading {{
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    height: 100%;
-                    background-color: #f8f9fa;
-                    border-radius: 4px;
-                    color: #666;
-                    font-family: system-ui, -apple-system, sans-serif;
-                }}
-                
-                model-viewer {{
-                    width: 100%;
-                    height: 100%;
-                }}
-            </style>
-
-        </head>
-        <body>
-            <div class="outer-container">
-                <!-- Basic Model Quality Indicators Section -->
-                <div class="section indicators"
-                    {basic_model_snippet}
-                </div>
-                
-                <!-- Fo-Fc Bokeh Plot Section -->
-                <div class="section plot"
-                    {fobs_fcalc_snippet}
-                </div>
-                
-                <!-- ORTEP Section -->
-                <div class="section ortep"
-                    {ortep_snippet}
-                </div>
-            </div>
-        </body>
-        </html>
-    """
-    ).strip()
-
-    print(html_template)
+    return "", html_snippet, css_snippet

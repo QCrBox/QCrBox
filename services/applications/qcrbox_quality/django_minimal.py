@@ -7,7 +7,7 @@ from django.core.management import execute_from_command_line
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.urls import path
-from qcrbox_quality_module import basic_model_quality_indicators
+from qcrbox_quality_module import basic_model_quality_indicators, fobs_div_fcalc, ortep_cifvis_3d
 
 from pyqcrbox.services import get_data_file_manager
 
@@ -84,7 +84,18 @@ def retrieve(request, dataset_id):
     import asyncio
 
     cif_text = asyncio.run(retrieve_data(dataset_id))
-    header_snippet, body_snippet, css_snippet = basic_model_quality_indicators(cif_text)
+
+    eval_functions = [
+        basic_model_quality_indicators,
+        fobs_div_fcalc,
+        ortep_cifvis_3d,
+    ]
+
+    results = [function(cif_text) for function in eval_functions]
+    header_snippets, body_snippets, css_snippets = zip(*results, strict=False)
+    header_snippet = "\n".join(header_snippets)
+    body_snippet = "\n".join(body_snippets)
+    css_snippet = "\n".join(css_snippets)
 
     title = f"Dataset {dataset_id} Quality Indicators"
 
@@ -95,7 +106,7 @@ def retrieve(request, dataset_id):
             "title": title,
             "header_html": header_snippet,
             "body_html": body_snippet,
-            "style": css_snippet,
+            "component_style": css_snippet,
         },
     )
 

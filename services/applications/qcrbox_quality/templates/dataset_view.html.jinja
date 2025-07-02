@@ -3,11 +3,60 @@
 <head>
     <title>{{ title }}</title>
     <style>
-        {{ style }}
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .outer-container {
+            width: 1000px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        
+        .section {
+            width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 24px;
+            background-color: #fff;
+            box-sizing: border-box;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        /* Indicators section */
+        .section.indicators {
+            height: 150px; /* Reduced height for metrics display */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Plot section */
+        .section.plot {
+            height: 400px; /* Increased height for better plot visibility */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* ORTEP section */
+        .section.ortep {
+            height: 800px; /* Increased height for 3D model */
+        }
+        
+        {{ component_style }}
     </style>
+        
     {{ header_html|safe }}
+        
 </head>
 <body>
-    {{ body_html|safe }}
+    <div class="outer-container">
+        {{ body_html|safe }}
+    </div>
 </body>
 </html>
