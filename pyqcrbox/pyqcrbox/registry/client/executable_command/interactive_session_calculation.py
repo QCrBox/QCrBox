@@ -3,10 +3,7 @@ import asyncio
 import anyio
 
 from pyqcrbox import logger
-from pyqcrbox.registry.client.executable_command.error import (
-    FinaliseCommandFailure,
-    error_dialog_box,
-)
+from pyqcrbox.registry.client.executable_command.error import FinaliseCommandFailure, error_dialog_box
 from pyqcrbox.services import get_data_file_manager
 from pyqcrbox.sql_models import CalculationStatusEnum
 
@@ -73,6 +70,9 @@ class InteractiveSessionCalculation(BaseCalculation):
             If the output file from the 'finalise' command cannot be found during import.
 
         """
+        if not self.background_task:
+            raise RuntimeError("There is no background task(s) to wait to finish")
+
         # await the background task so we can capture any exceptions which were raised
         # in it and re-raise them to propagate them back up
         try:
@@ -146,12 +146,12 @@ class InteractiveSessionCalculation(BaseCalculation):
         # Terminate the prepare and run calculation if still running. Then we need to set the 'calc_finished'
         # event which *should* cause run_calc.wait_until_finished() to exit. If this flag isn't set, then
         # execution will hang
-        if self.prepare_calc == CalculationStatusEnum.RUNNING:
-            logger.debug("Terminating prepare command in InteractiveSessionCalculation.terminate()")
+        if self.prepare_calc and self.prepare_calc.status == CalculationStatusEnum.RUNNING:
             await self.prepare_calc.terminate()
+
         if self.run_calc.status == CalculationStatusEnum.RUNNING:
-            logger.debug("Terminating run command in InteractiveSessionCalculation.terminate()")
             await self.run_calc.terminate()
+
         self.run_calc.calc_finished_event.set()
 
         # When the run calc is finished, this flag is used to communicate with the interactive

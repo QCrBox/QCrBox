@@ -55,6 +55,7 @@ class PythonCallableCalculation(BaseCalculation):
             The current status of the calculation.
 
         """
+        # Short-circuit to return SUCCESS when user terminated command
         if self._terminated:
             return CalculationStatusEnum.SUCCESSFUL
 
@@ -70,12 +71,11 @@ class PythonCallableCalculation(BaseCalculation):
                     self._apply_result.get()
                 except Exception as exc:
                     self.exception_raised = exc
-            # When the result is ready, we can close the pool normally without
-            # having to forcefully terminate the process and child processes
-            # by hand
             logger.debug(
                 f"Calculation {self.calculation_id} finished with status {calc_status}, closing multiprocessing pool",
             )
+            # When the result is ready, we can close the pool normally without having to forcefully
+            # terminate the process and child processes by hand
             self.pool.close()
             self.pool.join()
         else:

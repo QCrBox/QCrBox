@@ -2,7 +2,6 @@ from typing import TYPE_CHECKING
 
 from pyqcrbox.sql_models.command_spec import ImplementedAs
 
-from .base_command import BaseCommand
 from .cli_command import CLICommand
 from .interactive_session import InteractiveSession
 from .python_callable import PythonCallable
@@ -13,7 +12,9 @@ if TYPE_CHECKING:
 __all__ = ["ExecutableCommand"]
 
 
-def ExecutableCommand(cmd_spec: "CommandSpecDiscriminatedUnion", **kwargs) -> BaseCommand:
+def ExecutableCommand(
+    cmd_spec: "CommandSpecDiscriminatedUnion", **kwargs
+) -> PythonCallable | CLICommand | InteractiveSession:
     """Instantiate a command implementation from a command specification.
 
     Parameters
@@ -25,7 +26,7 @@ def ExecutableCommand(cmd_spec: "CommandSpecDiscriminatedUnion", **kwargs) -> Ba
 
     Returns
     -------
-    BaseCommand
+    PythonCallable | CLICommand | InteractiveSession
         An instance of the appropriate command class based on the implementation type.
 
     Raises
