@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: MPL-2.0
 import sys
-from typing import Optional
 
 import click
 import doit.task
@@ -42,19 +41,26 @@ from .build import populate_build_tasks
     default="qcrbox",
     help="Docker project name (see https://docs.docker.com/compose/project-name/)",
 )
+@click.option(
+    "--test-only",
+    is_flag=True,
+    default=False,
+    help="Launch only the minimum set of containers required for testing",
+)
 @add_verbose_option
 @click.argument("components", nargs=-1)
 def start_up_components(
-    build: Optional[bool],
-    build_deps: Optional[bool],
+    build: bool | None,
+    build_deps: bool | None,
     dry_run: bool,
     project_name: str,
+    test_only: bool,
     components: list[str],
 ):
     """
     Start up QCrBox components.
     """
-    docker_project = DockerProject(name=project_name)
+    docker_project = DockerProject(name=project_name, config_name="default" if not test_only else "test")
 
     def fill_default_values(build, build_deps):
         match (build, build_deps):
