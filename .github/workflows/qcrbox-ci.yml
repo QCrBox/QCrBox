@@ -107,6 +107,13 @@ jobs:
         run: |
           qcb up --all --test-only
 
+      - name: Wait for API to be available
+        run: |
+          for i in {1..30}; do
+            curl -s 127.0.0.1:${QCRBOX_REGISTRY_PORT}/api/healthz && break
+            sleep 5
+          done
+
       - name: Run API tests
         run: |
           cd ./pyqcrbox/robot_tests
