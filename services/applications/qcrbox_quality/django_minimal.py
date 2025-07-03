@@ -7,7 +7,7 @@ from django.core.management import execute_from_command_line
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.urls import path
-from qcrbox_quality_module import basic_model_quality_indicators, fobs_div_fcalc, ortep_cifvis_3d
+from quality_html import basic_model_quality_indicators, fobs_div_fcalc, ortep_cifvis_3d
 
 from pyqcrbox.services import get_data_file_manager
 

@@ -20,12 +20,12 @@ RUN micromamba install -n qcrbox -c conda-forge bokeh numpy django jinja2 && \
 
 RUN rm -f /opt/qcrbox/.idesktop/default.lnk
 COPY --chown=qcrbox:qcrbox \
-     qcrbox_quality_module.py \
      django_minimal.py \
      start_dev_webserver.sh \
      ${QCRBOX_HOME}
 
 ADD templates ${QCRBOX_HOME}/templates
+ADD quality_html ${QCRBOX_HOME}/quality_html
 
 RUN chmod +x start_dev_webserver.sh
 
