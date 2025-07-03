@@ -17,7 +17,7 @@ Test Timeout        2 minutes
 
 
 *** Variables ***
-${ENDPOINTS_API}                    http://127.0.0.1:11000/api
+${ENDPOINTS_API}    http://127.0.0.1:%{QCRBOX_REGISTRY_PORT=11000}/api
 ${SESSION_ALIAS}                    QCRBOX_REGISTRY_API_ENDPOINTS
 
 ${TEST_CIF_FILE_NAME}               robot_test_cif.cif

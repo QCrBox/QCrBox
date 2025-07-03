@@ -80,3 +80,41 @@ jobs:
       - uses: chartboost/ruff-action@v1
         with:
           args: format --diff --config pyqcrbox/pyproject.toml
+
+  api_tests:
+    runs-on: ubuntu-latest
+    steps:
+      # Checks out the  repository under $GITHUB_WORKSPACE, so the job can access it
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip' # caching pip dependencies
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade uv
+          uv pip install --system -r ./pyqcrbox/requirements-dev.txt
+          uv pip install --system pyqcrbox@./pyqcrbox
+
+      - name: Clean up any existing containers
+        run: |
+          docker container prune -f
+          docker network prune -f
+
+      - name: Bring up QCrBox registry and applications
+        run: |
+          qcb up --all --test-only
+
+      - name: Run API tests
+        run: |
+          cd ./pyqcrbox/robot_tests
+          robot api_endpoints.robot
+
+      - name: Cleanup services
+        if: always()
+        run: |
+          qcb down || true
+          docker container prune -f
+          docker network prune -f
