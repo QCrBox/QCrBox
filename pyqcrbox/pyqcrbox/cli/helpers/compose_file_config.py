@@ -51,7 +51,9 @@ class ComposeFileConfig:
         compose_files_runtime = compose_files_runtime or ()
         compose_files_test = compose_files_test or ()
 
-        if compose_files_build == () and compose_files_runtime == () or compose_files_test == ():
+        if (compose_files_build == () and compose_files_runtime == ()) or (
+            compose_files_build == () and compose_files_test == ()
+        ):
             raise ValueError(
                 "Arguments `compose_files_build` and `compose_files_runtime` or `compose_files_tests` cannot be empty."
             )
