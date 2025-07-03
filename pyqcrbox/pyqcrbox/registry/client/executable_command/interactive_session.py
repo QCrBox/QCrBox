@@ -7,6 +7,7 @@ import anyio
 
 from pyqcrbox import helpers, logger
 from pyqcrbox.registry.client.executable_command import BaseCommand
+from pyqcrbox.registry.client.executable_command.cli_command import CLICommand
 from pyqcrbox.registry.client.executable_command.error import PrepareCommandFailure, RunCommandFailure, error_dialog_box
 from pyqcrbox.registry.client.executable_command.python_callable import PythonCallable
 from pyqcrbox.sql_models import InteractiveSessionSpec
@@ -27,6 +28,149 @@ class InteractiveSession(BaseCommand):
         self._prepare_cmd = None
         self._run_cmd = None
         self._finalise_cmd = None
+
+    @staticmethod
+    async def _execute_prepare_command(
+        command: PythonCallable,
+        working_directory: str | Path | None,
+        session_calculation: InteractiveSessionCalculation,
+        **param_values: dict[str, Any],
+    ) -> None:
+        """Launch and execute the prepare command for this interactive session.
+
+        For the prepare command, only PythonCallable's are supported. This will
+        launch the prepare command in the background and wait for execution to
+        finish. The calculation object returned for the command is stored
+        in the calculation object for the interactive session passed to this
+        function.
+
+        Parameters
+        ----------
+        command : PythonCallable
+            A PythonCallable object containing the command instructions.
+        working_directory : str | Path | None
+            The working directory for the command to run in.
+        session_calculation : InteractiveSessionCalculation
+            The calculation object for the interactive session.
+        param_values : dict[str, Any]
+            Any keyword arguments which will be passed as parameters for the
+            command to run.
+
+        """
+        if not isinstance(command, PythonCallable):
+            raise TypeError("Only `PythonCallable` is supported for 'prepare_cmd'")
+        logger.debug(f"Executing prepare command in background and waiting for it to finish: {command}")
+
+        session_calculation.prepare_calc = await command.execute_in_background(
+            _calculation_id=helpers.generate_calculation_id(),
+            _cwd=working_directory,
+            _num_processes=1,
+            **param_values,
+        )
+        await session_calculation.prepare_calc.wait_until_finished()
+
+        if session_calculation.prepare_calc.exception_raised:
+            exception = session_calculation.prepare_calc.exception_raised
+            session_calculation._error_dialog_process = error_dialog_box(
+                f"An error occurred in the prepare command: {exception}"
+            )
+            # PrepareCommandFailure requires the original exception for better error
+            # reporting upstream
+            raise PrepareCommandFailure(
+                "Prepare command failed", session_calculation.prepare_calc.exception_raised
+            ) from exception
+
+        logger.debug("Prepare command has finished")
+
+    @staticmethod
+    async def _execute_run_command(
+        command: CLICommand | PythonCallable,
+        working_directory: str | Path | None,
+        session_calculation: InteractiveSessionCalculation,
+        **param_values: dict[str, Any],
+    ) -> None:
+        """Launch and execute the run command for this interactive session.
+
+        For the run command, CLICommand's and PythonCallable's are supported.
+        This will launch the runcommand in the background and wait for execution
+        to finish. The calculation object returned for the command is stored
+        in the calculation object for the interactive session passed to this
+        function.
+
+        Parameters
+        ----------
+        command : CLICommand | PythonCallable
+            A CLICommand or PythonCallable object containing the command
+            instructions.
+        working_directory : str | Path | None
+            The working directory for the command to run in.
+        session_calculation : InteractiveSessionCalculation
+            The calculation object for the interactive session.
+        param_values : dict[str, Any]
+            Any keyword arguments which will be passed as parameters for the
+            command to run.
+
+        """
+        if not isinstance(command, CLICommand | PythonCallable):
+            raise TypeError("Only `CLICommand` or `PythonCallable` are supported for 'run_cmd'")
+        logger.debug(f"Executing run command in background and waiting for it to finish: {command}")
+
+        session_calculation.run_calc = await command.execute_in_background(
+            _calculation_id=helpers.generate_calculation_id(),
+            _cwd=working_directory,
+            **param_values,
+        )
+        await session_calculation.run_calc.wait_until_finished()
+
+        if session_calculation.run_calc.exception_raised:
+            exception = session_calculation.run_calc.exception_raised
+            session_calculation._error_dialog_process = error_dialog_box(
+                f"An error occurred in the run command: {exception}"
+            )
+            # RunCommandFailure requires the original exception for better error
+            # reporting upstream
+            raise RunCommandFailure("Run command failed", exception) from exception
+
+        logger.debug("Run command has finished")
+
+    @staticmethod
+    async def _launch_finalise_command(
+        command: PythonCallable,
+        working_directory: str | Path | None,
+        session_calculation: InteractiveSessionCalculation,
+        **param_values: dict[str, Any],
+    ):
+        """Launch the finalise command for this interactive session.
+
+        For the finalise command, only PythonCallable's are supported. This will
+        launch the finalise command in the background and DOES NOT wait for it
+        to finish. The calculation object returned for the command is stored
+        in the calculation object for the interactive session passed to this
+        function.
+
+        Parameters
+        ----------
+        command : CLICommand | PythonCallable
+            A CLICommand or PythonCallable object containing the command
+            instructions.
+        working_directory : str | Path | None
+            The working directory for the command to run in.
+        session_calculation : InteractiveSessionCalculation
+            The calculation object for the interactive session.
+        param_values : dict[str, Any]
+            Any keyword arguments which will be passed as parameters for the
+            command to run.
+
+        """
+        if not isinstance(command, PythonCallable):
+            raise TypeError("Only `PythonCallable` is supported for 'finalise_cmd'")
+        logger.debug(f"Executing finalise command in background: {command}")
+
+        session_calculation.finalise_calc = await command.execute_in_background(
+            _calculation_id=helpers.generate_calculation_id(),
+            _cwd=working_directory,
+            **param_values,
+        )
 
     async def prepare_parameters_for_command_execution(
         self, working_dir: str | Path, **kwargs: dict[str, Any]
@@ -108,7 +252,8 @@ class InteractiveSession(BaseCommand):
         interactive_session_calc = InteractiveSessionCalculation(
             calculation_id=_calculation_id,
             calc_finished_event=calc_finished_event,
-            async_task=None,  # the following will be set after the task begins
+            # the following will be set after the task begins
+            async_task=None,
             prepare_calc=None,
             run_calc=None,
             finalise_calc=None,
@@ -118,70 +263,18 @@ class InteractiveSession(BaseCommand):
         prepare_cmd = ExecutableCommand(self.prepare_cmd_spec) if self.prepare_cmd_spec else None
         finalise_cmd = ExecutableCommand(self.finalise_cmd_spec) if self.finalise_cmd_spec else None
 
-        # Bit of a terrible hack to do this, but it seems to be OK. Essentially we are
-        # creating a task to run which we then use anyio.create_task to run asynchronously
+        # Create a task to run which will use asyncio.create_task to run asynchronously
         # in the background. By doing this we can return an InteractiveSessionCalculation
         # before the run_calc has finished and thus should be able to terminate the
         # calculation.
-        async def session_tasks():
+        async def background_task():
             nonlocal run_cmd, prepare_cmd, finalise_cmd
-
-            # Run prepare command, wait for it to finish, and handle errors
             if prepare_cmd:
-                if not isinstance(prepare_cmd, PythonCallable):
-                    raise TypeError("Only `PythonCallable` is supported for 'prepare_cmd'")
-                logger.debug(f"Executing prepare command in background and waiting for it to finish: {prepare_cmd}")
-                interactive_session_calc.prepare_calc = await prepare_cmd.execute_in_background(
-                    _calculation_id=helpers.generate_calculation_id(),
-                    _cwd=_cwd,
-                    **param_values,
-                )
-                await interactive_session_calc.prepare_calc.wait_until_finished()
-                if interactive_session_calc.prepare_calc.exception:
-                    calc_status = interactive_session_calc.prepare_calc.status
-                    raised_exception = interactive_session_calc.prepare_calc.exception
-                    logger.error(
-                        f"Exception raised by prepare_cmd (calc status {calc_status}): {raised_exception}",
-                    )
-                    error_dialog_box(f"An error occurred in the prepare command: {raised_exception}")
-                    raise PrepareCommandFailure(
-                        "Prepare command failed", interactive_session_calc.prepare_calc.exception
-                    ) from interactive_session_calc.prepare_calc.exception
-                logger.debug("Prepare command has finished executing")
-
-            # Run the main interactive command (run command), wait for it to finish
-            # and handle errors
-            logger.debug(f"Executing run command in background and waiting for it to finish: {run_cmd}")
-            interactive_session_calc.run_calc = await run_cmd.execute_in_background(
-                _calculation_id=helpers.generate_calculation_id(),
-                _cwd=_cwd,
-                **param_values,
-            )
-            await interactive_session_calc.run_calc.wait_until_finished()
-            if interactive_session_calc.run_calc.exception:
-                calc_status = interactive_session_calc.run_calc.status
-                raised_exception = interactive_session_calc.run_calc.exception
-                logger.error(
-                    f"Exception raised by run_cmd (calc status {calc_status}): {raised_exception}",
-                )
-                error_dialog_box(f"An error occurred in the run command: {raised_exception}")
-                raise RunCommandFailure(
-                    "Run command failed", interactive_session_calc.run_calc.exception
-                ) from interactive_session_calc.run_calc.exception
-            logger.debug("Run command has finished executing")
-
-            # Launch finalise command, but don't wait for it to finish. We wait for this
-            # to finish in the interactive session calculation
+                await self._execute_prepare_command(prepare_cmd, _cwd, interactive_session_calc, **param_values)
+            await self._execute_run_command(run_cmd, _cwd, interactive_session_calc, **param_values)
             if finalise_cmd:
-                if not isinstance(finalise_cmd, PythonCallable):
-                    raise TypeError("Only `PythonCallable` is supported for 'finalise_cmd'")
-                logger.debug(f"Executing finalise command in background: {finalise_cmd}")
-                interactive_session_calc.finalise_calc = await finalise_cmd.execute_in_background(
-                    _calculation_id=helpers.generate_calculation_id(),
-                    _cwd=_cwd,
-                    **param_values,
-                )
+                await self._launch_finalise_command(finalise_cmd, _cwd, interactive_session_calc, **param_values)
 
-        interactive_session_calc.background_task = asyncio.create_task(session_tasks())
+        interactive_session_calc.background_task = asyncio.create_task(background_task())
 
         return interactive_session_calc
