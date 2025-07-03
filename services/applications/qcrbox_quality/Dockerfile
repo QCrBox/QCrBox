@@ -15,14 +15,14 @@ ENV QCRBOX__REGISTRY__SERVER__PORT="8000"
 ENV QCRBOX_APPLICATION_DISPLAY_NAME="Qcrbox Quality"
 
 RUN micromamba install -n qcrbox -c conda-forge bokeh numpy django jinja2 && \
-    micromamba clean --all --yes
+    micromamba clean --all --yes && \
+    wget -P ${QCRBOX_HOME} https://github.com/Niolon/cifvis/releases/download/0.9.3/cifvis.alldeps.umd.cjs
 
 RUN rm -f /opt/qcrbox/.idesktop/default.lnk
 COPY --chown=qcrbox:qcrbox \
      qcrbox_quality_module.py \
      django_minimal.py \
      start_dev_webserver.sh \
-     cifvis.alldeps.umd.cjs \
      ${QCRBOX_HOME}
 
 ADD templates ${QCRBOX_HOME}/templates
