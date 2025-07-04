@@ -80,12 +80,14 @@ class QualityIndicatorBox:
 
         """
         read_value = cif_block.get(entry, "N/A")
-        if unit == "%" and isinstance(read_value, (int | float)):
+        if read_value == "N/A":
+            value = "N/A"
+            quality_level = DataQuality.INFORMATION
+        elif unit == "%":
             value = f"{float(read_value) * 100:.2f}"
-        elif isinstance(read_value, (int | float)):
-            value = f"{float(read_value):.2f}"
+            quality_level = from_entry(cif_block, entry)
         else:
-            value = read_value
+            value = f"{float(read_value):.2f}"
+            quality_level = from_entry(cif_block, entry)
 
-        quality_level = from_entry(cif_block, entry)
         return QualityIndicatorBox(name, value, unit, quality_level)

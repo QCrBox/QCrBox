@@ -32,8 +32,10 @@ def basic_model_quality_indicators(cif_text):
     """
     cif_model = read_cif_text_as_unified(cif_text)
     cif_block, _ = cifdata_str_or_index(cif_model, 0)
-    cif_block.add_data_item("_refine.diff_density_max", cif_block["_refine_diff.density_max"])
-    cif_block.add_data_item("_refine.diff_density_min", cif_block["_refine_diff.density_min"])
+    if "_refine_diff.density_max" in cif_block:
+        cif_block.add_data_item("_refine.diff_density_max", cif_block["_refine_diff.density_max"])
+    if "_refine_diff.density_min" in cif_block:
+        cif_block.add_data_item("_refine.diff_density_min", cif_block["_refine_diff.density_min"])
 
     entries = [
         ["_refine_ls.r_factor_all", r"$R_1(F)$", "%"],
