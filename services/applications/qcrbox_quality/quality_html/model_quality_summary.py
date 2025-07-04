@@ -1,13 +1,8 @@
-from pathlib import Path
-from textwrap import dedent
-
+from django.template.loader import render_to_string
 from qcrboxtools.analyse.quality.cif import from_entry
-from qcrboxtools.analyse.quality.html.quality_box import (
-    QualityIndicatorBox,
-    quality_div_group,
-)
 from qcrboxtools.cif.read import cifdata_str_or_index
 
+from .base import QualityIndicatorBox
 from .util import read_cif_text_as_unified
 
 
@@ -33,19 +28,19 @@ def basic_model_quality_indicators(cif_text):
         QualityIndicatorBox(
             name=r"$\rho_\mathrm{max}$",
             value=cif_block["_refine.diff_density_max"],
-            unit=r"$e\,\mathrm{Ang}^{-3}$",
+            unit=r"$e\,\mathrm{Å}^{-3}$",
             quality_level=from_entry(cif_block, "_refine.diff_density_max"),
         ),
         QualityIndicatorBox(
             name=r"$\rho_\mathrm{min}$",
             value=cif_block["_refine.diff_density_min"],
-            unit=r"$e\,\mathrm{Ang}^{-3}$",
+            unit=r"$e\,\mathrm{Å}^{-3}$",
             quality_level=from_entry(cif_block, "_refine.diff_density_min"),
         ),
         QualityIndicatorBox(
             name=r"$d_\mathrm{min}$",
             value=cif_block["_refine_ls.d_res_high"],
-            unit=r"$\mathrm{Ang}$",
+            unit=r"$\mathrm{Å}$",
             quality_level=from_entry(cif_block, "_refine_ls.d_res_high"),
         ),
         QualityIndicatorBox(
@@ -56,17 +51,14 @@ def basic_model_quality_indicators(cif_text):
         ),
     ]
 
-    header_snippet = dedent(
-        r"""
-        <script type="text/javascript" id="MathJax-script" async
-        src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js">
-        </script>
-    """
-    ).strip()
+    header_snippet = render_to_string("category_components/model_quality/header.html", {})
 
-    body_snippet = '<div class="section indicators">\n' + quality_div_group(indicators) + "\n</div>"
+    body_snippet = render_to_string(
+        "category_components/model_quality/body.html",
+        {
+            "indicators": indicators,
+        },
+    )
 
-    css_template_path = Path(__file__).parents[1] / "templates" / "quality.css"
-
-    css_snippet = css_template_path.read_text(encoding="utf-8").strip()
+    css_snippet = render_to_string("category_components/model_quality/style.css", {})
     return header_snippet, body_snippet, css_snippet

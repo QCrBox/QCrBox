@@ -7,15 +7,15 @@
             style="width: 100%; height: 100%;">
         </cifview-widget>
 
-        <script>            
+        <script type="text/javascript">            
             // Initialize with CIF data
             const widget = document.getElementById('cifview');
             
             // Wait for custom element to be defined and connected
-            customElements.whenDefined('cifview-widget').then(() => {{
+            customElements.whenDefined('cifview-widget').then(() => {
                 const cifData = atob("{{ cif_b64 }}");
                 widget.loadFromString(cifData);
-            }});
+            });
         </script>
     </div>
 </div>
