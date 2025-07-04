@@ -27,7 +27,7 @@ def add_verbose_option(f):
 
 
 def add_cli_option_to_enable_or_disable_components(f):
-    DEFAULT_ALL_COMPONENTS = ("olex2", "crystal-explorer", "qcrbox_quality")
+    DEFAULT_ALL_COMPONENTS = ("olex2", "crystal-explorer", "mopro")
     DEFAULT_TEST_COMPONENTS = ("olex2",)
     DEFAULT_EXPLICITLY_ENABLED_COMPONENTS = ()
     DEFAULT_EXPLICITLY_DISABLED_COMPONENTS = ("shelx", "qcrbox-nextflow", "eval1x")
