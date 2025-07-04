@@ -106,7 +106,7 @@ jobs:
 
       - name: Bring up QCrBox registry and applications
         run: |
-          qcb up --all --test-only
+          qcb up --test-only
 
       - name: Wait for QCrBox registry to be ready
         run: |
