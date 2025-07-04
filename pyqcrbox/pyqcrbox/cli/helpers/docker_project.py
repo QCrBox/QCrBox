@@ -7,17 +7,14 @@ import subprocess
 from loguru import logger
 
 from .compose_file_config import ComposeFileConfig
-from .qcrbox_helpers import (
-    QCrBoxSubprocessError,
-    get_current_pyqcrbox_version,
-    prettyprint_called_process_error,
-)
+from .qcrbox_helpers import QCrBoxSubprocessError, get_current_pyqcrbox_version, prettyprint_called_process_error
 
 __all__ = ["DockerProject"]
 
 
 class DockerProject:
     def __init__(self, *, name: str = "qcrbox", config_name: str = "default"):
+        self.config_name = config_name
         self.project_name = name
         self.compose_file_config = ComposeFileConfig.get_config(config_name)
         self.repo_root = self.compose_file_config.repo_root
@@ -45,7 +42,10 @@ class DockerProject:
         self.run_docker_compose_command("build", target_image, dry_run=dry_run, capture_output=True)
 
     def _construct_docker_compose_command(self, cmd: str, *cmd_args: str):
-        env_dev_file = self.repo_root.joinpath(".env.dev")
+        if self.config_name == "default":
+            env_file = self.repo_root.joinpath(".env.dev")
+        else:
+            env_file = self.repo_root.joinpath(".env.test")
 
         docker_executable = shutil.which("docker")
         cmd = (
@@ -53,7 +53,7 @@ class DockerProject:
                 docker_executable,
                 "compose",
                 f"--project-name={self.project_name}",
-                f"--env-file={env_dev_file}",
+                f"--env-file={env_file}",
             ]
             + self.compose_file_config.command_line_options
             + [cmd]

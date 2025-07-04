@@ -13,6 +13,8 @@ QCrBox makes use of a number of drop-in replacement technologies for common Pyth
 - [uv](https://docs.astral.sh/uv/guides/install-python/) - performance-optimised Python package manager, drop-in replacement for the Pip package manager
 - [pytest](https://docs.pytest.org/en/stable/) - automated unit test suite
 - [ruff](https://docs.astral.sh/ruff/) - performant Python linter and code formatter
+- [Robot Framework](https://robotframework.org/) -automation framework for test automation, used for acceptance testing
+  the API endpoints
 
 Documentation:
 

@@ -30,6 +30,13 @@ def find_docker_compose_run_files(root: Path):
     return valid_paths
 
 
+@functools.lru_cache(maxsize=1)
+def find_docker_compose_test_files(root: Path):
+    candidate_paths = sorted(root.rglob("docker-compose*.test.yml"))
+    valid_paths = [p for p in candidate_paths if "_template" not in p.parts]
+    return valid_paths
+
+
 def load_docker_compose_data(*compose_files: PathLike):
     docker_compose_data = {}
     for compose_file in compose_files:
@@ -39,20 +46,26 @@ def load_docker_compose_data(*compose_files: PathLike):
 
 
 class ComposeFileConfig:
-    def __init__(self, *, compose_files_build=None, compose_files_runtime=None):
+    def __init__(self, *, compose_files_build=None, compose_files_runtime=None, compose_files_test=None):
         compose_files_build = compose_files_build or ()
         compose_files_runtime = compose_files_runtime or ()
+        compose_files_test = compose_files_test or ()
 
-        if compose_files_build == () and compose_files_runtime == ():
-            raise ValueError("Arguments `compose_files_build` and `compose_files_runtime` cannot both be empty.")
+        if (compose_files_build == () and compose_files_runtime == ()) or (
+            compose_files_build == () and compose_files_test == ()
+        ):
+            raise ValueError(
+                "Arguments `compose_files_build` and `compose_files_runtime` or `compose_files_tests` cannot be empty."
+            )
 
         self.repo_root = find_common_repo_root(*compose_files_build, *compose_files_runtime)
         self.compose_files_build = [Path(compose_file).resolve() for compose_file in compose_files_build]
         self.compose_files_runtime = [Path(compose_file).resolve() for compose_file in compose_files_runtime]
+        self.compose_files_test = [Path(compose_file).resolve() for compose_file in compose_files_test]
 
         self._service_metadata_by_compose_file = {
             compose_file.relative_to(self.repo_root): load_docker_compose_data(compose_file)
-            for compose_file in self.compose_files_build + self.compose_files_runtime
+            for compose_file in self.compose_files_build + self.compose_files_runtime + self.compose_files_test
         }
         self._full_service_metadata = {}
         for compose_file, data in self._service_metadata_by_compose_file.items():
@@ -63,13 +76,28 @@ class ComposeFileConfig:
         repo_root = get_repo_root()
         compose_files_build = find_docker_compose_build_files(repo_root)
         compose_files_runtime = find_docker_compose_run_files(repo_root)
-        return cls(compose_files_build=compose_files_build, compose_files_runtime=compose_files_runtime)
+        return cls(
+            compose_files_build=compose_files_build,
+            compose_files_runtime=compose_files_runtime,
+        )
+
+    @classmethod
+    def get_test_config(cls):
+        repo_root = get_repo_root()
+        compose_files_build = find_docker_compose_build_files(repo_root)
+        compose_files_test = find_docker_compose_test_files(repo_root)
+        return cls(
+            compose_files_build=compose_files_build,
+            compose_files_test=compose_files_test,
+        )
 
     @classmethod
     def get_config(cls, config_name):
         match config_name:
             case "default":
                 return cls.get_default_config()
+            case "test":
+                return cls.get_test_config()
             case _:
                 raise ValueError(f"Invalid config name: {config_name}")
 
@@ -161,7 +189,7 @@ class ComposeFileConfig:
 
     @property
     def compose_files(self):
-        return self.compose_files_build + self.compose_files_runtime
+        return self.compose_files_build + self.compose_files_runtime + self.compose_files_test
 
     @property
     def command_line_options(self):
