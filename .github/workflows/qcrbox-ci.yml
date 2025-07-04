@@ -44,6 +44,7 @@ jobs:
           path: .build/docs_site/
 
   deploy_docs:
+    if: github.event_name == 'push'
     needs: build_docs
 
     # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
@@ -66,17 +67,84 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4 # or the latest "vX.X.X" version tag for this action
 
-  ruff:
+  # ruff:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: Print ruff version
+  #       uses: chartboost/ruff-action@v1
+  #       with:
+  #         args: --version
+  #     - uses: chartboost/ruff-action@v1
+  #       with:
+  #         args: check --config pyqcrbox/pyproject.toml
+  #     - uses: chartboost/ruff-action@v1
+  #       with:
+  #         args: format --diff --config pyqcrbox/pyproject.toml
+
+  robot_acceptance_tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Print ruff version
-        uses: chartboost/ruff-action@v1
         with:
-          args: --version
-      - uses: chartboost/ruff-action@v1
+            fetch-depth: 0
+
+      - uses: actions/setup-python@v4
         with:
-          args: check --config pyqcrbox/pyproject.toml
-      - uses: chartboost/ruff-action@v1
-        with:
-          args: format --diff --config pyqcrbox/pyproject.toml
+          python-version: '3.11'
+          cache: 'pip' # caching pip dependencies
+
+      - name: Install Python dependencies for CLI
+        run: |
+          pip install --upgrade uv
+          uv pip install --system -r ./pyqcrbox/requirements-dev.txt
+          uv pip install --system pyqcrbox@./pyqcrbox
+
+      - name: Clean up any existing containers
+        run: |
+          docker container prune -f
+          docker network prune -f
+
+      - name: Bring up QCrBox registry and applications
+        run: |
+          qcb up --test-only
+
+      - name: Wait for QCrBox registry to be ready
+        run: |
+          set -a
+          source .env.test
+          set +a
+          for i in {1..30}; do
+            if curl -s ${QCRBOX_BIND_ADDRESS}:${QCRBOX_REGISTRY_PORT}/api/healthz; then
+              exit 0
+            fi
+            echo "Waiting for registry to be ready... ($i/30)"
+            sleep 10
+          done
+          echo "Registry is not available"
+          exit 1
+
+      - name: Wait for applications to be registered
+        run: |
+          set -a
+          source .env.test
+          set +a
+          sleep 30
+          curl -s ${QCRBOX_BIND_ADDRESS}:${QCRBOX_REGISTRY_PORT}/api/applications
+
+      - name: Run Robot Framework test suites
+        run: |
+          set -a
+          source .env.test
+          set +a
+          cd ./pyqcrbox/robot_tests
+
+          echo "Running API Endpoints suite"
+          robot api_endpoints.robot
+
+      - name: Clean-up QCrBox
+        if: always()
+        run: |
+          qcb down || true
+          docker container prune -f
+          docker network prune -f

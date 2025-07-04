@@ -1,9 +1,12 @@
 ARG QCRBOX_DOCKER_TAG
 
-FROM qcrbox/base-application:${QCRBOX_DOCKER_TAG}
+FROM qcrbox/base-ancestor:${QCRBOX_DOCKER_TAG}
 
 
 SHELL ["/bin/bash", "-c"]
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
 ENV QCRBOX__NATS__HOST="qcrbox-nats"
 ENV QCRBOX__REGISTRY__SERVER__HOST="qcrbox-registry"
@@ -11,17 +14,33 @@ ENV QCRBOX__REGISTRY__SERVER__PORT="8000"
 
 ENV QCRBOX_APPLICATION_DISPLAY_NAME="Qcrbox Quality"
 
-RUN micromamba install -n qcrbox -c conda-forge plotly bokeh numpy trimesh && \
-    micromamba clean --all --yes
+RUN micromamba install -n qcrbox -c conda-forge bokeh numpy django jinja2 && \
+    micromamba clean --all --yes && \
+    wget -P ${QCRBOX_HOME} https://github.com/Niolon/cifvis/releases/download/0.9.3/cifvis.alldeps.umd.cjs
 
 RUN rm -f /opt/qcrbox/.idesktop/default.lnk
 COPY --chown=qcrbox:qcrbox \
-     config_qcrbox_quality.yaml \
-     configure_qcrbox_quality.py \
      qcrbox_quality_module.py \
+     django_minimal.py \
+     start_dev_webserver.sh \
      ${QCRBOX_HOME}
 
+ADD templates ${QCRBOX_HOME}/templates
+
+RUN chmod +x start_dev_webserver.sh
+
+COPY --chown=qcrbox:qcrbox \
+     supervisord.quality_webserver.conf \
+        ${QCRBOX_HOME}/supervisord_conf
+
 USER ${QCRBOX_USER}
+ENV QCRBOX_HOME=${QCRBOX_HOME}
+
 WORKDIR ${QCRBOX_HOME}
 
 ENV PATH="$PATH:${QCRBOX_HOME}/bin/"
+
+ENV QCRBOX_APPLICATION_DISPLAY_NAME="DataDisplay"
+ENV QCRBOX__LOGGING__LOG_LEVEL="DEBUG"
+
+EXPOSE 8080

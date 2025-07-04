@@ -1,41 +1,36 @@
+import base64
 from pathlib import Path
 from textwrap import dedent
 
 import numpy as np
-import plotly.graph_objects as go
 from bokeh.embed import components
 from bokeh.models import ColumnDataSource
 from bokeh.plotting import figure
 from bokeh.resources import INLINE
 from iotbx.cif import reader
-from qcrboxtools.analyse.ortep import cif2ortep_glb
 from qcrboxtools.analyse.quality.cif import from_entry
 from qcrboxtools.analyse.quality.html.quality_box import (
     QualityIndicatorBox,
     quality_div_group,
 )
-from qcrboxtools.cif.cif2cif import cif_file_to_specific_by_yml
-from qcrboxtools.cif.read import cifdata_str_or_index, read_cif_safe
+from qcrboxtools.cif.entries import cif_to_unified_keywords
+from qcrboxtools.cif.read import cifdata_str_or_index
+from qcrboxtools.cif.uncertainties import split_su_cif
 
-YAML_PATH = "config_qcrbox_quality.yaml"
+
+def read_cif_text_as_unified(input_cif_text):
+    """Read a CIF text string and return a unified CIF model."""
+    cif_model = reader(input_string=input_cif_text).model()
+    cif_model = cif_to_unified_keywords(cif_model, custom_categories=["iucr", "olex2"])
+    cif_model = split_su_cif(cif_model)
+    return cif_model
 
 
-def basic_model_quality_indicators(input_cif_path, output_html_path):
-    input_cif_path = Path(input_cif_path)
-    output_html_path = Path(output_html_path)
-
-    work_cif_path = input_cif_path.parent / "qcrbox_work.cif"
-
-    cif_file_to_specific_by_yml(
-        input_cif_path,
-        work_cif_path,
-        YAML_PATH,
-        "basic_model_quality_indicators",
-        "input_cif_path",
-    )
-
-    cif_model = read_cif_safe(work_cif_path)
+def basic_model_quality_indicators(cif_text):
+    cif_model = read_cif_text_as_unified(cif_text)
     cif_block, _ = cifdata_str_or_index(cif_model, 0)
+    cif_block.add_data_item("_refine.diff_density_max", cif_block["_refine_diff.density_max"])
+    cif_block.add_data_item("_refine.diff_density_min", cif_block["_refine_diff.density_min"])
 
     indicators = [
         QualityIndicatorBox(
@@ -53,19 +48,19 @@ def basic_model_quality_indicators(input_cif_path, output_html_path):
         QualityIndicatorBox(
             name=r"$\rho_\mathrm{max}$",
             value=cif_block["_refine.diff_density_max"],
-            unit=r"$e\,\unicode{x212B}^{-3}$",
+            unit=r"$e\,\mathrm{Ang}^{-3}$",
             quality_level=from_entry(cif_block, "_refine.diff_density_max"),
         ),
         QualityIndicatorBox(
             name=r"$\rho_\mathrm{min}$",
             value=cif_block["_refine.diff_density_min"],
-            unit=r"$e\,\unicode{x212B}^{-3}$",
+            unit=r"$e\,\mathrm{Ang}^{-3}$",
             quality_level=from_entry(cif_block, "_refine.diff_density_min"),
         ),
         QualityIndicatorBox(
             name=r"$d_\mathrm{min}$",
             value=cif_block["_refine_ls.d_res_high"],
-            unit=r"$\unicode{x212B}$",
+            unit=r"$\mathrm{Ang}$",
             quality_level=from_entry(cif_block, "_refine_ls.d_res_high"),
         ),
         QualityIndicatorBox(
@@ -76,102 +71,7 @@ def basic_model_quality_indicators(input_cif_path, output_html_path):
         ),
     ]
 
-    boxes_css = dedent(
-        """
-        .indicators-container {
-            display: flex;
-            gap: 16px;
-            justify-content: center;
-            flex-direction: row;
-            padding: 20px;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
-        }
-
-        .indicator {
-            padding: 12px;
-            border-radius: 8px;
-            text-align: center;
-            width: 100px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            min-height: 70px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            transition: transform 0.2s ease;
-        }
-
-        .indicator:hover {
-            transform: translateY(-2px);
-        }
-
-        /* Data Quality Colour Classes with slightly muted colors */
-        .data-quality-good {
-            background-color: #2e9d4f;
-            color: #ffffff;
-        }
-
-        .data-quality-goodish {
-            background-color: #7ed957;
-            color: #000000;
-        }
-
-        .data-quality-marginal {
-            background-color: #e4ef4c;
-            color: #000000;
-        }
-
-        .data-quality-badish {
-            background-color: #ffa726;
-            color: #000000;
-        }
-
-        .data-quality-bad {
-            background-color: #f44336;
-            color: #ffffff;
-        }
-
-        .data-quality-information {
-            background-color: #78909c;
-            color: #ffffff;
-        }
-
-        /* Indicator Content */
-        .indicator .name {
-            font-size: 14px;
-            line-height: 1.4;
-            margin-bottom: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 40px;
-        }
-
-        .indicator .value {
-            font-size: 18px;
-            font-weight: 600;
-            margin: 4px 0;
-        }
-
-        .indicator .unit {
-            font-size: 12px;
-            opacity: 0.9;
-            margin-top: 4px;
-            line-height: 1.2;
-        }
-
-        /* MathJax specific adjustments */
-        .mjx-chtml {
-            font-size: 110% !important;
-            margin: 0 !important;
-        }
-
-        .name .mjx-chtml {
-            display: inline-flex !important;
-            align-items: center;
-        }
-    """
-    ).strip()
-    mathjax = dedent(
+    header_snippet = dedent(
         r"""
         <script type="text/javascript" id="MathJax-script" async
         src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js">
@@ -179,28 +79,20 @@ def basic_model_quality_indicators(input_cif_path, output_html_path):
     """
     ).strip()
 
-    css_in_html = f"<style>\n{boxes_css}\n</style>\n\n"
+    body_snippet = '<div class="section indicators">\n' + quality_div_group(indicators) + "\n</div>"
 
-    html_snippet = mathjax + css_in_html + quality_div_group(indicators)
-    output_html_path.write_text(html_snippet, encoding="UTF-8")
-    # output_html_path.with_suffix(".css").write_text(boxes_css, encoding="UTF-8")
+    css_template_path = Path(__file__).parent / "templates" / "quality.css"
+
+    css_snippet = css_template_path.read_text(encoding="utf-8").strip()
+    return header_snippet, body_snippet, css_snippet
 
 
-def fobs_calc_block_from_cif(input_cif_path: Path, plotting_module: str = "bokeh"):
-    work_cif_path = input_cif_path.parent / "qcrbox_work.cif"
-
-    cif_file_to_specific_by_yml(
-        input_cif_path,
-        work_cif_path,
-        YAML_PATH,
-        f"fobs_div_fcalc_{plotting_module}",
-        "input_cif_path",
-    )
-
-    cif_model = read_cif_safe(work_cif_path)
+def fobs_calc_block_from_cif(cif_text):
+    cif_model = read_cif_text_as_unified(cif_text)
     cif_block, _ = cifdata_str_or_index(cif_model, 0)
+
     if "_iucr.refine_fcf_details" in cif_block:
-        cif_model = reader(input_string=cif_block["_iucr.refine_fcf_details"]).model()
+        cif_model = read_cif_text_as_unified(cif_block["_iucr.refine_fcf_details"])
         cif_block, _ = cifdata_str_or_index(cif_model, 0)
 
     return cif_block
@@ -216,71 +108,19 @@ def diagonal_line_parameters(fobs, fcalc):
 
 
 def create_hkl_labels(cif_block):
-    miller_entries = [f"_refln_index_{i}" for i in ("h", "k", "l")]
+    miller_entries = [f"_refln.index_{i}" for i in ("h", "k", "l")]
     if all(entry in cif_block for entry in miller_entries):
         miller_content = list(cif_block[entry] for entry in miller_entries)
-        return [f"({mil_h} {mil_k} {mil_l})" for mil_h, mil_k, mil_l in zip(*miller_content)]
+        return [f"({mil_h} {mil_k} {mil_l})" for mil_h, mil_k, mil_l in zip(*miller_content, strict=False)]
     return None
 
 
-def fobs_div_fcalc_plotly(input_cif_path, output_html_path):
-    input_cif_path = Path(input_cif_path)
-    output_html_path = Path(output_html_path)
+def fobs_div_fcalc(cif_text):
+    cif_block = fobs_calc_block_from_cif(cif_text)
+    print(cif_block.keys())
 
-    cif_block = fobs_calc_block_from_cif(input_cif_path, "plotly")
-
-    f_calc_sq = np.array(cif_block["_refln_F_squared_calc"], dtype=np.float64)
-    f_obs_sq = np.array(cif_block["_refln_F_squared_meas"], dtype=np.float64)
-
-    fobs = np.zeros_like(f_obs_sq)
-    fobs[f_obs_sq > 0] = np.sqrt(f_obs_sq[f_obs_sq > 0])
-    fobs[f_obs_sq < 0] = -np.sqrt(np.abs(f_obs_sq[f_obs_sq < 0]))
-    fcalc = np.sqrt(f_calc_sq)
-
-    line_start_end, view_range = diagonal_line_parameters(fobs, fcalc)
-    miller_labels = create_hkl_labels(cif_block)
-
-    if miller_labels is None:
-        hovertemplate = None
-    else:
-        hovertemplate = "%{text}"
-    fig = go.Figure()
-
-    fig.add_trace(
-        go.Scatter(x=fobs, y=fcalc, hovertemplate=hovertemplate, name="hkl", text=miller_labels, mode="markers")
-    )
-
-    fig.add_trace(
-        go.Scatter(
-            x=line_start_end,
-            y=line_start_end,
-            mode="lines",
-            line=dict(color="rgba(0,0,0,0.2)", width=1),
-        )
-    )
-
-    fig.update_layout(
-        xaxis_title=r"$$F_\text{obs}$$",
-        yaxis_title=r"$$F_\text{calc}$$",
-    )
-
-    fig.update_xaxes(range=view_range)
-    fig.update_yaxes(range=view_range)
-    fig.update_layout(showlegend=False)
-
-    html_snippet = fig.to_html(include_mathjax="cdn", full_html=False)
-
-    output_html_path.write_text(html_snippet, encoding="UTF-8")
-
-
-def fobs_div_fcalc_bokeh(input_cif_path, output_html_path):
-    input_cif_path = Path(input_cif_path)
-    output_html_path = Path(output_html_path)
-
-    cif_block = fobs_calc_block_from_cif(input_cif_path, "bokeh")
-
-    f_calc_sq = np.array(cif_block["_refln_F_squared_calc"], dtype=np.float64)
-    f_obs_sq = np.array(cif_block["_refln_F_squared_meas"], dtype=np.float64)
+    f_calc_sq = np.array(cif_block["_refln.f_squared_calc"], dtype=np.float64)
+    f_obs_sq = np.array(cif_block["_refln.f_squared_meas"], dtype=np.float64)
     fobs = np.zeros_like(f_obs_sq)
     fobs[f_obs_sq > 0] = np.sqrt(f_obs_sq[f_obs_sq > 0])
     fobs[f_obs_sq < 0] = -np.sqrt(np.abs(f_obs_sq[f_obs_sq < 0]))
@@ -312,29 +152,48 @@ def fobs_div_fcalc_bokeh(input_cif_path, output_html_path):
     plot_script, plot_div = components(p)
     js_resources = INLINE.render_js()
     css_resources = INLINE.render_css()
-    snippet = f"{js_resources}\n{css_resources}\n{plot_script}\n{plot_div}"
 
-    output_html_path.write_text(snippet, encoding="UTF-8")
+    header_snippet = js_resources
+    body_snippet = '<div class="section plot">\n' + plot_script + "\n" + plot_div + "\n</div>"
+    css_snippet = css_resources
+
+    return header_snippet, body_snippet, css_snippet
 
 
-def ortep_3d(input_cif_path, output_html_path):
-    input_cif_path = Path(input_cif_path)
-    output_html_path = Path(output_html_path)
-    output_glb_path = output_html_path.parent / "structure.glb"
-    cif2ortep_glb(input_cif_path, output_glb_path)
-    html_snippet = dedent(
-        """
-        <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js">
+def ortep_cifvis_3d(cif_text):
+    with open("cifvis.alldeps.umd.cjs") as fobj:
+        js_code = fobj.read()
+
+    cif_b64 = base64.b64encode(cif_text.encode()).decode()
+
+    css_path = Path(__file__).parent / "templates" / "ortep.css"
+    css_snippet = css_path.read_text(encoding="utf-8").strip()
+    inner_html_snippet = dedent(
+        f"""
+    <div class="cifvis-container" style="width: 100%; height: 100%;">
+                
+        <cifview-widget 
+            id="cifview"
+            caption="Crystal Structure"
+            style="width: 100%; height: 100%;">
+        </cifview-widget>
+
+        <script type="module">            
+            // Load the bundle
+            {js_code}
+            
+            // Initialize with CIF data
+            const widget = document.getElementById('cifview');
+            
+            // Wait for custom element to be defined and connected
+            customElements.whenDefined('cifview-widget').then(() => {{
+                const cifData = atob("{cif_b64}");
+                widget.loadFromString(cifData);
+            }});
         </script>
-        <style>
-        model-viewer {
-            width: 100%;
-            height: 100%;
-        }
-        </style>
-
-        <model-viewer alt="3D ORTEP" src="structure.glb" shadow-intensity="1" camera-controls touch-action="pan-y">
-        </model-viewer>
+    </div>
     """
-    ).strip()
-    output_html_path.write_text(html_snippet, encoding="UTF-8")
+    )
+    html_snippet = '<div class="section ortep">\n' + inner_html_snippet + "\n</div>"
+
+    return "", html_snippet, css_snippet

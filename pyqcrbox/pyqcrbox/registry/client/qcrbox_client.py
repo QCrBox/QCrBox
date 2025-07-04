@@ -156,39 +156,37 @@ class QCrBoxClient(QCrBoxServerClientBase):
 
         """
         logger.info(f"Received command execution request: {msg!r} (current status: {self.status.status})")
-
         if self.status.status != ClientStatusEnum.PENDING:
             logger.error(
                 f"Trying to execute a command when client is not PENDING (current status: {self.status.status})"
             )
             return
         self.status.set_busy()
+        await self.add_interactive_session_to_db(msg)
 
-        await self.add_interactive_session_to_database(msg)
-
+        calc = None
         try:
-            cmd = self.get_executable_command(msg.command_name)
+            command = self.get_executable_command(msg.command_name)
             # Parse each argument in `msg.arguments` as the correct parameter type
             # Steps:
             #   - get the command spec and look up parameter types for each argument
             #   - parse each argument as the correct type
             parsed_args = {}
             for param_name, value in msg.arguments.items():
-                param_dtype_str = cmd.cmd_spec.get_parameter_by_name(param_name).dtype
+                param_dtype_str = command.cmd_spec.get_parameter_by_name(param_name).dtype
                 parsed_args[param_name] = parse_parameter_as_its_dtype(value, param_dtype_str)
-            logger.debug(f"Executing calculation in the background: {cmd!r}")
-            calc = await cmd.execute_in_background(
+
+            logger.debug(f"Executing calculation in the background: {command!r}")
+            calc = await command.execute_in_background(
                 **parsed_args, _calculation_id=msg.calculation_id, _cwd=self.working_dir
             )
             if not isinstance(calc, BaseCalculation):
                 raise RuntimeError("Command execution did not return a calculation object.")
-            logger.debug(f"Executing command has returned calculation: {calc!r}")
         except Exception as exc:
-            logger.debug("cmd.execute_in_background() raised an exception")
-            logger.error(
-                f"Command failed in background task with exception: {exc!r}",
-            )
-            await self.handle_command_execution_exception(msg.calculation_id, exc)
+            logger.error(f"Command failed in background task with exception: {exc!r}")
+            # calc will be unbound if execute_in_background fails
+            if calc:
+                await self.handle_command_execution_exception(calc, exc)
             return
 
         # Keep track of the calculation, which should still be running
@@ -199,19 +197,13 @@ class QCrBoxClient(QCrBoxServerClientBase):
         try:
             await calc.wait_until_finished()
         except Exception as exc:
-            logger.debug("calc.wait_until_finished() raised an exception")
-            logger.error(
-                f"Calculation failed in background task with exception: {exc!r}",
-            )
-            if isinstance(calc, InteractiveSessionCalculation):
-                calc.is_closed = True
-                calc.session_closed_event.set()
-            await self.handle_command_execution_exception(msg.calculation_id, exc)
+            logger.error(f"Calculation failed in background task with exception: {exc!r}")
+            await self.handle_command_execution_exception(calc, exc)
             return
 
         await update_calculation_status_in_nats_kv(await calc.get_status_details())
 
-    async def handle_command_execution_exception(self, calculation_id: str, exception: Exception) -> None:
+    async def handle_command_execution_exception(self, calculation: BaseCalculation, exception: Exception) -> None:
         """Handle a command execution error.
 
         This updates the calculation status to FAILED and sets the client back to
@@ -220,22 +212,29 @@ class QCrBoxClient(QCrBoxServerClientBase):
 
         Parameters
         ----------
-        calculation_id : str
-            The calculation ID of the command.
+        calculation: BaseCalculation
+            The calculation which failed.
         exception : Exception
             The exception raised by the command.
 
         """
+        # Handle any special cases where something extra needs to be done.
+        #   - Interactive sessions: need to set flags to indicate that the
+        #      session has finished.
+        if isinstance(calculation, InteractiveSessionCalculation):
+            calculation.session_closed_event.set()
+            calculation.is_closed = True
+
         status_details = CalculationStatusDetails(
-            calculation_id=calculation_id,
+            calculation_id=calculation.calculation_id,
             status=CalculationStatusEnum.FAILED,
             stdout="",
             stderr="",
             extra_info={"error_msg": f"Exception raised in background task: {exception!r}"},
         )
         await update_calculation_status_in_nats_kv(status_details)
-        # Set client back to being idle, otherwise we wouldn't be able to request
-        # new commands
+
+        # Set client back to being idle, otherwise it won't accept new requests
         logger.debug("Setting client status to idle in handle_command_execution_exception")
         self.status.set_idle()
 
@@ -261,13 +260,11 @@ class QCrBoxClient(QCrBoxServerClientBase):
             A NATS response containing the status and dataset ID for any output.
 
         """
+        session_id = msg.session_id
         logger.info(f"Received request to close interactive session: {msg!r}")
 
-        session_id = msg.session_id
-
         if session_id not in self.calculations:
-            logger.error(f"No calculations on client found for {session_id!r}")
-            logger.debug(f"Calculations in client: {self.calculations.keys()}")
+            logger.error(f"Calculation not found in client for {session_id!r}")
             response = msg_specs.CloseInteractiveSessionResponseNATS(
                 session_id=session_id,
                 status=CalculationStatusEnum.FAILED,
@@ -275,46 +272,56 @@ class QCrBoxClient(QCrBoxServerClientBase):
             )
             return response
 
-        try:
-            calc = self.calculations[session_id]
-        except KeyError:
-            logger.error(f"Unable to find calculation with session_id={session_id!r}")
-            response = msg_specs.CloseInteractiveSessionResponseNATS(
-                session_id=session_id, status=CalculationStatusEnum.FAILED, output_dataset_id=None
-            )
-            return response
-
+        calc = self.calculations[session_id]
         logger.debug(f"Attempting to close interactive session: {calc}")
         try:
             await calc.terminate()
-            self.status.set_idle()  # Set status to idle so container can be re-used
         except AttributeError:
-            logger.error(f"Calculation {session_id!r} is not an interactive session")
+            logger.exception(f"Unable to terminate interactive session: {calc!r}")
             response = msg_specs.CloseInteractiveSessionResponseNATS(
                 session_id=session_id, status=CalculationStatusEnum.FAILED, output_dataset_id=None
             )
             return response
-
-        if calc.exception:
-            if isinstance(calc.exception, PrepareCommandFailure):
-                error_msg = f"Prepare step failed: {calc.exception.original_exception}"
-            elif isinstance(calc.exception, RunCommandFailure):
-                error_msg = f"Run step failed: {calc.exception.original_exception}"
-            elif isinstance(calc.exception, FinaliseCommandFailure):
-                error_msg = f"Fianalise step failed: {calc.exception.original_exception}"
-            else:
-                error_msg = f"Command failed: {calc.exception}"
-        else:
-            error_msg = None
+        self.status.set_idle()
+        logger.debug("Interactive session has been closed and client set to idle")
 
         response = msg_specs.CloseInteractiveSessionResponseNATS(
             session_id=session_id,
             status=calc.status,
             output_dataset_id=calc.output_dataset_id,
-            error_msg=error_msg,
+            error_msg=self.get_interactive_session_error_message(calc),
         )
 
         return response
+
+    @staticmethod
+    def get_interactive_session_error_message(calc: InteractiveSessionCalculation) -> str:
+        """Get an error message from an interactive session calculation.
+
+        Parameters
+        ----------
+        calc : InteractiveSessionCalculation
+            The calculation object for the interactive session being closed.
+
+        Returns
+        -------
+        str
+            The error message returned. This could be an empty string.
+
+        """
+        if calc.exception_raised:
+            if isinstance(calc.exception_raised, PrepareCommandFailure):
+                error_msg = f"Prepare step failed: {calc.exception_raised.original_exception}"
+            elif isinstance(calc.exception_raised, RunCommandFailure):
+                error_msg = f"Run step failed: {calc.exception_raised.original_exception}"
+            elif isinstance(calc.exception_raised, FinaliseCommandFailure):
+                error_msg = f"Fianalise step failed: {calc.exception_raised.original_exception}"
+            else:
+                error_msg = f"Command failed: {calc.exception_raised}"
+        else:
+            error_msg = ""
+
+        return error_msg
 
     async def get_calculation_status(
         self, msg: msg_specs.GetCalculationStatusNATS
@@ -369,7 +376,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         for calc in self._calculations:
             await calc.terminate()
 
-    async def add_interactive_session_to_database(self, msg: msg_specs.CommandExecutionRequestNATS) -> None:
+    async def add_interactive_session_to_db(self, msg: msg_specs.CommandExecutionRequestNATS) -> None:
         """Add an interactive session to the database if applicable.
 
         Parameters

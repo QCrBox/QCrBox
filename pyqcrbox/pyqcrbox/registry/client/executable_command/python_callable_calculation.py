@@ -38,7 +38,7 @@ class PythonCallableCalculation(BaseCalculation):
         self._apply_result = result
         self.pool = pool
         self.return_value = None
-        self.exception = None
+        self._terminated = False
 
     async def wait_until_finished(self):
         """Wait until the calculation is finished."""
@@ -55,6 +55,10 @@ class PythonCallableCalculation(BaseCalculation):
             The current status of the calculation.
 
         """
+        # Short-circuit to return SUCCESS when user terminated command
+        if self._terminated:
+            return CalculationStatusEnum.SUCCESSFUL
+
         if self._apply_result.ready():
             if self._apply_result.successful():
                 self.return_value = self._apply_result.get()
@@ -66,13 +70,12 @@ class PythonCallableCalculation(BaseCalculation):
                 try:
                     self._apply_result.get()
                 except Exception as exc:
-                    self.exception = exc
-            # When the result is ready, we can close the pool normally without
-            # having to forcefully terminate the process and child processes
-            # by hand
+                    self.exception_raised = exc
             logger.debug(
                 f"Calculation {self.calculation_id} finished with status {calc_status}, closing multiprocessing pool",
             )
+            # When the result is ready, we can close the pool normally without having to forcefully
+            # terminate the process and child processes by hand
             self.pool.close()
             self.pool.join()
         else:
@@ -125,4 +128,5 @@ class PythonCallableCalculation(BaseCalculation):
             for child in child_processes:
                 child.terminate()
             process.terminate()
+        self._terminated = True
         logger.debug("Multiprocessing pool terminated.")
