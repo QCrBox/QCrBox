@@ -155,14 +155,6 @@ Check /datasets/id/download downloads the dataset
 # Interactive sessions
 #
 
-Check /interactive-sessions returns a list of sessions
-    ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /interactive-sessions    200
-    ${payload}=    Check Response And Get Payload    ${response}
-
-    Check Response Has Attributes    ${payload}    interactive_sessions
-    ${interactive_sessions}=    Set Variable    ${payload["interactive_sessions"]}
-    Check Interactive Sessions Structure    @{interactive_sessions}
-
 Check /interactive-sessions can create an interactive session
     # Create request body for interactive session
     ${input_file}=    Create Dictionary    data_file_id=${TEST_DATA_FILE_ID}
@@ -184,6 +176,14 @@ Check /interactive-sessions can create an interactive session
 
     Check Response Has Attributes    ${payload}    interactive_session_id
     Set Suite Variable    ${TEST_INTERACTIVE_SESSION_ID}    ${payload["interactive_session_id"]}
+
+Check /interactive-sessions returns a list of sessions
+    ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /interactive-sessions    200
+    ${payload}=    Check Response And Get Payload    ${response}
+
+    Check Response Has Attributes    ${payload}    interactive_sessions
+    ${interactive_sessions}=    Set Variable    ${payload["interactive_sessions"]}
+    Check Interactive Sessions Structure    @{interactive_sessions}
 
 Check /interactive-sessions returns an error when client is busy
     ${input_file}=    Create Dictionary    data_file_id=${TEST_DATA_FILE_ID}

@@ -123,6 +123,14 @@ jobs:
           echo "Registry is not available"
           exit 1
 
+      - name: Wait for applications to be registered
+        run: |
+          set -a
+          source .env.test
+          set +a
+          sleep 30
+          curl -s ${QCRBOX_BIND_ADDRESS}:${QCRBOX_REGISTRY_PORT}/api/applications
+
       - name: Run Robot Framework test suites
         run: |
           set -a
