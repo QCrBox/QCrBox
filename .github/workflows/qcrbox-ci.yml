@@ -81,10 +81,9 @@ jobs:
         with:
           args: format --diff --config pyqcrbox/pyproject.toml
 
-  api_tests:
+  robot_acceptance_tests:
     runs-on: ubuntu-latest
     steps:
-      # Checks out the  repository under $GITHUB_WORKSPACE, so the job can access it
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v4
@@ -92,7 +91,7 @@ jobs:
           python-version: '3.11'
           cache: 'pip' # caching pip dependencies
 
-      - name: Install dependencies
+      - name: Install Python dependencies for CLI
         run: |
           pip install --upgrade uv
           uv pip install --system -r ./pyqcrbox/requirements-dev.txt
@@ -107,19 +106,29 @@ jobs:
         run: |
           qcb up --all --test-only
 
-      - name: Wait for API to be available
+      - name: Wait for QCrBox registry to be ready
         run: |
+          set -a
+          source .env.test
+          set +a
           for i in {1..30}; do
-            curl -s 127.0.0.1:${QCRBOX_REGISTRY_PORT}/api/healthz && break
-            sleep 5
+            if curl -s ${QCRBOX_BIND_ADDRESS}:${QCRBOX_REGISTRY_PORT}/api/healthz; then
+              exit 0
+            fi
+            echo "Waiting for registry to be ready... ($i/30)"
+            sleep 10
           done
+          echo "Registry is not available"
+          exit 1
 
-      - name: Run API tests
+      - name: Run Robot Framework test suites
         run: |
           cd ./pyqcrbox/robot_tests
+
+          echo "Running API Endpoints suite"
           robot api_endpoints.robot
 
-      - name: Cleanup services
+      - name: Clean-up QCrBox
         if: always()
         run: |
           qcb down || true
