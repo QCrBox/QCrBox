@@ -48,6 +48,10 @@ def basic_model_quality_indicators(cif_text):
 
     indicators = [QualityIndicatorBox.from_cif_block(cif_block, entry, name, unit) for entry, name, unit in entries]
 
+    if all(indicator.value == "N/A" for indicator in indicators):
+        # If all indicators are "N/A", return empty snippets
+        return "", "", ""
+
     header_snippet = render_to_string("category_components/model_quality/header.html", {})
 
     body_snippet = render_to_string(
