@@ -9,6 +9,24 @@ from qcrboxtools.cif.read import cifdata_str_or_index
 from .util import read_cif_text_as_unified
 
 
+def check_fobs_fcalc_entries_present(cif_block):
+    """
+    Check if the CIF block contains necessary entries for F_obs and F_calc.
+
+    Parameters
+    ----------
+    cif_block : dict
+        CIF block dictionary containing reflection data.
+
+    Returns
+    -------
+    bool
+        True if both F_obs and F_calc entries are present, False otherwise.
+
+    """
+    return "_refln.f_squared_meas" in cif_block and "_refln.f_squared_calc" in cif_block
+
+
 def fobs_calc_block_from_cif(cif_text):
     """
     Extract CIF block containing F_obs and F_calc data from CIF text.
@@ -117,7 +135,13 @@ def fobs_div_fcalc(cif_text):
 
     """
     cif_block = fobs_calc_block_from_cif(cif_text)
-    print(cif_block.keys())
+
+    if not check_fobs_fcalc_entries_present(cif_block):
+        return (
+            "",
+            "",
+            "",
+        )
 
     f_calc_sq = np.array(cif_block["_refln.f_squared_calc"], dtype=np.float64)
     f_obs_sq = np.array(cif_block["_refln.f_squared_meas"], dtype=np.float64)
