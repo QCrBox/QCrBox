@@ -101,7 +101,7 @@ def retrieve(request, dataset_id):
 
     response = render(
         request,
-        "dataset_view.html.jinja",
+        "dataset_view.html",
         {
             "title": title,
             "header_html": header_snippet,
