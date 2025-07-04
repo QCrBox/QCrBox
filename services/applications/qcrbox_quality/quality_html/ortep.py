@@ -23,7 +23,7 @@ def check_ortep_entries_present(cif_block):
     """
     required_entries = [
         "_space_group.crystal_system",
-        "_space_group.symop_operation_xyz",
+        "_space_group_symop.operation_xyz",
         "_cell.length_a",
         "_cell.length_b",
         "_cell.length_c",
