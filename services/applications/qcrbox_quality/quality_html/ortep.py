@@ -1,42 +1,42 @@
 import base64
-from pathlib import Path
-from textwrap import dedent
+
+from django.template.loader import render_to_string
 
 
 def ortep_cifvis_3d(cif_text):
-    with open("cifvis.alldeps.umd.cjs") as fobj:
-        js_code = fobj.read()
+    """
+    Generate HTML and CSS snippets for displaying a CIF file in a 3D visualization using ORTEP.
 
+    This function encodes the CIF text in base64 and prepares the necessary HTML and CSS
+    snippets to render a 3D visualization widget. The widget is styled with a CSS file
+    located in the templates directory.
+
+    Parameters
+    ----------
+    cif_text : str
+        The CIF text content to be visualized.
+
+    Returns
+    -------
+    tuple
+        A tuple containing:
+        - header_snippet : str
+            JavaScript resources for the ORTEP widget.
+        - body_snippet : str
+            HTML div containing the CIF visualization widget.
+        - css_snippet : str
+            CSS resources for styling the widget.
+
+    """
     cif_b64 = base64.b64encode(cif_text.encode()).decode()
 
-    css_path = Path(__file__).parents[1] / "templates" / "ortep.css"
-    css_snippet = css_path.read_text(encoding="utf-8").strip()
-    inner_html_snippet = dedent(
-        f"""
-    <div class="cifvis-container" style="width: 100%; height: 100%;">
-                
-        <cifview-widget 
-            id="cifview"
-            caption="Crystal Structure"
-            style="width: 100%; height: 100%;">
-        </cifview-widget>
-
-        <script type="module">            
-            // Load the bundle
-            {js_code}
-            
-            // Initialize with CIF data
-            const widget = document.getElementById('cifview');
-            
-            // Wait for custom element to be defined and connected
-            customElements.whenDefined('cifview-widget').then(() => {{
-                const cifData = atob("{cif_b64}");
-                widget.loadFromString(cifData);
-            }});
-        </script>
-    </div>
-    """
+    header_snippet = render_to_string("category_components/ortep/header.html", {})
+    html_snippet = render_to_string(
+        "category_components/ortep/body.html",
+        {
+            "cif_b64": cif_b64,
+        },
     )
-    html_snippet = '<div class="section ortep">\n' + inner_html_snippet + "\n</div>"
+    css_snippet = render_to_string("category_components/ortep/style.css", {})
 
-    return "", html_snippet, css_snippet
+    return header_snippet, html_snippet, css_snippet

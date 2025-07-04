@@ -2,7 +2,8 @@ import numpy as np
 from bokeh.embed import components
 from bokeh.models import ColumnDataSource
 from bokeh.plotting import figure
-from bokeh.resources import INLINE
+from bokeh.resources import CDN
+from django.template.loader import render_to_string
 from qcrboxtools.cif.read import cifdata_str_or_index
 
 from .util import read_cif_text_as_unified
@@ -149,11 +150,21 @@ def fobs_div_fcalc(cif_text):
     p.scatter("Fobs", "Fcalc", source=source)
     p.line(line_start_end, line_start_end, line_width=1, color="#000000", alpha=0.2)
     plot_script, plot_div = components(p)
-    js_resources = INLINE.render_js()
-    css_resources = INLINE.render_css()
 
-    header_snippet = js_resources
-    body_snippet = '<div class="section plot">\n' + plot_script + "\n" + plot_div + "\n</div>"
-    css_snippet = css_resources
+    header_snippet = render_to_string(
+        "category_components/fobs_fcalc/header.html",
+        {
+            "bokeh_cdn": CDN.render_js(),
+            "plot_script": plot_script,
+        },
+    )
+
+    body_snippet = render_to_string(
+        "category_components/fobs_fcalc/body.html",
+        {
+            "plot_div": plot_div,
+        },
+    )
+    css_snippet = CDN.render_css()
 
     return header_snippet, body_snippet, css_snippet
