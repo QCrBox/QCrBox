@@ -7,7 +7,13 @@ from django.core.management import execute_from_command_line
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.urls import path
-from quality_html import basic_model_quality_indicators, fobs_div_fcalc, ortep_cifvis_3d
+from quality_html import (
+    basic_model_quality_indicators,
+    fobs_div_fcalc,
+    ortep_cifvis_3d,
+    precision_plot,
+    precision_quality_indicators,
+)
 
 from pyqcrbox.services import get_data_file_manager
 
@@ -85,13 +91,15 @@ def retrieve(request, dataset_id):
 
     cif_text = asyncio.run(retrieve_data(dataset_id))
 
-    eval_functions = [
+    generator_functions = [
+        precision_quality_indicators,
+        precision_plot,
         basic_model_quality_indicators,
         fobs_div_fcalc,
         ortep_cifvis_3d,
     ]
 
-    results = [function(cif_text) for function in eval_functions]
+    results = [function(cif_text) for function in generator_functions]
     header_snippets, body_snippets, css_snippets = zip(*results, strict=False)
     header_snippet = "\n".join(header_snippets)
     body_snippet = "\n".join(body_snippets)
