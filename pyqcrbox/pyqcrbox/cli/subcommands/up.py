@@ -41,12 +41,6 @@ from .build import populate_build_tasks
     default="qcrbox",
     help="Docker project name (see https://docs.docker.com/compose/project-name/)",
 )
-@click.option(
-    "--test-only",
-    is_flag=True,
-    default=False,
-    help="Launch only the minimum set of containers required for testing",
-)
 @add_verbose_option
 @click.argument("components", nargs=-1)
 def start_up_components(
@@ -54,13 +48,14 @@ def start_up_components(
     build_deps: bool | None,
     dry_run: bool,
     project_name: str,
-    test_only: bool,
     components: list[str],
 ):
     """
     Start up QCrBox components.
     """
-    docker_project = DockerProject(name=project_name, config_name="default" if not test_only else "test")
+    ctx = click.get_current_context()
+    use_test_config = ctx.params.get("include_default_test_components")
+    docker_project = DockerProject(name=project_name, config_name="default" if not use_test_config else "test")
 
     def fill_default_values(build, build_deps):
         match (build, build_deps):

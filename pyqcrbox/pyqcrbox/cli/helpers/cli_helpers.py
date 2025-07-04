@@ -28,6 +28,7 @@ def add_verbose_option(f):
 
 def add_cli_option_to_enable_or_disable_components(f):
     DEFAULT_ALL_COMPONENTS = ("olex2", "crystal-explorer", "qcrbox_quality")
+    DEFAULT_TEST_COMPONENTS = ("olex2",)
     DEFAULT_EXPLICITLY_ENABLED_COMPONENTS = ()
     DEFAULT_EXPLICITLY_DISABLED_COMPONENTS = ("shelx", "qcrbox-nextflow", "eval1x")
 
@@ -35,6 +36,7 @@ def add_cli_option_to_enable_or_disable_components(f):
     def wrapper(
         ctx,
         include_all_default_components: bool,
+        include_default_test_components: bool,
         enabled_components: list[str] | None,
         disabled_components: list[str] | None,
         *args,
@@ -42,10 +44,12 @@ def add_cli_option_to_enable_or_disable_components(f):
     ):
         ctx.ensure_object(dict)  # ensure that ctx.obj exists and is a dict
         ctx.obj["DEFAULT_ALL_COMPONENTS"] = DEFAULT_ALL_COMPONENTS
+        ctx.obj["DEFAULT_TEST_COMPONENTS"] = DEFAULT_TEST_COMPONENTS
         ctx.obj["DEFAULT_EXPLICITLY_ENABLED_COMPONENTS"] = DEFAULT_EXPLICITLY_ENABLED_COMPONENTS
         ctx.obj["DEFAULT_EXPLICITLY_DISABLED_COMPONENTS"] = DEFAULT_EXPLICITLY_DISABLED_COMPONENTS
 
         default_components = ctx.obj["DEFAULT_ALL_COMPONENTS"]
+        test_components = ctx.obj["DEFAULT_TEST_COMPONENTS"]
         if enabled_components is None:
             enabled_components = DEFAULT_EXPLICITLY_ENABLED_COMPONENTS
         if disabled_components is None:
@@ -53,7 +57,13 @@ def add_cli_option_to_enable_or_disable_components(f):
 
         components = kwargs.pop("components")
         components_to_include = determine_components_to_include(
-            include_all_default_components, default_components, enabled_components, disabled_components, components
+            include_all_default_components,
+            include_default_test_components,
+            default_components,
+            test_components,
+            enabled_components,
+            disabled_components,
+            components,
         )
         kwargs["components"] = components_to_include
 
@@ -93,6 +103,16 @@ def add_cli_option_to_enable_or_disable_components(f):
             "or explicitly disabled (via --disable=COMPONENT) will remain excluded."
         ),
     )(wrapper)
+
+    wrapper = click.option(
+        "--test-only",
+        "include_default_test_components",
+        default=False,
+        show_default=True,
+        is_flag=True,
+        help="Include only the minimum required components to test QCrBox.",
+    )(wrapper)
+
     wrapper = click.pass_context(wrapper)
 
     return wrapper
@@ -100,16 +120,27 @@ def add_cli_option_to_enable_or_disable_components(f):
 
 def determine_components_to_include(
     include_all_default_components: bool,
+    include_default_test_components: bool,
     default_components: list[str],
+    test_components: list[str],
     enabled_components: list[str],
     disabled_components: list[str],
     components: list[str],
 ) -> set[str]:
+    if include_all_default_components and include_default_test_components:
+        click.echo("The flags --all and --test-only cannot be used together.")
+        sys.exit(1)
     if include_all_default_components:
         if not components:
             components = default_components
         else:
             click.echo("The flag --all cannot be combined with explicit component names.")
+            sys.exit(1)
+    if include_default_test_components:
+        if not components:
+            components = test_components
+        else:
+            click.echo("The flag --test-only cannot be combined with explicit component names.")
             sys.exit(1)
 
     simultaneously_enabled_and_disabled = set(enabled_components).intersection(disabled_components)
@@ -122,7 +153,9 @@ def determine_components_to_include(
 
     components_to_include = set(components).union(enabled_components).difference(disabled_components)
     if not components_to_include:
-        click.echo("Nothing to build. Consider using the --all flag or specify explicit component names.")
+        click.echo(
+            "Nothing to build. Consider using the --all or --test-only flags or specify explicit component names."
+        )
         sys.exit()
 
     if enabled_components:
