@@ -1,0 +1,11 @@
+<div class="section indicators precision-indicators">
+    <div class="indicators-container">
+        {% for indicator in indicators %}
+            <div class="indicator {{ indicator.css_class }}">
+                <div class="name">{{ indicator.name }}</div>
+                <div class="value">{{ indicator.value }}</div>
+                <div class="unit">{{ indicator.unit }}</div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
