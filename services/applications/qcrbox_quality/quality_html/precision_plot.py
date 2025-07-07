@@ -97,7 +97,6 @@ def precision_vs_resolution_plot(cif_text: str) -> tuple:
         ("Completeness", r"$$\mathrm{Completeness} \, (\%)$$"),
         ("Mean Redundancy", r"$$\mathrm{Mean\,Redundancy}$$"),
     ]
-
     # Create individual plots
     plots = []
     for indicator_name, y_label in plot_configs:
@@ -118,7 +117,7 @@ def precision_vs_resolution_plot(cif_text: str) -> tuple:
     return plot_script, plot_div
 
 
-def precision_plot(cif_text: str) -> tuple:
+def precision_plot(cif_text: str) -> tuple[set[str], str, set[str]]:
     """
     Generate HTML and CSS snippets for a precision vs resolution plot.
 
@@ -131,26 +130,21 @@ def precision_plot(cif_text: str) -> tuple:
     -------
     tuple
         A tuple containing:
-        - header_snippet : str
-            JavaScript resources for the precision plot widget.
-        - body_snippet : str
-            HTML div containing the precision plot widget.
-        - css_snippet : str
-            CSS resources for styling the widget.
+        - header_snippets : set[str]
+            HTML snippet for the header section, including JavaScript resources.
+        - body_snippets : str
+            HTML snippet for the body section, containing the precision plot.
+        - css_snippets : set[str]
+            CSS snippet for styling the precision plot.
 
     """
-    plot_script, plot_div = precision_vs_resolution_plot(cif_text)
-    print(plot_div)
-    bokeh_cdn = CDN.render_js()
+    try:
+        plot_script, plot_div = precision_vs_resolution_plot(cif_text)
+    except Exception as e:
+        print(f"Error generating precision plot: {e}")
+        return {}, "", {}
 
-    header_snippet = render_to_string(
-        "category_components/data_precision_plot/header.html",
-        {
-            "bokeh_cdn": bokeh_cdn,
-            "plot_script": plot_script,
-        },
-    )
     body_snippet = render_to_string("category_components/data_precision_plot/body.html", {"plot_div": plot_div})
     css_snippet = CDN.render_css()
 
-    return header_snippet, body_snippet, css_snippet
+    return {CDN.render_js(), plot_script}, body_snippet, {css_snippet}

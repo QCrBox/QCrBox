@@ -101,9 +101,9 @@ def retrieve(request, dataset_id):
 
     results = [function(cif_text) for function in generator_functions]
     header_snippets, body_snippets, css_snippets = zip(*results, strict=False)
-    header_snippet = "\n".join(header_snippets)
+    header_snippet = "\n".join(set.union(*header_snippets))
     body_snippet = "\n".join(body_snippets)
-    css_snippet = "\n".join(css_snippets)
+    css_snippet = "\n".join(set.union(*css_snippets))
 
     title = f"Dataset {dataset_id} Quality Indicators"
 

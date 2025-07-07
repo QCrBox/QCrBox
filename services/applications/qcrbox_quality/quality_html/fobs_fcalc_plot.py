@@ -109,7 +109,7 @@ def create_hkl_labels(cif_block):
     return None
 
 
-def fobs_div_fcalc(cif_text):
+def fobs_div_fcalc(cif_text: str) -> tuple[set[str], str, set[str]]:
     """
     Generate interactive F_obs vs F_calc scatter plot from CIF data.
 
@@ -138,9 +138,9 @@ def fobs_div_fcalc(cif_text):
 
     if not check_fobs_fcalc_entries_present(cif_block):
         return (
+            {},
             "",
-            "",
-            "",
+            {},
         )
 
     f_calc_sq = np.array(cif_block["_refln.f_squared_calc"], dtype=np.float64)
@@ -175,14 +175,6 @@ def fobs_div_fcalc(cif_text):
     p.line(line_start_end, line_start_end, line_width=1, color="#000000", alpha=0.2)
     plot_script, plot_div = components(p)
 
-    header_snippet = render_to_string(
-        "category_components/fobs_fcalc/header.html",
-        {
-            "bokeh_cdn": CDN.render_js(),
-            "plot_script": plot_script,
-        },
-    )
-
     body_snippet = render_to_string(
         "category_components/fobs_fcalc/body.html",
         {
@@ -191,4 +183,4 @@ def fobs_div_fcalc(cif_text):
     )
     css_snippet = CDN.render_css()
 
-    return header_snippet, body_snippet, css_snippet
+    return {CDN.render_js(), plot_script}, body_snippet, {css_snippet}

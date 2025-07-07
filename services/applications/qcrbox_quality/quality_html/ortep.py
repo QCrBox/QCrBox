@@ -41,7 +41,7 @@ def check_ortep_entries_present(cif_block):
     return all(entry in cif_block for entry in required_entries)
 
 
-def ortep_cifvis_3d(cif_text):
+def ortep_cifvis_3d(cif_text: str) -> tuple[set[str], str, set[str]]:
     """
     Generate HTML and CSS snippets for displaying a CIF file in a 3D visualization using ORTEP.
 
@@ -58,18 +58,18 @@ def ortep_cifvis_3d(cif_text):
     -------
     tuple
         A tuple containing:
-        - header_snippet : str
-            JavaScript resources for the ORTEP widget.
+        - header_snippet : set[str]
+            HTML snippet for the header section, including JavaScript resources.
         - body_snippet : str
-            HTML div containing the CIF visualization widget.
-        - css_snippet : str
-            CSS resources for styling the widget.
+            HTML snippet for the body section, containing the 3D visualization widget.
+        - css_snippet : set[str]
+            CSS snippet for styling the 3D visualization widget.
 
     """
     cif_model = read_cif_text_as_unified(cif_text)
     cif_block, _ = cifdata_str_or_index(cif_model, 0)
     if not check_ortep_entries_present(cif_block):
-        return "", "", ""
+        return {}, "", {}
     cif_b64 = base64.b64encode(cif_text.encode()).decode()
 
     header_snippet = render_to_string("category_components/ortep/header.html", {})
@@ -81,4 +81,4 @@ def ortep_cifvis_3d(cif_text):
     )
     css_snippet = render_to_string("category_components/ortep/style.css", {})
 
-    return header_snippet, html_snippet, css_snippet
+    return {header_snippet}, html_snippet, {css_snippet}

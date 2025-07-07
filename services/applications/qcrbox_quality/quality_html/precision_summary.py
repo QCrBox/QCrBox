@@ -49,7 +49,7 @@ class PrecisionQualityIndicatorBox(QualityIndicatorBox):
         return PrecisionQualityIndicatorBox(name, formatted_value, unit, quality_level)
 
 
-def precision_quality_indicators(cif_text: str) -> tuple[str, str, str]:
+def precision_quality_indicators(cif_text: str) -> tuple[set[str], set[str], set[str]]:
     """
     Generate HTML and CSS snippets for precision quality indicators from CIF text.
 
@@ -66,12 +66,9 @@ def precision_quality_indicators(cif_text: str) -> tuple[str, str, str]:
     -------
     tuple
         A tuple containing:
-        - header_snippet : str
-            HTML snippet for the header section.
-        - body_snippet : str
-            HTML snippet for the body section containing precision indicators.
-        - css_snippet : str
-            CSS snippet for styling the precision indicators.
+        - A set with the header HTML snippet for MathJax rendering.
+        - A set with the body HTML snippet containing precision indicators.
+        - A set with the CSS snippet for styling the precision indicators.
 
     """
     try:
@@ -107,15 +104,15 @@ def precision_quality_indicators(cif_text: str) -> tuple[str, str, str]:
 
         # If no valid indicators, return empty snippets
         if not indicators:
-            return "", "", ""
+            return {}, "", {}
 
     except Exception as e:
         # If precision analysis fails, return empty snippets
         print(f"Precision analysis failed: {e}")
-        return "", "", ""
+        return {}, "", {}
 
     # Generate HTML components
-    header_snippet = render_to_string("category_components/data_precision_summary/header.html", {})
+    header_snippet = render_to_string("shared_components/mathjax_header.html", {})
 
     body_snippet = render_to_string(
         "category_components/data_precision_summary/body.html",
@@ -124,6 +121,6 @@ def precision_quality_indicators(cif_text: str) -> tuple[str, str, str]:
         },
     )
 
-    css_snippet = render_to_string("category_components/data_precision_summary/style.css", {})
+    css_snippet = render_to_string("shared_components/boxes.css", {})
 
-    return header_snippet, body_snippet, css_snippet
+    return {header_snippet}, body_snippet, {css_snippet}

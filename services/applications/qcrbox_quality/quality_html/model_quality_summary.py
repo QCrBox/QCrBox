@@ -5,7 +5,7 @@ from .base import QualityIndicatorBox
 from .util import read_cif_text_as_unified
 
 
-def basic_model_quality_indicators(cif_text):
+def basic_model_quality_indicators(cif_text: str) -> tuple[set[str], str, set[str]]:
     """
     Generate HTML and CSS snippets for basic model quality indicators from CIF text.
 
@@ -22,12 +22,10 @@ def basic_model_quality_indicators(cif_text):
     -------
     tuple
         A tuple containing:
-        - header_snippet : str
-            HTML snippet for the header section containing JavaScript resources.
-        - body_snippet : str
-            HTML snippet for the body section containing quality indicators.
-        - css_snippet : str
-            CSS snippet for styling the quality indicators.
+        - A set with the header HTML snippet for MathJax rendering.
+        - A string with the body HTML snippet containing quality indicators.
+        - A set with the CSS snippet for styling the quality indicators.
+
 
     """
     cif_model = read_cif_text_as_unified(cif_text)
@@ -50,9 +48,9 @@ def basic_model_quality_indicators(cif_text):
 
     if all(indicator.value == "N/A" for indicator in indicators):
         # If all indicators are "N/A", return empty snippets
-        return "", "", ""
+        return {}, "", {}
 
-    header_snippet = render_to_string("category_components/model_quality/header.html", {})
+    header_snippet = render_to_string("shared_components/mathjax_header.html", {})
 
     body_snippet = render_to_string(
         "category_components/model_quality/body.html",
@@ -61,5 +59,6 @@ def basic_model_quality_indicators(cif_text):
         },
     )
 
-    css_snippet = render_to_string("category_components/model_quality/style.css", {})
-    return header_snippet, body_snippet, css_snippet
+    css_snippet = render_to_string("shared_components/boxes.css", {})
+
+    return {header_snippet}, body_snippet, {css_snippet}
