@@ -22,7 +22,7 @@ BASE_DIR = Path(__file__).resolve().parent
 settings.configure(
     DEBUG=os.getenv("DEBUG", "False").lower() == "true",
     SECRET_KEY=os.getenv("SECRET_KEY", "your-secret-key-change-this-in-production"),
-    ALLOWED_HOSTS=os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(","),
+    ALLOWED_HOSTS=os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1,demo1.qcrbox.org").split(","),
     # Security settings
     SECURE_BROWSER_XSS_FILTER=True,
     SECURE_CONTENT_TYPE_NOSNIFF=True,
