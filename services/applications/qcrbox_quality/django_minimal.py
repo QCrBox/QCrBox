@@ -92,11 +92,11 @@ def retrieve(request, dataset_id):
     cif_text = asyncio.run(retrieve_data(dataset_id))
 
     generator_functions = [
+        basic_model_quality_indicators,
+        ortep_cifvis_3d,
+        fobs_div_fcalc,
         precision_quality_indicators,
         precision_plot,
-        basic_model_quality_indicators,
-        fobs_div_fcalc,
-        ortep_cifvis_3d,
     ]
 
     results = [function(cif_text) for function in generator_functions]
