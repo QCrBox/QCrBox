@@ -48,7 +48,7 @@ def basic_model_quality_indicators(cif_text: str) -> tuple[set[str], str, set[st
 
     if all(indicator.value == "N/A" for indicator in indicators):
         # If all indicators are "N/A", return empty snippets
-        return {}, "", {}
+        return set(), "", set()
 
     header_snippet = render_to_string("shared_components/mathjax_header.html", {})
 

@@ -69,7 +69,7 @@ def ortep_cifvis_3d(cif_text: str) -> tuple[set[str], str, set[str]]:
     cif_model = read_cif_text_as_unified(cif_text)
     cif_block, _ = cifdata_str_or_index(cif_model, 0)
     if not check_ortep_entries_present(cif_block):
-        return {}, "", {}
+        return set(), "", set()
     cif_b64 = base64.b64encode(cif_text.encode()).decode()
 
     header_snippet = render_to_string("category_components/ortep/header.html", {})

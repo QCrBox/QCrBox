@@ -104,12 +104,12 @@ def precision_quality_indicators(cif_text: str) -> tuple[set[str], set[str], set
 
         # If no valid indicators, return empty snippets
         if not indicators:
-            return {}, "", {}
+            return set(), "", set()
 
     except Exception as e:
         # If precision analysis fails, return empty snippets
         print(f"Precision analysis failed: {e}")
-        return {}, "", {}
+        return set(), "", set()
 
     # Generate HTML components
     header_snippet = render_to_string("shared_components/mathjax_header.html", {})
