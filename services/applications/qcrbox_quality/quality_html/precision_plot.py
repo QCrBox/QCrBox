@@ -142,7 +142,7 @@ def precision_plot(cif_text: str) -> tuple[set[str], str, set[str]]:
         plot_script, plot_div = precision_vs_resolution_plot(cif_text)
     except Exception as e:
         print(f"Error generating precision plot: {e}")
-        return {}, "", {}
+        return set(), "", set()
 
     body_snippet = render_to_string("category_components/data_precision_plot/body.html", {"plot_div": plot_div})
     css_snippet = CDN.render_css()
