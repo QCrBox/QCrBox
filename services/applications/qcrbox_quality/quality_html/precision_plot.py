@@ -71,7 +71,7 @@ def create_precision_resolution_plot(
     xtick_pos = list(np.arange(len(values) + 1))
     d_limits = list(d_max) + [d_min[-1]]
     p.xaxis.ticker = list(xtick_pos)
-    p.xaxis.major_label_overrides = {i: f"{dlim:.2f}" for i, dlim in zip(xtick_pos, d_limits, strict=False)}
+    p.xaxis.major_label_overrides = {i: f"{dlim:.2f} Å" for i, dlim in zip(xtick_pos, d_limits, strict=False)}
     p.x_range.start = min(xtick_pos) - 0.2
     p.x_range.end = max(xtick_pos) + 0.2
 
