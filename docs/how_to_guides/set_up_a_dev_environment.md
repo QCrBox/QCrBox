@@ -56,8 +56,8 @@ $ qcb list components --all
 
 You can also test that the components build and run correctly by running a Devbox script,
 
-```console exec="1" source="console"
-devbox run test-api
+```console
+$ devbox run test-api
 ```
 
 ## Build a container to test the installation
@@ -72,8 +72,8 @@ $ qcb build qcrboxtools
 
 In the event of disaster, it is possible to destroy the containers and restart QCrBox by using a Devbox script,
 
-```console exec="1" source="console"
-devbox run restart-qcrbox
+```console
+$ devbox run restart-qcrbox
 ```
 
 ## Improving File Access Speed on Windows
