@@ -92,6 +92,22 @@ def __finalise_interactive(input_file):
             fobj.write('_iucr_refine_fcf_details\n;\n')
             fobj.write(fcf_content)
             fobj.write('\n;\n')
+
+        original_cif_text = input_cif_path.read_text(encoding="utf-8", errors="replace")
+        cleaned_cif_text = cleaned_cif_path.read_text(encoding="utf-8", errors="replace")
+        replace_entries = ('_symmetry_space_group_name_Hall','_symmetry_space_group_name_H-M_alt', '_space_group_IT_number')
+        for entry in replace_entries:
+            pattern = re.compile(rf"(\n\s*{entry} .*\n)", re.IGNORECASE)
+            match = pattern.search(original_cif_text)
+            if match:
+                value = match.group(1)
+                cleaned_cif_text = re.sub(
+                    pattern,
+                    value,
+                    cleaned_cif_text
+                )
+        cleaned_cif_path.write_text(cleaned_cif_text, encoding="utf-8")
+
         return cleaned_cif_path
     except StopIteration:
         pass
