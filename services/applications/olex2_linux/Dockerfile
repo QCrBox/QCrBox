@@ -31,7 +31,9 @@ RUN cd /opt &&  \
     unzip -o olex2/olex2-linux64_hl.zip && \
     rm olex2/olex2-linux64_hl.zip && \
     # chmod +x olex2/olex2c-linux64 && \
-    chmod +x olex2/startc
+    chmod +x olex2/startc && \
+    ln -s /opt/olex2/lib/libssl.so.1.1 /opt/olex2/lib/libssl.so.10 && \
+    ln -s /opt/olex2/lib/libcrypto.so.1.1 /opt/olex2/lib/libcrypto.so.10
 
 RUN sed -i 's|^#! /bin/sh|#! /bin/bash|' /opt/olex2/start && \
     sed -i 's|^./olex2 "$@" &$|./olex2 "$@"|' /opt/olex2/start
