@@ -1,6 +1,6 @@
 table Icon
   Caption: MoProGUI
-  Command: wine /opt/wine_installations/wine_win64/drive_c/MoProSuite-win-July2022/MoProGUI_Qt_win64/MoProGUI_win64.exe &
+  Command: wine $MOPRO_GUI_PATH &
   Icon: /opt/qcrbox/.idesktop/mopro_logo.png
   Width: 48
   Height: 48
