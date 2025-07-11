@@ -46,16 +46,26 @@ def __run_interactive(input_file):
     subprocess.call(command)
     # os.spawnl(os.P_NOWAIT, command)
 
+def non_final_cif(filename):
+    if str(filename.name).lower().endswith("hkl.cif"):
+        return True
+    excluded_cif = ("output.cif", "work.cif", "input.cif")
+    return filename.name in excluded_cif
+
+
 
 def __finalise_interactive(input_file):
     input_cif_path = Path(input_file)
     work_folder = input_cif_path.parent
     try:
-        excluded_cif = ("output.cif", "work.cif", "input.cif")
+        cif_paths = (
+            list(work_folder.glob("*.CIF")) 
+            + list(work_folder.glob("*.cif"))
+        )
         newest_cif_path = next(
             reversed(
                 sorted(
-                    (file_path for file_path in work_folder.glob("*.cif") if file_path.name not in excluded_cif),
+                    (file_path for file_path in cif_paths if not non_final_cif(file_path)),
                     key=os.path.getmtime,
                 )
             )
@@ -63,8 +73,25 @@ def __finalise_interactive(input_file):
 
         # MoPro might output invalid characters
 
-        cleaned_cif_path = newest_cif_path.with_name("asascii.cif")
+        cleaned_cif_path = newest_cif_path.with_name(f"{input_cif_path.stem}_mopro.cif")
         clean_cif(newest_cif_path, cleaned_cif_path)
+
+        newest_fcf_path = next(
+            reversed(
+                sorted(
+                    (file_path for file_path in work_folder.glob("*.fcf")),
+                    key=os.path.getmtime,
+                )
+            )
+        )
+
+        fcf_content = newest_fcf_path.read_text(encoding="utf-8", errors="replace")
+
+        with cleaned_cif_path.open("a", encoding="utf-8") as fobj:
+            fobj.write("\n")
+            fobj.write('_iucr_refine_fcf_details\n;\n')
+            fobj.write(fcf_content)
+            fobj.write('\n;\n')
         return cleaned_cif_path
     except StopIteration:
         pass
@@ -202,7 +229,7 @@ def run_inp_file(
             sorted(
                 (
                     file_path
-                    for file_path in work_folder.glob("*.cif")
+                    for file_path in work_folder.glob("*.cif", case_sensitive=False)
                     if file_path.name not in excluded_cif
                 ),
                 key=os.path.getmtime,
@@ -211,7 +238,7 @@ def run_inp_file(
     )
 
     # MoPro might output invalid characters
-    cleaned_cif_path = newest_cif_path.with_name("asascii.cif")
+    cleaned_cif_path = newest_cif_path.with_name(f"{input_cif_path.stem}_mopro.cif")
     clean_cif(newest_cif_path, cleaned_cif_path)
 
     cif_file_merge_to_unified_by_yml(
