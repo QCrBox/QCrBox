@@ -3,7 +3,7 @@
 #
 name: "MoProSuite"
 slug: "mopro"
-version: "2022.07"
+version: "2024.10"
 description: "Software for charge density refinement and modelling of molecules"
 url: "https://crm2.univ-lorraine.fr/de/die-software/mopro/download-mopro/"
 doi: "10.1107/S0108767306053748"
@@ -28,7 +28,7 @@ commands:
         callable_name: "__finalise_interactive"
         used_basecommand_parameters: ["input_file"]
 
-  - name: "interactive"
+  - name: "non_current_interactive"
     implemented_as: "interactive"
     parameters:
       - name: "input_cif_path"
@@ -81,13 +81,13 @@ commands:
         required_entry_sets: ["output"]
         invalidated_entries: ["_refine_.*", "_computing_.*", "_geom_.*", "_atom_rho_.*", "_atom_local_axes_.*"]
       - name: "inp_file_path"
-        dtype: "QCrBox.input_file"
+        dtype: "QCrBox.data_file"
         description: "path to the MoPro input file"
       - name: "constraint_file_path"
-        dtype: "QCrBox.input_file"
+        dtype: "QCrBox.data_file"
         description: "path to the MoPro constraints file"
       - name: "restraint_file_path"
-        dtype: "QCrBox.input_file"
+        dtype: "QCrBox.data_file"
         description: "path to the MoPro restraints file"
       - name: "table_type"
         dtype: "str"

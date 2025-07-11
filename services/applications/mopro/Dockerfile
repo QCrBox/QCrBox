@@ -6,21 +6,24 @@ ARG QCRBOX_ROOT_DIR
 ARG QCRBOX_USER
 
 
-COPY --chown=${QCRBOX_USER}:${QCRBOX_GROUP} MoProSuite_win_2024_09.zip /opt/wine_installations/wine_win64/drive_c/
+COPY --chown=${QCRBOX_USER}:${QCRBOX_GROUP} MoProSuite_win_2024_10.zip /opt/wine_installations/wine_win64/drive_c/MoPro.zip
 
 RUN cd /opt/wine_installations/wine_win64/drive_c/ && \
-    unzip MoProSuite_win_2024_09.zip && \
-    rm MoProSuite_win_2024_09.zip
+    unzip MoPro.zip && \
+    rm MoPro.zip && \
+    mv MoProSuite_win_2024_10 MoProSuite && \
+    cp MoProSuite/LibMoPro/ELMAM3_beta4e.txt MoProSuite/LibMoPro/ELMAM2.txt
+
 # These two need to be in linux filesystem path
 ENV MOPRO_ROAMING_PROFILE_DIR="/opt/wine_installations/wine_win64/drive_c/users/qcrbox/AppData/Roaming/mopro"
-ENV MOPRO_GUI_PATH="/opt/wine_installations/wine_win64/drive_c/MoProSuite_2024_09/MoProGUI2/MoProGUI_2024_09.exe"
+ENV MOPRO_GUI_PATH="/opt/wine_installations/wine_win64/drive_c/MoProSuite/MoProGUI2/MoProGUI_2024_09.exe"
 
 # These are for the mopro.ini therefore in the wine windows filesystem convention
-ENV MOPRO_LIB_PATH='C:\MoProSuite_2024_09\LibMoPro'
-ENV MOPRO_PATH='C:\MoProSuite_2024_09\bin-win\MoPro_2024_09.exe'
-ENV VMOPRO_PATH='C:\MoProSuite_2024_09\bin-win\VMoPro_2024_09.exe'
-ENV IMOPRO_PATH='C:\MoProSuite_2024_09\bin-win\Import2MoPro_2024_09.exe'
-ENV MOPRO_VIEWER_PATH='C:\MoProSuite_2024_09\MoProViewer\MoProViewer_2024_v1.1_3200.exe'
+ENV MOPRO_LIB_PATH='C:\MoProSuite\LibMoPro'
+ENV MOPRO_PATH='C:\MoProSuite\bin-win\MoPro-2024-10.exe'
+ENV VMOPRO_PATH='C:\MoProSuite\bin-win\VMoPro_2024_10.exe'
+ENV IMOPRO_PATH='C:\MoProSuite\bin-win\Import2MoPro_2024_10.exe'
+ENV MOPRO_VIEWER_PATH='C:\MoProSuite\MoProViewer\MoProViewer_2024_11.exe'
 
 ARG QUBOX_WINE_INSTALLATIONS_DIR
 ENV WINEPREFIX="/opt/wine_installations/wine_win64"
