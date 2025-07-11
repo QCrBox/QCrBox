@@ -9,7 +9,7 @@ services:
       start_period: 30s
       start_interval: 1s
     volumes:
-      - qcrbox-nats-storage:/mnt/nats/
+      - qcrbox-nats-test-storage:/mnt/nats/
     networks:
       - qcrbox-test-net
     hostname: "qcrbox-nats"
@@ -50,7 +50,7 @@ services:
     image: "qcrbox/registry:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
     volumes:
       - ${QCRBOX_SHARED_FILES_DIR_HOST_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_HOST_PATH}:${QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH}
-      - qcrbox-registry-db:${QCRBOX_REGISTRY_DB_DIR:?Must set env var QCRBOX_REGISTRY_DB_DIR}
+      - qcrbox-registry-test-db:${QCRBOX_REGISTRY_DB_DIR:?Must set env var QCRBOX_REGISTRY_DB_DIR}
     ports:
       - "${QCRBOX_BIND_ADDRESS}:${QCRBOX_REGISTRY_PORT:?Must set env var QCRBOX_REGISTRY_PORT}:8000"
     depends_on:
@@ -68,7 +68,7 @@ services:
     image: "qcrbox/nextflow:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - qcrbox-nextflow-home:${QCRBOX_NEXTFLOW_HOME:?Must set env var QCRBOX_NEXTFLOW_HOME}
+      - qcrbox-nextflow-home-test:${QCRBOX_NEXTFLOW_HOME:?Must set env var QCRBOX_NEXTFLOW_HOME}
       - ${QCRBOX_SHARED_FILES_DIR_HOST_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_HOST_PATH}:${QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH}
       # Note: for Nextflow to run correctly when executed from within a Docker container,
       # the host path to the shared folder must be mounted to the *same* path within the
@@ -89,6 +89,6 @@ networks:
   qcrbox-test-net:
 
 volumes:
-  qcrbox-registry-db:
-  qcrbox-nats-storage:
-  qcrbox-nextflow-home:
+  qcrbox-registry-test-db:
+  qcrbox-nats-test-storage:
+  qcrbox-nextflow-home-test:
