@@ -62,7 +62,7 @@ RUN eval "$(micromamba shell hook --shell bash)" && \
     ${MAMBA_EXE} activate ${QCRBOX_MAMBA_ENV_NAME} && \
     ${MAMBA_EXE} install -y python=3.11 && \
     ${MAMBA_EXE} install -y pip setuptools wheel conda-build && \
-    ${MAMBA_EXE} install -y cctbx-base && \
+    ${MAMBA_EXE} install -y cctbx-base==2025.5 && \
     ${MAMBA_EXE} clean -y --all --force-pkgs-dirs
 
 ##
