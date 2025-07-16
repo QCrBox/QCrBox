@@ -77,7 +77,8 @@
         "watchmedo auto-restart --pattern=*.py --recursive -- pyqcrbox-run-registry-server"
       ],
       "test-api": [
-        "qcb up --test-only",
+        "qcb down",
+        "qcb up --project-name qcrbox-test --test-only",
         "set -a; source ./.env.test; set +a",
         "cd ./pyqcrbox/robot_tests",
         "sleep 5",
