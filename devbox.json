@@ -51,7 +51,6 @@
       "source $VENV_DIR/bin/activate",
       "source ./scripts/devbox/initialise_shell_environment.sh",
       "uv pip install -e ./pyqcrbox[all]",
-      "uv pip install -e ./qcrbox_wrapper[env-file]",
       "test -x .git/hooks/pre-commit || pre-commit install"
     ],
     "scripts": {
