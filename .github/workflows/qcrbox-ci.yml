@@ -82,7 +82,7 @@ jobs:
   #       with:
   #         args: format --diff --config pyqcrbox/pyproject.toml
 
-  tests:
+  run_tests:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout QCrBox
@@ -96,11 +96,7 @@ jobs:
 
       - name: Bring up QCrBox registry and applications
         run: |
-          bash .github/scripts/launch_qcb.sh
-
-      - name: Wait for QCrBox registry to be ready
-        run: |
-          bash .github/scripts/check_qcb_healthy.sh $GITHUB_WORKSPACE
+          bash .github/scripts/launch_qcb.sh $GITHUB_WORKSPACE
 
       - name: Run Robot Framework test suites
         run: |

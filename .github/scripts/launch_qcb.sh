@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 if [ -z "$1" ]; then
     echo "Usage: $0 <QCrBox directory>"
     exit 1
@@ -20,3 +22,5 @@ uv pip install --system pyqcrbox@./pyqcrbox
 echo "Brining up QCrBox registry and test applications"
 docker container prune -f && docker network prune -f
 qcb up --test-only
+
+bash .github/scripts/check_qcb_healthy.sh $1
