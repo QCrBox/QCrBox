@@ -20,7 +20,8 @@ uv pip install --system -r ./pyqcrbox/requirements-dev.txt
 uv pip install --system pyqcrbox@./pyqcrbox
 
 echo "Brining up QCrBox registry and test applications"
-docker container prune -f && docker network prune -f
+qcb down
+docker system prune -af
 qcb up --test-only
 
 bash .github/scripts/check_qcb_healthy.sh $1

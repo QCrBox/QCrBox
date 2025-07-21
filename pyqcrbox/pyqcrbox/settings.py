@@ -80,7 +80,7 @@ class DatabaseSettings(QCrBoxSettingsBaseModel):
 
 class NATSSettings(QCrBoxSettingsBaseModel):
     host: str = "127.0.0.1"
-    port: int = 4222 if not IS_RUNNING_INSIDE_TESTS else 14222
+    port: int = 4222
     rpc_timeout: float = 3  # seconds
     graceful_timeout: Optional[int] = 5  # seconds
 

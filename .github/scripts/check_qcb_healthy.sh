@@ -15,7 +15,7 @@ fi
 cd "$1" || exit 1
 
 # Source test environment variables
-set -a && source .env.test && set +a
+set -a && source .env.dev && set +a
 
 # Check if jq installed, used to parse the response from QCrBox
 if ! command -v jq &> /dev/null; then

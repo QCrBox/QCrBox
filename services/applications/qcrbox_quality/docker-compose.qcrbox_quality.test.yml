@@ -11,7 +11,7 @@ services:
     volumes:
       - ${QCRBOX_SHARED_FILES_DIR_HOST_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_HOST_PATH}:${QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH}
     networks:
-      - qcrbox-test-net
+      - qcrbox-net
     restart: unless-stopped
     ports:
       - "${QCRBOX_BIND_ADDRESS}:${QCRBOX_QUALITY_PORT:?Must set env var QUALITY_PORT}:8080"
@@ -37,8 +37,3 @@ services:
 
       traefik.http.services.qcrbox_quality-service.loadbalancer.server.scheme: http
       traefik.http.services.qcrbox_quality-service.loadbalancer.server.port: 8080
-    logging:
-      driver: "syslog"
-      options:
-        syslog-address: udp://127.0.0.1:514
-        tag: "quality-display"
