@@ -82,7 +82,7 @@ jobs:
   #       with:
   #         args: format --diff --config pyqcrbox/pyproject.toml
 
-  robot_framework:
+  tests:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout QCrBox
@@ -94,27 +94,24 @@ jobs:
           python-version: '3.11'
           cache: 'pip' # caching pip dependencies
 
-      - name: Install Python dependencies
-        run: |
-          pip install --upgrade uv
-          uv pip install --system -r ./pyqcrbox/requirements-dev.txt
-          uv pip install --system pyqcrbox@./pyqcrbox
-
       - name: Bring up QCrBox registry and applications
         run: |
-          docker container prune -f
-          docker network prune -f
-          qcb up --test-only
+          bash .github/scripts/launch_qcb.sh
 
       - name: Wait for QCrBox registry to be ready
         run: |
-          bash .github/scripts/check_qcb_healthy.sh
+          bash .github/scripts/check_qcb_healthy.sh $GITHUB_WORKSPACE
 
       - name: Run Robot Framework test suites
         run: |
-          set -a && source .env.test &&set +a
+          set -a && source .env.test && set +a
           cd pyqcrbox/robot_tests
           robot api_endpoints.robot
+
+      - name: Run Pytest test suite and check coverage
+        run: |
+          cd pyqcrbox/tests
+          coverage run -m pytest
 
       - name: Clean-up QCrBox
         if: always()
