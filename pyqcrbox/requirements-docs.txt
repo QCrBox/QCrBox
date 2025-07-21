@@ -43,7 +43,7 @@ colorama==0.4.6
     # via mkdocs-material
 comm==0.2.2
     # via ipykernel
-cryptography==45.0.4
+cryptography==45.0.5
     # via secretstorage
 debugpy==1.8.6
     # via ipykernel

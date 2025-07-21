@@ -14,6 +14,8 @@ __all__ = ["StructlogRendererEnum", "get_log_level_as_int", "settings"]
 
 
 SQLiteDsn = str  # alias for readability
+IS_RUNNING_INSIDE_TESTS = hasattr(sys, "_qcrbox_running_inside_tests")
+IS_RUNNING_DEBUG_MODE = True
 
 
 def get_log_level_as_int(level: str):
@@ -124,12 +126,8 @@ class StructlogRendererEnum(Enum):
     JSON = "json"
 
 
-sys._qcrbox_running_inside_tests = True
-IS_RUNNING_INSIDE_TESTS = hasattr(sys, "_qcrbox_running_inside_tests")
-
-
 class LoggingSettings(QCrBoxSettingsBaseModel):
-    log_level: str = "INFO" if not IS_RUNNING_INSIDE_TESTS else "DEBUG"
+    log_level: str = "DEBUG" if IS_RUNNING_DEBUG_MODE or IS_RUNNING_INSIDE_TESTS else "INFO"
     renderer: StructlogRendererEnum = StructlogRendererEnum.JSON
 
     @property
@@ -145,7 +143,7 @@ class QCrBoxSettings(QCrBoxSettingsBaseModel):
         env_prefix="QCRBOX__",
     )
 
-    debug_mode: bool = False if not IS_RUNNING_INSIDE_TESTS else True
+    debug_mode: bool = IS_RUNNING_DEBUG_MODE
     nats: NATSSettings = NATSSettings()
     registry: RegistrySettings = RegistrySettings()
     db: DatabaseSettings = DatabaseSettings()

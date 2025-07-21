@@ -1,4 +1,7 @@
 [![License: MPL 2.0](https://img.shields.io/badge/License-MPL_2.0-blue.svg)](https://opensource.org/licenses/MPL-2.0)
+[![QCrBox CI](https://github.com/QCrBox/QCrBox/actions/workflows/qcrbox-ci.yml/badge.svg)](https://github.com/QCrBox/QCrBox/actions/workflows/qcrbox-ci.yml)
+![Test Coverage](pyqcrbox/coverage.svg)
+
 
 # Quantum Crystallography Toolbox
 

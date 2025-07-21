@@ -87,7 +87,12 @@ comm==0.2.2
 cookiecutter==2.6.0
     # via pyqcrbox (pyproject.toml)
 coverage==7.9.2
-    # via pytest-cov
+    # via
+    #   pyqcrbox (pyproject.toml)
+    #   coverage-badge
+    #   pytest-cov
+coverage-badge==1.1.2
+    # via pyqcrbox (pyproject.toml)
 cryptography==45.0.5
     # via secretstorage
 debugpy==1.8.14
@@ -468,6 +473,7 @@ send2trash==1.8.3
     # via jupyter-server
 setuptools==75.1.0
     # via
+    #   coverage-badge
     #   jupyterlab
     #   setuptools-scm
 setuptools-scm==8.1.0

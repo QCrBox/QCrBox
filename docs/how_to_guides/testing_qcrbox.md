@@ -49,9 +49,8 @@ application and logging containers which aren't necessary for core testing.
 qcb up --test-only
 ```
 
-Note that using this flag sources environment variables from `.env.test` rather than the regular `.env.dev` environment
-file used during development. The key difference between the two environment files are the port mappings used - the test
-environment uses different ports to avoid conflicts with development instances and to ensure isolated testing.
+When using `--test-only`, the same ports will be used as the normal deployment. Note that there will be no log
+aggregation in the test deployment.
 
 ## Devbox test script
 

@@ -5,9 +5,7 @@ from pyqcrbox.services import get_data_file_manager
 
 @pytest.mark.anyio
 async def test_import_of_local_file(sample_cif_file):
-    """
-    Test that we can import a local file and retrieve its contents from the data file manager.
-    """
+    """Test that we can import a local file and retrieve its contents from the data file manager."""
     data_file_manager = await get_data_file_manager()
 
     qcrbox_file_id = "qcrbox_data_file_001"
@@ -24,31 +22,29 @@ async def test_import_of_local_file(sample_cif_file):
 
 @pytest.mark.anyio
 async def test_list_existing_data_files(sample_cif_file):
-    """
-    Test that we can retrieve a list of stored data files.
-    """
+    """Test that we can retrieve a list of stored data files."""
     data_file_manager = await get_data_file_manager()
+    data_files = await data_file_manager.get_data_files()
+    num_data_files_start = len(data_files)
+    assert num_data_files_start >= 1
 
     qcrbox_file_id = "qcrbox_data_file_001"
     await data_file_manager.delete_data_file(qcrbox_file_id)
-
     data_files = await data_file_manager.get_data_files()
-    assert len(data_files) == 0
+    assert len(data_files) == num_data_files_start - 1
 
     await data_file_manager.import_local_file(sample_cif_file, _qcrbox_file_id=qcrbox_file_id)
     data_files = await data_file_manager.get_data_files()
-    assert len(data_files) == 1
+    assert len(data_files) == num_data_files_start
 
-    file1 = data_files[0]
-    assert file1.qcrbox_file_id == qcrbox_file_id
+    file1 = data_files[-1]
     assert file1.filename == sample_cif_file.name
+    assert file1.qcrbox_file_id == qcrbox_file_id
 
 
 @pytest.mark.anyio
 async def test_export_data_file(sample_cif_file, tmp_path):
-    """
-    Test that exporting a previously imported data file produces the expected file contents.
-    """
+    """Test that exporting a previously imported data file produces the expected file contents."""
     data_file_manager = await get_data_file_manager()
 
     qcrbox_file_id = "qcrbox_data_file_001"
