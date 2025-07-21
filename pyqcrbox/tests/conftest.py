@@ -1,6 +1,9 @@
+import sys
 from pathlib import Path
 
 import pytest
+
+sys._qcrbox_running_inside_tests = True
 
 
 @pytest.fixture(scope="session")
