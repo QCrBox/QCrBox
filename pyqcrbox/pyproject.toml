@@ -141,6 +141,7 @@ markers = [
     "requires_mock_rabbitmq_broker",
     "xfail_with_real_rabbitmq_broker",
 ]
+asyncio_default_fixture_loop_scope = "function"
 
 [tool.mypy]
 strict = true
