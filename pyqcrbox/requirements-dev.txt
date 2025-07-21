@@ -10,8 +10,6 @@ anyio==4.6.0
     #   faststream
     #   httpx
     #   jupyter-server
-appnope==0.1.4
-    # via ipykernel
 argon2-cffi==25.1.0
     # via jupyter-server
 argon2-cffi-bindings==21.2.0
@@ -57,7 +55,9 @@ certifi==2024.8.30
     #   requests
     #   selenium
 cffi==1.17.1
-    # via argon2-cffi-bindings
+    # via
+    #   argon2-cffi-bindings
+    #   cryptography
 cfgv==3.4.0
     # via pre-commit
 chardet==5.2.0
@@ -89,7 +89,12 @@ cookiecutter==2.6.0
 coverage==7.9.2
     # via
     #   pyqcrbox (pyproject.toml)
+    #   coverage-badge
     #   pytest-cov
+coverage-badge==1.1.2
+    # via pyqcrbox (pyproject.toml)
+cryptography==45.0.5
+    # via secretstorage
 debugpy==1.8.14
     # via ipykernel
 decopatch==1.4.10
@@ -120,6 +125,8 @@ gitdb==4.0.11
     # via gitpython
 gitpython==3.1.43
     # via pyqcrbox (pyproject.toml)
+greenlet==3.2.3
+    # via sqlalchemy
 grimp==3.9
     # via import-linter
 h11==0.14.0
@@ -175,6 +182,10 @@ jaraco-functools==4.1.0
     # via keyring
 jedi==0.19.2
     # via ipython
+jeepney==0.9.0
+    # via
+    #   keyring
+    #   secretstorage
 jinja2==3.1.6
     # via
     #   cookiecutter
@@ -454,12 +465,15 @@ rpds-py==0.26.0
     #   referencing
 ruff==0.12.2
     # via pyqcrbox (pyproject.toml)
+secretstorage==3.3.3
+    # via keyring
 selenium==4.32.0
     # via robotframework-seleniumlibrary
 send2trash==1.8.3
     # via jupyter-server
 setuptools==75.1.0
     # via
+    #   coverage-badge
     #   jupyterlab
     #   setuptools-scm
 setuptools-scm==8.1.0

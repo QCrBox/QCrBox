@@ -60,6 +60,7 @@ dev = [
     # testing
     "aioresult",
     "coverage",
+    "coverage-badge>=1.1.2",
     "pytest",
     "pytest-asyncio",
     "pytest-cov",

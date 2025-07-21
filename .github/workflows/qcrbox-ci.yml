@@ -104,10 +104,9 @@ jobs:
           cd pyqcrbox/robot_tests
           robot api_endpoints.robot
 
-      - name: Run Pytest test suite and check coverage
+      - name: Run Pytest test suit
         run: |
-          cd pyqcrbox/tests
-          coverage run -m pytest
+          cd pyqcrbox/tests && pytest .
 
       - name: Clean-up QCrBox
         if: always()
