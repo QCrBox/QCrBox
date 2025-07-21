@@ -82,64 +82,38 @@ jobs:
   #       with:
   #         args: format --diff --config pyqcrbox/pyproject.toml
 
-  robot_acceptance_tests:
+  robot_framework:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-            fetch-depth: 0
+      - name: Checkout QCrBox
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v4
+      - name: Install Python 3.11
+        uses: actions/setup-python@v4
         with:
           python-version: '3.11'
           cache: 'pip' # caching pip dependencies
 
-      - name: Install Python dependencies for CLI
+      - name: Install Python dependencies
         run: |
           pip install --upgrade uv
           uv pip install --system -r ./pyqcrbox/requirements-dev.txt
           uv pip install --system pyqcrbox@./pyqcrbox
 
-      - name: Clean up any existing containers
+      - name: Bring up QCrBox registry and applications
         run: |
           docker container prune -f
           docker network prune -f
-
-      - name: Bring up QCrBox registry and applications
-        run: |
           qcb up --test-only
 
       - name: Wait for QCrBox registry to be ready
         run: |
-          set -a
-          source .env.test
-          set +a
-          for i in {1..30}; do
-            if curl -s ${QCRBOX_BIND_ADDRESS}:${QCRBOX_REGISTRY_PORT}/api/healthz; then
-              exit 0
-            fi
-            echo "Waiting for registry to be ready... ($i/30)"
-            sleep 10
-          done
-          echo "Registry is not available"
-          exit 1
-
-      - name: Wait for applications to be registered
-        run: |
-          set -a
-          source .env.test
-          set +a
-          sleep 30
-          curl -s ${QCRBOX_BIND_ADDRESS}:${QCRBOX_REGISTRY_PORT}/api/applications
+          bash .github/scripts/check_qcb_healthy.sh
 
       - name: Run Robot Framework test suites
         run: |
-          set -a
-          source .env.test
-          set +a
-          cd ./pyqcrbox/robot_tests
-
-          echo "Running API Endpoints suite"
+          set -a && source .env.test &&set +a
+          cd pyqcrbox/robot_tests
           robot api_endpoints.robot
 
       - name: Clean-up QCrBox
