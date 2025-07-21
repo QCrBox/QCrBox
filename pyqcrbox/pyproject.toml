@@ -59,6 +59,7 @@ dev = [
     #
     # testing
     "aioresult",
+    "coverage",
     "pytest",
     "pytest-asyncio",
     "pytest-cov",
@@ -213,6 +214,7 @@ convention = "numpy"
 [tool.importlinter]
 root_package = "pyqcrbox"
 exclude_type_checking_imports = true
+
 #
 #[[tool.importlinter.contracts]]
 #name = "Server does not import client modules"

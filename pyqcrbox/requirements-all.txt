@@ -97,7 +97,9 @@ comm==0.2.2
 cookiecutter==2.6.0
     # via pyqcrbox (pyproject.toml)
 coverage==7.6.1
-    # via pytest-cov
+    # via
+    #   pyqcrbox (pyproject.toml)
+    #   pytest-cov
 debugpy==1.8.6
     # via ipykernel
 decopatch==1.4.10
@@ -526,6 +528,7 @@ rich==13.9.1
     #   rich-click
 rich-click==1.8.3
     # via
+    #   pyqcrbox (pyproject.toml)
     #   litestar
     #   robotframework-tidy
 robotframework==7.2.2
