@@ -83,6 +83,11 @@
         "sleep 5",
         "robot api_endpoints.robot"
       ],
+      "pytest": [
+        "cd ./pyqcrbox",
+        "pytest --cov=pyqcrbox tests",
+        "coverage-badge -f -o coverage.svg"
+      ],
       "restart-qcrbox": [
         "bash ./scripts/restart_qcrbox.sh"
       ]
