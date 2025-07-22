@@ -5,7 +5,7 @@ import nats.js.errors
 from pyqcrbox import logger
 from pyqcrbox.sql_models.calculation import CalculationNatsDB
 from pyqcrbox.sql_models.calculation_status_event import CalculationStatusDetails
-from pyqcrbox.svcs import get_nats_key_value
+from pyqcrbox.services import get_nats_key_value
 
 if TYPE_CHECKING:
     pass

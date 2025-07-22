@@ -10,7 +10,7 @@ from litestar.params import Body
 from sqlalchemy.orm import joinedload
 from sqlmodel import select
 
-from pyqcrbox import QCRBOX_SVCS_REGISTRY, logger, msg_specs, settings, sql_models
+from pyqcrbox import logger, msg_specs, settings, sql_models
 from pyqcrbox.data_management import DatasetResponse
 from pyqcrbox.data_management.data_file import DataFileMetadataResponse
 from pyqcrbox.services import get_data_file_manager, get_nats_broker
@@ -202,9 +202,9 @@ async def import_dataset(data: Annotated[UploadFile, Body(media_type=RequestEnco
 
 
 async def invoke_command(data: sql_models.CommandInvocationCreate) -> dict:
-    with svcs.Container(QCRBOX_SVCS_REGISTRY) as con:
-        nats_broker = await con.aget(NatsBroker)
+    from pyqcrbox.services import get_nats_broker
 
+    nats_broker = get_nats_broker()
     cmd_spec_db = _verify_command_exists(data.application_slug, data.application_version, data.command_name)
     _validate_arguments_against_command_parameters(cmd_spec_db, data.arguments)
 
