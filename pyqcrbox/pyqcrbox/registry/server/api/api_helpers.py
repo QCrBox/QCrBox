@@ -202,9 +202,7 @@ async def import_dataset(data: Annotated[UploadFile, Body(media_type=RequestEnco
 
 
 async def invoke_command(data: sql_models.CommandInvocationCreate) -> dict:
-    from pyqcrbox.services import get_nats_broker
-
-    nats_broker = get_nats_broker()
+    nats_broker = await get_nats_broker()
     cmd_spec_db = _verify_command_exists(data.application_slug, data.application_version, data.command_name)
     _validate_arguments_against_command_parameters(cmd_spec_db, data.arguments)
 
