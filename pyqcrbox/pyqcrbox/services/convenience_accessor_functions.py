@@ -10,8 +10,14 @@ async def get_data_file_manager() -> DataFileManager:
         return await con.aget(DataFileManager)
 
 
-async def get_nats_broker() -> NatsBroker:
+async def get_nats_broker(connect=False) -> NatsBroker:
     with svcs.Container(QCRBOX_GLOBAL_SERVICES_REGISTRY) as con:
         broker = await con.aget(NatsBroker)
-        await broker.connect()
+        if connect:
+            await broker.connect()
         return broker
+
+
+async def get_nats_key_value(bucket: str):
+    nats_broker = await get_nats_broker()
+    return await nats_broker.key_value(bucket=bucket)
