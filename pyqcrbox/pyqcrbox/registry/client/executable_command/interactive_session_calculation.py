@@ -3,7 +3,12 @@ import asyncio
 import anyio
 
 from pyqcrbox import logger
-from pyqcrbox.registry.client.executable_command.error import FinaliseCommandFailure, error_dialog_box
+from pyqcrbox.registry.client.executable_command.error import (
+    FinaliseCommandFailure,
+    PrepareCommandFailure,
+    RunCommandFailure,
+    error_dialog_box,
+)
 from pyqcrbox.services import get_data_file_manager
 from pyqcrbox.sql_models import CalculationStatusEnum
 
@@ -166,3 +171,26 @@ class InteractiveSessionCalculation(BaseCalculation):
         if self._error_dialog_process:
             self._error_dialog_process.terminate()
             self._error_dialog_process.join()
+
+    def get_error_message(self) -> str:
+        """Get the last error message for this interactive session.
+
+        Returns
+        -------
+        str
+            The error message returned. This could be an empty string.
+
+        """
+        if self.exception_raised:
+            if isinstance(self.exception_raised, PrepareCommandFailure):
+                error_msg = f"Prepare step failed: {self.exception_raised.original_exception}"
+            elif isinstance(self.exception_raised, RunCommandFailure):
+                error_msg = f"Run step failed: {self.exception_raised.original_exception}"
+            elif isinstance(self.exception_raised, FinaliseCommandFailure):
+                error_msg = f"Fianalise step failed: {self.exception_raised.original_exception}"
+            else:
+                error_msg = f"Command failed: {self.exception_raised}"
+        else:
+            error_msg = ""
+
+        return error_msg

@@ -11,7 +11,6 @@ class InteractiveLifecycleSteps(QCrBoxPydanticBaseModel):
     prepare: NonInteractiveCommandSpec | None = None
     run: NonInteractiveCommandSpec
     finalise: NonInteractiveCommandSpec | None = None
-    # toparams: NonInteractiveCommandSpec | None = None
 
     @model_validator(mode="before")
     @classmethod
@@ -23,13 +22,12 @@ class InteractiveLifecycleSteps(QCrBoxPydanticBaseModel):
 
     @property
     def commands(self):
-        return [getattr(self, name) for name in self.model_fields.keys() if getattr(self, name) is not None]
+        return [getattr(self, name) for name in self.model_fields if getattr(self, name) is not None]
 
 
 class InteractiveSessionSpec(BaseCommandSpec):
     implemented_as: Literal["interactive_session"] = "interactive_session"
     interactive_lifecycle: InteractiveLifecycleSteps
-    # non_interactive_equivalent: NonInteractiveCommandSpec | None = None
 
     @model_validator(mode="before")
     @classmethod

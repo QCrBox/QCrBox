@@ -4,12 +4,16 @@ import inspect
 import multiprocessing.pool
 import multiprocessing.process
 import traceback
+from pathlib import Path
+from typing import Any
 
 import anyio
 from pydantic._internal._validate_call import ValidateCallWrapper
 
 from pyqcrbox import logger
+from pyqcrbox.msg_specs.msg_types.client_side.command_execution_request import CommandExecutionRequestNATS
 from pyqcrbox.sql_models import PythonCallableSpec
+from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import parse_parameter_as_its_dtype
 
 from . import BaseCommand
 from .python_callable_calculation import PythonCallableCalculation
@@ -78,6 +82,23 @@ class PythonCallable(BaseCommand):
 
         """
         return f"<{self.__class__.__name__}: {self.fn.__name__}{self.signature!s}>"
+
+    async def add_to_database(
+        self, execute_request: CommandExecutionRequestNATS, executing_client_address: str
+    ) -> None:
+        pass
+
+    async def prepare_params(self, working_dir: str | Path, command_arguments: dict[str, Any]) -> dict[str, Any]:
+        # Create a mapping of the parameters, each item in the dict will be a QCrBox
+        # object representation of the data type of that parameter -- see pyqcrbox.sql_models.parameter_spec
+        parsed_params = {}
+        for param_name, param_value in command_arguments.items():
+            param_spec = self.cmd_spec.get_parameter_by_name(param_name)
+            parsed_params[param_name] = parse_parameter_as_its_dtype(param_value, param_spec.dtype)
+
+        return {
+            name: await param.prepare_for_execution(target_dir=working_dir) for name, param in parsed_params.items()
+        }
 
     async def execute_in_background(
         self,

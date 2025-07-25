@@ -2,11 +2,15 @@ import asyncio
 import os
 import re
 import subprocess
+from pathlib import Path
+from typing import Any
 
 import anyio
 
 from pyqcrbox import logger
+from pyqcrbox.msg_specs.msg_types.client_side.command_execution_request import CommandExecutionRequestNATS
 from pyqcrbox.sql_models import CLICommandSpec
+from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import parse_parameter_as_its_dtype
 
 from .base_command import BaseCommand
 from .cli_command_calculation import CLICmdCalculation
@@ -64,7 +68,24 @@ class CLICommand(BaseCommand):
         """
         return self.call_pattern
 
-    async def bind(self, working_dir: str, **param_values):
+    async def add_to_database(
+        self, execute_request: CommandExecutionRequestNATS, executing_client_address: str
+    ) -> None:
+        pass
+
+    async def prepare_params(self, working_dir: str | Path, command_arguments: dict[str, Any]) -> dict[str, Any]:
+        # Create a mapping of the parameters, each item in the dict will be a QCrBox
+        # object representation of the data type of that parameter -- see pyqcrbox.sql_models.parameter_spec
+        parsed_params = {}
+        for param_name, param_value in command_arguments.items():
+            param_spec = self.cmd_spec.get_parameter_by_name(param_name)
+            parsed_params[param_name] = parse_parameter_as_its_dtype(param_value, param_spec.dtype)
+
+        return {
+            name: await param.prepare_for_execution(target_dir=working_dir) for name, param in parsed_params.items()
+        }
+
+    async def bind(self, working_dir: str | Path, **param_values):
         """Bind parameter values to the call pattern for the CLI command.
 
         Parameters

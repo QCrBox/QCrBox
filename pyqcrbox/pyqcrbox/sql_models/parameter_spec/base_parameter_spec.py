@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from typing import Annotated, Any
 
 from pydantic import BeforeValidator, field_validator, model_validator
@@ -9,7 +10,13 @@ from ..base import QCrBoxPydanticBaseModel
 SENTINEL_UNDEFINED = "<undefined>"
 
 
-class BuiltinParameter(QCrBoxPydanticBaseModel):
+class BaseParameter(QCrBoxPydanticBaseModel, ABC):
+    @abstractmethod
+    async def prepare_for_execution(self, target_dir: str, target_filename: str | None = None) -> Any:
+        pass
+
+
+class BuiltinParameter(BaseParameter):
     dtype: type
     value: Any
 
@@ -17,7 +24,7 @@ class BuiltinParameter(QCrBoxPydanticBaseModel):
         return self.value
 
 
-class DataFileParameter(QCrBoxPydanticBaseModel):
+class DataFileParameter(BaseParameter):
     data_file_id: str
 
     async def prepare_for_execution(self, target_dir: str, target_filename: str | None = None) -> str:

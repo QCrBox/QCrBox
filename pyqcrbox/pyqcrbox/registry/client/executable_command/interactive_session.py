@@ -1,16 +1,19 @@
 import asyncio
-import os
 from pathlib import Path
 from typing import Any
 
 import anyio
 
 from pyqcrbox import helpers, logger
+from pyqcrbox.msg_specs.msg_types.client_side.command_execution_request import CommandExecutionRequestNATS
 from pyqcrbox.registry.client.executable_command import BaseCommand
 from pyqcrbox.registry.client.executable_command.cli_command import CLICommand
 from pyqcrbox.registry.client.executable_command.error import PrepareCommandFailure, RunCommandFailure, error_dialog_box
 from pyqcrbox.registry.client.executable_command.python_callable import PythonCallable
+from pyqcrbox.services import get_data_file_manager
 from pyqcrbox.sql_models import InteractiveSessionSpec
+from pyqcrbox.sql_models.interactive_session_info import InteractiveSessionInfo
+from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import parse_parameter_as_its_dtype
 
 from .interactive_session_calculation import InteractiveSessionCalculation
 
@@ -21,10 +24,12 @@ class InteractiveSession(BaseCommand):
     def __init__(self, cmd_spec: InteractiveSessionSpec):
         assert cmd_spec.implemented_as == "interactive_session"
         super().__init__(cmd_spec)
+
+        # specifications for interactive commands
         self.prepare_cmd_spec = cmd_spec.interactive_lifecycle.prepare
         self.run_cmd_spec = cmd_spec.interactive_lifecycle.run
         self.finalise_cmd_spec = cmd_spec.interactive_lifecycle.finalise
-
+        # placeholders for interactive command objects
         self._prepare_cmd = None
         self._run_cmd = None
         self._finalise_cmd = None
@@ -172,38 +177,68 @@ class InteractiveSession(BaseCommand):
             **param_values,
         )
 
-    async def prepare_parameters_for_command_execution(
-        self, working_dir: str | Path, **kwargs: dict[str, Any]
-    ) -> dict[str, Any]:
-        """Prepare the parameters to be used by the commands in the session.
+    async def prepare_params(self, working_dir: str | Path, command_arguments: dict[str, Any]) -> dict[str, Any]:
+        """Prepare and command parameters for execution for an interactive session.
+
+        This method parses the provided command arguments  then merges them with
+        any default values from the run, prepare, and finalise command specs.
 
         Parameters
         ----------
         working_dir : str | Path
-            A path-like object to the working directory for command execution.
-        kwargs : dict[str, Any]
-            Additional parameter values passed via keyword arguments.
+            The working directory in which to prepare parameters, e.g. where files
+            will be written to.
+        command_arguments : dict[str, Any]
+            A dictionary mapping parameter names to their provided values.
 
         Returns
         -------
         dict[str, Any]
-            A dict with the parameters names as the dict keys and the values of
-            the parameters as the dict values.
+            A dictionary mapping parameter names to their prepared values, ready for
+            use in command execution.
 
         """
-        # It is mandatory to have a run command defined, but optional to have a prepare or finalise command. So
-        # we have to be careful here and add their parameters only if they are defined.
-        param_values = self.run_cmd_spec.parameter_default_values
+        # Create a mapping of the parameters, each item in the dict will be a QCrBox
+        # object representation of the data type of that parameter -- see pyqcrbox.sql_models.parameter_spec
+        parsed_params = {}
+        for param_name, param_value in command_arguments.items():
+            param_spec = self.cmd_spec.get_parameter_by_name(param_name)
+            parsed_params[param_name] = parse_parameter_as_its_dtype(param_value, param_spec.dtype)
+
+        # Now we have to create a mapping of the parameter names to the value of
+        # the parameters. These will either by default values or be passed via the NATS
+        # message to invoke the command (and then "prepared" for execution)
+        param_values = self.run_cmd_spec.parameter_default_values | parsed_params
         if self.prepare_cmd_spec:
             param_values = param_values | self.prepare_cmd_spec.parameter_default_values
         if self.finalise_cmd_spec:
             param_values = param_values | self.finalise_cmd_spec.parameter_default_values
-        param_values = param_values | kwargs
-        param_values = {
-            name: await param.prepare_for_execution(target_dir=working_dir) for name, param in param_values.items()
-        }
 
-        return param_values
+        return {name: await param.prepare_for_execution(target_dir=working_dir) for name, param in param_values.items()}
+
+    async def add_to_database(
+        self, execute_request: CommandExecutionRequestNATS, executing_client_address: str
+    ) -> None:
+        """Add this interactive session to the database.
+
+        This adds an InteractiveSessionInfo object to the "interactive_sessions"
+        bucket in the data manager.
+
+        Parameters
+        ----------
+        execute_request : CommandExecutionRequestNATS
+            The execution request message, containing data about the calculation.
+        executing_client_address : str
+            The NATS address of the client executing the command.
+
+        """
+        session_info = InteractiveSessionInfo(
+            session_id=execute_request.calculation_id,
+            client_private_inbox=executing_client_address,
+            cmd_execution_request=execute_request,
+        )
+        data_manager = await get_data_file_manager()
+        await data_manager.store_interactive_session_info(session_info)
 
     async def execute_in_background(
         self,
@@ -212,7 +247,7 @@ class InteractiveSession(BaseCommand):
         _stdout_stream: asyncio.StreamReader | None = None,
         _stderr_stream: asyncio.StreamReader | None = None,
         _cwd: str | Path | None = None,
-        **kwargs,
+        **kwargs: dict[str, Any],
     ) -> InteractiveSessionCalculation:
         """Launch an interactive session calculation asynchronously.
 
@@ -223,6 +258,8 @@ class InteractiveSession(BaseCommand):
 
         Parameters
         ----------
+        command_arguments : dict
+            A dict containing the names of the arguments required for the function.
         _calculation_id : str
             The unique identifier for the interactive session calculation.
         _stdin_stream : asyncio.StreamWriter | None
@@ -245,13 +282,9 @@ class InteractiveSession(BaseCommand):
         """
         from .executable_command import ExecutableCommand
 
-        working_dir = _cwd or os.getcwd()
-        calc_finished_event = anyio.Event()
-        param_values = await self.prepare_parameters_for_command_execution(working_dir, **kwargs)
-
         interactive_session_calc = InteractiveSessionCalculation(
             calculation_id=_calculation_id,
-            calc_finished_event=calc_finished_event,
+            calc_finished_event=anyio.Event(),
             # the following will be set after the task begins
             async_task=None,
             prepare_calc=None,
@@ -270,10 +303,10 @@ class InteractiveSession(BaseCommand):
         async def background_task():
             nonlocal run_cmd, prepare_cmd, finalise_cmd
             if prepare_cmd:
-                await self._execute_prepare_command(prepare_cmd, _cwd, interactive_session_calc, **param_values)
-            await self._execute_run_command(run_cmd, _cwd, interactive_session_calc, **param_values)
+                await self._execute_prepare_command(prepare_cmd, _cwd, interactive_session_calc, **kwargs)
+            await self._execute_run_command(run_cmd, _cwd, interactive_session_calc, **kwargs)
             if finalise_cmd:
-                await self._launch_finalise_command(finalise_cmd, _cwd, interactive_session_calc, **param_values)
+                await self._launch_finalise_command(finalise_cmd, _cwd, interactive_session_calc, **kwargs)
 
         interactive_session_calc.background_task = asyncio.create_task(background_task())
 
