@@ -1,3 +1,5 @@
+# type: ignore
+
 """API endpoints for QCrBox, grouped by resource."""
 
 import traceback
@@ -189,6 +191,53 @@ async def get_command_by_id(id: int) -> schema.QCrBoxResponse[schema.CommandsRes
         raise QCrBoxAPIException(detail=f"Command not found: {id!r}", status_code=404) from exc
 
 
+@post(
+    path="/commands",
+    media_type=MediaType.JSON,
+    summary="Invoke a command with arguments",
+    tags=["commands"],
+    operation_id="invoke_command",
+    responses={400: schema.BAD_REQUEST_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
+)
+async def invoke_command(
+    data: Annotated[schema.InvokeCommand, Body()],
+) -> schema.QCrBoxResponse[schema.InvokeCommandResponse]:
+    """Create an interactive session with the provided arguments arguments."""
+    command_spec = CommandInvocationCreate(
+        application_slug=data.application_slug,
+        application_version=data.application_version,
+        command_name=data.command_name,
+        arguments=data.arguments,
+    )
+    try:
+        response = await api_helpers.invoke_command(command_spec)
+    except Exception as exc:
+        raise QCrBoxAPIException(
+            detail=f"Failed to invoke command due to an error in the server {str(exc)}", status_code=400
+        ) from exc
+
+    if response["status"] != CalculationStatusEnum.SUBMITTED:
+        error_msg = response["payload"].get("error", "an unknown error occurred")
+        raise QCrBoxAPIException(
+            detail=f"Failed to invoke command: {error_msg}",
+            status_code=500,
+        )
+
+    # TODO: we should respond with the created object, rather than the ID. But we can't do that just yet.
+    # interactive_session = api_helpers.get_calculation_info_by_calculation_id(response["payload"]["calculation_id"])
+
+    return QCrBoxResponse(
+        content={
+            "status": "success",
+            "message": f"Command invocation accepted: {data.application_slug!r}-{data.application_version!r}",
+            "payload": {
+                "calculation_id": response["payload"]["calculation_id"],
+            },
+        },
+        status_code=201,
+    )
+
+
 # Data files -----------------------------------------------------------------------------------------------------------
 
 
@@ -241,37 +290,6 @@ async def get_data_file_by_id(
         )
     except KeyError as exc:
         raise QCrBoxAPIException(detail=f"Data file not found: {id!r}", status_code=404) from exc
-
-
-# ----------------------------------------------------------------------------------------------------------------------
-# Removed for now, as there SHOULD NOT be any mechanism to upload a data file which is not associated to a dataset.
-# ----------------------------------------------------------------------------------------------------------------------
-# @post(
-#     path="/data-files",
-#     media_type=MediaType.JSON,
-#     summary="Upload a data file",
-#     tags=["data-files"],
-#     operation_id="create_data_file",
-#     responses={400: schema.BAD_REQUEST_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
-# )
-#
-# async def create_data_file(
-#     data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART, title="The file to upload")],
-# ) -> schema.QCrBoxResponse[schema.DataFilesResponse]:
-#     """Upload a new data file to the data store."""
-#     qcrbox_data_file_id = await api_helpers.import_data_file(data)
-#     data_file = await api_helpers.get_data_file_info(qcrbox_data_file_id)
-#     return QCrBoxResponse(
-#         content={
-#             "status": "success",
-#             "message": f"Imported data file: {data.filename!r}",
-#             "payload": {
-#                 "data_files": [data_file],
-#             },
-#         },
-#         status_code=201,
-#     )
-# ----------------------------------------------------------------------------------------------------------------------
 
 
 @get(
@@ -592,6 +610,7 @@ api_router = Router(
         # Commands
         list_commands,
         get_command_by_id,
+        invoke_command,
         # Datasets
         delete_dataset_by_id,
         list_datasets,
@@ -601,7 +620,6 @@ api_router = Router(
         # Data files
         list_data_files,
         get_data_file_by_id,
-        # create_data_file,
         download_data_file_by_id,
         # Interactive sessions
         list_interactive_sessions,

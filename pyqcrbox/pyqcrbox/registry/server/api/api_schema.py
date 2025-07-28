@@ -37,6 +37,31 @@ class CreateInteractiveSession(BaseModel):
     arguments: dict[str, Any]
 
 
+class InvokeCommand(BaseModel):
+    """Request body for invoke a command.
+
+    Attributes
+    ----------
+    application_slug : str
+        The slug of the application to invoke, as defined in the application
+        specification.
+    application_version : str
+        The version number of the application to invoke, as defined in the application
+        specification.
+    command_name : str
+        The name of the command to invoke, as defined in the application specification.
+    arguments : dict
+        Arguments required to invoke the interactive session for the application
+        requested.
+
+    """
+
+    application_slug: str
+    application_version: str
+    command_name: str
+    arguments: dict[str, Any]
+
+
 # Success responses
 
 
@@ -138,6 +163,10 @@ class DatasetsResponse(BaseModel):
     """
 
     datasets: list[DatasetResponse]
+
+
+class InvokeCommandResponse(BaseModel):
+    calculation_id: str
 
 
 class InteractiveSessionsResponse(BaseModel):

@@ -306,6 +306,43 @@ Check /interactive-sessions can open a new session after the last was closed
     Check Response Has Attributes    ${closed_session}    session_id    status    output_dataset_id    error_msg
     Should Be Equal    ${closed_session["session_id"]}    ${invoke_payload['interactive_session_id']}
 
+Check /commands can open an interactive session instead of /interactive-sessions
+    ${input_file}=    Create Dictionary    data_file_id=${TEST_DATA_FILE_ID}
+    ${arguments}=    Create Dictionary    input_file=${input_file}
+    ${request_body}=    Create Dictionary
+    ...    application_slug=olex2
+    ...    application_version=1.5-alpha
+    ...    command_name=interactive_session
+    ...    arguments=${arguments}
+
+    ${response}=    Send API Request
+    ...    POST
+    ...    ${SESSION_ALIAS}
+    ...    /commands
+    ...    201
+    ...    json_data=${request_body}
+    ${invoke_payload}=    Check Response And Get Payload    ${response}
+
+    Sleep    5s    "Waiting for interactive session to be registered and start"
+
+    Check Response Has Attributes    ${invoke_payload}    calculation_id
+
+    ${response}=    Send API Request
+    ...    POST
+    ...    ${SESSION_ALIAS}
+    ...    /interactive-sessions/${invoke_payload['calculation_id']}/close
+    ...    200
+    ${close_payload}=    Check Response And Get Payload    ${response}
+
+    Check Response Has Attributes    ${close_payload}    interactive_sessions
+    ${interactive_sessions}=    Set Variable    ${close_payload["interactive_sessions"]}
+    ${n_sessions}=    Get Length    ${interactive_sessions}
+    Should Be Equal As Integers    ${n_sessions}    1    "Close interactive session should return the closed session"
+
+    ${closed_session}=    Set Variable    ${interactive_sessions[0]}
+    Check Response Has Attributes    ${closed_session}    session_id    status    output_dataset_id    error_msg
+    Should Be Equal    ${closed_session["session_id"]}    ${invoke_payload['calculation_id']}
+
 #
 #    Calculations
 #
