@@ -59,7 +59,6 @@ class QCrBoxServer(QCrBoxServerClientBase):
         self.nats_broker.subscriber("server.cmd.handle_command_invocation_client_response")(
             self.handle_command_invocation_client_response
         )
-        self.nats_broker.subscriber("server.calc.get_status")(self.get_calculation_status_from_client)
         self.nats_broker.subscriber("*", kv_watch="calculation_status")(
             self.update_calculation_status_in_calculations_db
         )
@@ -133,7 +132,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
         # Now send the command request response to another inbox in the server (this class)
         # which will either ask the client to discard the request or execute the request
         invocation_response_from_client = msg_specs.CommandInvocationClientResponseNATS(
-            **invocation_response_from_client
+            **invocation_response_from_client  # type: ignore
         )
         await self.nats_broker.publish(
             message=invocation_response_from_client, subject="server.cmd.handle_command_invocation_client_response"
@@ -210,34 +209,6 @@ class QCrBoxServer(QCrBoxServerClientBase):
             client_id=msg.client_id,
             private_inbox_prefix=msg.private_inbox_prefix,
         )
-
-    async def get_calculation_status_from_client(
-        self, msg: msg_specs.GetCalculationStatusNATS
-    ) -> msg_specs.CalculationStatusResponseNATS:
-        """Get the status of a calculation from the executing client.
-
-        Parameters
-        ----------
-        msg : msg_specs.GetCalculationStatusNATS
-            A NATS dataclass containing the calculation status request.
-
-        Returns
-        -------
-        msg_specs.CalculationStatusResponseNATS
-            A NATS dataclass containing data about the calculation status.
-
-        """
-        logger.debug(f"Retrieving status for {msg.calculation_id!r}")
-        client = self.calculations[msg.calculation_id].executing_client
-        client_inbox_prefix = client.private_inbox_prefix
-        response = await self.nats_broker.publish(
-            msg,
-            f"{client_inbox_prefix}.calc.status",
-            rpc=True,
-        )
-        logger.debug(f"{client.client_id} responded with {response=!r}")
-
-        return response
 
     async def add_command_request_to_calculations_db(
         self,
@@ -348,7 +319,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
                 InternalServerException: handle_exception,
                 ServiceUnavailableException: handle_exception,
                 Exception: handle_exception,
-            },
+            },  # type: ignore
         )
 
     @on_qcrbox_startup
@@ -367,7 +338,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
         logger.info("Finished initialising database...")
 
 
-class TestQCrBoxServer(TestQCrBoxServerClientBase, QCrBoxServer):
+class TestQCrBoxServer(TestQCrBoxServerClientBase, QCrBoxServer):  # type: ignore
     pass
 
 

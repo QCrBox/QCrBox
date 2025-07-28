@@ -152,19 +152,17 @@ commands:
     implemented_as: "cli_command"
     call_pattern: |
       python /opt/qcrbox/qcrbtls_to_unified_cif_glue.py \
-        {input_cif_path} \
+        {input_cif} \
         {output_cif_path} \
         --custom_categories {custom_category_list}
     parameters:
-      - name: "input_cif_path"
-        dtype: "QCrBox.input_cif"
-        default_value: None
+      - name: "input_cif"
+        dtype: "QCrBox.cif_data_file"
         description: "Path to the CIF file to be converted"
         optional_entries: ["all_unified"]
         merge_su: False
       - name: "output_cif_path"
         dtype: "QCrBox.output_cif"
-        default_value: None
         description: "Path to save the CIF file to after converting"
         optional_entries: ["all_unified"]
         invalidated_entries: []

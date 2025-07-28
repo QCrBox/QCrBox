@@ -214,7 +214,9 @@ class InteractiveSession(BaseCommand):
         if self.finalise_cmd_spec:
             param_values = param_values | self.finalise_cmd_spec.parameter_default_values
 
-        return {name: await param.prepare_for_execution(target_dir=working_dir) for name, param in param_values.items()}
+        return {
+            name: await param.prepare_for_execution(target_dir=str(working_dir)) for name, param in param_values.items()
+        }
 
     async def add_to_database(
         self, execute_request: CommandExecutionRequestNATS, executing_client_address: str

@@ -61,37 +61,6 @@ Check /applications returns list of registered applications
     END
 
 #
-#    Commands
-#
-
-Check /commands returns a list of commands
-    ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /commands    200
-    ${payload}=    Check Response And Get Payload    ${response}
-
-    Check Response Has Attributes    ${payload}    commands
-    ${commands}=    Set Variable    ${payload["commands"]}
-    ${n_commands}=    Get Length    ${commands}
-    Should Be True    ${n_commands} > 0    "No commands registered, which is unexpected"
-
-    FOR    ${command}    IN    @{commands}
-        Check Command Response Structure    ${command}
-    END
-
-Check /commands/id returns a command
-    ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /commands/1    200
-    ${payload}=    Check Response And Get Payload    ${response}
-
-    Check Response Has Attributes    ${payload}    commands
-    ${commands}=    Set Variable    ${payload["commands"]}
-    ${n_commands}=    Get Length    ${commands}
-    Should Be True    ${n_commands} == 1    "/commands/id returned multiple commands"
-
-    Check Command Response Structure    ${commands[0]}
-
-Check /commands/id returns 404 for invalid id
-    ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /commands/0    404
-
-#
 #    Datasets
 #
 
@@ -150,6 +119,58 @@ Check /datasets/id/download downloads the dataset
     # Compare with original file content
     ${original_file_content}=    Get Binary File    ${TEST_CIF_FILE}
     Should Be Equal    ${original_file_content}    ${response.content}
+
+#
+#    Commands
+#
+
+Check /commands returns a list of commands
+    ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /commands    200
+    ${payload}=    Check Response And Get Payload    ${response}
+
+    Check Response Has Attributes    ${payload}    commands
+    ${commands}=    Set Variable    ${payload["commands"]}
+    ${n_commands}=    Get Length    ${commands}
+    Should Be True    ${n_commands} > 0    "No commands registered, which is unexpected"
+
+    FOR    ${command}    IN    @{commands}
+        Check Command Response Structure    ${command}
+    END
+
+Check /commands/id returns a command
+    ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /commands/1    200
+    ${payload}=    Check Response And Get Payload    ${response}
+
+    Check Response Has Attributes    ${payload}    commands
+    ${commands}=    Set Variable    ${payload["commands"]}
+    ${n_commands}=    Get Length    ${commands}
+    Should Be True    ${n_commands} == 1    "/commands/id returned multiple commands"
+
+    Check Command Response Structure    ${commands[0]}
+
+Check /commands/id returns 404 for invalid id
+    ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /commands/0    404
+
+Check /commands can invoke a non-interactive command
+    ${input_file}=    Create Dictionary    data_file_id=${TEST_DATA_FILE_ID}
+    ${arguments}=    Create Dictionary    input_cif=${input_file}    output_cif_path=/opt/qcrbox/test_cif.cif
+    ${request_body}=    Create Dictionary
+    ...    application_slug=qcrboxtools
+    ...    application_version=0.0.5
+    ...    command_name=to_unified_cif
+    ...    arguments=${arguments}
+
+    ${response}=    Send API Request
+    ...    POST
+    ...    ${SESSION_ALIAS}
+    ...    /commands
+    ...    201
+    ...    json_data=${request_body}
+    ${invoke_payload}=    Check Response And Get Payload    ${response}
+
+    Sleep    5s    "Waiting for non-interactive session to be registered and start"
+
+    Check Response Has Attributes    ${invoke_payload}    calculation_id
 
 #
 # Interactive sessions

@@ -89,12 +89,26 @@ class PythonCallable(BaseCommand):
         pass
 
     async def prepare_params(self, working_dir: str | Path, command_arguments: dict[str, Any]) -> dict[str, Any]:
-        # Create a mapping of the parameters, each item in the dict will be a QCrBox
-        # object representation of the data type of that parameter -- see pyqcrbox.sql_models.parameter_spec
+        """Prepare the parameters required for the Python callable command.
+
+        Any optional arguments which are not included are found in the command
+        specification default values list.
+
+        Parameters
+        ----------
+        working_dir : str
+            The working directory to potentially write any files to.
+        command_arguments : dict[str, Any]
+            The names and values of the parameters for the python function in a
+            dict mapping of { param_name: param_value }
+
+        """
         parsed_params = {}
         for param_name, param_value in command_arguments.items():
             param_spec = self.cmd_spec.get_parameter_by_name(param_name)
             parsed_params[param_name] = parse_parameter_as_its_dtype(param_value, param_spec.dtype)
+
+        parsed_params = self.cmd_spec.parameter_default_values | parsed_params
 
         return {
             name: await param.prepare_for_execution(target_dir=working_dir) for name, param in parsed_params.items()

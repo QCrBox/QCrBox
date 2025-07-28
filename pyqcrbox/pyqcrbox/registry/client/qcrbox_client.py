@@ -196,7 +196,11 @@ class QCrBoxClient(QCrBoxServerClientBase):
         except Exception as exc:
             logger.error(f"Command failed in background task with exception: {exc!r}")
             if command_calc:
-                await self.handle_command_failure(command_calc, exc)
+                await self.handle_calculation_failure(command_calc, exc)
+            else:
+                self.status.set_idle()
+                # Update command in database -- this could be a bit tricky because I'm not sure we have have
+                # a calculation ID yet
             return
 
         # Keep track of the calculation, which should still be running in the background
@@ -209,12 +213,12 @@ class QCrBoxClient(QCrBoxServerClientBase):
             await command_calc.wait_until_finished()
         except Exception as exc:
             logger.error(f"Calculation failed in background task with exception: {exc!r}")
-            await self.handle_command_failure(command_calc, exc)
+            await self.handle_calculation_failure(command_calc, exc)
             return
 
         await update_calculation_status_in_nats_kv(await command_calc.get_status_details())
 
-    async def handle_command_failure(self, calculation: BaseCalculation, exception: Exception) -> None:
+    async def handle_calculation_failure(self, calculation: BaseCalculation, exception: Exception) -> None:
         """Handle when the command execution fails, usually due to a raised exception.
 
         This updates the calculation status to FAILED and sets the client back to
