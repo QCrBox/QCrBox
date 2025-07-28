@@ -166,6 +166,15 @@ class DatasetsResponse(BaseModel):
 
 
 class InvokeCommandResponse(BaseModel):
+    """Response model for a calculation ID after invoking a command.
+
+    Attributes
+    ----------
+    calculation_id : str
+        The generated calculation identifier of the invoked command.
+
+    """
+
     calculation_id: str
 
 
