@@ -73,7 +73,6 @@ class QCrBoxClient(QCrBoxServerClientBase):
         )
         self.nats_broker.subscriber(f"{self.private_inbox}.cmd.discard")(self.handle_discard_command_invocation)
         self.nats_broker.subscriber(f"{self.private_inbox}.cmd.execute")(self.handle_command_execution)
-        self.nats_broker.subscriber(f"{self.private_inbox}.calc.status")(self.get_calculation_status)
         self.nats_broker.subscriber(f"{self.private_inbox}.interactive_session.close")(self.close_interactive_session)
 
     @on_qcrbox_startup
@@ -164,9 +163,11 @@ class QCrBoxClient(QCrBoxServerClientBase):
     async def handle_command_execution(self, execute_request: msg_specs.CommandExecutionRequestNATS) -> None:
         """Handle command execution requests.
 
-        Commands are executed in the background, returning immediately a Calculation
-        object. This handler does not return until the entire the entire calculation
-        has finished: prepare, run and finalise.
+        This method handles both interactive sessions and non-interactive commands
+        (python_callable and cli_command). When a command is executed in the background,
+        a calculation object is returned which we wait for to finish. This handler
+        does not return until the whole calculation has finished. For an interactive
+        session, this means the prepare, run and finalise steps have to have run.
 
         Parameters
         ----------
@@ -185,6 +186,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         command_calc = None
         try:
             command = ExecutableCommand(self.application_spec.get_command_spec_by_name(execute_request.command_name))
+            # TODO: only interactive sessions need to do this
             await command.add_to_database(execute_request, self.private_inbox)
             parameters = await command.prepare_params(self.working_dir, execute_request.arguments)
             logger.debug(f"Executing command {command!r} in the background with arguments {parameters!r}")
@@ -194,13 +196,10 @@ class QCrBoxClient(QCrBoxServerClientBase):
             if not isinstance(command_calc, BaseCalculation):
                 raise RuntimeError("Command execution did not return a calculation object.")
         except Exception as exc:
-            logger.error(f"Command failed in background task with exception: {exc!r}")
-            if command_calc:
+            if command_calc and isinstance(command_calc, BaseCalculation):
                 await self.handle_calculation_failure(command_calc, exc)
             else:
-                self.status.set_idle()
-                # Update command in database -- this could be a bit tricky because I'm not sure we have have
-                # a calculation ID yet
+                await self.handle_command_failure(exc)
             return
 
         # Keep track of the calculation, which should still be running in the background
@@ -216,10 +215,34 @@ class QCrBoxClient(QCrBoxServerClientBase):
             await self.handle_calculation_failure(command_calc, exc)
             return
 
+        # For non-interactive commands, we reset the client to being idle after the calculation
+        # has finished. For interactive sessions, we do that in `self.close_interactive_session`
+        # instead, as there is further cleanup required to end an interactive session
+        if command.type != "interactive_session":
+            self.status.set_idle()
+
         await update_calculation_status_in_nats_kv(await command_calc.get_status_details())
 
+    async def handle_command_failure(self, exception: Exception) -> None:
+        """Handle when launching a command fails.
+
+        This method differs from `handle_calculation_failure` as it is used for
+        handling failures when a command fails during configuration or when attempting
+        to launch it as a background async task.
+
+        Parameters
+        ----------
+        exception : Exception
+            The raised exception causing the failure mode.
+
+        """
+        logger.error(f"Failed to launch command with exception: {exception!r}")
+        self.status.set_idle()
+        # Update command in database -- this could be a bit tricky because I'm not sure we have have
+        # a calculation ID yet
+
     async def handle_calculation_failure(self, calculation: BaseCalculation, exception: Exception) -> None:
-        """Handle when the command execution fails, usually due to a raised exception.
+        """Handle when the calculation execution fails, usually due to a raised exception.
 
         This updates the calculation status to FAILED and sets the client back to
         being idle. You therefore need to return from ASAP `handle_command_execution`
@@ -233,6 +256,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
             The exception raised by the command.
 
         """
+        logger.error(f"Command calculation failed in background task with exception: {exception!r}")
         await update_calculation_status_in_nats_kv(
             CalculationStatusDetails(
                 calculation_id=calculation.calculation_id,
@@ -311,31 +335,6 @@ class QCrBoxClient(QCrBoxServerClientBase):
 
         return response
 
-    async def get_calculation_status(
-        self, msg: msg_specs.GetCalculationStatusNATS
-    ) -> msg_specs.CalculationStatusResponseNATS:
-        """Retrieve the status of a calculation.
-
-        Parameters
-        ----------
-        msg : msg_specs.GetCalculationStatusNATS
-            A NATS message containing the calculation ID to query.
-
-        Returns
-        -------
-        msg_specs.CalculationStatusResponseNATS
-            A response message containing the calculation ID and its current status.
-
-        """
-        logger.debug(f"Retrieving calculation details for calculation_id={msg.calculation_id!r}")
-        status = self.calculations[msg.calculation_id].status
-        logger.debug(f"Current calculation status: {status!r}")
-        response = msg_specs.CalculationStatusResponseNATS(
-            calculation_id=msg.calculation_id,
-            status=status,
-        )
-        return response
-
 
 class TestQCrBoxClient(TestQCrBoxServerClientBase, QCrBoxClient):  # type: ignore
     pass
@@ -355,7 +354,3 @@ def main():
 
     qcrbox_client = QCrBoxClient(application_spec=application_spec)
     qcrbox_client.run(host=settings.registry.client.host, port=settings.registry.client.port)
-
-
-if __name__ == "__main__":
-    main()

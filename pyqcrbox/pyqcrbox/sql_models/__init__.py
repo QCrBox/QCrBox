@@ -11,7 +11,6 @@ from .command_spec import (
     CommandSpecDB,
     CommandSpecDiscriminatedUnion,
     CommandSpecWithParameters,
-    InteractiveCommandSpec,
     InteractiveSessionSpec,
     PythonCallableSpec,
 )

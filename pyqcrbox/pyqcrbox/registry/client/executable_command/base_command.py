@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any
 
 from pyqcrbox.msg_specs.msg_types.client_side.command_execution_request import CommandExecutionRequestNATS
 from pyqcrbox.registry.client.executable_command.base_calculation import BaseCalculation
+from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import BaseParameter
 
 if TYPE_CHECKING:
     from pyqcrbox.sql_models import CommandSpecDiscriminatedUnion
@@ -23,6 +24,7 @@ class BaseCommand(metaclass=ABCMeta):
 
     def __init__(self, cmd_spec: "CommandSpecDiscriminatedUnion"):
         self.cmd_spec = cmd_spec
+        self.type = cmd_spec.implemented_as
 
     def __repr__(self):
         """Return a string representation of the command instance.
@@ -48,6 +50,25 @@ class BaseCommand(metaclass=ABCMeta):
             The execution request message, containing data about the calculation.
         executing_client_address : str
             The NATS address of the client executing the command.
+
+        """
+
+    @abstractmethod
+    async def prepare_params(
+        self, working_dir: str | Path, command_arguments: dict[str, BaseParameter]
+    ) -> dict[str, Any]:
+        """Prepare the parameters required for the CLI command.
+
+        Any optional arguments which are not included are found in the command
+        specification default values list.
+
+        Parameters
+        ----------
+        working_dir : str
+            The working directory to potentially write any files to.
+        command_arguments : dict[str, BaseParameter]
+            The names and values of the parameters for the CLI command in a dict
+            mapping of { param_name: param_value }
 
         """
 

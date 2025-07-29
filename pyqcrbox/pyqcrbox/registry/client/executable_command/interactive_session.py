@@ -13,7 +13,7 @@ from pyqcrbox.registry.client.executable_command.python_callable import PythonCa
 from pyqcrbox.services import get_data_file_manager
 from pyqcrbox.sql_models import InteractiveSessionSpec
 from pyqcrbox.sql_models.interactive_session_info import InteractiveSessionInfo
-from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import parse_parameter_as_its_dtype
+from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import BaseParameter, parse_parameter_as_its_dtype
 
 from .interactive_session_calculation import InteractiveSessionCalculation
 
@@ -177,7 +177,9 @@ class InteractiveSession(BaseCommand):
             **param_values,
         )
 
-    async def prepare_params(self, working_dir: str | Path, command_arguments: dict[str, Any]) -> dict[str, Any]:
+    async def prepare_params(
+        self, working_dir: str | Path, command_arguments: dict[str, BaseParameter]
+    ) -> dict[str, Any]:
         """Prepare and command parameters for execution for an interactive session.
 
         This method parses the provided command arguments  then merges them with
@@ -188,7 +190,7 @@ class InteractiveSession(BaseCommand):
         working_dir : str | Path
             The working directory in which to prepare parameters, e.g. where files
             will be written to.
-        command_arguments : dict[str, Any]
+        command_arguments : dict[str, BaseParameter]
             A dictionary mapping parameter names to their provided values.
 
         Returns

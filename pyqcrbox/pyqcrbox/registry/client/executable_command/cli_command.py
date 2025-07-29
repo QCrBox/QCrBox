@@ -10,7 +10,7 @@ import anyio
 from pyqcrbox import logger
 from pyqcrbox.msg_specs.msg_types.client_side.command_execution_request import CommandExecutionRequestNATS
 from pyqcrbox.sql_models import CLICommandSpec
-from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import parse_parameter_as_its_dtype
+from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import BaseParameter, parse_parameter_as_its_dtype
 
 from .base_command import BaseCommand
 from .cli_command_calculation import CLICmdCalculation
@@ -73,7 +73,9 @@ class CLICommand(BaseCommand):
     ) -> None:
         pass
 
-    async def prepare_params(self, working_dir: str | Path, command_arguments: dict[str, Any]) -> dict[str, Any]:
+    async def prepare_params(
+        self, working_dir: str | Path, command_arguments: dict[str, BaseParameter]
+    ) -> dict[str, Any]:
         """Prepare the parameters required for the CLI command.
 
         Any optional arguments which are not included are found in the command
@@ -83,7 +85,7 @@ class CLICommand(BaseCommand):
         ----------
         working_dir : str
             The working directory to potentially write any files to.
-        command_arguments : dict[str, Any]
+        command_arguments : dict[str, BaseParameter]
             The names and values of the parameters for the CLI command in a dict
             mapping of { param_name: param_value }
 

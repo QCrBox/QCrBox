@@ -2,6 +2,5 @@ from .base_command_spec import ImplementedAs
 from .cli_command_spec import CLICommandSpec
 from .command_spec import CommandSpec, CommandSpecDiscriminatedUnion, CommandSpecWithParameters
 from .command_spec_db import CommandSpecDB
-from .interactive_command_spec import InteractiveCommandSpec
 from .interactive_session_spec import InteractiveSessionSpec
 from .python_callable_spec import PythonCallableSpec
