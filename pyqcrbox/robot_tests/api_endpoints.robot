@@ -168,7 +168,7 @@ Check /commands can invoke a non-interactive command
     ...    json_data=${request_body}
     ${invoke_payload}=    Check Response And Get Payload    ${response}
 
-    Sleep    5s    "Waiting for non-interactive session to be registered and start"
+    Sleep    1s    "Waiting for non-interactive session to be registered and start"
 
     Check Response Has Attributes    ${invoke_payload}    calculation_id
 
@@ -193,7 +193,7 @@ Check /interactive-sessions can create an interactive session
     ...    json_data=${request_body}
     ${payload}=    Check Response And Get Payload    ${response}
 
-    Sleep    5s    "Waiting for interactive session to be registered and start"
+    Sleep    1s    "Waiting for interactive session to be registered and start"
 
     Check Response Has Attributes    ${payload}    interactive_session_id
     Set Suite Variable    ${TEST_INTERACTIVE_SESSION_ID}    ${payload["interactive_session_id"]}
@@ -307,7 +307,7 @@ Check /interactive-sessions can open a new session after the last was closed
     ...    json_data=${request_body}
     ${invoke_payload}=    Check Response And Get Payload    ${response}
 
-    Sleep    5s    "Waiting for interactive session to be registered and start"
+    Sleep    1s    "Waiting for interactive session to be registered and start"
 
     Check Response Has Attributes    ${invoke_payload}    interactive_session_id
 
@@ -344,7 +344,7 @@ Check /commands can open an interactive session instead of /interactive-sessions
     ...    json_data=${request_body}
     ${invoke_payload}=    Check Response And Get Payload    ${response}
 
-    Sleep    5s    "Waiting for interactive session to be registered and start"
+    Sleep    1s    "Waiting for interactive session to be registered and start"
 
     Check Response Has Attributes    ${invoke_payload}    calculation_id
 
