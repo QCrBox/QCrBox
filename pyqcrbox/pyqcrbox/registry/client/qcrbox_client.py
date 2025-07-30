@@ -7,6 +7,7 @@ from faststream.nats import NatsBroker
 from litestar import Litestar
 
 from pyqcrbox import helpers, logger, msg_specs, settings, sql_models
+from pyqcrbox.data_management.data_file_manager import DataFileManager
 from pyqcrbox.helpers import generate_private_routing_key
 from pyqcrbox.registry.client.executable_command.base_calculation import BaseCalculation
 from pyqcrbox.registry.client.executable_command.error import (
@@ -391,7 +392,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
             client_private_inbox=self.private_inbox,
             cmd_execution_request=msg,
         )
-        data_manager = await get_data_file_manager()
+        data_manager = await self.svcs_container.aget(DataFileManager)
         await data_manager.store_interactive_session_info(interactive_session_info)
         logger.debug(
             f"Added interactive session data manager: {interactive_session_info!r}",
