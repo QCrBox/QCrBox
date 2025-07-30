@@ -1,10 +1,12 @@
 import asyncio
 
 import anyio
+import svcs
 
 from pyqcrbox import logger
+from pyqcrbox.data_management.data_file_manager import DataFileManager
 from pyqcrbox.registry.client.executable_command.error import FinaliseCommandFailure, error_dialog_box
-from pyqcrbox.services import get_data_file_manager
+from pyqcrbox.services import QCRBOX_GLOBAL_SERVICES_REGISTRY
 from pyqcrbox.sql_models import CalculationStatusEnum
 
 from .base_calculation import BaseCalculation
@@ -111,16 +113,18 @@ class InteractiveSessionCalculation(BaseCalculation):
             if not output_file:
                 logger.info("No output file from interactive session")
             else:
-                data_manager = await get_data_file_manager()
-                try:
-                    output_data_file_id = await data_manager.import_local_file(output_file)
-                    self.output_dataset_id = await data_manager.create_dataset_from_data_file(output_data_file_id)
-                except FileNotFoundError:
-                    logger.error(f"Failed to create dataset for output from 'finalise' command, {output_file=!r}")
-                    raise
-                logger.info(
-                    "The output from the interactive session has been placed into dataset %s", self.output_dataset_id
-                )
+                async with svcs.Container(QCRBOX_GLOBAL_SERVICES_REGISTRY) as container:
+                    data_manager = await container.aget(DataFileManager)
+                    try:
+                        output_data_file_id = await data_manager.import_local_file(output_file)
+                        self.output_dataset_id = await data_manager.create_dataset_from_data_file(output_data_file_id)
+                    except FileNotFoundError:
+                        logger.error(f"Failed to create dataset for output from 'finalise' command, {output_file=!r}")
+                        raise
+                    logger.info(
+                        "The output from the interactive session has been placed into dataset %s",
+                        self.output_dataset_id,
+                    )
 
         logger.debug("All commands have finished, waiting for session close")
         self.is_closed = True

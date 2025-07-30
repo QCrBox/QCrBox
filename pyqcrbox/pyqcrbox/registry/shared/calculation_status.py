@@ -1,11 +1,11 @@
 from typing import TYPE_CHECKING
 
 import nats.js.errors
+from faststream.nats import NatsBroker
 
 from pyqcrbox import logger
 from pyqcrbox.sql_models.calculation import CalculationNatsDB
 from pyqcrbox.sql_models.calculation_status_event import CalculationStatusDetails
-from pyqcrbox.services import get_nats_key_value
 
 if TYPE_CHECKING:
     pass
@@ -21,7 +21,9 @@ class NatsCalculationAlreadyExists(Exception):
     pass
 
 
-async def update_calculation_status_in_nats_kv(status_details: CalculationStatusDetails) -> None:
+async def update_calculation_status_in_nats_kv(
+    nats_broker: NatsBroker, status_details: CalculationStatusDetails
+) -> None:
     """Append a new status to the the calculation status events for a calculation.
 
     Parameters
@@ -31,7 +33,7 @@ async def update_calculation_status_in_nats_kv(status_details: CalculationStatus
 
     """
     key = status_details.calculation_id
-    bucket = await get_nats_key_value(bucket="calculations")
+    bucket = await nats_broker.key_value(bucket="calculations")
     try:
         calc_entry = await bucket.get(key)
         calc_as_bytes = calc_entry.value
@@ -50,7 +52,7 @@ async def update_calculation_status_in_nats_kv(status_details: CalculationStatus
     )
 
 
-async def add_calculation_to_nats_kv(calculation: CalculationNatsDB) -> None:
+async def add_calculation_to_nats_kv(nats_broker: NatsBroker, calculation: CalculationNatsDB) -> None:
     """Add a new calculation to the NATS data manager.
 
     Parameters
@@ -70,7 +72,7 @@ async def add_calculation_to_nats_kv(calculation: CalculationNatsDB) -> None:
     )
     key = calculation.calculation_id
 
-    bucket = await get_nats_key_value(bucket="calculations")
+    bucket = await nats_broker.key_value(bucket="calculations")
     try:
         bucket_keys = await bucket.keys()
     except nats.js.errors.NoKeysError:

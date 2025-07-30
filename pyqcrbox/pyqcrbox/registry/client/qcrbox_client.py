@@ -7,6 +7,7 @@ from faststream.nats import NatsBroker
 from litestar import Litestar
 
 from pyqcrbox import helpers, logger, msg_specs, settings, sql_models
+from pyqcrbox.data_management.data_file_manager import DataFileManager
 from pyqcrbox.helpers import generate_private_routing_key
 from pyqcrbox.registry.client.executable_command.base_calculation import BaseCalculation
 from pyqcrbox.registry.client.executable_command.error import (
@@ -16,7 +17,6 @@ from pyqcrbox.registry.client.executable_command.error import (
 )
 from pyqcrbox.registry.client.executable_command.interactive_session_calculation import InteractiveSessionCalculation
 from pyqcrbox.registry.shared.calculation_status import update_calculation_status_in_nats_kv
-from pyqcrbox.services import get_data_file_manager
 from pyqcrbox.sql_models import CalculationStatusDetails, CalculationStatusEnum
 from pyqcrbox.sql_models.interactive_session_info import InteractiveSessionInfo
 from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import parse_parameter_as_its_dtype
@@ -42,7 +42,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         nats_broker: NatsBroker | None = None,
         asgi_server: Litestar | None = None,
     ):
-        super().__init__(nats_broker=nats_broker, asgi_server=asgi_server)
+        super().__init__(asgi_server=asgi_server)
         self.application_spec = application_spec
         self.client_id = client_id
         self.private_routing_key = private_routing_key or generate_private_routing_key()
@@ -140,7 +140,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
                 "error_msg": f"Discarded calculation {msg.calculation_id!r} due to client status {self.status.status}",
             },
         )
-        await update_calculation_status_in_nats_kv(status_details)
+        await update_calculation_status_in_nats_kv(self.nats_broker, status_details)
 
     async def handle_command_execution(self, msg: msg_specs.CommandExecutionRequestNATS) -> None:
         """Handle command execution requests.
@@ -191,7 +191,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
 
         # Keep track of the calculation, which should still be running
         self.calculations[msg.calculation_id] = calc
-        await update_calculation_status_in_nats_kv(await calc.get_status_details())
+        await update_calculation_status_in_nats_kv(self.nats_broker, await calc.get_status_details())
 
         # Wait until its finished and when finished, update the details
         try:
@@ -201,7 +201,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
             await self.handle_command_execution_exception(calc, exc)
             return
 
-        await update_calculation_status_in_nats_kv(await calc.get_status_details())
+        await update_calculation_status_in_nats_kv(self.nats_broker, await calc.get_status_details())
 
     async def handle_command_execution_exception(self, calculation: BaseCalculation, exception: Exception) -> None:
         """Handle a command execution error.
@@ -232,7 +232,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
             stderr="",
             extra_info={"error_msg": f"Exception raised in background task: {exception!r}"},
         )
-        await update_calculation_status_in_nats_kv(status_details)
+        await update_calculation_status_in_nats_kv(self.nats_broker, status_details)
 
         # Set client back to being idle, otherwise it won't accept new requests
         logger.debug("Setting client status to idle in handle_command_execution_exception")
@@ -392,7 +392,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
             client_private_inbox=self.private_inbox,
             cmd_execution_request=msg,
         )
-        data_manager = await get_data_file_manager()
+        data_manager = await self.svcs_container.aget(DataFileManager)
         await data_manager.store_interactive_session_info(interactive_session_info)
         logger.debug(
             f"Added interactive session data manager: {interactive_session_info!r}",

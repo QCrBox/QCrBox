@@ -1,7 +1,9 @@
+import asyncio
 import contextlib
 import inspect
 from abc import ABCMeta, abstractmethod
-from typing import AsyncContextManager, assert_never  # noqa: UP035
+from collections.abc import AsyncGenerator
+from typing import assert_never
 
 import anyio
 import nats.errors
@@ -15,8 +17,8 @@ from litestar import Litestar
 from litestar.testing import AsyncTestClient, TestClient
 
 from pyqcrbox.logging import logger
-from pyqcrbox.services.services_registry import get_qcrbox_services_registry, create_nats_broker
 from pyqcrbox.services.persistence import NatsPersistenceAdapter, SQLitePersistenceAdapter
+from pyqcrbox.services.services_registry import QCRBOX_GLOBAL_SERVICES_REGISTRY
 
 __all__ = ["QCrBoxServerClientBase", "TestQCrBoxServerClientBase"]
 
@@ -29,20 +31,11 @@ def on_qcrbox_startup(func):
 
 
 class QCrBoxServerClientBase(metaclass=ABCMeta):
-    def __init__(
-        self,
-        *,
-        nats_broker: NatsBroker | None = None,
-        asgi_server: Litestar | None = None,
-        svcs_registry: svcs.Registry | None = None,
-    ):
-        self.nats_broker = nats_broker or create_nats_broker()
+    def __init__(self, *, asgi_server: Litestar | None = None):
+        self.svcs_container = svcs.Container(QCRBOX_GLOBAL_SERVICES_REGISTRY)
+        self.nats_broker = asyncio.run(self.svcs_container.aget(NatsBroker))  # !! bad !!
         self.nats_persistence_adapter = NatsPersistenceAdapter()
         self.sqlite_persistence_adapter = SQLitePersistenceAdapter()
-
-        self.svcs_registry = get_qcrbox_services_registry()
-        # self.svcs_registry.register_value(RabbitBroker, self.broker)
-        self.svcs_registry.register_value(NatsBroker, self.nats_broker)
 
         # If not passed explicitly, the ASGI server and uvicorn server
         # will be set up when `.serve()` is called.
@@ -73,8 +66,7 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
         if self.uvicorn_server is not None:
             raise RuntimeError("Uvicorn server has already been set up (unexpectedly).")
 
-        # assert self.broker is not None
-        assert self.nats_broker is not None
+        # assert self.nats_broker is not None
         assert self.host is not None
         assert self.port is not None
 
@@ -134,29 +126,28 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
                     await func(**cur_kwargs)
 
     @contextlib.asynccontextmanager
-    async def lifespan_context(self, _: Litestar) -> AsyncContextManager:
+    async def lifespan_context(self, _: Litestar) -> AsyncGenerator:
         logger.debug(f"==> Entering {self.clsname} lifespan function...")
-        await self._create_private_nats_inbox()
-        self._set_up_nats_broker()
-        await self.start_broker()
-        await self.set_up_key_value_store()
-        await self.execute_startup_hooks(**self._run_kwargs)
 
-        try:
-            logger.debug("Yielding control to ASGI server ...")
-            yield
-            logger.debug("Received control back from ASGI server ...")
-        finally:
-            with contextlib.suppress(KeyError):
-                # with anyio.CancelScope(shield=True):
-                logger.debug("Closing broker.")
-                # await self.broker.close()
-                await self.nats_broker.close()
-                logger.debug("Done (broker is closed).")
+        async with svcs.Container(QCRBOX_GLOBAL_SERVICES_REGISTRY) as container:
+            self.svcs_container = container
+            self.nats_broker = await self.svcs_container.aget(NatsBroker)
 
-                logger.debug("Closing SVCS registry.")
-                await self.svcs_registry.aclose()
-                logger.debug("Done (SVCS registry is closed).")
+            await self._create_private_nats_inbox()
+            self._set_up_nats_broker()
+            await self.start_broker()
+            await self.set_up_key_value_store()
+            await self.execute_startup_hooks(**self._run_kwargs)
+
+            try:
+                logger.debug("Yielding control to ASGI server...")
+                yield
+                logger.debug("Received control back from ASGI server...")
+            finally:
+                with contextlib.suppress(KeyError):
+                    logger.debug("Closing broker.")
+                    await self.nats_broker.close()
+                    logger.debug("Broker is closed.")
 
         logger.debug(f"<== Exiting from {self.clsname} lifespan function.")
 
