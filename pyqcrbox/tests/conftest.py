@@ -1,7 +1,13 @@
 import sys
+from collections.abc import AsyncGenerator
 from pathlib import Path
 
 import pytest
+import svcs
+from faststream.nats import NatsBroker
+
+from pyqcrbox.data_management.data_file_manager import DataFileManager
+from pyqcrbox.services import QCRBOX_GLOBAL_SERVICES_REGISTRY
 
 sys._qcrbox_running_inside_tests = True
 
@@ -19,3 +25,27 @@ def sample_data_dir():
 @pytest.fixture(scope="session")
 def sample_cif_file(sample_data_dir):
     return sample_data_dir.joinpath("periodic_table.cif")
+
+
+@pytest.fixture(scope="session")
+async def nats_broker() -> AsyncGenerator[NatsBroker, None]:
+    async with svcs.Container(QCRBOX_GLOBAL_SERVICES_REGISTRY) as container:
+        broker = await container.aget(NatsBroker)
+        await broker.connect()
+        yield broker
+
+
+@pytest.fixture(scope="session")
+async def data_file_manager() -> AsyncGenerator[DataFileManager, None]:
+    import inspect
+
+    async with svcs.Container(QCRBOX_GLOBAL_SERVICES_REGISTRY) as container:
+        rs = QCRBOX_GLOBAL_SERVICES_REGISTRY.get_registered_service_for(DataFileManager)
+        print("\n\n--- DEBUGGING SVCS ---")
+        print(f"Factory for DataFileManager: {rs.factory}")
+        print(f"Factory signature: {inspect.signature(rs.factory)}")
+        print("------------------------\n\n")
+        # --- END DEBUGGING CODE ---
+
+        manager = await container.aget(DataFileManager)
+        yield manager
