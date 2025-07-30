@@ -1,7 +1,10 @@
 from typing import Any
 
+import svcs
 from faststream import Context
+from faststream.nats import NatsBroker
 from litestar import Litestar, MediaType, get
+from litestar.di import Provide
 from litestar.exceptions import (
     HTTPException,
     ImproperlyConfiguredException,
@@ -17,6 +20,7 @@ from litestar.response import Redirect
 from pydantic import BaseModel
 
 from pyqcrbox import helpers, logger, msg_specs, settings
+from pyqcrbox.data_management import DataFileManager
 from pyqcrbox.msg_specs.base import QCrBoxGenericResponse
 from pyqcrbox.registry.server.api.api_endpoints import handle_exception
 from pyqcrbox.registry.shared.calculation_status import (
@@ -26,7 +30,12 @@ from pyqcrbox.registry.shared.calculation_status import (
 )
 from pyqcrbox.sql_models import CalculationNatsDB, CalculationStatusDetails, CalculationStatusEnum
 
-from ..shared import QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup, structlog_plugin
+from ..shared import (
+    QCrBoxServerClientBase,
+    TestQCrBoxServerClientBase,
+    on_qcrbox_startup,
+    structlog_plugin,
+)
 from .api import api_router
 
 
@@ -44,6 +53,13 @@ class CalculationDetails(BaseModel):
     executing_client: ExecutingClientDetails | None = None
 
 
+def build_litestar_dependencies(container: svcs.Container) -> dict:
+    return {
+        "nats_broker": Provide(lambda: container.aget(NatsBroker)),
+        "data_file_manager": Provide(lambda: container.aget(DataFileManager)),
+    }
+
+
 @get(path="/", media_type=MediaType.HTML, include_in_schema=False)
 async def web_root_handler() -> Redirect:
     return Redirect(path="/api")
@@ -52,6 +68,8 @@ async def web_root_handler() -> Redirect:
 class QCrBoxServer(QCrBoxServerClientBase):
     def _set_up_nats_broker(self) -> None:
         """Initialise NATS inbox handlers."""
+        if not self.nats_broker:
+            raise RuntimeError(f"A NATS Broker has not been configured for {self!r}")
         self.nats_broker.subscriber("register-application")(self.handle_application_registration)
         self.nats_broker.subscriber("server.cmd.handle_command_invocation_by_user")(
             self.handle_command_invocation_by_user
@@ -257,7 +275,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
         # Don't allow the same calculation to be added to the database multiple times.
         # This **shouldn't** ever happen.
         try:
-            await add_calculation_to_nats_kv(calculation_db_entry)
+            await add_calculation_to_nats_kv(self.nats_broker, calculation_db_entry)
         except NatsCalculationAlreadyExists:
             logger.error(f"Trying to add a calculation to the database which already exists: {calculation_db_entry}")
             return msg_specs.QCrBoxGenericResponse(
@@ -272,7 +290,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
             stderr="",
             extra_info={},
         )
-        await update_calculation_status_in_nats_kv(calculation_status)
+        await update_calculation_status_in_nats_kv(self.nats_broker, calculation_status)
 
         return msg_specs.QCrBoxGenericResponse(
             response_to="server.cmd.handle_command_invocation_by_user",
@@ -295,15 +313,26 @@ class QCrBoxServer(QCrBoxServerClientBase):
 
         """
         logger.debug(f"Received NATS notification about calculation status update: {status_event!r}")
-        await update_calculation_status_in_nats_kv(status_event)
+        await update_calculation_status_in_nats_kv(self.nats_broker, status_event)
 
     def _set_up_asgi_server(self) -> None:
         """Initialise the ASGI server for providing the API endpoints."""
+
+        async def get_nats_broker():
+            return await self.svcs_container.aget(NatsBroker)
+
+        async def get_data_file_manager():
+            return await self.svcs_container.aget(DataFileManager)
+
         self.asgi_server = Litestar(
             route_handlers=[api_router, web_root_handler],
             lifespan=[self.lifespan_context],
             debug=settings.debug_mode,
             plugins=[structlog_plugin],
+            dependencies={
+                "nats_broker": Provide(get_nats_broker),
+                "data_file_manager": Provide(get_data_file_manager),
+            },
             openapi_config=OpenAPIConfig(
                 title="QCrBox",
                 version="0.2.3",

@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Annotated, Any
 
+import svcs
 from pydantic import BeforeValidator, field_validator, model_validator
 
 from pyqcrbox.logging import logger
@@ -28,11 +29,15 @@ class DataFileParameter(BaseParameter):
     data_file_id: str
 
     async def prepare_for_execution(self, target_dir: str, target_filename: str | None = None) -> str:
-        from pyqcrbox.services import get_data_file_manager
+        from pyqcrbox.data_management import DataFileManager
+        from pyqcrbox.services import QCRBOX_GLOBAL_SERVICES_REGISTRY
 
         logger.debug(f"Preparing data file for execution: {self!r}")
-        data_file_manager = await get_data_file_manager()
-        exported_file_path = await data_file_manager.export_data_file(self.data_file_id, target_dir, target_filename)
+        async with svcs.Container(QCRBOX_GLOBAL_SERVICES_REGISTRY) as container:
+            data_file_manager = await container.aget(DataFileManager)
+            exported_file_path = await data_file_manager.export_data_file(
+                self.data_file_id, target_dir, target_filename
+            )
         return str(exported_file_path)
 
 

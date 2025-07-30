@@ -1,7 +1,6 @@
 from typing import Annotated
 
 import sqlalchemy.exc
-import svcs
 from faststream.nats import NatsBroker
 from litestar.datastructures import UploadFile
 from litestar.enums import RequestEncodingType
@@ -11,9 +10,8 @@ from sqlalchemy.orm import joinedload
 from sqlmodel import select
 
 from pyqcrbox import logger, msg_specs, settings, sql_models
-from pyqcrbox.data_management import DatasetResponse
+from pyqcrbox.data_management import DataFileManager, DatasetResponse
 from pyqcrbox.data_management.data_file import DataFileMetadataResponse
-from pyqcrbox.services import get_data_file_manager, get_nats_broker
 from pyqcrbox.sql_models.calculation import CalculationNatsResponseModel
 
 
@@ -82,10 +80,10 @@ def _verify_command_exists(
     return cmd_spec_db
 
 
-async def close_interactive_session(session_id: str) -> msg_specs.CloseInteractiveSessionResponseNATS:
-    nats_broker = await get_nats_broker()
-    data_manager = await get_data_file_manager()
-    session_info = await data_manager.get_interactive_session_info(session_id)
+async def close_interactive_session(
+    session_id: str, *, nats_broker: NatsBroker, data_file_manager: DataFileManager
+) -> msg_specs.CloseInteractiveSessionResponseNATS:
+    session_info = await data_file_manager.get_interactive_session_info(session_id)
 
     msg = msg_specs.CloseInteractiveSessionNATS(session_id=session_id)
     response_json = await nats_broker.publish(
@@ -99,18 +97,16 @@ async def close_interactive_session(session_id: str) -> msg_specs.CloseInteracti
     return response
 
 
-async def export_data_file(data_file_id: str) -> tuple[bytes, str]:
+async def export_data_file(data_file_id: str, *, data_file_manager: DataFileManager) -> tuple[bytes, str]:
     # TODO: Create response model instead of Tuple
-    data_file_manager = await get_data_file_manager()
     data_file = await data_file_manager.get_file_contents(data_file_id)
     file_name = (await data_file_manager.get_file_metadata(data_file_id)).filename
 
     return data_file, file_name
 
 
-async def export_dataset(dataset_id: str) -> tuple[bytes, str]:
+async def export_dataset(dataset_id: str, *, data_file_manager: DataFileManager) -> tuple[bytes, str]:
     # TODO: Create response model instead of Tuple
-    data_file_manager = await get_data_file_manager()
     dataset_info = await data_file_manager.get_dataset_info(dataset_id)
 
     if dataset_info.is_empty:
@@ -128,20 +124,19 @@ async def export_dataset(dataset_id: str) -> tuple[bytes, str]:
     return file_contents, file_name
 
 
-async def delete_dataset(dataset_id: str) -> None:
-    data_file_manager = await get_data_file_manager()
+async def delete_dataset(dataset_id: str, *, data_file_manager: DataFileManager) -> None:
     await data_file_manager.delete_dataset(dataset_id)
 
 
-async def get_calculations() -> list[CalculationNatsResponseModel]:
-    data_file_manager = await get_data_file_manager()
+async def get_calculations(*, data_file_manager: DataFileManager) -> list[CalculationNatsResponseModel]:
     calculations = await data_file_manager.get_calculations()
 
     return [c.to_response_model() for c in calculations]
 
 
-async def get_calculation_by_calculation_id(calculation_id: str) -> CalculationNatsResponseModel:
-    data_file_manager = await get_data_file_manager()
+async def get_calculation_by_calculation_id(
+    calculation_id: str, *, data_file_manager: DataFileManager
+) -> CalculationNatsResponseModel:
     try:
         calculation = await data_file_manager.get_calculation_details(calculation_id)
     except KeyError as exc:
@@ -150,59 +145,54 @@ async def get_calculation_by_calculation_id(calculation_id: str) -> CalculationN
     return calculation
 
 
-async def get_data_file_info(data_file_id: str) -> DataFileMetadataResponse:
-    data_file_manager = await get_data_file_manager()
+async def get_data_file_info(data_file_id: str, *, data_file_manager: DataFileManager) -> DataFileMetadataResponse:
     data_file = await data_file_manager.get_file_metadata(data_file_id)
     return data_file.to_response_model()
 
 
-async def get_data_files() -> list[DataFileMetadataResponse]:
-    data_file_manager = await get_data_file_manager()
+async def get_data_files(*, data_file_manager: DataFileManager) -> list[DataFileMetadataResponse]:
     data_files = await data_file_manager.get_data_files()
     return [f.to_response_model() for f in data_files]
 
 
-async def get_dataset_info(dataset_id: str) -> DatasetResponse:
-    data_file_manager = await get_data_file_manager()
+async def get_dataset_info(dataset_id: str, *, data_file_manager: DataFileManager) -> DatasetResponse:
     dataset_info = await data_file_manager.get_dataset_info(dataset_id)
     return dataset_info.to_response_model()
 
 
-async def get_datasets() -> list[DatasetResponse]:
-    data_file_manager = await get_data_file_manager()
+async def get_datasets(*, data_file_manager: DataFileManager) -> list[DatasetResponse]:
     datasets = await data_file_manager.get_datasets()
     return [d.to_response_model() for d in datasets]
 
 
-async def get_interactive_session_info(session_id: str):
-    data_file_manager = await get_data_file_manager()
+async def get_interactive_session_info(session_id: str, *, data_file_manager: DataFileManager):
     session_info = await data_file_manager.get_interactive_session_info(session_id)
     return session_info.to_response_model()
 
 
-async def get_interactive_sessions():
-    data_file_manager = await get_data_file_manager()
+async def get_interactive_sessions(*, data_file_manager: DataFileManager):
     session_info = await data_file_manager.get_interactive_sessions()
     return [s.to_response_model() for s in session_info]
 
 
-async def import_data_file(data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)]) -> str:
-    data_file_manager = await get_data_file_manager()
+async def import_data_file(
+    data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)], *, data_file_manager: DataFileManager
+) -> str:
     qcrbox_data_file_id = await data_file_manager.import_bytes(await data.read(), filename=data.filename)
     logger.info(f"Data file imported: filename={data.filename!r} id={qcrbox_data_file_id!r}")
     return qcrbox_data_file_id
 
 
-async def import_dataset(data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)]) -> str:
-    data_file_manager = await get_data_file_manager()
+async def import_dataset(
+    data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)], *, data_file_manager: DataFileManager
+) -> str:
     qcrbox_data_file_id = await data_file_manager.import_bytes(await data.read(), filename=data.filename)
     qcrbox_dataset_id = await data_file_manager.create_dataset_from_data_file(qcrbox_data_file_id)
     logger.info(f"Dataset imported: id={qcrbox_dataset_id}, files=[id={qcrbox_data_file_id} filename={data.filename}]")
     return qcrbox_dataset_id
 
 
-async def invoke_command(data: sql_models.CommandInvocationCreate) -> dict:
-    nats_broker = await get_nats_broker()
+async def invoke_command(data: sql_models.CommandInvocationCreate, *, nats_broker: NatsBroker) -> dict:
     cmd_spec_db = _verify_command_exists(data.application_slug, data.application_version, data.command_name)
     _validate_arguments_against_command_parameters(cmd_spec_db, data.arguments)
 

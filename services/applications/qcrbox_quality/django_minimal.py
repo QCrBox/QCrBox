@@ -2,6 +2,7 @@ import os
 import sys
 from pathlib import Path
 
+import svcs
 from django.conf import settings
 from django.core.management import execute_from_command_line
 from django.http import HttpResponse
@@ -15,7 +16,8 @@ from quality_html import (
     precision_quality_indicators,
 )
 
-from pyqcrbox.services import get_data_file_manager
+from pyqcrbox.data_management.data_file_manager import DataFileManager
+from pyqcrbox.services import QCRBOX_GLOBAL_SERVICES_REGISTRY
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -66,19 +68,20 @@ settings.configure(
 
 async def retrieve_data(dataset_id):
     """Retrieve data for a given dataset ID."""
-    data_manager = await get_data_file_manager()
-    dataset_info = await data_manager.get_dataset_info(dataset_id)
-    data_file_id = dataset_info.first_data_file.qcrbox_file_id
-    try:
-        data = await data_manager.get_file_contents(data_file_id)
-        return data.decode("utf-8")
-    except Exception as e:
-        dataset_objs = await data_manager.get_datasets()
-        datasets = [d.dataset_id for d in dataset_objs]
-        if dataset_id not in datasets:
-            return f"Dataset ID '{dataset_id}' not found. Available datasets: {', '.join(datasets)}"
+    async with svcs.Container(QCRBOX_GLOBAL_SERVICES_REGISTRY) as container:
+        data_manager = await container.aget(DataFileManager)
+        dataset_info = await data_manager.get_dataset_info(dataset_id)
+        data_file_id = dataset_info.first_data_file.qcrbox_file_id
+        try:
+            data = await data_manager.get_file_contents(data_file_id)
+            return data.decode("utf-8")
+        except Exception as e:
+            dataset_objs = await data_manager.get_datasets()
+            datasets = [d.dataset_id for d in dataset_objs]
+            if dataset_id not in datasets:
+                return f"Dataset ID '{dataset_id}' not found. Available datasets: {', '.join(datasets)}"
 
-        return str(e)
+            return str(e)
 
 
 def index(request):

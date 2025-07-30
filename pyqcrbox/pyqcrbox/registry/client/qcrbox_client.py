@@ -13,7 +13,6 @@ from pyqcrbox.registry.client.executable_command.interactive_session_calculation
 from pyqcrbox.registry.client.executable_command.python_callable import PythonCallable
 from pyqcrbox.registry.shared.calculation_status import update_calculation_status_in_nats_kv
 from pyqcrbox.sql_models import CalculationStatusDetails, CalculationStatusEnum
-from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import parse_parameter_as_its_dtype
 
 from ..shared import QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup
 from .api_endpoints import create_client_asgi_server
@@ -34,7 +33,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         nats_broker: NatsBroker | None = None,
         asgi_server: Litestar | None = None,
     ):
-        super().__init__(nats_broker=nats_broker, asgi_server=asgi_server)
+        super().__init__(asgi_server=asgi_server)
         self.application_spec = application_spec
         self.client_id = client_id
         self.private_routing_key = private_routing_key or generate_private_routing_key()
@@ -151,13 +150,14 @@ class QCrBoxClient(QCrBoxServerClientBase):
             f"Received request to discard command invocation (client status: {self.status.status}): {msg!r}",
         )
         await update_calculation_status_in_nats_kv(
+            self.nats_broker,
             CalculationStatusDetails(
                 calculation_id=msg.calculation_id,
                 status=CalculationStatusEnum.FAILED,
                 extra_info={
                     "error_msg": f"Discarded calculation {msg.calculation_id!r} due to client status {self.status.status}",
                 },
-            )
+            ),
         )
 
     async def handle_command_execution(self, execute_request: msg_specs.CommandExecutionRequestNATS) -> None:
@@ -204,7 +204,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
 
         # Keep track of the calculation, which should still be running in the background
         self.calculations[execute_request.calculation_id] = command_calc
-        await update_calculation_status_in_nats_kv(await command_calc.get_status_details())
+        await update_calculation_status_in_nats_kv(self.nats_broker, await command_calc.get_status_details())
 
         # Wait until its finished and when finished, update the details. The calculation can
         # will raise an exception if (one of the interactive) commands failed
@@ -221,7 +221,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         if command.type != "interactive_session":
             self.status.set_idle()
 
-        await update_calculation_status_in_nats_kv(await command_calc.get_status_details())
+        await update_calculation_status_in_nats_kv(self.nats_broker, await command_calc.get_status_details())
 
     async def handle_command_failure(self, exception: Exception) -> None:
         """Handle when launching a command fails.
@@ -258,11 +258,12 @@ class QCrBoxClient(QCrBoxServerClientBase):
         """
         logger.error(f"Command calculation failed in background task with exception: {exception!r}")
         await update_calculation_status_in_nats_kv(
+            self.nats_broker,
             CalculationStatusDetails(
                 calculation_id=calculation.calculation_id,
                 status=CalculationStatusEnum.FAILED,
                 extra_info={"error_msg": f"Exception raised in background task: {exception!r}"},
-            )
+            ),
         )
 
         # Handle any special cases where something extra needs to be done to close
@@ -336,7 +337,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         return response
 
 
-class TestQCrBoxClient(TestQCrBoxServerClientBase, QCrBoxClient):  # type: ignore
+class TestQCrBoxClient(TestQCrBoxServerClientBase, QCrBoxClient):
     pass
 
 

@@ -156,7 +156,9 @@ class DataFileManager(ABC):
             await self.delete_data_file(file_metadata.qcrbox_file_id)
         await self._delete_from_kv("datasets", dataset_id)
 
-    async def export_data_file(self, data_file_id: str, output_dir: str, output_filename: str | None = None) -> Path:
+    async def export_data_file(
+        self, data_file_id: str, output_dir: str | Path, output_filename: str | None = None
+    ) -> Path:
         """Export a data file from the NATS object store to the file system.
 
         Parameters

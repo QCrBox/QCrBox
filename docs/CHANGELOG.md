@@ -11,15 +11,29 @@ This project aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0
 However, there will be an initial period of stabilisation where this is not adhered to
 (releases with version numbers `0.0.x`).
 
-
 ## [Unreleased]
+
+### Enhancements
+
+- The registry API now uses LiteStar dependency injection, improving management of the NATS server
+- Added a new test to test the DataFileManager service
+- And lots more!
+
+### Issues Fixed
+
+- Fixed an issue where the DataFileManager would lose connection to the NATS server when it had too many files
+- And lots more!
+
+## [icdm-2025]
 
 ### New Features
 
 - Implemented persistence of imported data files and associated metadata. ([#352](https://github.com/QCrBox/QCrBox/issues/352))
 - Added data quality container ([#301](https://github.com/QCrBox/QCrBox/issues/301)))
 - Added deployment script (`scripts/deploy.sh`). ([#381](https://github.com/QCrBox/QCrBox/issues/381))
-- Interactive GUI sessions can now be started with input files that were previously imported. ([#345](https://github.com/QCrBox/QCrBox/issues/345), [#354](https://github.com/QCrBox/QCrBox/issues/354))
+- Interactive GUI sessions can now be started with input files that were previously imported.
+  ([#345](https://github.com/QCrBox/QCrBox/issues/345), [#354](https://github.com/QCrBox/QCrBox/issues/354))
+- And lots more!
 
 ### Enhancements
 

@@ -1,13 +1,9 @@
 import pytest
 
-from pyqcrbox.services import get_data_file_manager
-
 
 @pytest.mark.anyio
-async def test_import_of_local_file(sample_cif_file):
+async def test_import_of_local_file(data_file_manager, sample_cif_file):
     """Test that we can import a local file and retrieve its contents from the data file manager."""
-    data_file_manager = await get_data_file_manager()
-
     qcrbox_file_id = "qcrbox_data_file_001"
     await data_file_manager.delete_data_file(qcrbox_file_id)
     assert not await data_file_manager.data_file_exists(qcrbox_file_id)
@@ -21,10 +17,8 @@ async def test_import_of_local_file(sample_cif_file):
 
 
 @pytest.mark.anyio
-async def test_list_existing_data_files(sample_cif_file):
+async def test_list_existing_data_files(data_file_manager, sample_cif_file):
     """Test that we can retrieve a list of stored data files."""
-    data_file_manager = await get_data_file_manager()
-
     data_files = await data_file_manager.get_data_files()
     num_data_files_start = len(data_files)
     assert num_data_files_start >= 1
@@ -44,10 +38,8 @@ async def test_list_existing_data_files(sample_cif_file):
 
 
 @pytest.mark.anyio
-async def test_export_data_file(sample_cif_file, tmp_path):
+async def test_export_data_file(data_file_manager, sample_cif_file, tmp_path):
     """Test that exporting a previously imported data file produces the expected file contents."""
-    data_file_manager = await get_data_file_manager()
-
     qcrbox_file_id = "qcrbox_data_file_001"
     await data_file_manager.import_local_file(sample_cif_file, _qcrbox_file_id=qcrbox_file_id)
 
