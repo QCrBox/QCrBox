@@ -5,12 +5,12 @@ from typing import Any
 import anyio
 
 from pyqcrbox import helpers, logger
+from pyqcrbox.data_management.data_file_manager import DataFileManager
 from pyqcrbox.msg_specs.msg_types.client_side.command_execution_request import CommandExecutionRequestNATS
 from pyqcrbox.registry.client.executable_command import BaseCommand
 from pyqcrbox.registry.client.executable_command.cli_command import CLICommand
 from pyqcrbox.registry.client.executable_command.error import PrepareCommandFailure, RunCommandFailure, error_dialog_box
 from pyqcrbox.registry.client.executable_command.python_callable import PythonCallable
-from pyqcrbox.services import get_data_file_manager
 from pyqcrbox.sql_models import InteractiveSessionSpec
 from pyqcrbox.sql_models.interactive_session_info import InteractiveSessionInfo
 from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import BaseParameter, parse_parameter_as_its_dtype
@@ -221,7 +221,10 @@ class InteractiveSession(BaseCommand):
         }
 
     async def add_to_database(
-        self, execute_request: CommandExecutionRequestNATS, executing_client_address: str
+        self,
+        data_file_manager: DataFileManager,
+        execute_request: CommandExecutionRequestNATS,
+        executing_client_address: str,
     ) -> None:
         """Add this interactive session to the database.
 
@@ -230,6 +233,8 @@ class InteractiveSession(BaseCommand):
 
         Parameters
         ----------
+        data_file_manager : DataFileManager
+            An instance of the DataFileManager.
         execute_request : CommandExecutionRequestNATS
             The execution request message, containing data about the calculation.
         executing_client_address : str
@@ -241,8 +246,7 @@ class InteractiveSession(BaseCommand):
             client_private_inbox=executing_client_address,
             cmd_execution_request=execute_request,
         )
-        data_manager = await get_data_file_manager()
-        await data_manager.store_interactive_session_info(session_info)
+        await data_file_manager.store_interactive_session_info(session_info)
 
     async def execute_in_background(
         self,

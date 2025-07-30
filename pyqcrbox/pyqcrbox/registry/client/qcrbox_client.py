@@ -6,6 +6,7 @@ from faststream.nats import NatsBroker
 from litestar import Litestar
 
 from pyqcrbox import helpers, logger, msg_specs, settings, sql_models
+from pyqcrbox.data_management.data_file_manager import DataFileManager
 from pyqcrbox.helpers import generate_private_routing_key
 from pyqcrbox.registry.client.executable_command.base_calculation import BaseCalculation
 from pyqcrbox.registry.client.executable_command.cli_command import CLICommand
@@ -187,7 +188,8 @@ class QCrBoxClient(QCrBoxServerClientBase):
         try:
             command = ExecutableCommand(self.application_spec.get_command_spec_by_name(execute_request.command_name))
             # TODO: only interactive sessions need to do this
-            await command.add_to_database(execute_request, self.private_inbox)
+            data_file_manager = await self.svcs_container.aget(DataFileManager)
+            await command.add_to_database(data_file_manager, execute_request, self.private_inbox)
             parameters = await command.prepare_params(self.working_dir, execute_request.arguments)
             logger.debug(f"Executing command {command!r} in the background with arguments {parameters!r}")
             command_calc = await command.execute_in_background(

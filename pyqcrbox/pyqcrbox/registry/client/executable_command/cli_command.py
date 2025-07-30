@@ -8,6 +8,7 @@ from typing import Any
 import anyio
 
 from pyqcrbox import logger
+from pyqcrbox.data_management.data_file_manager import DataFileManager
 from pyqcrbox.msg_specs.msg_types.client_side.command_execution_request import CommandExecutionRequestNATS
 from pyqcrbox.sql_models import CLICommandSpec
 from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import BaseParameter, parse_parameter_as_its_dtype
@@ -69,7 +70,10 @@ class CLICommand(BaseCommand):
         return self.call_pattern
 
     async def add_to_database(
-        self, execute_request: CommandExecutionRequestNATS, executing_client_address: str
+        self,
+        data_file_manager: DataFileManager,
+        execute_request: CommandExecutionRequestNATS,
+        executing_client_address: str,
     ) -> None:
         pass
 

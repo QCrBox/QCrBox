@@ -203,6 +203,7 @@ async def get_command_by_id(id: int) -> schema.QCrBoxResponse[schema.CommandsRes
 )
 async def invoke_command(
     data: Annotated[schema.InvokeCommand, Body()],
+    nats_broker: NatsBroker,
 ) -> schema.QCrBoxResponse[schema.InvokeCommandResponse]:
     """Create an interactive session with the provided arguments arguments."""
     command_spec = CommandInvocationCreate(
@@ -212,7 +213,7 @@ async def invoke_command(
         arguments=data.arguments,
     )
     try:
-        response = await api_helpers.invoke_command(command_spec)
+        response = await api_helpers.invoke_command(command_spec, nats_broker=nats_broker)
     except Exception as exc:
         raise QCrBoxAPIException(
             detail=f"Failed to invoke command due to an error in the server {str(exc)}", status_code=400

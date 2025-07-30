@@ -2,6 +2,7 @@ from abc import ABCMeta, abstractmethod
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from pyqcrbox.data_management import DataFileManager
 from pyqcrbox.msg_specs.msg_types.client_side.command_execution_request import CommandExecutionRequestNATS
 from pyqcrbox.registry.client.executable_command.base_calculation import BaseCalculation
 from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import BaseParameter
@@ -40,12 +41,17 @@ class BaseCommand(metaclass=ABCMeta):
 
     @abstractmethod
     async def add_to_database(
-        self, execute_request: CommandExecutionRequestNATS, executing_client_address: str
+        self,
+        data_file_manager: DataFileManager,
+        execute_request: CommandExecutionRequestNATS,
+        executing_client_address: str,
     ) -> None:
         """Add the command to the calculation database.
 
         Parameters
         ----------
+        data_file_manager : DataFileManager
+            An instance of the DataFileManager.
         execute_request : CommandExecutionRequestNATS
             The execution request message, containing data about the calculation.
         executing_client_address : str

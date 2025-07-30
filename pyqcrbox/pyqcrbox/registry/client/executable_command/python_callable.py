@@ -11,6 +11,7 @@ import anyio
 from pydantic._internal._validate_call import ValidateCallWrapper
 
 from pyqcrbox import logger
+from pyqcrbox.data_management.data_file_manager import DataFileManager
 from pyqcrbox.msg_specs.msg_types.client_side.command_execution_request import CommandExecutionRequestNATS
 from pyqcrbox.sql_models import PythonCallableSpec
 from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import BaseParameter, parse_parameter_as_its_dtype
@@ -84,7 +85,10 @@ class PythonCallable(BaseCommand):
         return f"<{self.__class__.__name__}: {self.fn.__name__}{self.signature!s}>"
 
     async def add_to_database(
-        self, execute_request: CommandExecutionRequestNATS, executing_client_address: str
+        self,
+        data_file_manager: DataFileManager,
+        execute_request: CommandExecutionRequestNATS,
+        executing_client_address: str,
     ) -> None:
         pass
 
