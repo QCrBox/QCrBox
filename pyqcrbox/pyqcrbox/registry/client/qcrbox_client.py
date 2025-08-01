@@ -2,7 +2,6 @@ import argparse
 import os
 from pathlib import Path
 
-from faststream.nats import NatsBroker
 from litestar import Litestar
 
 from pyqcrbox import helpers, logger, msg_specs, settings, sql_models
@@ -26,12 +25,11 @@ __all__ = ["QCrBoxClient", "TestQCrBoxClient"]
 class QCrBoxClient(QCrBoxServerClientBase):
     def __init__(
         self,
-        *,
         application_spec: sql_models.ApplicationSpec,
+        *,
         client_id: str = "anonymous_client",
         private_routing_key: str | None = None,
         work_root_dir: Path | None = None,
-        nats_broker: NatsBroker | None = None,
         asgi_server: Litestar | None = None,
     ):
         super().__init__(asgi_server=asgi_server)
@@ -156,7 +154,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
                 calculation_id=msg.calculation_id,
                 status=CalculationStatusEnum.FAILED,
                 extra_info={
-                    "error_msg": f"Discarded calculation {msg.calculation_id!r} due to client status {self.status.status}",
+                    "error_msg": f"Discarded {msg.calculation_id!r} due to client status {self.status.status}",
                 },
             ),
         )
@@ -227,7 +225,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
             except (RuntimeError, FileNotFoundError) as exc:
                 self.status.set_idle()
                 logger.exception(
-                    f"Failed to add output for command/calculation {calc.calculation_id} to DataFileManager due to {exc}"
+                    f"Failed to add output for calculation {calc.calculation_id} to DataFileManager due to {exc}"
                 )
             self.status.set_idle()
 

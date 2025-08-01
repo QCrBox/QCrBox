@@ -3,7 +3,6 @@ import contextlib
 import inspect
 from abc import ABCMeta, abstractmethod
 from collections.abc import AsyncGenerator
-from typing import assert_never
 
 import anyio
 import nats.errors
@@ -50,27 +49,30 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
         self.kv_applications = None
         self.kv_calculation_status = None
 
+        self.host = None
+        self.port = None
+
     @property
     def clsname(self):
         return self.__class__.__name__
 
     @abstractmethod
     def _set_up_nats_broker(self):
-        assert_never(self)
+        pass
 
     @abstractmethod
     def _set_up_asgi_server(self) -> None:
-        assert_never(self)
+        pass
 
     def _set_up_uvicorn_server(self) -> None:
         if self.uvicorn_server is not None:
             raise RuntimeError("Uvicorn server has already been set up (unexpectedly).")
-
-        # assert self.nats_broker is not None
+        assert self.nats_broker is not None
         assert self.host is not None
         assert self.port is not None
 
         self._set_up_asgi_server()
+        assert self.asgi_server is not None
 
         uvicorn_config = uvicorn.Config(
             self.asgi_server,
@@ -79,19 +81,43 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
         )
         self.uvicorn_server = uvicorn.Server(uvicorn_config)
 
-    async def start_broker(self):
+    async def _start_broker(self):
         for attempt in stamina.retry_context(on=nats.errors.NoServersError, timeout=10.0, attempts=None):
             with attempt:
                 await self.nats_broker.start()
 
-    async def close_broker(self):
+    async def _close_broker(self):
         await self.nats_broker.close()
 
     async def _create_private_nats_inbox(self):
-        await self.start_broker()
+        await self._start_broker()
         self._private_inbox = await self.nats_broker.new_inbox()
         logger.debug(f"Created private NATS inbox: {self._private_inbox}")
-        await self.close_broker()
+        await self._close_broker()
+
+    async def _wait_for_and_handle_shutdown_request(self, cancel_scope: anyio.CancelScope):
+        assert self.uvicorn_server is not None
+        # Wait for shutdown event to be set. This can happen, for example, when the
+        # user terminates the process presses (e.g. via Ctrl+C) or when the maximum
+        # number of messages has been processed.
+        logger.debug("Waiting for shutdown event to be set...")
+        await self._shutdown_event.wait()
+        logger.info(f"Received shutdown request, shutting down {self.clsname}.")
+        await self._run_custom_shutdown_tasks()
+        if self.uvicorn_server.started:
+            await self.uvicorn_server.shutdown()
+        cancel_scope.cancel()
+
+    async def _set_up_key_value_store(self):
+        self.kv_applications = await self.nats_broker.key_value(bucket="applications")
+
+    async def _run_custom_shutdown_tasks(self):  # noqa: B027
+        """Run custom shutdown tasks.
+
+        This is a no-op by default but can be used by derived classes to run
+        tasks when the shutdown signal is received.
+        """
+        pass
 
     @property
     def private_inbox(self):
@@ -103,22 +129,11 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
             "to retrieve a unique inbox name from NATS server)."
         )
 
-    async def set_up_key_value_store(self):
-        self.kv_applications = await self.nats_broker.key_value(bucket="applications")
-
-    async def _run_custom_shutdown_tasks(self):  # noqa: B027
-        """Run custom shutdown tasks.
-
-        This is a no-op by default but can be used by derived classes to run
-        tasks when the shutdown signal is received.
-        """
-        pass
-
     async def execute_startup_hooks(self, **kwargs):
         for name in dir(self):
             func = getattr(self, name)
             if inspect.ismethod(func) and hasattr(func, "_is_qcrbox_startup_hook"):
-                cur_kwargs = {name: value for (name, value) in kwargs.items() if name in func._param_names}
+                cur_kwargs = {name: value for (name, value) in kwargs.items() if name in func._param_names}  # type: ignore
                 logger.debug(f"Executing startup hook {func.__name__!r} with kwargs={cur_kwargs}")
                 if not inspect.iscoroutinefunction(func):
                     func(**cur_kwargs)
@@ -135,8 +150,8 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
 
             await self._create_private_nats_inbox()
             self._set_up_nats_broker()
-            await self.start_broker()
-            await self.set_up_key_value_store()
+            await self._start_broker()
+            await self._set_up_key_value_store()
             await self.execute_startup_hooks(**self._run_kwargs)
 
             try:
@@ -163,6 +178,7 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
 
     async def serve(self, task_status: TaskStatus[None] = TASK_STATUS_IGNORED):
         self._set_up_uvicorn_server()
+        assert self.uvicorn_server is not None
 
         logger.debug(f"Entering {self.clsname}.serve()...")
 
@@ -186,25 +202,13 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
         self._shutdown_event.set()
         logger.debug("Done, exiting shutdown()")
 
-    async def _wait_for_and_handle_shutdown_request(self, cancel_scope: anyio.CancelScope):
-        # Wait for shutdown event to be set. This can happen, for example, when the
-        # user terminates the process presses (e.g. via Ctrl+C) or when the maximum
-        # number of messages has been processed.
-        logger.debug("Waiting for shutdown event to be set...")
-        await self._shutdown_event.wait()
-        logger.info(f"Received shutdown request, shutting down {self.clsname}.")
-        await self._run_custom_shutdown_tasks()
-        if self.uvicorn_server.started:
-            await self.uvicorn_server.shutdown()
-        cancel_scope.cancel()
-
 
 class TestQCrBoxServerClientBase(QCrBoxServerClientBase):
     @contextlib.asynccontextmanager
-    async def run(
+    async def run(  # type: ignore
         self,
         host: str | None = None,
-        port: str | None = None,
+        port: int | None = None,
         task_status: TaskStatus[None] = TASK_STATUS_IGNORED,
         **kwargs,
     ):
@@ -214,7 +218,7 @@ class TestQCrBoxServerClientBase(QCrBoxServerClientBase):
         self._set_up_uvicorn_server()
 
         logger.debug(f"Entering {self.clsname}.serve()...")
-
+        assert self.uvicorn_server is not None
         try:
             async with anyio.create_task_group() as tg:
                 logger.info("Starting uvicorn server...")
@@ -232,42 +236,12 @@ class TestQCrBoxServerClientBase(QCrBoxServerClientBase):
 
     @contextlib.asynccontextmanager
     async def web_client(self):
+        assert self.asgi_server is not None
         async with AsyncTestClient(app=self.asgi_server) as web_client:
             yield web_client
 
     @contextlib.contextmanager
     def web_client_sync(self):
+        assert self.asgi_server is not None
         with TestClient(app=self.asgi_server) as web_client:
             yield web_client
-
-    def handler_was_called(self, queue_name):
-        return self.get_mock_handler(queue_name).called
-
-    def get_mock_handler(self, queue_name):
-        subscr = self._get_subscriber(queue_name)
-        try:
-            assert len(subscr.calls) == 1
-            handler = subscr.calls[0].handler
-        except AssertionError:
-            logger.warning(
-                f"More than one handler found for queue {queue_name!r}. "
-                "Did you start more than one RabbitBroker instance? "
-                "Arbitrarily returning the last handler."
-            )
-            handler = subscr.calls[-1].handler
-
-        return handler.mock
-
-    def _get_subscriber(self, queue_name):
-        cands = []
-        for s in self.broker._subscribers.values():
-            if s.queue.name == queue_name:
-                cands.append(s)
-
-        match len(cands):
-            case 1:
-                return cands[0]
-            case 0:
-                raise ValueError(f"No subscriber found for queue {queue_name!r}")
-            case _:
-                raise ValueError(f"More than one subscriber found for queue {queue_name!r}")
