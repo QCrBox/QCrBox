@@ -21,6 +21,7 @@ class CalculationNatsResponseModel(CalculationNatsBase):
     """Calculation response model, for API responses."""
 
     status: str
+    output_dataset_id: str | None
 
 
 class CalculationNatsDB(CalculationNatsBase):
@@ -48,6 +49,27 @@ class CalculationNatsDB(CalculationNatsBase):
             return CalculationStatusEnum.UNKNOWN
         return self.status_events[-1].status
 
+    @computed_field(return_type=str)
+    @property
+    def output_dataset_id(self) -> str | None:
+        """Get the dataset ID of the output of the calculation.
+
+        Returns
+        -------
+        str | None
+            The QCrBox Dataset ID or None if there has been no output yet
+
+        """
+        if len(self.status_events) == 0:
+            return None
+
+        # returns either the last dataset id, or the dataset id for the calculation
+        # success event
+        return next(
+            (e.output_dataset_id for e in self.status_events if e.status == CalculationStatusEnum.SUCCESSFUL),
+            self.status_events[-1].status,
+        )
+
     def to_response_model(self) -> CalculationNatsResponseModel:
         """Convert this instance into a response model.
 
@@ -61,11 +83,12 @@ class CalculationNatsDB(CalculationNatsBase):
             include=[
                 "calculation_id",
                 "status",
+                "output_dataset_id",
                 "application_slug",
                 "application_version",
                 "command_name",
                 "arguments",
-            ],
+            ],  # type: ignore
         )
 
         return CalculationNatsResponseModel(**data)

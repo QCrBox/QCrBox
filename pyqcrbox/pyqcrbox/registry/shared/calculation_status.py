@@ -40,6 +40,9 @@ async def update_calculation_status_in_nats_kv(
     except nats.js.errors.KeyNotFoundError:
         logger.error(f"Can't find calculation {key!r} to update calculation status")
         raise
+    if not calc_as_bytes:
+        logger.error(f"calculation {key} has an empty entry in calculations database")
+        raise nats.js.errors.KeyNotFoundError(f"{key} returned an empty calculation")
 
     calculation = CalculationNatsDB.model_validate_json(calc_as_bytes.decode())
     calculation.status_events.append(status_details)
@@ -48,7 +51,7 @@ async def update_calculation_status_in_nats_kv(
     )
     await bucket.put(
         key,
-        calculation.model_dump_json(exclude=["status"]).encode(),
+        calculation.model_dump_json(exclude={"status", "output_dataset_id"}).encode(),
     )
 
 
@@ -81,5 +84,5 @@ async def add_calculation_to_nats_kv(nats_broker: NatsBroker, calculation: Calcu
         raise KeyError(f"Calculation {key!r} already in NATS, can't create new calculation")
     await bucket.put(
         key,
-        calculation.model_dump_json(exclude=["status"]).encode(),
+        calculation.model_dump_json(exclude={"status", "output_dataset_id"}).encode(),  # type: ignore
     )
