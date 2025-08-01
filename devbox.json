@@ -77,7 +77,7 @@
       ],
       "robot-framework": [
 		"cd ./pyqcrbox/robot_tests",
-        "robot api_endpoints.robot"
+        "robot *.robot"
       ],
       "pytest": [
         "cd ./pyqcrbox",
