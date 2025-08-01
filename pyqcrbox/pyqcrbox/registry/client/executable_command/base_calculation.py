@@ -3,6 +3,7 @@ from abc import ABCMeta, abstractmethod
 
 import anyio
 
+from pyqcrbox.data_management import DataFileManager
 from pyqcrbox.sql_models import CalculationStatusDetails, CalculationStatusEnum
 
 
@@ -38,6 +39,17 @@ class BaseCalculation(metaclass=ABCMeta):
         """
         clsname = self.__class__.__name__
         return f"<{clsname}: calculation_id={self.calculation_id}>"
+
+    @abstractmethod
+    async def save_to_data_file_manager(self, data_file_manager: DataFileManager) -> None:
+        """Save the output of the calculation to the Data File Manager.
+
+        Parameters
+        ----------
+        data_file_manager : DataFileManager
+            An instance of the DataFile Manager.
+
+        """
 
     @abstractmethod
     async def wait_until_finished(self) -> None:

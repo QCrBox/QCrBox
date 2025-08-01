@@ -58,6 +58,39 @@ class InteractiveSessionCalculation(BaseCalculation):
     async def stderr(self) -> None:
         return None
 
+    async def save_to_data_file_manager(self, data_file_manager: DataFileManager) -> None:
+        """Save the output of the Interactive Session to the Data File Manager.
+
+        It is assumed that the return value of the finalise command, which has to be
+        a PythonCallable is the data to be stored in the Data File Manager, and
+        that only a single file is returned.
+
+        Parameters
+        ----------
+        data_file_manager : DataFileManager
+            An instance of the DataFile Manager.
+
+        """
+        if not isinstance(self.finalise_calc, PythonCallableCalculation):
+            raise RuntimeError("Finalise calculation in InteractiveSession not a PythonCallable")
+
+        output_file = self.finalise_calc.return_value
+        if not output_file:
+            logger.info("No output file from interactive session")
+            return
+
+        try:
+            output_data_file_id = await data_file_manager.import_local_file(output_file)
+            self.output_dataset_id = await data_file_manager.create_dataset_from_data_file(output_data_file_id)
+        except FileNotFoundError:
+            logger.error(f"Failed to create dataset for output from 'finalise' command, {output_file=!r}")
+            raise
+
+        logger.info(
+            "The output from the interactive session has been placed into dataset %s",
+            self.output_dataset_id,
+        )
+
     async def wait_until_finished(self) -> None:
         """Asynchronously wait for all calculation phases to complete.
 
@@ -112,24 +145,6 @@ class InteractiveSessionCalculation(BaseCalculation):
                 raise self.exception from self.finalise_calc.exception_raised
             logger.debug("Finalise command has finished")
 
-            # The above will only run if the finalise calc finished successfully, e.g.
-            # we didn't raise an exception in the above step
-            output_file = self.finalise_calc.return_value
-            if not output_file:
-                logger.info("No output file from interactive session")
-            else:
-                async with svcs.Container(QCRBOX_GLOBAL_SERVICES_REGISTRY) as container:
-                    data_manager = await container.aget(DataFileManager)
-                    try:
-                        output_data_file_id = await data_manager.import_local_file(output_file)
-                        self.output_dataset_id = await data_manager.create_dataset_from_data_file(output_data_file_id)
-                    except FileNotFoundError:
-                        logger.error(f"Failed to create dataset for output from 'finalise' command, {output_file=!r}")
-                        raise
-                    logger.info(
-                        "The output from the interactive session has been placed into dataset %s",
-                        self.output_dataset_id,
-                    )
 
         logger.debug("All commands have finished, waiting for session close")
         self.is_closed = True

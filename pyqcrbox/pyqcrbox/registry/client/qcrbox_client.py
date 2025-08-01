@@ -6,12 +6,14 @@ from faststream.nats import NatsBroker
 from litestar import Litestar
 
 from pyqcrbox import helpers, logger, msg_specs, settings, sql_models
+from pyqcrbox.data_management import data_file
 from pyqcrbox.data_management.data_file_manager import DataFileManager
 from pyqcrbox.helpers import generate_private_routing_key
 from pyqcrbox.registry.client.executable_command.base_calculation import BaseCalculation
 from pyqcrbox.registry.client.executable_command.cli_command import CLICommand
 from pyqcrbox.registry.client.executable_command.interactive_session_calculation import InteractiveSessionCalculation
 from pyqcrbox.registry.client.executable_command.python_callable import PythonCallable
+from pyqcrbox.registry.client.executable_command.python_callable_calculation import PythonCallableCalculation
 from pyqcrbox.registry.shared.calculation_status import update_calculation_status_in_nats_kv
 from pyqcrbox.sql_models import CalculationStatusDetails, CalculationStatusEnum
 
@@ -184,7 +186,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
             return
         self.status.set_busy()
 
-        command_calc = None
+        calc = None
         try:
             command = ExecutableCommand(self.application_spec.get_command_spec_by_name(execute_request.command_name))
             # TODO: only interactive sessions need to do this
@@ -192,38 +194,44 @@ class QCrBoxClient(QCrBoxServerClientBase):
             await command.add_to_database(data_file_manager, execute_request, self.private_inbox)
             parameters = await command.prepare_params(self.working_dir, execute_request.arguments)
             logger.debug(f"Executing command {command!r} in the background with arguments {parameters!r}")
-            command_calc = await command.execute_in_background(
+            calc = await command.execute_in_background(
                 **parameters, _calculation_id=execute_request.calculation_id, _cwd=self.working_dir
             )
-            if not isinstance(command_calc, BaseCalculation):
+            if not isinstance(calc, BaseCalculation):
                 raise RuntimeError("Command execution did not return a calculation object.")
         except Exception as exc:
-            if command_calc and isinstance(command_calc, BaseCalculation):
-                await self.handle_calculation_failure(command_calc, exc)
+            if calc and isinstance(calc, BaseCalculation):
+                await self.handle_calculation_failure(calc, exc)
             else:
                 await self.handle_command_failure(exc)
             return
 
         # Keep track of the calculation, which should still be running in the background
-        self.calculations[execute_request.calculation_id] = command_calc
-        await update_calculation_status_in_nats_kv(self.nats_broker, await command_calc.get_status_details())
+        self.calculations[execute_request.calculation_id] = calc
+        await update_calculation_status_in_nats_kv(self.nats_broker, await calc.get_status_details())
 
         # Wait until its finished and when finished, update the details. The calculation can
         # will raise an exception if (one of the interactive) commands failed
         try:
-            await command_calc.wait_until_finished()
+            await calc.wait_until_finished()
         except Exception as exc:
             logger.error(f"Calculation failed in background task with exception: {exc!r}")
-            await self.handle_calculation_failure(command_calc, exc)
+            await self.handle_calculation_failure(calc, exc)
             return
 
-        # For non-interactive commands, we reset the client to being idle after the calculation
-        # has finished. For interactive sessions, we do that in `self.close_interactive_session`
-        # instead, as there is further cleanup required to end an interactive session
+        await update_calculation_status_in_nats_kv(self.nats_broker, await calc.get_status_details())
+        try:
+            await calc.save_to_data_file_manager(await self.svcs_container.aget(DataFileManager))
+        except (RuntimeError, FileNotFoundError) as exc:
+            self.status.set_idle()
+            logger.exception(
+                f"Failed to add output for command/calculation {calc.calculation_id} to DataFileManager due to {exc}"
+            )
+
+        # For non-interactive commands, we need to reset the client to being idle here.
+        # For interactive session, that is done in `close_interactive_session`
         if command.type != "interactive_session":
             self.status.set_idle()
-
-        await update_calculation_status_in_nats_kv(self.nats_broker, await command_calc.get_status_details())
 
     async def handle_command_failure(self, exception: Exception) -> None:
         """Handle when launching a command fails.
