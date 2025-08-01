@@ -20,15 +20,10 @@ from litestar.response import Redirect
 from pydantic import BaseModel
 
 from pyqcrbox import helpers, logger, msg_specs, settings
-from pyqcrbox.data_management import DataFileManager
+from pyqcrbox.data_management import CalculationAlreadyExists, DataFileManager
 from pyqcrbox.msg_specs.base import QCrBoxGenericResponse
 from pyqcrbox.registry.server.api.api_endpoints import handle_exception
-from pyqcrbox.registry.shared.calculation_status import (
-    NatsCalculationAlreadyExists,
-    add_calculation_to_nats_kv,
-    update_calculation_status_in_nats_kv,
-)
-from pyqcrbox.sql_models import CalculationNatsDB, CalculationStatusDetails, CalculationStatusEnum
+from pyqcrbox.sql_models import CalculationDB, CalculationStatusDetails, CalculationStatusEnum
 
 from ..shared import (
     QCrBoxServerClientBase,
@@ -264,7 +259,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
             )
 
         logger.debug(f"Adding new command request to database: {user_invocation_request!r}")
-        calculation_db_entry = CalculationNatsDB(
+        calculation_db_entry = CalculationDB(
             calculation_id=user_invocation_request.calculation_id,
             application_slug=user_invocation_request.application_slug,
             application_version=user_invocation_request.application_version,
@@ -272,11 +267,13 @@ class QCrBoxServer(QCrBoxServerClientBase):
             arguments=user_invocation_request.arguments,
         )
 
+        data_file_manager = await self.svcs_container.aget(DataFileManager)
+
         # Don't allow the same calculation to be added to the database multiple times.
         # This **shouldn't** ever happen.
         try:
-            await add_calculation_to_nats_kv(self.nats_broker, calculation_db_entry)
-        except NatsCalculationAlreadyExists:
+            await data_file_manager.add_calculation_to_nats_kv(calculation_db_entry)
+        except CalculationAlreadyExists:
             logger.error(f"Trying to add a calculation to the database which already exists: {calculation_db_entry}")
             return msg_specs.QCrBoxGenericResponse(
                 response_to="server.cmd.handle_command_invocation_by_user",
@@ -290,7 +287,8 @@ class QCrBoxServer(QCrBoxServerClientBase):
             stderr="",
             extra_info={},
         )
-        await update_calculation_status_in_nats_kv(self.nats_broker, calculation_status)
+
+        await data_file_manager.update_calculation_status_events(calculation_status)
 
         return msg_specs.QCrBoxGenericResponse(
             response_to="server.cmd.handle_command_invocation_by_user",
@@ -313,7 +311,8 @@ class QCrBoxServer(QCrBoxServerClientBase):
 
         """
         logger.debug(f"Received NATS notification about calculation status update: {status_event!r}")
-        await update_calculation_status_in_nats_kv(self.nats_broker, status_event)
+        data_file_manager = await self.svcs_container.aget(DataFileManager)
+        await data_file_manager.update_calculation_status_events(status_event)
 
     def _set_up_asgi_server(self) -> None:
         """Initialise the ASGI server for providing the API endpoints."""

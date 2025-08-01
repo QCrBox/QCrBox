@@ -24,7 +24,7 @@ class CalculationNatsResponseModel(CalculationNatsBase):
     output_dataset_id: str | None
 
 
-class CalculationNatsDB(CalculationNatsBase):
+class CalculationDB(CalculationNatsBase):
     """Dataclass containing metadata about a calculation, used for NATS."""
 
     timestamp: datetime = Field(default_factory=datetime.now)

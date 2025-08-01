@@ -1,17 +1,21 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
 
-from pyqcrbox.sql_models.calculation import CalculationNatsDB
-
-__all__ = ["DataFileManager"]
+import nats.js.errors
 
 from pyqcrbox import logger
 from pyqcrbox.data_management.data_file import DataFileMetadata, Dataset
 from pyqcrbox.helpers import generate_data_file_id, generate_dataset_id
+from pyqcrbox.sql_models.calculation import CalculationDB
+from pyqcrbox.sql_models.calculation_status_event import CalculationStatusDetails
 from pyqcrbox.sql_models.interactive_session_info import InteractiveSessionInfo
 
+__all__ = ["DataFileManager"]
 
 class DatasetNotFoundError(Exception):
+    pass
+
+class CalculationAlreadyExists(Exception):
     pass
 
 
@@ -396,7 +400,7 @@ class DataFileManager(ABC):
         )
 
     #
-    async def get_calculation_details(self, key: str) -> CalculationNatsDB:
+    async def get_calculation_details(self, key: str) -> CalculationDB:
         """Get metadata about a calculation from the data manager.
 
         Parameters
@@ -411,12 +415,12 @@ class DataFileManager(ABC):
 
         """
         calc_as_bytes = await self._retrieve_from_kv("calculations", key)
-        calculation = CalculationNatsDB.model_validate_json(calc_as_bytes.decode())
+        calculation = CalculationDB.model_validate_json(calc_as_bytes.decode())
 
         return calculation
 
     #
-    async def get_calculations(self) -> list[CalculationNatsDB]:
+    async def get_calculations(self) -> list[CalculationDB]:
         """Get metadata about all the calculations in the data manager.
 
         Returns
@@ -429,3 +433,53 @@ class DataFileManager(ABC):
         calculations = [await self.get_calculation_details(key) for key in keys]
 
         return calculations
+
+    async def update_calculation_status_events(self, status_details: CalculationStatusDetails) -> None:
+        """Append a new status to the the calculation status events for a calculation.
+
+        Parameters
+        ----------
+        status_details : CalculationStatusDetails
+            The calculation status details to append to the calculation.
+
+        """
+        key = status_details.calculation_id
+
+        try:
+            calc_as_bytes = await self._retrieve_from_kv("calculations", key)
+        except nats.js.errors.KeyNotFoundError:
+            logger.error(f"Can't find calculation {key!r} to update calculation status")
+            raise
+
+        calculation = CalculationDB.model_validate_json(calc_as_bytes.decode())
+        calculation.status_events.append(status_details)
+        logger.debug(f"Appending status {status_details!r} to calculation {calculation!r}")
+        await self._store_in_kv(
+            "calculations", key, calculation.model_dump_json(exclude={"status", "output_dataset_id"}).encode()
+        )
+
+    async def add_calculation_to_nats_kv(self, calculation: CalculationDB) -> None:
+        """Add a new calculation to the NATS data manager.
+
+        Parameters
+        ----------
+        calculation : CalculationNats
+            An object containing metadata about the new calculation.
+
+        Raises
+        ------
+        KeyError
+            Raised when trying to add a new calculation to an already populated
+            calculation id.
+
+        """
+        logger.debug(
+            f"Adding calculation {calculation.calculation_id!r} to DataFileManager: {calculation!r}",
+        )
+        key = calculation.calculation_id
+        calculation_keys = await self._get_kv_keys("calculations")
+        if key in calculation_keys:
+            raise KeyError(f"Calculation {key!r} already in DataFileManager, can't create new calculation")
+        await self._store_in_kv(
+            "calculations", key, calculation.model_dump_json(exclude={"status", "output_dataset_id"}).encode()
+        )
