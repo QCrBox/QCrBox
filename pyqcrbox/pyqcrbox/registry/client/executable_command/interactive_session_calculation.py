@@ -2,6 +2,7 @@ import asyncio
 
 import anyio
 import svcs
+from h11 import Data
 
 from pyqcrbox import logger
 from pyqcrbox.data_management.data_file_manager import DataFileManager
@@ -145,11 +146,12 @@ class InteractiveSessionCalculation(BaseCalculation):
                 raise self.exception from self.finalise_calc.exception_raised
             logger.debug("Finalise command has finished")
 
+            async with svcs.Container(QCRBOX_GLOBAL_SERVICES_REGISTRY) as container:
+                data_file_manager = await container.aget(DataFileManager)
+                await self.save_to_data_file_manager(data_file_manager)
 
-        logger.debug("All commands have finished, waiting for session close")
         self.is_closed = True
         self.session_closed_event.set()
-        logger.debug(f"InteractiveSessionCalculation: interactive session finished: {self}")
 
     async def terminate(self) -> None:
         """Terminate the interactive session.

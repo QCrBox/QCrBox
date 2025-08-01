@@ -6,14 +6,12 @@ from faststream.nats import NatsBroker
 from litestar import Litestar
 
 from pyqcrbox import helpers, logger, msg_specs, settings, sql_models
-from pyqcrbox.data_management import data_file
 from pyqcrbox.data_management.data_file_manager import DataFileManager
 from pyqcrbox.helpers import generate_private_routing_key
 from pyqcrbox.registry.client.executable_command.base_calculation import BaseCalculation
 from pyqcrbox.registry.client.executable_command.cli_command import CLICommand
 from pyqcrbox.registry.client.executable_command.interactive_session_calculation import InteractiveSessionCalculation
 from pyqcrbox.registry.client.executable_command.python_callable import PythonCallable
-from pyqcrbox.registry.client.executable_command.python_callable_calculation import PythonCallableCalculation
 from pyqcrbox.registry.shared.calculation_status import update_calculation_status_in_nats_kv
 from pyqcrbox.sql_models import CalculationStatusDetails, CalculationStatusEnum
 
@@ -220,17 +218,18 @@ class QCrBoxClient(QCrBoxServerClientBase):
             return
 
         await update_calculation_status_in_nats_kv(self.nats_broker, await calc.get_status_details())
-        try:
-            await calc.save_to_data_file_manager(await self.svcs_container.aget(DataFileManager))
-        except (RuntimeError, FileNotFoundError) as exc:
-            self.status.set_idle()
-            logger.exception(
-                f"Failed to add output for command/calculation {calc.calculation_id} to DataFileManager due to {exc}"
-            )
 
-        # For non-interactive commands, we need to reset the client to being idle here.
-        # For interactive session, that is done in `close_interactive_session`
+        # For non-interactive commands, we need to reset the client to being idle here and
+        # save the output to the DataFileManager. For interactive sessions, that is done
+        # instead in `close_interactive_session`
         if command.type != "interactive_session":
+            try:
+                await calc.save_to_data_file_manager(await self.svcs_container.aget(DataFileManager))
+            except (RuntimeError, FileNotFoundError) as exc:
+                self.status.set_idle()
+                logger.exception(
+                    f"Failed to add output for command/calculation {calc.calculation_id} to DataFileManager due to {exc}"
+                )
             self.status.set_idle()
 
     async def handle_command_failure(self, exception: Exception) -> None:
