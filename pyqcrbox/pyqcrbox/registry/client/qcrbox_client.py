@@ -217,7 +217,6 @@ class QCrBoxClient(QCrBoxServerClientBase):
             await self.handle_calculation_failure(calc, exc)
             return
 
-        await update_calculation_status_in_nats_kv(self.nats_broker, await calc.get_status_details())
 
         # For non-interactive commands, we need to reset the client to being idle here and
         # save the output to the DataFileManager. For interactive sessions, that is done
@@ -231,6 +230,8 @@ class QCrBoxClient(QCrBoxServerClientBase):
                     f"Failed to add output for command/calculation {calc.calculation_id} to DataFileManager due to {exc}"
                 )
             self.status.set_idle()
+
+        await update_calculation_status_in_nats_kv(self.nats_broker, await calc.get_status_details())
 
     async def handle_command_failure(self, exception: Exception) -> None:
         """Handle when launching a command fails.

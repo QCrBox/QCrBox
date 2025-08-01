@@ -22,6 +22,7 @@ class BaseCalculation(metaclass=ABCMeta):
     def __init__(self, *, calculation_id: str, calc_finished_event: anyio.Event) -> None:
         self.calculation_id = calculation_id
         self.calc_finished_event = calc_finished_event
+        self.output_dataset_id = None
 
         # These are for error tracking, specifically for recording the exception
         # raised in an async sub-process and if the calculation was manually
@@ -83,6 +84,7 @@ class BaseCalculation(metaclass=ABCMeta):
             status=self.status,
             stdout=await self.stdout,
             stderr=await self.stderr,
+            output_dataset_id=self.output_dataset_id,
             extra_info=self._get_status_details_extra_info(),
         )
 

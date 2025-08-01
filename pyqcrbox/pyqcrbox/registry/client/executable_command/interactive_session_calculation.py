@@ -36,7 +36,6 @@ class InteractiveSessionCalculation(BaseCalculation):
         self.finalise_calc = finalise_calc
         self.background_task = async_task
         self.is_closed = False
-        self.output_dataset_id = None
         self.session_closed_event = anyio.Event()
 
         # for keeping track of error pop ups

@@ -40,7 +40,6 @@ class PythonCallableCalculation(BaseCalculation):
         self.pool = pool
         self.return_value = None
         self._terminated = False
-        self.output_dataset_id = None
 
     async def save_to_data_file_manager(self, data_file_manager: DataFileManager) -> None:
         """Save the output of the calculation to the Data File Manager.

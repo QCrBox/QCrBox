@@ -4,16 +4,16 @@ from enum import StrEnum
 from pydantic import BaseModel, Field, field_validator
 
 
-def set_timestamp_to_utc_now() -> datetime:
+def set_timestamp_to_utc_now() -> str:
     """Return datetime.now() in UTC.
 
     Returns
     -------
-    datetime
-        A new datetime object for the current timestamp with a UTC timezone.
+    str
+        A timestamp in ISO format for the current time in UTC.
 
     """
-    return datetime.now(UTC)
+    return datetime.now(UTC).isoformat()
 
 
 class CalculationStatusEnum(StrEnum):
@@ -69,8 +69,9 @@ class CalculationStatusDetails(BaseModel):
     status: CalculationStatusEnum
     stdout: str | None = ""
     stderr: str | None = ""
+    output_dataset_id: str | None = None
     extra_info: dict = {}
-    timestamp: datetime = Field(default_factory=set_timestamp_to_utc_now)
+    timestamp: str = Field(default_factory=set_timestamp_to_utc_now)
 
     @field_validator("stdout", "stderr", mode="before")
     @classmethod
