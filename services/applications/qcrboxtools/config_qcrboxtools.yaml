@@ -148,13 +148,9 @@ commands:
         description: "Comma separated list of python re regexes to match atom names against"
 
   - name: "to_unified_cif"
+    implemented_as: "python_callable"
     description: "Convert a CIF file to a unified CIF file"
-    implemented_as: "cli_command"
-    call_pattern: |
-      python /opt/qcrbox/qcrbtls_to_unified_cif_glue.py \
-        {input_cif} \
-        {output_cif_path} \
-        --custom_categories {custom_category_list}
+    import_path: "qcrbtls_to_unified_cif_glue"
     parameters:
       - name: "input_cif"
         dtype: "QCrBox.cif_data_file"
