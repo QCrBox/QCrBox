@@ -70,6 +70,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         )
         self.nats_broker.subscriber(f"{self.private_inbox}.cmd.discard")(self.handle_discard_command_invocation)
         self.nats_broker.subscriber(f"{self.private_inbox}.cmd.execute")(self.handle_command_execution)
+        self.nats_broker.subscriber(f"{self.private_inbox}.cmd.end")(self.handle_command_end)
         self.nats_broker.subscriber(f"{self.private_inbox}.interactive_session.close")(self.close_interactive_session)
 
     @on_qcrbox_startup
@@ -287,6 +288,55 @@ class QCrBoxClient(QCrBoxServerClientBase):
 
         # Set client back to being idle, otherwise it won't accept new requests
         self.status.set_idle()
+
+    async def handle_command_end(self, msg: msg_specs.EndCommandRequestNATS) -> msg_specs.EndCommandResponseNATS:
+        """End a running command."""
+        calculation_id = msg.calculation_id
+        logger.info(f"Received request to end command: {msg!r}")
+
+        if calculation_id not in self.calculations:
+            logger.error(f"Calculation not found in client for {calculation_id!r}")
+            response = msg_specs.EndCommandResponseNATS(
+                calculation_id=calculation_id,
+                status=CalculationStatusEnum.UNKNOWN,
+                output_dataset_id=None,
+                error_msg=f"Calculation {calculation_id!r} not found",
+            )
+            return response
+
+        calc = self.calculations[calculation_id]
+
+        if calc.status != CalculationStatusEnum.RUNNING:
+            logger.error("Trying to end a command which is not running")
+            response = msg_specs.EndCommandResponseNATS(
+                calculation_id=calculation_id,
+                status=calc.status,
+                output_dataset_id=calc.output_dataset_id,
+                error_msg="Command is not running",
+            )
+            return response
+
+        logger.debug(f"Attempting to end running calculation: {calc}")
+        try:
+            await calc.terminate()
+        except AttributeError:
+            logger.exception(f"Unable to terminate command: {calc!r}")
+            response = msg_specs.EndCommandResponseNATS(
+                calculation_id=calculation_id,
+                status=CalculationStatusEnum.FAILED,
+                output_dataset_id=None,
+                error_msg="Unable to terminate calculation",
+            )
+            return response
+
+        self.status.set_idle()
+
+        return msg_specs.EndCommandResponseNATS(
+            calculation_id=calculation_id,
+            status=calc.status,
+            output_dataset_id=calc.output_dataset_id,
+            error_msg=calc.get_error_message(),
+        )
 
     async def close_interactive_session(
         self, msg: msg_specs.CloseInteractiveSessionNATS

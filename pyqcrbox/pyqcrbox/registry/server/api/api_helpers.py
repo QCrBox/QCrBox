@@ -211,6 +211,20 @@ async def invoke_command(data: sql_models.CommandInvocationCreate, *, nats_broke
 
     return response_json
 
+async def end_command(
+    calculation_id: str, *, nats_broker: NatsBroker, data_file_manager: DataFileManager
+) -> msg_specs.EndCommandResponseNATS:
+    calculation = await data_file_manager.get_calculation_details(calculation_id)
+
+    msg = msg_specs.EndCommandRequestNATS(calculation_id=calculation_id)
+    response_json = await nats_broker.publish(
+        msg,
+        f"{calculation.client_private_inbox}.cmd.end",
+        rpc=True,
+    )
+
+    return msg_specs.EndCommandResponseNATS(**response_json)
+
 
 def retrieve_applications() -> list[sql_models.ApplicationSpecWithCommands]:
     model_cls = sql_models.ApplicationSpecDB

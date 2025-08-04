@@ -54,6 +54,11 @@ Check a non-interactive command can be invoked
     Check Response Has Attributes    ${invoke_payload}    calculation_id
     Set Suite Variable    ${TEST_CALCULATION_ID}    ${invoke_payload["calculation_id"]}
 
+Check that long running non-interactive commands can be stopped
+    ${response}=    Send API Request    POST    ${SESSION_ALIAS}    /commands/${TEST_CALCULATION_ID}/end    200
+    ${payload}=    Check Response And Get Payload    ${response}
+    Check Response Has Attributes    ${payload}    commands
+
 Check that the calculation entry contains the output dataset id
     ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /calculations/${TEST_CALCULATION_ID}    200
     ${payload}=    Check Response And Get Payload    ${response}
@@ -80,8 +85,8 @@ Setup suite
 
 Teardown suite
     Log datetime information
-    Delete Test Dataset
-    Delete Output Dataset
+    # Delete Test Dataset
+    # Delete Output Dataset
     Log    Test suite completed
 
 Upload Test Dataset

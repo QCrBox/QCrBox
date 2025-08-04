@@ -157,3 +157,6 @@ class PythonCallableCalculation(BaseCalculation):
             process.terminate()
         self._terminated = True
         logger.debug("Multiprocessing pool terminated.")
+
+    def get_error_message(self) -> str:
+        return ""

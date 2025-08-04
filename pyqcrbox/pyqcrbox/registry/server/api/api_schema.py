@@ -4,6 +4,7 @@ from litestar.openapi.datastructures import ResponseSpec
 from pydantic import BaseModel
 
 from pyqcrbox.data_management.data_file import DataFileMetadataResponse, DatasetResponse
+from pyqcrbox.msg_specs.msg_types.client_side.end_command import EndCommandResponseNATS
 from pyqcrbox.msg_specs.msg_types.client_side.get_calculation_status import CloseInteractiveSessionResponseNATS
 from pyqcrbox.sql_models.application_spec import ApplicationSpecWithCommands
 from pyqcrbox.sql_models.calculation import CalculationNatsResponseModel
@@ -215,6 +216,19 @@ class InteractiveSessionClosedResponse(BaseModel):
     """
 
     interactive_sessions: list[CloseInteractiveSessionResponseNATS]
+
+
+class EndCommandResponse(BaseModel):
+    """Response model for a command which was ended.
+
+    Attributes
+    ----------
+    commands : list[EndCommandResponseNATS]
+        A list of ended commands.
+
+    """
+
+    commands: list[EndCommandResponseNATS]
 
 
 # Error responses

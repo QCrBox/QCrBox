@@ -458,7 +458,7 @@ class DataFileManager(ABC):
             "calculations", key, calculation.model_dump_json(exclude={"status", "output_dataset_id"}).encode()
         )
 
-    async def add_calculation_to_nats_kv(self, calculation: CalculationDB) -> None:
+    async def add_calculation(self, calculation: CalculationDB) -> None:
         """Add a new calculation to the NATS data manager.
 
         Parameters

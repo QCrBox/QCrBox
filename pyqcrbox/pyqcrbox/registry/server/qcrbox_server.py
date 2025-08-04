@@ -261,6 +261,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
         logger.debug(f"Adding new command request to database: {user_invocation_request!r}")
         calculation_db_entry = CalculationDB(
             calculation_id=user_invocation_request.calculation_id,
+            client_private_inbox=client_invocation_response.private_inbox_prefix,
             application_slug=user_invocation_request.application_slug,
             application_version=user_invocation_request.application_version,
             command_name=user_invocation_request.command_name,
@@ -272,7 +273,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
         # Don't allow the same calculation to be added to the database multiple times.
         # This **shouldn't** ever happen.
         try:
-            await data_file_manager.add_calculation_to_nats_kv(calculation_db_entry)
+            await data_file_manager.add_calculation(calculation_db_entry)
         except CalculationAlreadyExists:
             logger.error(f"Trying to add a calculation to the database which already exists: {calculation_db_entry}")
             return msg_specs.QCrBoxGenericResponse(

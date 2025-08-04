@@ -3,6 +3,7 @@
 """API endpoints for QCrBox, grouped by resource."""
 
 import traceback
+from ast import Param
 from typing import Annotated
 
 import nats.js.errors
@@ -226,9 +227,6 @@ async def invoke_command(
             status_code=500,
         )
 
-    # TODO: we should respond with the created object, rather than the ID. But we can't do that just yet.
-    # interactive_session = api_helpers.get_calculation_info_by_calculation_id(response["payload"]["calculation_id"])
-
     return QCrBoxResponse(
         content={
             "status": "success",
@@ -238,6 +236,41 @@ async def invoke_command(
             },
         },
         status_code=201,
+    )
+
+
+@post(
+    path="/commands/{id:str}/end",
+    media_type=MediaType.JSON,
+    summary="Stop a running command",
+    tags=["commands"],
+    operation_id="end_command",
+    responses={400: schema.BAD_REQUEST_ERROR, 404: schema.NOT_FOUND_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
+)
+async def end_command(
+    id: str = Parameter(title="Calculation ID"), *, nats_broker: NatsBroker, data_file_manager: DataFileManager
+) -> schema.QCrBoxResponse[schema.EndCommandResponse]:
+    """End a running command."""
+    try:
+        closed_command = await api_helpers.end_command(id, data_file_manager=data_file_manager, nats_broker=nats_broker)
+    except KeyError as exc:
+        raise QCrBoxAPIException(detail=f"No command found with ID {id!r}", status_code=404) from exc
+    except TypeError as exc:
+        raise QCrBoxAPIException(
+            detail="There was an internal server error when processing your request", status_code=500
+        ) from exc
+
+    return QCrBoxResponse(
+        content={
+            "status": "success",
+            "message": f"Closed the command: {id!r}",
+            "payload": {
+                "commands": [
+                    closed_command,
+                ]
+            },
+        },
+        status_code=200,
     )
 
 
@@ -626,6 +659,7 @@ api_router = Router(
         list_commands,
         get_command_by_id,
         invoke_command,
+        end_command,
         # Datasets
         delete_dataset_by_id,
         list_datasets,

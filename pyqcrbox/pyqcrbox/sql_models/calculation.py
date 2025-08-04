@@ -11,6 +11,7 @@ class CalculationNatsBase(QCrBoxPydanticBaseModel):
     """Base dataclass for calculation metadata."""
 
     calculation_id: str
+    client_private_inbox: str
     application_slug: str
     application_version: str
     command_name: str
@@ -21,6 +22,7 @@ class CalculationNatsResponseModel(CalculationNatsBase):
     """Calculation response model, for API responses."""
 
     status: str
+    client_private_inbox: str
     output_dataset_id: str | None
 
 
@@ -82,6 +84,7 @@ class CalculationDB(CalculationNatsBase):
         data = self.model_dump(
             include=[
                 "calculation_id",
+                "client_private_inbox",
                 "status",
                 "output_dataset_id",
                 "application_slug",
