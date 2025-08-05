@@ -69,7 +69,7 @@ class CalculationDB(CalculationNatsBase):
         # success event
         return next(
             (e.output_dataset_id for e in self.status_events if e.status == CalculationStatusEnum.SUCCESSFUL),
-            self.status_events[-1].status,
+            self.status_events[-1].output_dataset_id,
         )
 
     def to_response_model(self) -> CalculationNatsResponseModel:
