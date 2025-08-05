@@ -2,6 +2,7 @@ import argparse
 import os
 from pathlib import Path
 
+import anyio
 from litestar import Litestar
 
 from pyqcrbox import helpers, logger, msg_specs, settings, sql_models
@@ -9,6 +10,7 @@ from pyqcrbox.data_management.data_file_manager import DataFileManager
 from pyqcrbox.helpers import generate_private_routing_key
 from pyqcrbox.registry.client.executable_command.base_calculation import BaseCalculation
 from pyqcrbox.registry.client.executable_command.cli_command import CLICommand
+from pyqcrbox.registry.client.executable_command.interactive_session import InteractiveSession
 from pyqcrbox.registry.client.executable_command.interactive_session_calculation import InteractiveSessionCalculation
 from pyqcrbox.registry.client.executable_command.python_callable import PythonCallable
 from pyqcrbox.sql_models import CalculationStatusDetails, CalculationStatusEnum
@@ -37,6 +39,8 @@ class QCrBoxClient(QCrBoxServerClientBase):
         self.private_routing_key = private_routing_key or generate_private_routing_key()
         self._calculations: list[BaseCalculation] = []
         self.status = ClientStatus(client_id, ClientStatusEnum.IDLE)
+
+        self._anyio_lock = anyio.Lock()
 
     @property
     def working_dir(self) -> Path:
@@ -70,7 +74,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         )
         self.nats_broker.subscriber(f"{self.private_inbox}.cmd.discard")(self.handle_discard_command_invocation)
         self.nats_broker.subscriber(f"{self.private_inbox}.cmd.execute")(self.handle_command_execution)
-        self.nats_broker.subscriber(f"{self.private_inbox}.cmd.end")(self.handle_command_end)
+        self.nats_broker.subscriber(f"{self.private_inbox}.cmd.stop")(self.handle_stop_running_command)
         self.nats_broker.subscriber(f"{self.private_inbox}.interactive_session.close")(self.close_interactive_session)
 
     @on_qcrbox_startup
@@ -117,7 +121,17 @@ class QCrBoxClient(QCrBoxServerClientBase):
         logger.info(
             f"Received command invocation request (client status: {self.status.status}): {msg!r}",
         )
-        response_msg = msg_specs.CommandInvocationClientResponseNATS(
+
+        # Use an anyio lock to avoid a race condition in checking if the client
+        # is available to accept a new command
+        async with self._anyio_lock:
+            if self.status.is_available:
+                self.status.set_pending()
+                logger.info(f"Client ({self.private_inbox}) is available. Accepting new command request")
+            else:
+                logger.error(f"Client ({self.private_inbox}) is not available. Rejecting new command request")
+
+        return msg_specs.CommandInvocationClientResponseNATS(
             application_slug=msg.application_slug,
             application_version=msg.application_version,
             client_id=self.client_id,
@@ -125,13 +139,6 @@ class QCrBoxClient(QCrBoxServerClientBase):
             calculation_id=msg.calculation_id,
             private_inbox_prefix=self.private_inbox,
         )
-        if self.status.is_available:
-            logger.info("Client is free, able to accept new command request")
-            self.status.set_pending()
-        else:
-            logger.info("Client is busy, unable to accept new command request")
-
-        return response_msg
 
     async def handle_discard_command_invocation(self, msg: msg_specs.DiscardCommandInvocationNATS) -> None:
         """Handle discard command invocation requests.
@@ -200,10 +207,13 @@ class QCrBoxClient(QCrBoxServerClientBase):
             if not isinstance(calc, BaseCalculation):
                 raise RuntimeError("Command execution did not return a calculation object.")
         except Exception as exc:
+            # If calc is not set, then the calculation failed to start in the background
+            # which is easier to deal with. If the calculation actually started, then we need
+            # to do some other stuff
             if calc and isinstance(calc, BaseCalculation):
                 await self.handle_calculation_failure(calc, exc)
             else:
-                await self.handle_command_failure(exc)
+                await self.handle_command_launch_failure(execute_request.calculation_id, exc)
             return
 
         # Keep track of the calculation, which should still be running in the background
@@ -219,7 +229,6 @@ class QCrBoxClient(QCrBoxServerClientBase):
             await self.handle_calculation_failure(calc, exc)
             return
 
-
         # For non-interactive commands, we need to reset the client to being idle here and
         # save the output to the DataFileManager. For interactive sessions, that is done
         # instead in `close_interactive_session`
@@ -233,9 +242,10 @@ class QCrBoxClient(QCrBoxServerClientBase):
                 )
             self.status.set_idle()
 
+        logger.debug("Updating calculation status after calculation has finished")
         await data_file_manager.update_calculation_status_events(await calc.get_status_details())
 
-    async def handle_command_failure(self, exception: Exception) -> None:
+    async def handle_command_launch_failure(self, calculation_id: str, exception: Exception) -> None:
         """Handle when launching a command fails.
 
         This method differs from `handle_calculation_failure` as it is used for
@@ -244,14 +254,22 @@ class QCrBoxClient(QCrBoxServerClientBase):
 
         Parameters
         ----------
+        calculation_id : str
+            The calculation ID of the command which failed to launch.
         exception : Exception
             The raised exception causing the failure mode.
 
         """
         logger.error(f"Failed to launch command with exception: {exception!r}")
+        data_file_manager = await self.svcs_container.aget(DataFileManager)
+        await data_file_manager.update_calculation_status_events(
+            CalculationStatusDetails(
+                calculation_id=calculation_id,
+                status=CalculationStatusEnum.FAILED,
+                extra_info={"error_msg": f"Exception raised in background task: {exception!r}"},
+            ),
+        )
         self.status.set_idle()
-        # Update command in database -- this could be a bit tricky because I'm not sure we have have
-        # a calculation ID yet
 
     async def handle_calculation_failure(self, calculation: BaseCalculation, exception: Exception) -> None:
         """Handle when the calculation execution fails, usually due to a raised exception.
@@ -292,49 +310,84 @@ class QCrBoxClient(QCrBoxServerClientBase):
         # Set client back to being idle, otherwise it won't accept new requests
         self.status.set_idle()
 
-    async def handle_command_end(self, msg: msg_specs.EndCommandRequestNATS) -> msg_specs.EndCommandResponseNATS:
-        """End a running command."""
-        calculation_id = msg.calculation_id
-        logger.info(f"Received request to end command: {msg!r}")
+    async def handle_stop_running_command(
+        self, msg: msg_specs.StopRunningCalculationMsg
+    ) -> msg_specs.StoppedCalculationResponseMsg:
+        """Handle when a long running command is requested to be ended.
 
-        if calculation_id not in self.calculations:
-            logger.error(f"Calculation not found in client for {calculation_id!r}")
-            response = msg_specs.EndCommandResponseNATS(
+        Parameters
+        ----------
+        msg : msg_specs.EndCommandRequestNATS
+            A NATS message containing data about which command/calculation
+            should be ended.
+
+        Returns
+        -------
+        msg_specs.EndCommandResponseNATS
+            A NATS message to send back to the API containing data about the
+            ended command.
+
+        """
+        logger.debug(f"Received request to end command: {msg!r}")
+        calculation_id = msg.calculation_id
+
+        # If the client is not busy, then a command isn't running.
+        if self.status.status != ClientStatusEnum.BUSY:
+            error_msg = f"Client is not busy, there is no command to terminate (client status {self.status.status})"
+            logger.error(error_msg)
+            return msg_specs.StoppedCalculationResponseMsg(
                 calculation_id=calculation_id,
                 status=CalculationStatusEnum.UNKNOWN,
                 output_dataset_id=None,
-                error_msg=f"Calculation {calculation_id!r} not found",
+                error_msg=error_msg,
             )
-            return response
 
-        calc = self.calculations[calculation_id]
+        try:
+            calc = self.calculations[calculation_id]
+        except KeyError:
+            error_msg = f"Calculation {calculation_id!r} was not found in client"
+            logger.error(error_msg)
+            return msg_specs.StoppedCalculationResponseMsg(
+                calculation_id=calculation_id,
+                status=CalculationStatusEnum.UNKNOWN,
+                output_dataset_id=None,
+                error_msg=error_msg,
+            )
 
+        # If the calculation isn't running, then we can't terminate it (there is
+        # nothing to terminate...)
         if calc.status != CalculationStatusEnum.RUNNING:
-            logger.error("Trying to end a command which is not running")
-            response = msg_specs.EndCommandResponseNATS(
+            error_msg = f"Trying to end calculation {calculation_id} which is not running on the client"
+            logger.error(error_msg)
+            return msg_specs.StoppedCalculationResponseMsg(
                 calculation_id=calculation_id,
                 status=calc.status,
                 output_dataset_id=calc.output_dataset_id,
-                error_msg="Command is not running",
+                error_msg=error_msg,
             )
-            return response
 
-        logger.debug(f"Attempting to end running calculation: {calc}")
+        logger.debug(f"Terminating running calculation {calc!r}")
         try:
             await calc.terminate()
         except AttributeError:
-            logger.exception(f"Unable to terminate command: {calc!r}")
-            response = msg_specs.EndCommandResponseNATS(
+            exc_msg = f"Calculation {calculation_id} does not have a terminate method, something very bad has happened"
+            logger.exception(exc_msg)
+            return msg_specs.StoppedCalculationResponseMsg(
                 calculation_id=calculation_id,
                 status=CalculationStatusEnum.FAILED,
                 output_dataset_id=None,
-                error_msg="Unable to terminate calculation",
+                error_msg=exc_msg,
             )
-            return response
 
+        # Mark the client as being idle now that the calculation has been terminated
+        # and update the status of the calculation. If we don't update the status here,
+        # it'll still be be marked as RUNNING in the calculation database
+        logger.debug("Setting container to idle and updating calculation status after forced termination")
         self.status.set_idle()
+        data_file_manager = await self.svcs_container.aget(DataFileManager)
+        await data_file_manager.update_calculation_status_events(await calc.get_status_details())
 
-        return msg_specs.EndCommandResponseNATS(
+        return msg_specs.StoppedCalculationResponseMsg(
             calculation_id=calculation_id,
             status=calc.status,
             output_dataset_id=calc.output_dataset_id,
@@ -370,7 +423,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
             logger.error(f"Calculation not found in client for {session_id!r}")
             response = msg_specs.CloseInteractiveSessionResponseNATS(
                 session_id=session_id,
-                status=CalculationStatusEnum.FAILED,
+                status=CalculationStatusEnum.UNKNOWN,
                 output_dataset_id=None,
             )
             return response

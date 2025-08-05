@@ -15,6 +15,9 @@ class ClientStatus:
         self._client_id = client_id
         self._status = ClientStatusEnum(initial_status)
 
+    def __str__(self):
+        return str(self._status)
+
     @property
     def status(self):
         return self._status

@@ -3,7 +3,6 @@
 """API endpoints for QCrBox, grouped by resource."""
 
 import traceback
-from ast import Param
 from typing import Annotated
 
 import nats.js.errors
@@ -56,7 +55,7 @@ async def index() -> Response:
     )
 
 
-@get(path="/openapi-schema", media_type=MediaType.JSON, include_in_schema=False)
+@get(path="/schema", media_type=MediaType.JSON, include_in_schema=False)
 async def openapi_schema(request: Request) -> dict:
     return request.app.openapi_schema.to_schema()
 
@@ -141,6 +140,42 @@ async def get_calculation_by_id(
     except api_helpers.CalculationNotFoundError as exc:
         raise QCrBoxAPIException(detail=f"Calculation not found: {id!r}", status_code=404) from exc
 
+@post(
+    path="/calculations/{id:str}/stop",
+    media_type=MediaType.JSON,
+    summary="Stop a running calculation",
+    tags=["commands"],
+    operation_id="stop_running_calculation",
+    responses={400: schema.BAD_REQUEST_ERROR, 404: schema.NOT_FOUND_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
+)
+async def stop_running_calculation(
+    id: str = Parameter(title="Calculation ID"), *, nats_broker: NatsBroker, data_file_manager: DataFileManager
+) -> schema.QCrBoxResponse[schema.StoppedCalculationResponse]:
+    """Stop a currently running command, interactive and non-interactive."""
+    try:
+        stopped_calculations = await api_helpers.stop_running_calculation(
+            id, data_file_manager=data_file_manager, nats_broker=nats_broker
+        )
+    except KeyError as exc:
+        raise QCrBoxAPIException(detail=f"No calculation with ID {id!r}", status_code=404) from exc
+    except TypeError as exc:
+        raise QCrBoxAPIException(
+            detail="There was an internal server error when processing your request", status_code=500
+        ) from exc
+
+    return QCrBoxResponse(
+        content={
+            "status": "success",
+            "message": f"Stopped {len(stopped_calculations)} calculations",
+            "payload": {
+                "calculations": [
+                    stopped_calculations,
+                ]
+            },
+        },
+        status_code=200,
+    )
+
 
 # Commands -------------------------------------------------------------------------------------------------------------
 
@@ -203,10 +238,10 @@ async def get_command_by_id(id: int) -> schema.QCrBoxResponse[schema.CommandsRes
     responses={400: schema.BAD_REQUEST_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
 async def invoke_command(
-    data: Annotated[schema.InvokeCommand, Body()],
+    data: Annotated[schema.InvokeCommandParameters, Body()],
     nats_broker: NatsBroker,
 ) -> schema.QCrBoxResponse[schema.InvokeCommandResponse]:
-    """Create an interactive session with the provided arguments arguments."""
+    """Create an interactive session with the provided arguments."""
     command_spec = CommandInvocationCreate(
         application_slug=data.application_slug,
         application_version=data.application_version,
@@ -238,40 +273,6 @@ async def invoke_command(
         status_code=201,
     )
 
-
-@post(
-    path="/commands/{id:str}/end",
-    media_type=MediaType.JSON,
-    summary="Stop a running command",
-    tags=["commands"],
-    operation_id="end_command",
-    responses={400: schema.BAD_REQUEST_ERROR, 404: schema.NOT_FOUND_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
-)
-async def end_command(
-    id: str = Parameter(title="Calculation ID"), *, nats_broker: NatsBroker, data_file_manager: DataFileManager
-) -> schema.QCrBoxResponse[schema.EndCommandResponse]:
-    """End a running command."""
-    try:
-        closed_command = await api_helpers.end_command(id, data_file_manager=data_file_manager, nats_broker=nats_broker)
-    except KeyError as exc:
-        raise QCrBoxAPIException(detail=f"No command found with ID {id!r}", status_code=404) from exc
-    except TypeError as exc:
-        raise QCrBoxAPIException(
-            detail="There was an internal server error when processing your request", status_code=500
-        ) from exc
-
-    return QCrBoxResponse(
-        content={
-            "status": "success",
-            "message": f"Closed the command: {id!r}",
-            "payload": {
-                "commands": [
-                    closed_command,
-                ]
-            },
-        },
-        status_code=200,
-    )
 
 
 # Data files -----------------------------------------------------------------------------------------------------------
@@ -538,7 +539,7 @@ async def get_interactive_session_by_id(
     responses={400: schema.BAD_REQUEST_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
 async def create_interactive_session_with_arguments(
-    data: Annotated[schema.CreateInteractiveSession, Body()], nats_broker: NatsBroker
+    data: Annotated[schema.CreateInteractiveSessionParameters, Body()], nats_broker: NatsBroker
 ) -> schema.QCrBoxResponse[schema.InteractiveSessionIDResponse]:
     """Create an interactive session with the provided arguments arguments."""
     command_spec = CommandInvocationCreate(
@@ -655,11 +656,11 @@ api_router = Router(
         # Calculations
         list_calculations,
         get_calculation_by_id,
+        stop_running_calculation,
         # Commands
         list_commands,
         get_command_by_id,
         invoke_command,
-        end_command,
         # Datasets
         delete_dataset_by_id,
         list_datasets,

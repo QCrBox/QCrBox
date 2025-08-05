@@ -1,16 +1,16 @@
 from pyqcrbox.sql_models import QCrBoxPydanticBaseModel
 
 __all__ = [
-    "EndCommandRequestNATS",
-    "EndCommandResponseNATS",
+    "StopRunningCalculationMsg",
+    "StoppedCalculationResponseMsg",
 ]
 
 
-class EndCommandRequestNATS(QCrBoxPydanticBaseModel):
+class StopRunningCalculationMsg(QCrBoxPydanticBaseModel):
     calculation_id: str
 
 
-class EndCommandResponseNATS(QCrBoxPydanticBaseModel):
+class StoppedCalculationResponseMsg(QCrBoxPydanticBaseModel):
     calculation_id: str
     status: str
     output_dataset_id: str | None

@@ -91,7 +91,6 @@ async def close_interactive_session(
         f"{session_info.client_private_inbox}.interactive_session.close",
         rpc=True,
     )
-    logger.debug(f"{session_info.client_private_inbox}.interactive_session.close response: {response_json}")
 
     response = msg_specs.CloseInteractiveSessionResponseNATS(**response_json)
     return response
@@ -179,7 +178,7 @@ async def import_data_file(
     data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)], *, data_file_manager: DataFileManager
 ) -> str:
     qcrbox_data_file_id = await data_file_manager.import_bytes(await data.read(), filename=data.filename)
-    logger.info(f"Data file imported: filename={data.filename!r} id={qcrbox_data_file_id!r}")
+    logger.debug(f"Data file imported: filename={data.filename!r} id={qcrbox_data_file_id!r}")
     return qcrbox_data_file_id
 
 
@@ -188,7 +187,7 @@ async def import_dataset(
 ) -> str:
     qcrbox_data_file_id = await data_file_manager.import_bytes(await data.read(), filename=data.filename)
     qcrbox_dataset_id = await data_file_manager.create_dataset_from_data_file(qcrbox_data_file_id)
-    logger.info(f"Dataset imported: id={qcrbox_dataset_id}, files=[id={qcrbox_data_file_id} filename={data.filename}]")
+    logger.debug(f"Dataset imported: id={qcrbox_dataset_id}, files=[id={qcrbox_data_file_id} filename={data.filename}]")
     return qcrbox_dataset_id
 
 
@@ -211,19 +210,19 @@ async def invoke_command(data: sql_models.CommandInvocationCreate, *, nats_broke
 
     return response_json
 
-async def end_command(
+async def stop_running_calculation(
     calculation_id: str, *, nats_broker: NatsBroker, data_file_manager: DataFileManager
-) -> msg_specs.EndCommandResponseNATS:
+) -> msg_specs.StoppedCalculationResponseMsg:
     calculation = await data_file_manager.get_calculation_details(calculation_id)
 
-    msg = msg_specs.EndCommandRequestNATS(calculation_id=calculation_id)
+    msg = msg_specs.StopRunningCalculationMsg(calculation_id=calculation_id)
     response_json = await nats_broker.publish(
         msg,
-        f"{calculation.client_private_inbox}.cmd.end",
+        f"{calculation.client_private_inbox}.cmd.stop",
         rpc=True,
     )
 
-    return msg_specs.EndCommandResponseNATS(**response_json)
+    return msg_specs.StoppedCalculationResponseMsg(**response_json)
 
 
 def retrieve_applications() -> list[sql_models.ApplicationSpecWithCommands]:

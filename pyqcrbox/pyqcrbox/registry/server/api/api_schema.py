@@ -4,8 +4,8 @@ from litestar.openapi.datastructures import ResponseSpec
 from pydantic import BaseModel
 
 from pyqcrbox.data_management.data_file import DataFileMetadataResponse, DatasetResponse
-from pyqcrbox.msg_specs.msg_types.client_side.end_command import EndCommandResponseNATS
 from pyqcrbox.msg_specs.msg_types.client_side.get_calculation_status import CloseInteractiveSessionResponseNATS
+from pyqcrbox.msg_specs.msg_types.client_side.stop_calculation import StoppedCalculationResponseMsg
 from pyqcrbox.sql_models.application_spec import ApplicationSpecWithCommands
 from pyqcrbox.sql_models.calculation import CalculationNatsResponseModel
 from pyqcrbox.sql_models.command_spec import CommandSpecWithParameters
@@ -16,7 +16,7 @@ T = TypeVar("T")
 # Request bodies
 
 
-class CreateInteractiveSession(BaseModel):
+class CreateInteractiveSessionParameters(BaseModel):
     """Request body for invoking an interactive session.
 
     Attributes
@@ -38,7 +38,7 @@ class CreateInteractiveSession(BaseModel):
     arguments: dict[str, Any]
 
 
-class InvokeCommand(BaseModel):
+class InvokeCommandParameters(BaseModel):
     """Request body for invoke a command.
 
     Attributes
@@ -218,8 +218,8 @@ class InteractiveSessionClosedResponse(BaseModel):
     interactive_sessions: list[CloseInteractiveSessionResponseNATS]
 
 
-class EndCommandResponse(BaseModel):
-    """Response model for a command which was ended.
+class StoppedCalculationResponse(BaseModel):
+    """Response model for a command which was stopped.
 
     Attributes
     ----------
@@ -228,7 +228,7 @@ class EndCommandResponse(BaseModel):
 
     """
 
-    commands: list[EndCommandResponseNATS]
+    calculations: list[StoppedCalculationResponseMsg]
 
 
 # Error responses
