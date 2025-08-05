@@ -1,7 +1,6 @@
 from typing import Any
 
 import svcs
-from faststream import Context
 from faststream.nats import NatsBroker
 from litestar import Litestar, MediaType, get
 from litestar.di import Provide
@@ -71,9 +70,6 @@ class QCrBoxServer(QCrBoxServerClientBase):
         )
         self.nats_broker.subscriber("server.cmd.handle_command_invocation_client_response")(
             self.handle_command_invocation_client_response
-        )
-        self.nats_broker.subscriber("*", kv_watch="calculation_status")(
-            self.update_calculation_status_in_calculations_db
         )
 
     async def handle_application_registration(self, msg: msg_specs.RegisterApplication) -> None:
@@ -156,7 +152,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
         command_request_final_status = await self.add_command_request_to_calculations_db(
             invocation_request_to_client, invocation_response_from_client
         )
-        logger.debug(f"Command invocation final status: {command_request_final_status}")
+        logger.debug(f"Command invocation final status before execution: {command_request_final_status}")
 
         return command_request_final_status
 
@@ -268,10 +264,9 @@ class QCrBoxServer(QCrBoxServerClientBase):
             arguments=user_invocation_request.arguments,
         )
 
-        data_file_manager = await self.svcs_container.aget(DataFileManager)
-
         # Don't allow the same calculation to be added to the database multiple times.
         # This **shouldn't** ever happen.
+        data_file_manager = await self.svcs_container.aget(DataFileManager)
         try:
             await data_file_manager.add_calculation(calculation_db_entry)
         except CalculationAlreadyExists:
@@ -281,39 +276,21 @@ class QCrBoxServer(QCrBoxServerClientBase):
                 status=CalculationStatusEnum.FAILED,
                 payload={"error": "Tried to add a new calculation to one which already exists"},
             )
-        calculation_status = CalculationStatusDetails(
-            calculation_id=user_invocation_request.calculation_id,
-            status=CalculationStatusEnum.SUBMITTED,
-            stdout="",
-            stderr="",
-            extra_info={},
+        await data_file_manager.update_calculation_status_events(
+            CalculationStatusDetails(
+                calculation_id=user_invocation_request.calculation_id,
+                status=CalculationStatusEnum.SUBMITTED,
+                stdout="",
+                stderr="",
+                extra_info={},
+            )
         )
-
-        await data_file_manager.update_calculation_status_events(calculation_status)
 
         return msg_specs.QCrBoxGenericResponse(
             response_to="server.cmd.handle_command_invocation_by_user",
             status=CalculationStatusEnum.SUBMITTED,
             payload={"calculation_id": user_invocation_request.calculation_id},
         )
-
-    async def update_calculation_status_in_calculations_db(
-        self, status_event: CalculationStatusDetails, _calculation_id: str = Context("message.raw_message.key")
-    ) -> None:
-        """Add a calculation status event to a calculation.
-
-        Parameters
-        ----------
-        status_event : CalculationStatusDetails
-            The status event to append to the list of status events for the
-            calculation.
-        _calculation_id : str, optional
-            The calculation ID of the calculation to update.
-
-        """
-        logger.debug(f"Received NATS notification about calculation status update: {status_event!r}")
-        data_file_manager = await self.svcs_container.aget(DataFileManager)
-        await data_file_manager.update_calculation_status_events(status_event)
 
     def _set_up_asgi_server(self) -> None:
         """Initialise the ASGI server for providing the API endpoints."""

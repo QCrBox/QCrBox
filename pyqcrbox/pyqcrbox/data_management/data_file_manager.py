@@ -151,10 +151,10 @@ class DataFileManager(ABC):
         try:
             dataset_as_bytes = await self._retrieve_from_kv("datasets", dataset_id)
         except KeyError:
-            logger.error(f"No dataset found for id={dataset_id!r}")
+            logger.error(f"No dataset found for id {dataset_id!r}")
             raise
         dataset = Dataset.model_validate_json(dataset_as_bytes.decode())
-        logger.info(f"Removing dataset id={dataset_id!r} and data files {list(dataset.data_files.keys())}")
+        logger.debug(f"Removing dataset id={dataset_id!r} and data files {list(dataset.data_files.keys())}")
 
         for _, file_metadata in dataset.data_files.items():
             await self.delete_data_file(file_metadata.qcrbox_file_id)
@@ -189,11 +189,10 @@ class DataFileManager(ABC):
         output_filename = output_filename or object_store_filename
         output_path = output_dir / output_filename
 
-        logger.debug(f"Writing {data_file_id!r} to {output_path}")
         with output_path.open("wb") as f:
             f.write(file_contents)
 
-        logger.info(f"Exported data file {output_filename} to {output_path.resolve()}")
+        logger.debug(f"Exported data file {output_filename} to {output_path.resolve()}")
 
         return output_path
 
@@ -452,8 +451,14 @@ class DataFileManager(ABC):
             raise
 
         calculation = CalculationDB.model_validate_json(calc_as_bytes.decode())
-        calculation.status_events.append(status_details)
+
+        if len(calculation.status_events) > 0 and status_details.status == calculation.status_events[-1].status:
+            logger.warning(
+                f"Adding new event with same status as the last: {status_details} ~= {calculation.status_events[-1]}"
+            )
+
         logger.debug(f"Appending status {status_details!r} to calculation {calculation!r}")
+        calculation.status_events.append(status_details)
         await self._store_in_kv(
             "calculations", key, calculation.model_dump_json(exclude={"status", "output_dataset_id"}).encode()
         )
