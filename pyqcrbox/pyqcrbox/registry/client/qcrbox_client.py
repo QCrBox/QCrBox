@@ -125,6 +125,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         # Use an anyio lock to avoid a race condition in checking if the client
         # is available to accept a new command
         async with self._anyio_lock:
+            is_available = self.status.is_available
             if self.status.is_available:
                 self.status.set_pending()
                 logger.info(f"Client ({self.private_inbox}) is available. Accepting new command request")
@@ -135,7 +136,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
             application_slug=msg.application_slug,
             application_version=msg.application_version,
             client_id=self.client_id,
-            client_is_available=self.status.is_available,
+            client_is_available=is_available,
             calculation_id=msg.calculation_id,
             private_inbox_prefix=self.private_inbox,
         )
