@@ -146,6 +146,7 @@ async def get_calculation_by_id(
     summary="Stop a running calculation",
     tags=["calculations"],
     operation_id="stop_running_calculation",
+    status_code=200,
     responses={400: schema.BAD_REQUEST_ERROR, 404: schema.NOT_FOUND_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
 async def stop_running_calculation(
@@ -153,7 +154,7 @@ async def stop_running_calculation(
 ) -> schema.QCrBoxResponse[schema.StoppedCalculationResponse]:
     """Stop a currently running command, interactive and non-interactive."""
     try:
-        stopped_calculations = await api_helpers.stop_running_calculation(
+        stopped_calculation = await api_helpers.stop_running_calculation(
             id, data_file_manager=data_file_manager, nats_broker=nats_broker
         )
     except KeyError as exc:
@@ -166,10 +167,10 @@ async def stop_running_calculation(
     return QCrBoxResponse(
         content={
             "status": "success",
-            "message": f"Stopped {len(stopped_calculations)} calculations",
+            "message": f"Stopped calculation {stopped_calculation.calculation_id}",
             "payload": {
                 "calculations": [
-                    stopped_calculations,
+                    stopped_calculation,
                 ]
             },
         },
