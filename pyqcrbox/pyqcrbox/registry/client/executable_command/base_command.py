@@ -40,26 +40,6 @@ class BaseCommand(metaclass=ABCMeta):
         return f"<{clsname}: {self.cmd_spec.name!r}>"
 
     @abstractmethod
-    async def add_to_database(
-        self,
-        data_file_manager: DataFileManager,
-        execute_request: CommandExecutionRequestNATS,
-        executing_client_address: str,
-    ) -> None:
-        """Add the command to the calculation database.
-
-        Parameters
-        ----------
-        data_file_manager : DataFileManager
-            An instance of the DataFileManager.
-        execute_request : CommandExecutionRequestNATS
-            The execution request message, containing data about the calculation.
-        executing_client_address : str
-            The NATS address of the client executing the command.
-
-        """
-
-    @abstractmethod
     async def prepare_params(
         self, working_dir: str | Path, command_arguments: dict[str, BaseParameter]
     ) -> dict[str, Any]:

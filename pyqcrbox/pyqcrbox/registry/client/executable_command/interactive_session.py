@@ -220,7 +220,7 @@ class InteractiveSession(BaseCommand):
             name: await param.prepare_for_execution(target_dir=str(working_dir)) for name, param in param_values.items()
         }
 
-    async def add_to_database(
+    async def add_to_interactive_session_database(
         self,
         data_file_manager: DataFileManager,
         execute_request: CommandExecutionRequestNATS,

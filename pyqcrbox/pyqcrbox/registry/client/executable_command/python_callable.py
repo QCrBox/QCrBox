@@ -84,14 +84,6 @@ class PythonCallable(BaseCommand):
         """
         return f"<{self.__class__.__name__}: {self.fn.__name__}{self.signature!s}>"
 
-    async def add_to_database(
-        self,
-        data_file_manager: DataFileManager,
-        execute_request: CommandExecutionRequestNATS,
-        executing_client_address: str,
-    ) -> None:
-        pass
-
     async def prepare_params(
         self, working_dir: str | Path, command_arguments: dict[str, BaseParameter]
     ) -> dict[str, Any]:

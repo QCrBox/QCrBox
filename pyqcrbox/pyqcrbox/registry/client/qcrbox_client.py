@@ -187,8 +187,11 @@ class QCrBoxClient(QCrBoxServerClientBase):
 
         try:
             command = ExecutableCommand(self.application_spec.get_command_spec_by_name(execute_request.command_name))
-            # TODO: only interactive sessions need to do this
-            await command.add_to_database(data_file_manager, execute_request, self.private_inbox)
+            logger.debug(f"Command to execute: {command}")
+            if isinstance(command, InteractiveSession):
+                await command.add_to_interactive_session_database(
+                    data_file_manager, execute_request, self.private_inbox
+                )
             parameters = await command.prepare_params(self.working_dir, execute_request.arguments)
             logger.debug(f"Executing command {command!r} in the background with arguments {parameters!r}")
             calc = await command.execute_in_background(
