@@ -144,7 +144,7 @@ async def get_calculation_by_id(
     path="/calculations/{id:str}/stop",
     media_type=MediaType.JSON,
     summary="Stop a running calculation",
-    tags=["commands"],
+    tags=["calculations"],
     operation_id="stop_running_calculation",
     responses={400: schema.BAD_REQUEST_ERROR, 404: schema.NOT_FOUND_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
