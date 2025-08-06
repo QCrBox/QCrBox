@@ -49,16 +49,15 @@ Check a non-interactive command can be invoked
     ...    json_data=${request_body}
     ${invoke_payload}=    Check Response And Get Payload    ${response}
 
-    Sleep    1s    "Waiting for non-interactive session to be registered and start"
+    Sleep    2s    "Waiting for non-interactive session to be registered and start"
 
     Check Response Has Attributes    ${invoke_payload}    calculation_id
     Set Suite Variable    ${TEST_CALCULATION_ID}    ${invoke_payload["calculation_id"]}
 
 Check that long running non-interactive commands can be stopped
-    Sleep    5s
-    ${response}=    Send API Request    POST    ${SESSION_ALIAS}    /commands/${TEST_CALCULATION_ID}/stop    200
+    ${response}=    Send API Request    POST    ${SESSION_ALIAS}    /calculations/${TEST_CALCULATION_ID}/stop    200
     ${payload}=    Check Response And Get Payload    ${response}
-    Check Response Has Attributes    ${payload}    commands
+    Check Response Has Attributes    ${payload}   calculations
 
 Check that the non-interactive command has stopped
     ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /calculations/${TEST_CALCULATION_ID}    200
