@@ -71,21 +71,21 @@ Check that the non-interactive command has stopped
     Check Calculations Structure    ${calculations}
     Should Not Be Equal    ${calculations[0]["status"]}    running
 
-# Check that the calculation entry contains the output dataset id
-#     ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /calculations/${TEST_CALCULATION_ID}    200
-#     ${payload}=    Check Response And Get Payload    ${response}
+Check that the calculation entry contains the output dataset id
+    ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /calculations/${TEST_CALCULATION_ID}    200
+    ${payload}=    Check Response And Get Payload    ${response}
 
-#     Check Response Has Attributes    ${payload}    calculations
-#     ${calculations}=    Set Variable    ${payload["calculations"]}
-#     ${n_calculations}=    Get Length    ${calculations}
-#     Should Be Equal As Integers    ${n_calculations}    1    "Multiple calculations retrieved, when only one requested"
+    Check Response Has Attributes    ${payload}    calculations
+    ${calculations}=    Set Variable    ${payload["calculations"]}
+    ${n_calculations}=    Get Length    ${calculations}
+    Should Be Equal As Integers    ${n_calculations}    1    "Multiple calculations retrieved, when only one requested"
 
-#     Check Calculations Structure    ${calculations}
-#     Set Suite Variable    ${TEST_OUTPUT_DATASET_ID}    ${calculations[0]["output_dataset_id"]}
+    Check Calculations Structure    ${calculations}
+    Set Suite Variable    ${TEST_OUTPUT_DATASET_ID}    ${calculations[0]["output_dataset_id"]}
 
-# Check it's possible to download the non-interactive command's output dataset
-#     ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /datasets/${TEST_OUTPUT_DATASET_ID}    200
-#     Should Not Be Empty    ${response.content}
+Check it's possible to download the non-interactive command's output dataset
+    ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /datasets/${TEST_OUTPUT_DATASET_ID}    200
+    Should Not Be Empty    ${response.content}
 
 
 *** Keywords ***
@@ -97,8 +97,8 @@ Setup suite
 
 Teardown suite
     Log datetime information
-    # Delete Test Dataset
-    # Delete Output Dataset
+    Delete Test Dataset
+    Delete Output Dataset
     Log    Test suite completed
 
 Upload Test Dataset
