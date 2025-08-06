@@ -7,6 +7,7 @@ from litestar import Litestar
 
 from pyqcrbox import helpers, logger, msg_specs, settings, sql_models
 from pyqcrbox.data_management.data_file_manager import DataFileManager
+from pyqcrbox.debug import log_eel
 from pyqcrbox.helpers import generate_private_routing_key
 from pyqcrbox.registry.client.executable_command.base_calculation import BaseCalculation
 from pyqcrbox.registry.client.executable_command.cli_command import CLICommand
@@ -100,6 +101,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
             logger.error("Application registration failed (no response from server)")
             self.shutdown()
 
+    @log_eel
     async def handle_command_invocation_request_from_server(
         self, msg: msg_specs.CommandInvocationRequestNATS
     ) -> msg_specs.CommandInvocationClientResponseNATS:
@@ -141,6 +143,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
             private_inbox_prefix=self.private_inbox,
         )
 
+    @log_eel
     async def handle_discard_command_invocation(self, msg: msg_specs.DiscardCommandInvocationNATS) -> None:
         """Handle discard command invocation requests.
 
@@ -167,6 +170,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
             ),
         )
 
+    @log_eel
     async def handle_command_execution(self, execute_request: msg_specs.CommandExecutionRequestNATS) -> None:
         """Handle command execution requests.
 
@@ -246,6 +250,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         logger.debug("Updating calculation status after calculation has finished")
         await data_file_manager.update_calculation_status_events(await calc.get_status_details())
 
+    @log_eel
     async def handle_command_launch_failure(self, calculation_id: str, exception: Exception) -> None:
         """Handle when launching a command fails.
 
@@ -272,6 +277,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         )
         self.status.set_idle()
 
+    @log_eel
     async def handle_calculation_failure(self, calculation: BaseCalculation, exception: Exception) -> None:
         """Handle when the calculation execution fails, usually due to a raised exception.
 
@@ -311,6 +317,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         # Set client back to being idle, otherwise it won't accept new requests
         self.status.set_idle()
 
+    @log_eel
     async def handle_stop_running_command(
         self, msg: msg_specs.StopRunningCalculationMsg
     ) -> msg_specs.StoppedCalculationResponseMsg:
@@ -395,6 +402,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
             error_msg=calc.get_error_message(),
         )
 
+    @log_eel
     async def close_interactive_session(
         self, msg: msg_specs.CloseInteractiveSessionNATS
     ) -> msg_specs.CloseInteractiveSessionResponseNATS:
