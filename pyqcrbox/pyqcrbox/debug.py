@@ -1,19 +1,19 @@
 import inspect
+from collections.abc import Callable
 from functools import wraps
-from typing import Callable
 
 from pyqcrbox import logger
 
 
 def _log_enter(func_name: str) -> None:
-    logger.debug(f"[EEL:Enter] {func_name}")
+    logger.debug(f"[EEL][ENTER] {func_name}")
 
 
 def _log_exit(full_name: str) -> None:
-    logger.debug(f"[EEL:Exit ] {full_name}")
+    logger.debug(f"[EEL][EXIT] {full_name}")
 
 
-def eel_logging(func: Callable) -> Callable:
+def log_eel(func: Callable) -> Callable:
     """Log entry and exit for a function.
 
     Both synchronous and asynchronous functions are supported.
@@ -27,6 +27,7 @@ def eel_logging(func: Callable) -> Callable:
     -------
     callable
         The wrapped function with logging.
+
     """
 
     def _get_func_name(args):

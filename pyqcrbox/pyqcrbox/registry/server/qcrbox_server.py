@@ -20,6 +20,7 @@ from pydantic import BaseModel
 
 from pyqcrbox import helpers, logger, msg_specs, settings
 from pyqcrbox.data_management import CalculationAlreadyExists, DataFileManager
+from pyqcrbox.debug import log_eel
 from pyqcrbox.msg_specs.base import QCrBoxGenericResponse
 from pyqcrbox.registry.server.api.api_endpoints import handle_exception
 from pyqcrbox.sql_models import CalculationDB, CalculationStatusDetails, CalculationStatusEnum
@@ -95,6 +96,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
         # await self.nats_persistence_adapter.save_application_spec(msg.payload.application_spec)
         await self.sqlite_persistence_adapter.save_application_spec(msg.payload.application_spec)
 
+    @log_eel
     async def handle_command_invocation_by_user(self, msg: msg_specs.InvokeCommandNATS) -> QCrBoxGenericResponse:
         """Handle a command request from a user.
 
@@ -149,13 +151,14 @@ class QCrBoxServer(QCrBoxServerClientBase):
 
         # Whatever happens, try and the request to the calculations database. This method
         # also returns the status to return to the API, e.g. either failure or submitted
-        command_request_final_status = await self.add_command_request_to_calculations_db(
+        command_request_final_status = await self.add_command_request_to_database(
             invocation_request_to_client, invocation_response_from_client
         )
         logger.debug(f"Command invocation final status before execution: {command_request_final_status}")
 
         return command_request_final_status
 
+    @log_eel
     async def handle_command_invocation_client_response(
         self, msg: msg_specs.CommandInvocationClientResponseNATS
     ) -> None:
@@ -173,6 +176,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
 
         """
         logger.info(f"Received client response: {msg!r}")
+        logger.debug("[EEL][ENTER] handle_command_invocation_client_response")
 
         # If the client is not available, discard request and return
         if not msg.client_is_available:
@@ -219,7 +223,8 @@ class QCrBoxServer(QCrBoxServerClientBase):
             private_inbox_prefix=msg.private_inbox_prefix,
         )
 
-    async def add_command_request_to_calculations_db(
+    @log_eel
+    async def add_command_request_to_database(
         self,
         user_invocation_request: msg_specs.CommandInvocationRequestNATS,
         client_invocation_response: msg_specs.CommandInvocationClientResponseNATS,
@@ -254,7 +259,9 @@ class QCrBoxServer(QCrBoxServerClientBase):
                 payload={"error": f"The client '{client_id!r}' is not available to execute the command request"},
             )
 
-        logger.debug(f"Adding new command request to database: {user_invocation_request!r}")
+        logger.debug("Adding accepted command request to database")
+        logger.debug(f"{user_invocation_request= }")
+        logger.debug(f"{client_invocation_response= }")
         calculation_db_entry = CalculationDB(
             calculation_id=user_invocation_request.calculation_id,
             client_private_inbox=client_invocation_response.private_inbox_prefix,
@@ -276,6 +283,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
                 status=CalculationStatusEnum.FAILED,
                 payload={"error": "Tried to add a new calculation to one which already exists"},
             )
+        logger.debug("Updating calculation status to SUBMITTED after command request accepted")
         await data_file_manager.update_calculation_status_events(
             CalculationStatusDetails(
                 calculation_id=user_invocation_request.calculation_id,
