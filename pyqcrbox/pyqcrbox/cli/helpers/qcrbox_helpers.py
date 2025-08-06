@@ -7,6 +7,7 @@ from typing import Optional, TypeVar
 
 import setuptools_scm
 from git import InvalidGitRepositoryError, Repo
+from loguru import logger
 
 # Type alias
 PathLike = TypeVar("PathLike", str, Path)
@@ -14,11 +15,32 @@ PathLike = TypeVar("PathLike", str, Path)
 __all__ = ["get_current_pyqcrbox_version", "get_repo_root"]
 
 
+# def get_current_pyqcrbox_version() -> str:
+#     """
+#     Return the current version of the 'pyqcrbox' module.
+#     """
+#     pyqcrbox_version = setuptools_scm.get_version(root=get_repo_root())
+#     logger.info(f"pyqcrbox version: {pyqcrbox_version}")
+#     return pyqcrbox_version
+
+
 def get_current_pyqcrbox_version() -> str:
+    """Return the current version of the 'pyqcrbox' module.
+
+    Returns
+    -------
+    str
+        The version of pyqcrbox.
+
     """
-    Return the current version of the 'pyqcrbox' module.
-    """
-    return setuptools_scm.get_version(root=get_repo_root())
+    try:
+        from pyqcrbox._version import __version__
+
+        pyqcrbox_version = __version__
+    except ImportError:
+        pyqcrbox_version = setuptools_scm.get_version(root=get_repo_root())
+    logger.info(f"pyqcrbox version: {pyqcrbox_version}")
+    return pyqcrbox_version
 
 
 def get_repo_root(path: Optional[PathLike] = None):
