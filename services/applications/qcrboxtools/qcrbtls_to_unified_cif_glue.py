@@ -18,11 +18,6 @@ def to_unified_cif(
         split_sus=True,
     )
 
-    import time
-
-    while True:
-        time.sleep(10)
-
     return output_cif_path
 
 
