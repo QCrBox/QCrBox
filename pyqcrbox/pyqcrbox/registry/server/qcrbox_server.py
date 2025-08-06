@@ -217,6 +217,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
             arguments=calc.arguments,
             calculation_id=msg.calculation_id,
         )
+        logger.debug(f"Message to client for command execution: {response_to_client}")
         await self.nats_broker.publish(response_to_client, subject=f"{msg.private_inbox_prefix}.cmd.execute")
         calc.executing_client = ExecutingClientDetails(
             client_id=msg.client_id,

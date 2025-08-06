@@ -457,7 +457,7 @@ class DataFileManager(ABC):
                 f"Adding new event with same status as the last: {status_details} ~= {calculation.status_events[-1]}"
             )
 
-        logger.debug(f"Appending status {status_details!r} to calculation {calculation!r}")
+        logger.debug(f"Appending status {status_details.status} to calculation {calculation.calculation_id}")
         calculation.status_events.append(status_details)
         await self._store_in_kv(
             "calculations", key, calculation.model_dump_json(exclude={"status", "output_dataset_id"}).encode()

@@ -130,11 +130,11 @@ class QCrBoxClient(QCrBoxServerClientBase):
             is_available = self.status.is_available
             if self.status.is_available:
                 self.status.set_pending()
-                logger.info(f"Client ({self.private_inbox}) is available. Accepting new command request")
+                logger.info(f"Client ({self.private_inbox}) is available, accepting new command request")
             else:
-                logger.error(f"Client ({self.private_inbox}) is not available. Rejecting new command request")
+                logger.error(f"Client ({self.private_inbox}) is not available, rejecting new command request")
 
-        return msg_specs.CommandInvocationClientResponseNATS(
+        new_msg = msg_specs.CommandInvocationClientResponseNATS(
             application_slug=msg.application_slug,
             application_version=msg.application_version,
             client_id=self.client_id,
@@ -142,6 +142,10 @@ class QCrBoxClient(QCrBoxServerClientBase):
             calculation_id=msg.calculation_id,
             private_inbox_prefix=self.private_inbox,
         )
+
+        logger.debug(f"Sending message back to server {new_msg}")
+
+        return new_msg
 
     @log_eel
     async def handle_discard_command_invocation(self, msg: msg_specs.DiscardCommandInvocationNATS) -> None:
@@ -227,6 +231,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
 
         # Wait until its finished and when finished, update the details. The calculation can
         # will raise an exception if (one of the interactive) commands failed
+        logger.debug("Waiting for calculation to finish after launching in the background")
         try:
             await calc.wait_until_finished()
         except Exception as exc:
@@ -234,14 +239,17 @@ class QCrBoxClient(QCrBoxServerClientBase):
             await self.handle_calculation_failure(calc, exc)
             return
 
+        logger.debug(f"Exited from calc.wait_until_finished(): {command.type}")
+        logger.debug(f"Calculation: {calc}")
+
         # For non-interactive commands, we need to reset the client to being idle here and
         # save the output to the DataFileManager. For interactive sessions, that is done
         # instead in `close_interactive_session`
         if command.type != "interactive_session":
+            logger.debug("Adding non-interactive output to DataFileManager")
             try:
                 await calc.save_to_data_file_manager(await self.svcs_container.aget(DataFileManager))
             except (RuntimeError, FileNotFoundError) as exc:
-                self.status.set_idle()
                 logger.exception(
                     f"Failed to add output for calculation {calc.calculation_id} to DataFileManager due to {exc}"
                 )
@@ -375,8 +383,11 @@ class QCrBoxClient(QCrBoxServerClientBase):
             )
 
         logger.debug(f"Terminating running calculation {calc!r}")
+        logger.debug(f"{calc.calculation_id=} {calc.calc_finished_event=} {calc.return_value=}")
+
         try:
             await calc.terminate()
+            calc.calc_finished_event.set()
         except AttributeError:
             exc_msg = f"Calculation {calculation_id} does not have a terminate method, something very bad has happened"
             logger.exception(exc_msg)
