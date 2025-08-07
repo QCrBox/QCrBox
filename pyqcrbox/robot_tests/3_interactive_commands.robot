@@ -38,8 +38,8 @@ Check /interactive-sessions can create an interactive session
     ${input_file}=    Create Dictionary    data_file_id=${TEST_DATA_FILE_ID}
     ${arguments}=    Create Dictionary    input_file=${input_file}
     ${request_body}=    Create Dictionary
-    ...    application_slug=olex2
-    ...    application_version=1.5-alpha
+    ...    application_slug=dummy_gui
+    ...    application_version=0.1.0
     ...    arguments=${arguments}
 
     ${response}=    Send API Request
@@ -67,8 +67,8 @@ Check /interactive-sessions returns an error when client is busy
     ${input_file}=    Create Dictionary    data_file_id=${TEST_DATA_FILE_ID}
     ${arguments}=    Create Dictionary    input_file=${input_file}
     ${request_body}=    Create Dictionary
-    ...    application_slug=olex2
-    ...    application_version=1.5-alpha
+    ...    application_slug=dummy_gui
+    ...    application_version=0.1.0
     ...    arguments=${arguments}
 
     ${response}=    Send API Request
@@ -153,8 +153,8 @@ Check /interactive-sessions can open a new session after the last was closed
     ${input_file}=    Create Dictionary    data_file_id=${TEST_DATA_FILE_ID}
     ${arguments}=    Create Dictionary    input_file=${input_file}
     ${request_body}=    Create Dictionary
-    ...    application_slug=olex2
-    ...    application_version=1.5-alpha
+    ...    application_slug=dummy_gui
+    ...    application_version=0.1.0
     ...    arguments=${arguments}
 
     ${response}=    Send API Request
@@ -190,8 +190,8 @@ Check /commands can open an interactive session instead of /interactive-sessions
     ${input_file}=    Create Dictionary    data_file_id=${TEST_DATA_FILE_ID}
     ${arguments}=    Create Dictionary    input_file=${input_file}
     ${request_body}=    Create Dictionary
-    ...    application_slug=olex2
-    ...    application_version=1.5-alpha
+    ...    application_slug=dummy_gui
+    ...    application_version=0.1.0
     ...    command_name=interactive_session
     ...    arguments=${arguments}
 

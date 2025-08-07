@@ -39,7 +39,6 @@ def get_current_pyqcrbox_version() -> str:
         pyqcrbox_version = __version__
     except ImportError:
         pyqcrbox_version = setuptools_scm.get_version(root=get_repo_root())
-    logger.info(f"pyqcrbox version: {pyqcrbox_version}")
     return pyqcrbox_version
 
 

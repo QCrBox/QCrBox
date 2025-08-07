@@ -3,8 +3,9 @@
 #
 name: "Dummy GUI"
 slug: "dummy_gui"
-version: "x.y.z"
+version: "0.1.0"
 description: "Dummy GUI for testing of interactive applications"
+url: ""
 
 commands:
   - name: "interactive_session"
@@ -12,14 +13,9 @@ commands:
     description: "Start dummy GUI"
     parameters:
       - name: "input_file"
-        dtype: "QCrBox.data_file"
+        dtype: "QCrBox.cif_data_file"
         description: "The file to open in the dummy GUI"
     interactive_lifecycle:
-#      prepare:
-#        implemented_as: "python_callable"
-#        import_path: "configure_olex2"
-#        callable_name: "prepare__interactive"
-#        used_basecommand_parameters: ["input_cif_path", "work_cif_path"]
       run:
         implemented_as: "cli_command"
         call_pattern: "python dummy_gui.py {input_file}"
