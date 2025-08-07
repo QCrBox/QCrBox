@@ -4,6 +4,7 @@ from typing import Annotated, Any
 import svcs
 from pydantic import BeforeValidator, field_validator, model_validator
 
+from pyqcrbox.debug import log_eel
 from pyqcrbox.logging import logger
 
 from ..base import QCrBoxPydanticBaseModel
@@ -36,6 +37,7 @@ class BuiltinParameter(BaseParameter):
     dtype: str
     value: Any
 
+    @log_eel
     async def prepare_for_execution(self, target_dir: str, target_filename: str | None = None) -> Any:
         return _builtin_dtypes[self.dtype](self.value)
 
@@ -43,6 +45,7 @@ class BuiltinParameter(BaseParameter):
 class DataFileParameter(BaseParameter):
     data_file_id: str
 
+    @log_eel
     async def prepare_for_execution(self, target_dir: str, target_filename: str | None = None) -> str:
         from pyqcrbox.data_management import DataFileManager
         from pyqcrbox.services import QCRBOX_GLOBAL_SERVICES_REGISTRY
@@ -59,6 +62,7 @@ class DataFileParameter(BaseParameter):
 class CifDataFileParameter(BaseParameter):
     data_file_id: str
 
+    @log_eel
     async def prepare_for_execution(self, target_dir: str, target_filename: str | None = None) -> str:
         from pyqcrbox.data_management import DataFileManager
         from pyqcrbox.services import QCRBOX_GLOBAL_SERVICES_REGISTRY
@@ -87,9 +91,9 @@ def verify_dtype_is_a_known_type(v: str) -> str:
 
 
 def parse_parameter_default_value_as_string(v: Any, dtype: type | None = None) -> BuiltinParameter:
-    if not dtype:
+    if not dtype or not isinstance(dtype, type):
         dtype = type(v)
-    return BuiltinParameter(dtype=str(dtype), value=v)
+    return BuiltinParameter(dtype=dtype.__name__, value=v)
 
 
 def parse_parameter_as_its_dtype(v: Any, dtype_str: str) -> Any:

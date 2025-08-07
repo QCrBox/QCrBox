@@ -6,6 +6,7 @@ import psutil
 
 from pyqcrbox import logger
 from pyqcrbox.data_management.data_file_manager import DataFileManager
+from pyqcrbox.debug import log_eel
 from pyqcrbox.sql_models import CalculationStatusEnum
 
 from .base_calculation import BaseCalculation
@@ -41,6 +42,7 @@ class PythonCallableCalculation(BaseCalculation):
         self.return_value = None
         self._terminated = False
 
+    @log_eel
     async def save_to_data_file_manager(self, data_file_manager: DataFileManager) -> None:
         """Save the output of the calculation to the Data File Manager.
 
@@ -67,6 +69,7 @@ class PythonCallableCalculation(BaseCalculation):
 
         logger.info(f"Created Dataset {self.output_dataset_id} containing data file {data_file_id}")
 
+    @log_eel
     async def wait_until_finished(self):
         """Wait until the calculation is finished."""
         await self.calc_finished_event.wait()
@@ -140,6 +143,7 @@ class PythonCallableCalculation(BaseCalculation):
         else:
             return "Retrieval of STDERR not implemented yet for PythonCallableCalculation"
 
+    @log_eel
     async def terminate(self):
         """Terminate the calculation."""
         logger.debug(
