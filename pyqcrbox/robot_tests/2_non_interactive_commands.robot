@@ -32,13 +32,13 @@ ${TEST_OUTPUT_DATASET_ID}       ${EMPTY}
 
 
 *** Test Cases ***
-Check a non-interactive command can be invoked
+Invoke a short running non-interactive command
     ${input_file}=    Create Dictionary    data_file_id=${TEST_DATA_FILE_ID}
-    ${arguments}=    Create Dictionary    input_cif=${input_file}    output_cif_path=/opt/qcrbox/test_cif.cif
+    ${arguments}=    Create Dictionary    input_cif=${input_file}    print_times=3
     ${request_body}=    Create Dictionary
-    ...    application_slug=qcrboxtools
-    ...    application_version=0.0.5
-    ...    command_name=to_unified_cif
+    ...    application_slug=dummy_cli
+    ...    application_version=0.1.0
+    ...    command_name=print_cif
     ...    arguments=${arguments}
 
     ${response}=    Send API Request
@@ -48,47 +48,95 @@ Check a non-interactive command can be invoked
     ...    201
     ...    json_data=${request_body}
     ${invoke_payload}=    Check Response And Get Payload    ${response}
-
-    Sleep    2s    "Waiting for non-interactive session to be registered and start"
-
     Check Response Has Attributes    ${invoke_payload}    calculation_id
     Set Suite Variable    ${TEST_CALCULATION_ID}    ${invoke_payload["calculation_id"]}
 
-Check that long running non-interactive commands can be stopped
-    ${response}=    Send API Request    POST    ${SESSION_ALIAS}    /calculations/${TEST_CALCULATION_ID}/stop    200
-    ${payload}=    Check Response And Get Payload    ${response}
-    Check Response Has Attributes    ${payload}   calculations
+Check that short command status is successful
+    ${calculation}=    Wait Until Keyword Succeeds
+    ...    10s
+    ...    2s
+    ...    Check Calculation Successful
+    ...    ${TEST_CALCULATION_ID}
 
-Check that the non-interactive command has stopped
-    ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /calculations/${TEST_CALCULATION_ID}    200
-    ${payload}=    Check Response And Get Payload    ${response}
+    # Use the output from this command as the output dataset which should be downloadable
+    Set Suite Variable    ${TEST_OUTPUT_DATASET_ID}    ${calculation["output_dataset_id"]}
+    Should Not Be None    ${TEST_OUTPUT_DATASET_ID}
 
-    Check Response Has Attributes    ${payload}    calculations
-    ${calculations}=    Set Variable    ${payload["calculations"]}
-    ${n_calculations}=    Get Length    ${calculations}
-    Should Be Equal As Integers    ${n_calculations}    1    "Multiple calculations retrieved, when only one requested"
-
-    Check Calculations Structure    ${calculations}
-    Should Not Be Equal    ${calculations[0]["status"]}    running
-
-Check that the calculation entry contains the output dataset id
-    ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /calculations/${TEST_CALCULATION_ID}    200
-    ${payload}=    Check Response And Get Payload    ${response}
-
-    Check Response Has Attributes    ${payload}    calculations
-    ${calculations}=    Set Variable    ${payload["calculations"]}
-    ${n_calculations}=    Get Length    ${calculations}
-    Should Be Equal As Integers    ${n_calculations}    1    "Multiple calculations retrieved, when only one requested"
-
-    Check Calculations Structure    ${calculations}
-    Set Suite Variable    ${TEST_OUTPUT_DATASET_ID}    ${calculations[0]["output_dataset_id"]}
-
-Check it's possible to download the non-interactive command's output dataset
+Download the output dataset from the short running command
     ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /datasets/${TEST_OUTPUT_DATASET_ID}    200
     Should Not Be Empty    ${response.content}
 
+Invoke a long running non-interactive command
+    ${arguments}=    Create Dictionary    dummy="hello"
+    ${request_body}=    Create Dictionary
+    ...    application_slug=dummy_cli
+    ...    application_version=0.1.0
+    ...    command_name=infinite_loop
+    ...    arguments=${arguments}
+
+    ${response}=    Send API Request
+    ...    POST
+    ...    ${SESSION_ALIAS}
+    ...    /commands
+    ...    201
+    ...    json_data=${request_body}
+    ${invoke_payload}=    Check Response And Get Payload    ${response}
+    Check Response Has Attributes    ${invoke_payload}    calculation_id
+    Set Suite Variable    ${TEST_CALCULATION_ID}    ${invoke_payload["calculation_id"]}
+
+Check that a long running non-interactive command is still running
+    Sleep    5s    "Letting the long running command run for a while"
+    ${calculation_status}=    Get Calculation Status    ${TEST_CALCULATION_ID}
+    Should Be Equal    ${calculation_status["status"]}    running
+
+Check that long running non-interactive command can be stopped
+   ${response}=    Send API Request    POST    ${SESSION_ALIAS}    /calculations/${TEST_CALCULATION_ID}/stop    200
+   ${payload}=    Check Response And Get Payload    ${response}
+   Check Response Has Attributes    ${payload}    calculations
+
+Check that the non-interactive command has stopped
+    ${calculation_status}=    Check Calculation Successful    ${TEST_CALCULATION_ID}
+    Should Be None    ${calculation_status["output_dataset_id"]}
+
 
 *** Keywords ***
+Get Calculation Status
+    [Arguments]    ${calculation_id}
+
+    ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /calculations/${calculation_id}    200
+    ${payload}=    Check Response And Get Payload    ${response}
+
+    Check Response Has Attributes    ${payload}    calculations
+    ${calculations}=    Set Variable    ${payload["calculations"]}
+    ${n_calculations}=    Get Length    ${calculations}
+    Should Be Equal As Integers    ${n_calculations}    1    "Multiple calculations retrieved, when only one requested"
+
+    Check Calculations Structure    ${calculations}
+    ${calculation_status}=    Set Variable    ${calculations[0]}
+
+    RETURN    ${calculation_status}
+
+Check Calculation Successful
+    [Arguments]    ${calculation_id}
+    ${calculation_status}=    Get Calculation Status    ${calculation_id}
+    Should Be Equal    ${calculation_status["status"]}    successful
+
+    RETURN    ${calculation_status}
+
+Check Calculations Structure
+    [Arguments]    ${calculations}
+    FOR    ${calculation}    IN    @{calculations}
+        Check Response Has Attributes
+        ...    ${calculation}
+        ...    calculation_id
+        ...    application_slug
+        ...    application_version
+        ...    command_name
+        ...    status
+        ...    arguments
+        ...    output_dataset_id
+    END
+
 Setup suite
     Create API Session    ${SESSION_ALIAS}    ${ENDPOINTS_API}
     Log datetime information
@@ -127,17 +175,3 @@ Delete Test Dataset
 
 Delete Output Dataset
     ${response}=    Send API Request    DELETE    ${SESSION_ALIAS}    /datasets/${TEST_OUTPUT_DATASET_ID}    204
-
-Check Calculations Structure
-    [Arguments]    ${calculations}
-    FOR    ${calculation}    IN    @{calculations}
-        Check Response Has Attributes
-        ...    ${calculation}
-        ...    calculation_id
-        ...    application_slug
-        ...    application_version
-        ...    command_name
-        ...    status
-        ...    arguments
-        ...    output_dataset_id
-    END

@@ -20,7 +20,29 @@ commands:
         default_value: 5.0
         description: "Sleep duration (in seconds)"
 
-  - name: "sample_cmd"
+  - name: "print_cif"
+    description: "A short Python function which prints the name of the input CIF and returns it back"
+    implemented_as: "python_callable"
+    import_path: "sample_functions"
+    parameters:
+      - name: "input_cif"
+        dtype: "QCrBox.cif_data_file"
+        description: "The input CIF file"
+      - name: "print_times"
+        dtype: "int"
+        default_value: "2"
+        description: "The number of times to print the CIF file"
+
+  - name: "infinite_loop"
+    description: "A Python function which loops infinitely until cancelled"
+    implemented_as: "python_callable"
+    import_path: "sample_functions"
+    parameters:
+      - name: "dummy"
+        dtype: str
+        description: "An unused dummy parameter"
+
+  - name: "sample_cli_cmd"
     implemented_as: "cli_command"
     call_pattern: "sample_cmd.sh {msg} {some_number}"
     parameters:
