@@ -11,6 +11,21 @@ from ..base import QCrBoxPydanticBaseModel
 SENTINEL_UNDEFINED = "<undefined>"
 
 
+_builtin_dtypes = {
+    "str": str,
+    "int": int,
+    "float": float,
+    "bool": bool,
+    "QCrBox.input_cif": str,
+    "QCrBox.output_cif": str,
+    "QCrBox.work_cif": str,
+    "QCrBox.folder_path": str,
+    "QCrBox.input_path": str,
+    "QCrBox.output_path": str,
+    "QCrBox.input_folder": str,
+}
+
+
 class BaseParameter(QCrBoxPydanticBaseModel, ABC):
     @abstractmethod
     async def prepare_for_execution(self, target_dir: str, target_filename: str | None = None) -> Any:
@@ -22,7 +37,7 @@ class BuiltinParameter(BaseParameter):
     value: Any
 
     async def prepare_for_execution(self, target_dir: str, target_filename: str | None = None) -> Any:
-        return self.value
+        return _builtin_dtypes[self.dtype](self.value)
 
 
 class DataFileParameter(BaseParameter):
@@ -57,20 +72,6 @@ class CifDataFileParameter(BaseParameter):
         return str(exported_file_path)
 
 
-_builtin_dtypes = {
-    "str": str,
-    "int": int,
-    "float": float,
-    "bool": bool,
-    "QCrBox.input_cif": str,
-    "QCrBox.output_cif": str,
-    "QCrBox.work_cif": str,
-    "QCrBox.folder_path": str,
-    "QCrBox.input_path": str,
-    "QCrBox.output_path": str,
-    "QCrBox.input_folder": str,
-}
-
 _custom_dtypes = {
     "QCrBox.data_file": DataFileParameter,
     "QCrBox.cif_data_file": CifDataFileParameter,
@@ -91,13 +92,13 @@ def parse_parameter_default_value_as_string(v: Any, dtype: type | None = None) -
     return BuiltinParameter(dtype=str(dtype), value=v)
 
 
-def parse_parameter_as_its_dtype(v: Any, dtype_str) -> Any:
+def parse_parameter_as_its_dtype(v: Any, dtype_str: str) -> Any:
     if dtype_str not in _known_dtypes:
         raise ValueError(f"Unsupported parameter type: {dtype_str}")
 
     if dtype_str in _builtin_dtypes:
         dtype = _builtin_dtypes[dtype_str]
-        return BuiltinParameter(dtype=str(dtype), value=v)
+        return BuiltinParameter(dtype=dtype.__name__, value=dtype(v))
 
     try:
         result = _known_dtypes[dtype_str](**v) if isinstance(v, dict) else _known_dtypes[dtype_str](v)
