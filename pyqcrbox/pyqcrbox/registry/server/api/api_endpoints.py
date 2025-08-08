@@ -247,7 +247,7 @@ async def invoke_command(
         application_slug=data.application_slug,
         application_version=data.application_version,
         command_name=data.command_name,
-        arguments=data.arguments,
+        arguments=data.command_arguments,
     )
     try:
         response = await api_helpers.invoke_command(command_spec, nats_broker=nats_broker)
@@ -536,7 +536,7 @@ async def get_interactive_session_by_id(
     media_type=MediaType.JSON,
     summary="Create interactive session",
     tags=["interactive-sessions"],
-    operation_id="create_interactive_session_with_arguments",
+    operation_id="create_interactive_session",
     responses={400: schema.BAD_REQUEST_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
 async def create_interactive_session_with_arguments(
@@ -547,7 +547,7 @@ async def create_interactive_session_with_arguments(
         application_slug=data.application_slug,
         application_version=data.application_version,
         command_name="interactive_session",
-        arguments=data.arguments,
+        arguments=data.command_arguments,
     )
     try:
         response = await api_helpers.invoke_command(command_spec, nats_broker=nats_broker)

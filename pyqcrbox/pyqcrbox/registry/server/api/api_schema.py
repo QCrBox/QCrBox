@@ -35,7 +35,7 @@ class CreateInteractiveSessionParameters(BaseModel):
 
     application_slug: str
     application_version: str
-    arguments: dict[str, Any]
+    command_arguments: dict[str, Any]
 
 
 class InvokeCommandParameters(BaseModel):
@@ -60,7 +60,7 @@ class InvokeCommandParameters(BaseModel):
     application_slug: str
     application_version: str
     command_name: str
-    arguments: dict[str, Any]
+    command_arguments: dict[str, Any]
 
 
 # Success responses
