@@ -8,8 +8,10 @@ regressions from being introduced. This page covers the current testing infrastr
 QCrBox uses Robot Framework to run acceptance tests that validate the system's behavior from an end-user perspective.
 Test suites for Robot Framework are kept in `QCrBox/pyqcbox/robot_tests`. There are currently two test suites:
 
-- `api_endpoints.robot` - tests the API endpoints
-- `web_interface.robot` - tests the QCrBoxFrontend Django website
+- `1_endpoints.robot` - tests some API endpoints which are used in the other test suites
+- `2_non_interactive_commands.robot` - tests non-interactive command invocation, status checking and stopping
+- `3_interactive.robot` - tests interactive command invocation, status checking and closing
+- `4_calculations.robot` - tests the calculation status endpoints more thoroughly
 
 We have used Robot Framework because it's keyword-driven approach to makes writing, reading and maintaining tests simple
 in comparison to other testing frameworks. This should make it easier for tests suites to be maintained and expanded by
@@ -24,47 +26,52 @@ cd ./pyqcrbox/robot_tests
 robot *.robot
 ```
 
+## Pytest
+
+In addition to the Robot Framework acceptance tests, we also have a small suite of unit (and smaller integration) tests.
+These tests are designed to poke at the core functionality of the `pyqcrbox` Python package, whereas the Robot Framework
+tests are for validation the API.
+
+```shell
+cd ./pyqcrbox/tests
+pytest
+```
+
 ## CI/CD pipeline
 
 GitHub Actions are used to test the QCrBox builds and that the API behaves as expected. These tests are run on every
 pull request to `main` and `dev` and typically takes ~10 minutes to run.
 
-### Using the `--test-only` flag with `qcb` to build the minimum set of containers for testing
+### Using the `--test` flag with `qcb` to build the minimum set of containers for testing
 
-It is not recommended to do this for regular development work. This functionality exists to decrease build and test times
-in GitHub actions or for power users who need faster testing.
-
-If you need to use this flag, take down all QCrBox containers to avoid conflicts between different container
-configurations and port mappings.
-
-```shell
-qcb down
-```
-
-Using the `--test-only` flag will build the minimum set of containers required for running the test suite, including:
-qcrbox-registry, qcrbox-nats, olex2, qcrbox_quality and qcrbox-reverse-proxy. This setup excludes building multiple
-application and logging containers which aren't necessary for core testing.
+It is not recommended to do this for regular development work. This functionality exists to decrease build and test
+times in GitHub actions or for power users who need faster testing. Using the `--test` flag will build the minimum set
+of containers required for running the test suite: qcrbox-registry, qcrbox-nats, qcrbox-reverse-proxy, dummy_cli and
+dummy_gui. This setup excludes building multiple application and logging containers which aren't necessary for core
+testing.
 
 ```shell
-qcb up --test-only
+qcb up --test
 ```
 
-When using `--test-only`, the same ports will be used as the normal deployment. Note that there will be no log
+When using `--test`, the same ports will be used as the normal deployment but note that there will be no log
 aggregation in the test deployment.
 
 ## Devbox test script
 
-The devbox test script provides a convenient way to run the complete API test suite with a single command:
+We have multiple Devbox scripts which provide a convenient way to run the test suites:
 
 ```shell
-devbox run test-api
+devbox run test-mode
+devbox run robot-framework
+devbox run pytest
 ```
 
-This command will automatically:
+These commands will:
 
-- Take down any running containers
-- Start the necessary test containers if they're not already running
-- Execute the full Robot Framework test suite against the API endpoints
+1. Remove any running containers and bring QCrBox into test mode (`qcb up --test`)
+2. Execute the Robot Framework test suite
+3. Execute the Pytest test suite
 
 ## Best practices for testing
 
