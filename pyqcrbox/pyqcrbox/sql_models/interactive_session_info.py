@@ -27,5 +27,5 @@ class InteractiveSessionInfo(QCrBoxPydanticBaseModel):
             application_slug=self.cmd_execution_request.application_slug,
             application_version=self.cmd_execution_request.application_version,
             command_name=self.cmd_execution_request.command_name,
-            arguments=self.cmd_execution_request.arguments,
+            arguments=self.cmd_execution_request.command_arguments,
         )

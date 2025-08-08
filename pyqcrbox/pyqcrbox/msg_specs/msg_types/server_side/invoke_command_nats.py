@@ -11,7 +11,7 @@ class InvokeCommandNATS(QCrBoxPydanticBaseModel):
     application_slug: str
     application_version: str
     command_name: str
-    arguments: dict[str, Any]
+    command_arguments: dict[str, Any]
 
     @property
     def nats_subject_parts(self):

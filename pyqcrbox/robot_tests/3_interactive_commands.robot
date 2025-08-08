@@ -40,7 +40,7 @@ Check /interactive-sessions can create an interactive session
     ${request_body}=    Create Dictionary
     ...    application_slug=dummy_gui
     ...    application_version=0.1.0
-    ...    arguments=${arguments}
+    ...    command_arguments=${arguments}
 
     ${response}=    Send API Request
     ...    POST
@@ -69,7 +69,7 @@ Check /interactive-sessions returns an error when client is busy
     ${request_body}=    Create Dictionary
     ...    application_slug=dummy_gui
     ...    application_version=0.1.0
-    ...    arguments=${arguments}
+    ...    command_arguments=${arguments}
 
     ${response}=    Send API Request
     ...    POST
@@ -84,7 +84,7 @@ Check /interactive-sessions fails for incorrect application
     ${request_body}=    Create Dictionary
     ...    application_slug=olex-999
     ...    application_version=1.5-alpha
-    ...    arguments=${arguments}
+    ...    command_arguments=${arguments}
     ${response}=    Send API Request
     ...    POST
     ...    ${SESSION_ALIAS}
@@ -155,7 +155,7 @@ Check /interactive-sessions can open a new session after the last was closed
     ${request_body}=    Create Dictionary
     ...    application_slug=dummy_gui
     ...    application_version=0.1.0
-    ...    arguments=${arguments}
+    ...    command_arguments=${arguments}
 
     ${response}=    Send API Request
     ...    POST
@@ -193,7 +193,7 @@ Check /commands can open an interactive session instead of /interactive-sessions
     ...    application_slug=dummy_gui
     ...    application_version=0.1.0
     ...    command_name=interactive_session
-    ...    arguments=${arguments}
+    ...    command_arguments=${arguments}
 
     ${response}=    Send API Request
     ...    POST

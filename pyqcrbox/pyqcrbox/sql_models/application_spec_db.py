@@ -11,7 +11,7 @@ from .application_spec import ApplicationSpec, ApplicationSpecBase
 from .command_spec import CommandSpecDB
 
 if typing.TYPE_CHECKING:
-    from .application_spec import ApplicationSpecWithCommands
+    from .application_spec import ApplicationSpecWithCommandsResponse
 
 
 class ApplicationSpecDB(ApplicationSpecBase, SQLModel, table=True):
@@ -186,7 +186,7 @@ class ApplicationSpecDB(ApplicationSpecBase, SQLModel, table=True):
 
             return self
 
-    def to_response_model(self) -> "ApplicationSpecWithCommands":
+    def to_response_model(self) -> "ApplicationSpecWithCommandsResponse":
         """Convert the ApplicationSpecDB to an ApplicationSpecWithCommands response model.
 
         Returns
@@ -195,6 +195,6 @@ class ApplicationSpecDB(ApplicationSpecBase, SQLModel, table=True):
             A Pydantic response model populated with data from this instance.
 
         """
-        from .application_spec import ApplicationSpecWithCommands
+        from .application_spec import ApplicationSpecWithCommandsResponse
 
-        return ApplicationSpecWithCommands(**self.model_dump(as_response_model=True))
+        return ApplicationSpecWithCommandsResponse(**self.model_dump(as_response_model=True))

@@ -82,5 +82,5 @@ Check Calculations Structure
         ...    application_version
         ...    command_name
         ...    status
-        ...    arguments
+        ...    command_arguments
     END

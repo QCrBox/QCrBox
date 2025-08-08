@@ -7,7 +7,7 @@ from pyqcrbox.sql_models.base import QCrBoxPydanticBaseModel
 from pyqcrbox.sql_models.calculation_status_event import CalculationStatusDetails, CalculationStatusEnum
 
 
-class CalculationNatsBase(QCrBoxPydanticBaseModel):
+class CalculationBase(QCrBoxPydanticBaseModel):
     """Base dataclass for calculation metadata."""
 
     calculation_id: str
@@ -15,10 +15,10 @@ class CalculationNatsBase(QCrBoxPydanticBaseModel):
     application_slug: str
     application_version: str
     command_name: str
-    arguments: dict[str, Any]
+    command_arguments: dict[str, Any]
 
 
-class CalculationNatsResponseModel(CalculationNatsBase):
+class CalculationResponse(CalculationBase):
     """Calculation response model, for API responses."""
 
     status: str
@@ -26,7 +26,7 @@ class CalculationNatsResponseModel(CalculationNatsBase):
     output_dataset_id: str | None
 
 
-class CalculationDB(CalculationNatsBase):
+class CalculationDB(CalculationBase):
     """Dataclass containing metadata about a calculation, used for NATS."""
 
     timestamp: datetime = Field(default_factory=datetime.now)
@@ -72,7 +72,7 @@ class CalculationDB(CalculationNatsBase):
             self.status_events[-1].output_dataset_id,
         )
 
-    def to_response_model(self) -> CalculationNatsResponseModel:
+    def to_response_model(self) -> CalculationResponse:
         """Convert this instance into a response model.
 
         Returns
@@ -90,8 +90,8 @@ class CalculationDB(CalculationNatsBase):
                 "application_slug",
                 "application_version",
                 "command_name",
-                "arguments",
+                "command_arguments",
             ],  # type: ignore
         )
 
-        return CalculationNatsResponseModel(**data)
+        return CalculationResponse(**data)

@@ -2,7 +2,7 @@ from pyqcrbox.sql_models import QCrBoxPydanticBaseModel
 
 __all__ = [
     "StopRunningCalculationMsg",
-    "StoppedCalculationResponseMsg",
+    "StoppedCalculationResponse",
 ]
 
 
@@ -10,7 +10,7 @@ class StopRunningCalculationMsg(QCrBoxPydanticBaseModel):
     calculation_id: str
 
 
-class StoppedCalculationResponseMsg(QCrBoxPydanticBaseModel):
+class StoppedCalculationResponse(QCrBoxPydanticBaseModel):
     calculation_id: str
     status: str
     output_dataset_id: str | None

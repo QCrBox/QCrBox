@@ -208,7 +208,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
                 await command.add_to_interactive_session_database(
                     data_file_manager, execute_request, self.private_inbox
                 )
-            parameters = await command.prepare_params(self.working_dir, execute_request.arguments)
+            parameters = await command.prepare_params(self.working_dir, execute_request.command_arguments)
             logger.debug(f"Executing command {command!r} in the background with arguments {parameters!r}")
             calc = await command.execute_in_background(
                 **parameters, _calculation_id=execute_request.calculation_id, _cwd=self.working_dir
@@ -328,7 +328,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
     @log_eel
     async def handle_stop_running_command(
         self, msg: msg_specs.StopRunningCalculationMsg
-    ) -> msg_specs.StoppedCalculationResponseMsg:
+    ) -> msg_specs.StoppedCalculationResponse:
         """Handle when a long running command is requested to be ended.
 
         Parameters
@@ -351,7 +351,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         if self.status.status != ClientStatusEnum.BUSY:
             error_msg = f"Client is not busy, there is no command to terminate (client status {self.status.status})"
             logger.error(error_msg)
-            return msg_specs.StoppedCalculationResponseMsg(
+            return msg_specs.StoppedCalculationResponse(
                 calculation_id=calculation_id,
                 status=CalculationStatusEnum.UNKNOWN,
                 output_dataset_id=None,
@@ -363,7 +363,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         except KeyError:
             error_msg = f"Calculation {calculation_id!r} was not found in client"
             logger.error(error_msg)
-            return msg_specs.StoppedCalculationResponseMsg(
+            return msg_specs.StoppedCalculationResponse(
                 calculation_id=calculation_id,
                 status=CalculationStatusEnum.UNKNOWN,
                 output_dataset_id=None,
@@ -375,7 +375,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         if calc.status != CalculationStatusEnum.RUNNING:
             error_msg = f"Trying to end calculation {calculation_id} which is not running on the client"
             logger.error(error_msg)
-            return msg_specs.StoppedCalculationResponseMsg(
+            return msg_specs.StoppedCalculationResponse(
                 calculation_id=calculation_id,
                 status=calc.status,
                 output_dataset_id=calc.output_dataset_id,
@@ -391,7 +391,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         except AttributeError:
             exc_msg = f"Calculation {calculation_id} does not have a terminate method, something very bad has happened"
             logger.exception(exc_msg)
-            return msg_specs.StoppedCalculationResponseMsg(
+            return msg_specs.StoppedCalculationResponse(
                 calculation_id=calculation_id,
                 status=CalculationStatusEnum.FAILED,
                 output_dataset_id=None,
@@ -406,7 +406,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         data_file_manager = await self.svcs_container.aget(DataFileManager)
         await data_file_manager.update_calculation_status_events(await calc.get_status_details())
 
-        return msg_specs.StoppedCalculationResponseMsg(
+        return msg_specs.StoppedCalculationResponse(
             calculation_id=calculation_id,
             status=calc.status,
             output_dataset_id=calc.output_dataset_id,
@@ -416,7 +416,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
     @log_eel
     async def close_interactive_session(
         self, msg: msg_specs.CloseInteractiveSessionNATS
-    ) -> msg_specs.CloseInteractiveSessionResponseNATS:
+    ) -> msg_specs.CloseInteractiveSessionResponse:
         """Close an interactive session.
 
         Terminates any running calculations and closes the session. If the interactive
@@ -441,7 +441,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
 
         if session_id not in self.calculations:
             logger.error(f"Calculation not found in client for {session_id!r}")
-            response = msg_specs.CloseInteractiveSessionResponseNATS(
+            response = msg_specs.CloseInteractiveSessionResponse(
                 session_id=session_id,
                 status=CalculationStatusEnum.UNKNOWN,
                 output_dataset_id=None,
@@ -454,14 +454,14 @@ class QCrBoxClient(QCrBoxServerClientBase):
             await calc.terminate()
         except AttributeError:
             logger.exception(f"Unable to terminate interactive session: {calc!r}")
-            response = msg_specs.CloseInteractiveSessionResponseNATS(
+            response = msg_specs.CloseInteractiveSessionResponse(
                 session_id=session_id, status=CalculationStatusEnum.FAILED, output_dataset_id=None
             )
             return response
         self.status.set_idle()
         logger.debug("Interactive session has been closed and client set to idle")
 
-        response = msg_specs.CloseInteractiveSessionResponseNATS(
+        response = msg_specs.CloseInteractiveSessionResponse(
             session_id=session_id,
             status=calc.status,
             output_dataset_id=calc.output_dataset_id,

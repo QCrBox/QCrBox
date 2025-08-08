@@ -39,7 +39,7 @@ Invoke a short running non-interactive command
     ...    application_slug=dummy_cli
     ...    application_version=0.1.0
     ...    command_name=print_cif
-    ...    arguments=${arguments}
+    ...    command_arguments=${arguments}
 
     ${response}=    Send API Request
     ...    POST
@@ -72,7 +72,7 @@ Invoke a long running non-interactive command
     ...    application_slug=dummy_cli
     ...    application_version=0.1.0
     ...    command_name=infinite_loop
-    ...    arguments=${arguments}
+    ...    command_arguments=${arguments}
 
     ${response}=    Send API Request
     ...    POST
@@ -133,7 +133,7 @@ Check Calculations Structure
         ...    application_version
         ...    command_name
         ...    status
-        ...    arguments
+        ...    command_arguments
         ...    output_dataset_id
     END
 

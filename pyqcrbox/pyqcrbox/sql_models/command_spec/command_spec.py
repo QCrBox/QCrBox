@@ -7,7 +7,7 @@ from .cli_command_spec import CLICommandSpec
 from .interactive_session_spec import InteractiveSessionSpec
 from .python_callable_spec import PythonCallableSpec
 
-__all__ = ["CommandSpecDiscriminatedUnion", "CommandSpec", "CommandSpecWithParameters"]
+__all__ = ["CommandSpecDiscriminatedUnion", "CommandSpec", "CommandSpecWithParametersResponse"]
 
 
 CommandSpecTaggedUnion = (
@@ -24,7 +24,7 @@ def CommandSpec(**command_spec_json) -> CommandSpecDiscriminatedUnion:
     return command_spec_adapter.validate_python(command_spec_json)
 
 
-class CommandSpecWithParameters(BaseCommandSpec):
+class CommandSpecWithParametersResponse(BaseCommandSpec):
     id: int
     application_id: int
     parameters: dict

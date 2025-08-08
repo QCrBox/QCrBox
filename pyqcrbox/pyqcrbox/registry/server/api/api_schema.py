@@ -3,12 +3,12 @@ from typing import Any, Generic, TypeVar
 from litestar.openapi.datastructures import ResponseSpec
 from pydantic import BaseModel
 
-from pyqcrbox.data_management.data_file import DataFileMetadataResponse, DatasetResponse
-from pyqcrbox.msg_specs.msg_types.client_side.get_calculation_status import CloseInteractiveSessionResponseNATS
-from pyqcrbox.msg_specs.msg_types.client_side.stop_calculation import StoppedCalculationResponseMsg
-from pyqcrbox.sql_models.application_spec import ApplicationSpecWithCommands
-from pyqcrbox.sql_models.calculation import CalculationNatsResponseModel
-from pyqcrbox.sql_models.command_spec import CommandSpecWithParameters
+from pyqcrbox.data_management.data_file import DataFileInfoResponse, DatasetInfoResponse
+from pyqcrbox.msg_specs.msg_types.client_side.get_calculation_status import CloseInteractiveSessionResponse
+from pyqcrbox.msg_specs.msg_types.client_side.stop_calculation import StoppedCalculationResponse
+from pyqcrbox.sql_models.application_spec import ApplicationSpecWithCommandsResponse
+from pyqcrbox.sql_models.calculation import CalculationResponse
+from pyqcrbox.sql_models.command_spec import CommandSpecWithParametersResponse
 from pyqcrbox.sql_models.interactive_session_info import InteractiveSessionInfoResponse
 
 T = TypeVar("T")
@@ -111,7 +111,7 @@ class ApplicationsResponse(BaseModel):
 
     """
 
-    applications: list[ApplicationSpecWithCommands]
+    applications: list[ApplicationSpecWithCommandsResponse]
 
 
 class CalculationsResponse(BaseModel):
@@ -124,7 +124,7 @@ class CalculationsResponse(BaseModel):
 
     """
 
-    calculations: list[CalculationNatsResponseModel]
+    calculations: list[CalculationResponse]
 
 
 class CommandsResponse(BaseModel):
@@ -137,7 +137,7 @@ class CommandsResponse(BaseModel):
 
     """
 
-    commands: list[CommandSpecWithParameters]
+    commands: list[CommandSpecWithParametersResponse]
 
 
 class DataFilesResponse(BaseModel):
@@ -150,7 +150,7 @@ class DataFilesResponse(BaseModel):
 
     """
 
-    data_files: list[DataFileMetadataResponse]
+    data_files: list[DataFileInfoResponse]
 
 
 class DatasetsResponse(BaseModel):
@@ -163,7 +163,7 @@ class DatasetsResponse(BaseModel):
 
     """
 
-    datasets: list[DatasetResponse]
+    datasets: list[DatasetInfoResponse]
 
 
 class InvokeCommandResponse(BaseModel):
@@ -215,10 +215,10 @@ class InteractiveSessionClosedResponse(BaseModel):
 
     """
 
-    interactive_sessions: list[CloseInteractiveSessionResponseNATS]
+    interactive_sessions: list[CloseInteractiveSessionResponse]
 
 
-class StoppedCalculationResponse(BaseModel):
+class CalculationStoppedResponse(BaseModel):
     """Response model for a command which was stopped.
 
     Attributes
@@ -228,7 +228,7 @@ class StoppedCalculationResponse(BaseModel):
 
     """
 
-    calculations: list[StoppedCalculationResponseMsg]
+    calculations: list[StoppedCalculationResponse]
 
 
 # Error responses

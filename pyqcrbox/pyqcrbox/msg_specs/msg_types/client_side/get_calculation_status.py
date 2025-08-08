@@ -4,7 +4,7 @@ __all__ = [
     "GetCalculationStatusNATS",
     "CalculationStatusResponseNATS",
     "CloseInteractiveSessionNATS",
-    "CloseInteractiveSessionResponseNATS",
+    "CloseInteractiveSessionResponse",
 ]
 
 
@@ -21,7 +21,7 @@ class CloseInteractiveSessionNATS(QCrBoxPydanticBaseModel):
     session_id: str
 
 
-class CloseInteractiveSessionResponseNATS(QCrBoxPydanticBaseModel):
+class CloseInteractiveSessionResponse(QCrBoxPydanticBaseModel):
     session_id: str
     status: str
     output_dataset_id: str | None

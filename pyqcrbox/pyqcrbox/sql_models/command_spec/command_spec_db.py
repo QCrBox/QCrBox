@@ -7,7 +7,7 @@ from .base_command_spec import ImplementedAs
 from .command_spec import CommandSpec
 
 if TYPE_CHECKING:
-    from pyqcrbox.sql_models import ApplicationSpecDB, CommandSpecWithParameters
+    from pyqcrbox.sql_models import ApplicationSpecDB, CommandSpecWithParametersResponse
 
 
 class CommandSpecDB(QCrBoxBaseSQLModel, table=True):
@@ -103,7 +103,7 @@ class CommandSpecDB(QCrBoxBaseSQLModel, table=True):
 
         return cls(**data)
 
-    def to_response_model(self) -> "CommandSpecWithParameters":
+    def to_response_model(self) -> "CommandSpecWithParametersResponse":
         """Convert this instance into a response model for API responses.
 
         Returns
@@ -112,8 +112,8 @@ class CommandSpecDB(QCrBoxBaseSQLModel, table=True):
             The response model
 
         """
-        from .command_spec import CommandSpecWithParameters
+        from .command_spec import CommandSpecWithParametersResponse
 
         data = self.model_dump(as_response_model=True)
 
-        return CommandSpecWithParameters(**data)
+        return CommandSpecWithParametersResponse(**data)

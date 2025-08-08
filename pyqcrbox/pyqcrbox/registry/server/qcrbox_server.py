@@ -44,7 +44,7 @@ class CalculationDetails(BaseModel):
     application_slug: str
     application_version: str
     command_name: str
-    arguments: dict[str, Any]
+    command_arguments: dict[str, Any]
     executing_client: ExecutingClientDetails | None = None
 
 
@@ -129,7 +129,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
             application_slug=msg.application_slug,
             application_version=msg.application_version,
             command_name=msg.command_name,
-            arguments=msg.arguments,
+            command_arguments=msg.command_arguments,
             calculation_id=calculation_id,
         )
 
@@ -176,7 +176,6 @@ class QCrBoxServer(QCrBoxServerClientBase):
 
         """
         logger.info(f"Received client response: {msg!r}")
-        logger.debug("[EEL][ENTER] handle_command_invocation_client_response")
 
         # If the client is not available, discard request and return
         if not msg.client_is_available:
@@ -214,8 +213,8 @@ class QCrBoxServer(QCrBoxServerClientBase):
             application_slug=calc.application_slug,
             application_version=calc.application_version,
             command_name=calc.command_name,
-            arguments=calc.arguments,
-            calculation_id=msg.calculation_id,
+            command_arguments=calc.command_arguments,
+            calculation_id=calc.calculation_id,
         )
         logger.debug(f"Message to client for command execution: {response_to_client}")
         await self.nats_broker.publish(response_to_client, subject=f"{msg.private_inbox_prefix}.cmd.execute")
@@ -260,16 +259,13 @@ class QCrBoxServer(QCrBoxServerClientBase):
                 payload={"error": f"The client '{client_id!r}' is not available to execute the command request"},
             )
 
-        logger.debug("Adding accepted command request to database")
-        logger.debug(f"{user_invocation_request= }")
-        logger.debug(f"{client_invocation_response= }")
         calculation_db_entry = CalculationDB(
             calculation_id=user_invocation_request.calculation_id,
             client_private_inbox=client_invocation_response.private_inbox_prefix,
             application_slug=user_invocation_request.application_slug,
             application_version=user_invocation_request.application_version,
             command_name=user_invocation_request.command_name,
-            arguments=user_invocation_request.arguments,
+            command_arguments=user_invocation_request.command_arguments,
         )
 
         # Don't allow the same calculation to be added to the database multiple times.

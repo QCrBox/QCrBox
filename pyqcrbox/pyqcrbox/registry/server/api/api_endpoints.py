@@ -151,7 +151,7 @@ async def get_calculation_by_id(
 )
 async def stop_running_calculation(
     id: str = Parameter(title="Calculation ID"), *, nats_broker: NatsBroker, data_file_manager: DataFileManager
-) -> schema.QCrBoxResponse[schema.StoppedCalculationResponse]:
+) -> schema.QCrBoxResponse[schema.CalculationStoppedResponse]:
     """Stop a currently running command, interactive and non-interactive."""
     try:
         stopped_calculation = await api_helpers.stop_running_calculation(

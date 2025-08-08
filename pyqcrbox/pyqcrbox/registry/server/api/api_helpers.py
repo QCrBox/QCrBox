@@ -10,9 +10,9 @@ from sqlalchemy.orm import joinedload
 from sqlmodel import select
 
 from pyqcrbox import logger, msg_specs, settings, sql_models
-from pyqcrbox.data_management import DataFileManager, DatasetResponse
-from pyqcrbox.data_management.data_file import DataFileMetadataResponse
-from pyqcrbox.sql_models.calculation import CalculationNatsResponseModel
+from pyqcrbox.data_management import DataFileManager, DatasetInfoResponse
+from pyqcrbox.data_management.data_file import DataFileInfoResponse
+from pyqcrbox.sql_models.calculation import CalculationResponse
 
 
 class CalculationNotFoundError(Exception):
@@ -82,7 +82,7 @@ def _verify_command_exists(
 
 async def close_interactive_session(
     session_id: str, *, nats_broker: NatsBroker, data_file_manager: DataFileManager
-) -> msg_specs.CloseInteractiveSessionResponseNATS:
+) -> msg_specs.CloseInteractiveSessionResponse:
     session_info = await data_file_manager.get_interactive_session_info(session_id)
 
     msg = msg_specs.CloseInteractiveSessionNATS(session_id=session_id)
@@ -92,7 +92,7 @@ async def close_interactive_session(
         rpc=True,
     )
 
-    response = msg_specs.CloseInteractiveSessionResponseNATS(**response_json)
+    response = msg_specs.CloseInteractiveSessionResponse(**response_json)
     return response
 
 
@@ -127,7 +127,7 @@ async def delete_dataset(dataset_id: str, *, data_file_manager: DataFileManager)
     await data_file_manager.delete_dataset(dataset_id)
 
 
-async def get_calculations(*, data_file_manager: DataFileManager) -> list[CalculationNatsResponseModel]:
+async def get_calculations(*, data_file_manager: DataFileManager) -> list[CalculationResponse]:
     calculations = await data_file_manager.get_calculations()
 
     return [c.to_response_model() for c in calculations]
@@ -135,7 +135,7 @@ async def get_calculations(*, data_file_manager: DataFileManager) -> list[Calcul
 
 async def get_calculation_by_calculation_id(
     calculation_id: str, *, data_file_manager: DataFileManager
-) -> CalculationNatsResponseModel:
+) -> CalculationResponse:
     try:
         calculation = await data_file_manager.get_calculation_details(calculation_id)
     except KeyError as exc:
@@ -144,22 +144,22 @@ async def get_calculation_by_calculation_id(
     return calculation
 
 
-async def get_data_file_info(data_file_id: str, *, data_file_manager: DataFileManager) -> DataFileMetadataResponse:
+async def get_data_file_info(data_file_id: str, *, data_file_manager: DataFileManager) -> DataFileInfoResponse:
     data_file = await data_file_manager.get_file_metadata(data_file_id)
     return data_file.to_response_model()
 
 
-async def get_data_files(*, data_file_manager: DataFileManager) -> list[DataFileMetadataResponse]:
+async def get_data_files(*, data_file_manager: DataFileManager) -> list[DataFileInfoResponse]:
     data_files = await data_file_manager.get_data_files()
     return [f.to_response_model() for f in data_files]
 
 
-async def get_dataset_info(dataset_id: str, *, data_file_manager: DataFileManager) -> DatasetResponse:
+async def get_dataset_info(dataset_id: str, *, data_file_manager: DataFileManager) -> DatasetInfoResponse:
     dataset_info = await data_file_manager.get_dataset_info(dataset_id)
     return dataset_info.to_response_model()
 
 
-async def get_datasets(*, data_file_manager: DataFileManager) -> list[DatasetResponse]:
+async def get_datasets(*, data_file_manager: DataFileManager) -> list[DatasetInfoResponse]:
     datasets = await data_file_manager.get_datasets()
     return [d.to_response_model() for d in datasets]
 
@@ -199,7 +199,7 @@ async def invoke_command(data: sql_models.CommandInvocationCreate, *, nats_broke
         application_slug=cmd_spec_db.application.slug,
         application_version=cmd_spec_db.application.version,
         command_name=cmd_spec_db.name,
-        arguments=data.arguments,
+        command_arguments=data.arguments,
     )
     response_json = await nats_broker.publish(msg, "server.cmd.handle_command_invocation_by_user", rpc=True)
 
@@ -212,7 +212,7 @@ async def invoke_command(data: sql_models.CommandInvocationCreate, *, nats_broke
 
 async def stop_running_calculation(
     calculation_id: str, *, nats_broker: NatsBroker, data_file_manager: DataFileManager
-) -> msg_specs.StoppedCalculationResponseMsg:
+) -> msg_specs.StoppedCalculationResponse:
     calculation = await data_file_manager.get_calculation_details(calculation_id)
 
     msg = msg_specs.StopRunningCalculationMsg(calculation_id=calculation_id)
@@ -222,10 +222,10 @@ async def stop_running_calculation(
         rpc=True,
     )
 
-    return msg_specs.StoppedCalculationResponseMsg(**response_json)
+    return msg_specs.StoppedCalculationResponse(**response_json)
 
 
-def retrieve_applications() -> list[sql_models.ApplicationSpecWithCommands]:
+def retrieve_applications() -> list[sql_models.ApplicationSpecWithCommandsResponse]:
     model_cls = sql_models.ApplicationSpecDB
     with settings.db.get_session() as session:
         applications = session.scalars(select(model_cls)).all()
@@ -233,7 +233,9 @@ def retrieve_applications() -> list[sql_models.ApplicationSpecWithCommands]:
     return applications_response_models
 
 
-def retrieve_command_by_id(cmd_id: int, raise_if_not_found: bool = True) -> sql_models.CommandSpecWithParameters | None:
+def retrieve_command_by_id(
+    cmd_id: int, raise_if_not_found: bool = True
+) -> sql_models.CommandSpecWithParametersResponse | None:
     query = select(sql_models.CommandSpecDB).where(sql_models.CommandSpecDB.id == cmd_id)
     with settings.db.get_session() as session:
         try:
@@ -247,7 +249,7 @@ def retrieve_command_by_id(cmd_id: int, raise_if_not_found: bool = True) -> sql_
     return cmd_response_model
 
 
-def retrieve_commands() -> list[sql_models.CommandSpecWithParameters]:
+def retrieve_commands() -> list[sql_models.CommandSpecWithParametersResponse]:
     stmt = select(
         sql_models.CommandSpecDB, sql_models.ApplicationSpecDB.slug, sql_models.ApplicationSpecDB.version
     ).join(
