@@ -98,6 +98,30 @@ Check that the non-interactive command has stopped
     ${calculation_status}=    Check Calculation Successful    ${TEST_CALCULATION_ID}
     Should Be None    ${calculation_status["output_dataset_id"]}
 
+Check that an error is returned if a dataset ID is used instead of a data file ID
+    ${input_file}=    Create Dictionary    data_file_id=${TEST_DATASET_ID}
+    ${arguments}=    Create Dictionary    input_cif=${input_file}    print_times=3
+    ${request_body}=    Create Dictionary
+    ...    application_slug=dummy_cli
+    ...    application_version=0.1.0
+    ...    command_name=print_cif
+    ...    command_arguments=${arguments}
+
+    ${response}=    Send API Request
+    ...    POST
+    ...    ${SESSION_ALIAS}
+    ...    /commands
+    ...    201
+    ...    json_data=${request_body}
+    ${invoke_payload}=    Check Response And Get Payload    ${response}
+    Check Response Has Attributes    ${invoke_payload}    calculation_id
+    ${calculation_id}=    Set Variable    ${invoke_payload["calculation_id"]}
+
+    ${calculation_status}=    Get Calculation Status    ${calculation_id}
+    Should Be Equal    ${calculation_status["status"]}    failed
+    ${error_msg}=    Set Variable    ${calculation_status["status_events"][-1]["extra_info"]["error_msg"]}
+    Should Contain    ${error_msg}    is a dataset ID
+
 
 *** Keywords ***
 Get Calculation Status

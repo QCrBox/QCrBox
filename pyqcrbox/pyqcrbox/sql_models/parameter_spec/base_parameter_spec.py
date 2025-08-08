@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import Annotated, Any
+from typing import TYPE_CHECKING, Annotated, Any
 
+import nats.js.errors as nats_errors
 import svcs
 from pydantic import BeforeValidator, field_validator, model_validator
 
@@ -9,7 +10,38 @@ from pyqcrbox.logging import logger
 
 from ..base import QCrBoxPydanticBaseModel
 
+if TYPE_CHECKING:
+    from pyqcrbox.data_management import DataFileManager
+
 SENTINEL_UNDEFINED = "<undefined>"
+
+
+async def check_if_id_is_a_dataset(data_file_manager: "DataFileManager", id_to_check: str) -> bool:
+    """Check if an ID is for a dataset.
+
+    This is used when an exception is raised when trying to write a data file
+    to disk. It is easy to pass a dataset ID instead of a data file ID.
+
+    Parameters
+    ----------
+    data_file_manager : DataFileManger
+        An instance of the DataFileManager
+    id_to_check : str
+        The ID to check.
+
+    Returns
+    -------
+    bool
+        True if is a dataset ID, False otherwise.
+
+    """
+    from pyqcrbox.data_management.data_file_manager import DatasetNotFoundError
+
+    try:
+        await data_file_manager.get_dataset_info(id_to_check)
+        return True
+    except DatasetNotFoundError:
+        return False
 
 
 _builtin_dtypes = {
@@ -53,14 +85,23 @@ class DataFileParameter(BaseParameter):
         logger.debug(f"Preparing data file for execution: {self!r}")
         async with svcs.Container(QCRBOX_GLOBAL_SERVICES_REGISTRY) as container:
             data_file_manager = await container.aget(DataFileManager)
-            exported_file_path = await data_file_manager.export_data_file(
-                self.data_file_id, target_dir, target_filename
-            )
+            try:
+                exported_file_path = await data_file_manager.export_data_file(
+                    self.data_file_id, target_dir, target_filename
+                )
+            except nats_errors.ObjectNotFoundError as exc:
+                if await check_if_id_is_a_dataset(data_file_manager, self.data_file_id):
+                    exc_msg = f"Provided data file ID {self.data_file_id} is a dataset ID"
+                else:
+                    exc_msg = f"No data file was found with id {self.data_file_id}"
+                raise ValueError(exc_msg) from exc
+
         return str(exported_file_path)
 
 
 class CifDataFileParameter(BaseParameter):
     data_file_id: str
+    # More CIF specific parameters will go in here
 
     @log_eel
     async def prepare_for_execution(self, target_dir: str, target_filename: str | None = None) -> str:
@@ -70,9 +111,17 @@ class CifDataFileParameter(BaseParameter):
         logger.debug(f"Preparing CIF data file for execution: {self!r}")
         async with svcs.Container(QCRBOX_GLOBAL_SERVICES_REGISTRY) as container:
             data_file_manager = await container.aget(DataFileManager)
-            exported_file_path = await data_file_manager.export_data_file(
-                self.data_file_id, target_dir, target_filename
-            )
+            try:
+                exported_file_path = await data_file_manager.export_data_file(
+                    self.data_file_id, target_dir, target_filename
+                )
+            except nats_errors.ObjectNotFoundError as exc:
+                if await check_if_id_is_a_dataset(data_file_manager, self.data_file_id):
+                    exc_msg = f"Provided data file ID {self.data_file_id} is a dataset ID"
+                else:
+                    exc_msg = f"No data file was found with id {self.data_file_id}"
+                raise ValueError(exc_msg) from exc
+
         return str(exported_file_path)
 
 
