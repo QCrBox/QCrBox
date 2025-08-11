@@ -48,45 +48,47 @@ commands:
 
   - name: "check_structure_convergence"
     description: "Check the convergence of a structure, to be used for refinement with changing atomic form factors"
-    implemented_as: "cli_command"
-    call_pattern: |
-      python /opt/qcrbox/qcrbtls_check_convergence_glue.py \
-        {cif1_path} 0 \
-        {cif2_path} 0 \
-        --max_abs_position {max_abs_position} \
-        --max_position_su {max_position_su} \
-        --max_abs_uij {max_abs_uij} \
-        --max_uij_su {max_uij_su} \
-        --output {output_json_path}
+    # implemented_as: "cli_command"
+    # call_pattern: |
+    #   python /opt/qcrbox/qcrbtls_check_convergence_glue.py \
+    #     {cif1_path} 0 \
+    #     {cif2_path} 0 \
+    #     --max_abs_position {max_abs_position} \
+    #     --max_position_su {max_position_su} \
+    #     --max_abs_uij {max_abs_uij} \
+    #     --max_uij_su {max_uij_su} \
+    #     --output {output_json_path}
+    implemented_as: "python_callable"
+    import_path: "qcrbtls_check_convergence_glue"
     parameters:
-      - name: "cif1_path"
-        dtype: "QCrBox.input_cif"
+      - name: "cif1"
+        dtype: "QCrBox.cif_data_file"
         default_value: None
         description: "Path to the first CIF file to be compared"
         required_entry_sets: ["comparison"]
         merge_su: False
-      - name: "cif2_path"
-        dtype: "QCrBox.input_cif"
+      - name: "cif2"
+        dtype: "QCrBox.cif_data_file"
         default_value: None
         description: "Path to the second CIF file to be compared"
         required_entry_sets: ["comparison"]
         merge_su: False
-      - name: "max_abs_position"
-        dtype: "float"
-        default_value: None
-        description: "Maximum absolute difference in position in Angstrom"
-      - name: "max_position_su"
-        dtype: "float"
-        default_value: None
-        description: "Maximum absolute difference in position / standard uncertainties"
-      - name: "max_abs_uij"
-        dtype: "float"
-        default_value: None
-        description: "Maximum absolute difference in U(cif) in Angstrom^2"
-      - name: "max_uij_su"
-        dtype: "float"
-        default_value: None
-        description: "Maximum absolute difference in U(cif) / standard uncertainties"
+      # - name: "max_abs_position"
+      #   dtype: "float"
+      #   default_value: None
+      #   description: "Maximum absolute difference in position in Angstrom"
+      # - name: "max_position_su"
+      #   dtype: "float"
+      #   default_value: None
+      #   description: "Maximum absolute difference in position / standard uncertainties"
+      # - name: "max_abs_uij"
+      #   dtype: "float"
+      #   default_value: None
+      #   description: "Maximum absolute difference in U(cif) in Angstrom^2"
+      # - name: "max_uij_su"
+      #   dtype: "float"
+      #   default_value: None
+      #   description: "Maximum absolute difference in U(cif) / standard uncertainties"
       - name: "output_json_path"
         dtype: "QCrBox.output_path"
         default_value: None

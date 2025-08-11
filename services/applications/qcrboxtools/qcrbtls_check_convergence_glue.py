@@ -8,7 +8,61 @@ from qcrboxtools.cif.cif2cif import cif_file_to_specific_by_yml
 YML_PATH = "/opt/qcrbox/config_qcrboxtools.yaml"
 
 
-def parse_optional_float(value):
+def check_structure_convergence(cif1, cif2, output_json_path):
+    # Convert paths in Path objects and CIFs into unified format
+    cif1 = Path(cif1)
+    cif2 = Path(cif2)
+    converted1_path = cif1.parent / "converted1.cif"
+    converted2_path = cif2.parent / "converted2.cif"
+    cif_file_to_specific_by_yml(cif1, converted1_path, YML_PATH, "check_structure_convergence", "cif1")
+    cif_file_to_specific_by_yml(cif2, converted2_path, YML_PATH, "check_structure_convergence", "cif2")
+
+    # This is the criteria we want
+    mean_abs_position = None
+    mean_position_su = None
+    mean_abs_uij = None
+    mean_uij_su = None
+
+    # these should be parameters for the command
+    max_abs_position = None
+    max_position_su = None
+    max_abs_uij = None
+    max_uij_su = None
+
+    criteria = {
+        "max abs position": max_abs_position,
+        "mean abs position": mean_abs_position,
+        "max position/su": max_position_su,
+        "mean position/su": mean_position_su,
+        "max abs uij": max_abs_uij,
+        "mean abs uij": mean_abs_uij,
+        "max uij/su": max_uij_su,
+        "mean uij/su": mean_uij_su,
+    }
+
+    # Remove criteria set to None
+    criteria = {k: v for k, v in criteria.items() if v is not None}
+
+    cif1_dataset = 0
+    cif2_dataset = 0
+
+    is_converged = check_converged(converted1_path, cif1_dataset, converted2_path, cif2_dataset, criteria)
+
+    # clean up the converted structure
+    converted1_path.unlink()
+    converted2_path.unlink()
+
+    result = {"converged": is_converged}
+    output_json_path = Path(output_json_path)
+    with output_json_path.open("w") as f:
+        json.dump(result, f)
+
+    print(f"Convergence check: {'Converged' if is_converged else 'Not converged'}")
+
+    return str(output_json_path)
+
+
+def parse_optional_float(value) -> None | float:
     """
     Parses a string into a float or returns None if the string is 'None'.
 
