@@ -22,6 +22,7 @@ class CalculationResponse(CalculationBase):
     """Calculation response model, for API responses."""
 
     status: str
+    status_events: list[CalculationStatusDetails]
     client_private_inbox: str
     output_dataset_id: str | None
 
@@ -91,6 +92,7 @@ class CalculationDB(CalculationBase):
                 "application_version",
                 "command_name",
                 "command_arguments",
+                "status_events",
             ],  # type: ignore
         )
 
