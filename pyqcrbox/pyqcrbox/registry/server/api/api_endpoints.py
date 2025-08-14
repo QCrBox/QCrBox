@@ -55,7 +55,7 @@ async def index() -> Response:
     )
 
 
-@get(path="/openapi-schema", media_type=MediaType.JSON, include_in_schema=False)
+@get(path="/schema", media_type=MediaType.JSON, include_in_schema=False)
 async def openapi_schema(request: Request) -> dict:
     return request.app.openapi_schema.to_schema()
 
@@ -140,6 +140,43 @@ async def get_calculation_by_id(
     except api_helpers.CalculationNotFoundError as exc:
         raise QCrBoxAPIException(detail=f"Calculation not found: {id!r}", status_code=404) from exc
 
+@post(
+    path="/calculations/{id:str}/stop",
+    media_type=MediaType.JSON,
+    summary="Stop a running calculation",
+    tags=["calculations"],
+    operation_id="stop_running_calculation",
+    status_code=200,
+    responses={400: schema.BAD_REQUEST_ERROR, 404: schema.NOT_FOUND_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
+)
+async def stop_running_calculation(
+    id: str = Parameter(title="Calculation ID"), *, nats_broker: NatsBroker, data_file_manager: DataFileManager
+) -> schema.QCrBoxResponse[schema.CalculationStoppedResponse]:
+    """Stop a currently running command, interactive and non-interactive."""
+    try:
+        stopped_calculation = await api_helpers.stop_running_calculation(
+            id, data_file_manager=data_file_manager, nats_broker=nats_broker
+        )
+    except KeyError as exc:
+        raise QCrBoxAPIException(detail=f"No calculation with ID {id!r}", status_code=404) from exc
+    except TypeError as exc:
+        raise QCrBoxAPIException(
+            detail="There was an internal server error when processing your request", status_code=500
+        ) from exc
+
+    return QCrBoxResponse(
+        content={
+            "status": "success",
+            "message": f"Stopped calculation {stopped_calculation.calculation_id}",
+            "payload": {
+                "calculations": [
+                    stopped_calculation,
+                ]
+            },
+        },
+        status_code=200,
+    )
+
 
 # Commands -------------------------------------------------------------------------------------------------------------
 
@@ -191,6 +228,52 @@ async def get_command_by_id(id: int) -> schema.QCrBoxResponse[schema.CommandsRes
         )
     except api_helpers.CommandNotFoundError as exc:
         raise QCrBoxAPIException(detail=f"Command not found: {id!r}", status_code=404) from exc
+
+
+@post(
+    path="/commands",
+    media_type=MediaType.JSON,
+    summary="Invoke a command with arguments",
+    tags=["commands"],
+    operation_id="invoke_command",
+    responses={400: schema.BAD_REQUEST_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
+)
+async def invoke_command(
+    data: Annotated[schema.InvokeCommandParameters, Body()],
+    nats_broker: NatsBroker,
+) -> schema.QCrBoxResponse[schema.InvokeCommandResponse]:
+    """Create an interactive session with the provided arguments."""
+    command_spec = CommandInvocationCreate(
+        application_slug=data.application_slug,
+        application_version=data.application_version,
+        command_name=data.command_name,
+        arguments=data.command_arguments,
+    )
+    try:
+        response = await api_helpers.invoke_command(command_spec, nats_broker=nats_broker)
+    except Exception as exc:
+        raise QCrBoxAPIException(
+            detail=f"Failed to invoke command due to an error in the server {str(exc)}", status_code=400
+        ) from exc
+
+    if response["status"] != CalculationStatusEnum.SUBMITTED:
+        error_msg = response["payload"].get("error", "an unknown error occurred")
+        raise QCrBoxAPIException(
+            detail=f"Failed to invoke command: {error_msg}",
+            status_code=500,
+        )
+
+    return QCrBoxResponse(
+        content={
+            "status": "success",
+            "message": f"Command invocation accepted: {data.application_slug!r}-{data.application_version!r}",
+            "payload": {
+                "calculation_id": response["payload"]["calculation_id"],
+            },
+        },
+        status_code=201,
+    )
+
 
 
 # Data files -----------------------------------------------------------------------------------------------------------
@@ -245,37 +328,6 @@ async def get_data_file_by_id(
         )
     except KeyError as exc:
         raise QCrBoxAPIException(detail=f"Data file not found: {id!r}", status_code=404) from exc
-
-
-# ----------------------------------------------------------------------------------------------------------------------
-# Removed for now, as there SHOULD NOT be any mechanism to upload a data file which is not associated to a dataset.
-# ----------------------------------------------------------------------------------------------------------------------
-# @post(
-#     path="/data-files",
-#     media_type=MediaType.JSON,
-#     summary="Upload a data file",
-#     tags=["data-files"],
-#     operation_id="create_data_file",
-#     responses={400: schema.BAD_REQUEST_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
-# )
-#
-# async def create_data_file(
-#     data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART, title="The file to upload")],
-# ) -> schema.QCrBoxResponse[schema.DataFilesResponse]:
-#     """Upload a new data file to the data store."""
-#     qcrbox_data_file_id = await api_helpers.import_data_file(data)
-#     data_file = await api_helpers.get_data_file_info(qcrbox_data_file_id)
-#     return QCrBoxResponse(
-#         content={
-#             "status": "success",
-#             "message": f"Imported data file: {data.filename!r}",
-#             "payload": {
-#                 "data_files": [data_file],
-#             },
-#         },
-#         status_code=201,
-#     )
-# ----------------------------------------------------------------------------------------------------------------------
 
 
 @get(
@@ -484,18 +536,18 @@ async def get_interactive_session_by_id(
     media_type=MediaType.JSON,
     summary="Create interactive session",
     tags=["interactive-sessions"],
-    operation_id="create_interactive_session_with_arguments",
+    operation_id="create_interactive_session",
     responses={400: schema.BAD_REQUEST_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
 async def create_interactive_session_with_arguments(
-    data: Annotated[schema.CreateInteractiveSession, Body()], nats_broker: NatsBroker
+    data: Annotated[schema.CreateInteractiveSessionParameters, Body()], nats_broker: NatsBroker
 ) -> schema.QCrBoxResponse[schema.InteractiveSessionIDResponse]:
     """Create an interactive session with the provided arguments arguments."""
     command_spec = CommandInvocationCreate(
         application_slug=data.application_slug,
         application_version=data.application_version,
         command_name="interactive_session",
-        arguments=data.arguments,
+        arguments=data.command_arguments,
     )
     try:
         response = await api_helpers.invoke_command(command_spec, nats_broker=nats_broker)
@@ -605,9 +657,11 @@ api_router = Router(
         # Calculations
         list_calculations,
         get_calculation_by_id,
+        stop_running_calculation,
         # Commands
         list_commands,
         get_command_by_id,
+        invoke_command,
         # Datasets
         delete_dataset_by_id,
         list_datasets,
@@ -617,7 +671,6 @@ api_router = Router(
         # Data files
         list_data_files,
         get_data_file_by_id,
-        # create_data_file,
         download_data_file_by_id,
         # Interactive sessions
         list_interactive_sessions,

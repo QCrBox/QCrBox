@@ -10,7 +10,7 @@ from pydantic import Field, PrivateAttr, field_validator, model_validator
 from .. import helpers
 from .base import QCrBoxPydanticBaseModel
 from .cif_entry_set import CifEntrySet
-from .command_spec.command_spec import CommandSpecDiscriminatedUnion, CommandSpecWithParameters
+from .command_spec.command_spec import CommandSpecDiscriminatedUnion, CommandSpecWithParametersResponse
 
 __all__ = ["ApplicationSpec"]
 
@@ -126,8 +126,8 @@ class ApplicationSpec(ApplicationSpecBase):
         return f"{slug_sanitized}.{version_sanitized}"
 
 
-class ApplicationSpecWithCommands(ApplicationSpecBase):
+class ApplicationSpecWithCommandsResponse(ApplicationSpecBase):
     id: int
     registered_at: datetime
-    commands: list[CommandSpecWithParameters]
+    commands: list[CommandSpecWithParametersResponse]
     # cif_entry_sets: list[CifEntrySetRead] = []

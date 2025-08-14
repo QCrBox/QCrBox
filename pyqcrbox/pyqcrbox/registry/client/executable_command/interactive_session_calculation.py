@@ -2,10 +2,16 @@ import asyncio
 
 import anyio
 import svcs
+from h11 import Data
 
 from pyqcrbox import logger
 from pyqcrbox.data_management.data_file_manager import DataFileManager
-from pyqcrbox.registry.client.executable_command.error import FinaliseCommandFailure, error_dialog_box
+from pyqcrbox.registry.client.executable_command.error import (
+    FinaliseCommandFailure,
+    PrepareCommandFailure,
+    RunCommandFailure,
+    error_dialog_box,
+)
 from pyqcrbox.services import QCRBOX_GLOBAL_SERVICES_REGISTRY
 from pyqcrbox.sql_models import CalculationStatusEnum
 
@@ -30,7 +36,6 @@ class InteractiveSessionCalculation(BaseCalculation):
         self.finalise_calc = finalise_calc
         self.background_task = async_task
         self.is_closed = False
-        self.output_dataset_id = None
         self.session_closed_event = anyio.Event()
 
         # for keeping track of error pop ups
@@ -52,6 +57,39 @@ class InteractiveSessionCalculation(BaseCalculation):
     @property
     async def stderr(self) -> None:
         return None
+
+    async def save_to_data_file_manager(self, data_file_manager: DataFileManager) -> None:
+        """Save the output of the Interactive Session to the Data File Manager.
+
+        It is assumed that the return value of the finalise command, which has to be
+        a PythonCallable is the data to be stored in the Data File Manager, and
+        that only a single file is returned.
+
+        Parameters
+        ----------
+        data_file_manager : DataFileManager
+            An instance of the DataFile Manager.
+
+        """
+        if not isinstance(self.finalise_calc, PythonCallableCalculation):
+            raise RuntimeError("Finalise calculation in InteractiveSession not a PythonCallable")
+
+        output_file = self.finalise_calc.return_value
+        if not output_file:
+            logger.info("No output file from interactive session")
+            return
+
+        try:
+            output_data_file_id = await data_file_manager.import_local_file(output_file)
+            self.output_dataset_id = await data_file_manager.create_dataset_from_data_file(output_data_file_id)
+        except FileNotFoundError:
+            logger.error(f"Failed to create dataset for output from 'finalise' command, {output_file=!r}")
+            raise
+
+        logger.info(
+            "The output from the interactive session has been placed into dataset %s",
+            self.output_dataset_id,
+        )
 
     async def wait_until_finished(self) -> None:
         """Asynchronously wait for all calculation phases to complete.
@@ -107,29 +145,12 @@ class InteractiveSessionCalculation(BaseCalculation):
                 raise self.exception from self.finalise_calc.exception_raised
             logger.debug("Finalise command has finished")
 
-            # The above will only run if the finalise calc finished successfully, e.g.
-            # we didn't raise an exception in the above step
-            output_file = self.finalise_calc.return_value
-            if not output_file:
-                logger.info("No output file from interactive session")
-            else:
-                async with svcs.Container(QCRBOX_GLOBAL_SERVICES_REGISTRY) as container:
-                    data_manager = await container.aget(DataFileManager)
-                    try:
-                        output_data_file_id = await data_manager.import_local_file(output_file)
-                        self.output_dataset_id = await data_manager.create_dataset_from_data_file(output_data_file_id)
-                    except FileNotFoundError:
-                        logger.error(f"Failed to create dataset for output from 'finalise' command, {output_file=!r}")
-                        raise
-                    logger.info(
-                        "The output from the interactive session has been placed into dataset %s",
-                        self.output_dataset_id,
-                    )
+            async with svcs.Container(QCRBOX_GLOBAL_SERVICES_REGISTRY) as container:
+                data_file_manager = await container.aget(DataFileManager)
+                await self.save_to_data_file_manager(data_file_manager)
 
-        logger.debug("All commands have finished, waiting for session close")
         self.is_closed = True
         self.session_closed_event.set()
-        logger.debug(f"InteractiveSessionCalculation: interactive session finished: {self}")
 
     async def terminate(self) -> None:
         """Terminate the interactive session.
@@ -170,3 +191,26 @@ class InteractiveSessionCalculation(BaseCalculation):
         if self._error_dialog_process:
             self._error_dialog_process.terminate()
             self._error_dialog_process.join()
+
+    def get_error_message(self) -> str:
+        """Get the last error message for this interactive session.
+
+        Returns
+        -------
+        str
+            The error message returned. This could be an empty string.
+
+        """
+        if self.exception_raised:
+            if isinstance(self.exception_raised, PrepareCommandFailure):
+                error_msg = f"Prepare step failed: {self.exception_raised.original_exception}"
+            elif isinstance(self.exception_raised, RunCommandFailure):
+                error_msg = f"Run step failed: {self.exception_raised.original_exception}"
+            elif isinstance(self.exception_raised, FinaliseCommandFailure):
+                error_msg = f"Fianalise step failed: {self.exception_raised.original_exception}"
+            else:
+                error_msg = f"Command failed: {self.exception_raised}"
+        else:
+            error_msg = ""
+
+        return error_msg

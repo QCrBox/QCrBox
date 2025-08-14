@@ -6,6 +6,7 @@ import signal
 import anyio
 
 from pyqcrbox import logger
+from pyqcrbox.data_management import DataFileManager
 from pyqcrbox.sql_models import CalculationStatusEnum
 
 from .base_calculation import BaseCalculation
@@ -34,6 +35,20 @@ class CLICmdCalculation(BaseCalculation):
         self._terminated = False
         self.retrieved_stdout_stderr = False
         self.calc_finished_event = calc_finished_event
+
+    async def save_to_data_file_manager(self, data_file_manager: DataFileManager) -> None:
+        """Save the output of the CLI Command to the Data File Manager.
+
+        This is a dummy method, as getting data from a CLI command is not
+        supported.
+
+        Parameters
+        ----------
+        data_file_manager : DataFileManager
+            An instance of the DataFile Manager.
+
+        """
+        logger.info("Writing output from a CLI Command is not yet supported!")
 
     async def wait_until_finished(self):
         """Wait until the calculation is finished."""

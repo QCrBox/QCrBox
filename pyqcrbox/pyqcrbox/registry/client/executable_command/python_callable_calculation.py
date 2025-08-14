@@ -5,6 +5,8 @@ import anyio
 import psutil
 
 from pyqcrbox import logger
+from pyqcrbox.data_management.data_file_manager import DataFileManager
+from pyqcrbox.debug import log_eel
 from pyqcrbox.sql_models import CalculationStatusEnum
 
 from .base_calculation import BaseCalculation
@@ -40,6 +42,34 @@ class PythonCallableCalculation(BaseCalculation):
         self.return_value = None
         self._terminated = False
 
+    @log_eel
+    async def save_to_data_file_manager(self, data_file_manager: DataFileManager) -> None:
+        """Save the output of the calculation to the Data File Manager.
+
+        It is assumed that the return value of the PythonCallable is the data to
+        be stored in the Data File Manager, and that only a single file is
+        returned.
+
+        Parameters
+        ----------
+        data_file_manager : DataFileManager
+            An instance of the DataFile Manager.
+
+        """
+        if not self.return_value:
+            logger.info("This calculation has no return value or data file to add to the Data File Manager.")
+            return
+
+        try:
+            data_file_id = await data_file_manager.import_local_file(self.return_value)
+            self.output_dataset_id = await data_file_manager.create_dataset_from_data_file(data_file_id)
+        except FileNotFoundError:
+            logger.error(f"Failed to add data file and create dataset for {self.return_value}")
+            raise
+
+        logger.info(f"Created Dataset {self.output_dataset_id} containing data file {data_file_id}")
+
+    @log_eel
     async def wait_until_finished(self):
         """Wait until the calculation is finished."""
         await self.calc_finished_event.wait()
@@ -113,6 +143,7 @@ class PythonCallableCalculation(BaseCalculation):
         else:
             return "Retrieval of STDERR not implemented yet for PythonCallableCalculation"
 
+    @log_eel
     async def terminate(self):
         """Terminate the calculation."""
         logger.debug(
@@ -130,3 +161,6 @@ class PythonCallableCalculation(BaseCalculation):
             process.terminate()
         self._terminated = True
         logger.debug("Multiprocessing pool terminated.")
+
+    def get_error_message(self) -> str:
+        return ""

@@ -3,11 +3,12 @@ from typing import Any, Generic, TypeVar
 from litestar.openapi.datastructures import ResponseSpec
 from pydantic import BaseModel
 
-from pyqcrbox.data_management.data_file import DataFileMetadataResponse, DatasetResponse
-from pyqcrbox.msg_specs.msg_types.client_side.get_calculation_status import CloseInteractiveSessionResponseNATS
-from pyqcrbox.sql_models.application_spec import ApplicationSpecWithCommands
-from pyqcrbox.sql_models.calculation import CalculationNatsResponseModel
-from pyqcrbox.sql_models.command_spec import CommandSpecWithParameters
+from pyqcrbox.data_management.data_file import DataFileInfoResponse, DatasetInfoResponse
+from pyqcrbox.msg_specs.msg_types.client_side.get_calculation_status import CloseInteractiveSessionResponse
+from pyqcrbox.msg_specs.msg_types.client_side.stop_calculation import StoppedCalculationResponse
+from pyqcrbox.sql_models.application_spec import ApplicationSpecWithCommandsResponse
+from pyqcrbox.sql_models.calculation import CalculationResponse
+from pyqcrbox.sql_models.command_spec import CommandSpecWithParametersResponse
 from pyqcrbox.sql_models.interactive_session_info import InteractiveSessionInfoResponse
 
 T = TypeVar("T")
@@ -15,7 +16,7 @@ T = TypeVar("T")
 # Request bodies
 
 
-class CreateInteractiveSession(BaseModel):
+class CreateInteractiveSessionParameters(BaseModel):
     """Request body for invoking an interactive session.
 
     Attributes
@@ -34,7 +35,32 @@ class CreateInteractiveSession(BaseModel):
 
     application_slug: str
     application_version: str
-    arguments: dict[str, Any]
+    command_arguments: dict[str, Any]
+
+
+class InvokeCommandParameters(BaseModel):
+    """Request body for invoke a command.
+
+    Attributes
+    ----------
+    application_slug : str
+        The slug of the application to invoke, as defined in the application
+        specification.
+    application_version : str
+        The version number of the application to invoke, as defined in the application
+        specification.
+    command_name : str
+        The name of the command to invoke, as defined in the application specification.
+    arguments : dict
+        Arguments required to invoke the interactive session for the application
+        requested.
+
+    """
+
+    application_slug: str
+    application_version: str
+    command_name: str
+    command_arguments: dict[str, Any]
 
 
 # Success responses
@@ -85,7 +111,7 @@ class ApplicationsResponse(BaseModel):
 
     """
 
-    applications: list[ApplicationSpecWithCommands]
+    applications: list[ApplicationSpecWithCommandsResponse]
 
 
 class CalculationsResponse(BaseModel):
@@ -98,7 +124,7 @@ class CalculationsResponse(BaseModel):
 
     """
 
-    calculations: list[CalculationNatsResponseModel]
+    calculations: list[CalculationResponse]
 
 
 class CommandsResponse(BaseModel):
@@ -111,7 +137,7 @@ class CommandsResponse(BaseModel):
 
     """
 
-    commands: list[CommandSpecWithParameters]
+    commands: list[CommandSpecWithParametersResponse]
 
 
 class DataFilesResponse(BaseModel):
@@ -124,7 +150,7 @@ class DataFilesResponse(BaseModel):
 
     """
 
-    data_files: list[DataFileMetadataResponse]
+    data_files: list[DataFileInfoResponse]
 
 
 class DatasetsResponse(BaseModel):
@@ -137,7 +163,20 @@ class DatasetsResponse(BaseModel):
 
     """
 
-    datasets: list[DatasetResponse]
+    datasets: list[DatasetInfoResponse]
+
+
+class InvokeCommandResponse(BaseModel):
+    """Response model for a calculation ID after invoking a command.
+
+    Attributes
+    ----------
+    calculation_id : str
+        The generated calculation identifier of the invoked command.
+
+    """
+
+    calculation_id: str
 
 
 class InteractiveSessionsResponse(BaseModel):
@@ -176,7 +215,20 @@ class InteractiveSessionClosedResponse(BaseModel):
 
     """
 
-    interactive_sessions: list[CloseInteractiveSessionResponseNATS]
+    interactive_sessions: list[CloseInteractiveSessionResponse]
+
+
+class CalculationStoppedResponse(BaseModel):
+    """Response model for a command which was stopped.
+
+    Attributes
+    ----------
+    commands : list[EndCommandResponseNATS]
+        A list of ended commands.
+
+    """
+
+    calculations: list[StoppedCalculationResponse]
 
 
 # Error responses

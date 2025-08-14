@@ -5,6 +5,22 @@ from typing import List, Optional
 from qcrboxtools.cif.cif2cif import cif_file_to_unified
 
 
+def to_unified_cif(
+    input_cif,
+    output_cif_path,
+    custom_category_list,
+):
+    cif_file_to_unified(
+        input_cif_path=input_cif,
+        output_cif_path=output_cif_path,
+        convert_keywords=True,
+        custom_categories=custom_category_list,
+        split_sus=True,
+    )
+
+    return output_cif_path
+
+
 def main():
     parser = argparse.ArgumentParser(description="Process CIF files with optional modifications.")
     parser.add_argument("input_cif_path", type=Path, help="The input CIF file path.")

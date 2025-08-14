@@ -1,6 +1,6 @@
 from pyqcrbox.sql_models import QCrBoxPydanticBaseModel
 
-__all__ = ["DataFileMetadata", "DataFileMetadataResponse", "Dataset", "DatasetResponse"]
+__all__ = ["DataFileMetadata", "DataFileInfoResponse", "Dataset", "DatasetInfoResponse"]
 
 
 class DataFileMetadata(QCrBoxPydanticBaseModel):
@@ -8,15 +8,15 @@ class DataFileMetadata(QCrBoxPydanticBaseModel):
     filename: str
     filetype: str
 
-    def to_response_model(self) -> "DataFileMetadataResponse":
-        return DataFileMetadataResponse(
+    def to_response_model(self) -> "DataFileInfoResponse":
+        return DataFileInfoResponse(
             qcrbox_file_id=self.qcrbox_file_id,
             filename=self.filename,
             filetype=self.filetype,
         )
 
 
-class DataFileMetadataResponse(QCrBoxPydanticBaseModel):
+class DataFileInfoResponse(QCrBoxPydanticBaseModel):
     qcrbox_file_id: str
     filename: str
     filetype: str
@@ -44,13 +44,13 @@ class Dataset(DatasetBase):
     dataset_id: str
     data_files: dict[str, DataFileMetadata]
 
-    def to_response_model(self) -> "DatasetResponse":
-        return DatasetResponse(
+    def to_response_model(self) -> "DatasetInfoResponse":
+        return DatasetInfoResponse(
             qcrbox_dataset_id=self.dataset_id,
             data_files={key: f.to_response_model() for key, f in self.data_files.items()},
         )
 
 
-class DatasetResponse(DatasetBase):
+class DatasetInfoResponse(DatasetBase):
     qcrbox_dataset_id: str
-    data_files: dict[str, DataFileMetadataResponse]
+    data_files: dict[str, DataFileInfoResponse]

@@ -17,3 +17,8 @@ services:
     networks:
       - qcrbox-net
     restart: unless-stopped
+    logging:
+      driver: "syslog"
+      options:
+        syslog-address: udp://127.0.0.1:514
+        tag: "qcrboxtools"

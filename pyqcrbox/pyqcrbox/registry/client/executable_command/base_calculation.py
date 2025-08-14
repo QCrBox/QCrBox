@@ -3,6 +3,7 @@ from abc import ABCMeta, abstractmethod
 
 import anyio
 
+from pyqcrbox.data_management import DataFileManager
 from pyqcrbox.sql_models import CalculationStatusDetails, CalculationStatusEnum
 
 
@@ -21,6 +22,7 @@ class BaseCalculation(metaclass=ABCMeta):
     def __init__(self, *, calculation_id: str, calc_finished_event: anyio.Event) -> None:
         self.calculation_id = calculation_id
         self.calc_finished_event = calc_finished_event
+        self.output_dataset_id = None
 
         # These are for error tracking, specifically for recording the exception
         # raised in an async sub-process and if the calculation was manually
@@ -38,6 +40,17 @@ class BaseCalculation(metaclass=ABCMeta):
         """
         clsname = self.__class__.__name__
         return f"<{clsname}: calculation_id={self.calculation_id}>"
+
+    @abstractmethod
+    async def save_to_data_file_manager(self, data_file_manager: DataFileManager) -> None:
+        """Save the output of the calculation to the Data File Manager.
+
+        Parameters
+        ----------
+        data_file_manager : DataFileManager
+            An instance of the DataFile Manager.
+
+        """
 
     @abstractmethod
     async def wait_until_finished(self) -> None:
@@ -71,6 +84,7 @@ class BaseCalculation(metaclass=ABCMeta):
             status=self.status,
             stdout=await self.stdout,
             stderr=await self.stderr,
+            output_dataset_id=self.output_dataset_id,
             extra_info=self._get_status_details_extra_info(),
         )
 

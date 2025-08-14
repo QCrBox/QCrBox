@@ -75,9 +75,12 @@
       "qcrbox-dev-server": [
         "watchmedo auto-restart --pattern=*.py --recursive -- pyqcrbox-run-registry-server"
       ],
+      "test-mode": [
+        "qcb down && qcb up --test"
+      ],
       "robot-framework": [
-		"cd ./pyqcrbox/robot_tests",
-        "robot api_endpoints.robot"
+        "cd ./pyqcrbox/robot_tests",
+        "robot *.robot"
       ],
       "pytest": [
         "cd ./pyqcrbox",

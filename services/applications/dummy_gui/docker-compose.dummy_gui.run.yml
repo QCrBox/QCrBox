@@ -1,0 +1,45 @@
+services:
+  dummy_gui:
+    image: "qcrbox/dummy_gui:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
+    build:
+      context: services/applications/dummy_gui/
+      args:
+        QCRBOX_DOCKER_TAG: ${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}
+    ports:
+      - "${QCRBOX_BIND_ADDRESS}:${QCRBOX_DUMMY_GUI_PORT:?Must set env var QCRBOX_DUMMY_GUI_PORT}:8080"
+    depends_on:
+      qcrbox-registry:
+        condition: service_healthy
+    volumes:
+      - ${QCRBOX_SHARED_FILES_DIR_HOST_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_HOST_PATH}:${QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH}
+    networks:
+      - qcrbox-net
+    restart: unless-stopped
+    environment:
+      QCRBOX_APPLICATION_DISPLAY_NAME: "Dummy GUI"
+      QCRBOX__NATS__HOST: "qcrbox-nats"
+      QCRBOX__REGISTRY__SERVER__HOST: "qcrbox-registry"
+      QCRBOX__REGISTRY__SERVER__PORT: "8000"
+      QCRBOX__GUI__PORT: ${QCRBOX_DUMMY_GUI_PORT}
+    labels:
+      traefik.enable: true
+      traefik.http.routers.to-dummy-gui-path-prefix.rule: Path(`/gui/dummy-gui`)
+      traefik.http.routers.to-dummy-gui-path-prefix.middlewares: redirect-gui-dummy-gui-path
+      traefik.http.routers.to-dummy-gui-path-prefix.service: dummy-gui-service
+      traefik.http.middlewares.redirect-gui-dummy-gui-path.redirectregex.regex: ^http://(.+)/gui/dummy-gui(/?)$$
+      traefik.http.middlewares.redirect-gui-dummy-gui-path.redirectregex.replacement: http://dummy-gui.gui.$$1/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true
+
+      traefik.http.routers.to-dummy-gui-subdomain.rule: HostRegexp(`^dummy-gui\.gui\..+$$`)
+      traefik.http.routers.to-dummy-gui-subdomain.middlewares: redirect-gui-dummy-gui-subdomain
+      traefik.http.routers.to-dummy-gui-subdomain.service: dummy-gui-service
+      traefik.http.middlewares.redirect-gui-dummy-gui-subdomain.redirectregex.regex: ^http://dummy-gui\.gui\.([^/]+)(/?)$$
+      traefik.http.middlewares.redirect-gui-dummy-gui-subdomain.redirectregex.replacement: http://dummy-gui.gui.$$1/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true
+
+      traefik.http.services.dummy-gui-service.loadbalancer.server.scheme: http
+      traefik.http.services.dummy-gui-service.loadbalancer.server.port: 8080
+
+    logging:
+      driver: "syslog"
+      options:
+        syslog-address: udp://127.0.0.1:514
+        tag: "dummy_gui"

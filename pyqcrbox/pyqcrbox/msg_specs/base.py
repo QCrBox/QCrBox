@@ -34,7 +34,7 @@ class QCrBoxGenericResponse(QCrBoxBaseMessage):
     response_to: str
     status: str
     msg: str = ""
-    payload: Optional[QCrBoxBasePayload] = None
+    payload: dict[str, Any] | QCrBoxBasePayload | None = None
 
     @field_validator("payload", mode="before")
     @classmethod
