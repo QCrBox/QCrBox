@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MPL-2.0
 import shutil
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable
 
 import click
 from doit.task import Task
@@ -36,9 +36,7 @@ def build_components(
     dry_run: bool,
     components: list[str],
 ):
-    """
-    Build QCrBox components.
-    """
+    """Build QCrBox components."""
     docker_project = DockerProject()
 
     action_descr = "Building" if not dry_run else "Would build"
@@ -109,17 +107,10 @@ def task_build_qcrboxtools_python_package(dry_run: bool):
     if not dry_run:
         qcrboxtools_package_root = repo_root.joinpath(".build", "QCrBoxTools")
         base_ancestor_pyqcrbox_dist_dir = repo_root.joinpath("services/base_images/base_ancestor/pyqcrbox_dist/")
-        # requirements_files = list(qcrboxtools_package_root.glob("requirements*.txt"))
-
         action_build_qcrboxtools_wheel = make_action_to_build_wheel(
             qcrboxtools_package_root, base_ancestor_pyqcrbox_dist_dir
         )
-        # actions_copy_requirements_files = [
-        #     make_action_to_copy_file(filename, base_ancestor_pyqcrbox_dist_dir) for filename in requirements_files
-        # ]
-
         actions += [action_build_qcrboxtools_wheel]
-        # actions += actions_copy_requirements_files
 
     return {
         "name": "task_build_python_package:qcrboxtools",

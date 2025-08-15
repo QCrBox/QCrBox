@@ -7,7 +7,6 @@ from typing import Optional, TypeVar
 
 import setuptools_scm
 from git import InvalidGitRepositoryError, Repo
-from loguru import logger
 
 # Type alias
 PathLike = TypeVar("PathLike", str, Path)

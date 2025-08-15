@@ -71,13 +71,13 @@ class DockerProject:
             try:
                 proc = subprocess.run(full_cmd, env=custom_env, shell=False, check=False, capture_output=True)
             except Exception as exc:
-                raise QCrBoxSubprocessError(f"Error when trying to run docker compose command: {exc}")
+                raise QCrBoxSubprocessError(f"Error when trying to run docker compose command: {exc}") from exc
 
             try:
                 proc.check_returncode()
             except subprocess.CalledProcessError as exc:
                 error_msg = prettyprint_called_process_error(exc)
-                raise QCrBoxSubprocessError(error_msg)
+                raise QCrBoxSubprocessError(error_msg) from exc
             return proc
 
     def start_up_docker_containers(self, target_containers: list[str], dry_run):

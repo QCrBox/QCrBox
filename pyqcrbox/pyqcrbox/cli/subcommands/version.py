@@ -2,13 +2,10 @@
 
 import click
 
-from ... import __version__
-from ..helpers import ClickCommandCls
+from ..helpers import ClickCommandCls, get_current_pyqcrbox_version
 
 
 @click.command(name="version", cls=ClickCommandCls)
 def print_qcrbox_version():
-    """
-    Print the qcrbox version.
-    """
-    click.echo(__version__)
+    """Print the pyqcrbox version."""
+    click.echo(get_current_pyqcrbox_version())
