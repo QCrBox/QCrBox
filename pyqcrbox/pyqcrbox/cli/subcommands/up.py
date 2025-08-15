@@ -50,9 +50,7 @@ def start_up_components(
     project_name: str,
     components: list[str],
 ):
-    """
-    Start up QCrBox components.
-    """
+    """Start up QCrBox components."""
     ctx = click.get_current_context()
     use_test_config = ctx.params.get("include_default_test_components")
     docker_project = DockerProject(name=project_name, config_name="default" if not use_test_config else "test")

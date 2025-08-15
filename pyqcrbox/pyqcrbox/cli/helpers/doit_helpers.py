@@ -11,10 +11,7 @@ __all__ = ["make_task", "run_tasks"]
 
 
 def make_task(task_dict_func):
-    """
-    Wrapper to decorate functions returning pydoit `Task` dictionaries
-    and have them return pydoit `Task` objects.
-    """
+    """Decorate functions returning pydoit `Task` dictionaries and have them return pydoit `Task` objects."""
 
     def d_to_t(*args, **kwargs):
         ret_dict = task_dict_func(*args, **kwargs)
@@ -43,9 +40,7 @@ class Loader(TaskLoader2):
 
 
 def run_tasks(tasks):
-    """
-    Given a list of `Task` objects and a list of arguments, execute the tasks.
-    """
+    """Given a list of `Task` objects and a list of arguments, execute the tasks."""
     doitmain = DoitMain(Loader(tasks))
     exit_code = doitmain.run(["run"])
     if exit_code != 0:

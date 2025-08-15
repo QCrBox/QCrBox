@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MPL-2.0
 
 import sys
-from typing import Iterable, Optional
+from collections.abc import Iterable
 
 import click
 import requests
@@ -44,10 +44,7 @@ def update_status_of_containers():
 
 @click.group(name="list", cls=NaturalOrderGroup)
 def list_qcrbox_resources():
-    """
-    List registered resources (applications, commands, etc.)
-    """
-    pass
+    """List registered resources (applications, commands, etc.)."""
 
 
 def run_request_against_registry_api(endpoint, params):
@@ -96,10 +93,8 @@ def list_available_components(include_all_components):
     default=None,
     help="Filter applications by version (must match exactly)",
 )
-def list_applications(slug: Optional[str], version: Optional[str]):
-    """
-    List registered applications.
-    """
+def list_applications(slug: str | None, version: str | None):
+    """List registered applications."""
     r = run_request_against_registry_api("/applications", params={"slug": slug, "version": version})
 
     cols_to_print = (
@@ -109,7 +104,10 @@ def list_applications(slug: Optional[str], version: Optional[str]):
         "version",
         "registered_at",
     )
-    data = [pretty_print_timestamp("registered_at")(extract_columns(cols_to_print)(row)) for row in r.json()]
+    data = [
+        pretty_print_timestamp("registered_at")(extract_columns(cols_to_print)(row))
+        for row in r.json()["payload"]["applications"]
+    ]
     click.echo(tabulate(data, headers="keys", tablefmt="simple"))
 
 
@@ -145,9 +143,7 @@ def list_commands(
     application_version: str | None,
     include_interactive_lifecycle_steps: bool,
 ):
-    """
-    List registered commands.
-    """
+    """List registered commands."""
     r = run_request_against_registry_api(
         "/commands",
         params={"name": name, "application_slug": application_slug, "application_version": application_version},
@@ -162,7 +158,7 @@ def list_commands(
     )
     data = [
         extract_columns(cols_to_print)(row)
-        for row in r.json()
+        for row in r.json()["payload"]["commands"]
         if not row["name"].startswith("__interactive_") or include_interactive_lifecycle_steps
     ]
     for row in data:
@@ -170,57 +166,18 @@ def list_commands(
     click.echo(tabulate(data, headers="keys", tablefmt="simple"))
 
 
-@list_qcrbox_resources.command(name="containers")
-@click.option(
-    "--application-id",
-    default=None,
-    type=int,
-    help="Filter containers by application_id (run 'qcb list applications' to get the id)",
-)
-@click.option(
-    "--update-status",
-    is_flag=True,
-    default=False,
-    type=bool,
-    help=(
-        "Ensure the status of all containers in the registry database is up to date before listing them. "
-        "This is disabled by default because it currently takes about a second per container "
-        "(it will be much faster once proper async support is added)."
-    ),
-)
-def list_containers(application_id: Optional[int], update_status: bool):
-    """
-    List registered containers.
-    """
-    if update_status:
-        update_status_of_containers()
-
-    r = run_request_against_registry_api("/containers", params={"application_id": application_id})
-    cols_to_print = (
-        "id",
-        "qcrbox_id",
-        "registered_at",
-        "application_id",
-        "status",
-    )  # we're dropping column 'routing_key__registry_to_application'
-    data = [pretty_print_timestamp("registered_at")(extract_columns(cols_to_print)(row)) for row in r.json()]
-    click.echo(tabulate(data, headers="keys", tablefmt="simple"))
-
-
 @list_qcrbox_resources.command(name="calculations")
 def list_calculations():
-    """
-    List calculations.
-    """
+    """List calculations."""
     r = run_request_against_registry_api("/calculations", params={})
     assert r.status_code == 200, "Error retrieving calculations from server"
     cols_to_print = (
         "calculation_id",
         "application_slug",
         "application_version",
-        "command_name",
-        "arguments",
         "status",
+        "command_name",
+        "command_arguments",
     )
-    data = [extract_columns(cols_to_print)(row) for row in r.json()]
+    data = [extract_columns(cols_to_print)(row) for row in r.json()["payload"]["calculations"]]
     click.echo(tabulate(data, headers="keys", tablefmt="simple"))

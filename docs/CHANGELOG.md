@@ -15,20 +15,26 @@ However, there will be an initial period of stabilisation where this is not adhe
 
 ### New Features
 
-- Included support for non-interactive commands, including stopping any long-running commands
+- Included support for non-interactive commands, including stopping any long-running commands.
+
+### Removed Features
+
+- We have removed the dev, docs, invoke and status options from the `qcb` CLI.
 
 ### Enhancements
 
-- The registry API now uses LiteStar dependency injection, improving management of the NATS server
-- Added a new tests to test the DataFileManager service, non-interactive commands and new API endpoints
+- The registry API now uses LiteStar dependency injection, improving management of the NATS server.
+- Added a new tests to test the DataFileManager service, non-interactive commands and new API endpoints.
 - And lots more!
 
 ### Issues Fixed
 
-- Fixed an issue where the DataFileManager would lose connection to the NATS server when it had too many files
+- Fixed an issue where the DataFileManager would lose connection to the NATS server when it had too many files.
 - Replaces an obscure error message when a wrong `QCrBox.cif_data_file` or `QCrBox.data_file` parameter with a more
-  helpful one
-- Fixed an issue where `qcb up` would use the wrong version ID for `pyqcrbox` when building service containers
+  helpful one.
+- Fixed an issue where `qcb up` would use the wrong version ID for `pyqcrbox` when building service containers.
+- Fixed an issue where `qcb list` would use the wrong URL and port number for the registry API.
+- Fixed linting issues raised by `ruff` for `qcb`.
 - And lots more!
 
 ## [icdm-2025]

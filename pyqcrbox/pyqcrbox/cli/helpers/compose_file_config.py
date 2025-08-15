@@ -68,7 +68,7 @@ class ComposeFileConfig:
             for compose_file in self.compose_files_build + self.compose_files_runtime + self.compose_files_test
         }
         self._full_service_metadata = {}
-        for compose_file, data in self._service_metadata_by_compose_file.items():
+        for _compose_file, data in self._service_metadata_by_compose_file.items():
             self._full_service_metadata = deep_update(self._full_service_metadata, data)
 
     @classmethod
@@ -124,8 +124,8 @@ class ComposeFileConfig:
 
         try:
             return service_metadata["build"]["context"]
-        except KeyError:
-            raise QCrBoxNoBuildContextError()
+        except KeyError as exc:
+            raise QCrBoxNoBuildContextError() from exc
 
     def get_dockerfile_for_service(self, service_name):
         build_context = self.get_build_context(service_name)
