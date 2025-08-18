@@ -29,6 +29,12 @@ from .build import populate_build_tasks
     help="Also build any dependencies of the given components. This option implies --build. [default: --build-deps]",
 )
 @click.option(
+    "--prod-images",
+    is_flag=True,
+    default=False,
+    help="Use production-ready images from the QCrBox container registry. [default: false]",
+)
+@click.option(
     "-n",
     "--dry-run",
     is_flag=True,
@@ -46,6 +52,7 @@ from .build import populate_build_tasks
 def start_up_components(
     build: bool | None,
     build_deps: bool | None,
+    prod_images: bool | None,
     dry_run: bool,
     project_name: str,
     components: list[str],
@@ -55,7 +62,13 @@ def start_up_components(
     """
     ctx = click.get_current_context()
     use_test_config = ctx.params.get("include_default_test_components")
-    docker_project = DockerProject(name=project_name, config_name="default" if not use_test_config else "test")
+    if prod_images:
+        config_name = "production"
+    elif use_test_config:
+        config_name = "test"
+    else:
+        config_name = "default"
+    docker_project = DockerProject(name=project_name, config_name=config_name)
 
     def fill_default_values(build, build_deps):
         match (build, build_deps):

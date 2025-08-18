@@ -42,7 +42,11 @@ class DockerProject:
         self.run_docker_compose_command("build", target_image, dry_run=dry_run, capture_output=True)
 
     def _construct_docker_compose_command(self, cmd: str, *cmd_args: str):
-        env_file = self.repo_root.joinpath(".env.dev")
+        if self.config_name == "production":
+            env_file = self.repo_root.joinpath(".env.prod")
+        else:
+            env_file = self.repo_root.joinpath(".env.dev")
+
         docker_executable = shutil.which("docker")
         cmd = (
             [
