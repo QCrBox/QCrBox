@@ -21,7 +21,7 @@ services:
     image: "nats:2.10.16-alpine"
     command: ["nats-server", "--jetstream", "-m", "8222", "--store_dir", "/mnt/nats/", "--server_name", "qcrbox-nats"]
     healthcheck:
-      test: curl --fail http://localhost:8222/healthz
+      test: ["CMD", "wget", "-qO-", "http://localhost:8222/healthz"]
       interval: 60s
       start_period: 30s
       start_interval: 1s
@@ -73,7 +73,7 @@ services:
         tag: "qcrbox-reverse-proxy"
 
   qcrbox-registry:
-    image: "qcrbox.azurecr.io/qcrbox-registry:latest"
+    image: ${QCRBOX_DOCKER_REPO:?Must set env var QCRBOX_DOCKER_REPO}/registry:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}
     volumes:
       - ${QCRBOX_SHARED_FILES_DIR_HOST_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_HOST_PATH}:${QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH}
       - qcrbox-registry-db:${QCRBOX_REGISTRY_DB_DIR:?Must set env var QCRBOX_REGISTRY_DB_DIR}
@@ -103,4 +103,3 @@ networks:
 volumes:
   qcrbox-registry-db:
   qcrbox-nats-storage:
-  qcrbox-nextflow-home:

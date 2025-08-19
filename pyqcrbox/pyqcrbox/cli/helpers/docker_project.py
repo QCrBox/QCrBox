@@ -13,7 +13,7 @@ __all__ = ["DockerProject"]
 
 
 class DockerProject:
-    def __init__(self, *, name: str = "qcrbox", config_name: str = "default"):
+    def __init__(self, *, name: str = "qcrbox", config_name: str = "development"):
         self.config_name = config_name
         self.project_name = name
         self.compose_file_config = ComposeFileConfig.get_config(config_name)
@@ -42,7 +42,7 @@ class DockerProject:
         self.run_docker_compose_command("build", target_image, dry_run=dry_run, capture_output=True)
 
     def _construct_docker_compose_command(self, cmd: str, *cmd_args: str):
-        if self.config_name == "production":
+        if self.config_name == "prebuilt":
             env_file = self.repo_root.joinpath(".env.prod")
         else:
             env_file = self.repo_root.joinpath(".env.dev")
@@ -58,7 +58,7 @@ class DockerProject:
             + self.compose_file_config.command_line_options
             + [cmd]
             + list(cmd_args)
-        )
+        )  # type: ignore
 
         return cmd
 
@@ -75,13 +75,13 @@ class DockerProject:
             try:
                 proc = subprocess.run(full_cmd, env=custom_env, shell=False, check=False, capture_output=True)
             except Exception as exc:
-                raise QCrBoxSubprocessError(f"Error when trying to run docker compose command: {exc}")
+                raise QCrBoxSubprocessError(f"Error when trying to run docker compose command: {exc}") from exc
 
             try:
                 proc.check_returncode()
             except subprocess.CalledProcessError as exc:
                 error_msg = prettyprint_called_process_error(exc)
-                raise QCrBoxSubprocessError(error_msg)
+                raise QCrBoxSubprocessError(error_msg) from exc
             return proc
 
     def start_up_docker_containers(self, target_containers: list[str], dry_run):
