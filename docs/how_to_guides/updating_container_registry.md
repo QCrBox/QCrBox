@@ -62,3 +62,40 @@ To list tags for a specific image:
 ```sh
 az acr repository show-tags --name qcrbox --repository qcrbox-registry --output table
 ```
+
+## Using pre-built images
+
+You can use the `qcb` tool to start services with pre-built images. For example, to start the `olex2` service with the
+production image:
+
+```sh
+qcb up --prebuilt-images olex2
+```
+
+This command will use the production Docker Compose file for `olex2` and pull the image from the ACR if it is not
+already present locally. To enable an application to pull form the ACR, you must include a `docker-compose.*.prebuilt.yml`
+file in its directory in `QCrBox/services/applications/`. Instead of using the Dockerfile to build the image, you
+instead use the image from the ACR. Below is an example of what the relevant section of this file might look like:
+
+```yaml
+services:
+  olex2:
+    image: ${QCRBOX_DOCKER_REPO:?Must set env var QCRBOX_DOCKER_REPO}/olex2-linux:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}  # Pulls from the QCrBox ACR
+    volumes:
+      - ${QCRBOX_SHARED_FILES_DIR_HOST_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_HOST_PATH}:${QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH}
+    networks:
+      - qcrbox-net
+    ports:
+      - "${QCRBOX_BIND_ADDRESS}:${QCRBOX_OLEX2_LINUX_PORT:?Must set env var QCRBOX_OLEX2_LINUX_PORT}:8080"
+    depends_on:
+      qcrbox-registry:
+        condition: service_healthy
+    # then you can configure environment variables and whatever else is required
+```
+
+This requires the following environment variables:
+
+```sh
+QCRBOX_DOCKER_REPO=qcrbox.azurecr.io
+QCRBOX_DOCKER_TAG=latest
+```
