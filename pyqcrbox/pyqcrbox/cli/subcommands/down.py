@@ -22,9 +22,7 @@ from ..helpers import ClickCommandCls, DockerProject, run_tasks
 )
 @click.argument("components", nargs=-1)
 def shut_down_components(dry_run: bool, project_name: str, components: list[str]):
-    """
-    Shut down QCrBox components.
-    """
+    """Shut down QCrBox components."""
     docker_project = DockerProject(name=project_name)
     components = components or docker_project.services_excluding_base_images
     click.echo(f"Shutting down the following components: {', '.join(components)}\n")

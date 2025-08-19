@@ -49,17 +49,16 @@ def prettify_pydantic_validation_error(yaml_data: dict, err_details: dict):
     help="Display the original pydantic validation error (for debugging).",
 )
 def validate_application_spec(application_spec_file: click.Path, show_pydantic_errors: bool):
-    """
-    Check application spec yaml file for errors.
-    """
+    """Check application spec yaml file for errors."""
     all_errors_recognised = True
 
     try:
-        _ = ApplicationSpec.from_yaml_file(application_spec_file)
+        _ = ApplicationSpec.from_yaml_file(str(application_spec_file))
     except pydantic.ValidationError as exc:
-        click.echo(f"❌ Yaml spec failed to validate: {application_spec_file!r}")
+        click.echo(f"× Yaml spec failed to validate: {application_spec_file!r}")
         click.echo()
-        yaml_data = yaml.safe_load(open(application_spec_file).read())
+        with open(str(application_spec_file)) as fp:
+            yaml_data = yaml.safe_load(fp.read())
         for err_details in exc.errors():
             err_msg = prettify_pydantic_validation_error(yaml_data, err_details)
             if err_msg:
@@ -75,4 +74,4 @@ def validate_application_spec(application_spec_file: click.Path, show_pydantic_e
 
         sys.exit(1)
 
-    click.echo("✔ Application spec successfully validated. 🎉")
+    click.echo("✔ Application spec successfully validated.")

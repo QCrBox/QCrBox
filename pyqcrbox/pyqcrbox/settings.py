@@ -93,7 +93,7 @@ class NATSSettings(QCrBoxSettingsBaseModel):
 
 class ServerAPISettings(QCrBoxSettingsBaseModel):
     host: str = "127.0.0.1"
-    port: int = 8001
+    port: int = 11000
     enable_autoreload: bool = False
 
     @computed_field  # type: ignore

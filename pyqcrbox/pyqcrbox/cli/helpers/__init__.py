@@ -7,6 +7,7 @@ from .docker_project import DockerProject
 from .doit_helpers import make_task, run_tasks
 from .qcrbox_helpers import (
     QCrBoxSubprocessError,
+    get_current_pyqcrbox_version,
     get_mkdocs_config_file_path,
     get_repo_root,
     prettyprint_called_process_error,

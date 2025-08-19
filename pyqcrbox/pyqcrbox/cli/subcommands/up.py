@@ -58,6 +58,7 @@ def start_up_components(
     components: list[str],
 ):
     """Start up QCrBox components."""
+    
     def fill_default_values(build, build_deps):
         match (build, build_deps):
             case True, None:

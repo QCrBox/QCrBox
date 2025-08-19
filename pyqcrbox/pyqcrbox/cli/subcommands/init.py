@@ -25,11 +25,6 @@ from ..helpers import get_repo_root
 @click.argument(
     "application_slug",
     metavar="<application_slug>",
-    # help=(
-    #     "The slug is used as the directory name for the new application "
-    #     "(as a subfolder of services/applications/) and also as a unique "
-    #     "identifier in other contexts."
-    # ),
 )
 def create_application_template(overwrite_if_exists, dry_run, application_slug):
     """
@@ -64,9 +59,6 @@ def create_application_template(overwrite_if_exists, dry_run, application_slug):
     click.echo("The following dialog will guide you through the relevant settings.")
     click.echo("At any time you can press Ctrl+C to abort.")
     click.echo()
-    # click.echo("At the end you will be able to confirm your choices or abort the ")
-    # click.echo("process before any files are created.")
-    # click.echo()
 
     if target_dir.exists():
         if overwrite_if_exists:
@@ -80,7 +72,7 @@ def create_application_template(overwrite_if_exists, dry_run, application_slug):
 
     result_dir = run_cookiecutter(
         template_dir,
-        output_dir=target_dir.parent,
+        output_dir=str(target_dir.parent),
         overwrite_if_exists=overwrite_if_exists,
         extra_context={"application_slug": application_slug},
     )
