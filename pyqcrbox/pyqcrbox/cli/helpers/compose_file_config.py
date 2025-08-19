@@ -47,7 +47,10 @@ def load_docker_compose_data(*compose_files: PathLike):
 
 
 class ComposeFileConfig:
-    def __init__(self, *, compose_files_build=None, compose_files_runtime=None, compose_files_prod=None):
+    def __init__(
+        self, *, config_name: str, compose_files_build=None, compose_files_runtime=None, compose_files_prod=None
+    ):
+        self.config_name = config_name
         compose_files_build = compose_files_build or ()
         compose_files_runtime = compose_files_runtime or ()
         compose_files_prod = compose_files_prod or ()
@@ -79,6 +82,7 @@ class ComposeFileConfig:
         compose_files_build = find_docker_compose_build_files(repo_root)
         compose_files_runtime = find_docker_compose_run_files(repo_root)
         return cls(
+            config_name="development",
             compose_files_build=compose_files_build,
             compose_files_runtime=compose_files_runtime,
         )
@@ -88,7 +92,10 @@ class ComposeFileConfig:
         logger.info("Using prebuilt image configuration")
         repo_root = get_repo_root()
         compose_files_prod = find_docker_compose_prebuilt_files(repo_root)
-        return cls(compose_files_prod=compose_files_prod)
+        return cls(
+            config_name="prebuilt",
+            compose_files_prod=compose_files_prod,
+        )
 
     @classmethod
     def get_config(cls, config_name):
@@ -98,7 +105,7 @@ class ComposeFileConfig:
             case "prebuilt":
                 return cls.get_prebuilt_image_config()
             case _:
-                raise ValueError(f"Invalid config name: {config_name}")
+                raise ValueError(f"Invalid config name: {config_name}. Valid config names: development, prebuilt.")
 
     @property
     def services_including_base_images(self):
@@ -116,10 +123,14 @@ class ComposeFileConfig:
         try:
             service_metadata = self._full_service_metadata["services"][service_name]
         except KeyError:
-            click.echo(f"Invalid component name: {service_name!r}")
-            click.echo()
-            click.echo("Run 'qcb list components' to get a list of valid component names.")
-            sys.exit(1)
+            if self.config_name == "prebuilt":
+                click.echo(f"No prebuilt image available for component: {service_name!r}")
+                sys.exit(1)
+            else:
+                click.echo(f"Invalid component name: {service_name!r}")
+                click.echo()
+                click.echo("Run 'qcb list components' to get a list of valid component names.")
+                sys.exit(1)
 
         try:
             return service_metadata["build"]["context"]
