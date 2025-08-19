@@ -7,6 +7,7 @@ from pathlib import Path
 
 import click
 import yaml
+from loguru import logger
 from pydantic.v1.utils import deep_update
 
 from .qcrbox_helpers import PathLike, find_common_repo_root, get_repo_root
@@ -31,8 +32,8 @@ def find_docker_compose_run_files(root: Path):
 
 
 @functools.lru_cache(maxsize=1)
-def find_docker_compose_test_files(root: Path):
-    candidate_paths = sorted(root.rglob("docker-compose*.test.yml"))
+def find_docker_compose_prebuilt_files(root: Path):
+    candidate_paths = sorted(root.rglob("docker-compose*.prebuilt.yml"))
     valid_paths = [p for p in candidate_paths if "_template" not in p.parts]
     return valid_paths
 
@@ -46,60 +47,65 @@ def load_docker_compose_data(*compose_files: PathLike):
 
 
 class ComposeFileConfig:
-    def __init__(self, *, compose_files_build=None, compose_files_runtime=None, compose_files_test=None):
+    def __init__(
+        self, *, config_name: str, compose_files_build=None, compose_files_runtime=None, compose_files_prod=None
+    ):
+        self.config_name = config_name
         compose_files_build = compose_files_build or ()
         compose_files_runtime = compose_files_runtime or ()
-        compose_files_test = compose_files_test or ()
+        compose_files_prod = compose_files_prod or ()
 
-        if (compose_files_build == () and compose_files_runtime == ()) or (
-            compose_files_build == () and compose_files_test == ()
-        ):
+        if compose_files_prod == () and compose_files_build == () and compose_files_runtime == ():
             raise ValueError(
-                "Arguments `compose_files_build` and `compose_files_runtime` or `compose_files_tests` cannot be empty."
+                "Arguments `compose_files_build`, `compose_files_runtime` and `compose_files_prod` cannot all be empty."
             )
 
         self.repo_root = find_common_repo_root(*compose_files_build, *compose_files_runtime)
         self.compose_files_build = [Path(compose_file).resolve() for compose_file in compose_files_build]
-        self.compose_files_runtime = [Path(compose_file).resolve() for compose_file in compose_files_runtime]
-        self.compose_files_test = [Path(compose_file).resolve() for compose_file in compose_files_test]
+        if compose_files_prod:
+            self.compose_files_runtime = [Path(compose_file).resolve() for compose_file in compose_files_prod]
+        else:
+            self.compose_files_runtime = [Path(compose_file).resolve() for compose_file in compose_files_runtime]
 
         self._service_metadata_by_compose_file = {
             compose_file.relative_to(self.repo_root): load_docker_compose_data(compose_file)
-            for compose_file in self.compose_files_build + self.compose_files_runtime + self.compose_files_test
+            for compose_file in self.compose_files_build + self.compose_files_runtime
         }
         self._full_service_metadata = {}
         for _compose_file, data in self._service_metadata_by_compose_file.items():
             self._full_service_metadata = deep_update(self._full_service_metadata, data)
 
     @classmethod
-    def get_default_config(cls):
+    def get_development_config(cls):
+        logger.info("Using development configuration")
         repo_root = get_repo_root()
         compose_files_build = find_docker_compose_build_files(repo_root)
         compose_files_runtime = find_docker_compose_run_files(repo_root)
         return cls(
+            config_name="development",
             compose_files_build=compose_files_build,
             compose_files_runtime=compose_files_runtime,
         )
 
     @classmethod
-    def get_test_config(cls):
+    def get_prebuilt_image_config(cls):
+        logger.info("Using prebuilt image configuration")
         repo_root = get_repo_root()
-        compose_files_build = find_docker_compose_build_files(repo_root)
-        compose_files_test = find_docker_compose_test_files(repo_root)
+        compose_files_prod = find_docker_compose_prebuilt_files(repo_root)
         return cls(
-            compose_files_build=compose_files_build,
-            compose_files_test=compose_files_test,
+            config_name="prebuilt",
+            compose_files_prod=compose_files_prod,
         )
 
     @classmethod
     def get_config(cls, config_name):
         match config_name:
-            case "default":
-                return cls.get_default_config()
-            case "test":
-                return cls.get_test_config()
+            case "development":
+                return cls.get_development_config()
+            case "prebuilt":
+                return cls.get_prebuilt_image_config()
             case _:
-                raise ValueError(f"Invalid config name: {config_name}")
+                raise ValueError(f"Invalid config name: {config_name}. Valid config names: development, prebuilt.")
 
     @property
     def services_including_base_images(self):
@@ -117,10 +123,14 @@ class ComposeFileConfig:
         try:
             service_metadata = self._full_service_metadata["services"][service_name]
         except KeyError:
-            click.echo(f"Invalid component name: {service_name!r}")
-            click.echo()
-            click.echo("Run 'qcb list components' to get a list of valid component names.")
-            sys.exit(1)
+            if self.config_name == "prebuilt":
+                click.echo(f"No prebuilt image available for component: {service_name!r}")
+                sys.exit(1)
+            else:
+                click.echo(f"Invalid component name: {service_name!r}")
+                click.echo()
+                click.echo("Run 'qcb list components' to get a list of valid component names.")
+                sys.exit(1)
 
         try:
             return service_metadata["build"]["context"]
@@ -137,7 +147,8 @@ class ComposeFileConfig:
             contents = dockerfile.open().readlines()
             dependency_lines = [line for line in contents if line.startswith("FROM qcrbox")]
             dependency_names = [
-                re.match("^FROM qcrbox/(?P<image_name>.*):", line).group("image_name") for line in dependency_lines
+                re.match("^FROM qcrbox/(?P<image_name>.*):", line).group("image_name")  # type: ignore
+                for line in dependency_lines
             ]
         except QCrBoxNoBuildContextError:
             dependency_names = []
@@ -189,7 +200,7 @@ class ComposeFileConfig:
 
     @property
     def compose_files(self):
-        return self.compose_files_build + self.compose_files_runtime + self.compose_files_test
+        return self.compose_files_build + self.compose_files_runtime
 
     @property
     def command_line_options(self):

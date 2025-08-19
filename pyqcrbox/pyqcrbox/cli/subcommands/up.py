@@ -29,6 +29,12 @@ from .build import populate_build_tasks
     help="Also build any dependencies of the given components. This option implies --build. [default: --build-deps]",
 )
 @click.option(
+    "--prebuilt-images",
+    is_flag=True,
+    default=False,
+    help="Use pre-built production-ready images from the QCrBox container registry. [default: False]",
+)
+@click.option(
     "-n",
     "--dry-run",
     is_flag=True,
@@ -46,15 +52,13 @@ from .build import populate_build_tasks
 def start_up_components(
     build: bool | None,
     build_deps: bool | None,
+    prebuilt_images: bool | None,
     dry_run: bool,
     project_name: str,
     components: list[str],
 ):
     """Start up QCrBox components."""
-    ctx = click.get_current_context()
-    use_test_config = ctx.params.get("include_default_test_components")
-    docker_project = DockerProject(name=project_name, config_name="default" if not use_test_config else "test")
-
+    
     def fill_default_values(build, build_deps):
         match (build, build_deps):
             case True, None:
@@ -78,6 +82,10 @@ def start_up_components(
                 return True, True
 
     build, build_deps = fill_default_values(build, build_deps)
+    # if prebuilt_images and build or build_deps:
+    #     click.echo("Error: options --prebuilt-images is incompatible with --build or --build-deps")
+    #     sys.exit(1)
+    docker_project = DockerProject(name=project_name, config_name="prebuilt" if prebuilt_images else "development")
 
     build_tasks = []
     if build or build_deps:

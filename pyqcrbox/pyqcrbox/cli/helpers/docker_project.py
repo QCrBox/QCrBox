@@ -13,7 +13,7 @@ __all__ = ["DockerProject"]
 
 
 class DockerProject:
-    def __init__(self, *, name: str = "qcrbox", config_name: str = "default"):
+    def __init__(self, *, name: str = "qcrbox", config_name: str = "development"):
         self.config_name = config_name
         self.project_name = name
         self.compose_file_config = ComposeFileConfig.get_config(config_name)
@@ -42,7 +42,11 @@ class DockerProject:
         self.run_docker_compose_command("build", target_image, dry_run=dry_run, capture_output=True)
 
     def _construct_docker_compose_command(self, cmd: str, *cmd_args: str):
-        env_file = self.repo_root.joinpath(".env.dev")
+        if self.config_name == "prebuilt":
+            env_file = self.repo_root.joinpath(".env.prod")
+        else:
+            env_file = self.repo_root.joinpath(".env.dev")
+
         docker_executable = shutil.which("docker")
         cmd = (
             [
@@ -54,7 +58,7 @@ class DockerProject:
             + self.compose_file_config.command_line_options
             + [cmd]
             + list(cmd_args)
-        )
+        )  # type: ignore
 
         return cmd
 

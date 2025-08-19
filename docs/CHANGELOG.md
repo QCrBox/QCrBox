@@ -16,7 +16,9 @@ However, there will be an initial period of stabilisation where this is not adhe
 ### New Features
 
 - Included support for non-interactive commands, including stopping any long-running commands.
-
+- Added `--prebuilt-images` option to `qcb up` to bring QCrBox up using tested images from the QCrBox container
+  repository
+  
 ### Removed Features
 
 - We have removed the dev, docs, invoke and status options from the `qcb` CLI.

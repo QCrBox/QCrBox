@@ -128,7 +128,7 @@ def determine_components_to_include(
     components: list[str],
 ) -> set[str]:
     if include_all_default_components and include_default_test_components:
-        click.echo("The flags --all and --test-only cannot be used together.")
+        click.echo("The flags --all and --test cannot be used together.")
         sys.exit(1)
     if include_all_default_components:
         if not components:
@@ -140,7 +140,7 @@ def determine_components_to_include(
         if not components:
             components = test_components
         else:
-            click.echo("The flag --test-only cannot be combined with explicit component names.")
+            click.echo("The flag --test cannot be combined with explicit component names.")
             sys.exit(1)
 
     simultaneously_enabled_and_disabled = set(enabled_components).intersection(disabled_components)
@@ -153,9 +153,7 @@ def determine_components_to_include(
 
     components_to_include = set(components).union(enabled_components).difference(disabled_components)
     if not components_to_include:
-        click.echo(
-            "Nothing to build. Consider using the --all or --test-only flags or specify explicit component names."
-        )
+        click.echo("Nothing to build. Consider using the --all or --test flags or specify explicit component names.")
         sys.exit()
 
     if enabled_components:
