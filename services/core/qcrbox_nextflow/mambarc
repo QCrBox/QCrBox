@@ -1,5 +1,0 @@
-#
-# Mamba configuration file for QCrBox
-#
-channels:
-  - conda-forge

@@ -30,7 +30,7 @@ def add_cli_option_to_enable_or_disable_components(f):
     DEFAULT_ALL_COMPONENTS = ("olex2", "crystal-explorer", "mopro", "qcrbox_quality", "xharpy-gpaw", "qcrboxtools")
     DEFAULT_TEST_COMPONENTS = ("dummy_cli", "dummy_gui")
     DEFAULT_EXPLICITLY_ENABLED_COMPONENTS = ()
-    DEFAULT_EXPLICITLY_DISABLED_COMPONENTS = ("shelx", "qcrbox-nextflow", "eval1x")
+    DEFAULT_EXPLICITLY_DISABLED_COMPONENTS = ("shelx", "eval1x")
 
     @functools.wraps(f)
     def wrapper(

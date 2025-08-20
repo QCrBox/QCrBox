@@ -43,17 +43,6 @@ services:
         # We set a default value for QCRBOX_WINEARCH just so that we can run the base-wine container for debugging,
         # but this must be set by each application as required.
         QCRBOX_WINEARCH: ${QCRBOX_WINEARCH:-win32}
-    #depends_on:
-    #  - base-novnc
-    #environment:
-    #  QCRBOX_APP_DISPLAY_NAME: "QCrBox-Wine"
-    #volumes:
-    #  - wine_installations_dir:${QCRBOX_WINE_INSTALLATIONS_DIR:?Must set env var QCRBOX_WINE_INSTALLATIONS_DIR}
-    #networks:
-    #  - qcrbox-net
-    #ports:
-    #  - "${QCRBOX_BIND_ADDRESS}:${QCRBOX_PORT_BASE_IMAGE_WINE:?Must set env var QCRBOX_PORT_BASE_IMAGE_WINE}:8080"
-    #restart: "unless-stopped"
 
   qcrbox-nats:
     build:
@@ -67,16 +56,3 @@ services:
         QCRBOX_ROOT_DIR: ${QCRBOX_ROOT_DIR:?Must set env var QCRBOX_ROOT_DIR}
         QCRBOX_SUPERVISORD_CONF_DIR: ${QCRBOX_SUPERVISORD_CONF_DIR:?Must set env var QCRBOX_SUPERVISORD_CONF_DIR}
         QCRBOX_REGISTRY_DB_DIR: ${QCRBOX_REGISTRY_DB_DIR:?Must set env var QCRBOX_REGISTRY_DB_DIR}
-
-  qcrbox-nextflow:
-    build:
-      context: services/core/qcrbox_nextflow
-      args:
-        QCRBOX_DOCKER_TAG: ${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}
-        QCRBOX_ROOT_DIR: ${QCRBOX_ROOT_DIR:?Must set env var QCRBOX_ROOT_DIR}
-        QCRBOX_SUPERVISORD_CONF_DIR: ${QCRBOX_SUPERVISORD_CONF_DIR:?Must set env var QCRBOX_SUPERVISORD_CONF_DIR}
-        PYQCRBOX_PYTHON_PACKAGE_VERSION: ${PYQCRBOX_PYTHON_PACKAGE_VERSION:-${QCRBOX_DOCKER_TAG}}
-        QCRBOX_PYTHON_PACKAGE_VERSION: ${QCRBOX_PYTHON_PACKAGE_VERSION:-${QCRBOX_DOCKER_TAG}}
-        QCRBOXTOOLS_VERSION: ${QCRBOXTOOLS_VERSION:?Must set env var QCRBOXTOOLS_VERSION}
-        QCRBOX_NEXTFLOW_HOME: "${QCRBOX_NEXTFLOW_HOME:?Must set env var QCRBOX_NEXTFLOW_HOME}"
-        NEXTFLOW_VERSION: "23.10.0"

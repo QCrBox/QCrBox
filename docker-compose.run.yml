@@ -98,35 +98,9 @@ services:
         syslog-address: udp://127.0.0.1:514
         tag: "qcrbox-registry"
 
-  qcrbox-nextflow:
-    image: "qcrbox/nextflow:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - qcrbox-nextflow-home:${QCRBOX_NEXTFLOW_HOME:?Must set env var QCRBOX_NEXTFLOW_HOME}
-      - ${QCRBOX_SHARED_FILES_DIR_HOST_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_HOST_PATH}:${QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH}
-      # Note: for Nextflow to run correctly when executed from within a Docker container,
-      # the host path to the shared folder must be mounted to the *same* path within the
-      # `qcrbox-nextflow` container.
-      - ${QCRBOX_SHARED_FILES_DIR_HOST_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_HOST_PATH}:${QCRBOX_SHARED_FILES_DIR_HOST_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_HOST_PATH}
-    depends_on:
-      qcrbox-nats:
-        condition: service_healthy
-    environment:
-      QCRBOX_REGISTRY_HOST: "qcrbox-registry"
-      QCRBOX_REGISTRY_PORT: "8000"
-      QCRBOX_NEXTFLOW_HOME: "${QCRBOX_NEXTFLOW_HOME:?Must set env var QCRBOX_NEXTFLOW_HOME}"
-    networks:
-      - qcrbox-net
-    restart: "unless-stopped"
-    logging:
-      driver: "syslog"
-      options:
-        syslog-address: udp://127.0.0.1:514
-        tag: "qcrbox-nextflow"
 networks:
   qcrbox-net:
 
 volumes:
   qcrbox-registry-db:
   qcrbox-nats-storage:
-  qcrbox-nextflow-home:

@@ -12,11 +12,10 @@ Let's check which components are available in QCrBox.
 $ qcb list components
 ```
 
-This list contains three "core" components (`qcrbox-message-bus`, `qcrbox-registry`, `qcrbox-nextflow`).
-You don't need to worry about these for using and interacting with QCrBox - they will be started automatically
-when you spin up the crystallographic application components.
+This list contains the services available in QCrBox, including core components such as "qcrbox-registry", "qcrbox-nats"
+and so on. The remaining components represent existing crystallographic software packages that are accessible from
+QCrBox.
 
-The remaining components represent existing crystallographic software packages that are accessible from QCrBox.
 ```
 crystal-explorer
 eval1x
