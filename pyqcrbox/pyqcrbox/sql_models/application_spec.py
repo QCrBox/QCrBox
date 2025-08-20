@@ -10,6 +10,7 @@ from pydantic import Field, PrivateAttr, field_validator, model_validator
 from .. import helpers
 from .base import QCrBoxPydanticBaseModel
 from .cif_entry_set import CifEntrySet
+from .command_spec.base_command_spec import ImplementedAs
 from .command_spec.command_spec import CommandSpecDiscriminatedUnion, CommandSpecWithParametersResponse
 
 __all__ = ["ApplicationSpec"]
@@ -109,6 +110,20 @@ class ApplicationSpec(ApplicationSpecBase):
         if len(command_names) != len(set(command_names)):
             raise ValueError(f"Command names must be unique, got: {command_names!r}")
         return value
+
+    @field_validator("commands")
+    @classmethod
+    def verify_implemented_as_valid(
+        cls, commands: list[CommandSpecDiscriminatedUnion]
+    ) -> list[CommandSpecDiscriminatedUnion]:
+        for command in commands:
+            if (
+                command.is_non_interactive
+                and command.implemented_as == ImplementedAs.cli_command
+                and not command.name.startswith("__")  # this is to ignore commands in the interactive lifecycle
+            ):
+                raise ValueError(f"Non-interactive command cannot be a {ImplementedAs.cli_command!r}")
+        return commands
 
     @model_validator(mode="after")
     def add_interactive_lifecycle_commands(self):
