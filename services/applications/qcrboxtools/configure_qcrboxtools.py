@@ -107,7 +107,7 @@ def replace_structure_from_cif(input_cif, structure_cif, output_cif_name):
     return str(output_cif_path)
 
 
-def iso2ansio(input_cif, output_cif_name):
+def iso2aniso(input_cif, output_cif_name):
     input_cif_path = Path(input_cif)
     work_cif_path = input_cif_path.parent / "qcrbox_work.cif"
 

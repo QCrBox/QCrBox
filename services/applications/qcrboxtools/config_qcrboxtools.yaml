@@ -22,7 +22,7 @@ commands:
           one_of: ["_space_group.centring_type", "_space_group.name_h-m_alt", "_space_group.name_hall"]
         ]
         merge_su: No
-      - name: "structure_cif_path"
+      - name: "structure_cif"
         dtype: "QCrBox.data_file"
         default_value: None
         description: "Path to the CIF file containing the structure to be inserted"
@@ -36,7 +36,7 @@ commands:
           "_atom_site.*"
         ]
 
-  - name: "check_structure_convergence_max_abs_position"
+  - name: "check_structure_convergence"
     description: "Check the convergence of a structure, to be used for refinement with changing atomic form factors"
     implemented_as: "python_callable"
     import_path: "configure_qcrboxtools"

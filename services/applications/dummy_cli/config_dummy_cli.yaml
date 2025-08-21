@@ -42,16 +42,4 @@ commands:
         dtype: str
         description: "An unused dummy parameter"
 
-  - name: "sample_cli_cmd"
-    implemented_as: "cli_command"
-    call_pattern: "sample_cmd.sh {msg} {some_number}"
-    parameters:
-      - name: "msg"
-        dtype: str
-        default_value: null
-      - name: "some_number"
-        dtype: int
-        default_value: 42
-        required: False
-
 qcrbox_yaml_spec_version: "0.1"
