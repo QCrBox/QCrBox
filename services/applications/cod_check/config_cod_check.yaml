@@ -14,9 +14,9 @@ commands:
     import_path: "configure_cod_check"
     callable_name: "qcb_get_number_fitting_cod_entries"
     parameters:
-      - name: "input_cif_path"
+      - name: "input_cif"
         description: "Path to the input CIF file."
-        dtype: "QCrBox.input_cif"
+        dtype: "QCrBox.cif_data_file"
         required_entries: [
           "_cell_length_a", "_cell_length_b", "_cell_length_c",
           "_cell_angle_alpha", "_cell_angle_beta", "_cell_angle_gamma",
@@ -35,18 +35,18 @@ commands:
     implemented_as: "python_callable"
     import_path: "configure_cod_check"
     parameters:
-      - name: "input_cif_path"
+      - name: "input_cif"
         description: "Path to the input CIF file."
-        dtype: "QCrBox.input_cif"
+        dtype: "QCrBox.cif_data_file"
         required_entries: [
           "_cell_length_a", "_cell_length_b", "_cell_length_c",
           "_cell_angle_alpha", "_cell_angle_beta", "_cell_angle_gamma",
           "_chemical_formula_sum"
         ]
         default_value: None
-      - name: "output_cif_path"
-        description: "Path to the output CIF file."
-        dtype: "QCrBox.output_cif"
+      - name: "output_cif_name"
+        description: "Name of the the output CIF file."
+        dtype: str
         required_entries: [
           "_atom_site_label", "_atom_site_fract_x", "_atom_site_fract_y", "_atom_site_fract_z",
           "_atom_site_occupancy", "_atom_site_U_iso_or_equiv", "_atom_site_type_symbol",
