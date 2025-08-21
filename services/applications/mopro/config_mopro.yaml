@@ -11,9 +11,9 @@ doi: "10.1107/S0108767306053748"
 commands:
   - name: "interactive_session"
     implemented_as: "interactive_session"
-    description: "qad"
+    description: "Launch an interactive session for using MoProSuite"
     parameters:
-      - name: "input_file"
+      - name: "input_cif"
         dtype: "QCrBox.cif_data_file"
         description: "The CIF file to open in MoPro"
     interactive_lifecycle:
@@ -21,74 +21,36 @@ commands:
         implemented_as: "python_callable"
         import_path: "configure_mopro"
         callable_name: "__run_interactive"
-        used_basecommand_parameters: ["input_file"]
+        used_basecommand_parameters: ["input_cif"]
       finalise:
         implemented_as: "python_callable"
         import_path: "configure_mopro"
         callable_name: "__finalise_interactive"
-        used_basecommand_parameters: ["input_file"]
-
-  - name: "non_current_interactive"
-    implemented_as: "interactive"
-    parameters:
-      - name: "input_cif_path"
-        dtype: "QCrBox.input_cif"
-        required_entry_sets: ["input"]
-        merge_su: True
-        custom_categories: ["iucr", "mopro"]
-      - name: "output_cif_path"
-        dtype: "QCrBox.output_cif"
-        required_entries: []
-        optional_entries: []
-        required_entry_sets: ["output"]
-        invalidated_entries: ["_refine_.*", "_computing_.*", "_geom_.*", "_atom_rho_.*", "_atom_local_axes_.*"]
-        custom_categories: ["iucr", "mopro"]
-      - name: "table_type"
-        dtype: "str"
-        default_value: "MoPro v20"
-        description: "to be added"
-      - name: "wavefunction_type"
-        dtype: "str"
-        default_value: "Su Coppens"
-        description: "to be added"
-    interactive_lifecycle:
-      prepare:
-        implemented_as: "python_callable"
-        import_path: "configure_mopro"
-        callable_name: "prepare__interactive"
-        used_basecommand_parameters: ["input_cif_path", "table_type", "wavefunction_type"]
-      run:
-        implemented_as: "cli_command"
-        call_pattern: "wine $MOPRO_GUI_PATH"
-      finalise:
-        implemented_as: "python_callable"
-        import_path: "configure_mopro"
-        callable_name: "finalise__interactive"
-        used_basecommand_parameters: ["input_cif_path", "output_cif_path"]
+        used_basecommand_parameters: ["input_cif"]
 
   - name: "run_inp_file"
     implemented_as: "python_callable"
     import_path: "configure_mopro"
     parameters:
-      - name: "input_cif_path"
-        dtype: "QCrBox.input_cif"
+      - name: "input_cif"
+        dtype: "QCrBox.cif_data_file"
         required_entry_sets: ["input"]
         merge_su: True
-      - name: "output_cif_path"
+      - name: "output_cif_name"
         dtype: "QCrBox.output_cif"
         required_entries: []
         optional_entries: []
         required_entry_sets: ["output"]
         invalidated_entries: ["_refine_.*", "_computing_.*", "_geom_.*", "_atom_rho_.*", "_atom_local_axes_.*"]
-      - name: "inp_file_path"
+      - name: "inp_file"
         dtype: "QCrBox.data_file"
-        description: "path to the MoPro input file"
-      - name: "constraint_file_path"
+        description: "The MoPro input file"
+      - name: "constraint_file"
         dtype: "QCrBox.data_file"
-        description: "path to the MoPro constraints file"
-      - name: "restraint_file_path"
+        description: "The MoPro constraints file"
+      - name: "restraint_file"
         dtype: "QCrBox.data_file"
-        description: "path to the MoPro restraints file"
+        description: "The MoPro restraints file"
       - name: "table_type"
         dtype: "str"
         default_value: "MoPro v20"

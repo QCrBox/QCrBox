@@ -50,7 +50,7 @@ commands:
         merge_su: True
         custom_categories: ["shelx"]
       - name: "output_cif_name"
-        dtype: str
+        dtype: "QCrBox.output_cif"
         default_value: None
         description: "Path to save the CIF file to after refining the structure"
         required_entry_sets: ["structure", "atomic_information"]

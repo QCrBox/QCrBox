@@ -46,7 +46,7 @@ commands:
         default_value: None
       - name: "output_cif_name"
         description: "Name of the the output CIF file."
-        dtype: str
+        dtype: "QCrBox.output_cif"
         required_entries: [
           "_atom_site_label", "_atom_site_fract_x", "_atom_site_fract_y", "_atom_site_fract_z",
           "_atom_site_occupancy", "_atom_site_U_iso_or_equiv", "_atom_site_type_symbol",

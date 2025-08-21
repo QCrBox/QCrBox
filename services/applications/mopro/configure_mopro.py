@@ -1,8 +1,5 @@
 import os
 import re
-import shlex
-
-# import os
 import subprocess
 from pathlib import Path, PureWindowsPath
 
@@ -22,8 +19,8 @@ IMPORT_MOPRO_EXE_PATH = PureWindowsPath(os.environ["IMOPRO_PATH"])
 MOPRO_ROAMING_DIR = Path(os.environ["MOPRO_ROAMING_PROFILE_DIR"])
 
 
-def __run_interactive(input_file):
-    input_cif_path = Path(input_file)
+def __run_interactive(input_cif):
+    input_cif_path = Path(input_cif)
     work_dir = input_cif_path.parent
 
     path_helper = WinePathHelper()
@@ -35,7 +32,7 @@ def __run_interactive(input_file):
 
     mopro_gui_path = os.environ["MOPRO_GUI_PATH"]
 
-    command = ['wine', str(mopro_gui_path)]
+    command = ["wine", str(mopro_gui_path)]
 
     # write hkl
     unified_cif_path = work_dir / "unified_for_hkl.cif"
@@ -44,7 +41,7 @@ def __run_interactive(input_file):
     unified_cif_path.unlink()
 
     subprocess.call(command)
-    # os.spawnl(os.P_NOWAIT, command)
+
 
 def non_final_cif(filename):
     if str(filename.name).lower().endswith("hkl.cif"):
@@ -53,15 +50,11 @@ def non_final_cif(filename):
     return filename.name in excluded_cif
 
 
-
-def __finalise_interactive(input_file):
-    input_cif_path = Path(input_file)
+def __finalise_interactive(input_cif):
+    input_cif_path = Path(input_cif)
     work_folder = input_cif_path.parent
     try:
-        cif_paths = (
-            list(work_folder.glob("*.CIF")) 
-            + list(work_folder.glob("*.cif"))
-        )
+        cif_paths = list(work_folder.glob("*.CIF")) + list(work_folder.glob("*.cif"))
         newest_cif_path = next(
             reversed(
                 sorted(
@@ -89,23 +82,23 @@ def __finalise_interactive(input_file):
 
         with cleaned_cif_path.open("a", encoding="utf-8") as fobj:
             fobj.write("\n")
-            fobj.write('_iucr_refine_fcf_details\n;\n')
+            fobj.write("_iucr_refine_fcf_details\n;\n")
             fobj.write(fcf_content)
-            fobj.write('\n;\n')
+            fobj.write("\n;\n")
 
         original_cif_text = input_cif_path.read_text(encoding="utf-8", errors="replace")
         cleaned_cif_text = cleaned_cif_path.read_text(encoding="utf-8", errors="replace")
-        replace_entries = ('_symmetry_space_group_name_Hall','_symmetry_space_group_name_H-M_alt', '_space_group_IT_number')
+        replace_entries = (
+            "_symmetry_space_group_name_Hall",
+            "_symmetry_space_group_name_H-M_alt",
+            "_space_group_IT_number",
+        )
         for entry in replace_entries:
             pattern = re.compile(rf"(\n\s*{entry} .*\n)", re.IGNORECASE)
             match = pattern.search(original_cif_text)
             if match:
                 value = match.group(1)
-                cleaned_cif_text = re.sub(
-                    pattern,
-                    value,
-                    cleaned_cif_text
-                )
+                cleaned_cif_text = re.sub(pattern, value, cleaned_cif_text)
         cleaned_cif_path.write_text(cleaned_cif_text, encoding="utf-8")
 
         return cleaned_cif_path
@@ -115,9 +108,7 @@ def __finalise_interactive(input_file):
 
 def clean_cif(cif_path, cleaned_cif_path):
     text = cif_path.read_text(encoding="utf-8", errors="replace")
-    non_character_pattern = re.compile(
-        r"[^\w\s\.,!?;:\'\"\-()\[\]{}<>|/\\@#%&*+=`~\^]"
-    )
+    non_character_pattern = re.compile(r"[^\w\s\.,!?;:\'\"\-()\[\]{}<>|/\\@#%&*+=`~\^]")
     cleaned_text = non_character_pattern.sub("?", text)
     cleaned_cif_path.write_text(cleaned_text, encoding="utf-8")
 
@@ -126,7 +117,7 @@ def table_path(table_type):
     match table_type:
         case "MoPro v24":
             table_name = LIBMOPRO_PATH / "mopro_v24.tab"
-        #case "XD":
+        # case "XD":
         #    table_name = lib_path / "mopro_xd.tab"
         case _:
             if not table_type.endswith(".tab"):
@@ -141,7 +132,7 @@ def wave_function_path(wave_function_type):
             wave_name = LIBMOPRO_PATH / "WAVEF_Su_Coppens_relativistic"
         case "Clementi Roetti":
             wave_name = LIBMOPRO_PATH / "WAVEF"
-        #case "Mollynx":
+        # case "Mollynx":
         #    wave_name = lib_path / "WAVEF_Mollynx"
         case _:
             wave_name = LIBMOPRO_PATH / f"WAVEF_{wave_function_type}"
@@ -154,7 +145,6 @@ def anom_path():
 
 def density_path():
     return LIBMOPRO_PATH / "dens_sph_neu.tab"
-
 
 
 def create_mopro_inis(work_dir, table_type, wavefunction_type):
@@ -191,21 +181,20 @@ def add_files_mopro_inp(inp_file: MoProInpFile, table_type: str, wave_function_t
     inp_file.files["ANOM"] = anom_path()
     return inp_file
 
+
 def run_inp_file(
-    input_cif_path,
-    output_cif_path,
-    inp_file_path,
-    constraint_file_path,
-    restraint_file_path,
+    input_cif,
+    output_cif_name,
+    inp_file,
+    constraint_file,
+    restraint_file,
     table_type,
-    wavefunction_type
+    wavefunction_type,
 ):
-    work_folder = Path(input_cif_path).parent
+    work_folder = Path(input_cif).parent
     work_cif_path = work_folder / "work.cif"
-    cif_file_to_specific_by_yml(
-        input_cif_path, work_cif_path, YAML_PATH, "run_inp_file", "input_cif_path"
-    )
-    cif2hkl4(input_cif_path, 0, work_cif_path.with_suffix(".hkl"))
+    cif_file_to_specific_by_yml(input_cif, work_cif_path, YAML_PATH, "run_inp_file", "input_cif_path")
+    cif2hkl4(input_cif, 0, work_cif_path.with_suffix(".hkl"))
 
     mopro_ini_path = MOPRO_ROAMING_DIR / "mopro.ini"
     if mopro_ini_path.exists():
@@ -218,21 +207,21 @@ def run_inp_file(
     imopro.cif2par(work_cif_path)
 
     path_helper = WinePathHelper()
-    inp_file_path = Path(inp_file_path)
-    inp_file = MoProInpFile.from_file(inp_file_path)
+    inp_file = Path(inp_file)
+    inp_file = MoProInpFile.from_file(inp_file)
     add_files_mopro_inp(inp_file, table_type, wavefunction_type)
     para_path = work_cif_path.with_name(work_cif_path.stem + "_00.par")
     inp_file.files["PARA"] = path_helper.get_windows_path(para_path)
     inp_file.files["DATA"] = path_helper.get_windows_path(work_cif_path.with_suffix(".hkl"))
-    if constraint_file_path.lower() != "none":
-        inp_file.files["CONS"] = path_helper.get_windows_path(Path(constraint_file_path))
+    if constraint_file.lower() != "none":
+        inp_file.files["CONS"] = path_helper.get_windows_path(Path(constraint_file))
     else:
         inp_file.files.pop("CONS", None)
-    if restraint_file_path.lower() != "none":
-        inp_file.files["REST"] = path_helper.get_windows_path(Path(restraint_file_path))
+    if restraint_file.lower() != "none":
+        inp_file.files["REST"] = path_helper.get_windows_path(Path(restraint_file))
     else:
         inp_file.files.pop("REST", None)
-    inp_file.body += '\nWRIT CIFM\n'
+    inp_file.body += "\nWRIT CIFM\n"
     inp_file.write(work_folder / "mopro.inp")
 
     mopro_unix_path = path_helper.get_unix_path(Path(os.environ["MOPRO_PATH"]))
@@ -254,87 +243,20 @@ def run_inp_file(
     )
 
     # MoPro might output invalid characters
-    cleaned_cif_path = newest_cif_path.with_name(f"{input_cif_path.stem}_mopro.cif")
+    cleaned_cif_path = newest_cif_path.with_name(f"{input_cif.stem}_mopro.cif")
     clean_cif(newest_cif_path, cleaned_cif_path)
 
+    output_cif_path = work_cif_path.parent / output_cif_name
     cif_file_merge_to_unified_by_yml(
         cleaned_cif_path,
         output_cif_path,
-        input_cif_path,
+        input_cif,
         YAML_PATH,
         "run_inp_file",
-        "output_cif_path",
+        "output_cif_name",
     )
 
-
-def prepare__interactive(input_cif_path, table_type, wavefunction_type):
-    input_cif_path = Path(input_cif_path)
-    work_dir = input_cif_path.parent
-    work_cif_path = work_dir / "work.cif"
-    cif_file_to_specific_by_yml(
-        input_cif_path, work_cif_path, YAML_PATH, "interactive", "input_cif_path"
-    )
-
-    create_mopro_inis(work_dir, table_type, wavefunction_type)
-
-    cif2hkl4(input_cif_path, 0, input_cif_path.with_suffix(".hkl"))
-
-    path_helper = WinePathHelper()
-    imopro_unix_path = path_helper.get_unix_path(Path(os.environ["IMOPRO_PATH"]))
-
-    imopro = MoProImportRobot(executable_path=imopro_unix_path)
-    imopro.cif2par(work_cif_path)
-
-
-def finalise__interactive(input_cif_path, output_cif_path):
-    output_cif_path = Path(output_cif_path)
-    input_cif_path = Path(input_cif_path)
-    work_folder = input_cif_path.parent
-    try:
-        excluded_cif = ("output.cif", "work.cif", "input.cif")
-        newest_cif_path = next(
-            reversed(
-                sorted(
-                    (
-                        file_path
-                        for file_path in work_folder.glob("*.cif")
-                        if file_path.name not in excluded_cif
-                    ),
-                    key=os.path.getmtime,
-                )
-            )
-        )
-
-        # MoPro might output invalid characters
-        cleaned_cif_path = newest_cif_path.with_name("cleaned.cif")
-        clean_cif(newest_cif_path, cleaned_cif_path)
-
-        cif_file_merge_to_unified_by_yml(
-            cleaned_cif_path,
-            output_cif_path,
-            input_cif_path,
-            YAML_PATH,
-            "interactive",
-            "output_cif_path",
-        )
-    except StopIteration:
-        pass
-
-def toparams__interactive(input_cif_path):
-    input_cif_path = Path(input_cif_path)
-    work_folder = input_cif_path.parent
-
-
-def redo__interactive(input_cif_path):
-    pass
-
-def toparams__interactive(input_cif_path):
-    input_cif_path = Path(input_cif_path)
-    work_folder = input_cif_path.parent
-
-
-def redo__interactive(input_cif_path):
-    pass
+    return str(output_cif_path)
 
 
 if __name__ == "__main__":
