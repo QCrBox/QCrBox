@@ -11,9 +11,9 @@ from pyqcrbox.registry.client import QCrBoxClient
 YAML_PATH = "/opt/qcrbox/config_xharpy_gpaw.yaml"
 
 
-def atom_form_fact_gpaw(input_cif_path, output_tsc_path, functional, gridspacing):
-    work_cif_path = Path(input_cif_path).parent / "work.cif"
-    cif_file_to_specific_by_yml(input_cif_path, work_cif_path, YAML_PATH, "atom_form_fact_gpaw", "input_cif_path")
+def atom_form_fact_gpaw(input_cif, output_tsc_name, functional, gridspacing):
+    work_cif_path = Path(input_cif).parent / "work.cif"
+    cif_file_to_specific_by_yml(input_cif, work_cif_path, YAML_PATH, "atom_form_fact_gpaw", "input_cif")
     subprocess.check_call(
         [
             "python",
@@ -22,7 +22,7 @@ def atom_form_fact_gpaw(input_cif_path, output_tsc_path, functional, gridspacing
             "--cif_name",
             str(work_cif_path),
             "--tsc_name",
-            str(output_tsc_path),
+            str(output_tsc_name),
             "--xc",
             str(functional),
             # "--kpoints", Param("kpoints"),
@@ -32,25 +32,27 @@ def atom_form_fact_gpaw(input_cif_path, output_tsc_path, functional, gridspacing
         ]
     )
 
+    return str(output_tsc_name)
 
-def ha_refine(input_cif_path, output_cif_path, functional, gridspacing):
-    input_cif_path = Path(input_cif_path)
+
+def ha_refine(input_cif, output_cif_name, functional, gridspacing):
+    input_cif = Path(input_cif)
     output_dir = Path("./xharpy_output")
     if output_dir.exists():
         shutil.rmtree(output_dir)
     output_dir.mkdir()
 
-    cif2hkl4(input_cif_path, 0, output_dir / "shelx.hkl")
+    cif2hkl4(input_cif, 0, output_dir / "shelx.hkl")
 
     work_cif_path = output_dir / "qcrbox_work.cif"
 
-    cif_text = input_cif_path.read_text(encoding="UTF-8")
+    cif_text = input_cif.read_text(encoding="UTF-8")
     extinction_method = "none"
     if "refine_ls.extinction_coef" in cif_text:
         entry = cif_text.split("refine_ls.extinction_coef")[1].strip()[:2]
         if entry.strip() != ".":
             extinction_method = "shelxl"
-    cif_file_to_specific_by_yml(input_cif_path, work_cif_path, YAML_PATH, "ha_refine", "input_cif_path")
+    cif_file_to_specific_by_yml(input_cif, work_cif_path, YAML_PATH, "ha_refine", "input_cif")
 
     subprocess.check_call(
         [
@@ -82,11 +84,15 @@ def ha_refine(input_cif_path, output_cif_path, functional, gridspacing):
         ]
     )
 
+    output_cif_path = work_cif_path.parent / output_cif_name
     cif_file_merge_to_unified_by_yml(
-        work_cif_path, output_cif_path, input_cif_path, YAML_PATH, "ha_refine", "output_cif_path"
+        work_cif_path, output_cif_path, input_cif, YAML_PATH, "ha_refine", "output_cif_name"
     )
 
     shutil.rmtree(output_dir)
+
+    return str(output_cif_path)
+
 
 if __name__ == "__main__":
     application_spec = sql_models.ApplicationSpec.from_yaml_file(YAML_PATH)
