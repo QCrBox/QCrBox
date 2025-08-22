@@ -494,7 +494,7 @@ async def download_dataset_by_id(
     return Response(
         content=dataset_contents_as_bytes,
         media_type="application/octet-stream",
-        headers={"Content-Disposition": f"attachment; filename={output_filename!r}"},
+        headers={"Content-Disposition": f"attachment; filename={output_filename}"},
         status_code=200,
     )
 
