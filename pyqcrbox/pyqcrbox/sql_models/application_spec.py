@@ -7,6 +7,8 @@ from typing import Self
 import yaml
 from pydantic import Field, PrivateAttr, field_validator, model_validator
 
+from pyqcrbox._version import version as pyqcrbox_version
+
 from .. import helpers
 from .base import QCrBoxPydanticBaseModel
 from .cif_entry_set import CifEntrySet
@@ -31,6 +33,7 @@ class ApplicationSpecBase(QCrBoxPydanticBaseModel):
     name: str
     slug: str
     version: str
+    pyqcrbox_version: str = pyqcrbox_version
     description: str | None = None
     url: str | None = None
     email: str | None = None
