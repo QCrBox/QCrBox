@@ -22,6 +22,8 @@ However, there will be an initial period of stabilisation where this is not adhe
   will be returned instead of each file individually.
 - Data files now track which dataset they belong to, so deleting a data file will remove it from the dataset it is in
   similar to how deleting a dataset will delete its data files.
+- The version of `pyqcrbox` an application is based on is validated against the version the registry is built on to
+  ensure compatibility.
 
 ### Removed Features
 
