@@ -1,3 +1,5 @@
+import io
+import zipfile
 from typing import Annotated
 
 import sqlalchemy.exc
@@ -165,8 +167,9 @@ async def export_data_file(data_file_id: str, *, data_manager: DataManager) -> t
 async def export_dataset(dataset_id: str, *, data_manager: DataManager) -> tuple[bytes, str]:
     """Export a dataset's contents and filename by its ID.
 
-    This currently only supports exporting datasets which contain only a single
-    data file.
+    If a dataset contains a single file, then that file is returned from this.
+    If there are multiple files, then a Zip file is created and that is returned
+    instead.
 
     Parameters
     ----------
@@ -181,17 +184,24 @@ async def export_dataset(dataset_id: str, *, data_manager: DataManager) -> tuple
         The file contents and the filename.
 
     """
-    dataset_info = await data_manager.get_dataset(dataset_id)
+    dataset = await data_manager.get_dataset(dataset_id)
 
-    if dataset_info.is_empty:
+    if dataset.is_empty:
         msg = f"Dataset {dataset_id} is empty"
         raise ValueError(msg)
 
-    if dataset_info.contains_multiple_files:
-        msg = "Downloading datasets with multiple files is not supported yet"
-        raise NotImplementedError(msg)
+    if dataset.contains_multiple_files:
+        file_name = f"{dataset.dataset_id}.zip"
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+            for data_file in dataset.data_files.values():
+                zf.writestr(
+                    data_file.filename,
+                    await data_manager.get_data_file_contents(data_file.qcrbox_file_id),
+                )
+        file_contents = zip_buffer.getvalue()
     else:
-        data_file = dataset_info.first_data_file
+        data_file = dataset.first_data_file
         file_name = data_file.filename
         file_contents = await data_manager.get_data_file_contents(data_file.qcrbox_file_id)
 
