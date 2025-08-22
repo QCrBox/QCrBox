@@ -73,7 +73,7 @@ $ qcb build qcrboxtools
 In the event of disaster, it is possible to destroy the containers and restart QCrBox by using a Devbox script,
 
 ```console
-$ devbox run restart-qcrbox
+devbox run restart
 ```
 
 ## Improving File Access Speed on Windows

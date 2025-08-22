@@ -62,7 +62,7 @@ aggregation in the test deployment.
 We have multiple Devbox scripts which provide a convenient way to run the test suites:
 
 ```shell
-devbox run test-mode
+devbox run build-test-mode
 devbox run robot-framework
 devbox run pytest
 ```
@@ -72,6 +72,12 @@ These commands will:
 1. Remove any running containers and bring QCrBox into test mode (`qcb up --test`)
 2. Execute the Robot Framework test suite
 3. Execute the Pytest test suite
+
+To do all these at once, you can use the Devbox script:
+
+```shell
+devbox run tests
+```
 
 ## Best practices for testing
 
