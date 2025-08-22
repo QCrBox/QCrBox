@@ -130,6 +130,8 @@ def task_build_docker_image(service: str, docker_project: DockerProject, with_de
         if service == "base-ancestor":
             task_deps.append("task_build_python_package:pyqcrbox")
 
+    logger.debug(f"Building {service} with dependencies: {task_deps}")
+
     try:
         build_context = docker_project.get_build_context(service)
 

@@ -97,7 +97,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
 
         if msg.payload.application_spec.pyqcrbox_version != pyqcrbox_version:
             error_msg = (
-                f"Registration request for {msg.payload.application_spec.slug} {msg.payload.application_spec.version}"
+                f"Registration request for {msg.payload.application_spec.slug} {msg.payload.application_spec.version} "
                 + f"rejected due to application's pyqcrbox version {msg.payload.application_spec.pyqcrbox_version} != "
                 + f"{pyqcrbox_version}"
             )

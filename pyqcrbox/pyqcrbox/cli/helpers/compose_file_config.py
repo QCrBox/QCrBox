@@ -176,7 +176,6 @@ class ComposeFileConfig:
             dependencies = self.get_build_and_runtime_dependencies(service_name)
         else:
             dependencies = self.get_runtime_dependencies(service_name)
-        logger.debug(f"Getting dependencies for {service_name}: {dependencies}")
         return dependencies
 
     def get_dependency_chain(self, service_name, include_build_deps=False):
