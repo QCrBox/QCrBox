@@ -246,7 +246,7 @@ class InteractiveSession(BaseCommand):
             client_private_inbox=executing_client_address,
             cmd_execution_request=execute_request,
         )
-        await data_file_manager.store_interactive_session_info(session_info)
+        await data_file_manager.store_interactive_session(session_info)
 
     async def execute_in_background(
         self,

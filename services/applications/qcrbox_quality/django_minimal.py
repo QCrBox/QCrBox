@@ -70,10 +70,10 @@ async def retrieve_data(dataset_id):
     """Retrieve data for a given dataset ID."""
     async with svcs.Container(QCRBOX_GLOBAL_SERVICES_REGISTRY) as container:
         data_manager = await container.aget(DataManager)
-        dataset_info = await data_manager.get_dataset_info(dataset_id)
+        dataset_info = await data_manager.get_dataset(dataset_id)
         data_file_id = dataset_info.first_data_file.qcrbox_file_id
         try:
-            data = await data_manager.get_file_contents(data_file_id)
+            data = await data_manager.get_data_file_contents(data_file_id)
             return data.decode("utf-8")
         except Exception as e:
             dataset_objs = await data_manager.get_datasets()

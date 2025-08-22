@@ -127,7 +127,7 @@ async def close_interactive_session(
         The response from the client after closing the session.
 
     """
-    session_info = await data_manager.get_interactive_session_info(session_id)
+    session_info = await data_manager.get_interactive_session(session_id)
 
     msg = msg_specs.CloseInteractiveSessionNATS(session_id=session_id)
     response_json = await nats_broker.publish(
@@ -156,8 +156,8 @@ async def export_data_file(data_file_id: str, *, data_manager: DataManager) -> t
         The file contents and the filename.
 
     """
-    data_file = await data_manager.get_file_contents(data_file_id)
-    file_name = (await data_manager.get_data_file_info(data_file_id)).filename
+    data_file = await data_manager.get_data_file_contents(data_file_id)
+    file_name = (await data_manager.get_data_file(data_file_id)).filename
 
     return data_file, file_name
 
@@ -181,7 +181,7 @@ async def export_dataset(dataset_id: str, *, data_manager: DataManager) -> tuple
         The file contents and the filename.
 
     """
-    dataset_info = await data_manager.get_dataset_info(dataset_id)
+    dataset_info = await data_manager.get_dataset(dataset_id)
 
     if dataset_info.is_empty:
         msg = f"Dataset {dataset_id} is empty"
@@ -193,7 +193,7 @@ async def export_dataset(dataset_id: str, *, data_manager: DataManager) -> tuple
     else:
         data_file = dataset_info.first_data_file
         file_name = data_file.filename
-        file_contents = await data_manager.get_file_contents(data_file.qcrbox_file_id)
+        file_contents = await data_manager.get_data_file_contents(data_file.qcrbox_file_id)
 
     return file_contents, file_name
 
@@ -247,7 +247,7 @@ async def get_calculation_by_calculation_id(calculation_id: str, *, data_manager
 
     """
     try:
-        calculation = await data_manager.get_calculation_details(calculation_id)
+        calculation = await data_manager.get_calculation(calculation_id)
     except KeyError as exc:
         raise CalculationNotFoundError from exc
 
@@ -270,7 +270,7 @@ async def get_data_file_info(data_file_id: str, *, data_manager: DataManager) ->
         The data file info response model.
 
     """
-    data_file = await data_manager.get_data_file_info(data_file_id)
+    data_file = await data_manager.get_data_file(data_file_id)
     return data_file.to_response_model()
 
 
@@ -308,7 +308,7 @@ async def get_dataset_info(dataset_id: str, *, data_manager: DataManager) -> Dat
         The dataset info response model.
 
     """
-    dataset_info = await data_manager.get_dataset_info(dataset_id)
+    dataset_info = await data_manager.get_dataset(dataset_id)
     return dataset_info.to_response_model()
 
 
@@ -346,7 +346,7 @@ async def get_interactive_session_info(session_id: str, *, data_manager: DataMan
         The interactive session info response model.
 
     """
-    session_info = await data_manager.get_interactive_session_info(session_id)
+    session_info = await data_manager.get_interactive_session(session_id)
     return session_info.to_response_model()
 
 
@@ -386,7 +386,7 @@ async def import_data_file(
         The ID of the imported data file.
 
     """
-    qcrbox_data_file_id = await data_manager.import_bytes(await data.read(), filename=data.filename)
+    qcrbox_data_file_id = await data_manager._import_bytes(await data.read(), filename=data.filename)
     return qcrbox_data_file_id
 
 
@@ -408,7 +408,7 @@ async def import_dataset(
         The ID of the imported dataset.
 
     """
-    qcrbox_data_file_id = await data_manager.import_bytes(await data.read(), filename=data.filename)
+    qcrbox_data_file_id = await data_manager._import_bytes(await data.read(), filename=data.filename)
     qcrbox_dataset_id = await data_manager.create_dataset_from_data_file(qcrbox_data_file_id)
     return qcrbox_dataset_id
 
@@ -468,7 +468,7 @@ async def stop_running_calculation(
         The response from the client after stopping the calculation.
 
     """
-    calculation = await data_manager.get_calculation_details(calculation_id)
+    calculation = await data_manager.get_calculation(calculation_id)
 
     msg = msg_specs.StopRunningCalculationMsg(calculation_id=calculation_id)
     response_json = await nats_broker.publish(

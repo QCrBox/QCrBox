@@ -113,7 +113,7 @@ class DataManager(ABC):
 
         """
         dataset_id = generate_dataset_id()
-        data_files = [await self.get_data_file_info(data_file_id)]
+        data_files = [await self.get_data_file(data_file_id)]
         dataset_info = Dataset(dataset_id=dataset_id, data_files={f.filename: f for f in data_files})
         await self._store_dataset(dataset_info)
 
@@ -135,8 +135,8 @@ class DataManager(ABC):
             The ID of the updated dataset.
 
         """
-        dataset = await self.get_dataset_info(dataset_id)
-        data_file = await self.get_data_file_info(data_file_id)
+        dataset = await self.get_dataset(dataset_id)
+        data_file = await self.get_data_file(data_file_id)
         dataset.data_files[data_file.filename] = data_file
         await self._store_dataset(dataset)
 
@@ -230,7 +230,7 @@ class DataManager(ABC):
 
         """
         file_contents = await self._retrieve_from_object_store(DataManagerKeys.DATA_FILE_CONTENTS, data_file_id)
-        object_store_filename = (await self.get_data_file_info(data_file_id)).filename
+        object_store_filename = (await self.get_data_file(data_file_id)).filename
 
         output_dir = Path(output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -244,7 +244,7 @@ class DataManager(ABC):
 
         return output_path
 
-    async def get_data_file_info(self, data_file_id: str) -> DataFile:
+    async def get_data_file(self, data_file_id: str) -> DataFile:
         """Get the metadata for a data file.
 
         Parameters
@@ -272,11 +272,11 @@ class DataManager(ABC):
 
         """
         keys = await self._get_kv_keys(DataManagerKeys.DATA_FILES)
-        values = [await self.get_data_file_info(key) for key in keys]
+        values = [await self.get_data_file(key) for key in keys]
 
         return values
 
-    async def get_dataset_info(self, dataset_id: str) -> Dataset:
+    async def get_dataset(self, dataset_id: str) -> Dataset:
         """Get metadata about a dataset.
 
         Parameters
@@ -314,7 +314,7 @@ class DataManager(ABC):
             for dataset_id in dataset_ids
         ]
 
-    async def get_file_contents(self, data_file_id: str) -> bytes:
+    async def get_data_file_contents(self, data_file_id: str) -> bytes:
         """Get the contents of a data file.
 
         Parameters
@@ -332,7 +332,7 @@ class DataManager(ABC):
 
         return file_contents
 
-    async def get_interactive_session_info(self, session_id: str) -> InteractiveSessionInfo:
+    async def get_interactive_session(self, session_id: str) -> InteractiveSessionInfo:
         """Get metadata about an interactive session.
 
         Parameters
@@ -361,11 +361,11 @@ class DataManager(ABC):
 
         """
         keys = await self._get_kv_keys(DataManagerKeys.INTERACTIVE_SESSIONS)
-        values = [await self.get_interactive_session_info(key) for key in keys]
+        values = [await self.get_interactive_session(key) for key in keys]
 
         return values
 
-    async def import_bytes(
+    async def _import_bytes(
         self,
         file_contents: bytes,
         filename: str,
@@ -404,7 +404,7 @@ class DataManager(ABC):
 
         return qcrbox_file_id
 
-    async def import_local_file(self, file_path: str | Path, *, _qcrbox_file_id: str | None = None) -> str:
+    async def import_file(self, file_path: str | Path, *, _qcrbox_file_id: str | None = None) -> str:
         """Import a data file into the data manager, from a local file system.
 
         This function will add both the contents of the file, in bytes, and metadata
@@ -428,11 +428,11 @@ class DataManager(ABC):
         qcrbox_file_id = _qcrbox_file_id or generate_data_file_id()
 
         with file_path.open("rb") as f:
-            qcrbox_file_id = await self.import_bytes(f.read(), filename=file_path.name, _qcrbox_file_id=qcrbox_file_id)
+            qcrbox_file_id = await self._import_bytes(f.read(), filename=file_path.name, _qcrbox_file_id=qcrbox_file_id)
 
         return qcrbox_file_id
 
-    async def store_interactive_session_info(self, session_info: InteractiveSessionInfo) -> None:
+    async def store_interactive_session(self, session_info: InteractiveSessionInfo) -> None:
         """Add metadata about an interactive session to the data manager.
 
         Parameters
@@ -447,7 +447,7 @@ class DataManager(ABC):
         )
 
     #
-    async def get_calculation_details(self, key: str) -> CalculationDB:
+    async def get_calculation(self, key: str) -> CalculationDB:
         """Get metadata about a calculation from the data manager.
 
         Parameters
@@ -477,11 +477,11 @@ class DataManager(ABC):
 
         """
         keys = await self._get_kv_keys(DataManagerKeys.CALCULATIONS)
-        calculations = [await self.get_calculation_details(key) for key in keys]
+        calculations = [await self.get_calculation(key) for key in keys]
 
         return calculations
 
-    async def update_calculation_status_events(self, status_details: CalculationStatusDetails) -> None:
+    async def update_calculation_status(self, status_details: CalculationStatusDetails) -> None:
         """Append a new status to the the calculation status events for a calculation.
 
         Parameters
@@ -513,7 +513,7 @@ class DataManager(ABC):
             calculation.model_dump_json(exclude={"status", "output_dataset_id"}).encode(),
         )
 
-    async def add_calculation(self, calculation: CalculationDB) -> None:
+    async def store_calculation(self, calculation: CalculationDB) -> None:
         """Add a new calculation to the NATS data manager.
 
         Parameters

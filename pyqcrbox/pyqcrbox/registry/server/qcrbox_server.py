@@ -272,7 +272,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
         # This **shouldn't** ever happen.
         data_file_manager = await self.svcs_container.aget(DataManager)
         try:
-            await data_file_manager.add_calculation(calculation_db_entry)
+            await data_file_manager.store_calculation(calculation_db_entry)
         except CalculationAlreadyExistsError:
             logger.error(f"Trying to add a calculation to the database which already exists: {calculation_db_entry}")
             return msg_specs.QCrBoxGenericResponse(
@@ -281,7 +281,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
                 payload={"error": "Tried to add a new calculation to one which already exists"},
             )
         logger.debug("Updating calculation status to SUBMITTED after command request accepted")
-        await data_file_manager.update_calculation_status_events(
+        await data_file_manager.update_calculation_status(
             CalculationStatusDetails(
                 calculation_id=user_invocation_request.calculation_id,
                 status=CalculationStatusEnum.SUBMITTED,

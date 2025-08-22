@@ -38,7 +38,7 @@ async def check_if_id_is_a_dataset(data_manager: "DataManager", id_to_check: str
     from pyqcrbox.data_management import DatasetNotFoundError
 
     try:
-        await data_manager.get_dataset_info(id_to_check)
+        await data_manager.get_dataset(id_to_check)
         return True
     except DatasetNotFoundError:
         return False

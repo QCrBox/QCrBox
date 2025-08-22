@@ -13,18 +13,22 @@ sys._qcrbox_running_inside_tests = True
 
 
 @pytest.fixture(scope="session")
-def anyio_backend():
+def anyio_backend() -> str:
     return "asyncio"
 
 
 @pytest.fixture(scope="session")
-def sample_data_dir():
+def sample_data_dir() -> Path:
     return Path(__file__).parent.joinpath("sample_data")
 
 
 @pytest.fixture(scope="session")
-def sample_cif_file(sample_data_dir):
+def sample_cif_file(sample_data_dir: Path) -> Path:
     return sample_data_dir.joinpath("periodic_table.cif")
+
+@pytest.fixture(scope="session")
+def sample_json_file(sample_data_dir: Path) -> Path:
+    return sample_data_dir.joinpath("periodic_table.json")
 
 
 @pytest.fixture(scope="session")

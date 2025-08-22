@@ -61,7 +61,7 @@ class PythonCallableCalculation(BaseCalculation):
             return
 
         try:
-            data_file_id = await data_file_manager.import_local_file(self.return_value)
+            data_file_id = await data_file_manager.import_file(self.return_value)
             self.output_dataset_id = await data_file_manager.create_dataset_from_data_file(data_file_id)
         except FileNotFoundError:
             logger.error(f"Failed to add data file and create dataset for {self.return_value}")
