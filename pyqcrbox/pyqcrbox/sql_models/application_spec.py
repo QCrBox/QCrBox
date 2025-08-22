@@ -7,7 +7,7 @@ from typing import Self
 import yaml
 from pydantic import Field, PrivateAttr, field_validator, model_validator
 
-from pyqcrbox._version import version as pyqcrbox_version
+from pyqcrbox._version import __version__ as pyqcrbox_version
 
 from .. import helpers
 from .base import QCrBoxPydanticBaseModel

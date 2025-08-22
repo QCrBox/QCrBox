@@ -19,7 +19,7 @@ from litestar.response import Redirect
 from pydantic import BaseModel
 
 from pyqcrbox import helpers, logger, msg_specs, settings
-from pyqcrbox._version import version as pyqcrbox_version
+from pyqcrbox._version import __version__ as pyqcrbox_version
 from pyqcrbox.data_management import CalculationAlreadyExistsError, DataManager
 from pyqcrbox.debug import log_eel
 from pyqcrbox.msg_specs.base import QCrBoxGenericResponse
