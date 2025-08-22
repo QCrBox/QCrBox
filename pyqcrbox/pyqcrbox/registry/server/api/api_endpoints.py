@@ -353,6 +353,44 @@ async def download_data_file_by_id(
         headers={"Content-Disposition": f"attachment; filename={data_file_name!r}"},
     )
 
+@delete(
+    path="/data-files/{id:str}",
+    summary="Delete a data file",
+    tags=["data-files"],
+    operation_id="delete_data_file_by_id",
+    responses={400: schema.BAD_REQUEST_ERROR, 404: schema.NOT_FOUND_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
+)
+async def delete_data_file_by_id(id: str = Parameter(title="Data file ID"), *, data_manager: DataManager) -> None:
+    """Remove a dataset and associated data files from the data store."""
+    await api_helpers.delete_data_file(id, data_manager=data_manager)
+
+
+@post(
+    path="/data-files",
+    media_type=MediaType.JSON,
+    summary="Create a new data file",
+    tags=["data-files"],
+    operation_id="create_data_file",
+    responses={400: schema.BAD_REQUEST_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
+)
+async def create_data_file(
+    data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)], data_manager: DataManager
+) -> schema.QCrBoxResponse[schema.DataFilesResponse]:
+    """Create a new dataset by uploading data files."""
+    qcrbox_data_file_id = await api_helpers.import_data_file(data, data_manager=data_manager)
+    data_file = await api_helpers.get_data_file_info(qcrbox_data_file_id, data_manager=data_manager)
+
+    return QCrBoxResponse(
+        content={
+            "status": "success",
+            "message": f"Created data file: {qcrbox_data_file_id!r}",
+            "payload": {
+                "data_files": [data_file],
+            },
+        },
+        status_code=201,
+    )
+
 
 # Datasets -------------------------------------------------------------------------------------------------------------
 
@@ -697,6 +735,8 @@ api_router = Router(
         list_data_files,
         get_data_file_by_id,
         download_data_file_by_id,
+        delete_data_file_by_id,
+        create_data_file,
         # Interactive sessions
         list_interactive_sessions,
         get_interactive_session_by_id,

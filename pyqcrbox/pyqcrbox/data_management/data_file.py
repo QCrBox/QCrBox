@@ -13,6 +13,9 @@ class DataFile(QCrBoxPydanticBaseModel):
     ----------
     qcrbox_file_id : str
         Unique identifier for the data file.
+    qcrbox_dataset_id : str | None
+        Identifier for the dataset this data file is in. If None, the data file
+        is not in a dataset.
     filename : str
         Name of the file.
     filetype : str
@@ -21,6 +24,7 @@ class DataFile(QCrBoxPydanticBaseModel):
     """
 
     qcrbox_file_id: str
+    qcrbox_dataset_id: str | None
     filename: str
     filetype: str
 
@@ -35,6 +39,7 @@ class DataFile(QCrBoxPydanticBaseModel):
         """
         return DataFileResponse(
             qcrbox_file_id=self.qcrbox_file_id,
+            qcrbox_dataset_id=self.qcrbox_dataset_id,
             filename=self.filename,
             filetype=self.filetype,
         )
@@ -47,6 +52,9 @@ class DataFileResponse(QCrBoxPydanticBaseModel):
     ----------
     qcrbox_file_id : str
         Unique identifier for the data file.
+    qcrbox_dataset_id : str | None
+        Identifier for the dataset this data file is in. If None, the data file
+        is not in a dataset.
     filename : str
         Name of the file.
     filetype : str
@@ -55,5 +63,6 @@ class DataFileResponse(QCrBoxPydanticBaseModel):
     """
 
     qcrbox_file_id: str
+    qcrbox_dataset_id: str | None
     filename: str
     filetype: str

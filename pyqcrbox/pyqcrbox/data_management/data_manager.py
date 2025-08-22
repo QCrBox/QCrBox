@@ -61,18 +61,18 @@ class DataManager(ABC):
     async def _store_in_object_store(self, bucket: str, key: str, value: bytes) -> None:
         pass
 
-    async def _store_dataset(self, metadata: Dataset) -> None:
+    async def _store_dataset(self, dataset: Dataset) -> None:
         """Add metadata about a dataset into the data manager.
 
         Parameters
         ----------
-        dataset_info : Dataset
+        dataset : Dataset
             A Dataset object containing metadata about the dataset.
 
         """
-        await self._store_in_kv(DataManagerKeys.DATASETS, metadata.dataset_id, metadata.model_dump_json().encode())
+        await self._store_in_kv(DataManagerKeys.DATASETS, dataset.dataset_id, dataset.model_dump_json().encode())
 
-    async def _store_file_contents(self, key: str, file_contents: bytes) -> None:
+    async def _store_data_file_contents(self, key: str, file_contents: bytes) -> None:
         """Add the contents of a file to the data manager.
 
         Parameters
@@ -85,26 +85,29 @@ class DataManager(ABC):
         """
         await self._store_in_object_store(DataManagerKeys.DATA_FILE_CONTENTS, key, file_contents)
 
-    async def _store_file_metadata(self, key: str, metadata: DataFile) -> None:
+    async def _store_data_file_metadata(self, data_file: DataFile) -> None:
         """Add metadata about a data file into the data manager.
 
         Parameters
         ----------
-        key : str
-            The key to associate with the file metadata.
-        metadata : DataFile
+        data_file : DataFile
             A DataFileMetadata object containing metadata about the data file.
 
         """
-        await self._store_in_kv(DataManagerKeys.DATA_FILES, key, metadata.model_dump_json().encode())
+        await self._store_in_kv(
+            DataManagerKeys.DATA_FILES, data_file.qcrbox_file_id, data_file.model_dump_json().encode()
+        )
 
-    async def create_dataset_from_data_file(self, data_file_id: str) -> str:
+    async def create_dataset_from_data_files(self, data_file_ids: str | list[str]) -> str:
         """Create a new dataset from a data file.
+
+        The data files which are added to the dataset are updated with a
+        reference to the dataset they (now) belong to.
 
         Parameters
         ----------
-        data_file_id : str
-            The ID of the data file to create the dataset with.
+        data_file_ids : str | list [str]
+            A list of ID of the data files to create the dataset with.
 
         Returns
         -------
@@ -112,14 +115,21 @@ class DataManager(ABC):
             The ID of the created dataset.
 
         """
+        if isinstance(data_file_ids, str):
+            data_file_ids = [data_file_ids]
+        data_files = [await self.get_data_file(data_file_id) for data_file_id in data_file_ids]
+
         dataset_id = generate_dataset_id()
-        data_files = [await self.get_data_file(data_file_id)]
         dataset_info = Dataset(dataset_id=dataset_id, data_files={f.filename: f for f in data_files})
         await self._store_dataset(dataset_info)
 
+        for data_file in data_files:
+            data_file.qcrbox_dataset_id = dataset_id
+            await self._store_data_file_metadata(data_file)
+
         return dataset_id
 
-    async def update_data_files_in_dataset(self, dataset_id: str, data_file_id: str) -> str:
+    async def update_data_file_in_dataset(self, dataset_id: str, data_file_id: str) -> str:
         """Append a new data file to a dataset.
 
         If the file already exists in the dataset (the file being added has the
@@ -138,10 +148,14 @@ class DataManager(ABC):
             The ID of the updated dataset.
 
         """
-        dataset = await self.get_dataset(dataset_id)
         data_file = await self.get_data_file(data_file_id)
+
+        dataset = await self.get_dataset(dataset_id)
         dataset.data_files[data_file.filename] = data_file
         await self._store_dataset(dataset)
+
+        data_file.qcrbox_dataset_id = dataset_id
+        await self._store_data_file_metadata(data_file)
 
         return dataset.dataset_id
 
@@ -186,9 +200,15 @@ class DataManager(ABC):
             The ID of the data file to delete.
 
         """
-        logger.debug(f"TODO: check if any datasets reference this file: {data_file_id}")
+        data_file = await self.get_data_file(data_file_id)
+
         await self._delete_from_kv(DataManagerKeys.DATA_FILES, data_file_id)
         await self._delete_from_object_store(DataManagerKeys.DATA_FILE_CONTENTS, data_file_id)
+
+        if data_file.qcrbox_dataset_id:
+            parent_dataset = await self.get_dataset(data_file.qcrbox_dataset_id)
+            parent_dataset.data_files.pop(data_file.filename)
+            await self._store_dataset(parent_dataset)
 
     async def delete_dataset(self, dataset_id: str) -> None:
         """Delete a dataset and its data files from the data manager.
@@ -368,7 +388,7 @@ class DataManager(ABC):
 
         return values
 
-    async def import_bytes(
+    async def import_file_from_bytes(
         self,
         file_contents: bytes,
         filename: str,
@@ -397,13 +417,14 @@ class DataManager(ABC):
         """
         qcrbox_file_id = _qcrbox_file_id or generate_data_file_id()
         file_extension = Path(filename).suffix[1:]
-        data_file_info = DataFile(
+        data_file = DataFile(
             qcrbox_file_id=qcrbox_file_id,
+            qcrbox_dataset_id=None,
             filename=filename,
             filetype=file_extension,
         )
-        await self._store_file_contents(qcrbox_file_id, file_contents)
-        await self._store_file_metadata(qcrbox_file_id, data_file_info)
+        await self._store_data_file_metadata(data_file)
+        await self._store_data_file_contents(qcrbox_file_id, file_contents)
 
         return qcrbox_file_id
 
@@ -431,7 +452,9 @@ class DataManager(ABC):
         qcrbox_file_id = _qcrbox_file_id or generate_data_file_id()
 
         with file_path.open("rb") as f:
-            qcrbox_file_id = await self.import_bytes(f.read(), filename=file_path.name, _qcrbox_file_id=qcrbox_file_id)
+            qcrbox_file_id = await self.import_file_from_bytes(
+                f.read(), filename=file_path.name, _qcrbox_file_id=qcrbox_file_id
+            )
 
         return qcrbox_file_id
 

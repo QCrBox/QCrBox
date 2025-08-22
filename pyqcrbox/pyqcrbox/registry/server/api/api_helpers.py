@@ -121,7 +121,7 @@ async def close_interactive_session(
     nats_broker : NatsBroker
         The NATS broker instance.
     data_manager : DataManager
-        The data file manager instance.
+        The data manager instance.
 
     Returns
     -------
@@ -150,7 +150,7 @@ async def export_data_file(data_file_id: str, *, data_manager: DataManager) -> t
     data_file_id : str
         The ID of the data file to export.
     data_manager : DataManager
-        The data file manager instance.
+        The data manager instance.
 
     Returns
     -------
@@ -176,7 +176,7 @@ async def export_dataset(dataset_id: str, *, data_manager: DataManager) -> tuple
     dataset_id : str
         The ID of the dataset to export.
     data_manager : DataManager
-        The data file manager instance.
+        The data manager instance.
 
     Returns
     -------
@@ -207,6 +207,19 @@ async def export_dataset(dataset_id: str, *, data_manager: DataManager) -> tuple
 
     return file_contents, file_name
 
+async def delete_data_file(data_file_id: str, *, data_manager: DataManager) -> None:
+    """Delete a data file by its ID.
+
+    Parameters
+    ----------
+    data_file_id : str
+        The ID of the data file to delete.
+    data_manager : DataManager
+        The data manager instance.
+
+    """
+    await data_manager.delete_data_file(data_file_id)
+
 
 async def delete_dataset(dataset_id: str, *, data_manager: DataManager) -> None:
     """Delete a dataset by its ID.
@@ -216,19 +229,19 @@ async def delete_dataset(dataset_id: str, *, data_manager: DataManager) -> None:
     dataset_id : str
         The ID of the dataset to delete.
     data_manager : DataManager
-        The data file manager instance.
+        The data manager instance.
 
     """
     await data_manager.delete_dataset(dataset_id)
 
 
 async def get_calculations(*, data_manager: DataManager) -> list[CalculationResponse]:
-    """Get all calculations from the data file manager.
+    """Get all calculations from the data manager.
 
     Parameters
     ----------
     data_manager : DataManager
-        The data file manager instance.
+        The data manager instance.
 
     Returns
     -------
@@ -248,7 +261,7 @@ async def get_calculation_by_calculation_id(calculation_id: str, *, data_manager
     calculation_id : str
         The ID of the calculation to retrieve.
     data_manager : DataManager
-        The data file manager instance.
+        The data manager instance.
 
     Returns
     -------
@@ -272,7 +285,7 @@ async def get_data_file_info(data_file_id: str, *, data_manager: DataManager) ->
     data_file_id : str
         The ID of the data file.
     data_manager : DataManager
-        The data file manager instance.
+        The data manager instance.
 
     Returns
     -------
@@ -285,12 +298,12 @@ async def get_data_file_info(data_file_id: str, *, data_manager: DataManager) ->
 
 
 async def get_data_files(*, data_manager: DataManager) -> list[DataFileResponse]:
-    """Get all data files in the data file manager.
+    """Get all data files in the data manager.
 
     Parameters
     ----------
     data_manager : DataManager
-        The data file manager instance.
+        The data manager instance.
 
     Returns
     -------
@@ -310,7 +323,7 @@ async def get_dataset_info(dataset_id: str, *, data_manager: DataManager) -> Dat
     dataset_id : str
         The ID of the dataset.
     data_manager : DataManager
-        The data file manager instance.
+        The data manager instance.
 
     Returns
     -------
@@ -323,12 +336,12 @@ async def get_dataset_info(dataset_id: str, *, data_manager: DataManager) -> Dat
 
 
 async def get_datasets(*, data_manager: DataManager) -> list[DatasetResponse]:
-    """Get all datasets in the data file manager.
+    """Get all datasets in the data manager.
 
     Parameters
     ----------
     data_manager : DataManager
-        The data file manager instance.
+        The data manager instance.
 
     Returns
     -------
@@ -348,7 +361,7 @@ async def get_interactive_session_info(session_id: str, *, data_manager: DataMan
     session_id : str
         The ID of the interactive session.
     data_manager : DataManager
-        The data file manager instance.
+        The data manager instance.
 
     Returns
     -------
@@ -361,12 +374,12 @@ async def get_interactive_session_info(session_id: str, *, data_manager: DataMan
 
 
 async def get_interactive_sessions(*, data_manager: DataManager):
-    """Get all interactive sessions in the data file manager.
+    """Get all interactive sessions in the data manager.
 
     Parameters
     ----------
     data_manager : DataManager
-        The data file manager instance.
+        The data manager instance.
 
     Returns
     -------
@@ -381,14 +394,14 @@ async def get_interactive_sessions(*, data_manager: DataManager):
 async def import_data_file(
     data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)], *, data_manager: DataManager
 ) -> str:
-    """Import a data file from an uploaded file into the data file manager.
+    """Import a data file from an uploaded file into the data manager.
 
     Parameters
     ----------
     data : UploadFile
         The uploaded file to import.
     data_manager : DataManager
-        The data file manager instance.
+        The data manager instance.
 
     Returns
     -------
@@ -396,7 +409,7 @@ async def import_data_file(
         The ID of the imported data file.
 
     """
-    qcrbox_data_file_id = await data_manager.import_bytes(await data.read(), filename=data.filename)
+    qcrbox_data_file_id = await data_manager.import_file_from_bytes(await data.read(), filename=data.filename)
     return qcrbox_data_file_id
 
 
@@ -410,7 +423,7 @@ async def import_dataset(
     data : UploadFile
         The uploaded file to import as a dataset.
     data_manager : DataManager
-        The data file manager instance.
+        The data manager instance.
 
     Returns
     -------
@@ -418,8 +431,8 @@ async def import_dataset(
         The ID of the imported dataset.
 
     """
-    qcrbox_data_file_id = await data_manager.import_bytes(await data.read(), filename=data.filename)
-    qcrbox_dataset_id = await data_manager.create_dataset_from_data_file(qcrbox_data_file_id)
+    qcrbox_data_file_id = await data_manager.import_file_from_bytes(await data.read(), filename=data.filename)
+    qcrbox_dataset_id = await data_manager.create_dataset_from_data_files(qcrbox_data_file_id)
     return qcrbox_dataset_id
 
 
@@ -445,7 +458,7 @@ async def append_to_dataset(
 
     """
     qcrbox_data_file_id = await import_data_file(data, data_manager=data_manager)
-    qcrbox_dataset_id = await data_manager.update_data_files_in_dataset(dataset_id, qcrbox_data_file_id)
+    qcrbox_dataset_id = await data_manager.update_data_file_in_dataset(dataset_id, qcrbox_data_file_id)
 
     return qcrbox_dataset_id
 
@@ -497,7 +510,7 @@ async def stop_running_calculation(
     nats_broker : NatsBroker
         The NATS broker instance.
     data_manager : DataManager
-        The data file manager instance.
+        The data manager instance.
 
     Returns
     -------

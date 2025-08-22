@@ -20,6 +20,8 @@ However, there will be an initial period of stabilisation where this is not adhe
   repository.
 - Datasets can now contain multiple data files (of any type). When downloading a dataset with multiple files, a zip file
   will be returned instead of each file individually.
+- Data files now track which dataset they belong to, so deleting a data file will remove it from the dataset it is in
+  similar to how deleting a dataset will delete its data files.
 
 ### Removed Features
 
@@ -43,6 +45,11 @@ However, there will be an initial period of stabilisation where this is not adhe
 - Fixed an issue where `qcb list` would use the wrong URL and port number for the registry API.
 - Fixed linting issues raised by `ruff` for `qcb`.
 - And lots more!
+
+### Documentation
+
+- Added how to guide on using the QCrBox Azure Container Repository.
+- Updated the how to guide on testing QCrBox.
 
 ## [icdm-2025]
 
@@ -75,11 +82,6 @@ However, there will be an initial period of stabilisation where this is not adhe
 ### Development
 
 - Added dummy GUI application for testing of interactive sessions. ([#364](https://github.com/QCrBox/QCrBox/issues/364))
-
-
-### Documentation
-
-
 
 ## [v0.0.2]
 

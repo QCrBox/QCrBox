@@ -6,13 +6,12 @@ from pyqcrbox.data_management import DataManager
 
 
 @pytest.mark.anyio
-async def test_import_of_local_file(data_manager: DataManager, sample_cif_file: Path) -> None:
+async def test_local_file_can_be_imported(data_manager: DataManager, sample_cif_file: Path) -> None:
     """Test that we can import a local file and retrieve its contents from the data file manager."""
     qcrbox_file_id = "qcrbox_data_file_001"
-    await data_manager.delete_data_file(qcrbox_file_id)
-    assert not await data_manager.data_file_exists(qcrbox_file_id), (
-        f"ID {qcrbox_file_id} for test data file already exists"
-    )
+    file_exists = await data_manager.data_file_exists(qcrbox_file_id)
+    if file_exists:
+        await data_manager.delete_data_file(qcrbox_file_id)
 
     await data_manager.import_file(sample_cif_file, _qcrbox_file_id=qcrbox_file_id)
     assert await data_manager.data_file_exists(qcrbox_file_id), "Data file did not import into DataManager"
@@ -23,7 +22,7 @@ async def test_import_of_local_file(data_manager: DataManager, sample_cif_file: 
 
 
 @pytest.mark.anyio
-async def test_file_can_be_delete(data_manager: DataManager) -> None:
+async def test_file_can_be_deleted(data_manager: DataManager) -> None:
     """Test that a data file can be deleted."""
     qcrbox_file_id = "qcrbox_data_file_001"
     assert await data_manager.data_file_exists(qcrbox_file_id), "Test data file doesn't exist"
@@ -92,7 +91,7 @@ async def test_appending_to_dataset(data_manager: DataManager, sample_cif_file: 
     assert await data_manager.data_file_exists(test_file_id_2)
 
     # Create dataset with the first test file
-    dataset_id = await data_manager.create_dataset_from_data_file(data_file_id_1)
+    dataset_id = await data_manager.create_dataset_from_data_files(data_file_id_1)
 
     # Make sure the first file is in there
     dataset = await data_manager.get_dataset(dataset_id)
@@ -101,7 +100,7 @@ async def test_appending_to_dataset(data_manager: DataManager, sample_cif_file: 
     )
 
     # Now append another file and check it's in there too
-    appended_dataset_id = await data_manager.update_data_files_in_dataset(dataset_id, data_file_id_2)
+    appended_dataset_id = await data_manager.update_data_file_in_dataset(dataset_id, data_file_id_2)
     assert appended_dataset_id == dataset_id, (
         "Dataset ID returned for appended dataset doesn't match original dataset ID"
     )

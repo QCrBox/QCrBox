@@ -80,7 +80,7 @@ class InteractiveSessionCalculation(BaseCalculation):
 
         try:
             output_data_file_id = await data_file_manager.import_file(output_file)
-            self.output_dataset_id = await data_file_manager.create_dataset_from_data_file(output_data_file_id)
+            self.output_dataset_id = await data_file_manager.create_dataset_from_data_files(output_data_file_id)
         except FileNotFoundError:
             logger.error(f"Failed to create dataset for output from 'finalise' command, {output_file=!r}")
             raise
