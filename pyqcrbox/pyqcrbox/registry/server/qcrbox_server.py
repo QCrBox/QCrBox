@@ -19,6 +19,7 @@ from litestar.response import Redirect
 from pydantic import BaseModel
 
 from pyqcrbox import helpers, logger, msg_specs, settings
+from pyqcrbox._version import __version__ as pyqcrbox_version
 from pyqcrbox.data_management import CalculationAlreadyExistsError, DataManager
 from pyqcrbox.debug import log_eel
 from pyqcrbox.msg_specs.base import QCrBoxGenericResponse
@@ -73,7 +74,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
             self.handle_command_invocation_client_response
         )
 
-    async def handle_application_registration(self, msg: msg_specs.RegisterApplication) -> None:
+    async def handle_application_registration(self, msg: msg_specs.RegisterApplication) -> QCrBoxGenericResponse:
         """Handle application registration requests.
 
         This is a handler for the `register-application` inbox in the NATS broker.
@@ -93,8 +94,29 @@ class QCrBoxServer(QCrBoxServerClientBase):
             f"Received registration for application: {msg.payload.application_spec.slug!r} "
             f"(version: {msg.payload.application_spec.version!r})"
         )
+
+        if msg.payload.application_spec.pyqcrbox_version != pyqcrbox_version:
+            error_msg = (
+                f"Registration request for {msg.payload.application_spec.slug} {msg.payload.application_spec.version} "
+                + f"rejected due to application's pyqcrbox version {msg.payload.application_spec.pyqcrbox_version} != "
+                + f"{pyqcrbox_version}"
+            )
+            logger.error(error_msg)
+            return QCrBoxGenericResponse(
+                response_to=f"{msg.payload.private_routing_key}",
+                status="failed",
+                msg=error_msg,
+            )
+
         # await self.nats_persistence_adapter.save_application_spec(msg.payload.application_spec)
         await self.sqlite_persistence_adapter.save_application_spec(msg.payload.application_spec)
+
+        return QCrBoxGenericResponse(
+            response_to=f"{msg.payload.private_routing_key}",
+            status="success",
+            msg=f"Successfully registered {msg.payload.application_spec.slug} {msg.payload.application_spec.version} "
+            + f"({msg.payload.private_routing_key})",
+        )
 
     @log_eel
     async def handle_command_invocation_by_user(self, msg: msg_specs.InvokeCommandNATS) -> QCrBoxGenericResponse:

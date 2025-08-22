@@ -15,6 +15,7 @@ from faststream.nats import NatsBroker
 from litestar import Litestar
 from litestar.testing import AsyncTestClient, TestClient
 
+from pyqcrbox._version import __version__ as pyqcrbox_version
 from pyqcrbox.logging import logger
 from pyqcrbox.services.persistence import NatsPersistenceAdapter, SQLitePersistenceAdapter
 from pyqcrbox.services.services_registry import QCRBOX_GLOBAL_SERVICES_REGISTRY
@@ -170,6 +171,7 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
         self.host = host or "127.0.0.1"
         self.port = port or 8000
         logger.debug(f"Running {self.clsname} with {kwargs=}")
+        logger.debug(f"pyqcrbox version: {pyqcrbox_version}")
         self._run_kwargs = kwargs
         try:
             anyio.run(self.serve)

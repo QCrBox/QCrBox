@@ -145,7 +145,7 @@ class ComposeFileConfig:
         try:
             dockerfile = self.get_dockerfile_for_service(service_name)
             contents = dockerfile.open().readlines()
-            dependency_lines = [line for line in contents if line.startswith("FROM qcrbox")]
+            dependency_lines = [line for line in contents if line.startswith("FROM qcrbox/")]
             dependency_names = [
                 re.match("^FROM qcrbox/(?P<image_name>.*):", line).group("image_name")  # type: ignore
                 for line in dependency_lines
@@ -173,9 +173,10 @@ class ComposeFileConfig:
 
     def get_direct_dependencies(self, service_name: str, include_build_deps: bool = False):
         if include_build_deps:
-            return self.get_build_and_runtime_dependencies(service_name)
+            dependencies = self.get_build_and_runtime_dependencies(service_name)
         else:
-            return self.get_runtime_dependencies(service_name)
+            dependencies = self.get_runtime_dependencies(service_name)
+        return dependencies
 
     def get_dependency_chain(self, service_name, include_build_deps=False):
         deps_done = []
