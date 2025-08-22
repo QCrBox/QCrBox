@@ -1,3 +1,5 @@
+import io
+import zipfile
 from typing import Annotated
 
 import sqlalchemy.exc
@@ -10,8 +12,8 @@ from sqlalchemy.orm import joinedload
 from sqlmodel import select
 
 from pyqcrbox import logger, msg_specs, settings, sql_models
-from pyqcrbox.data_management import DataFileManager, DatasetInfoResponse
-from pyqcrbox.data_management.data_file import DataFileInfoResponse
+from pyqcrbox.data_management import DataManager, DatasetResponse
+from pyqcrbox.data_management.data_file import DataFileResponse
 from pyqcrbox.sql_models.calculation import CalculationResponse
 
 
@@ -108,7 +110,7 @@ def _verify_command_exists(
 
 
 async def close_interactive_session(
-    session_id: str, *, nats_broker: NatsBroker, data_file_manager: DataFileManager
+    session_id: str, *, nats_broker: NatsBroker, data_manager: DataManager
 ) -> msg_specs.CloseInteractiveSessionResponse:
     """Close an interactive session by sending a close request via NATS.
 
@@ -118,8 +120,8 @@ async def close_interactive_session(
         The ID of the interactive session to close.
     nats_broker : NatsBroker
         The NATS broker instance.
-    data_file_manager : DataFileManager
-        The data file manager instance.
+    data_manager : DataManager
+        The data manager instance.
 
     Returns
     -------
@@ -127,7 +129,7 @@ async def close_interactive_session(
         The response from the client after closing the session.
 
     """
-    session_info = await data_file_manager.get_interactive_session_info(session_id)
+    session_info = await data_manager.get_interactive_session(session_id)
 
     msg = msg_specs.CloseInteractiveSessionNATS(session_id=session_id)
     response_json = await nats_broker.publish(
@@ -140,15 +142,15 @@ async def close_interactive_session(
     return response
 
 
-async def export_data_file(data_file_id: str, *, data_file_manager: DataFileManager) -> tuple[bytes, str]:
+async def export_data_file(data_file_id: str, *, data_manager: DataManager) -> tuple[bytes, str]:
     """Export a data file's contents and filename by its ID.
 
     Parameters
     ----------
     data_file_id : str
         The ID of the data file to export.
-    data_file_manager : DataFileManager
-        The data file manager instance.
+    data_manager : DataManager
+        The data manager instance.
 
     Returns
     -------
@@ -156,24 +158,25 @@ async def export_data_file(data_file_id: str, *, data_file_manager: DataFileMana
         The file contents and the filename.
 
     """
-    data_file = await data_file_manager.get_file_contents(data_file_id)
-    file_name = (await data_file_manager.get_file_metadata(data_file_id)).filename
+    data_file = await data_manager.get_data_file_contents(data_file_id)
+    file_name = (await data_manager.get_data_file(data_file_id)).filename
 
     return data_file, file_name
 
 
-async def export_dataset(dataset_id: str, *, data_file_manager: DataFileManager) -> tuple[bytes, str]:
+async def export_dataset(dataset_id: str, *, data_manager: DataManager) -> tuple[bytes, str]:
     """Export a dataset's contents and filename by its ID.
 
-    This currently only supports exporting datasets which contain only a single
-    data file.
+    If a dataset contains a single file, then that file is returned from this.
+    If there are multiple files, then a Zip file is created and that is returned
+    instead.
 
     Parameters
     ----------
     dataset_id : str
         The ID of the dataset to export.
-    data_file_manager : DataFileManager
-        The data file manager instance.
+    data_manager : DataManager
+        The data manager instance.
 
     Returns
     -------
@@ -181,44 +184,64 @@ async def export_dataset(dataset_id: str, *, data_file_manager: DataFileManager)
         The file contents and the filename.
 
     """
-    dataset_info = await data_file_manager.get_dataset_info(dataset_id)
+    dataset = await data_manager.get_dataset(dataset_id)
 
-    if dataset_info.is_empty:
+    if dataset.is_empty:
         msg = f"Dataset {dataset_id} is empty"
         raise ValueError(msg)
 
-    if dataset_info.contains_multiple_files:
-        msg = "Downloading datasets with multiple files is not supported yet"
-        raise NotImplementedError(msg)
+    if dataset.contains_multiple_files:
+        file_name = f"{dataset.dataset_id}.zip"
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+            for data_file in dataset.data_files.values():
+                zf.writestr(
+                    data_file.filename,
+                    await data_manager.get_data_file_contents(data_file.qcrbox_file_id),
+                )
+        file_contents = zip_buffer.getvalue()
     else:
-        data_file = dataset_info.first_data_file
+        data_file = dataset.first_data_file
         file_name = data_file.filename
-        file_contents = await data_file_manager.get_file_contents(data_file.qcrbox_file_id)
+        file_contents = await data_manager.get_data_file_contents(data_file.qcrbox_file_id)
 
     return file_contents, file_name
 
+async def delete_data_file(data_file_id: str, *, data_manager: DataManager) -> None:
+    """Delete a data file by its ID.
 
-async def delete_dataset(dataset_id: str, *, data_file_manager: DataFileManager) -> None:
+    Parameters
+    ----------
+    data_file_id : str
+        The ID of the data file to delete.
+    data_manager : DataManager
+        The data manager instance.
+
+    """
+    await data_manager.delete_data_file(data_file_id)
+
+
+async def delete_dataset(dataset_id: str, *, data_manager: DataManager) -> None:
     """Delete a dataset by its ID.
 
     Parameters
     ----------
     dataset_id : str
         The ID of the dataset to delete.
-    data_file_manager : DataFileManager
-        The data file manager instance.
+    data_manager : DataManager
+        The data manager instance.
 
     """
-    await data_file_manager.delete_dataset(dataset_id)
+    await data_manager.delete_dataset(dataset_id)
 
 
-async def get_calculations(*, data_file_manager: DataFileManager) -> list[CalculationResponse]:
-    """Get all calculations from the data file manager.
+async def get_calculations(*, data_manager: DataManager) -> list[CalculationResponse]:
+    """Get all calculations from the data manager.
 
     Parameters
     ----------
-    data_file_manager : DataFileManager
-        The data file manager instance.
+    data_manager : DataManager
+        The data manager instance.
 
     Returns
     -------
@@ -226,21 +249,19 @@ async def get_calculations(*, data_file_manager: DataFileManager) -> list[Calcul
         A list of calculation response models.
 
     """
-    calculations = await data_file_manager.get_calculations()
+    calculations = await data_manager.get_calculations()
     return [c.to_response_model() for c in calculations]
 
 
-async def get_calculation_by_calculation_id(
-    calculation_id: str, *, data_file_manager: DataFileManager
-) -> CalculationResponse:
+async def get_calculation_by_calculation_id(calculation_id: str, *, data_manager: DataManager) -> CalculationResponse:
     """Get a calculation by its calculation ID.
 
     Parameters
     ----------
     calculation_id : str
         The ID of the calculation to retrieve.
-    data_file_manager : DataFileManager
-        The data file manager instance.
+    data_manager : DataManager
+        The data manager instance.
 
     Returns
     -------
@@ -249,60 +270,60 @@ async def get_calculation_by_calculation_id(
 
     """
     try:
-        calculation = await data_file_manager.get_calculation_details(calculation_id)
+        calculation = await data_manager.get_calculation(calculation_id)
     except KeyError as exc:
         raise CalculationNotFoundError from exc
 
     return calculation.to_response_model()
 
 
-async def get_data_file_info(data_file_id: str, *, data_file_manager: DataFileManager) -> DataFileInfoResponse:
+async def get_data_file_info(data_file_id: str, *, data_manager: DataManager) -> DataFileResponse:
     """Get metadata for a data file by its ID.
 
     Parameters
     ----------
     data_file_id : str
         The ID of the data file.
-    data_file_manager : DataFileManager
-        The data file manager instance.
+    data_manager : DataManager
+        The data manager instance.
 
     Returns
     -------
-    DataFileInfoResponse
+    DataFileResponse
         The data file info response model.
 
     """
-    data_file = await data_file_manager.get_file_metadata(data_file_id)
+    data_file = await data_manager.get_data_file(data_file_id)
     return data_file.to_response_model()
 
 
-async def get_data_files(*, data_file_manager: DataFileManager) -> list[DataFileInfoResponse]:
-    """Get all data files in the data file manager.
+async def get_data_files(*, data_manager: DataManager) -> list[DataFileResponse]:
+    """Get all data files in the data manager.
 
     Parameters
     ----------
-    data_file_manager : DataFileManager
-        The data file manager instance.
+    data_manager : DataManager
+        The data manager instance.
 
     Returns
     -------
-    list[DataFileInfoResponse]
+    list[DataFileResponse]
         A list of data file info response models.
 
     """
-    data_files = await data_file_manager.get_data_files()
+    data_files = await data_manager.get_data_files()
     return [f.to_response_model() for f in data_files]
 
 
-async def get_dataset_info(dataset_id: str, *, data_file_manager: DataFileManager) -> DatasetInfoResponse:
+async def get_dataset_info(dataset_id: str, *, data_manager: DataManager) -> DatasetResponse:
     """Get metadata for a dataset by its ID.
 
     Parameters
     ----------
     dataset_id : str
         The ID of the dataset.
-    data_file_manager : DataFileManager
-        The data file manager instance.
+    data_manager : DataManager
+        The data manager instance.
 
     Returns
     -------
@@ -310,17 +331,17 @@ async def get_dataset_info(dataset_id: str, *, data_file_manager: DataFileManage
         The dataset info response model.
 
     """
-    dataset_info = await data_file_manager.get_dataset_info(dataset_id)
+    dataset_info = await data_manager.get_dataset(dataset_id)
     return dataset_info.to_response_model()
 
 
-async def get_datasets(*, data_file_manager: DataFileManager) -> list[DatasetInfoResponse]:
-    """Get all datasets in the data file manager.
+async def get_datasets(*, data_manager: DataManager) -> list[DatasetResponse]:
+    """Get all datasets in the data manager.
 
     Parameters
     ----------
-    data_file_manager : DataFileManager
-        The data file manager instance.
+    data_manager : DataManager
+        The data manager instance.
 
     Returns
     -------
@@ -328,19 +349,19 @@ async def get_datasets(*, data_file_manager: DataFileManager) -> list[DatasetInf
         A list of dataset info response models.
 
     """
-    datasets = await data_file_manager.get_datasets()
+    datasets = await data_manager.get_datasets()
     return [d.to_response_model() for d in datasets]
 
 
-async def get_interactive_session_info(session_id: str, *, data_file_manager: DataFileManager):
+async def get_interactive_session_info(session_id: str, *, data_manager: DataManager):
     """Get interactive session info by its ID.
 
     Parameters
     ----------
     session_id : str
         The ID of the interactive session.
-    data_file_manager : DataFileManager
-        The data file manager instance.
+    data_manager : DataManager
+        The data manager instance.
 
     Returns
     -------
@@ -348,17 +369,17 @@ async def get_interactive_session_info(session_id: str, *, data_file_manager: Da
         The interactive session info response model.
 
     """
-    session_info = await data_file_manager.get_interactive_session_info(session_id)
+    session_info = await data_manager.get_interactive_session(session_id)
     return session_info.to_response_model()
 
 
-async def get_interactive_sessions(*, data_file_manager: DataFileManager):
-    """Get all interactive sessions in the data file manager.
+async def get_interactive_sessions(*, data_manager: DataManager):
+    """Get all interactive sessions in the data manager.
 
     Parameters
     ----------
-    data_file_manager : DataFileManager
-        The data file manager instance.
+    data_manager : DataManager
+        The data manager instance.
 
     Returns
     -------
@@ -366,21 +387,21 @@ async def get_interactive_sessions(*, data_file_manager: DataFileManager):
         A list of interactive session info response models.
 
     """
-    session_info = await data_file_manager.get_interactive_sessions()
+    session_info = await data_manager.get_interactive_sessions()
     return [s.to_response_model() for s in session_info]
 
 
 async def import_data_file(
-    data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)], *, data_file_manager: DataFileManager
+    data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)], *, data_manager: DataManager
 ) -> str:
-    """Import a data file from an uploaded file into the data file manager.
+    """Import a data file from an uploaded file into the data manager.
 
     Parameters
     ----------
     data : UploadFile
         The uploaded file to import.
-    data_file_manager : DataFileManager
-        The data file manager instance.
+    data_manager : DataManager
+        The data manager instance.
 
     Returns
     -------
@@ -388,12 +409,12 @@ async def import_data_file(
         The ID of the imported data file.
 
     """
-    qcrbox_data_file_id = await data_file_manager.import_bytes(await data.read(), filename=data.filename)
+    qcrbox_data_file_id = await data_manager.import_file_from_bytes(await data.read(), filename=data.filename)
     return qcrbox_data_file_id
 
 
 async def import_dataset(
-    data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)], *, data_file_manager: DataFileManager
+    data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)], *, data_manager: DataManager
 ) -> str:
     """Import a data file into a dataset from an uploaded file.
 
@@ -401,8 +422,8 @@ async def import_dataset(
     ----------
     data : UploadFile
         The uploaded file to import as a dataset.
-    data_file_manager : DataFileManager
-        The data file manager instance.
+    data_manager : DataManager
+        The data manager instance.
 
     Returns
     -------
@@ -410,8 +431,35 @@ async def import_dataset(
         The ID of the imported dataset.
 
     """
-    qcrbox_data_file_id = await data_file_manager.import_bytes(await data.read(), filename=data.filename)
-    qcrbox_dataset_id = await data_file_manager.create_dataset_from_data_file(qcrbox_data_file_id)
+    qcrbox_data_file_id = await data_manager.import_file_from_bytes(await data.read(), filename=data.filename)
+    qcrbox_dataset_id = await data_manager.create_dataset_from_data_files(qcrbox_data_file_id)
+    return qcrbox_dataset_id
+
+
+async def append_to_dataset(
+    dataset_id: str,
+    data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)],
+    *,
+    data_manager: DataManager,
+) -> str:
+    """Append a file to a dataset.
+
+    Parameters
+    ----------
+    dataset_id : str
+        The ID of the dataset to append the file to.
+    data : UploadFile
+        The uploaded file to import as a dataset.
+
+    Returns
+    -------
+    str
+        The ID of the dataset which has been updated.
+
+    """
+    qcrbox_data_file_id = await import_data_file(data, data_manager=data_manager)
+    qcrbox_dataset_id = await data_manager.update_data_file_in_dataset(dataset_id, qcrbox_data_file_id)
+
     return qcrbox_dataset_id
 
 
@@ -451,7 +499,7 @@ async def invoke_command(data: sql_models.CommandInvocationCreate, *, nats_broke
 
 
 async def stop_running_calculation(
-    calculation_id: str, *, nats_broker: NatsBroker, data_file_manager: DataFileManager
+    calculation_id: str, *, nats_broker: NatsBroker, data_manager: DataManager
 ) -> msg_specs.StoppedCalculationResponse:
     """Stop a running calculation by sending a stop request via NATS.
 
@@ -461,8 +509,8 @@ async def stop_running_calculation(
         The ID of the calculation to stop.
     nats_broker : NatsBroker
         The NATS broker instance.
-    data_file_manager : DataFileManager
-        The data file manager instance.
+    data_manager : DataManager
+        The data manager instance.
 
     Returns
     -------
@@ -470,7 +518,7 @@ async def stop_running_calculation(
         The response from the client after stopping the calculation.
 
     """
-    calculation = await data_file_manager.get_calculation_details(calculation_id)
+    calculation = await data_manager.get_calculation(calculation_id)
 
     msg = msg_specs.StopRunningCalculationMsg(calculation_id=calculation_id)
     response_json = await nats_broker.publish(

@@ -6,7 +6,7 @@ import anyio
 from litestar import Litestar
 
 from pyqcrbox import helpers, logger, msg_specs, settings, sql_models
-from pyqcrbox.data_management.data_file_manager import DataFileManager
+from pyqcrbox.data_management import DataManager
 from pyqcrbox.debug import log_eel
 from pyqcrbox.helpers import generate_private_routing_key
 from pyqcrbox.registry.client.executable_command.base_calculation import BaseCalculation
@@ -163,8 +163,8 @@ class QCrBoxClient(QCrBoxServerClientBase):
         logger.info(
             f"Received request to discard command invocation (client status: {self.status.status}): {msg!r}",
         )
-        data_file_manager = await self.svcs_container.aget(DataFileManager)
-        await data_file_manager.update_calculation_status_events(
+        data_file_manager = await self.svcs_container.aget(DataManager)
+        await data_file_manager.update_calculation_status(
             CalculationStatusDetails(
                 calculation_id=msg.calculation_id,
                 status=CalculationStatusEnum.FAILED,
@@ -199,7 +199,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         self.status.set_busy()
 
         calc = None
-        data_file_manager = await self.svcs_container.aget(DataFileManager)
+        data_file_manager = await self.svcs_container.aget(DataManager)
 
         try:
             command = ExecutableCommand(self.application_spec.get_command_spec_by_name(execute_request.command_name))
@@ -227,7 +227,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
 
         # Keep track of the calculation, which should still be running in the background
         self.calculations[execute_request.calculation_id] = calc
-        await data_file_manager.update_calculation_status_events(await calc.get_status_details())
+        await data_file_manager.update_calculation_status(await calc.get_status_details())
 
         # Wait until its finished and when finished, update the details. The calculation can
         # will raise an exception if (one of the interactive) commands failed
@@ -243,20 +243,20 @@ class QCrBoxClient(QCrBoxServerClientBase):
         logger.debug(f"Calculation: {calc}")
 
         # For non-interactive commands, we need to reset the client to being idle here and
-        # save the output to the DataFileManager. For interactive sessions, that is done
+        # save the output to the DataManager. For interactive sessions, that is done
         # instead in `close_interactive_session`
         if command.type != "interactive_session":
-            logger.debug("Adding non-interactive output to DataFileManager")
+            logger.debug("Adding non-interactive output to DataManager")
             try:
-                await calc.save_to_data_file_manager(await self.svcs_container.aget(DataFileManager))
+                await calc.save_to_data_file_manager(await self.svcs_container.aget(DataManager))
             except (RuntimeError, FileNotFoundError) as exc:
                 logger.exception(
-                    f"Failed to add output for calculation {calc.calculation_id} to DataFileManager due to {exc}"
+                    f"Failed to add output for calculation {calc.calculation_id} to DataManager due to {exc}"
                 )
             self.status.set_idle()
 
         logger.debug("Updating calculation status after calculation has finished")
-        await data_file_manager.update_calculation_status_events(await calc.get_status_details())
+        await data_file_manager.update_calculation_status(await calc.get_status_details())
 
     @log_eel
     async def handle_command_launch_failure(self, calculation_id: str, exception: Exception) -> None:
@@ -275,8 +275,8 @@ class QCrBoxClient(QCrBoxServerClientBase):
 
         """
         logger.error(f"Failed to launch command with exception: {exception!r}")
-        data_file_manager = await self.svcs_container.aget(DataFileManager)
-        await data_file_manager.update_calculation_status_events(
+        data_file_manager = await self.svcs_container.aget(DataManager)
+        await data_file_manager.update_calculation_status(
             CalculationStatusDetails(
                 calculation_id=calculation_id,
                 status=CalculationStatusEnum.FAILED,
@@ -302,8 +302,8 @@ class QCrBoxClient(QCrBoxServerClientBase):
 
         """
         logger.error(f"Command calculation failed in background task with exception: {exception!r}")
-        data_file_manager = await self.svcs_container.aget(DataFileManager)
-        await data_file_manager.update_calculation_status_events(
+        data_file_manager = await self.svcs_container.aget(DataManager)
+        await data_file_manager.update_calculation_status(
             CalculationStatusDetails(
                 calculation_id=calculation.calculation_id,
                 status=CalculationStatusEnum.FAILED,
@@ -403,8 +403,8 @@ class QCrBoxClient(QCrBoxServerClientBase):
         # it'll still be be marked as RUNNING in the calculation database
         logger.debug("Setting container to idle and updating calculation status after forced termination")
         self.status.set_idle()
-        data_file_manager = await self.svcs_container.aget(DataFileManager)
-        await data_file_manager.update_calculation_status_events(await calc.get_status_details())
+        data_file_manager = await self.svcs_container.aget(DataManager)
+        await data_file_manager.update_calculation_status(await calc.get_status_details())
 
         return msg_specs.StoppedCalculationResponse(
             calculation_id=calculation_id,

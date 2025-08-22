@@ -16,7 +16,7 @@ from quality_html import (
     precision_quality_indicators,
 )
 
-from pyqcrbox.data_management.data_file_manager import DataFileManager
+from pyqcrbox.data_management.data_manager import DataManager
 from pyqcrbox.services import QCRBOX_GLOBAL_SERVICES_REGISTRY
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -69,11 +69,11 @@ settings.configure(
 async def retrieve_data(dataset_id):
     """Retrieve data for a given dataset ID."""
     async with svcs.Container(QCRBOX_GLOBAL_SERVICES_REGISTRY) as container:
-        data_manager = await container.aget(DataFileManager)
-        dataset_info = await data_manager.get_dataset_info(dataset_id)
+        data_manager = await container.aget(DataManager)
+        dataset_info = await data_manager.get_dataset(dataset_id)
         data_file_id = dataset_info.first_data_file.qcrbox_file_id
         try:
-            data = await data_manager.get_file_contents(data_file_id)
+            data = await data_manager.get_data_file_contents(data_file_id)
             return data.decode("utf-8")
         except Exception as e:
             dataset_objs = await data_manager.get_datasets()

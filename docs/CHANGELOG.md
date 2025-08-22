@@ -17,29 +17,39 @@ However, there will be an initial period of stabilisation where this is not adhe
 
 - Included support for non-interactive commands, including stopping any long-running commands.
 - Added `--prebuilt-images` option to `qcb up` to bring QCrBox up using tested images from the QCrBox container
-  repository
+  repository.
+- Datasets can now contain multiple data files (of any type). When downloading a dataset with multiple files, a zip file
+  will be returned instead of each file individually.
+- Data files now track which dataset they belong to, so deleting a data file will remove it from the dataset it is in
+  similar to how deleting a dataset will delete its data files.
 
 ### Removed Features
 
 - We have removed the dev, docs, invoke and status options from the `qcb` CLI.
-- Removed `qcrbox-nextflow` container which was unused
-- "cli_command" is no longer a valid "implemented_as" type for non-interactive commands
+- Removed `qcrbox-nextflow` container which was unused.
+- `cli_command` is no longer a valid `implemented_as` type for non-interactive commands.
 
 ### Enhancements
 
 - The registry API now uses LiteStar dependency injection, improving management of the NATS server.
-- Added a new tests to test the DataFileManager service, non-interactive commands and new API endpoints.
+- Renamed `DataFileManager` to `DataManager` to better reflect that is manages more than just data files
+- Added a new tests to test the DataManager service, non-interactive commands and new API endpoints.
 - And lots more!
 
 ### Issues Fixed
 
-- Fixed an issue where the DataFileManager would lose connection to the NATS server when it had too many files.
+- Fixed an issue where the `DataManager` would lose connection to the NATS server when it had too many files.
 - Replaces an obscure error message when a wrong `QCrBox.cif_data_file` or `QCrBox.data_file` parameter with a more
   helpful one.
 - Fixed an issue where `qcb up` would use the wrong version ID for `pyqcrbox` when building service containers.
 - Fixed an issue where `qcb list` would use the wrong URL and port number for the registry API.
 - Fixed linting issues raised by `ruff` for `qcb`.
 - And lots more!
+
+### Documentation
+
+- Added how to guide on using the QCrBox Azure Container Repository.
+- Updated the how to guide on testing QCrBox.
 
 ## [icdm-2025]
 
@@ -72,11 +82,6 @@ However, there will be an initial period of stabilisation where this is not adhe
 ### Development
 
 - Added dummy GUI application for testing of interactive sessions. ([#364](https://github.com/QCrBox/QCrBox/issues/364))
-
-
-### Documentation
-
-
 
 ## [v0.0.2]
 

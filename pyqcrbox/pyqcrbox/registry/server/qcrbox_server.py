@@ -19,7 +19,7 @@ from litestar.response import Redirect
 from pydantic import BaseModel
 
 from pyqcrbox import helpers, logger, msg_specs, settings
-from pyqcrbox.data_management import CalculationAlreadyExists, DataFileManager
+from pyqcrbox.data_management import CalculationAlreadyExistsError, DataManager
 from pyqcrbox.debug import log_eel
 from pyqcrbox.msg_specs.base import QCrBoxGenericResponse
 from pyqcrbox.registry.server.api.api_endpoints import handle_exception
@@ -51,7 +51,7 @@ class CalculationDetails(BaseModel):
 def build_litestar_dependencies(container: svcs.Container) -> dict:
     return {
         "nats_broker": Provide(lambda: container.aget(NatsBroker)),
-        "data_file_manager": Provide(lambda: container.aget(DataFileManager)),
+        "data_file_manager": Provide(lambda: container.aget(DataManager)),
     }
 
 
@@ -270,10 +270,10 @@ class QCrBoxServer(QCrBoxServerClientBase):
 
         # Don't allow the same calculation to be added to the database multiple times.
         # This **shouldn't** ever happen.
-        data_file_manager = await self.svcs_container.aget(DataFileManager)
+        data_file_manager = await self.svcs_container.aget(DataManager)
         try:
-            await data_file_manager.add_calculation(calculation_db_entry)
-        except CalculationAlreadyExists:
+            await data_file_manager.store_calculation(calculation_db_entry)
+        except CalculationAlreadyExistsError:
             logger.error(f"Trying to add a calculation to the database which already exists: {calculation_db_entry}")
             return msg_specs.QCrBoxGenericResponse(
                 response_to="server.cmd.handle_command_invocation_by_user",
@@ -281,7 +281,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
                 payload={"error": "Tried to add a new calculation to one which already exists"},
             )
         logger.debug("Updating calculation status to SUBMITTED after command request accepted")
-        await data_file_manager.update_calculation_status_events(
+        await data_file_manager.update_calculation_status(
             CalculationStatusDetails(
                 calculation_id=user_invocation_request.calculation_id,
                 status=CalculationStatusEnum.SUBMITTED,
@@ -303,8 +303,8 @@ class QCrBoxServer(QCrBoxServerClientBase):
         async def get_nats_broker():
             return await self.svcs_container.aget(NatsBroker)
 
-        async def get_data_file_manager():
-            return await self.svcs_container.aget(DataFileManager)
+        async def get_data_manager():
+            return await self.svcs_container.aget(DataManager)
 
         self.asgi_server = Litestar(
             route_handlers=[api_router, web_root_handler],
@@ -313,7 +313,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
             plugins=[structlog_plugin],
             dependencies={
                 "nats_broker": Provide(get_nats_broker),
-                "data_file_manager": Provide(get_data_file_manager),
+                "data_manager": Provide(get_data_manager),
             },
             openapi_config=OpenAPIConfig(
                 title="QCrBox",

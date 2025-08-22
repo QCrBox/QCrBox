@@ -3,10 +3,10 @@ import contextlib
 import nats.js.errors
 from faststream.nats import NatsBroker
 
-from .data_file_manager import DataFileManager
+from .data_manager import DataManager
 
 
-class NatsDataFileManager(DataFileManager):
+class NatsDataManager(DataManager):
     def __init__(self, nats_broker: NatsBroker):
         self._nats_broker = nats_broker
 

@@ -53,8 +53,8 @@
       "test -x .git/hooks/pre-commit || pre-commit install"
     ],
     "scripts": {
-      "test-mode": [
-        "qcb down && qcb up --test"
+      "build-test-mode": [
+        "qcb down && qcb up --test && sleep 10"
       ],
       "robot-framework": [
         "cd ./pyqcrbox/robot_tests",
@@ -65,7 +65,12 @@
         "pytest --cov=pyqcrbox tests",
         "coverage-badge -f -o coverage.svg"
       ],
-      "restart-qcrbox": [
+      "tests": [
+        "devbox run build-test-mode",
+        "devbox run robot-framework",
+        "devbox run pytest"
+      ],
+      "restart": [
         "bash ./scripts/restart_qcrbox.sh"
       ]
     }

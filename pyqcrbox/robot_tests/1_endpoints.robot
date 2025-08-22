@@ -24,9 +24,12 @@ ${SESSION_ALIAS}            QCRBOX_REGISTRY_API_ENDPOINTS
 
 ${TEST_CIF_FILE_NAME}       robot_test_cif.cif
 ${TEST_CIF_FILE}            ${CURDIR}/test_data/${TEST_CIF_FILE_NAME}
+${TEST_JSON_FILE_NAME}      robot_test_json.json
+${TEST_JSON_FILE}           ${CURDIR}/test_data/${TEST_JSON_FILE_NAME}
 
 ${TEST_CALCULATION_ID}      ${EMPTY}
-${TEST_DATA_FILE_ID}        ${EMPTY}
+${TEST_CIF_FILE_ID}     ${EMPTY}
+${TEST_JSON_FILE_ID}    ${EMPTY}
 ${TEST_DATASET_ID}          ${EMPTY}
 
 
@@ -81,9 +84,41 @@ Check /datasets can upload a data file to a dataset
     ${test_dataset_id}=    Set Variable    ${datasets[0]["qcrbox_dataset_id"]}
     Set Suite Variable    ${TEST_DATASET_ID}    ${test_dataset_id}
     Set Suite Variable
-    ...    ${TEST_DATA_FILE_ID}
+    ...    ${TEST_CIF_FILE_ID}
     ...    ${datasets[0]["data_files"]["${TEST_CIF_FILE_NAME}"]["qcrbox_file_id"]}
     Check Datasets Structure    @{datasets}
+
+Check /datasets/id/append can add a new data file to a dataset
+    ${file_contents}=    Get Binary File    ${TEST_JSON_FILE}
+    ${files}=    Create Dictionary    ${TEST_JSON_FILE_NAME}=${file_contents}
+
+    ${response}=    Send API Request    POST    ${SESSION_ALIAS}    /data-files    201    files=${files}
+
+    ${response}=    Send API Request
+    ...    POST
+    ...    ${SESSION_ALIAS}
+    ...    /datasets/${TEST_DATASET_ID}/append
+    ...    201
+    ...    files=${files}
+    ${payload}=    Check Response And Get Payload    ${response}
+
+    Check Response Has Attributes    ${payload}    datasets
+    ${datasets}=    Set Variable    ${payload["datasets"]}
+    ${n_datasets}=    Get Length    ${datasets}
+    Should Be Equal As Integers
+    ...    ${n_datasets}
+    ...    1
+    ...    "/datasets response returned an incorrect number of datasets when it should return only the created dataset"
+
+    ${test_dataset_id}=    Set Variable    ${datasets[0]["qcrbox_dataset_id"]}
+    Check Datasets Structure    @{datasets}
+    ${data_files}=    Set Variable    ${datasets[0]["data_files"]}
+    ${n_data_files}=    Get Length    ${data_files}
+    Should Be Equal As Integers    ${n_data_files}    2
+    Set Suite Variable    ${TEST_JSON_FILE_ID}    ${data_files["${TEST_JSON_FILE_NAME}"]["qcrbox_file_id"]}
+
+    Log    Dataset ID ${test_dataset_id}
+    Log    JSON ID ${TEST_JSON_FILE_ID}
 
 Check /datasets returns a list of datasets
     ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /datasets    200
@@ -111,11 +146,25 @@ Check /datasets/id returns the correct dataset
     ${dataset_id}=    Set Variable    ${datasets[0]["qcrbox_dataset_id"]}
     Should Be Equal    ${TEST_DATASET_ID}    ${dataset_id}    "/datasets/id returned the wrong dataset"
 
+Check that /data-files/id can remove a data file
+    ${response}=    Send API Request    DELETE    ${SESSION_ALIAS}    /data-files/${TEST_JSON_FILE_ID}    204
+
+    ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /datasets/${TEST_DATASET_ID}    200
+    ${payload}=    Check Response And Get Payload    ${response}
+    Check Response Has Attributes    ${payload}    datasets
+    ${dataset}=    Set Variable    ${payload["datasets"][0]}
+    Log    ${dataset}
+
+    ${n_data_files}=    Get Length    ${dataset["data_files"]}
+    Should Be Equal As Integers    ${n_data_files}    1
+
 Check /datasets/id/download downloads the dataset
     ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /datasets/${TEST_DATASET_ID}/download    200
     Should Not Be Empty    ${response.content}
 
-    # Compare with original file content
+    # Compare with original file content.
+    # Note that this will fail if the previous test fails because it will download
+    # a zip rather than a single file
     ${original_file_content}=    Get Binary File    ${TEST_CIF_FILE}
     Should Be Equal    ${original_file_content}    ${response.content}
 

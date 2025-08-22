@@ -6,25 +6,29 @@ import pytest
 import svcs
 from faststream.nats import NatsBroker
 
-from pyqcrbox.data_management.data_file_manager import DataFileManager
+from pyqcrbox.data_management import DataManager
 from pyqcrbox.services import QCRBOX_GLOBAL_SERVICES_REGISTRY
 
 sys._qcrbox_running_inside_tests = True
 
 
 @pytest.fixture(scope="session")
-def anyio_backend():
+def anyio_backend() -> str:
     return "asyncio"
 
 
 @pytest.fixture(scope="session")
-def sample_data_dir():
+def sample_data_dir() -> Path:
     return Path(__file__).parent.joinpath("sample_data")
 
 
 @pytest.fixture(scope="session")
-def sample_cif_file(sample_data_dir):
+def sample_cif_file(sample_data_dir: Path) -> Path:
     return sample_data_dir.joinpath("periodic_table.cif")
+
+@pytest.fixture(scope="session")
+def sample_json_file(sample_data_dir: Path) -> Path:
+    return sample_data_dir.joinpath("periodic_table.json")
 
 
 @pytest.fixture(scope="session")
@@ -36,16 +40,8 @@ async def nats_broker() -> AsyncGenerator[NatsBroker, None]:
 
 
 @pytest.fixture(scope="session")
-async def data_file_manager() -> AsyncGenerator[DataFileManager, None]:
-    import inspect
+async def data_manager() -> AsyncGenerator[DataManager, None]:
 
     async with svcs.Container(QCRBOX_GLOBAL_SERVICES_REGISTRY) as container:
-        rs = QCRBOX_GLOBAL_SERVICES_REGISTRY.get_registered_service_for(DataFileManager)
-        print("\n\n--- DEBUGGING SVCS ---")
-        print(f"Factory for DataFileManager: {rs.factory}")
-        print(f"Factory signature: {inspect.signature(rs.factory)}")
-        print("------------------------\n\n")
-        # --- END DEBUGGING CODE ---
-
-        manager = await container.aget(DataFileManager)
+        manager = await container.aget(DataManager)
         yield manager

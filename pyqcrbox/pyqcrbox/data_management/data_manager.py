@@ -1,25 +1,34 @@
 from abc import ABC, abstractmethod
+from enum import StrEnum, auto
 from pathlib import Path
 
 import nats.js.errors
 
 from pyqcrbox import logger
-from pyqcrbox.data_management.data_file import DataFileMetadata, Dataset
+from pyqcrbox.data_management.data_file import DataFile
+from pyqcrbox.data_management.dataset import Dataset
+from pyqcrbox.data_management.errors import DatasetNotFoundError
 from pyqcrbox.helpers import generate_data_file_id, generate_dataset_id
 from pyqcrbox.sql_models.calculation import CalculationDB
 from pyqcrbox.sql_models.calculation_status_event import CalculationStatusDetails
 from pyqcrbox.sql_models.interactive_session_info import InteractiveSessionInfo
 
-__all__ = ["DataFileManager"]
-
-class DatasetNotFoundError(Exception):
-    pass
-
-class CalculationAlreadyExists(Exception):
-    pass
+__all__ = ["DataManager"]
 
 
-class DataFileManager(ABC):
+class DataManagerKeys(StrEnum):
+    """Enum for keys in the DataManager."""
+
+    DATASETS = auto()
+    DATA_FILE_CONTENTS = auto()
+    DATA_FILES = auto()
+    INTERACTIVE_SESSIONS = auto()
+    CALCULATIONS = auto()
+
+
+class DataManager(ABC):
+    """DataManager object responsible for manging data kept by QCrBox."""
+
     @abstractmethod
     async def _delete_from_kv(self, bucket: str, key: str) -> None:
         pass
@@ -52,18 +61,18 @@ class DataFileManager(ABC):
     async def _store_in_object_store(self, bucket: str, key: str, value: bytes) -> None:
         pass
 
-    async def _store_dataset_info(self, metadata: Dataset) -> None:
+    async def _store_dataset(self, dataset: Dataset) -> None:
         """Add metadata about a dataset into the data manager.
 
         Parameters
         ----------
-        dataset_info : Dataset
+        dataset : Dataset
             A Dataset object containing metadata about the dataset.
 
         """
-        await self._store_in_kv("datasets", metadata.dataset_id, metadata.model_dump_json().encode())
+        await self._store_in_kv(DataManagerKeys.DATASETS, dataset.dataset_id, dataset.model_dump_json().encode())
 
-    async def _store_file_contents(self, key: str, file_contents: bytes) -> None:
+    async def _store_data_file_contents(self, key: str, file_contents: bytes) -> None:
         """Add the contents of a file to the data manager.
 
         Parameters
@@ -74,28 +83,31 @@ class DataFileManager(ABC):
             The contents of the file, as a bytes stream.
 
         """
-        await self._store_in_object_store("data_file_contents", key, file_contents)
+        await self._store_in_object_store(DataManagerKeys.DATA_FILE_CONTENTS, key, file_contents)
 
-    async def _store_file_metadata(self, key: str, metadata: DataFileMetadata) -> None:
+    async def _store_data_file_metadata(self, data_file: DataFile) -> None:
         """Add metadata about a data file into the data manager.
 
         Parameters
         ----------
-        key : str
-            The key to associate with the file metadata.
-        metadata : DataFileMetadata
+        data_file : DataFile
             A DataFileMetadata object containing metadata about the data file.
 
         """
-        await self._store_in_kv("data_file_metadata", key, metadata.model_dump_json().encode())
+        await self._store_in_kv(
+            DataManagerKeys.DATA_FILES, data_file.qcrbox_file_id, data_file.model_dump_json().encode()
+        )
 
-    async def create_dataset_from_data_file(self, data_file_id: str) -> str:
+    async def create_dataset_from_data_files(self, data_file_ids: str | list[str]) -> str:
         """Create a new dataset from a data file.
+
+        The data files which are added to the dataset are updated with a
+        reference to the dataset they (now) belong to.
 
         Parameters
         ----------
-        data_file_id : str
-            The ID of the data file to create the dataset with.
+        data_file_ids : str | list [str]
+            A list of ID of the data files to create the dataset with.
 
         Returns
         -------
@@ -103,12 +115,65 @@ class DataFileManager(ABC):
             The ID of the created dataset.
 
         """
+        if isinstance(data_file_ids, str):
+            data_file_ids = [data_file_ids]
+        data_files = [await self.get_data_file(data_file_id) for data_file_id in data_file_ids]
+
         dataset_id = generate_dataset_id()
-        data_files = [await self.get_file_metadata(data_file_id)]
         dataset_info = Dataset(dataset_id=dataset_id, data_files={f.filename: f for f in data_files})
-        await self._store_dataset_info(dataset_info)
+        await self._store_dataset(dataset_info)
+
+        for data_file in data_files:
+            data_file.qcrbox_dataset_id = dataset_id
+            await self._store_data_file_metadata(data_file)
 
         return dataset_id
+
+    async def update_data_file_in_dataset(self, dataset_id: str, data_file_id: str) -> str:
+        """Append a new data file to a dataset.
+
+        If the file already exists in the dataset (the file being added has the
+        same file name) then it will be overwritten by this method.
+
+        Parameters
+        ----------
+        dataset_id : str
+            The ID of the dataset to append to.
+        data_file_id : str
+            The ID of the data file to append.
+
+        Returns
+        -------
+        str
+            The ID of the updated dataset.
+
+        """
+        data_file = await self.get_data_file(data_file_id)
+
+        dataset = await self.get_dataset(dataset_id)
+        dataset.data_files[data_file.filename] = data_file
+        await self._store_dataset(dataset)
+
+        data_file.qcrbox_dataset_id = dataset_id
+        await self._store_data_file_metadata(data_file)
+
+        return dataset.dataset_id
+
+    async def dataset_exists(self, dataset_id: str) -> bool:
+        """Check that a dataset exists for the given ID.
+
+        Parameters
+        ----------
+        dataset_id : str
+            The ID to check for a dataset.
+
+        Returns
+        -------
+        bool
+            If the dataset exists or not.
+
+        """
+        return await self._kv_key_exists(DataManagerKeys.DATASETS, dataset_id)
 
     async def data_file_exists(self, data_file_id: str) -> bool:
         """Check that a data file exists for the given ID.
@@ -124,7 +189,7 @@ class DataFileManager(ABC):
             If the file exists or not
 
         """
-        return await self._kv_key_exists("data_file_metadata", data_file_id)
+        return await self._kv_key_exists(DataManagerKeys.DATA_FILES, data_file_id)
 
     async def delete_data_file(self, data_file_id: str) -> None:
         """Delete a data file from the data manager.
@@ -135,9 +200,15 @@ class DataFileManager(ABC):
             The ID of the data file to delete.
 
         """
-        logger.debug(f"TODO: check if any datasets reference this file: {data_file_id}")
-        await self._delete_from_kv("data_file_metadata", data_file_id)
-        await self._delete_from_object_store("data_file_contents", data_file_id)
+        data_file = await self.get_data_file(data_file_id)
+
+        await self._delete_from_kv(DataManagerKeys.DATA_FILES, data_file_id)
+        await self._delete_from_object_store(DataManagerKeys.DATA_FILE_CONTENTS, data_file_id)
+
+        if data_file.qcrbox_dataset_id:
+            parent_dataset = await self.get_dataset(data_file.qcrbox_dataset_id)
+            parent_dataset.data_files.pop(data_file.filename)
+            await self._store_dataset(parent_dataset)
 
     async def delete_dataset(self, dataset_id: str) -> None:
         """Delete a dataset and its data files from the data manager.
@@ -149,7 +220,7 @@ class DataFileManager(ABC):
 
         """
         try:
-            dataset_as_bytes = await self._retrieve_from_kv("datasets", dataset_id)
+            dataset_as_bytes = await self._retrieve_from_kv(DataManagerKeys.DATASETS, dataset_id)
         except KeyError:
             logger.error(f"No dataset found for id {dataset_id!r}")
             raise
@@ -158,7 +229,7 @@ class DataFileManager(ABC):
 
         for _, file_metadata in dataset.data_files.items():
             await self.delete_data_file(file_metadata.qcrbox_file_id)
-        await self._delete_from_kv("datasets", dataset_id)
+        await self._delete_from_kv(DataManagerKeys.DATASETS, dataset_id)
 
     async def export_data_file(
         self, data_file_id: str, output_dir: str | Path, output_filename: str | None = None
@@ -181,8 +252,8 @@ class DataFileManager(ABC):
             The file path of the exported file.
 
         """
-        file_contents = await self._retrieve_from_object_store("data_file_contents", data_file_id)
-        object_store_filename = (await self.get_file_metadata(data_file_id)).filename
+        file_contents = await self._retrieve_from_object_store(DataManagerKeys.DATA_FILE_CONTENTS, data_file_id)
+        object_store_filename = (await self.get_data_file(data_file_id)).filename
 
         output_dir = Path(output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -196,7 +267,7 @@ class DataFileManager(ABC):
 
         return output_path
 
-    async def get_file_metadata(self, data_file_id: str) -> DataFileMetadata:
+    async def get_data_file(self, data_file_id: str) -> DataFile:
         """Get the metadata for a data file.
 
         Parameters
@@ -210,11 +281,11 @@ class DataFileManager(ABC):
             A DataFileMetadata object containing metadata about the data file.
 
         """
-        metadata_as_bytes = await self._retrieve_from_kv("data_file_metadata", data_file_id)
+        metadata_as_bytes = await self._retrieve_from_kv(DataManagerKeys.DATA_FILES, data_file_id)
 
-        return DataFileMetadata.model_validate_json(metadata_as_bytes.decode())
+        return DataFile.model_validate_json(metadata_as_bytes.decode())
 
-    async def get_data_files(self) -> list[DataFileMetadata]:
+    async def get_data_files(self) -> list[DataFile]:
         """Get the metadata for all the data files.
 
         Returns
@@ -223,12 +294,12 @@ class DataFileManager(ABC):
             A list of DataFileMetadata objects.
 
         """
-        keys = await self._get_kv_keys("data_file_metadata")
-        values = [await self.get_file_metadata(key) for key in keys]
+        keys = await self._get_kv_keys(DataManagerKeys.DATA_FILES)
+        values = [await self.get_data_file(key) for key in keys]
 
         return values
 
-    async def get_dataset_info(self, dataset_id: str) -> Dataset:
+    async def get_dataset(self, dataset_id: str) -> Dataset:
         """Get metadata about a dataset.
 
         Parameters
@@ -243,7 +314,7 @@ class DataFileManager(ABC):
 
         """
         try:
-            dataset_info_as_bytes = await self._retrieve_from_kv("datasets", dataset_id)
+            dataset_info_as_bytes = await self._retrieve_from_kv(DataManagerKeys.DATASETS, dataset_id)
         except KeyError as exc:
             exc_msg = f"Dataset not found: {dataset_id!r}"
             raise DatasetNotFoundError(exc_msg) from exc
@@ -259,14 +330,14 @@ class DataFileManager(ABC):
             A list of Dataset objects.
 
         """
-        dataset_ids = await self._get_kv_keys("datasets")
+        dataset_ids = await self._get_kv_keys(DataManagerKeys.DATASETS)
 
         return [
-            Dataset.model_validate_json(await self._retrieve_from_kv("datasets", dataset_id))
+            Dataset.model_validate_json(await self._retrieve_from_kv(DataManagerKeys.DATASETS, dataset_id))
             for dataset_id in dataset_ids
         ]
 
-    async def get_file_contents(self, data_file_id: str) -> bytes:
+    async def get_data_file_contents(self, data_file_id: str) -> bytes:
         """Get the contents of a data file.
 
         Parameters
@@ -280,11 +351,11 @@ class DataFileManager(ABC):
             The contents of the file in raw binary.
 
         """
-        file_contents = await self._retrieve_from_object_store("data_file_contents", data_file_id)
+        file_contents = await self._retrieve_from_object_store(DataManagerKeys.DATA_FILE_CONTENTS, data_file_id)
 
         return file_contents
 
-    async def get_interactive_session_info(self, session_id: str) -> InteractiveSessionInfo:
+    async def get_interactive_session(self, session_id: str) -> InteractiveSessionInfo:
         """Get metadata about an interactive session.
 
         Parameters
@@ -298,7 +369,7 @@ class DataFileManager(ABC):
             An interactiveSessionInfo containing data about the interactive session.
 
         """
-        session_info_as_bytes = await self._retrieve_from_kv("interactive_sessions", session_id)
+        session_info_as_bytes = await self._retrieve_from_kv(DataManagerKeys.INTERACTIVE_SESSIONS, session_id)
 
         return InteractiveSessionInfo.model_validate_json(session_info_as_bytes.decode())
 
@@ -312,12 +383,12 @@ class DataFileManager(ABC):
             sessions
 
         """
-        keys = await self._get_kv_keys("interactive_sessions")
-        values = [await self.get_interactive_session_info(key) for key in keys]
+        keys = await self._get_kv_keys(DataManagerKeys.INTERACTIVE_SESSIONS)
+        values = [await self.get_interactive_session(key) for key in keys]
 
         return values
 
-    async def import_bytes(
+    async def import_file_from_bytes(
         self,
         file_contents: bytes,
         filename: str,
@@ -346,17 +417,18 @@ class DataFileManager(ABC):
         """
         qcrbox_file_id = _qcrbox_file_id or generate_data_file_id()
         file_extension = Path(filename).suffix[1:]
-        data_file_info = DataFileMetadata(
+        data_file = DataFile(
             qcrbox_file_id=qcrbox_file_id,
+            qcrbox_dataset_id=None,
             filename=filename,
             filetype=file_extension,
         )
-        await self._store_file_contents(qcrbox_file_id, file_contents)
-        await self._store_file_metadata(qcrbox_file_id, data_file_info)
+        await self._store_data_file_metadata(data_file)
+        await self._store_data_file_contents(qcrbox_file_id, file_contents)
 
         return qcrbox_file_id
 
-    async def import_local_file(self, file_path: str | Path, *, _qcrbox_file_id: str | None = None) -> str:
+    async def import_file(self, file_path: str | Path, *, _qcrbox_file_id: str | None = None) -> str:
         """Import a data file into the data manager, from a local file system.
 
         This function will add both the contents of the file, in bytes, and metadata
@@ -380,11 +452,13 @@ class DataFileManager(ABC):
         qcrbox_file_id = _qcrbox_file_id or generate_data_file_id()
 
         with file_path.open("rb") as f:
-            qcrbox_file_id = await self.import_bytes(f.read(), filename=file_path.name, _qcrbox_file_id=qcrbox_file_id)
+            qcrbox_file_id = await self.import_file_from_bytes(
+                f.read(), filename=file_path.name, _qcrbox_file_id=qcrbox_file_id
+            )
 
         return qcrbox_file_id
 
-    async def store_interactive_session_info(self, session_info: InteractiveSessionInfo) -> None:
+    async def store_interactive_session(self, session_info: InteractiveSessionInfo) -> None:
         """Add metadata about an interactive session to the data manager.
 
         Parameters
@@ -395,11 +469,11 @@ class DataFileManager(ABC):
 
         """
         await self._store_in_kv(
-            "interactive_sessions", session_info.session_id, session_info.model_dump_json().encode()
+            DataManagerKeys.INTERACTIVE_SESSIONS, session_info.session_id, session_info.model_dump_json().encode()
         )
 
     #
-    async def get_calculation_details(self, key: str) -> CalculationDB:
+    async def get_calculation(self, key: str) -> CalculationDB:
         """Get metadata about a calculation from the data manager.
 
         Parameters
@@ -413,7 +487,7 @@ class DataFileManager(ABC):
             A CalculationNatsDB object containing metadata about the calculation.
 
         """
-        calc_as_bytes = await self._retrieve_from_kv("calculations", key)
+        calc_as_bytes = await self._retrieve_from_kv(DataManagerKeys.CALCULATIONS, key)
         calculation = CalculationDB.model_validate_json(calc_as_bytes.decode())
 
         return calculation
@@ -428,12 +502,12 @@ class DataFileManager(ABC):
             A list of CalculationNatsDB which contain metadata about a calculation.
 
         """
-        keys = await self._get_kv_keys("calculations")
-        calculations = [await self.get_calculation_details(key) for key in keys]
+        keys = await self._get_kv_keys(DataManagerKeys.CALCULATIONS)
+        calculations = [await self.get_calculation(key) for key in keys]
 
         return calculations
 
-    async def update_calculation_status_events(self, status_details: CalculationStatusDetails) -> None:
+    async def update_calculation_status(self, status_details: CalculationStatusDetails) -> None:
         """Append a new status to the the calculation status events for a calculation.
 
         Parameters
@@ -445,7 +519,7 @@ class DataFileManager(ABC):
         key = status_details.calculation_id
 
         try:
-            calc_as_bytes = await self._retrieve_from_kv("calculations", key)
+            calc_as_bytes = await self._retrieve_from_kv(DataManagerKeys.CALCULATIONS, key)
         except nats.js.errors.KeyNotFoundError:
             logger.error(f"Can't find calculation {key!r} to update calculation status")
             raise
@@ -460,10 +534,12 @@ class DataFileManager(ABC):
         logger.debug(f"Appending status {status_details.status} to calculation {calculation.calculation_id}")
         calculation.status_events.append(status_details)
         await self._store_in_kv(
-            "calculations", key, calculation.model_dump_json(exclude={"status", "output_dataset_id"}).encode()
+            DataManagerKeys.CALCULATIONS,
+            key,
+            calculation.model_dump_json(exclude={"status", "output_dataset_id"}).encode(),
         )
 
-    async def add_calculation(self, calculation: CalculationDB) -> None:
+    async def store_calculation(self, calculation: CalculationDB) -> None:
         """Add a new calculation to the NATS data manager.
 
         Parameters
@@ -479,12 +555,14 @@ class DataFileManager(ABC):
 
         """
         logger.debug(
-            f"Adding calculation {calculation.calculation_id!r} to DataFileManager: {calculation!r}",
+            f"Adding calculation {calculation.calculation_id!r} to DataManager: {calculation!r}",
         )
         key = calculation.calculation_id
-        calculation_keys = await self._get_kv_keys("calculations")
+        calculation_keys = await self._get_kv_keys(DataManagerKeys.CALCULATIONS)
         if key in calculation_keys:
-            raise KeyError(f"Calculation {key!r} already in DataFileManager, can't create new calculation")
+            raise KeyError(f"Calculation {key!r} already in DataManager, can't create new calculation")
         await self._store_in_kv(
-            "calculations", key, calculation.model_dump_json(exclude={"status", "output_dataset_id"}).encode()
+            DataManagerKeys.CALCULATIONS,
+            key,
+            calculation.model_dump_json(exclude={"status", "output_dataset_id"}).encode(),
         )
