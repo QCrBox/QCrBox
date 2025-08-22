@@ -19,7 +19,7 @@ from litestar.response import Redirect
 from pydantic import BaseModel
 
 from pyqcrbox import helpers, logger, msg_specs, settings
-from pyqcrbox.data_management import CalculationAlreadyExists, DataManager
+from pyqcrbox.data_management import CalculationAlreadyExistsError, DataManager
 from pyqcrbox.debug import log_eel
 from pyqcrbox.msg_specs.base import QCrBoxGenericResponse
 from pyqcrbox.registry.server.api.api_endpoints import handle_exception
@@ -273,7 +273,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
         data_file_manager = await self.svcs_container.aget(DataManager)
         try:
             await data_file_manager.add_calculation(calculation_db_entry)
-        except CalculationAlreadyExists:
+        except CalculationAlreadyExistsError:
             logger.error(f"Trying to add a calculation to the database which already exists: {calculation_db_entry}")
             return msg_specs.QCrBoxGenericResponse(
                 response_to="server.cmd.handle_command_invocation_by_user",

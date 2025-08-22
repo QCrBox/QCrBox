@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from enum import StrEnum, auto
 from pathlib import Path
 
 import nats.js.errors
@@ -6,6 +7,7 @@ import nats.js.errors
 from pyqcrbox import logger
 from pyqcrbox.data_management.data_file import DataFile
 from pyqcrbox.data_management.dataset import Dataset
+from pyqcrbox.data_management.errors import DatasetNotFoundError
 from pyqcrbox.helpers import generate_data_file_id, generate_dataset_id
 from pyqcrbox.sql_models.calculation import CalculationDB
 from pyqcrbox.sql_models.calculation_status_event import CalculationStatusDetails
@@ -13,14 +15,20 @@ from pyqcrbox.sql_models.interactive_session_info import InteractiveSessionInfo
 
 __all__ = ["DataManager"]
 
-class DatasetNotFoundError(Exception):
-    pass
 
-class CalculationAlreadyExists(Exception):
-    pass
+class DataManagerKeys(StrEnum):
+    """Enum for keys in the DataManager."""
+
+    DATASETS = auto()
+    DATA_FILE_CONTENTS = auto()
+    DATA_FILES = auto()
+    INTERACTIVE_SESSIONS = auto()
+    CALCULATIONS = auto()
 
 
 class DataManager(ABC):
+    """DataManager object responsible for manging data kept by QCrBox."""
+
     @abstractmethod
     async def _delete_from_kv(self, bucket: str, key: str) -> None:
         pass
@@ -62,7 +70,7 @@ class DataManager(ABC):
             A Dataset object containing metadata about the dataset.
 
         """
-        await self._store_in_kv("datasets", metadata.dataset_id, metadata.model_dump_json().encode())
+        await self._store_in_kv(DataManagerKeys.DATASETS, metadata.dataset_id, metadata.model_dump_json().encode())
 
     async def _store_file_contents(self, key: str, file_contents: bytes) -> None:
         """Add the contents of a file to the data manager.
@@ -75,7 +83,7 @@ class DataManager(ABC):
             The contents of the file, as a bytes stream.
 
         """
-        await self._store_in_object_store("data_file_contents", key, file_contents)
+        await self._store_in_object_store(DataManagerKeys.DATA_FILE_CONTENTS, key, file_contents)
 
     async def _store_file_metadata(self, key: str, metadata: DataFile) -> None:
         """Add metadata about a data file into the data manager.
@@ -88,7 +96,7 @@ class DataManager(ABC):
             A DataFileMetadata object containing metadata about the data file.
 
         """
-        await self._store_in_kv("data_file_metadata", key, metadata.model_dump_json().encode())
+        await self._store_in_kv(DataManagerKeys.DATA_FILES, key, metadata.model_dump_json().encode())
 
     async def create_dataset_from_data_file(self, data_file_id: str) -> str:
         """Create a new dataset from a data file.
@@ -134,6 +142,22 @@ class DataManager(ABC):
 
         return dataset.dataset_id
 
+    async def dataset_exists(self, dataset_id: str) -> bool:
+        """Check that a dataset exists for the given ID.
+
+        Parameters
+        ----------
+        dataset_id : str
+            The ID to check for a dataset.
+
+        Returns
+        -------
+        bool
+            If the dataset exists or not.
+
+        """
+        return await self._kv_key_exists(DataManagerKeys.DATASETS, dataset_id)
+
     async def data_file_exists(self, data_file_id: str) -> bool:
         """Check that a data file exists for the given ID.
 
@@ -148,7 +172,7 @@ class DataManager(ABC):
             If the file exists or not
 
         """
-        return await self._kv_key_exists("data_file_metadata", data_file_id)
+        return await self._kv_key_exists(DataManagerKeys.DATA_FILES, data_file_id)
 
     async def delete_data_file(self, data_file_id: str) -> None:
         """Delete a data file from the data manager.
@@ -160,8 +184,8 @@ class DataManager(ABC):
 
         """
         logger.debug(f"TODO: check if any datasets reference this file: {data_file_id}")
-        await self._delete_from_kv("data_file_metadata", data_file_id)
-        await self._delete_from_object_store("data_file_contents", data_file_id)
+        await self._delete_from_kv(DataManagerKeys.DATA_FILES, data_file_id)
+        await self._delete_from_object_store(DataManagerKeys.DATA_FILE_CONTENTS, data_file_id)
 
     async def delete_dataset(self, dataset_id: str) -> None:
         """Delete a dataset and its data files from the data manager.
@@ -173,7 +197,7 @@ class DataManager(ABC):
 
         """
         try:
-            dataset_as_bytes = await self._retrieve_from_kv("datasets", dataset_id)
+            dataset_as_bytes = await self._retrieve_from_kv(DataManagerKeys.DATASETS, dataset_id)
         except KeyError:
             logger.error(f"No dataset found for id {dataset_id!r}")
             raise
@@ -182,7 +206,7 @@ class DataManager(ABC):
 
         for _, file_metadata in dataset.data_files.items():
             await self.delete_data_file(file_metadata.qcrbox_file_id)
-        await self._delete_from_kv("datasets", dataset_id)
+        await self._delete_from_kv(DataManagerKeys.DATASETS, dataset_id)
 
     async def export_data_file(
         self, data_file_id: str, output_dir: str | Path, output_filename: str | None = None
@@ -205,7 +229,7 @@ class DataManager(ABC):
             The file path of the exported file.
 
         """
-        file_contents = await self._retrieve_from_object_store("data_file_contents", data_file_id)
+        file_contents = await self._retrieve_from_object_store(DataManagerKeys.DATA_FILE_CONTENTS, data_file_id)
         object_store_filename = (await self.get_data_file_info(data_file_id)).filename
 
         output_dir = Path(output_dir)
@@ -234,7 +258,7 @@ class DataManager(ABC):
             A DataFileMetadata object containing metadata about the data file.
 
         """
-        metadata_as_bytes = await self._retrieve_from_kv("data_file_metadata", data_file_id)
+        metadata_as_bytes = await self._retrieve_from_kv(DataManagerKeys.DATA_FILES, data_file_id)
 
         return DataFile.model_validate_json(metadata_as_bytes.decode())
 
@@ -247,7 +271,7 @@ class DataManager(ABC):
             A list of DataFileMetadata objects.
 
         """
-        keys = await self._get_kv_keys("data_file_metadata")
+        keys = await self._get_kv_keys(DataManagerKeys.DATA_FILES)
         values = [await self.get_data_file_info(key) for key in keys]
 
         return values
@@ -267,7 +291,7 @@ class DataManager(ABC):
 
         """
         try:
-            dataset_info_as_bytes = await self._retrieve_from_kv("datasets", dataset_id)
+            dataset_info_as_bytes = await self._retrieve_from_kv(DataManagerKeys.DATASETS, dataset_id)
         except KeyError as exc:
             exc_msg = f"Dataset not found: {dataset_id!r}"
             raise DatasetNotFoundError(exc_msg) from exc
@@ -283,10 +307,10 @@ class DataManager(ABC):
             A list of Dataset objects.
 
         """
-        dataset_ids = await self._get_kv_keys("datasets")
+        dataset_ids = await self._get_kv_keys(DataManagerKeys.DATASETS)
 
         return [
-            Dataset.model_validate_json(await self._retrieve_from_kv("datasets", dataset_id))
+            Dataset.model_validate_json(await self._retrieve_from_kv(DataManagerKeys.DATASETS, dataset_id))
             for dataset_id in dataset_ids
         ]
 
@@ -304,7 +328,7 @@ class DataManager(ABC):
             The contents of the file in raw binary.
 
         """
-        file_contents = await self._retrieve_from_object_store("data_file_contents", data_file_id)
+        file_contents = await self._retrieve_from_object_store(DataManagerKeys.DATA_FILE_CONTENTS, data_file_id)
 
         return file_contents
 
@@ -322,7 +346,7 @@ class DataManager(ABC):
             An interactiveSessionInfo containing data about the interactive session.
 
         """
-        session_info_as_bytes = await self._retrieve_from_kv("interactive_sessions", session_id)
+        session_info_as_bytes = await self._retrieve_from_kv(DataManagerKeys.INTERACTIVE_SESSIONS, session_id)
 
         return InteractiveSessionInfo.model_validate_json(session_info_as_bytes.decode())
 
@@ -336,7 +360,7 @@ class DataManager(ABC):
             sessions
 
         """
-        keys = await self._get_kv_keys("interactive_sessions")
+        keys = await self._get_kv_keys(DataManagerKeys.INTERACTIVE_SESSIONS)
         values = [await self.get_interactive_session_info(key) for key in keys]
 
         return values
@@ -419,7 +443,7 @@ class DataManager(ABC):
 
         """
         await self._store_in_kv(
-            "interactive_sessions", session_info.session_id, session_info.model_dump_json().encode()
+            DataManagerKeys.INTERACTIVE_SESSIONS, session_info.session_id, session_info.model_dump_json().encode()
         )
 
     #
@@ -437,7 +461,7 @@ class DataManager(ABC):
             A CalculationNatsDB object containing metadata about the calculation.
 
         """
-        calc_as_bytes = await self._retrieve_from_kv("calculations", key)
+        calc_as_bytes = await self._retrieve_from_kv(DataManagerKeys.CALCULATIONS, key)
         calculation = CalculationDB.model_validate_json(calc_as_bytes.decode())
 
         return calculation
@@ -452,7 +476,7 @@ class DataManager(ABC):
             A list of CalculationNatsDB which contain metadata about a calculation.
 
         """
-        keys = await self._get_kv_keys("calculations")
+        keys = await self._get_kv_keys(DataManagerKeys.CALCULATIONS)
         calculations = [await self.get_calculation_details(key) for key in keys]
 
         return calculations
@@ -469,7 +493,7 @@ class DataManager(ABC):
         key = status_details.calculation_id
 
         try:
-            calc_as_bytes = await self._retrieve_from_kv("calculations", key)
+            calc_as_bytes = await self._retrieve_from_kv(DataManagerKeys.CALCULATIONS, key)
         except nats.js.errors.KeyNotFoundError:
             logger.error(f"Can't find calculation {key!r} to update calculation status")
             raise
@@ -484,7 +508,9 @@ class DataManager(ABC):
         logger.debug(f"Appending status {status_details.status} to calculation {calculation.calculation_id}")
         calculation.status_events.append(status_details)
         await self._store_in_kv(
-            "calculations", key, calculation.model_dump_json(exclude={"status", "output_dataset_id"}).encode()
+            DataManagerKeys.CALCULATIONS,
+            key,
+            calculation.model_dump_json(exclude={"status", "output_dataset_id"}).encode(),
         )
 
     async def add_calculation(self, calculation: CalculationDB) -> None:
@@ -506,9 +532,11 @@ class DataManager(ABC):
             f"Adding calculation {calculation.calculation_id!r} to DataManager: {calculation!r}",
         )
         key = calculation.calculation_id
-        calculation_keys = await self._get_kv_keys("calculations")
+        calculation_keys = await self._get_kv_keys(DataManagerKeys.CALCULATIONS)
         if key in calculation_keys:
             raise KeyError(f"Calculation {key!r} already in DataManager, can't create new calculation")
         await self._store_in_kv(
-            "calculations", key, calculation.model_dump_json(exclude={"status", "output_dataset_id"}).encode()
+            DataManagerKeys.CALCULATIONS,
+            key,
+            calculation.model_dump_json(exclude={"status", "output_dataset_id"}).encode(),
         )
