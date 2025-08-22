@@ -111,7 +111,7 @@ def iso2aniso(input_cif, output_cif_name):
     input_cif_path = Path(input_cif)
     work_cif_path = input_cif_path.parent / "qcrbox_work.cif"
 
-    cif_file_to_specific_by_yml(input_cif_path, work_cif_path, YAML_PATH, "iso2aniso", "input_cif_name")
+    cif_file_to_specific_by_yml(input_cif_path, work_cif_path, YAML_PATH, "iso2aniso", "input_cif")
 
     # There were the original default values set via command line parameters when they were optional arguments/options
     select_names = None
