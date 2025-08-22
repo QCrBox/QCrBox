@@ -16,7 +16,7 @@ from litestar.response import Response
 from litestar.status_codes import HTTP_500_INTERNAL_SERVER_ERROR
 
 from pyqcrbox import settings
-from pyqcrbox.data_management import DataFileManager, DatasetNotFoundError
+from pyqcrbox.data_management import DataManager, DatasetNotFoundError
 from pyqcrbox.registry.server.api import api_schema as schema
 from pyqcrbox.registry.shared.qcrbox_response import QCrBoxResponse
 from pyqcrbox.sql_models import CalculationStatusEnum, CommandInvocationCreate
@@ -97,9 +97,9 @@ async def list_applications() -> schema.QCrBoxResponse[schema.ApplicationsRespon
     operation_id="list_calculations",
     responses={400: schema.BAD_REQUEST_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
-async def list_calculations(data_file_manager: DataFileManager) -> schema.QCrBoxResponse[schema.CalculationsResponse]:
+async def list_calculations(data_manager: DataManager) -> schema.QCrBoxResponse[schema.CalculationsResponse]:
     """Retrieve a list of all calculations, past and present."""
-    calculations = await api_helpers.get_calculations(data_file_manager=data_file_manager)
+    calculations = await api_helpers.get_calculations(data_manager=data_manager)
 
     return QCrBoxResponse(
         content={
@@ -122,11 +122,11 @@ async def list_calculations(data_file_manager: DataFileManager) -> schema.QCrBox
     responses={400: schema.BAD_REQUEST_ERROR, 404: schema.NOT_FOUND_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
 async def get_calculation_by_id(
-    id: str = Parameter(title="Calculation ID"), *, data_file_manager: DataFileManager
+    id: str = Parameter(title="Calculation ID"), *, data_manager: DataManager
 ) -> schema.QCrBoxResponse[schema.CalculationsResponse]:
     """Retrieve a calculation by its ID."""
     try:
-        calculation = await api_helpers.get_calculation_by_calculation_id(id, data_file_manager=data_file_manager)
+        calculation = await api_helpers.get_calculation_by_calculation_id(id, data_manager=data_manager)
         return QCrBoxResponse(
             content={
                 "status": "success",
@@ -150,12 +150,12 @@ async def get_calculation_by_id(
     responses={400: schema.BAD_REQUEST_ERROR, 404: schema.NOT_FOUND_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
 async def stop_running_calculation(
-    id: str = Parameter(title="Calculation ID"), *, nats_broker: NatsBroker, data_file_manager: DataFileManager
+    id: str = Parameter(title="Calculation ID"), *, nats_broker: NatsBroker, data_manager: DataManager
 ) -> schema.QCrBoxResponse[schema.CalculationStoppedResponse]:
     """Stop a currently running command, interactive and non-interactive."""
     try:
         stopped_calculation = await api_helpers.stop_running_calculation(
-            id, data_file_manager=data_file_manager, nats_broker=nats_broker
+            id, data_manager=data_manager, nats_broker=nats_broker
         )
     except KeyError as exc:
         raise QCrBoxAPIException(detail=f"No calculation with ID {id!r}", status_code=404) from exc
@@ -287,9 +287,9 @@ async def invoke_command(
     operation_id="list_data_files",
     responses={400: schema.BAD_REQUEST_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
-async def list_data_files(data_file_manager: DataFileManager) -> schema.QCrBoxResponse[schema.DataFilesResponse]:
+async def list_data_files(data_manager: DataManager) -> schema.QCrBoxResponse[schema.DataFilesResponse]:
     """Retrieve a list of all data files in the data store."""
-    data_files = await api_helpers.get_data_files(data_file_manager=data_file_manager)
+    data_files = await api_helpers.get_data_files(data_manager=data_manager)
     return QCrBoxResponse(
         content={
             "status": "success",
@@ -311,11 +311,11 @@ async def list_data_files(data_file_manager: DataFileManager) -> schema.QCrBoxRe
     responses={400: schema.BAD_REQUEST_ERROR, 404: schema.NOT_FOUND_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
 async def get_data_file_by_id(
-    id: str = Parameter(title="Data file ID"), *, data_file_manager: DataFileManager
+    id: str = Parameter(title="Data file ID"), *, data_manager: DataManager
 ) -> schema.QCrBoxResponse[schema.DataFilesResponse]:
     """Retrieve a data files by it's ID."""
     try:
-        data_file = await api_helpers.get_data_file_info(id, data_file_manager=data_file_manager)
+        data_file = await api_helpers.get_data_file_info(id, data_manager=data_manager)
         return QCrBoxResponse(
             content={
                 "status": "success",
@@ -339,13 +339,11 @@ async def get_data_file_by_id(
     responses={400: schema.BAD_REQUEST_ERROR, 404: schema.NOT_FOUND_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
 async def download_data_file_by_id(
-    id: str = Parameter(title="Data file ID"), *, data_file_manager: DataFileManager
+    id: str = Parameter(title="Data file ID"), *, data_manager: DataManager
 ) -> Response[bytes]:
     """Download a data file from the data store."""
     try:
-        data_file_contents_as_bytes, data_file_name = await api_helpers.export_data_file(
-            id, data_file_manager=data_file_manager
-        )
+        data_file_contents_as_bytes, data_file_name = await api_helpers.export_data_file(id, data_manager=data_manager)
     except nats.js.errors.NotFoundError as exc:
         raise QCrBoxAPIException(detail=f"Data file not found: {id!r}", status_code=404) from exc
 
@@ -366,9 +364,9 @@ async def download_data_file_by_id(
     operation_id="delete_dataset_by_id",
     responses={400: schema.BAD_REQUEST_ERROR, 404: schema.NOT_FOUND_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
-async def delete_dataset_by_id(id: str = Parameter(title="Dataset ID"), *, data_file_manager: DataFileManager) -> None:
+async def delete_dataset_by_id(id: str = Parameter(title="Dataset ID"), *, data_manager: DataManager) -> None:
     """Remove a dataset and associated data files from the data store."""
-    await api_helpers.delete_dataset(id, data_file_manager=data_file_manager)
+    await api_helpers.delete_dataset(id, data_manager=data_manager)
 
 
 @get(
@@ -379,9 +377,9 @@ async def delete_dataset_by_id(id: str = Parameter(title="Dataset ID"), *, data_
     operation_id="list_datasets",
     responses={400: schema.BAD_REQUEST_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
-async def list_datasets(data_file_manager: DataFileManager) -> schema.QCrBoxResponse[schema.DatasetsResponse]:
+async def list_datasets(data_manager: DataManager) -> schema.QCrBoxResponse[schema.DatasetsResponse]:
     """Retrieve a list of all datasets in the data store."""
-    datasets = await api_helpers.get_datasets(data_file_manager=data_file_manager)
+    datasets = await api_helpers.get_datasets(data_manager=data_manager)
     return QCrBoxResponse(
         content={
             "status": "success",
@@ -403,11 +401,11 @@ async def list_datasets(data_file_manager: DataFileManager) -> schema.QCrBoxResp
     responses={400: schema.BAD_REQUEST_ERROR, 404: schema.NOT_FOUND_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
 async def get_dataset_by_id(
-    id: str = Parameter(title="Dataset ID"), *, data_file_manager: DataFileManager
+    id: str = Parameter(title="Dataset ID"), *, data_manager: DataManager
 ) -> schema.QCrBoxResponse[schema.DatasetsResponse]:
     """Retrieve a dataset by its ID, including metadata of linked data files."""
     try:
-        dataset = await api_helpers.get_dataset_info(id, data_file_manager=data_file_manager)
+        dataset = await api_helpers.get_dataset_info(id, data_manager=data_manager)
         return QCrBoxResponse(
             content={
                 "status": "success",
@@ -431,11 +429,11 @@ async def get_dataset_by_id(
     responses={400: schema.BAD_REQUEST_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
 async def create_dataset(
-    data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)], data_file_manager: DataFileManager
+    data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)], data_manager: DataManager
 ) -> schema.QCrBoxResponse[schema.DatasetsResponse]:
     """Create a new dataset by uploading data files."""
-    qcrbox_dataset_id = await api_helpers.import_dataset(data, data_file_manager=data_file_manager)
-    dataset = await api_helpers.get_dataset_info(qcrbox_dataset_id, data_file_manager=data_file_manager)
+    qcrbox_dataset_id = await api_helpers.import_dataset(data, data_manager=data_manager)
+    dataset = await api_helpers.get_dataset_info(qcrbox_dataset_id, data_manager=data_manager)
     return QCrBoxResponse(
         content={
             "status": "success",
@@ -445,6 +443,31 @@ async def create_dataset(
             },
         },
         status_code=201,
+    )
+
+@post(
+    path="/datasets/{id:str}/append",
+    media_type=MediaType.JSON,
+    summary="Add a file to a dataset",
+    tags=["datasets"],
+    operation_id="append_to_dataset",
+    responses={400: schema.BAD_REQUEST_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
+)
+async def append_to_dataset(
+    id: str,
+    data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)],
+    data_manager: DataManager,
+):
+    """Append a new data file to a dataset."""
+    return QCrBoxResponse(
+        content={
+            "status": "success",
+            "message": f"Appended file to dataset: {id!r}",
+            "payload": {
+                "datasets": [],
+            },
+        },
+        status=201,
     )
 
 
@@ -457,13 +480,11 @@ async def create_dataset(
     responses={400: schema.BAD_REQUEST_ERROR, 404: schema.NOT_FOUND_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
 async def download_dataset_by_id(
-    id: str = Parameter(title="Dataset ID"), *, data_file_manager: DataFileManager
+    id: str = Parameter(title="Dataset ID"), *, data_manager: DataManager
 ) -> Response[bytes]:
     """Download the data files of a datast as a Zip file."""
     try:
-        dataset_contents_as_bytes, output_filename = await api_helpers.export_dataset(
-            id, data_file_manager=data_file_manager
-        )
+        dataset_contents_as_bytes, output_filename = await api_helpers.export_dataset(id, data_manager=data_manager)
     except DatasetNotFoundError as exc:
         raise QCrBoxAPIException(detail=f"Dataset not found: {id!r}", status_code=404) from exc
 
@@ -487,10 +508,10 @@ async def download_dataset_by_id(
     responses={400: schema.BAD_REQUEST_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
 async def list_interactive_sessions(
-    data_file_manager: DataFileManager,
+    data_manager: DataManager,
 ) -> schema.QCrBoxResponse[schema.InteractiveSessionsResponse]:
     """Retrieve a list of interactive sessions, past and present."""
-    interactive_sessions = await api_helpers.get_interactive_sessions(data_file_manager=data_file_manager)
+    interactive_sessions = await api_helpers.get_interactive_sessions(data_manager=data_manager)
     return QCrBoxResponse(
         {
             "status": "success",
@@ -512,11 +533,11 @@ async def list_interactive_sessions(
     responses={400: schema.BAD_REQUEST_ERROR, 404: schema.NOT_FOUND_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
 async def get_interactive_session_by_id(
-    id: str = Parameter(title="Interactive session ID"), *, data_file_manager: DataFileManager
+    id: str = Parameter(title="Interactive session ID"), *, data_manager: DataManager
 ) -> schema.QCrBoxResponse[schema.InteractiveSessionsResponse]:
     """Retrieve and interactive session of the given ID."""
     try:
-        interactive_session = await api_helpers.get_interactive_session_info(id, data_file_manager=data_file_manager)
+        interactive_session = await api_helpers.get_interactive_session_info(id, data_manager=data_manager)
         return QCrBoxResponse(
             {
                 "status": "success",
@@ -588,12 +609,12 @@ async def create_interactive_session_with_arguments(
     responses={400: schema.BAD_REQUEST_ERROR, 404: schema.NOT_FOUND_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
 async def close_interactive_session(
-    id: str = Parameter(title="Interactive session ID"), *, data_file_manager: DataFileManager, nats_broker: NatsBroker
+    id: str = Parameter(title="Interactive session ID"), *, data_manager: DataManager, nats_broker: NatsBroker
 ) -> schema.QCrBoxResponse[schema.InteractiveSessionClosedResponse]:
     """Close, potentially prematurely, an interactive session."""
     try:
         closed_session = await api_helpers.close_interactive_session(
-            id, data_file_manager=data_file_manager, nats_broker=nats_broker
+            id, data_manager=data_manager, nats_broker=nats_broker
         )
     except KeyError as exc:
         raise QCrBoxAPIException(detail=f"Interactive session not found: {id!r}", status_code=404) from exc

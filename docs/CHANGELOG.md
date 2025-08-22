@@ -28,12 +28,13 @@ However, there will be an initial period of stabilisation where this is not adhe
 ### Enhancements
 
 - The registry API now uses LiteStar dependency injection, improving management of the NATS server.
-- Added a new tests to test the DataFileManager service, non-interactive commands and new API endpoints.
+- Renamed `DataFileManager` to `DataManager` to better reflect that is manages more than just data files
+- Added a new tests to test the DataManager service, non-interactive commands and new API endpoints.
 - And lots more!
 
 ### Issues Fixed
 
-- Fixed an issue where the DataFileManager would lose connection to the NATS server when it had too many files.
+- Fixed an issue where the `DataManager` would lose connection to the NATS server when it had too many files.
 - Replaces an obscure error message when a wrong `QCrBox.cif_data_file` or `QCrBox.data_file` parameter with a more
   helpful one.
 - Fixed an issue where `qcb up` would use the wrong version ID for `pyqcrbox` when building service containers.

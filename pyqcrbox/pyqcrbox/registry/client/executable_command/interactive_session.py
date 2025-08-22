@@ -5,7 +5,7 @@ from typing import Any
 import anyio
 
 from pyqcrbox import helpers, logger
-from pyqcrbox.data_management.data_file_manager import DataFileManager
+from pyqcrbox.data_management.data_manager import DataManager
 from pyqcrbox.msg_specs.msg_types.client_side.command_execution_request import CommandExecutionRequestNATS
 from pyqcrbox.registry.client.executable_command import BaseCommand
 from pyqcrbox.registry.client.executable_command.cli_command import CLICommand
@@ -222,7 +222,7 @@ class InteractiveSession(BaseCommand):
 
     async def add_to_interactive_session_database(
         self,
-        data_file_manager: DataFileManager,
+        data_file_manager: DataManager,
         execute_request: CommandExecutionRequestNATS,
         executing_client_address: str,
     ) -> None:
@@ -233,8 +233,8 @@ class InteractiveSession(BaseCommand):
 
         Parameters
         ----------
-        data_file_manager : DataFileManager
-            An instance of the DataFileManager.
+        data_file_manager : DataManager
+            An instance of the DataManager.
         execute_request : CommandExecutionRequestNATS
             The execution request message, containing data about the calculation.
         executing_client_address : str

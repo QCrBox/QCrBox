@@ -35,7 +35,7 @@ when retrieving it from either.
 
 Key-value store:
 
-| Table                | Description                                                                                                                                               | QCrBox Model                                                                      | 
+| Table                | Description                                                                                                                                               | QCrBox Model                                                                      |
 |----------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------|
 | applications         | Stores the ApplicationSpec for each application which requests registration. This also contains the commands belonging to the application.                | `pyqcbox.sql_models.application_spec.ApplicationSpec`                             |
 | calculation_status   | Tracks current and previous calculations, including their output (stdout, stderr and "extra_info").                                                       | `pyqcbox.sql_models.calculation_status_event.CalculationStatusDetails`            |
@@ -47,14 +47,14 @@ Object store:
 
 | Table              | Description                                                                                                            |
 |--------------------|------------------------------------------------------------------------------------------------------------------------|
-| data_file_contents | Contains the contents of data files. The same key is shared for the same file in the object store and key-value store. | 
+| data_file_contents | Contains the contents of data files. The same key is shared for the same file in the object store and key-value store. |
 
 ### Code implementation
 
-The NATS data manager is implemented in the `pyqcrbox.data_management`, split between an abstract `DataFileManager` and
-a concrete `NatsDataFileManager` class. The abstract class defines the interface for the data manager, implementing
+The NATS data manager is implemented in the `pyqcrbox.data_management`, split between an abstract `DataManager` and
+a concrete `NatsDataManager` class. The abstract class defines the interface for the data manager, implementing
 logic for, e.g., storing and retrieving data files from the object store or adding application specifications to the
-key-value store. The concrete `NatsDataFileManager` implements the logic for getting data into and out of the NATS
+key-value store. The concrete `NatsDataManager` implements the logic for getting data into and out of the NATS
 key-value and object store.
 
 The idea is that the abstract class can be used to implement other data managers, using the same concept of retrieving

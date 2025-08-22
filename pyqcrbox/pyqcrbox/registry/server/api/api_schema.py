@@ -3,7 +3,8 @@ from typing import Any, Generic, TypeVar
 from litestar.openapi.datastructures import ResponseSpec
 from pydantic import BaseModel
 
-from pyqcrbox.data_management.data_file import DataFileInfoResponse, DatasetInfoResponse
+from pyqcrbox.data_management.data_file import DataFileResponse
+from pyqcrbox.data_management.dataset import DatasetResponse
 from pyqcrbox.msg_specs.msg_types.client_side.get_calculation_status import CloseInteractiveSessionResponse
 from pyqcrbox.msg_specs.msg_types.client_side.stop_calculation import StoppedCalculationResponse
 from pyqcrbox.sql_models.application_spec import ApplicationSpecWithCommandsResponse
@@ -150,7 +151,7 @@ class DataFilesResponse(BaseModel):
 
     """
 
-    data_files: list[DataFileInfoResponse]
+    data_files: list[DataFileResponse]
 
 
 class DatasetsResponse(BaseModel):
@@ -163,7 +164,7 @@ class DatasetsResponse(BaseModel):
 
     """
 
-    datasets: list[DatasetInfoResponse]
+    datasets: list[DatasetResponse]
 
 
 class InvokeCommandResponse(BaseModel):

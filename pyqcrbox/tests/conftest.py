@@ -6,7 +6,7 @@ import pytest
 import svcs
 from faststream.nats import NatsBroker
 
-from pyqcrbox.data_management.data_file_manager import DataFileManager
+from pyqcrbox.data_management import DataManager
 from pyqcrbox.services import QCRBOX_GLOBAL_SERVICES_REGISTRY
 
 sys._qcrbox_running_inside_tests = True
@@ -36,16 +36,8 @@ async def nats_broker() -> AsyncGenerator[NatsBroker, None]:
 
 
 @pytest.fixture(scope="session")
-async def data_file_manager() -> AsyncGenerator[DataFileManager, None]:
-    import inspect
+async def data_manager() -> AsyncGenerator[DataManager, None]:
 
     async with svcs.Container(QCRBOX_GLOBAL_SERVICES_REGISTRY) as container:
-        rs = QCRBOX_GLOBAL_SERVICES_REGISTRY.get_registered_service_for(DataFileManager)
-        print("\n\n--- DEBUGGING SVCS ---")
-        print(f"Factory for DataFileManager: {rs.factory}")
-        print(f"Factory signature: {inspect.signature(rs.factory)}")
-        print("------------------------\n\n")
-        # --- END DEBUGGING CODE ---
-
-        manager = await container.aget(DataFileManager)
+        manager = await container.aget(DataManager)
         yield manager

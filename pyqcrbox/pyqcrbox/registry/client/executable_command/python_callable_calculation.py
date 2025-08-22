@@ -5,7 +5,7 @@ import anyio
 import psutil
 
 from pyqcrbox import logger
-from pyqcrbox.data_management.data_file_manager import DataFileManager
+from pyqcrbox.data_management.data_manager import DataManager
 from pyqcrbox.debug import log_eel
 from pyqcrbox.sql_models import CalculationStatusEnum
 
@@ -43,7 +43,7 @@ class PythonCallableCalculation(BaseCalculation):
         self._terminated = False
 
     @log_eel
-    async def save_to_data_file_manager(self, data_file_manager: DataFileManager) -> None:
+    async def save_to_data_file_manager(self, data_file_manager: DataManager) -> None:
         """Save the output of the calculation to the Data File Manager.
 
         It is assumed that the return value of the PythonCallable is the data to
@@ -52,7 +52,7 @@ class PythonCallableCalculation(BaseCalculation):
 
         Parameters
         ----------
-        data_file_manager : DataFileManager
+        data_file_manager : DataManager
             An instance of the DataFile Manager.
 
         """

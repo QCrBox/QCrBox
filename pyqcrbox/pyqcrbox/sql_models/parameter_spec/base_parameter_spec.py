@@ -11,12 +11,12 @@ from pyqcrbox.logging import logger
 from ..base import QCrBoxPydanticBaseModel
 
 if TYPE_CHECKING:
-    from pyqcrbox.data_management import DataFileManager
+    from pyqcrbox.data_management import DataManager
 
 SENTINEL_UNDEFINED = "<undefined>"
 
 
-async def check_if_id_is_a_dataset(data_file_manager: "DataFileManager", id_to_check: str) -> bool:
+async def check_if_id_is_a_dataset(data_manager: "DataManager", id_to_check: str) -> bool:
     """Check if an ID is for a dataset.
 
     This is used when an exception is raised when trying to write a data file
@@ -25,7 +25,7 @@ async def check_if_id_is_a_dataset(data_file_manager: "DataFileManager", id_to_c
     Parameters
     ----------
     data_file_manager : DataFileManger
-        An instance of the DataFileManager
+        An instance of the DataManager
     id_to_check : str
         The ID to check.
 
@@ -35,10 +35,10 @@ async def check_if_id_is_a_dataset(data_file_manager: "DataFileManager", id_to_c
         True if is a dataset ID, False otherwise.
 
     """
-    from pyqcrbox.data_management.data_file_manager import DatasetNotFoundError
+    from pyqcrbox.data_management import DatasetNotFoundError
 
     try:
-        await data_file_manager.get_dataset_info(id_to_check)
+        await data_manager.get_dataset_info(id_to_check)
         return True
     except DatasetNotFoundError:
         return False
@@ -79,12 +79,12 @@ class DataFileParameter(BaseParameter):
 
     @log_eel
     async def prepare_for_execution(self, target_dir: str, target_filename: str | None = None) -> str:
-        from pyqcrbox.data_management import DataFileManager
+        from pyqcrbox.data_management import DataManager
         from pyqcrbox.services import QCRBOX_GLOBAL_SERVICES_REGISTRY
 
         logger.debug(f"Preparing data file for execution: {self!r}")
         async with svcs.Container(QCRBOX_GLOBAL_SERVICES_REGISTRY) as container:
-            data_file_manager = await container.aget(DataFileManager)
+            data_file_manager = await container.aget(DataManager)
             try:
                 exported_file_path = await data_file_manager.export_data_file(
                     self.data_file_id, target_dir, target_filename
@@ -105,12 +105,12 @@ class CifDataFileParameter(BaseParameter):
 
     @log_eel
     async def prepare_for_execution(self, target_dir: str, target_filename: str | None = None) -> str:
-        from pyqcrbox.data_management import DataFileManager
+        from pyqcrbox.data_management import DataManager
         from pyqcrbox.services import QCRBOX_GLOBAL_SERVICES_REGISTRY
 
         logger.debug(f"Preparing CIF data file for execution: {self!r}")
         async with svcs.Container(QCRBOX_GLOBAL_SERVICES_REGISTRY) as container:
-            data_file_manager = await container.aget(DataFileManager)
+            data_file_manager = await container.aget(DataManager)
             try:
                 exported_file_path = await data_file_manager.export_data_file(
                     self.data_file_id, target_dir, target_filename
