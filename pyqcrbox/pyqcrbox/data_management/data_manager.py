@@ -119,8 +119,11 @@ class DataManager(ABC):
 
         return dataset_id
 
-    async def append_data_file_to_dataset(self, dataset_id: str, data_file_id: str) -> str:
+    async def update_data_files_in_dataset(self, dataset_id: str, data_file_id: str) -> str:
         """Append a new data file to a dataset.
+
+        If the file already exists in the dataset (the file being added has the
+        same file name) then it will be overwritten by this method.
 
         Parameters
         ----------
@@ -365,7 +368,7 @@ class DataManager(ABC):
 
         return values
 
-    async def _import_bytes(
+    async def import_bytes(
         self,
         file_contents: bytes,
         filename: str,
@@ -428,7 +431,7 @@ class DataManager(ABC):
         qcrbox_file_id = _qcrbox_file_id or generate_data_file_id()
 
         with file_path.open("rb") as f:
-            qcrbox_file_id = await self._import_bytes(f.read(), filename=file_path.name, _qcrbox_file_id=qcrbox_file_id)
+            qcrbox_file_id = await self.import_bytes(f.read(), filename=file_path.name, _qcrbox_file_id=qcrbox_file_id)
 
         return qcrbox_file_id
 

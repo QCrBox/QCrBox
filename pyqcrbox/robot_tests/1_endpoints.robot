@@ -24,6 +24,8 @@ ${SESSION_ALIAS}            QCRBOX_REGISTRY_API_ENDPOINTS
 
 ${TEST_CIF_FILE_NAME}       robot_test_cif.cif
 ${TEST_CIF_FILE}            ${CURDIR}/test_data/${TEST_CIF_FILE_NAME}
+${TEST_JSON_FILE_NAME}      robot_test_json.json
+${TEST_JSON_FILE}           ${CURDIR}/test_data/${TEST_JSON_FILE_NAME}
 
 ${TEST_CALCULATION_ID}      ${EMPTY}
 ${TEST_DATA_FILE_ID}        ${EMPTY}
@@ -84,6 +86,32 @@ Check /datasets can upload a data file to a dataset
     ...    ${TEST_DATA_FILE_ID}
     ...    ${datasets[0]["data_files"]["${TEST_CIF_FILE_NAME}"]["qcrbox_file_id"]}
     Check Datasets Structure    @{datasets}
+
+Check /datasets/id/append can add a new data file to a dataset
+    ${file_contents}=    Get Binary File    ${TEST_JSON_FILE}
+    ${files}=    Create Dictionary    ${TEST_JSON_FILE_NAME}=${file_contents}
+
+    ${response}=    Send API Request
+    ...    POST
+    ...    ${SESSION_ALIAS}
+    ...    /datasets/${TEST_DATASET_ID}/append
+    ...    201
+    ...    files=${files}
+    ${payload}=    Check Response And Get Payload    ${response}
+
+    Check Response Has Attributes    ${payload}    datasets
+    ${datasets}=    Set Variable    ${payload["datasets"]}
+    ${n_datasets}=    Get Length    ${datasets}
+    Should Be Equal As Integers
+    ...    ${n_datasets}
+    ...    1
+    ...    "/datasets response returned an incorrect number of datasets when it should return only the created dataset"
+
+    ${test_dataset_id}=    Set Variable    ${datasets[0]["qcrbox_dataset_id"]}
+    Check Datasets Structure    @{datasets}
+    ${data_files}=    Set Variable    ${datasets[0]["data_files"]}
+    ${n_data_files}=    Get Length    ${data_files}
+    Should Be Equal As Integers    ${n_data_files}    2
 
 Check /datasets returns a list of datasets
     ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /datasets    200

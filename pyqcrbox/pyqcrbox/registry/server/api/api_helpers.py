@@ -386,7 +386,7 @@ async def import_data_file(
         The ID of the imported data file.
 
     """
-    qcrbox_data_file_id = await data_manager._import_bytes(await data.read(), filename=data.filename)
+    qcrbox_data_file_id = await data_manager.import_bytes(await data.read(), filename=data.filename)
     return qcrbox_data_file_id
 
 
@@ -408,8 +408,35 @@ async def import_dataset(
         The ID of the imported dataset.
 
     """
-    qcrbox_data_file_id = await data_manager._import_bytes(await data.read(), filename=data.filename)
+    qcrbox_data_file_id = await data_manager.import_bytes(await data.read(), filename=data.filename)
     qcrbox_dataset_id = await data_manager.create_dataset_from_data_file(qcrbox_data_file_id)
+    return qcrbox_dataset_id
+
+
+async def append_to_dataset(
+    dataset_id: str,
+    data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)],
+    *,
+    data_manager: DataManager,
+) -> str:
+    """Append a file to a dataset.
+
+    Parameters
+    ----------
+    dataset_id : str
+        The ID of the dataset to append the file to.
+    data : UploadFile
+        The uploaded file to import as a dataset.
+
+    Returns
+    -------
+    str
+        The ID of the dataset which has been updated.
+
+    """
+    qcrbox_data_file_id = await import_data_file(data, data_manager=data_manager)
+    qcrbox_dataset_id = await data_manager.update_data_files_in_dataset(dataset_id, qcrbox_data_file_id)
+
     return qcrbox_dataset_id
 
 

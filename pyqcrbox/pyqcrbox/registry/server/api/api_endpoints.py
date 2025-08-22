@@ -456,18 +456,21 @@ async def create_dataset(
 async def append_to_dataset(
     id: str,
     data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)],
+    *,
     data_manager: DataManager,
-):
+) -> schema.QCrBoxResponse[schema.DatasetsResponse]:
     """Append a new data file to a dataset."""
+    dataset_id = await api_helpers.append_to_dataset(id, data, data_manager=data_manager)
+    dataset = await api_helpers.get_dataset_info(dataset_id, data_manager=data_manager)
     return QCrBoxResponse(
         content={
             "status": "success",
-            "message": f"Appended file to dataset: {id!r}",
+            "message": f"Appended file to dataset: {dataset_id!r}",
             "payload": {
-                "datasets": [],
+                "datasets": [dataset],
             },
         },
-        status=201,
+        status_code=201,
     )
 
 
@@ -689,6 +692,7 @@ api_router = Router(
         get_dataset_by_id,
         create_dataset,
         download_dataset_by_id,
+        append_to_dataset,
         # Data files
         list_data_files,
         get_data_file_by_id,
