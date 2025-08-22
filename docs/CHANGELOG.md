@@ -17,13 +17,15 @@ However, there will be an initial period of stabilisation where this is not adhe
 
 - Included support for non-interactive commands, including stopping any long-running commands.
 - Added `--prebuilt-images` option to `qcb up` to bring QCrBox up using tested images from the QCrBox container
-  repository
+  repository.
+- Datasets can now contain multiple data files (of any type). When downloading a dataset with multiple files, a zip file
+  will be returned instead of each file individually.
 
 ### Removed Features
 
 - We have removed the dev, docs, invoke and status options from the `qcb` CLI.
-- Removed `qcrbox-nextflow` container which was unused
-- "cli_command" is no longer a valid "implemented_as" type for non-interactive commands
+- Removed `qcrbox-nextflow` container which was unused.
+- `cli_command` is no longer a valid `implemented_as` type for non-interactive commands.
 
 ### Enhancements
 
