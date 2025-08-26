@@ -408,7 +408,7 @@ class BaseParameterSpec(QCrBoxPydanticBaseModel):
     name: str
     dtype: DTypeAsStr
     description: str
-    default_value: Any | None = None
+    default_value: str | int | float | bool | None = None
     valid_values: ValidValueSpec | None = None
 
     @field_validator("dtype")
