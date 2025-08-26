@@ -3,24 +3,25 @@ from typing import Annotated, Union
 
 from pydantic import Field, Tag, TypeAdapter
 
-# from .base_parameter_spec import SENTINEL_UNDEFINED
+from pyqcrbox import logger
+
 from .builtin_parameter_types import BoolParameterSpec, FloatParameterSpec, IntParameterSpec, StrParameterSpec
 from .filesystem_path_parameters import (
     CifDataFileParameterSpec,
     DataFileParameterSpec,
-    FolderPathParameterSpec,
-    GenericInputPathParameterSpec,
-    GenericOutputPathParameterSpec,
-    InputCifParameterSpec,
-    InputFolderParameterSpec,
+    # FolderPathParameterSpec,
+    # GenericInputPathParameterSpec,
+    # GenericOutputPathParameterSpec,
+    # InputCifParameterSpec,
+    # InputFolderParameterSpec,
     OutputCifParameterSpec,
-    WorkCifParameterSpec,
+    # WorkCifParameterSpec,
 )
 
 __all__ = ["ParameterSpecDiscriminatedUnion"]
 
 
-ParameterSpecTaggedUnion = Union[
+ParameterSpecTaggedUnion = Union[  # noqa: UP007
     #
     # Builtin types
     #
@@ -31,15 +32,18 @@ ParameterSpecTaggedUnion = Union[
     #
     # File/directory types with QCrBox-specific logic
     #
-    Annotated[InputCifParameterSpec, Tag("QCrBox.input_cif")],
-    Annotated[GenericInputPathParameterSpec, Tag("QCrBox.input_path")],
     Annotated[OutputCifParameterSpec, Tag("QCrBox.output_cif")],
-    Annotated[GenericOutputPathParameterSpec, Tag("QCrBox.output_path")],
-    Annotated[WorkCifParameterSpec, Tag("QCrBox.work_cif")],
-    Annotated[FolderPathParameterSpec, Tag("QCrBox.folder_path")],
     Annotated[DataFileParameterSpec, Tag("QCrBox.data_file")],
     Annotated[CifDataFileParameterSpec, Tag("QCrBox.cif_data_file")],
-    Annotated[InputFolderParameterSpec, Tag("QCrBox.input_folder")],
+    #
+    # Deprecated parameters
+    #
+    # Annotated[InputCifParameterSpec, Tag("QCrBox.input_cif")],
+    # Annotated[GenericInputPathParameterSpec, Tag("QCrBox.input_path")],
+    # Annotated[GenericOutputPathParameterSpec, Tag("QCrBox.output_path")],
+    # Annotated[WorkCifParameterSpec, Tag("QCrBox.work_cif")],
+    # Annotated[FolderPathParameterSpec, Tag("QCrBox.folder_path")],
+    # Annotated[InputFolderParameterSpec, Tag("QCrBox.input_folder")],
 ]
 ParameterSpecDiscriminatedUnion = Annotated[ParameterSpecTaggedUnion, Field(discriminator="dtype")]
 
@@ -52,7 +56,9 @@ def get_param_spec_from_json(param_spec_json: dict) -> ParameterSpecDiscriminate
 
 def get_param_spec_from_signature_param(p: inspect.Parameter) -> ParameterSpecDiscriminatedUnion:
     if p.annotation == inspect._empty:
-        return None
+        exc_msg = f"Parameter {p.name} has no annotation"
+        logger.error(exc_msg)
+        raise ValueError(exc_msg)
 
     dtype = p.annotation.__name__
     is_required = p.default == inspect._empty
@@ -64,9 +70,3 @@ def get_param_spec_from_signature_param(p: inspect.Parameter) -> ParameterSpecDi
 
 def ParameterSpec(**kwargs):
     return get_param_spec_from_json(kwargs)
-    # if isinstance(data, dict):
-    #     return get_param_spec_from_json(data)
-    # elif isinstance(data, inspect.Parameter):
-    #     return get_param_spec_from_signature_param(data)
-    # else:
-    #     raise TypeError(f"Cannot instantiate ParameterSpec from input data: {data}")

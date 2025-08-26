@@ -1,3 +1,4 @@
+import re
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Annotated, Any
 
@@ -5,7 +6,6 @@ import nats.js.errors as nats_errors
 import svcs
 from pydantic import BeforeValidator, field_validator, model_validator
 
-from pyqcrbox.debug import log_eel
 from pyqcrbox.logging import logger
 
 from ..base import QCrBoxPydanticBaseModel
@@ -49,36 +49,110 @@ _builtin_dtypes = {
     "int": int,
     "float": float,
     "bool": bool,
-    "QCrBox.input_cif": str,
+    # "QCrBox.input_cif": str,
     "QCrBox.output_cif": str,
-    "QCrBox.work_cif": str,
-    "QCrBox.folder_path": str,
-    "QCrBox.input_path": str,
-    "QCrBox.output_path": str,
-    "QCrBox.input_folder": str,
+    # "QCrBox.work_cif": str,
+    # "QCrBox.folder_path": str,
+    # "QCrBox.input_path": str,
+    # "QCrBox.output_path": str,
+    # "QCrBox.input_folder": str,
 }
 
 
 class BaseParameter(QCrBoxPydanticBaseModel, ABC):
+    """Base parameter abstract class."""
+
     @abstractmethod
     async def prepare_for_execution(self, target_dir: str, target_filename: str | None = None) -> Any:
+        """Prepare a parameter for command execution.
+
+        Parameters
+        ----------
+        target_dir : str
+            The target directory to write the parameter to, if relevant.
+        target_filename : str | None
+            The target filename to write to disk, if relevant.
+
+        Returns
+        -------
+        Any
+            The value of the parameter required for command execution.
+
+        """
         pass
 
 
 class BuiltinParameter(BaseParameter):
+    """Class for handling a builtin data type parameter.
+
+    Attributes
+    ----------
+    dtype : str
+        The data type of the parameter, as a string.
+    value : Any
+        The value of the parameter.
+
+    """
+
     dtype: str
     value: Any
 
-    @log_eel
     async def prepare_for_execution(self, target_dir: str, target_filename: str | None = None) -> Any:
+        """Prepare the value for command execution.
+
+        This method essentially converts the value of the parameter into the
+        correct data type, ready to be used by the executing command.
+
+        Parameters
+        ----------
+        target_dir : str
+            Unused.
+        target_filename: str
+            Unused.
+
+        Returns
+        -------
+        Any
+            The value of the parameter as the correct data type.
+
+        """
         return _builtin_dtypes[self.dtype](self.value)
 
 
 class DataFileParameter(BaseParameter):
+    """Class for handling data file parameters, such as JSON or INP files.
+
+    Attributes
+    ----------
+    data_file_id : str
+        The QCrBox data file ID for the CIF file in the DataManager.
+
+    """
+
     data_file_id: str
 
-    @log_eel
     async def prepare_for_execution(self, target_dir: str, target_filename: str | None = None) -> str:
+        """Prepare the CIF file for command execution.
+
+        This method is used to retrieve the contents of the file from the
+        DataManager and to write it to a location on the container's file
+        system.
+
+        Parameters
+        ----------
+        target_dir : str
+            The target directory to write the file to.
+        target_filename : str | None
+            The target filename to write to disk. If not provided, the filename
+            in the DataManger wil lbe used instead.
+
+        Returns
+        -------
+        str
+            The file path (within the application container) to the file written
+            to disk.
+
+        """
         from pyqcrbox.data_management import DataManager
         from pyqcrbox.services import QCRBOX_GLOBAL_SERVICES_REGISTRY
 
@@ -100,11 +174,40 @@ class DataFileParameter(BaseParameter):
 
 
 class CifDataFileParameter(BaseParameter):
+    """Class for handling CIF datafile parameters.
+
+    Attributes
+    ----------
+    data_file_id : str
+        The QCrBox data file ID for the CIF file in the DataManager.
+
+    """
+
     data_file_id: str
     # More CIF specific parameters will go in here
 
-    @log_eel
     async def prepare_for_execution(self, target_dir: str, target_filename: str | None = None) -> str:
+        """Prepare the CIF file for command execution.
+
+        This method is used to retrieve the contents of the CIF file from the
+        DataManager and to write it to a location on the container's file
+        system.
+
+        Parameters
+        ----------
+        target_dir : str
+            The target directory to write the CIF to.
+        target_filename : str | None
+            The target filename to write to disk. If not provided, the filename
+            in the DataManger wil lbe used instead.
+
+        Returns
+        -------
+        str
+            The file path (within the application container) to the CIF file
+            written to disk.
+
+        """
         from pyqcrbox.data_management import DataManager
         from pyqcrbox.services import QCRBOX_GLOBAL_SERVICES_REGISTRY
 
@@ -134,18 +237,62 @@ _known_dtypes = _builtin_dtypes | _custom_dtypes
 
 
 def verify_dtype_is_a_known_type(v: str) -> str:
+    """Verify that a dtype string is known.
+
+    Parameters
+    ----------
+    v : str
+        The dtype to verify as a string.
+
+    Returns
+    -------
+    str
+        The input value.
+
+    """
     if v not in _known_dtypes:
         raise ValueError(f"Unsupported dtype: {v!r}")
     return v
 
 
 def parse_parameter_default_value_as_string(v: Any, dtype: type | None = None) -> BuiltinParameter:
+    """Convert a parameter's value value into a BuiltinParameter class.
+
+    Parameters
+    ----------
+    v : Any
+        The value of the default parameter.
+    dtype : type | None
+        The data type to convert to. If this is not specified, then the type
+        is inferred using Python's `type()` builtin.
+
+    Returns
+    -------
+    BuiltinParameter
+        The parameter as a BuiltinParameter spec.
+
+    """
     if not dtype or not isinstance(dtype, type):
         dtype = type(v)
     return BuiltinParameter(dtype=dtype.__name__, value=v)
 
 
 def parse_parameter_as_its_dtype(v: Any, dtype_str: str) -> Any:
+    """Convert a parameter value into its data type.
+
+    Parameters
+    ----------
+    v : Any
+        The value of the parameter.
+    dtype_str : str
+        The data type of the parameter, represented as a string.
+
+    Returns
+    -------
+    Any
+        The parameter as the specified data type.
+
+    """
     if dtype_str not in _known_dtypes:
         raise ValueError(f"Unsupported parameter type: {dtype_str}")
 
@@ -157,8 +304,7 @@ def parse_parameter_as_its_dtype(v: Any, dtype_str: str) -> Any:
         result = _known_dtypes[dtype_str](**v) if isinstance(v, dict) else _known_dtypes[dtype_str](v)
     except Exception as exc:
         logger.warning(
-            f"Could not convert value to its declared type - leaving unchanged: value={v!r}\n\n"
-            f"Original error: {exc}"
+            f"Could not convert value to its declared type - leaving unchanged: value={v!r}\n\nOriginal error: {exc}"
         )
         result = v
 
@@ -169,12 +315,101 @@ DTypeAsStr = Annotated[str, BeforeValidator(verify_dtype_is_a_known_type)]
 DefaultValueAsStr = Annotated[BuiltinParameter, BeforeValidator(parse_parameter_default_value_as_string)]
 
 
+class ValidValueSpec(QCrBoxPydanticBaseModel):
+    """Defines allowed values for a parameter.
+
+    If none of the attributes are filled in, then there will be no validation.
+
+    Attributes
+    ----------
+    numeric_range : tuple[float | int, float | int]
+        The valid numeric range of the parameter (min, max), e.g. [0.0, 1.0].
+    string_enum : list[str]
+        A list of valid string values for the parameters, e.g. ["A", "B", "C"]
+    string_regex : str
+        A regex pattern to validate string input against.
+
+    """
+
+    numeric_range: tuple[float | int, float | int] | None = None
+    string_enum: list[str] | None = None
+    string_regex: str | None = None
+
+    @model_validator(mode="after")
+    def check_at_least_one(cls, values):
+        """Check that at least one validation attribute is set."""
+        if not (values.numeric_range or values.string_enum or values.string_regex):
+            raise ValueError("At least one of numeric_range, string_enum, or string_regex must be set for validation")
+        return values
+
+    @field_validator("numeric_range")
+    @classmethod
+    def check_range(cls, value):
+        """Check if the numeric range is valid (min, max)."""
+        if value and value[0] > value[1]:
+            raise ValueError("Numeric value range must be (min, max)")
+        return value
+
+    def is_valid(self, value: str) -> bool:
+        """Check if a value is a valid choice.
+
+        Parameters
+        ----------
+        value : str
+            The value to check.
+
+        Returns
+        -------
+        bool
+            True if valid, False if not.
+
+        """
+        if self.numeric_range:
+            lo, hi = self.numeric_range
+            try:
+                if not (lo <= float(value) <= hi):
+                    return False
+            except ValueError:
+                return False
+        if self.string_enum and value not in self.string_enum:
+            return False
+        if self.string_regex:  # noqa: SIM102
+            if not re.match(self.string_regex, value):
+                return False
+
+        return True
+
+
 class BaseParameterSpec(QCrBoxPydanticBaseModel):
+    """Base dataclass for defining properties for a command parameter.
+
+    All the attributes as required when defining a parameter. The data type
+    (dtype) of the parameter is typically validated when an Application Spec
+    class is instantiated.
+
+    Attributes
+    ----------
+    name : str
+        The parameter name/label/identifier.
+    dtype : str
+        The data type of the parameter as a string, e.g. something like "bool",
+        or "QCrBox.cif_data_file".
+    description : str
+        A human-friendly description of the parameter.
+    default_value : Any | None
+        An optional default value for parameter, typically used in the frontend
+        as a placeholder.
+    valid_values : ValidValueSpec | None
+        A string representing a range of valid values for the parameter. If this
+        is not set, there will be no validation for the parameter.
+
+    """
+
     name: str
     dtype: DTypeAsStr
-    required: bool = True
-    default_value: DefaultValueAsStr | None = None
-    description: str = ""
+    description: str
+    default_value: Any | None = None
+    valid_values: ValidValueSpec | None = None
 
     @field_validator("dtype")
     @classmethod
@@ -183,18 +418,16 @@ class BaseParameterSpec(QCrBoxPydanticBaseModel):
             raise ValueError(f"Unsupported dtype: {value!r}")
         return value
 
-    @model_validator(mode="before")
+    @field_validator("default_value")
     @classmethod
-    def set_field_required(cls, model_data: dict) -> dict:
-        model_data = model_data.copy()
-
-        if "default_value" not in model_data or model_data["default_value"] is None:
-            model_data["required"] = True
-            # model_data["default_value"] = SENTINEL_UNDEFINED
-        else:
-            model_data["required"] = False
-
-        return model_data
+    def verify_default_value_is_builtin_dtype(cls, value: Any) -> Any:
+        dtype_str = type(value).__str__
+        if dtype_str not in _builtin_dtypes:
+            supported_dtypes = list(_builtin_dtypes.keys())
+            raise ValueError(
+                f"Unsupported dtype {dtype_str!r} for default value. Supported values: {', '.join(supported_dtypes)}"
+            )
+        return value
 
     def dtype_is_compatible_with(self, other_dtype: str):
         return self.dtype == other_dtype
