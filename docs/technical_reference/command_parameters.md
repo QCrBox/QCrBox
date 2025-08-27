@@ -78,8 +78,11 @@ parameters:
   - name: cif_label
     description: The CIF label/section to print, must begin with an _
     valid_value:
-      regex: "^_"
+      regex: "^_"  # the value must start with a _
 ```
 
+There are three fields for specifying a valid value:
 
-All parameters are expected to have at least these three attributes.
+- `numeric_range` - a numerical range the value can be between (include of min and max), e.g. [0, 5]
+- `choices` - a list of choices a value can be, compatible only with strings
+- `regex` - a regex used to validate the value, compatible only with strings
