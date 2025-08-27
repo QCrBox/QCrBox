@@ -20,7 +20,7 @@ commands:
         dtype: float
         description: Sleep duration (in seconds)
         default_value: 5.0
-        valid_values:
+        valid_value:
           numeric_range: [0, 10]
 
   - name: print_cif
@@ -35,7 +35,7 @@ commands:
         dtype: int
         description: The number of times to print the CIF file
         default_value: 2
-        valid_values:
+        valid_value:
           numeric_range: [1, 10]
 
   - name: infinite_loop

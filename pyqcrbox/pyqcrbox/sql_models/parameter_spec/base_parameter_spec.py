@@ -315,7 +315,7 @@ DTypeAsStr = Annotated[str, BeforeValidator(verify_dtype_is_a_known_type)]
 DefaultValueAsStr = Annotated[BuiltinParameter, BeforeValidator(parse_parameter_default_value_as_string)]
 
 
-class ValidValueSpec(QCrBoxPydanticBaseModel):
+class ParameterValidationSpec(QCrBoxPydanticBaseModel):
     """Defines allowed values for a parameter.
 
     If none of the attributes are filled in, then there will be no validation.
@@ -409,7 +409,7 @@ class BaseParameterSpec(QCrBoxPydanticBaseModel):
     dtype: DTypeAsStr
     description: str = ""
     default_value: str | int | float | bool | None = None
-    valid_values: ValidValueSpec | None = None
+    valid_value: ParameterValidationSpec | None = None
 
     @field_validator("dtype")
     @classmethod
@@ -442,14 +442,14 @@ class BaseParameterSpec(QCrBoxPydanticBaseModel):
     @model_validator(mode="after")
     def verify_valid_value_correct_usage(self) -> "BaseParameterSpec":
         """Verify that the correct validation criteria has been used for the dtype."""
-        if self.valid_values is None:
+        if self.valid_value is None:
             return self
 
-        if self.valid_values.numeric_range and self.dtype == "str":
+        if self.valid_value.numeric_range and self.dtype == "str":
             raise ValueError(f"numeric_range validator is not compatible with parameter of type {self.dtype}")
-        if self.valid_values.choices and self.dtype != "str":
+        if self.valid_value.choices and self.dtype != "str":
             raise ValueError(f"choices validator is not compatible with parameter of type {self.dtype}")
-        if self.valid_values.regex and self.dtype != "str":
+        if self.valid_value.regex and self.dtype != "str":
             raise ValueError(f"regex validator is not compatible with parameter of type {self.dtype}")
 
         return self
