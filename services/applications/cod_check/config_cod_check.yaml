@@ -34,6 +34,7 @@ commands:
   - name: "merge_closest_cod_entry"
     implemented_as: "python_callable"
     import_path: "configure_cod_check"
+    description: "Merge the closest COD entry into the CIF file"
     parameters:
       - name: "input_cif"
         description: "Path to the input CIF file."
