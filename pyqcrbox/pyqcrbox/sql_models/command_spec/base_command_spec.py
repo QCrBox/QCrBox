@@ -13,8 +13,44 @@ class ImplementedAs(str, Enum):
 
 
 class BaseCommandSpec(QCrBoxPydanticBaseModel):
+    """Base model specification for a command.
+
+    This is used for both non-interactive commands as well as interactive
+    commands and the commands making up the interactive lifecycle.
+
+    Attributes
+    ----------
+    name : str
+        The name of the command
+    description : str
+        A description  of the command.
+    implemented_as : ImplementedAs
+        The type of command this is, e.g. interactive_session, CLICommand or
+        PythonCallable.
+    parameters : list[ParameterSpecDiscriminatedUnion]
+        A list of parameters for the command, represented as parameter
+        specifications.
+    merge_cif_su : bool
+        Whether to merge the CIF SU or not??
+    doi : str
+        Data object identifier for this command.
+
+    Properties
+    ----------
+    is_python_callable : bool
+        Whether this command is implemented as PythonCallable.
+    is_cli_command : bool
+        Whether this command is implemented as CLICommand.
+    is_interactive : bool
+        Whether this command is an interactive session.
+    parameter_default_values : dict
+        A mapping of parameter name to the default value for that parameter.
+        This only includes non-required parameters.
+
+    """
+
     name: str
-    description: str = ""
+    description: str
     implemented_as: ImplementedAs
     parameters: list[ParameterSpecDiscriminatedUnion]
     merge_cif_su: bool = False
@@ -38,7 +74,9 @@ class BaseCommandSpec(QCrBoxPydanticBaseModel):
 
     @property
     def parameter_default_values(self):
-        return {param.name: param.default_value for param in self.parameters if not param.required}
+        # For now, we have removed this functionality as all parameters are required in a command
+        # return {param.name: param.default_value for param in self.parameters if not param.required}
+        return {}
 
     def get_parameter_by_name(self, param_name) -> ParameterSpecDiscriminatedUnion:
         # TODO: handle case where parameter is not found
