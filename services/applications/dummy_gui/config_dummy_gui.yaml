@@ -18,10 +18,12 @@ commands:
     interactive_lifecycle:
       run:
         implemented_as: "cli_command"
+        description: "Run command for rendering the dummy GUI"
         call_pattern: "python dummy_gui.py {input_file}"
         used_basecommand_parameters: ["input_file"]
       finalise:
         implemented_as: "python_callable"
+        description: "Finalise command for handling cleaning up afterwards"
         import_path: "dummy_gui_commands"
         callable_name: "finalise_interactive"
         used_basecommand_parameters: ["input_file"]
