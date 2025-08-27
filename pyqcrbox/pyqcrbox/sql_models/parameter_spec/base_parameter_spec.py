@@ -324,7 +324,7 @@ class ValidValueSpec(QCrBoxPydanticBaseModel):
     ----------
     numeric_range : tuple[float | int, float | int]
         The valid numeric range of the parameter (min, max), e.g. [0.0, 1.0].
-    string_enum : list[str]
+    chocies: list[str]
         A list of valid string values for the parameters, e.g. ["A", "B", "C"]
     string_regex : str
         A regex pattern to validate string input against.
@@ -332,19 +332,19 @@ class ValidValueSpec(QCrBoxPydanticBaseModel):
     """
 
     numeric_range: tuple[float | int, float | int] | None = None
-    string_enum: list[str] | None = None
-    string_regex: str | None = None
+    choices: list[str] | None = None
+    regex: str | None = None
 
     @model_validator(mode="after")
     def check_at_least_one(cls, values):
         """Check that at least one validation attribute is set."""
-        if not (values.numeric_range or values.string_enum or values.string_regex):
-            raise ValueError("At least one of numeric_range, string_enum, or string_regex must be set for validation")
+        if not (values.numeric_range or values.choices or values.regex):
+            raise ValueError("At least one of numeric_range, choices, or regex must be set for validation criteria")
         return values
 
     @field_validator("numeric_range")
     @classmethod
-    def check_range(cls, value):
+    def check_numeric_range_valid(cls, value: list[float | int] | None) -> list[float | int] | None:
         """Check if the numeric range is valid (min, max)."""
         if value and value[0] > value[1]:
             raise ValueError("Numeric value range must be (min, max)")
@@ -371,10 +371,10 @@ class ValidValueSpec(QCrBoxPydanticBaseModel):
                     return False
             except ValueError:
                 return False
-        if self.string_enum and value not in self.string_enum:
+        if self.choices and value not in self.choices:
             return False
-        if self.string_regex:  # noqa: SIM102
-            if not re.match(self.string_regex, value):
+        if self.regex:  # noqa: SIM102
+            if not re.match(self.regex, value):
                 return False
 
         return True
@@ -414,16 +414,19 @@ class BaseParameterSpec(QCrBoxPydanticBaseModel):
     @field_validator("dtype")
     @classmethod
     def verify_dtype_is_a_known_type(cls, value: str) -> str:
+        """Verify that the dtype attribute is a valid choice and supported."""
         if value not in _known_dtypes:
             raise ValueError(f"Unsupported dtype: {value!r}")
         return value
 
-    # TODO: validate that default_value is a dtype compatible with the parameter
     @field_validator("default_value")
     @classmethod
-    def verify_default_value_is_builtin_dtype(cls, value: Any) -> Any:
-        # Don't do anything when default_value is None -- using `is` to avoid
-        # falsey equivalents
+    def verify_default_value_is_builtin_dtype(cls, value: Any | None) -> Any | None:
+        """Verify that the default value set is the correct dtype.
+
+        TODO : validate that default_value is a dtype compatible with the parameter
+        """
+        # using `is` to avoid falsey equivalents, such as 0
         if value is None:
             return value
         # Now we have to check to make sure the default value is a compatible
@@ -436,5 +439,38 @@ class BaseParameterSpec(QCrBoxPydanticBaseModel):
             )
         return value
 
-    def dtype_is_compatible_with(self, other_dtype: str):
+    @model_validator(mode="after")
+    def verify_valid_value_correct_usage(self) -> "BaseParameterSpec":
+        """Verify that the correct validation criteria has been used for the dtype."""
+        if self.valid_values is None:
+            return self
+
+        if self.valid_values.numeric_range and self.dtype == "str":
+            raise ValueError(f"numeric_range validator is not compatible with parameter of type {self.dtype}")
+        if self.valid_values.choices and self.dtype != "str":
+            raise ValueError(f"choices validator is not compatible with parameter of type {self.dtype}")
+        if self.valid_values.regex and self.dtype != "str":
+            raise ValueError(f"regex validator is not compatible with parameter of type {self.dtype}")
+
+        return self
+
+    def dtype_is_compatible_with(self, other_dtype: type | str) -> bool:
+        """Check if this parameter is compatible with another data type.
+
+        TODO: implement more robust checking because e.g. float and int should
+              be compatible.
+
+        Parameters
+        ----------
+        other_dtype : type | str
+            The data type to check if the parameter is compatible with.
+
+        Returns
+        -------
+        bool
+            Whether or not the types are compatible.
+
+        """
+        if isinstance(other_dtype, type):
+            other_dtype = other_dtype.__name__
         return self.dtype == other_dtype
