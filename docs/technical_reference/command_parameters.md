@@ -16,6 +16,7 @@ Python, whilst the last three are custom data types for QCrBox.
 | `QCrBox.data_file`     | `DataFileParameter`    | Custom data file parameter type, used for generic files (e.g. .csv) |
 | `QCrBox.cif_data_file` | `CifDataFileParameter` | Custom CIF data file parameter typed, used for CIF files            |
 | `QCrBox.output_cif`    | `str`                  | Name to use for the output CIF file                                 |
+| `QCrBox.output_path`   | `str`                  | Path to output data                                                 |
 
 In addition to the above data types, we have the following **deprecated** data types which have been removed since
 moving to using NATS as the message broker and data store/manager. These were removed because there is no shared file
@@ -27,7 +28,6 @@ they are not handled by users or application developers. These could come back i
 | `QCrBox.work_cif`     | `str` | Path or name of working CIF file |
 | `QCrBox.folder_path`  | `str` | Folder path                      |
 | `QCrBox.input_path`   | `str` | Path to input data               |
-| `QCrBox.output_path`  | `str` | Path to output data              |
 | `QCrBox.input_folder` | `str` | Input folder path                |
 
 ## Parameter YAML specification

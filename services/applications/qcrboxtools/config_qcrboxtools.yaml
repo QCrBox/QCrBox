@@ -97,21 +97,6 @@ commands:
           "_refln.*calc.*", "_shelx.*", "_iucr.refine_instructions_details",
           '_refine(?!_ls\.weighting|_ls\.extinction)'
         ]
-      # - name: "select_names"
-      #   dtype: str
-      #   default_value: null
-      #   required: False
-      #   description: "Comma separated list of atom names to include in the conversion"
-      # - name: "select_elements"
-      #   dtype: str
-      #   default_value: null
-      #   required: False
-      #   description: "Comma separated list of element symbols to include in the conversion"
-      # - name: "select_regexes"
-      #   dtype: str
-      #   default_value: null
-      #   required: False
-      #   description: "Comma separated list of python re regexes to match atom names against"
 
   - name: "to_unified_cif"
     implemented_as: "python_callable"
@@ -128,11 +113,6 @@ commands:
         description: "Path to save the CIF file to after converting"
         optional_entries: ["all_unified"]
         invalidated_entries: []
-      # - name: "custom_category_list"
-      #   dtype: "str"
-      #   description: "Comma separated list of custom categories (such as iucr, shelx ...) to include in the unified CIF"
-      #   default_value: None
-      #   required: False
 
 cif_entry_sets:
   - name: "molecular_structure"

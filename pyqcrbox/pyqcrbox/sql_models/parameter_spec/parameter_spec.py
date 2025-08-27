@@ -9,12 +9,12 @@ from .builtin_parameter_types import BoolParameterSpec, FloatParameterSpec, IntP
 from .filesystem_path_parameters import (
     CifDataFileParameterSpec,
     DataFileParameterSpec,
+    GenericOutputPathParameterSpec,
+    OutputCifParameterSpec,
     # FolderPathParameterSpec,
     # GenericInputPathParameterSpec,
-    # GenericOutputPathParameterSpec,
     # InputCifParameterSpec,
     # InputFolderParameterSpec,
-    OutputCifParameterSpec,
     # WorkCifParameterSpec,
 )
 
@@ -35,12 +35,12 @@ ParameterSpecTaggedUnion = Union[  # noqa: UP007
     Annotated[OutputCifParameterSpec, Tag("QCrBox.output_cif")],
     Annotated[DataFileParameterSpec, Tag("QCrBox.data_file")],
     Annotated[CifDataFileParameterSpec, Tag("QCrBox.cif_data_file")],
+    Annotated[GenericOutputPathParameterSpec, Tag("QCrBox.output_path")],
     #
     # Deprecated parameters
     #
     # Annotated[InputCifParameterSpec, Tag("QCrBox.input_cif")],
     # Annotated[GenericInputPathParameterSpec, Tag("QCrBox.input_path")],
-    # Annotated[GenericOutputPathParameterSpec, Tag("QCrBox.output_path")],
     # Annotated[WorkCifParameterSpec, Tag("QCrBox.work_cif")],
     # Annotated[FolderPathParameterSpec, Tag("QCrBox.folder_path")],
     # Annotated[InputFolderParameterSpec, Tag("QCrBox.input_folder")],

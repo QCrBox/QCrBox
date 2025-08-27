@@ -49,12 +49,12 @@ _builtin_dtypes = {
     "int": int,
     "float": float,
     "bool": bool,
-    # "QCrBox.input_cif": str,
     "QCrBox.output_cif": str,
+    "QCrBox.output_path": str,
+    # "QCrBox.input_cif": str,
     # "QCrBox.work_cif": str,
     # "QCrBox.folder_path": str,
     # "QCrBox.input_path": str,
-    # "QCrBox.output_path": str,
     # "QCrBox.input_folder": str,
 }
 
