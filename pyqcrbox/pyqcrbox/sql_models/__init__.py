@@ -14,4 +14,4 @@ from .command_spec import (
     InteractiveSessionSpec,
     PythonCallableSpec,
 )
-from .parameter_spec import ParameterSpec, ParameterSpecDiscriminatedUnion
+from .parameter_spec import ParameterSpecDiscriminatedUnion

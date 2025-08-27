@@ -1,7 +1,7 @@
 import time
 
 
-def print_cif(input_cif, print_times):
+def print_cif(input_cif: str, print_times: int):
     """A short running command which prints the input_cif and returns it back."""
 
     for _ in range(print_times):
@@ -10,7 +10,7 @@ def print_cif(input_cif, print_times):
     return input_cif
 
 
-def infinite_loop(dummy):
+def infinite_loop(dummy: str):
     """A command which runs forever and takes no parameters."""
 
     count = 0

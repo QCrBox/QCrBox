@@ -407,7 +407,7 @@ class BaseParameterSpec(QCrBoxPydanticBaseModel):
 
     name: str
     dtype: DTypeAsStr
-    description: str
+    description: str = ""
     default_value: str | int | float | bool | None = None
     valid_values: ValidValueSpec | None = None
 
@@ -418,10 +418,17 @@ class BaseParameterSpec(QCrBoxPydanticBaseModel):
             raise ValueError(f"Unsupported dtype: {value!r}")
         return value
 
+    # TODO: validate that default_value is a dtype compatible with the parameter
     @field_validator("default_value")
     @classmethod
     def verify_default_value_is_builtin_dtype(cls, value: Any) -> Any:
-        dtype_str = type(value).__str__
+        # Don't do anything when default_value is None -- using `is` to avoid
+        # falsey equivalents
+        if value is None:
+            return value
+        # Now we have to check to make sure the default value is a compatible
+        # data type
+        dtype_str = type(value).__name__
         if dtype_str not in _builtin_dtypes:
             supported_dtypes = list(_builtin_dtypes.keys())
             raise ValueError(

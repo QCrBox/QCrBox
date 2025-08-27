@@ -45,8 +45,8 @@ ParameterSpecTaggedUnion = Union[  # noqa: UP007
     # Annotated[FolderPathParameterSpec, Tag("QCrBox.folder_path")],
     # Annotated[InputFolderParameterSpec, Tag("QCrBox.input_folder")],
 ]
-ParameterSpecDiscriminatedUnion = Annotated[ParameterSpecTaggedUnion, Field(discriminator="dtype")]
 
+ParameterSpecDiscriminatedUnion = Annotated[ParameterSpecTaggedUnion, Field(discriminator="dtype")]
 parameter_spec_adapter: TypeAdapter[ParameterSpecTaggedUnion] = TypeAdapter(ParameterSpecDiscriminatedUnion)
 
 
@@ -54,19 +54,19 @@ def get_param_spec_from_json(param_spec_json: dict) -> ParameterSpecDiscriminate
     return parameter_spec_adapter.validate_python(param_spec_json)
 
 
-def get_param_spec_from_signature_param(p: inspect.Parameter) -> ParameterSpecDiscriminatedUnion:
+def get_param_spec_from_signature_param(p: inspect.Parameter) -> ParameterSpecDiscriminatedUnion | None:
     if p.annotation == inspect._empty:
-        exc_msg = f"Parameter {p.name} has no annotation"
-        logger.error(exc_msg)
-        raise ValueError(exc_msg)
+        logger.error(f"Parameter {p.name} has no annotation")
+        return None
 
     dtype = p.annotation.__name__
     is_required = p.default == inspect._empty
     default_value = None if is_required else repr(p.default)
 
-    param_spec_json = {"name": p.name, "dtype": dtype, "required": is_required, "default_value": default_value}
+    param_spec_json = {
+        "name": p.name,
+        "dtype": dtype,
+        "default_value": default_value,
+        "description": "dummy description which can be whatever for this validation step",
+    }
     return get_param_spec_from_json(param_spec_json)
-
-
-def ParameterSpec(**kwargs):
-    return get_param_spec_from_json(kwargs)
