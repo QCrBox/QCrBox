@@ -68,5 +68,6 @@ def get_param_spec_from_signature_param(p: inspect.Parameter) -> ParameterSpecDi
         "dtype": dtype,
         "default_value": default_value,
         "description": "dummy description which can be whatever for this validation step",
+        "required": True,
     }
     return get_param_spec_from_json(param_spec_json)

@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Annotated, Any
 
 import nats.js.errors as nats_errors
 import svcs
-from pydantic import BeforeValidator, field_validator, model_validator
+from pydantic import BeforeValidator, Field, field_validator, model_validator
 
 from pyqcrbox.logging import logger
 
@@ -410,6 +410,20 @@ class BaseParameterSpec(QCrBoxPydanticBaseModel):
     description: str = ""
     default_value: str | int | float | bool | None = None
     valid_value: ParameterValidationSpec | None = None
+
+    # We are marking all parameters as being REQUIRED and freezing the choice.
+    # If we want optional parameters later, we can change this to a required
+    # field like the above fields.
+    required: bool = Field(default_factory=lambda: True, frozen=True)
+
+    @field_validator("required")
+    @classmethod
+    def verify_parameter_is_required(cls, value: bool) -> bool:
+        """Verify that the `required` field is True."""
+        if value is not True:
+            raise ValueError("`required` field is set to False when it can only be True")
+
+        return value
 
     @field_validator("dtype")
     @classmethod

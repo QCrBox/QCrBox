@@ -37,9 +37,7 @@ def _validate_arguments_against_command_parameters(cmd_spec_db: sql_models.Comma
 
     """
     params = list(cmd_spec_db.parameters.values())
-    # XXX: removed p["required"] for now as all parameters are required
-    # required_param_names = set(p["name"] for p in params if p["required"] is True)
-    required_param_names = set(p["name"] for p in params)
+    required_param_names = set(p["name"] for p in params if p["required"] is True)
     all_param_names = set(cmd_spec_db.parameters.keys())
     arg_names = set(arguments.keys())
 
