@@ -24,6 +24,8 @@ However, there will be an initial period of stabilisation where this is not adhe
   similar to how deleting a dataset will delete its data files.
 - The version of `pyqcrbox` an application is based on is validated against the version the registry is built on to
   ensure compatibility.
+- Validation criteria can optionally be set for command parameters, which validates a user's input for the value of a
+  parameter.
 
 ### Removed Features
 
@@ -52,6 +54,7 @@ However, there will be an initial period of stabilisation where this is not adhe
 
 - Added how to guide on using the QCrBox Azure Container Repository.
 - Updated the how to guide on testing QCrBox.
+- Added a technical reference page on parameter specification.
 
 ## [icdm-2025]
 

@@ -8,6 +8,5 @@ COPY --chown=qcrbox:qcrbox \
      configure_dummy_cli.py \
      ${QCRBOX_HOME}
 COPY --chown=qcrbox:qcrbox --chmod=755 sample_functions.py ${QCRBOX_HOME}
-COPY --chown=qcrbox:qcrbox --chmod=755 sample_cmd.sh ${QCRBOX_HOME}/bin/
 
 ENV PATH="$PATH:${QCRBOX_HOME}/bin/"

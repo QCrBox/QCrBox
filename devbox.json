@@ -72,6 +72,12 @@
       ],
       "restart": [
         "bash ./scripts/restart_qcrbox.sh"
+      ],
+      "validate-apps": [
+        "bash ./scripts/validate_application_yaml.sh"
+      ],
+      "upload-containers": [
+        "bash ./update_container_repository.sh"
       ]
     }
   }

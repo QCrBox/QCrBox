@@ -24,6 +24,7 @@ commands:
         implemented_as: "cli_command"
         call_pattern: "/usr/bin/CrystalExplorer --open {input_cif}"
         used_basecommand_parameters: ["input_cif"]
+        description: "Launch Crystal Explorer with the provided CIF file"
 
 cif_entry_sets:
   - name: cif_structure_ddl1

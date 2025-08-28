@@ -1,45 +1,50 @@
 #
 # Configuration for the application 'dummy_cli'
 #
-name: "Dummy CLI"
-slug: "dummy_cli"
+name: Dummy CLI
+slug: dummy_cli
 version: "0.1.0"
-description: "Dummy non-interactive application for development, testing and debugging"
+description: Dummy non-interactive application for development, testing and debugging
 url: ""
 
 commands:
-  - name: "greet_and_sleep"
-    description: "Print a greeting message, then wait for a given duration before returning."
-    implemented_as: "python_callable"
-    import_path: "pyqcrbox.helpers"
+  - name: greet_and_sleep
+    description: Print a greeting message, then wait for a given duration before returning.
+    implemented_as: python_callable
+    import_path: pyqcrbox.helpers
     parameters:
-      - name: "name"
+      - name: name
         dtype: str
-      - name: "duration"
+        description: The name of the person to be greeted
+      - name: duration
         dtype: float
+        description: Sleep duration (in seconds)
         default_value: 5.0
-        description: "Sleep duration (in seconds)"
+        valid_value:
+          numeric_range: [0, 10]
 
-  - name: "print_cif"
-    description: "A short Python function which prints the name of the input CIF and returns it back"
-    implemented_as: "python_callable"
-    import_path: "sample_functions"
+  - name: print_cif
+    description: A short Python function which prints the name of the input CIF and returns it back
+    implemented_as: python_callable
+    import_path: sample_functions
     parameters:
-      - name: "input_cif"
-        dtype: "QCrBox.cif_data_file"
-        description: "The input CIF file"
-      - name: "print_times"
-        dtype: "int"
-        default_value: "2"
-        description: "The number of times to print the CIF file"
+      - name: input_cif
+        dtype: QCrBox.cif_data_file
+        description: The input CIF file
+      - name: print_times
+        dtype: int
+        description: The number of times to print the CIF file
+        default_value: 2
+        valid_value:
+          numeric_range: [1, 10]
 
-  - name: "infinite_loop"
-    description: "A Python function which loops infinitely until cancelled"
-    implemented_as: "python_callable"
-    import_path: "sample_functions"
+  - name: infinite_loop
+    description: A Python function which loops infinitely until cancelled
+    implemented_as: python_callable
+    import_path: sample_functions
     parameters:
-      - name: "dummy"
+      - name: dummy
         dtype: str
-        description: "An unused dummy parameter"
+        description: An unused dummy parameter
 
 qcrbox_yaml_spec_version: "0.1"

@@ -17,12 +17,17 @@ class MissingTypeAnnotation(Exception):
     pass
 
 
-class ParameterValidator:
+class PythonCallableParameterValidator:
+    """Class for validating a PythonCallable parameters."""
+
     def __init__(self, fn_signature: inspect.Signature):
         self.fn_signature = fn_signature
         self.fn_params = {p.name: get_param_spec_from_signature_param(p) for p in self.fn_signature.parameters.values()}
+        logger.debug(f"PythonCallable: fn_signature {self.fn_signature}")
+        logger.debug(f"PythonCallable: fn_params {self.fn_params}")
 
     def validate(self, param_spec: dict | ParameterSpecDiscriminatedUnion):
+        """Validate a parameter against its Python callable."""
         param_spec = parameter_spec_adapter.validate_python(param_spec)
 
         if param_spec.name not in self.fn_params:
@@ -37,35 +42,32 @@ class ParameterValidator:
                 f"Parameter dtype mismatch: {param_spec.dtype!r} is not compatible with {fn_param.dtype!r}"
             )
 
-        if param_spec.required != fn_param.required:
-            raise ValueError(f"Mismatch in parameter definitions: {param_spec!r} != {fn_param!r}")
-        #
-        # if not param_spec.required and param_spec.default_value != fn_param.default_value:
-        #     raise ValueError(f"Mismatch in parameter definitions: {param_spec!r} != {fn_param!r}")
-
 
 class PythonCallableSpec(BaseCommandSpec):
-    implemented_as: Literal["python_callable"] = "python_callable"
+    """Pydantic model for specifying PythonCallable commands.
+
+    Attributes
+    ----------
+    implemented_as : str
+        The implemented as method, it being a python_callable.
+    import_path : str
+        The path to the Python source script to import, containing the callable.
+    callable_name : str
+        The name of the callable Python function. If this is not provided, it
+        is assumed to be the same as the PythonCallable command name.
+
+    """
+
+    implemented_as: Literal["python_callable"] = "python_callable"  # type: ignore
     import_path: str
     callable_name: str | None = None
 
-    # @model_validator(mode="before")
-    # def validate_parameters_against_function_signature(model_data):
-    #     # module = importlib.import_module(model_data["import_path"])
-    #     # fn = getattr(module, model_data["callable_name"])
-    #     # signature = inspect.signature(fn)
-    #     # parameters = [get_param_spec_from_signature_param(p) for p in signature.parameters.values()]
-    #     parameters = []
-    #
-    #     if "parameters" not in model_data:
-    #         model_data["parameters"] = parameters
-    #     else:
-    #         raise NotImplementedError("TODO: validate given parameters against function signature")
-    #
-    #     return model_data
-
     @model_validator(mode="after")
-    def validate_parameters_against_function_signature(model_data):
+    def validate_parameters_against_function_signature(model_data: "PythonCallableSpec") -> "PythonCallableSpec":
+        """Validate the parameters in the application spec against the callable function."""
+        if not model_data.callable_name:
+            raise ValueError("The name of the python callable function has has not been set")
+
         try:
             module = importlib.import_module(model_data.import_path)
         except ImportError as exc:
@@ -78,9 +80,8 @@ class PythonCallableSpec(BaseCommandSpec):
 
         fn = getattr(module, model_data.callable_name)
         fn_signature = inspect.signature(fn)
-        # fn_params = [get_param_spec_from_signature_param(p) for p in fn_signature.parameters.values()]
+        fn_validator = PythonCallableParameterValidator(fn_signature)
 
-        fn_validator = ParameterValidator(fn_signature)
         for p in model_data.parameters:
             try:
                 fn_validator.validate(p)
@@ -92,9 +93,7 @@ class PythonCallableSpec(BaseCommandSpec):
     @model_validator(mode="before")
     @classmethod
     def set_name_and_callable_name_if_missing(cls, model_data: dict) -> dict:
-        """
-        If `callable_name` is not explicitly provided, assume it is the same as the command name and vice versa.
-        """
+        """If `callable_name` is not explicitly provided, assume it is the same as the command name and vice versa."""
         match model_data.get("name"), model_data.get("callable_name"):
             case None, None:
                 raise ValueError("The fields 'name' and 'callable_name' cannot both be missing")
@@ -104,7 +103,6 @@ class PythonCallableSpec(BaseCommandSpec):
                 model_data["name"] = model_data["callable_name"]
             case _:
                 pass
-
         if "." in model_data["callable_name"]:
             raise ValueError("Qualified names (containing dots) are not supported yet")
 

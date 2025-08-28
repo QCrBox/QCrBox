@@ -16,23 +16,19 @@ commands:
     parameters:
       - name: "input_cif"
         dtype: "QCrBox.cif_data_file"
-        default_value: None
         description: "Path to the CIF file containing the structure to calculate the atomic form factors for"
         required_entry_sets: ["cell", "structure", "resolution"]
         required_entries: ["_space_group_symop_operation_xyz"]
         merge_su: True
       - name: "output_tsc_name"
         dtype: str
-        default_value: None
         description: "Name to use for the output TSC file to after calculating the atomic form factors"
       - name: "functional"
         dtype: "str"
-        default_value: None
         description: "The DFT functional to use for the GPAW calculation"
       - name: "gridspacing"
         dtype: "float"
         default_value: 0.16
-        required: False
         description: "The grid spacing in Angstrom to use for the GPAW calculation"
 
   - name: "ha_refine"
@@ -42,7 +38,6 @@ commands:
     parameters:
       - name: "input_cif"
         dtype: "QCrBox.cif_data_file"
-        default_value: None
         description: "Name to use for the output CIF file containing the structure to refine"
         required_entry_sets: ["cell", "structure", "diffraction_intensities", "atomic_information"]
         optional_entry_sets: ["geometry_lookup"]
@@ -51,7 +46,6 @@ commands:
         custom_categories: ["shelx"]
       - name: "output_cif_name"
         dtype: "QCrBox.output_cif"
-        default_value: None
         description: "Path to save the CIF file to after refining the structure"
         required_entry_sets: ["structure", "atomic_information"]
         optional_entry_sets: ["geometry_lookup"]
@@ -63,12 +57,10 @@ commands:
         custom_categories: ["shelx"]
       - name: "functional"
         dtype: "str"
-        default_value: None
         description: "The DFT functional to use for the GPAW calculation"
       - name: "gridspacing"
         dtype: "float"
         default_value: 0.16
-        required: False
         description: "The grid spacing in Angstrom to use for the GPAW calculation"
 
 
