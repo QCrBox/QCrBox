@@ -73,7 +73,7 @@ Check /datasets can upload a data file to a dataset
     ${response}=    Send API Request    POST    ${SESSION_ALIAS}    /datasets    201    files=${files}
     ${payload}=    Check Response And Get Payload    ${response}
 
-    Check Response Has Attributes    ${payload}    datasets
+    Check Response Has Attributes    ${payload}    datasets    data_files
     ${datasets}=    Set Variable    ${payload["datasets"]}
     ${n_datasets}=    Get Length    ${datasets}
     Should Be Equal As Integers
@@ -102,7 +102,7 @@ Check /datasets/id/append can add a new data file to a dataset
     ...    files=${files}
     ${payload}=    Check Response And Get Payload    ${response}
 
-    Check Response Has Attributes    ${payload}    datasets
+    Check Response Has Attributes    ${payload}    datasets    data_files    appended_file
     ${datasets}=    Set Variable    ${payload["datasets"]}
     ${n_datasets}=    Get Length    ${datasets}
     Should Be Equal As Integers
@@ -135,7 +135,7 @@ Check /datasets/id returns the correct dataset
     ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /datasets/${TEST_DATASET_ID}    200
     ${payload}=    Check Response And Get Payload    ${response}
 
-    Check Response Has Attributes    ${payload}    datasets
+    Check Response Has Attributes    ${payload}    datasets    data_files
     ${datasets}=    Set Variable    ${payload["datasets"]}
     ${n_datasets}=    Get Length    ${datasets}
     Should Be Equal As Integers

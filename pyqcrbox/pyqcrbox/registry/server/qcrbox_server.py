@@ -339,7 +339,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
             },
             openapi_config=OpenAPIConfig(
                 title="QCrBox",
-                version="0.3.0",
+                version="0.4.0",
                 use_handler_docstrings=True,
             ),
             exception_handlers={

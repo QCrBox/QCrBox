@@ -440,7 +440,7 @@ async def list_datasets(data_manager: DataManager) -> schema.QCrBoxResponse[sche
 )
 async def get_dataset_by_id(
     id: str = Parameter(title="Dataset ID"), *, data_manager: DataManager
-) -> schema.QCrBoxResponse[schema.DatasetsResponse]:
+) -> schema.QCrBoxResponse[schema.DatasetsWithDataFilesResponse]:
     """Retrieve a dataset by its ID, including metadata of linked data files."""
     try:
         dataset = await api_helpers.get_dataset_info(id, data_manager=data_manager)
@@ -450,6 +450,7 @@ async def get_dataset_by_id(
                 "message": f"Retrieved dataset: {id!r}",
                 "payload": {
                     "datasets": [dataset],
+                    "data_files": list(dataset.data_files.values()),
                 },
             },
             status_code=200,
@@ -468,7 +469,7 @@ async def get_dataset_by_id(
 )
 async def create_dataset(
     data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)], data_manager: DataManager
-) -> schema.QCrBoxResponse[schema.DatasetsResponse]:
+) -> schema.QCrBoxResponse[schema.DatasetsWithDataFilesResponse]:
     """Create a new dataset by uploading data files."""
     qcrbox_dataset_id = await api_helpers.import_dataset(data, data_manager=data_manager)
     dataset = await api_helpers.get_dataset_info(qcrbox_dataset_id, data_manager=data_manager)
@@ -478,6 +479,7 @@ async def create_dataset(
             "message": f"Created dataset: {qcrbox_dataset_id!r}",
             "payload": {
                 "datasets": [dataset],
+                "data_files": list(dataset.data_files.values()),
             },
         },
         status_code=201,
@@ -496,7 +498,7 @@ async def append_to_dataset(
     data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)],
     *,
     data_manager: DataManager,
-) -> schema.QCrBoxResponse[schema.DatasetsResponse]:
+) -> schema.QCrBoxResponse[schema.DatasetAppendResponse]:
     """Append a new data file to a dataset."""
     dataset_id = await api_helpers.append_to_dataset(id, data, data_manager=data_manager)
     dataset = await api_helpers.get_dataset_info(dataset_id, data_manager=data_manager)
@@ -506,6 +508,8 @@ async def append_to_dataset(
             "message": f"Appended file to dataset: {dataset_id!r}",
             "payload": {
                 "datasets": [dataset],
+                "data_files": list(dataset.data_files.values()),
+                "appended_file": dataset.data_files[data.filename],
             },
         },
         status_code=201,

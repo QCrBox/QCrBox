@@ -38,6 +38,7 @@ However, there will be an initial period of stabilisation where this is not adhe
 - The registry API now uses LiteStar dependency injection, improving management of the NATS server.
 - Renamed `DataFileManager` to `DataManager` to better reflect that is manages more than just data files
 - Added a new tests to test the DataManager service, non-interactive commands and new API endpoints.
+- Additional fields have been added to the payload for the dataset API endpoints.
 - And lots more!
 
 ### Issues Fixed

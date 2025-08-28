@@ -77,7 +77,7 @@
         "bash ./scripts/validate_application_yaml.sh"
       ],
       "upload-containers": [
-        "bash ./update_container_repository.sh"
+        "bash ./scripts/update_container_repository.sh"
       ]
     }
   }
