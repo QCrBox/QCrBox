@@ -1,6 +1,6 @@
 services:
   mopro:
-    image: "qcrbox.azurecr.io/mopro:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
+    image: "${QCRBOX_DOCKER_REPO:?Must set env var QCRBOX_DOCKER_REPO}/mopro:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
     volumes:
       - ${QCRBOX_SHARED_FILES_DIR_HOST_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_HOST_PATH}:${QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH}
     networks:
