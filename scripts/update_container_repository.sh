@@ -18,6 +18,8 @@ docker tag qcrbox/qcrbox_quality:latest qcrbox.azurecr.io/qcrbox_quality:latest
 docker tag qcrbox/cod_check:latest qcrbox.azurecr.io/cod_check:latest
 docker tag qcrbox/qcrbox_quality:latest qcrbox.azurecr.io/qcrbox_quality:latest
 docker tag qcrbox/xharpy-gpaw:latest qcrbox.azurecr.io/xharpy-gpaw:latest
+docker tag qcrbox/mopro:latest qcrbox.azurecr.io/mopro:latest
+docker tag qcrbox/qcrbox_quality:latest qcrbox.azurecr.io/qcrbox_quality:latest
 
 docker push qcrbox.azurecr.io/base-ancestor:latest
 docker push qcrbox.azurecr.io/base-application:latest
@@ -30,3 +32,5 @@ docker push qcrbox.azurecr.io/qcrboxtools:latest
 docker push qcrbox.azurecr.io/qcrbox_quality:latest
 docker push qcrbox.azurecr.io/cod_check:latest
 docker push qcrbox.azurecr.io/xharpy-gpaw:latest
+docker push qcrbox.azurecr.io/mopro:latest
+docker push qcrbox.azurecr.io/qcrbox_quality:latest
