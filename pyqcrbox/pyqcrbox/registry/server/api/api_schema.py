@@ -167,6 +167,39 @@ class DatasetsResponse(BaseModel):
     datasets: list[DatasetResponse]
 
 
+class DatasetsWithDataFilesResponse(BaseModel):
+    """Response model for a dataset with its data files.
+
+    Attributes
+    ----------
+    datasets : list[DatasetResponse]
+        A list of dataset metadata.
+    data_files : list[DataFileResponse]
+        A list of data file metadata.
+
+    """
+
+    datasets: list[DatasetResponse]
+    data_files: list[DataFileResponse]
+
+
+class DatasetAppendResponse(BaseModel):
+    """Response model for appending a file to a dataset.
+
+    Attributes
+    ----------
+    datasets : list[DatasetResponse]
+        A list of dataset metadata.
+    data_files : list[DataFileResponse]
+        A list of data file metadata.
+
+    """
+
+    datasets: list[DatasetResponse]
+    data_files: list[DataFileResponse]
+    appended_file: DataFileResponse
+
+
 class InvokeCommandResponse(BaseModel):
     """Response model for a calculation ID after invoking a command.
 
