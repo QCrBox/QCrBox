@@ -1,11 +1,13 @@
 import re
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Any
 
 import nats.js.errors as nats_errors
 import svcs
 from pydantic import BeforeValidator, Field, PrivateAttr, field_validator, model_validator
 
+from pyqcrbox.debug import log_eel
 from pyqcrbox.logging import logger
 
 from ..base import QCrBoxPydanticBaseModel
@@ -185,35 +187,44 @@ class CifDataFileParameter(QCrBoxPydanticBaseModel):
     """
 
     data_file_id: str
-    # More CIF specific parameters will go in here
+
+    # These are CIF specific, required for pre-processing the CIF file
+    required_entries: list[str]
+    optional_entries: list[str] = []
+    merge_su: bool = False
+    custom_categories: list[str] = []
 
     _exported_path: str = PrivateAttr(default="")
 
-    async def _convert_to_specific_format(self, application_yaml_path: str, command_name: str, parameter_name: str):
+    @log_eel
+    async def _convert_to_specific_format(self) -> str:
         """Convert the CIF to a specific format.
 
-        Parameters
-        ----------
-        input_cif_path : str
-            The input
+        At the moment, this does an in-place conversion by overwriting the
+        original CIF export.
+
+        Returns
+        -------
+        str
+            The file path to the converted CIF file.
 
         """
-        from qcrboxtools.cif.cif2cif import cif_file_to_specific_by_yml
+        from qcrboxtools.cif.cif2cif import cif_file_to_specific
+
+        if not Path(self._exported_path).exists():
+            raise OSError("CIF has not yet been exported to disk")
 
         input_cif_path = self._exported_path
         output_cif_path = self._exported_path
+        logger.debug(f"_convert_to_specific_format: {input_cif_path=} {output_cif_path=}")
 
-        logger.debug(
-            f"_convert_to_specific_format: {input_cif_path=} {output_cif_path=} {application_yaml_path=}"
-            f" {command_name=} {parameter_name=}"
-        )
-
-        cif_file_to_specific_by_yml(
+        cif_file_to_specific(
             input_cif_path,
             output_cif_path,
-            application_yaml_path,  # yaml contains info about how to convert
-            command_name,  # the parameter (below) belongs to a command
-            parameter_name,  # the parameter is what contains the info about how to convert
+            self.required_entries,
+            self.optional_entries,
+            self.custom_categories,
+            self.merge_su,
         )
 
         return output_cif_path
@@ -230,13 +241,11 @@ class CifDataFileParameter(QCrBoxPydanticBaseModel):
     #         parameter_name,  # in this case, it will be the parameter name for output_cif_path
     #     )
 
+    @log_eel
     async def prepare_for_execution(
         self,
         target_dir: str,
         target_filename: str | None = None,
-        *,
-        to_specific_cif_format: bool = False,
-        conversion_arguments: dict | None = None,
     ) -> str:
         """Prepare the CIF file for command execution.
 
@@ -251,12 +260,6 @@ class CifDataFileParameter(QCrBoxPydanticBaseModel):
         target_filename : str | None
             The target filename to write to disk. If not provided, the filename
             in the DataManger wil lbe used instead.
-        to_specific_cif_format : bool
-            Convert the CIF to the specific format specified in application. By
-            default, this does not happen.
-        conversion_arguments : dict | None
-            Arguments required for the CIF conversion, `application_yaml_path`,
-            `command_name` and `parameter_name`.
 
         Returns
         -------
@@ -282,21 +285,9 @@ class CifDataFileParameter(QCrBoxPydanticBaseModel):
                     exc_msg = f"No data file was found with id {self.data_file_id}"
                 raise ValueError(exc_msg) from exc
 
-            if to_specific_cif_format:
-                if not conversion_arguments:
-                    raise ValueError("Can't convert to specific format as conversion arguments not provided")
-                if not isinstance(conversion_arguments, dict):
-                    raise TypeError("`conversion_arguments` must be a dict")
-
-                required_arguments = {"application_yaml_path", "command_name", "parameter_name"}
-                missing_keys = required_arguments - conversion_arguments.keys()
-                if missing_keys:
-                    exc_msg = f"Missing the following conversion arguments: {', '.join(missing_keys)}"
-                    raise ValueError(exc_msg)
-
-                self._exported_path = exported_file_path = await self._convert_to_specific_format(
-                    **conversion_arguments
-                )
+            if self.required_entries:
+                logger.debug("Converting CIF to specific format")
+                self._exported_path = exported_file_path = await self._convert_to_specific_format()
 
         return str(exported_file_path)
 
@@ -366,6 +357,8 @@ def parse_parameter_as_its_dtype(v: Any, dtype_str: str) -> Any:
         The parameter as the specified data type.
 
     """
+    logger.debug(f"parse_parameter_as_its_dtype: {dtype_str=} value={v}")
+
     if dtype_str not in _known_dtypes:
         raise ValueError(f"Unsupported parameter type: {dtype_str}")
 
@@ -373,15 +366,17 @@ def parse_parameter_as_its_dtype(v: Any, dtype_str: str) -> Any:
         dtype = _builtin_dtypes[dtype_str]
         return BuiltinParameter(dtype=dtype.__name__, value=dtype(v))
 
-    try:
-        result = _known_dtypes[dtype_str](**v) if isinstance(v, dict) else _known_dtypes[dtype_str](v)
-    except Exception as exc:
-        logger.warning(
-            f"Could not convert value to its declared type - leaving unchanged: value={v!r}\n\nOriginal error: {exc}"
-        )
-        result = v
+    return _known_dtypes[dtype_str](**v)
 
-    return result
+    # try:
+    #     result = _known_dtypes[dtype_str](**v) if isinstance(v, dict) else _known_dtypes[dtype_str](v)
+    # except Exception as exc:
+    #     logger.warning(
+    #         f"Could not convert value to its declared type - leaving unchanged: value={v!r}\n\nOriginal error: {exc}"
+    #     )
+    #     result = v
+    #
+    # return result
 
 
 DTypeAsStr = Annotated[str, BeforeValidator(verify_dtype_is_a_known_type)]

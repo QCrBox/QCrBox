@@ -1,5 +1,4 @@
 import asyncio
-import os
 from pathlib import Path
 from typing import Any
 
@@ -14,8 +13,7 @@ from pyqcrbox.registry.client.executable_command.error import PrepareCommandFail
 from pyqcrbox.registry.client.executable_command.python_callable import PythonCallable
 from pyqcrbox.sql_models import InteractiveSessionSpec
 from pyqcrbox.sql_models.interactive_session_info import InteractiveSessionInfo
-from pyqcrbox.sql_models.parameter_spec import parse_parameter_as_its_dtype
-from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import BaseParameter, CifDataFileParameter
+from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import BaseParameter, parse_parameter_as_its_dtype
 
 from .interactive_session_calculation import InteractiveSessionCalculation
 
@@ -196,12 +194,19 @@ class InteractiveSession(BaseCommand):
             use in command execution.
 
         """
+        logger.debug(f"Preparing parameters for {self.cmd_spec!r}")
         # Create a mapping of the parameters, each item in the dict will be a QCrBox
         # object representation of the data type of that parameter -- see pyqcrbox.sql_models.parameter_spec
         parsed_params = {}
         for param_name, param_value in command_arguments.items():
             param_spec = self.cmd_spec.get_parameter_by_name(param_name)
+            logger.debug(f"InteractiveSession: {param_name=} {param_value=} {param_spec=}")
+            # XXX: The issue is that a data file parameter is {param_name: {data_file_id: ....}}
+            #      It tries to be parsed into a CifDataFileParameter, but it can't because we are missing
+            #      the rest of the fields required (required_entries, etc). This is probably why earlier
+            #      we did it by yml instead.
             parsed_params[param_name] = parse_parameter_as_its_dtype(param_value, param_spec.dtype)
+        logger.debug(f"InteractiveSession: parsed params {parsed_params}")
 
         # Now we have to create a mapping of the parameter names to the value of
         # the parameters. These will either by default values or be passed via the NATS
@@ -211,22 +216,10 @@ class InteractiveSession(BaseCommand):
             param_values = param_values | self.prepare_cmd_spec.parameter_default_values
         if self.finalise_cmd_spec:
             param_values = param_values | self.finalise_cmd_spec.parameter_default_values
+        logger.debug(f"InteractiveSession: param values {param_values}")
 
-        # TODO: this is far from ideal
-        parameters = {}
-        for name, param in param_values.items():
-            if isinstance(param, CifDataFileParameter):
-                parameters[name] = await param.prepare_for_execution(
-                    target_dir=str(working_dir),
-                    to_specific_cif_format=True,
-                    conversion_arguments={
-                        "application_yaml_path": os.getenv("QCRBOX__APPLICATION__YAML"),
-                        "command_name": self.cmd_spec.name,
-                        "parameter_name": name,
-                    },
-                )
-            else:
-                parameters[name] = await param.prepare_for_execution(target_dir=str(working_dir))
+        parameters = {name: await param.prepare_for_execution() for name, param in param_values.items()}
+        logger.debug(f"InteractiveSession: parameters {parameters}")
 
         return parameters
 

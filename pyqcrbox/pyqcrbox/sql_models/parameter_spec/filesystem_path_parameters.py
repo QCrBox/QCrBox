@@ -49,8 +49,6 @@ class DataFileParameterSpec(BaseFilesystemPathParameterSpec):
 class BaseCifFileParameterSpec(BaseFilesystemPathParameterSpec):
     required_entries: list[CifEntryLiteral | OneOfCifEntrySpec] = []
     optional_entries: list[CifEntryLiteral | OneOfCifEntrySpec] = []
-    required_entry_sets: list[str] = []
-    optional_entry_sets: list[str] = []
     merge_su: bool = False
     custom_categories: list[str] = []
 
