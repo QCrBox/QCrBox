@@ -199,22 +199,23 @@ class QCrBoxClient(QCrBoxServerClientBase):
         self.status.set_busy()
 
         calc = None
-        data_file_manager = await self.svcs_container.aget(DataManager)
+        data_manager = await self.svcs_container.aget(DataManager)
 
         try:
             command = ExecutableCommand(self.application_spec.get_command_spec_by_name(execute_request.command_name))
-            logger.debug(f"Command to execute: {command}")
+            # TODO: Issue #520 - create a _cwd
+            command_parameters = await command.prepare_params(self.working_dir, execute_request.command_arguments)
+            logger.debug(f"Executing command {command!r} in the background with arguments {command_parameters!r}")
+
+            # TODO: we should have the interactive session handle this, or add it
+            #       as the same time we add to the calculation datastore
             if isinstance(command, InteractiveSession):
-                await command.add_to_interactive_session_database(
-                    data_file_manager, execute_request, self.private_inbox
-                )
-            parameters = await command.prepare_params(self.working_dir, execute_request.command_arguments)
-            logger.debug(f"Executing command {command!r} in the background with arguments {parameters!r}")
+                await command.add_to_interactive_session_database(data_manager, execute_request, self.private_inbox)
+
+            # TODO: Issue #520 - create a _cwd
             calc = await command.execute_in_background(
-                **parameters, _calculation_id=execute_request.calculation_id, _cwd=self.working_dir
+                **command_parameters, _calculation_id=execute_request.calculation_id, _cwd=self.working_dir
             )
-            if not isinstance(calc, BaseCalculation):
-                raise RuntimeError("Command execution did not return a calculation object.")
         except Exception as exc:
             # If calc is not set, then the calculation failed to start in the background
             # which is easier to deal with. If the calculation actually started, then we need
@@ -227,7 +228,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
 
         # Keep track of the calculation, which should still be running in the background
         self.calculations[execute_request.calculation_id] = calc
-        await data_file_manager.update_calculation_status(await calc.get_status_details())
+        await data_manager.update_calculation_status(await calc.get_status_details())
 
         # Wait until its finished and when finished, update the details. The calculation can
         # will raise an exception if (one of the interactive) commands failed
@@ -256,7 +257,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
             self.status.set_idle()
 
         logger.debug("Updating calculation status after calculation has finished")
-        await data_file_manager.update_calculation_status(await calc.get_status_details())
+        await data_manager.update_calculation_status(await calc.get_status_details())
 
     @log_eel
     async def handle_command_launch_failure(self, calculation_id: str, exception: Exception) -> None:

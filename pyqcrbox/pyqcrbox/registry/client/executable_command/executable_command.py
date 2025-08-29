@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING
 
+from pyqcrbox import logger
 from pyqcrbox.sql_models.command_spec import ImplementedAs
 
 from .cli_command import CLICommand
@@ -9,7 +10,9 @@ from .python_callable import PythonCallable
 if TYPE_CHECKING:
     from pyqcrbox.sql_models.command_spec.command_spec import CommandSpecDiscriminatedUnion
 
-__all__ = ["ExecutableCommand"]
+__all__ = [
+    "ExecutableCommand",
+]
 
 
 def ExecutableCommand(
@@ -37,10 +40,14 @@ def ExecutableCommand(
     """
     match cmd_spec.implemented_as:
         case ImplementedAs.python_callable:
-            return PythonCallable(cmd_spec)
+            command = PythonCallable(cmd_spec)
         case ImplementedAs.cli_command:
-            return CLICommand(cmd_spec)
+            command = CLICommand(cmd_spec)
         case ImplementedAs.interactive_session:
-            return InteractiveSession(cmd_spec, **kwargs)
+            command = InteractiveSession(cmd_spec, **kwargs)
         case _:
             raise ValueError(f"Invalid value for 'implemented_as': {cmd_spec.implemented_as}")
+
+    logger.debug(f"Retrieved command to execute: {command}")
+
+    return command
