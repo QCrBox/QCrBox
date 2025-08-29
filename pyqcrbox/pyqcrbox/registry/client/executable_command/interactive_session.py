@@ -1,4 +1,5 @@
 import asyncio
+import os
 from pathlib import Path
 from typing import Any
 
@@ -14,7 +15,7 @@ from pyqcrbox.registry.client.executable_command.python_callable import PythonCa
 from pyqcrbox.sql_models import InteractiveSessionSpec
 from pyqcrbox.sql_models.interactive_session_info import InteractiveSessionInfo
 from pyqcrbox.sql_models.parameter_spec import parse_parameter_as_its_dtype
-from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import BaseParameter
+from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import BaseParameter, CifDataFileParameter
 
 from .interactive_session_calculation import InteractiveSessionCalculation
 
@@ -211,9 +212,23 @@ class InteractiveSession(BaseCommand):
         if self.finalise_cmd_spec:
             param_values = param_values | self.finalise_cmd_spec.parameter_default_values
 
-        return {
-            name: await param.prepare_for_execution(target_dir=str(working_dir)) for name, param in param_values.items()
-        }
+        # TODO: this is far from ideal
+        parameters = {}
+        for name, param in param_values.items():
+            if isinstance(param, CifDataFileParameter):
+                parameters[name] = await param.prepare_for_execution(
+                    target_dir=str(working_dir),
+                    to_specific_cif_format=True,
+                    conversion_arguments={
+                        "application_yaml_path": os.getenv("QCRBOX__APPLICATION__YAML"),
+                        "command_name": self.cmd_spec.name,
+                        "parameter_name": name,
+                    },
+                )
+            else:
+                parameters[name] = await param.prepare_for_execution(target_dir=str(working_dir))
+
+        return parameters
 
     async def add_to_interactive_session_database(
         self,

@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Annotated, Any
 
 import nats.js.errors as nats_errors
 import svcs
-from pydantic import BeforeValidator, Field, field_validator, model_validator
+from pydantic import BeforeValidator, Field, PrivateAttr, field_validator, model_validator
 
 from pyqcrbox.logging import logger
 
@@ -173,7 +173,8 @@ class DataFileParameter(BaseParameter):
         return str(exported_file_path)
 
 
-class CifDataFileParameter(BaseParameter):
+# TODO: change back to BaseParameter
+class CifDataFileParameter(QCrBoxPydanticBaseModel):
     """Class for handling CIF datafile parameters.
 
     Attributes
@@ -186,7 +187,57 @@ class CifDataFileParameter(BaseParameter):
     data_file_id: str
     # More CIF specific parameters will go in here
 
-    async def prepare_for_execution(self, target_dir: str, target_filename: str | None = None) -> str:
+    _exported_path: str = PrivateAttr(default="")
+
+    async def _convert_to_specific_format(self, application_yaml_path: str, command_name: str, parameter_name: str):
+        """Convert the CIF to a specific format.
+
+        Parameters
+        ----------
+        input_cif_path : str
+            The input
+
+        """
+        from qcrboxtools.cif.cif2cif import cif_file_to_specific_by_yml
+
+        input_cif_path = self._exported_path
+        output_cif_path = self._exported_path
+
+        logger.debug(
+            f"_convert_to_specific_format: {input_cif_path=} {output_cif_path=} {application_yaml_path=}"
+            f" {command_name=} {parameter_name=}"
+        )
+
+        cif_file_to_specific_by_yml(
+            input_cif_path,
+            output_cif_path,
+            application_yaml_path,  # yaml contains info about how to convert
+            command_name,  # the parameter (below) belongs to a command
+            parameter_name,  # the parameter is what contains the info about how to convert
+        )
+
+        return output_cif_path
+
+    # async def merge_to_unified_format(self):
+    #     """Merge this CIF with another to a unified CIF format."""
+    #     from qcrboxtools.cif.cif2cif import cif_file_merge_to_unified_by_yml
+    #     cif_file_merge_to_unified_by_yml(
+    #         original_cif_path,
+    #         new_cif_path,
+    #         output_cif_path,  # merged original and new
+    #         YAML_PATH,
+    #         command_name,
+    #         parameter_name,  # in this case, it will be the parameter name for output_cif_path
+    #     )
+
+    async def prepare_for_execution(
+        self,
+        target_dir: str,
+        target_filename: str | None = None,
+        *,
+        to_specific_cif_format: bool = False,
+        conversion_arguments: dict | None = None,
+    ) -> str:
         """Prepare the CIF file for command execution.
 
         This method is used to retrieve the contents of the CIF file from the
@@ -200,6 +251,12 @@ class CifDataFileParameter(BaseParameter):
         target_filename : str | None
             The target filename to write to disk. If not provided, the filename
             in the DataManger wil lbe used instead.
+        to_specific_cif_format : bool
+            Convert the CIF to the specific format specified in application. By
+            default, this does not happen.
+        conversion_arguments : dict | None
+            Arguments required for the CIF conversion, `application_yaml_path`,
+            `command_name` and `parameter_name`.
 
         Returns
         -------
@@ -215,7 +272,7 @@ class CifDataFileParameter(BaseParameter):
         async with svcs.Container(QCRBOX_GLOBAL_SERVICES_REGISTRY) as container:
             data_file_manager = await container.aget(DataManager)
             try:
-                exported_file_path = await data_file_manager.export_data_file(
+                self._exported_path = exported_file_path = await data_file_manager.export_data_file(
                     self.data_file_id, target_dir, target_filename
                 )
             except nats_errors.ObjectNotFoundError as exc:
@@ -224,6 +281,22 @@ class CifDataFileParameter(BaseParameter):
                 else:
                     exc_msg = f"No data file was found with id {self.data_file_id}"
                 raise ValueError(exc_msg) from exc
+
+            if to_specific_cif_format:
+                if not conversion_arguments:
+                    raise ValueError("Can't convert to specific format as conversion arguments not provided")
+                if not isinstance(conversion_arguments, dict):
+                    raise TypeError("`conversion_arguments` must be a dict")
+
+                required_arguments = {"application_yaml_path", "command_name", "parameter_name"}
+                missing_keys = required_arguments - conversion_arguments.keys()
+                if missing_keys:
+                    exc_msg = f"Missing the following conversion arguments: {', '.join(missing_keys)}"
+                    raise ValueError(exc_msg)
+
+                self._exported_path = exported_file_path = await self._convert_to_specific_format(
+                    **conversion_arguments
+                )
 
         return str(exported_file_path)
 

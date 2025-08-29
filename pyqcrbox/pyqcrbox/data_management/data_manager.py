@@ -233,7 +233,7 @@ class DataManager(ABC):
 
     async def export_data_file(
         self, data_file_id: str, output_dir: str | Path, output_filename: str | None = None
-    ) -> Path:
+    ) -> str:
         """Export a data file from the NATS object store to the file system.
 
         Parameters
@@ -248,7 +248,7 @@ class DataManager(ABC):
 
         Returns
         -------
-        pathlib.Path
+        str
             The file path of the exported file.
 
         """
@@ -265,7 +265,7 @@ class DataManager(ABC):
 
         logger.debug(f"Exported data file {output_filename} to {output_path.resolve()}")
 
-        return output_path
+        return str(output_path.absolute())
 
     async def get_data_file(self, data_file_id: str) -> DataFile:
         """Get the metadata for a data file.
