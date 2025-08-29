@@ -13,7 +13,8 @@ from pyqcrbox.registry.client.executable_command.error import PrepareCommandFail
 from pyqcrbox.registry.client.executable_command.python_callable import PythonCallable
 from pyqcrbox.sql_models import InteractiveSessionSpec
 from pyqcrbox.sql_models.interactive_session_info import InteractiveSessionInfo
-from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import BaseParameter, parse_parameter_as_its_dtype
+from pyqcrbox.sql_models.parameter_spec import parse_parameter_as_its_dtype
+from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import BaseParameter
 
 from .interactive_session_calculation import InteractiveSessionCalculation
 
@@ -62,8 +63,6 @@ class InteractiveSession(BaseCommand):
             command to run.
 
         """
-        if not isinstance(command, PythonCallable):
-            raise TypeError("Only `PythonCallable` is supported for 'prepare_cmd'")
         logger.debug(f"Executing prepare command in background and waiting for it to finish: {command}")
 
         session_calculation.prepare_calc = await command.execute_in_background(
@@ -116,8 +115,6 @@ class InteractiveSession(BaseCommand):
             command to run.
 
         """
-        if not isinstance(command, CLICommand | PythonCallable):
-            raise TypeError("Only `CLICommand` or `PythonCallable` are supported for 'run_cmd'")
         logger.debug(f"Executing run command in background and waiting for it to finish: {command}")
 
         session_calculation.run_calc = await command.execute_in_background(
@@ -167,8 +164,6 @@ class InteractiveSession(BaseCommand):
             command to run.
 
         """
-        if not isinstance(command, PythonCallable):
-            raise TypeError("Only `PythonCallable` is supported for 'finalise_cmd'")
         logger.debug(f"Executing finalise command in background: {command}")
 
         session_calculation.finalise_calc = await command.execute_in_background(
@@ -222,7 +217,7 @@ class InteractiveSession(BaseCommand):
 
     async def add_to_interactive_session_database(
         self,
-        data_file_manager: DataManager,
+        data_manager: DataManager,
         execute_request: CommandExecutionRequestNATS,
         executing_client_address: str,
     ) -> None:
@@ -233,7 +228,7 @@ class InteractiveSession(BaseCommand):
 
         Parameters
         ----------
-        data_file_manager : DataManager
+        data_manager: DataManager
             An instance of the DataManager.
         execute_request : CommandExecutionRequestNATS
             The execution request message, containing data about the calculation.
@@ -246,7 +241,7 @@ class InteractiveSession(BaseCommand):
             client_private_inbox=executing_client_address,
             cmd_execution_request=execute_request,
         )
-        await data_file_manager.store_interactive_session(session_info)
+        await data_manager.store_interactive_session(session_info)
 
     async def execute_in_background(
         self,
@@ -294,9 +289,9 @@ class InteractiveSession(BaseCommand):
             calculation_id=_calculation_id,
             calc_finished_event=anyio.Event(),
             # the following will be set after the task begins
-            async_task=None,
+            async_task=None,  # type: ignore
             prepare_calc=None,
-            run_calc=None,
+            run_calc=None,  # type: ignore
             finalise_calc=None,
         )
 
@@ -310,10 +305,19 @@ class InteractiveSession(BaseCommand):
         # calculation.
         async def background_task():
             nonlocal run_cmd, prepare_cmd, finalise_cmd
+
             if prepare_cmd:
+                if not isinstance(prepare_cmd, PythonCallable):
+                    raise TypeError("`prepare` command for interactive session must be PythonCallable")
                 await self._execute_prepare_command(prepare_cmd, _cwd, interactive_session_calc, **kwargs)
+
+            if not isinstance(run_cmd, PythonCallable | CLICommand):
+                raise TypeError("`run_cmd` for interactive session must be PythonCallable or CLICommand")
             await self._execute_run_command(run_cmd, _cwd, interactive_session_calc, **kwargs)
+
             if finalise_cmd:
+                if not isinstance(finalise_cmd, PythonCallable):
+                    raise TypeError("`finalise` command for interactive session must be PythonCallable")
                 await self._launch_finalise_command(finalise_cmd, _cwd, interactive_session_calc, **kwargs)
 
         interactive_session_calc.background_task = asyncio.create_task(background_task())
