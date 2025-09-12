@@ -235,7 +235,7 @@ To create a QCrBox image for our application, we'll execute a specific build com
 qcb build cod_check_tutorial
 ```
 
-> **Important Note:** By default, `qcb build` without additional arguments performs a full rebuild of all dependencies to ensure everything is up-to-date. If you have recently completed a build and wish to save time, you can opt for the `--no-deps` argument. This option focuses solely on building the QCrBox image without updating the dependencies.
+> **Important Note:** By default, `qcb build` without additional arguments performs a full rebuild of all dependencies to ensure everything is up-to-date. If you have recently completed a build and wish to save time, you can opt for the `--no-build-deps` argument. This option focuses solely on building the QCrBox image without updating the dependencies.
 
 After completing the build process, you can launch your newly created QCrBox image with the following command:
 
@@ -243,7 +243,7 @@ After completing the build process, you can launch your newly created QCrBox ima
 qcb up cod_check_tutorial --no-build-deps
 ```
 
-This command starts the container without recompiling the image or its dependencies, assuming they were recently built. If you aim to update both dependencies and the image before launching, simply omit the `--no-rebuild-deps` flag. This ensures that your QCrBox image and all related components are fully up-to-date.
+This command starts the container without recompiling the image or its dependencies, assuming they were recently built. If you aim to update both dependencies and the image before launching, simply omit the `--no-build-deps` flag. This ensures that your QCrBox image and all related components are fully up-to-date.
 
 
 ## Build a function to load in a structure from the best matching unit cell
@@ -414,7 +414,10 @@ docker volume rm qcrbox_qcrbox-registry-db
 qcb up cod_check_tutorial
 ```
 
-Note that this will only bring up the `cod_check_tutorial` container and any other containers that it depends on, such as the core QCrBox containers. Any other application containers won't come up.
+Note that:
+
+- We remove the QCrBox registry volume so that our container's registry entry will be rebuilt. This will be unnecessary in future releases.
+- This will only bring up the `cod_check_tutorial` container and any other containers that it depends on, such as the core QCrBox containers. Any other application containers won't come up.
 
 To check if the container has started correctly we can examine its Docker logs. Use `docker ps -a` to identify the container name running with the image `qcrbox/cod_check_tutorial`, and then use `docker logs` followed by the container name, e.g.
 
