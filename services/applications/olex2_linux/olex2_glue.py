@@ -15,8 +15,6 @@ def refine(command_name: str, input_cif_path: str, output_cif_path: str, ls_cycl
 
     work_cif_path = input_cif_path.parent / "qcrbox_work.cif"
 
-    command_name = "refine_tsc" if tsc_path else "refine_iam"
-
     cif_file_to_specific_by_yml(input_cif_path, work_cif_path, YAML_PATH, command_name, "input_cif_path")
 
     olex2_socket = Olex2Socket(structure_path=work_cif_path)
@@ -30,12 +28,12 @@ def refine(command_name: str, input_cif_path: str, output_cif_path: str, ls_cycl
         work_cif_path, 0, output_cif_path, input_cif_path, YAML_PATH, command_name, "output_cif_path"
     )
 
-def refine_iam(input_cif_path: str, output_cif_path: str, ls_cycles: int, weight_cycles: int):
-    refine("refine_iam", input_cif_path, output_cif_path, ls_cycles, weight_cycles)
+def refine_iam(input_cif_path: str, output_cif_path: str, ls_cycles: str, weight_cycles: str):
+    refine("Refine IAM", input_cif_path, output_cif_path, int(ls_cycles), int(weight_cycles))
     return str(output_cif_path)
 
-def refine_tsc(input_cif_path: str, output_cif_path: str, tsc_path: str, ls_cycles: int, weight_cycles: int):
-    refine("refine_tsc", input_cif_path, output_cif_path, ls_cycles, weight_cycles, tsc_path)
+def refine_tsc(input_cif_path: str, output_cif_path: str, tsc_path: str, ls_cycles: str, weight_cycles: str):
+    refine("Refine with TSC(B)", input_cif_path, output_cif_path, int(ls_cycles), int(weight_cycles), tsc_path)
     return str(output_cif_path)
 
 def run_commands(input_cif_path: str, output_cif_path: str, cmd_file_path: str, tsc_path: Optional[str] = None):

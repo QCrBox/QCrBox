@@ -58,12 +58,12 @@ commands:
         custom_categories: ["iucr", "shelx"]
         invalidated_entries: ["_shelx_.*"]
       - name: "ls_cycles"
-        dtype: int
-        default_value: 5
+        dtype: str
+        default_value: "5"
         description: "Number of least squares cycles to run."
       - name: "weight_cycles"
-        dtype: int
-        default_value: 5
+        dtype: str
+        default_value: "5"
         description: "Number of weight cycles to run. Each weight cycle consists of the full number of least squares cycles."
   - name: "Refine with TSC(B)"
     implemented_as: "python_callable"
@@ -88,12 +88,12 @@ commands:
         dtype: "QCrBox.data_file"
         description: "Path to the TSC file to use."
       - name: "ls_cycles"
-        dtype: int
-        default_value: 5
+        dtype: str
+        default_value: "5"
         description: "Number of least squares cycles to run."
       - name: "weight_cycles"
-        dtype: int
-        default_value: 5
+        dtype: str
+        default_value: "5"
         description: "Number of weight cycles to run. Each weight cycle consists of the full number of least squares cycles."
 
 cif_entry_sets:
