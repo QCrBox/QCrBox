@@ -39,6 +39,62 @@ commands:
         callable_name: "finalise__interactive"
         used_basecommand_parameters: ["input_file"]
         description: "Finalise and return the CIF file to QCrBox"
+  - name: "Refine IAM"
+    implemented_as: "python_callable"
+    description: "Refine a CIF file using the IAM method."
+    import_path: "olex2_glue"
+    callable_name: "refine_iam"
+    parameters:
+      - name: "input_cif_path"
+        dtype: "QCrBox.cif_data_file"
+        description: "Path to the CIF file to refine."
+        required_entry_sets: ["cell_data", "diffraction_data", "atom_data"]
+        merge_su: Yes
+        custom_categories: ["iucr", "shelx"]
+      - name: "output_cif_path"
+        dtype: "QCrBox.output_cif"
+        description: "Path to save the refined CIF file to."
+        required_entry_sets: ["olex_structure_output"]
+        custom_categories: ["iucr", "shelx"]
+        invalidated_entries: ["_shelx_.*"]
+      - name: "ls_cycles"
+        dtype: int
+        default_value: 5
+        description: "Number of least squares cycles to run."
+      - name: "weight_cycles"
+        dtype: int
+        default_value: 5
+        description: "Number of weight cycles to run. Each weight cycle consists of the full number of least squares cycles."
+  - name: "Refine with TSC(B)"
+    implemented_as: "python_callable"
+    description: "Refine a CIF file using aspheric form factors from a tsc(b) file."
+    doi: 10.1039/D0SC05526C
+    import_path: "olex2_glue"
+    callable_name: "refine_tsc"
+    parameters:
+      - name: "input_cif_path"
+        dtype: "QCrBox.cif_data_file"
+        description: "Path to the CIF file to refine."
+        required_entry_sets: ["cell_data", "diffraction_data", "atom_data"]
+        merge_su: Yes
+        custom_categories: ["iucr", "shelx"]
+      - name: "output_cif_path"
+        dtype: "QCrBox.output_cif"
+        description: "Path to save the refined CIF file to."
+        required_entry_sets: ["olex_structure_output"]
+        custom_categories: ["iucr", "shelx"]
+        invalidated_entries: ["_shelx_.*"]
+      - name: "tsc_path"
+        dtype: "QCrBox.data_file"
+        description: "Path to the TSC file to use."
+      - name: "ls_cycles"
+        dtype: int
+        default_value: 5
+        description: "Number of least squares cycles to run."
+      - name: "weight_cycles"
+        dtype: int
+        default_value: 5
+        description: "Number of weight cycles to run. Each weight cycle consists of the full number of least squares cycles."
 
 cif_entry_sets:
   - name: "cell_data"

@@ -6,7 +6,7 @@ SHELL ["/bin/bash", "-c"]
 USER root
 
 RUN apt-get update -y && \
-    apt-get install -y --fix-missing --no-install-recommends libgtk2.0-0 libglu1-mesa openmpi-bin && \
+    apt-get install -y --fix-missing --no-install-recommends libgtk2.0-0 libglu1-mesa openmpi-bin libncurses5 && \
     rm -rf /var/lib/apt/lists
 
 # Ensure the locale en_GB is available (otherwise Olex2
@@ -51,7 +51,7 @@ ENV OLEX2_DATADIR_STATIC=true
 COPY ./.idesktop ${QCRBOX_HOME}/.idesktop
 
 COPY ./configure_olex2.py ${QCRBOX_HOME}/
-COPY ./olex2_glue_cli.py ${QCRBOX_HOME}
+COPY ./olex2_glue.py ${QCRBOX_HOME}
 COPY ./config_olex2.yaml ${QCRBOX_HOME}
 
 
