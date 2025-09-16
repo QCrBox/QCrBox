@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from pyqcrbox.registry.client.executable_command.base_calculation import BaseCalculation
+from pyqcrbox.sql_models.application_spec import ApplicationSpec
 from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import BaseParameter
 
 if TYPE_CHECKING:
@@ -39,7 +40,7 @@ class BaseCommand(metaclass=ABCMeta):
 
     @abstractmethod
     async def prepare_params(
-        self, working_dir: str | Path, command_arguments: dict[str, BaseParameter]
+        self, working_dir: str | Path, application_spec: ApplicationSpec, command_arguments: dict[str, BaseParameter]
     ) -> dict[str, Any]:
         """Prepare the parameters required for the CLI command.
 

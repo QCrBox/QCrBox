@@ -197,11 +197,21 @@ class CifDataFileParameter(QCrBoxPydanticBaseModel):
     _exported_path: str = PrivateAttr(default="")
 
     @log_eel
-    async def _convert_to_specific_format(self) -> str:
+    async def _convert_to_specific_format(self, yaml_path, command_name, parameter_name) -> str:
         """Convert the CIF to a specific format.
 
         At the moment, this does an in-place conversion by overwriting the
         original CIF export.
+
+        Parameters
+        ----------
+        yaml_path : str | Path
+            The path to the application specification yaml, containing the
+            command and parameter specification.
+        command_name : str
+            The name of the command this parameter is for.
+        parameter_name : str
+            The name of the CIF parameter.
 
         Returns
         -------
@@ -209,7 +219,7 @@ class CifDataFileParameter(QCrBoxPydanticBaseModel):
             The file path to the converted CIF file.
 
         """
-        from qcrboxtools.cif.cif2cif import cif_file_to_specific
+        from qcrboxtools.cif.cif2cif import cif_file_to_specific_by_yml
 
         if not Path(self._exported_path).exists():
             raise OSError("CIF has not yet been exported to disk")
@@ -218,13 +228,12 @@ class CifDataFileParameter(QCrBoxPydanticBaseModel):
         output_cif_path = self._exported_path
         logger.debug(f"_convert_to_specific_format: {input_cif_path=} {output_cif_path=}")
 
-        cif_file_to_specific(
+        cif_file_to_specific_by_yml(
             input_cif_path,
             output_cif_path,
-            self.required_entries,
-            self.optional_entries,
-            self.custom_categories,
-            self.merge_su,
+            yaml_path,
+            command_name,
+            parameter_name,
         )
 
         return output_cif_path
@@ -243,9 +252,7 @@ class CifDataFileParameter(QCrBoxPydanticBaseModel):
 
     @log_eel
     async def prepare_for_execution(
-        self,
-        target_dir: str,
-        target_filename: str | None = None,
+        self, target_dir: str, target_filename: str | None = None, *, conversion_parameters: dict | None
     ) -> str:
         """Prepare the CIF file for command execution.
 
@@ -285,9 +292,11 @@ class CifDataFileParameter(QCrBoxPydanticBaseModel):
                     exc_msg = f"No data file was found with id {self.data_file_id}"
                 raise ValueError(exc_msg) from exc
 
-            if self.required_entries:
-                logger.debug("Converting CIF to specific format")
-                self._exported_path = exported_file_path = await self._convert_to_specific_format()
+            if conversion_parameters:
+                logger.debug(f"Converting CIF to specific format with params: {conversion_parameters}")
+                self._exported_path = exported_file_path = await self._convert_to_specific_format(
+                    *conversion_parameters
+                )
 
         return str(exported_file_path)
 

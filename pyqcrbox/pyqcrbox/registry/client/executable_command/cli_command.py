@@ -9,6 +9,7 @@ import anyio
 
 from pyqcrbox import logger
 from pyqcrbox.sql_models import CLICommandSpec
+from pyqcrbox.sql_models.application_spec import ApplicationSpec
 from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import BaseParameter, parse_parameter_as_its_dtype
 
 from .base_command import BaseCommand
@@ -68,7 +69,7 @@ class CLICommand(BaseCommand):
         return self.call_pattern
 
     async def prepare_params(
-        self, working_dir: str | Path, command_arguments: dict[str, BaseParameter]
+        self, working_dir: str | Path, application_spec: ApplicationSpec, command_arguments: dict[str, BaseParameter]
     ) -> dict[str, Any]:
         """Prepare the parameters required for the CLI command.
 

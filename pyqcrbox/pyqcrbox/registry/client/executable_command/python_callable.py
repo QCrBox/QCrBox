@@ -13,7 +13,12 @@ from pydantic._internal._validate_call import ValidateCallWrapper
 from pyqcrbox import logger
 from pyqcrbox.debug import log_eel
 from pyqcrbox.sql_models import PythonCallableSpec
-from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import BaseParameter, parse_parameter_as_its_dtype
+from pyqcrbox.sql_models.application_spec import ApplicationSpec
+from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import (
+    BaseParameter,
+    CifDataFileParameter,
+    parse_parameter_as_its_dtype,
+)
 
 from . import BaseCommand
 from .python_callable_calculation import PythonCallableCalculation
@@ -85,7 +90,7 @@ class PythonCallable(BaseCommand):
 
     @log_eel
     async def prepare_params(
-        self, working_dir: str | Path, command_arguments: dict[str, BaseParameter]
+        self, working_dir: str | Path, application_spec: ApplicationSpec, command_arguments: dict[str, BaseParameter]
     ) -> dict[str, Any]:
         """Prepare the parameters required for the Python callable command.
 
@@ -107,6 +112,20 @@ class PythonCallable(BaseCommand):
             parsed_params[param_name] = parse_parameter_as_its_dtype(param_value, param_spec.dtype)
 
         parsed_params = self.cmd_spec.parameter_default_values | parsed_params
+
+        prepared_params = {}
+        for param_name, parsed_param in parsed_params.items():
+            if isinstance(parsed_param, CifDataFileParameter):
+                conversion = {
+                    "yaml_path": application_spec.yaml_file_path,
+                    "command_name": self.cmd_spec.name,
+                    "parameter_name": param_name,
+                }
+                prepared_params[param_name] = await parsed_param.prepare_for_execution(
+                    target_dir=working_dir, conversion_parameters=conversion
+                )
+            else:
+                prepared_params[param_name] = await parsed_param.prepare_for_execution(target_dir=working_dir)
 
         return {
             name: await param.prepare_for_execution(target_dir=working_dir) for name, param in parsed_params.items()

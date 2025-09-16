@@ -204,7 +204,9 @@ class QCrBoxClient(QCrBoxServerClientBase):
         try:
             command = ExecutableCommand(self.application_spec.get_command_spec_by_name(execute_request.command_name))
             # TODO: Issue #520 - create a _cwd
-            command_parameters = await command.prepare_params(self.working_dir, execute_request.command_arguments)
+            command_parameters = await command.prepare_params(
+                self.working_dir, self.application_spec, execute_request.command_arguments
+            )
             logger.debug(f"Executing command {command!r} in the background with arguments {command_parameters!r}")
 
             # TODO: we should have the interactive session handle this, or add it

@@ -171,9 +171,7 @@ class InteractiveSession(BaseCommand):
             **param_values,
         )
 
-    async def prepare_params(
-        self, working_dir: str | Path, command_arguments: dict[str, BaseParameter]
-    ) -> dict[str, Any]:
+    async def prepare_params(self, working_dir: str | Path, command_arguments: dict[str, Any]) -> dict[str, Any]:
         """Prepare and command parameters for execution for an interactive session.
 
         This method parses the provided command arguments  then merges them with
@@ -205,6 +203,13 @@ class InteractiveSession(BaseCommand):
             #      It tries to be parsed into a CifDataFileParameter, but it can't because we are missing
             #      the rest of the fields required (required_entries, etc). This is probably why earlier
             #      we did it by yml instead.
+            if param_spec.dtype == "QCrBox.cif_data_file":
+                logger.debug("Trying to be smart..")
+                missing_fields = param_spec.model_dump(
+                    include={"required_entries", "optional_entries", "merge_su", "custom_categories"}
+                )
+                param_value = param_value | missing_fields
+            logger.debug(f"param value: {param_value}")
             parsed_params[param_name] = parse_parameter_as_its_dtype(param_value, param_spec.dtype)
         logger.debug(f"InteractiveSession: parsed params {parsed_params}")
 
@@ -218,7 +223,9 @@ class InteractiveSession(BaseCommand):
             param_values = param_values | self.finalise_cmd_spec.parameter_default_values
         logger.debug(f"InteractiveSession: param values {param_values}")
 
-        parameters = {name: await param.prepare_for_execution() for name, param in param_values.items()}
+        parameters = {
+            name: await param.prepare_for_execution(target_dir=str(working_dir)) for name, param in param_values.items()
+        }
         logger.debug(f"InteractiveSession: parameters {parameters}")
 
         return parameters
