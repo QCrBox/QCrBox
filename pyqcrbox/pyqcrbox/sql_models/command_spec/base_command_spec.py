@@ -53,8 +53,8 @@ class BaseCommandSpec(QCrBoxPydanticBaseModel):
     description: str
     implemented_as: ImplementedAs
     parameters: list[ParameterSpecDiscriminatedUnion]
-    merge_cif_su: bool = False
-    doi: str | None = None
+    # merge_cif_su: bool = False
+    # doi: str | None = None
 
     @property
     def is_python_callable(self) -> bool:

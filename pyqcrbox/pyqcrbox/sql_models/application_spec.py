@@ -86,8 +86,6 @@ class ApplicationSpecBase(QCrBoxPydanticBaseModel):
 
 
 class ApplicationSpec(ApplicationSpecBase):
-    # model_config = ConfigDict(arbitrary_types_allowed=True)
-
     qcrbox_yaml_spec_version: str
     commands: list[CommandSpecDiscriminatedUnion] = []
     cif_entry_sets: list[CifEntrySet] = []
@@ -98,7 +96,7 @@ class ApplicationSpec(ApplicationSpecBase):
         yaml_file_dir = str(yaml_file_path.parent.absolute())
         sys.path.insert(0, yaml_file_dir)
         yaml_data = yaml.safe_load(yaml_file_path.open())
-        return cls(**yaml_data, yaml_file_path=yaml_file_path)
+        return cls(**yaml_data, yaml_file_path=str(yaml_file_path))
 
     @property
     def interactive_commands(self) -> list[CommandSpecDiscriminatedUnion]:
