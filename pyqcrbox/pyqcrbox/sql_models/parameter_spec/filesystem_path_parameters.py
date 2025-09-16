@@ -26,20 +26,8 @@ class BaseFilesystemPathParameterSpec(BaseParameterSpec):
         return other_dtype in ["str"]
 
 
-class GenericInputPathParameterSpec(BaseFilesystemPathParameterSpec):
-    dtype: Literal["QCrBox.input_path"]
-
-
 class GenericOutputPathParameterSpec(BaseFilesystemPathParameterSpec):
     dtype: Literal["QCrBox.output_path"]
-
-
-class InputFolderParameterSpec(BaseFilesystemPathParameterSpec):
-    dtype: Literal["QCrBox.input_folder"]
-
-
-class FolderPathParameterSpec(BaseFilesystemPathParameterSpec):
-    dtype: Literal["QCrBox.folder_path"]
 
 
 class DataFileParameterSpec(BaseFilesystemPathParameterSpec):
@@ -49,6 +37,8 @@ class DataFileParameterSpec(BaseFilesystemPathParameterSpec):
 class BaseCifFileParameterSpec(BaseFilesystemPathParameterSpec):
     required_entries: list[CifEntryLiteral | OneOfCifEntrySpec] = []
     optional_entries: list[CifEntryLiteral | OneOfCifEntrySpec] = []
+    required_entry_sets: list[str] = []
+    optional_entry_sets: list[str] = []
     merge_su: bool = False
     custom_categories: list[str] = []
 
@@ -67,15 +57,7 @@ class CifDataFileParameterSpec(BaseCifFileParameterSpec):
     dtype: Literal["QCrBox.cif_data_file"]
 
 
-class InputCifParameterSpec(BaseCifFileParameterSpec):
-    dtype: Literal["QCrBox.input_cif"]
-
-
 class OutputCifParameterSpec(BaseCifFileParameterSpec):
     dtype: Literal["QCrBox.output_cif"]
     invalidated_entries: list[str]
     output_block: int = 0  # default: select first block from output cif file
-
-
-class WorkCifParameterSpec(BaseCifFileParameterSpec):
-    dtype: Literal["QCrBox.work_cif"]
