@@ -54,7 +54,10 @@
     ],
     "scripts": {
       "build-test-mode": [
-        "qcb down && qcb up --test && sleep 10"
+        "qcb down",
+        "docker images -q 'qcrbox/*' | grep -q . && docker rmi $(docker images -q 'qcrbox/*')",
+        "qcb up --test",
+        "sleep 10"
       ],
       "robot-framework": [
         "cd ./pyqcrbox/robot_tests",
