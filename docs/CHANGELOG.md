@@ -43,6 +43,7 @@ However, there will be an initial period of stabilisation where this is not adhe
 
 ### Issues Fixed
 
+- Fixed an unneeded and failing type validation check in the COD Check example service due to parameter handling updates.
 - Fixed an issue where the `DataManager` would lose connection to the NATS server when it had too many files.
 - Replaces an obscure error message when a wrong `QCrBox.cif_data_file` or `QCrBox.data_file` parameter with a more
   helpful one.
