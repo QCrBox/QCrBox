@@ -13,7 +13,7 @@
     "micromamba":                "latest",
     "bashInteractive":           "latest",
     "fzf":                       "latest",
-    "python":                    "3.12",
+    "python": "3.11.13",
     "python312Packages.tkinter": "latest",
     "uv":                        "latest",
     "fd":                        "latest",
@@ -49,7 +49,8 @@
     "init_hook": [
       "source $VENV_DIR/bin/activate",
       "source ./scripts/devbox/initialise_shell_environment.sh",
-      "uv pip install -e ./pyqcrbox[all]",
+      "uv pip install -r ./pyqcrbox/requirements-all.txt",
+      "uv pip install -e ./pyqcrbox --no-deps",
       "test -x .git/hooks/pre-commit || pre-commit install"
     ],
     "scripts": {
