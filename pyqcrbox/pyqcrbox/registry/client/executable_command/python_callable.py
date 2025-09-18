@@ -14,12 +14,7 @@ from pyqcrbox import logger
 from pyqcrbox.debug import log_eel
 from pyqcrbox.sql_models import PythonCallableSpec
 from pyqcrbox.sql_models.application_spec import ApplicationSpec
-from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import (
-    BaseParameter,
-    Cif2CifOptions,
-    CifDataFileParameter,
-    parse_parameter_as_its_dtype,
-)
+from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import BaseParameter, CifDataFileParameter
 
 from . import BaseCommand
 from .python_callable_calculation import PythonCallableCalculation
@@ -91,47 +86,39 @@ class PythonCallable(BaseCommand):
 
     @log_eel
     async def prepare_params(
-        self, working_dir: str | Path, application_spec: ApplicationSpec, command_arguments: dict[str, BaseParameter]
+        self,
+        application_spec: ApplicationSpec,
+        command_arguments: dict[str, BaseParameter | CifDataFileParameter],
+        working_dir: str | Path,
     ) -> dict[str, Any]:
-        """Prepare the parameters required for the Python callable command.
+        """Prepare the parameters required for command execution.
 
-        Any optional arguments which are not included are found in the command
-        specification default values list.
+        If there are optional arguments for the command which are not included
+        in the `command_arguments` dictionary, then the value for these arguments
+        will be taken from the command specification used to initialise
+        the BaseCommand class.
 
         Parameters
         ----------
+        application_spec : ApplicationSpec
+            The application specification for application the command belongs to.
+        command_arguments : dict[str, BaseParameter]
+            The names and values of the parameters for the command in a dict
+            mapping of { param_name: param_value }
         working_dir : str
             The working directory to potentially write any files to.
-        command_arguments : dict[str, BaseParameter]
-            The names and values of the parameters for the python function in a
-            dict mapping of { param_name: param_value }
 
         """
-        parsed_params = {}
-        for param_name, param_value in command_arguments.items():
-            param_spec = self.cmd_spec.get_parameter_by_name(param_name)
-            parsed_params[param_name] = parse_parameter_as_its_dtype(param_value, param_spec.dtype)
+        parsed_params = self._parse_params_into_dtype(command_arguments)
 
+        # Combine parsed_params with default values in the command spec, this is
+        # only required for optional arguments
         parsed_params = self.cmd_spec.parameter_default_values | parsed_params
 
-        prepared_params = {}
-        for param_name, parsed_param in parsed_params.items():
-            # CifDataFileParameters can be converted between different Cif types,
-            # so we handle them differently.
-            # TODO: this needs cleaning up and potentially moving into the CifDataFileParameter class
-            if isinstance(parsed_param, CifDataFileParameter):
-                cif2cif_options = Cif2CifOptions(
-                    application_yaml=str(application_spec.yaml_file_path),
-                    command_name=self.cmd_spec.name,
-                    parameter_name=param_name,
-                )
-                prepared_params[param_name] = await parsed_param.prepare_for_execution(
-                    target_dir=working_dir, cif2cif_options=cif2cif_options
-                )
-            else:
-                prepared_params[param_name] = await parsed_param.prepare_for_execution(target_dir=working_dir)
+        prepared_params = await self._prepare_params_for_execution(parsed_params, application_spec, str(working_dir))
 
         return prepared_params
+
 
     @log_eel
     async def execute_in_background(
@@ -177,7 +164,7 @@ class PythonCallable(BaseCommand):
         def success_callback(result):
             nonlocal calc_finished_event
             logger.debug(f"Success: {result=} ({multiprocessing.process.current_process().name})")
-            calc_finished_event.set()
+            calc_finished_event.set()  # type: ignore
             calc_finished_event = None
 
         def error_callback(exc):
@@ -187,7 +174,7 @@ class PythonCallable(BaseCommand):
                 f"PythonCallable Error: {exc=} ({multiprocessing.process.current_process().name})\n\n"
                 + f"Traceback:\n\n{traceback_str}"
             )
-            calc_finished_event.set()
+            calc_finished_event.set()  # type: ignore
             calc_finished_event = None
 
         self.pool = multiprocessing.pool.Pool(_num_processes)

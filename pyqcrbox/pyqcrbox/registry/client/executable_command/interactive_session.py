@@ -14,11 +14,7 @@ from pyqcrbox.registry.client.executable_command.python_callable import PythonCa
 from pyqcrbox.sql_models import InteractiveSessionSpec
 from pyqcrbox.sql_models.application_spec import ApplicationSpec
 from pyqcrbox.sql_models.interactive_session_info import InteractiveSessionInfo
-from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import (
-    Cif2CifOptions,
-    CifDataFileParameter,
-    parse_parameter_as_its_dtype,
-)
+from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import BaseParameter, CifDataFileParameter
 
 from .interactive_session_calculation import InteractiveSessionCalculation
 
@@ -177,64 +173,40 @@ class InteractiveSession(BaseCommand):
         )
 
     async def prepare_params(
-        self, working_dir: str | Path, application_spec: ApplicationSpec, command_arguments: dict[str, Any]
+        self,
+        application_spec: ApplicationSpec,
+        command_arguments: dict[str, BaseParameter | CifDataFileParameter],
+        working_dir: str | Path,
     ) -> dict[str, Any]:
-        """Prepare and command parameters for execution for an interactive session.
+        """Prepare the parameters required for command execution.
 
-        This method parses the provided command arguments  then merges them with
-        any default values from the run, prepare, and finalise command specs.
+        If there are optional arguments for the command which are not included
+        in the `command_arguments` dictionary, then the value for these arguments
+        will be taken from the command specification used to initialise
+        the BaseCommand class.
 
         Parameters
         ----------
-        working_dir : str | Path
-            The working directory in which to prepare parameters, e.g. where files
-            will be written to.
+        application_spec : ApplicationSpec
+            The application specification for application the command belongs to.
         command_arguments : dict[str, BaseParameter]
-            A dictionary mapping parameter names to their provided values.
-
-        Returns
-        -------
-        dict[str, Any]
-            A dictionary mapping parameter names to their prepared values, ready for
-            use in command execution.
+            The names and values of the parameters for the command in a dict
+            mapping of { param_name: param_value }
+        working_dir : str
+            The working directory to potentially write any files to.
 
         """
-        logger.debug(f"Preparing parameters for {self.cmd_spec!r}")
-        # Create a mapping of the parameters, each item in the dict will be a QCrBox
-        # object representation of the data type of that parameter -- see pyqcrbox.sql_models.parameter_spec
-        parsed_params = {}
-        for param_name, param_value in command_arguments.items():
-            param_spec = self.cmd_spec.get_parameter_by_name(param_name)
-            parsed_params[param_name] = parse_parameter_as_its_dtype(param_value, param_spec.dtype)
+        parsed_params = self._parse_params_into_dtype(command_arguments)
 
-        # Now we have to create a mapping of the parameter names to the value of
-        # the parameters. These will either by default values or be passed via the NATS
-        # message to invoke the command (and then "prepared" for execution)
+        # Combine parsed_params with default values in the command spec, this is
+        # only required for optional arguments
         parased_params = self.run_cmd_spec.parameter_default_values | parsed_params
         if self.prepare_cmd_spec:
             parased_params = parased_params | self.prepare_cmd_spec.parameter_default_values
         if self.finalise_cmd_spec:
             parased_params = parased_params | self.finalise_cmd_spec.parameter_default_values
-        logger.debug(f"InteractiveSession: param values {parased_params}")
 
-        prepared_params = {}
-        for param_name, parsed_param in parased_params.items():
-            # CifDataFileParameters can be converted between different Cif types,
-            # so we handle them differently.
-            # TODO: this needs cleaning up and potentially moving into the CifDataFileParameter class
-            if isinstance(parsed_param, CifDataFileParameter):
-                cif2cif_options = Cif2CifOptions(
-                    application_yaml=str(application_spec.yaml_file_path),
-                    command_name=self.cmd_spec.name,
-                    parameter_name=param_name,
-                )
-                prepared_params[param_name] = await parsed_param.prepare_for_execution(
-                    target_dir=working_dir, cif2cif_options=cif2cif_options
-                )
-            else:
-                prepared_params[param_name] = await parsed_param.prepare_for_execution(target_dir=working_dir)
-
-        logger.debug(f"InteractiveSession: parameters {prepared_params}")
+        prepared_params = await self._prepare_params_for_execution(parsed_params, application_spec, str(working_dir))
 
         return prepared_params
 

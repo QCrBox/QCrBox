@@ -16,8 +16,6 @@ from ..base import QCrBoxPydanticBaseModel
 if TYPE_CHECKING:
     from pyqcrbox.data_management import DataManager
 
-SENTINEL_UNDEFINED = "<undefined>"
-
 
 async def check_if_id_is_a_dataset(data_manager: "DataManager", id_to_check: str) -> bool:
     """Check if an ID is for a dataset.
@@ -54,11 +52,6 @@ _builtin_dtypes = {
     "bool": bool,
     "QCrBox.output_cif": str,
     "QCrBox.output_path": str,
-    # "QCrBox.input_cif": str,
-    # "QCrBox.work_cif": str,
-    # "QCrBox.folder_path": str,
-    # "QCrBox.input_path": str,
-    # "QCrBox.input_folder": str,
 }
 
 
@@ -100,6 +93,7 @@ class BuiltinParameter(BaseParameter):
     dtype: str
     value: Any
 
+    @log_eel
     async def prepare_for_execution(self, target_dir: str, target_filename: str | None = None) -> Any:
         """Prepare the value for command execution.
 
@@ -134,6 +128,7 @@ class DataFileParameter(BaseParameter):
 
     data_file_id: str
 
+    @log_eel
     async def prepare_for_execution(self, target_dir: str, target_filename: str | None = None) -> str:
         """Prepare the CIF file for command execution.
 
@@ -183,6 +178,9 @@ class Cif2CifOptions(QCrBoxPydanticBaseModel):
     command_name: str
     parameter_name: str
 
+    def __str__(self) -> str:
+        return f"Cif2CifOptions({self.application_yaml=}, {self.command_name=}, {self.parameter_name=})"
+
 
 class CifDataFileParameter(QCrBoxPydanticBaseModel):
     """Class for handling CIF datafile parameters.
@@ -197,7 +195,7 @@ class CifDataFileParameter(QCrBoxPydanticBaseModel):
     data_file_id: str
 
     @log_eel
-    async def _convert_to_specific_format(self, input_cif_path: str, cif2cif_options: Cif2CifOptions) -> str:
+    async def to_specific_format(self, input_cif_path: str, cif2cif_options: Cif2CifOptions) -> str:
         """Convert the CIF to a specific format.
 
         At the moment, this does an in-place conversion by overwriting the
@@ -226,7 +224,7 @@ class CifDataFileParameter(QCrBoxPydanticBaseModel):
         output_cif_path = Path(input_cif_path).parent / "converted.cif"
 
         try:
-            logger.debug(f"Converting CIF to specific format: {input_cif_path=} {output_cif_path=}")
+            logger.debug(f"Converting CIF to specific format with parameters: {cif2cif_options}")
             cif_file_to_specific_by_yml(
                 input_cif_path,
                 output_cif_path,
@@ -240,17 +238,36 @@ class CifDataFileParameter(QCrBoxPydanticBaseModel):
 
         return input_cif_path
 
-    # async def merge_to_unified_format(self):
-    #     """Merge this CIF with another to a unified CIF format."""
-    #     from qcrboxtools.cif.cif2cif import cif_file_merge_to_unified_by_yml
-    #     cif_file_merge_to_unified_by_yml(
-    #         original_cif_path,
-    #         new_cif_path,
-    #         output_cif_path,  # merged original and new
-    #         YAML_PATH,
-    #         command_name,
-    #         parameter_name,  # in this case, it will be the parameter name for output_cif_path
-    #     )
+    @log_eel
+    async def to_unified_format(self, original_cif_path: str, new_cif_path: str, cif2cif_options: Cif2CifOptions):
+        """Merge an original and converted CIF together into a unified CIF format.
+
+        Parameters
+        ----------
+        input_cif_path : str
+            The original CIF, prior to any conversions including to a specific
+            format.
+        new_cif_path : str
+            The CIF after it has been converted to a new format.
+        cif2cif_options : Cif2CifOptions
+            Options required for cif2cif conversion to the unified format.
+
+        """
+        # Lazily import module for same reason as in `to_specific_format`
+        from qcrboxtools.cif.cif2cif import cif_file_merge_to_unified_by_yml
+
+        merge_cif_path = Path(original_cif_path).parent / "unified.cif"
+
+        cif_file_merge_to_unified_by_yml(
+            original_cif_path,
+            new_cif_path,
+            merge_cif_path,  # this is the output, e.g. the merged original and new
+            cif2cif_options.application_yaml,
+            cif2cif_options.command_name,
+            cif2cif_options.parameter_name,  # in this case, it will be the parameter name for output_cif_path
+        )
+
+        shutil.copy(merge_cif_path, original_cif_path)
 
     @log_eel
     async def prepare_for_execution(
@@ -289,6 +306,7 @@ class CifDataFileParameter(QCrBoxPydanticBaseModel):
         from pyqcrbox.services import QCRBOX_GLOBAL_SERVICES_REGISTRY
 
         logger.debug(f"Preparing CIF data file for execution: {self.data_file_id}")
+
         async with svcs.Container(QCRBOX_GLOBAL_SERVICES_REGISTRY) as container:
             data_file_manager = await container.aget(DataManager)
             try:
@@ -297,14 +315,16 @@ class CifDataFileParameter(QCrBoxPydanticBaseModel):
                 )
             except nats_errors.ObjectNotFoundError as exc:
                 if await check_if_id_is_a_dataset(data_file_manager, self.data_file_id):
-                    exc_msg = f"Provided data file ID '{self.data_file_id}' is a dataset ID"
+                    exc_msg = f"The provided `data_file_id` '{self.data_file_id}' is a `dataset_id`"
                 else:
-                    exc_msg = f"No data file was found with id {self.data_file_id}"
+                    exc_msg = f"No data file was found with the provided `data_file_id` '{self.data_file_id}'"
                 raise ValueError(exc_msg) from exc
 
             if cif2cif_options:
                 logger.debug(f"Converting CIF to specific format with params: {cif2cif_options}")
-                exported_file_path = await self._convert_to_specific_format(exported_file_path, cif2cif_options)
+                exported_file_path = await self.to_specific_format(exported_file_path, cif2cif_options)
+
+        logger.debug(f"Exported CIF data file to: {exported_file_path}")
 
         return str(exported_file_path)
 
@@ -384,16 +404,6 @@ def parse_parameter_as_its_dtype(v: Any, dtype_str: str) -> Any:
         return BuiltinParameter(dtype=dtype.__name__, value=dtype(v))
 
     return _known_dtypes[dtype_str](**v)
-
-    # try:
-    #     result = _known_dtypes[dtype_str](**v) if isinstance(v, dict) else _known_dtypes[dtype_str](v)
-    # except Exception as exc:
-    #     logger.warning(
-    #         f"Could not convert value to its declared type - leaving unchanged: value={v!r}\n\nOriginal error: {exc}"
-    #     )
-    #     result = v
-    #
-    # return result
 
 
 DTypeAsStr = Annotated[str, BeforeValidator(verify_dtype_is_a_known_type)]
