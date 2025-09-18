@@ -6,15 +6,10 @@ from ..cif_entry_set import CifEntryLiteral, OneOfCifEntrySpec
 from .base_parameter_spec import BaseParameterSpec
 
 __all__ = [
-    "FolderPathParameterSpec",
-    "InputCifParameterSpec",
-    "GenericInputPathParameterSpec",
     "OutputCifParameterSpec",
-    "WorkCifParameterSpec",
     "DataFileParameterSpec",
     "CifDataFileParameterSpec",
     "GenericOutputPathParameterSpec",
-    "InputFolderParameterSpec",
 ]
 
 

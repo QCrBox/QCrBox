@@ -219,6 +219,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
                 **command_parameters, _calculation_id=execute_request.calculation_id, _cwd=self.working_dir
             )
         except Exception as exc:
+            logger.exception(f"Exception raised during command execution: {exc}")
             # If calc is not set, then the calculation failed to start in the background
             # which is easier to deal with. If the calculation actually started, then we need
             # to do some other stuff

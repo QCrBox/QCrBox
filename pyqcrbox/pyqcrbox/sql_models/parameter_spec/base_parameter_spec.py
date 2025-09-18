@@ -1,11 +1,12 @@
 import re
+import shutil
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Any
 
 import nats.js.errors as nats_errors
 import svcs
-from pydantic import BeforeValidator, Field, PrivateAttr, field_validator, model_validator
+from pydantic import BeforeValidator, Field, field_validator, model_validator
 
 from pyqcrbox.debug import log_eel
 from pyqcrbox.logging import logger
@@ -175,7 +176,14 @@ class DataFileParameter(BaseParameter):
         return str(exported_file_path)
 
 
-# TODO: change back to BaseParameter
+class Cif2CifOptions(QCrBoxPydanticBaseModel):
+    """Dataclass containing pamaters for Cif2Cif conversion."""
+
+    application_yaml: str
+    command_name: str
+    parameter_name: str
+
+
 class CifDataFileParameter(QCrBoxPydanticBaseModel):
     """Class for handling CIF datafile parameters.
 
@@ -188,16 +196,8 @@ class CifDataFileParameter(QCrBoxPydanticBaseModel):
 
     data_file_id: str
 
-    # These are CIF specific, required for pre-processing the CIF file
-    required_entries: list[str]
-    optional_entries: list[str] = []
-    merge_su: bool = False
-    custom_categories: list[str] = []
-
-    _exported_path: str = PrivateAttr(default="")
-
     @log_eel
-    async def _convert_to_specific_format(self, yaml_path, command_name, parameter_name) -> str:
+    async def _convert_to_specific_format(self, input_cif_path: str, cif2cif_options: Cif2CifOptions) -> str:
         """Convert the CIF to a specific format.
 
         At the moment, this does an in-place conversion by overwriting the
@@ -205,13 +205,10 @@ class CifDataFileParameter(QCrBoxPydanticBaseModel):
 
         Parameters
         ----------
-        yaml_path : str | Path
-            The path to the application specification yaml, containing the
-            command and parameter specification.
-        command_name : str
-            The name of the command this parameter is for.
-        parameter_name : str
-            The name of the CIF parameter.
+        input_cif_path : str
+            The path to the CIF file on the disk, in its original format.
+        cif2cif_options : Cif2CifOptions
+            Options required for Cif2Cif conversion.
 
         Returns
         -------
@@ -219,24 +216,29 @@ class CifDataFileParameter(QCrBoxPydanticBaseModel):
             The file path to the converted CIF file.
 
         """
-        from qcrboxtools.cif.cif2cif import cif_file_to_specific_by_yml
+        # These are lazily imported because when we build `qcb`, qcrboxtools is
+        # not available. This is because `qcrboxtools` relies on ccbtx, which is
+        # hard to install
+        from qcrboxtools.cif.cif2cif import NoKeywordsError, cif_file_to_specific_by_yml
 
-        if not Path(self._exported_path).exists():
+        if not Path(input_cif_path).exists():
             raise OSError("CIF has not yet been exported to disk")
+        output_cif_path = Path(input_cif_path).parent / "converted.cif"
 
-        input_cif_path = self._exported_path
-        output_cif_path = self._exported_path
-        logger.debug(f"_convert_to_specific_format: {input_cif_path=} {output_cif_path=}")
+        try:
+            logger.debug(f"Converting CIF to specific format: {input_cif_path=} {output_cif_path=}")
+            cif_file_to_specific_by_yml(
+                input_cif_path,
+                output_cif_path,
+                cif2cif_options.application_yaml,
+                cif2cif_options.command_name,
+                cif2cif_options.parameter_name,
+            )
+            shutil.copy(output_cif_path, input_cif_path)
+        except NoKeywordsError as exc:
+            logger.warning(f"{cif2cif_options.parameter_name} has no required or optional CIF entries defined: {exc}")
 
-        cif_file_to_specific_by_yml(
-            input_cif_path,
-            output_cif_path,
-            yaml_path,
-            command_name,
-            parameter_name,
-        )
-
-        return output_cif_path
+        return input_cif_path
 
     # async def merge_to_unified_format(self):
     #     """Merge this CIF with another to a unified CIF format."""
@@ -252,13 +254,17 @@ class CifDataFileParameter(QCrBoxPydanticBaseModel):
 
     @log_eel
     async def prepare_for_execution(
-        self, target_dir: str, target_filename: str | None = None, *, conversion_parameters: dict | None
+        self, target_dir: str, target_filename: str | None = None, *, cif2cif_options: Cif2CifOptions | None = None
     ) -> str:
         """Prepare the CIF file for command execution.
 
         This method is used to retrieve the contents of the CIF file from the
         DataManager and to write it to a location on the container's file
         system.
+
+        If the `conversion_parameters` argument is set, then the CIF will be
+        converted to the required format as defined in the parameter
+        specification.
 
         Parameters
         ----------
@@ -267,6 +273,10 @@ class CifDataFileParameter(QCrBoxPydanticBaseModel):
         target_filename : str | None
             The target filename to write to disk. If not provided, the filename
             in the DataManger wil lbe used instead.
+        cif2cif_options : Cif2CifOptions | None
+            Parameters required to convert the CIF from one format to another.
+            By default, CIFs will not be converted unless this argument is
+            provided.
 
         Returns
         -------
@@ -278,25 +288,23 @@ class CifDataFileParameter(QCrBoxPydanticBaseModel):
         from pyqcrbox.data_management import DataManager
         from pyqcrbox.services import QCRBOX_GLOBAL_SERVICES_REGISTRY
 
-        logger.debug(f"Preparing CIF data file for execution: {self!r}")
+        logger.debug(f"Preparing CIF data file for execution: {self.data_file_id}")
         async with svcs.Container(QCRBOX_GLOBAL_SERVICES_REGISTRY) as container:
             data_file_manager = await container.aget(DataManager)
             try:
-                self._exported_path = exported_file_path = await data_file_manager.export_data_file(
+                exported_file_path = await data_file_manager.export_data_file(
                     self.data_file_id, target_dir, target_filename
                 )
             except nats_errors.ObjectNotFoundError as exc:
                 if await check_if_id_is_a_dataset(data_file_manager, self.data_file_id):
-                    exc_msg = f"Provided data file ID {self.data_file_id} is a dataset ID"
+                    exc_msg = f"Provided data file ID '{self.data_file_id}' is a dataset ID"
                 else:
                     exc_msg = f"No data file was found with id {self.data_file_id}"
                 raise ValueError(exc_msg) from exc
 
-            if conversion_parameters:
-                logger.debug(f"Converting CIF to specific format with params: {conversion_parameters}")
-                self._exported_path = exported_file_path = await self._convert_to_specific_format(
-                    *conversion_parameters
-                )
+            if cif2cif_options:
+                logger.debug(f"Converting CIF to specific format with params: {cif2cif_options}")
+                exported_file_path = await self._convert_to_specific_format(exported_file_path, cif2cif_options)
 
         return str(exported_file_path)
 

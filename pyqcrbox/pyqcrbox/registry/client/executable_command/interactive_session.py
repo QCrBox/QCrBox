@@ -12,8 +12,13 @@ from pyqcrbox.registry.client.executable_command.cli_command import CLICommand
 from pyqcrbox.registry.client.executable_command.error import PrepareCommandFailure, RunCommandFailure, error_dialog_box
 from pyqcrbox.registry.client.executable_command.python_callable import PythonCallable
 from pyqcrbox.sql_models import InteractiveSessionSpec
+from pyqcrbox.sql_models.application_spec import ApplicationSpec
 from pyqcrbox.sql_models.interactive_session_info import InteractiveSessionInfo
-from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import BaseParameter, parse_parameter_as_its_dtype
+from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import (
+    Cif2CifOptions,
+    CifDataFileParameter,
+    parse_parameter_as_its_dtype,
+)
 
 from .interactive_session_calculation import InteractiveSessionCalculation
 
@@ -171,7 +176,9 @@ class InteractiveSession(BaseCommand):
             **param_values,
         )
 
-    async def prepare_params(self, working_dir: str | Path, command_arguments: dict[str, Any]) -> dict[str, Any]:
+    async def prepare_params(
+        self, working_dir: str | Path, application_spec: ApplicationSpec, command_arguments: dict[str, Any]
+    ) -> dict[str, Any]:
         """Prepare and command parameters for execution for an interactive session.
 
         This method parses the provided command arguments  then merges them with
@@ -198,37 +205,38 @@ class InteractiveSession(BaseCommand):
         parsed_params = {}
         for param_name, param_value in command_arguments.items():
             param_spec = self.cmd_spec.get_parameter_by_name(param_name)
-            logger.debug(f"InteractiveSession: {param_name=} {param_value=} {param_spec=}")
-            # XXX: The issue is that a data file parameter is {param_name: {data_file_id: ....}}
-            #      It tries to be parsed into a CifDataFileParameter, but it can't because we are missing
-            #      the rest of the fields required (required_entries, etc). This is probably why earlier
-            #      we did it by yml instead.
-            if param_spec.dtype == "QCrBox.cif_data_file":
-                logger.debug("Trying to be smart..")
-                missing_fields = param_spec.model_dump(
-                    include={"required_entries", "optional_entries", "merge_su", "custom_categories"}
-                )
-                param_value = param_value | missing_fields
-            logger.debug(f"param value: {param_value}")
             parsed_params[param_name] = parse_parameter_as_its_dtype(param_value, param_spec.dtype)
-        logger.debug(f"InteractiveSession: parsed params {parsed_params}")
 
         # Now we have to create a mapping of the parameter names to the value of
         # the parameters. These will either by default values or be passed via the NATS
         # message to invoke the command (and then "prepared" for execution)
-        param_values = self.run_cmd_spec.parameter_default_values | parsed_params
+        parased_params = self.run_cmd_spec.parameter_default_values | parsed_params
         if self.prepare_cmd_spec:
-            param_values = param_values | self.prepare_cmd_spec.parameter_default_values
+            parased_params = parased_params | self.prepare_cmd_spec.parameter_default_values
         if self.finalise_cmd_spec:
-            param_values = param_values | self.finalise_cmd_spec.parameter_default_values
-        logger.debug(f"InteractiveSession: param values {param_values}")
+            parased_params = parased_params | self.finalise_cmd_spec.parameter_default_values
+        logger.debug(f"InteractiveSession: param values {parased_params}")
 
-        parameters = {
-            name: await param.prepare_for_execution(target_dir=str(working_dir)) for name, param in param_values.items()
-        }
-        logger.debug(f"InteractiveSession: parameters {parameters}")
+        prepared_params = {}
+        for param_name, parsed_param in parased_params.items():
+            # CifDataFileParameters can be converted between different Cif types,
+            # so we handle them differently.
+            # TODO: this needs cleaning up and potentially moving into the CifDataFileParameter class
+            if isinstance(parsed_param, CifDataFileParameter):
+                cif2cif_options = Cif2CifOptions(
+                    application_yaml=str(application_spec.yaml_file_path),
+                    command_name=self.cmd_spec.name,
+                    parameter_name=param_name,
+                )
+                prepared_params[param_name] = await parsed_param.prepare_for_execution(
+                    target_dir=working_dir, cif2cif_options=cif2cif_options
+                )
+            else:
+                prepared_params[param_name] = await parsed_param.prepare_for_execution(target_dir=working_dir)
 
-        return parameters
+        logger.debug(f"InteractiveSession: parameters {prepared_params}")
+
+        return prepared_params
 
     async def add_to_interactive_session_database(
         self,

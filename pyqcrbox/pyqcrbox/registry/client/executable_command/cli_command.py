@@ -92,9 +92,24 @@ class CLICommand(BaseCommand):
 
         parsed_params = self.cmd_spec.parameter_default_values | parsed_params
 
-        return {
-            name: await param.prepare_for_execution(target_dir=working_dir) for name, param in parsed_params.items()
-        }
+        prepared_params = {}
+        for param_name, parsed_param in parsed_params.items():
+            # CifDataFileParameters can be converted between different Cif types,
+            # so we handle them differently.
+            # TODO: this needs cleaning up and potentially moving into the CifDataFileParameter class
+            if isinstance(parsed_param, CifDataFileParameter):
+                cif2cif_options = Cif2CifOptions(
+                    application_yaml=str(application_spec.yaml_file_path),
+                    command_name=self.cmd_spec.name,
+                    parameter_name=param_name,
+                )
+                prepared_params[param_name] = await parsed_param.prepare_for_execution(
+                    target_dir=working_dir, cif2cif_options=cif2cif_options
+                )
+            else:
+                prepared_params[param_name] = await parsed_param.prepare_for_execution(target_dir=working_dir)
+
+        return prepared_params
 
     async def bind(self, working_dir: str | Path, **param_values):
         """Bind parameter values to the call pattern for the CLI command.

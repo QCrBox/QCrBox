@@ -69,7 +69,7 @@ async def test_export_data_file(data_manager: DataManager, sample_cif_file: Path
     output_filename = "output.cif"
     expected_output_file_path = output_dir / output_filename
 
-    exported_file_path = await data_manager.export_data_file(qcrbox_file_id, output_dir, output_filename)
+    exported_file_path = Path(await data_manager.export_data_file(qcrbox_file_id, output_dir, output_filename))
     assert exported_file_path.exists()
     assert exported_file_path == expected_output_file_path
 

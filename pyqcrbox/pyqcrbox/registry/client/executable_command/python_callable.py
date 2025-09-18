@@ -16,6 +16,7 @@ from pyqcrbox.sql_models import PythonCallableSpec
 from pyqcrbox.sql_models.application_spec import ApplicationSpec
 from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import (
     BaseParameter,
+    Cif2CifOptions,
     CifDataFileParameter,
     parse_parameter_as_its_dtype,
 )
@@ -115,21 +116,22 @@ class PythonCallable(BaseCommand):
 
         prepared_params = {}
         for param_name, parsed_param in parsed_params.items():
+            # CifDataFileParameters can be converted between different Cif types,
+            # so we handle them differently.
+            # TODO: this needs cleaning up and potentially moving into the CifDataFileParameter class
             if isinstance(parsed_param, CifDataFileParameter):
-                conversion = {
-                    "yaml_path": application_spec.yaml_file_path,
-                    "command_name": self.cmd_spec.name,
-                    "parameter_name": param_name,
-                }
+                cif2cif_options = Cif2CifOptions(
+                    application_yaml=str(application_spec.yaml_file_path),
+                    command_name=self.cmd_spec.name,
+                    parameter_name=param_name,
+                )
                 prepared_params[param_name] = await parsed_param.prepare_for_execution(
-                    target_dir=working_dir, conversion_parameters=conversion
+                    target_dir=working_dir, cif2cif_options=cif2cif_options
                 )
             else:
                 prepared_params[param_name] = await parsed_param.prepare_for_execution(target_dir=working_dir)
 
-        return {
-            name: await param.prepare_for_execution(target_dir=working_dir) for name, param in parsed_params.items()
-        }
+        return prepared_params
 
     @log_eel
     async def execute_in_background(
