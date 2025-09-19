@@ -204,8 +204,9 @@ class QCrBoxClient(QCrBoxServerClientBase):
         try:
             command = ExecutableCommand(self.application_spec.get_command_spec_by_name(execute_request.command_name))
             # TODO: Issue #520 - create a _cwd
-            command_parameters = await command.prepare_params(self.application_spec, execute_request.command_arguments,
-                                                              self.working_dir)
+            command_parameters = await command.prepare_params(
+                self.application_spec, execute_request.command_arguments, self.working_dir
+            )
             logger.debug(f"Executing command {command!r} in the background with arguments {command_parameters!r}")
 
             # TODO: we should have the interactive session handle this, or add it
@@ -230,7 +231,16 @@ class QCrBoxClient(QCrBoxServerClientBase):
 
         # Keep track of the calculation, which should still be running in the background
         self.calculations[execute_request.calculation_id] = calc
-        await data_manager.update_calculation_status(await calc.get_status_details())
+        logger.debug(f"Updating calculation status for {calc.calculation_id} after `execute_in_background()`")
+        try:
+            await data_manager.update_calculation_status(await calc.get_status_details())
+        except Exception as exc:  # TODO: switch back to (nats.js.errors.KeyNotFoundError, KeyError)
+            logger.error(
+                f"Failed to update calculation status for {calc.calculation_id}, as it doesn't exist in the Data "
+                "Manager. Unable to continue."
+            )
+            await self.handle_calculation_failure(calc, exc)
+            return
 
         # Wait until its finished and when finished, update the details. The calculation can
         # will raise an exception if (one of the interactive) commands failed
@@ -278,8 +288,8 @@ class QCrBoxClient(QCrBoxServerClientBase):
 
         """
         logger.error(f"Failed to launch command with exception: {exception!r}")
-        data_file_manager = await self.svcs_container.aget(DataManager)
-        await data_file_manager.update_calculation_status(
+        data_manager = await self.svcs_container.aget(DataManager)
+        await data_manager.update_calculation_status(
             CalculationStatusDetails(
                 calculation_id=calculation_id,
                 status=CalculationStatusEnum.FAILED,
@@ -305,8 +315,8 @@ class QCrBoxClient(QCrBoxServerClientBase):
 
         """
         logger.error(f"Command calculation failed in background task with exception: {exception!r}")
-        data_file_manager = await self.svcs_container.aget(DataManager)
-        await data_file_manager.update_calculation_status(
+        data_manager = await self.svcs_container.aget(DataManager)
+        await data_manager.update_calculation_status(
             CalculationStatusDetails(
                 calculation_id=calculation.calculation_id,
                 status=CalculationStatusEnum.FAILED,

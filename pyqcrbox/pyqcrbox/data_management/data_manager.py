@@ -472,7 +472,6 @@ class DataManager(ABC):
             DataManagerKeys.INTERACTIVE_SESSIONS, session_info.session_id, session_info.model_dump_json().encode()
         )
 
-    #
     async def get_calculation(self, key: str) -> CalculationDB:
         """Get metadata about a calculation from the data manager.
 
@@ -492,7 +491,6 @@ class DataManager(ABC):
 
         return calculation
 
-    #
     async def get_calculations(self) -> list[CalculationDB]:
         """Get metadata about all the calculations in the data manager.
 
@@ -517,10 +515,11 @@ class DataManager(ABC):
 
         """
         key = status_details.calculation_id
+        logger.debug(f"Updating calculation status for calculation '{key}': {status_details!r}")
 
         try:
             calc_as_bytes = await self._retrieve_from_kv(DataManagerKeys.CALCULATIONS, key)
-        except nats.js.errors.KeyNotFoundError:
+        except (nats.js.errors.KeyNotFoundError, KeyError):
             logger.error(f"Can't find calculation {key!r} to update calculation status")
             raise
 
@@ -538,6 +537,7 @@ class DataManager(ABC):
             key,
             calculation.model_dump_json(exclude={"status", "output_dataset_id"}).encode(),
         )
+        logger.debug(f"Appended status {status_details} to calculation {key}")
 
     async def store_calculation(self, calculation: CalculationDB) -> None:
         """Add a new calculation to the NATS data manager.
@@ -566,3 +566,4 @@ class DataManager(ABC):
             key,
             calculation.model_dump_json(exclude={"status", "output_dataset_id"}).encode(),
         )
+        logger.debug(f"Calculation {key} added to DataManager")
