@@ -20,23 +20,29 @@ RUN cd /lib/x86_64-linux-gnu/ && \
 
 # create folder and then work as user to avoid a RUN chown
 
-RUN mkdir /opt/olex2 && \
-    chown -R ${QCRBOX_USER}:${QCRBOX_GROUP} /opt/olex2
+COPY ./olex2_files/olex2-linux64.zip /opt/olex2-linux64.zip
 
-COPY --chown=${QCRBOX_USER}:${QCRBOX_GROUP} ./olex2_files/olex2-linux64_hl.zip /opt/olex2
+RUN cd /opt && \
+    unzip -o olex2-linux64.zip && \
+    rm /opt/olex2-linux64.zip && \
+    chown -R ${QCRBOX_USER}:${QCRBOX_GROUP} /opt/olex2 
+
+
+# COPY --chown=${QCRBOX_USER}:${QCRBOX_GROUP} ./olex2_files/olex2-linux64_hl.zip /opt/olex2
 
 USER ${QCRBOX_USER}
 
 RUN cd /opt &&  \
-    unzip -o olex2/olex2-linux64_hl.zip && \
-    rm olex2/olex2-linux64_hl.zip && \
+    cp /opt/olex2/start /opt/olex2/startc && \   
+    #rm olex2-linux64_hl.zip && \
     # chmod +x olex2/olex2c-linux64 && \
     chmod +x olex2/startc && \
     ln -s /opt/olex2/lib/libssl.so.1.1 /opt/olex2/lib/libssl.so.10 && \
     ln -s /opt/olex2/lib/libcrypto.so.1.1 /opt/olex2/lib/libcrypto.so.10
 
 RUN sed -i 's|^#! /bin/sh|#! /bin/bash|' /opt/olex2/start && \
-    sed -i 's|^./olex2 "$@" &$|./olex2 "$@"|' /opt/olex2/start
+    sed -i 's|^./olex2 "$@" &$|./olex2 "$@"|' /opt/olex2/start && \
+    sed -i 's|./olex2 "$@"|./olex2c "$@" server 8899|' /opt/olex2/startc
 
 RUN mkdir -p ${QCRBOX_HOME}/.local/share && \
     mkdir -p ${QCRBOX_HOME}/.olex2/data/ && \

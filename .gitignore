@@ -78,8 +78,7 @@ services/applications/crysalis-pro/CrysAlisPro*.exe
 docs/tutorials/examples/input_files/Ylid_Mo_RT.zip
 
 # Olex2
-services/applications/olex2_linux/olex2_files/olex2c-linux64
-services/applications/olex2_linux/olex2_files/olex2-linux64_hl.zip
+services/applications/olex2_linux/olex2_files/olex2-linux64.zip
 
 #Eval14/15
 services/applications/eval1x/EVPY-Linux-x86_64-20231113-bullseye.tar.gz
