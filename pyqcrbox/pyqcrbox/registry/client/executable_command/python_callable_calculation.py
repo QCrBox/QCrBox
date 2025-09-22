@@ -43,7 +43,7 @@ class PythonCallableCalculation(BaseCalculation):
         self._terminated = False
 
     @log_eel
-    async def save_to_data_file_manager(self, data_file_manager: DataManager) -> None:
+    async def save_output_to_data_manager(self, data_manager: DataManager) -> None:
         """Save the output of the calculation to the Data File Manager.
 
         It is assumed that the return value of the PythonCallable is the data to
@@ -52,7 +52,7 @@ class PythonCallableCalculation(BaseCalculation):
 
         Parameters
         ----------
-        data_file_manager : DataManager
+        data_manager : DataManager
             An instance of the DataFile Manager.
 
         """
@@ -61,8 +61,8 @@ class PythonCallableCalculation(BaseCalculation):
             return
 
         try:
-            data_file_id = await data_file_manager.import_file(self.return_value)
-            self.output_dataset_id = await data_file_manager.create_dataset_from_data_files(data_file_id)
+            data_file_id = await data_manager.import_file(self.return_value)
+            self.output_dataset_id = await data_manager.create_dataset_from_data_files(data_file_id)
         except FileNotFoundError:
             logger.error(f"Failed to add data file and create dataset for {self.return_value}")
             raise

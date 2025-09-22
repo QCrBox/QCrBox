@@ -25,7 +25,7 @@ async def check_if_id_is_a_dataset(data_manager: "DataManager", id_to_check: str
 
     Parameters
     ----------
-    data_file_manager : DataFileManger
+    data_manager : DataFileManger
         An instance of the DataManager
     id_to_check : str
         The ID to check.
@@ -156,13 +156,11 @@ class DataFileParameter(BaseParameter):
 
         logger.debug(f"Preparing data file for execution: {self!r}")
         async with svcs.Container(QCRBOX_GLOBAL_SERVICES_REGISTRY) as container:
-            data_file_manager = await container.aget(DataManager)
+            data_manager = await container.aget(DataManager)
             try:
-                exported_file_path = await data_file_manager.export_data_file(
-                    self.data_file_id, target_dir, target_filename
-                )
+                exported_file_path = await data_manager.export_data_file(self.data_file_id, target_dir, target_filename)
             except nats_errors.ObjectNotFoundError as exc:
-                if await check_if_id_is_a_dataset(data_file_manager, self.data_file_id):
+                if await check_if_id_is_a_dataset(data_manager, self.data_file_id):
                     exc_msg = f"Provided data file ID {self.data_file_id} is a dataset ID"
                 else:
                     exc_msg = f"No data file was found with id {self.data_file_id}"
@@ -308,13 +306,11 @@ class CifDataFileParameter(QCrBoxPydanticBaseModel):
         logger.debug(f"Preparing CIF data file for execution: {self.data_file_id}")
 
         async with svcs.Container(QCRBOX_GLOBAL_SERVICES_REGISTRY) as container:
-            data_file_manager = await container.aget(DataManager)
+            data_manager = await container.aget(DataManager)
             try:
-                exported_file_path = await data_file_manager.export_data_file(
-                    self.data_file_id, target_dir, target_filename
-                )
+                exported_file_path = await data_manager.export_data_file(self.data_file_id, target_dir, target_filename)
             except nats_errors.ObjectNotFoundError as exc:
-                if await check_if_id_is_a_dataset(data_file_manager, self.data_file_id):
+                if await check_if_id_is_a_dataset(data_manager, self.data_file_id):
                     exc_msg = f"The provided `data_file_id` '{self.data_file_id}' is a `dataset_id`"
                 else:
                     exc_msg = f"No data file was found with the provided `data_file_id` '{self.data_file_id}'"

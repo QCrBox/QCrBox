@@ -57,7 +57,7 @@ class InteractiveSessionCalculation(BaseCalculation):
     async def stderr(self) -> None:
         return None
 
-    async def save_to_data_file_manager(self, data_file_manager: DataManager) -> None:
+    async def save_output_to_data_manager(self, data_manager: DataManager) -> None:
         """Save the output of the Interactive Session to the Data File Manager.
 
         It is assumed that the return value of the finalise command, which has to be
@@ -66,7 +66,7 @@ class InteractiveSessionCalculation(BaseCalculation):
 
         Parameters
         ----------
-        data_file_manager : DataManager
+        data_manager : DataManager
             An instance of the DataFile Manager.
 
         """
@@ -79,8 +79,8 @@ class InteractiveSessionCalculation(BaseCalculation):
             return
 
         try:
-            output_data_file_id = await data_file_manager.import_file(output_file)
-            self.output_dataset_id = await data_file_manager.create_dataset_from_data_files(output_data_file_id)
+            output_data_file_id = await data_manager.import_file(output_file)
+            self.output_dataset_id = await data_manager.create_dataset_from_data_files(output_data_file_id)
         except FileNotFoundError:
             logger.error(f"Failed to create dataset for output from 'finalise' command, {output_file=!r}")
             raise
@@ -145,8 +145,8 @@ class InteractiveSessionCalculation(BaseCalculation):
             logger.debug("Finalise command has finished")
 
             async with svcs.Container(QCRBOX_GLOBAL_SERVICES_REGISTRY) as container:
-                data_file_manager = await container.aget(DataManager)
-                await self.save_to_data_file_manager(data_file_manager)
+                data_manager = await container.aget(DataManager)
+                await self.save_output_to_data_manager(data_manager)
 
         self.is_closed = True
         self.session_closed_event.set()

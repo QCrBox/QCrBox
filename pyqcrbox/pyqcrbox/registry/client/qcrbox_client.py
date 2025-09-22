@@ -163,8 +163,8 @@ class QCrBoxClient(QCrBoxServerClientBase):
         logger.info(
             f"Received request to discard command invocation (client status: {self.status.status}): {msg!r}",
         )
-        data_file_manager = await self.svcs_container.aget(DataManager)
-        await data_file_manager.update_calculation_status(
+        data_manager = await self.svcs_container.aget(DataManager)
+        await data_manager.update_calculation_status(
             CalculationStatusDetails(
                 calculation_id=msg.calculation_id,
                 status=CalculationStatusEnum.FAILED,
@@ -261,7 +261,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         if command.type != "interactive_session":
             logger.debug("Adding non-interactive output to DataManager")
             try:
-                await calc.save_to_data_file_manager(await self.svcs_container.aget(DataManager))
+                await calc.save_output_to_data_manager(await self.svcs_container.aget(DataManager))
             except (RuntimeError, FileNotFoundError) as exc:
                 logger.exception(
                     f"Failed to add output for calculation {calc.calculation_id} to DataManager due to {exc}"
@@ -416,8 +416,8 @@ class QCrBoxClient(QCrBoxServerClientBase):
         # it'll still be be marked as RUNNING in the calculation database
         logger.debug("Setting container to idle and updating calculation status after forced termination")
         self.status.set_idle()
-        data_file_manager = await self.svcs_container.aget(DataManager)
-        await data_file_manager.update_calculation_status(await calc.get_status_details())
+        data_manager = await self.svcs_container.aget(DataManager)
+        await data_manager.update_calculation_status(await calc.get_status_details())
 
         return msg_specs.StoppedCalculationResponse(
             calculation_id=calculation_id,

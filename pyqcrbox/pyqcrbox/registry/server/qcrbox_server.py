@@ -52,7 +52,7 @@ class CalculationDetails(BaseModel):
 def build_litestar_dependencies(container: svcs.Container) -> dict:
     return {
         "nats_broker": Provide(lambda: container.aget(NatsBroker)),
-        "data_file_manager": Provide(lambda: container.aget(DataManager)),
+        "data_manager": Provide(lambda: container.aget(DataManager)),
     }
 
 
@@ -317,9 +317,9 @@ class QCrBoxServer(QCrBoxServerClientBase):
 
         # Don't allow the same calculation to be added to the database multiple times.
         # This **shouldn't** ever happen.
-        data_file_manager = await self.svcs_container.aget(DataManager)
+        data_manager = await self.svcs_container.aget(DataManager)
         try:
-            await data_file_manager.store_calculation(calculation_db_entry)
+            await data_manager.store_calculation(calculation_db_entry)
         except CalculationAlreadyExistsError:
             logger.error(f"Trying to add a calculation to the database which already exists: {calculation_db_entry}")
             return msg_specs.QCrBoxGenericResponse(
@@ -329,7 +329,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
             )
 
         logger.debug("Updating calculation status to submitted after command request accepted")
-        await data_file_manager.update_calculation_status(
+        await data_manager.update_calculation_status(
             CalculationStatusDetails(
                 calculation_id=user_invocation_request.calculation_id,
                 status=CalculationStatusEnum.SUBMITTED,

@@ -42,12 +42,12 @@ class BaseCalculation(metaclass=ABCMeta):
         return f"<{clsname}: calculation_id={self.calculation_id}>"
 
     @abstractmethod
-    async def save_to_data_file_manager(self, data_file_manager: DataManager) -> None:
+    async def save_output_to_data_manager(self, data_manager: DataManager) -> None:
         """Save the output of the calculation to the Data File Manager.
 
         Parameters
         ----------
-        data_file_manager : DataManager
+        data_manager : DataManager
             An instance of the DataFile Manager.
 
         """

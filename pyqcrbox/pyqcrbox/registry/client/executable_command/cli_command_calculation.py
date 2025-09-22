@@ -36,7 +36,7 @@ class CLICmdCalculation(BaseCalculation):
         self.retrieved_stdout_stderr = False
         self.calc_finished_event = calc_finished_event
 
-    async def save_to_data_file_manager(self, data_file_manager: DataManager) -> None:
+    async def save_output_to_data_manager(self, data_manager: DataManager) -> None:
         """Save the output of the CLI Command to the Data File Manager.
 
         This is a dummy method, as getting data from a CLI command is not
@@ -44,7 +44,7 @@ class CLICmdCalculation(BaseCalculation):
 
         Parameters
         ----------
-        data_file_manager : DataManager
+        data_manager : DataManager
             An instance of the DataFile Manager.
 
         """
