@@ -184,6 +184,8 @@ class QCrBoxClient(QCrBoxServerClientBase):
         does not return until the whole calculation has finished. For an interactive
         session, this means the prepare, run and finalise steps have to have run.
 
+        TODO: Issue #520 - create a working directory for the command execution
+
         Parameters
         ----------
         execute_request : msg_specs.CommandExecutionRequestNATS
@@ -203,20 +205,24 @@ class QCrBoxClient(QCrBoxServerClientBase):
 
         try:
             command = ExecutableCommand(self.application_spec.get_command_spec_by_name(execute_request.command_name))
-            # TODO: Issue #520 - create a _cwd
-            command_parameters = await command.prepare_params(
+
+            # The difference between parsed and prepared parameters is that the
+            # parsed ones are internal QCrBox representations of the parameters passed
+            # for command execution. The prepared parameters variable is a mapping of
+            # parameter name and the actual "prepared" values, e.g. locations on the file system.
+            parsed_parameters, prepared_parameters = await command.prepare_params(
                 self.application_spec, execute_request.command_arguments, self.working_dir
             )
-            logger.debug(f"Executing command {command!r} in the background with arguments: {command_parameters!r}")
+            logger.debug(f"Executing command {command!r} in the background with arguments: {prepared_parameters!r}")
 
             # TODO: we should have the interactive session handle this, or add it
             #       as the same time we add to the calculation datastore
             if isinstance(command, InteractiveSession):
-                await command.add_to_data_manager(data_manager, execute_request, self.private_inbox)
+                await command.store_interactive_session_details(data_manager, execute_request, self.private_inbox)
 
             # TODO: Issue #520 - create a _cwd
             calc = await command.execute_in_background(
-                **command_parameters, _calculation_id=execute_request.calculation_id, _cwd=self.working_dir
+                **prepared_parameters, _calculation_id=execute_request.calculation_id, _cwd=self.working_dir
             )
         except Exception as exc:
             logger.exception(f"Exception raised during command execution: {exc}")
@@ -484,7 +490,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         return response
 
 
-class TestQCrBoxClient(TestQCrBoxServerClientBase, QCrBoxClient):
+class TestQCrBoxClient(TestQCrBoxServerClientBase, QCrBoxClient):  # type: ignore
     pass
 
 

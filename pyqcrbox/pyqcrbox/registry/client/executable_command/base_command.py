@@ -49,7 +49,7 @@ class BaseCommand(metaclass=ABCMeta):
     # is unsatisfying and warrants changing
 
     def _parse_params_into_dtype(
-        self, command_arguments: dict[str, Any]
+        self, command_arguments: dict[str, str]
     ) -> dict[str, BaseParameter | CifDataFileParameter]:
         """Convert a command arguments into a BaseParameter derived classes.
 
@@ -62,7 +62,7 @@ class BaseCommand(metaclass=ABCMeta):
 
         Parameters
         ----------
-        command_arguments : dict[str, Any]
+        command_arguments : dict[str, str]
             A mapping of a command argument names and the provided value to be
             converted into a BaseParameter class.
 
@@ -142,9 +142,9 @@ class BaseCommand(metaclass=ABCMeta):
     async def prepare_params(
         self,
         application_spec: ApplicationSpec,
-        command_arguments: dict[str, BaseParameter | CifDataFileParameter],
+        command_arguments: dict[str, str],
         working_dir: str | Path,
-    ) -> dict[str, Any]:
+    ) -> tuple[dict[str, BaseParameter | CifDataFileParameter], dict[str, Any]]:
         """Prepare the parameters required for command execution.
 
         If there are optional arguments for the command which are not included
@@ -156,15 +156,19 @@ class BaseCommand(metaclass=ABCMeta):
         ----------
         application_spec : ApplicationSpec
             The application specification for application the command belongs to.
-        command_arguments : dict[str, BaseParameter]
+        command_arguments : dict[str, str]
             The names and values of the parameters for the command in a dict
-            mapping of { param_name: param_value }
+            mapping of { param_name: param_value } where `param_value` will be
+            parsed from an string representation.
         working_dir : str
             The working directory to potentially write any files to.
 
         Returns
         -------
-        dict[str, Any]:
+        dict[str, BaseParameter | CifDataFileParameter]
+            A mapping of argument/parameter name to a BaseParameter derived
+            class which is used for command execution.
+        dict[str, Any]
             A mapping of parameter name to parameter values, which should be
             passed to a command's execute_in_background method.
 

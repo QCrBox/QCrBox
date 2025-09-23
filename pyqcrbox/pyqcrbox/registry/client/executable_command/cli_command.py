@@ -71,9 +71,9 @@ class CLICommand(BaseCommand):
     async def prepare_params(
         self,
         application_spec: ApplicationSpec,
-        command_arguments: dict[str, BaseParameter | CifDataFileParameter],
+        command_arguments: dict[str, str],
         working_dir: str | Path,
-    ) -> dict[str, Any]:
+    ) -> tuple[dict[str, BaseParameter | CifDataFileParameter], dict[str, Any]]:
         """Prepare the parameters required for command execution.
 
         If there are optional arguments for the command which are not included
@@ -85,11 +85,21 @@ class CLICommand(BaseCommand):
         ----------
         application_spec : ApplicationSpec
             The application specification for application the command belongs to.
-        command_arguments : dict[str, BaseParameter]
+        command_arguments : dict[str, str]
             The names and values of the parameters for the command in a dict
-            mapping of { param_name: param_value }
+            mapping of { param_name: param_value } where `param_value` will be
+            parsed from an string representation.
         working_dir : str
             The working directory to potentially write any files to.
+
+        Returns
+        -------
+        dict[str, BaseParameter | CifDataFileParameter]
+            A mapping of argument/parameter name to a BaseParameter derived
+            class which is used for command execution.
+        dict[str, Any]
+            A mapping of parameter name to parameter values, which should be
+            passed to a command's execute_in_background method.
 
         """
         parsed_params = self._parse_params_into_dtype(command_arguments)
@@ -100,7 +110,7 @@ class CLICommand(BaseCommand):
 
         prepared_params = await self._prepare_params_for_execution(parsed_params, application_spec, str(working_dir))
 
-        return prepared_params
+        return parsed_params, prepared_params
 
     async def bind(self, working_dir: str | Path, **param_values):
         """Bind parameter values to the call pattern for the CLI command.
