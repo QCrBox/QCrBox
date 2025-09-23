@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: MPL-2.0
 import multiprocessing.pool
+from pathlib import Path
 
 import anyio
 import psutil
@@ -59,12 +60,22 @@ class PythonCallableCalculation(BaseCalculation):
         if not self.return_value:
             logger.info("This calculation has no return value, nothing to store in the data manager")
             return
+        if not isinstance(self.return_value, str):
+            exc_msg = f"The return value from the calculation must be an str, not type {type(self.return_value)}"
+            logger.error(f"Unable to save output of calculation {self.calculation_id}: '{exc_msg}'")
+            raise ValueError(exc_msg)
+
+        output_file = Path(self.return_value)
+        if not output_file.exists() or not output_file.is_file():
+            exc_msg = f"The return value '{output_file}' from the calculation is not a file"
+            logger.error(f"Unable to save output of calculation {self.calculation_id}: '{exc_msg}'")
+            raise ValueError(exc_msg)
 
         try:
-            data_file_id = await data_manager.import_file(self.return_value)
+            data_file_id = await data_manager.import_file(output_file)
             self.output_dataset_id = await data_manager.create_dataset_from_data_files(data_file_id)
         except FileNotFoundError:
-            logger.error(f"Failed to add data file and create dataset for {self.return_value}")
+            logger.error(f"Failed to add data file and create dataset for {output_file}")
             raise
 
         logger.info(f"Created Dataset {self.output_dataset_id} containing data file {data_file_id}")
@@ -76,6 +87,7 @@ class PythonCallableCalculation(BaseCalculation):
         _ = self.status  # FIXME: This is a workaround to ensure the return value is set.
 
     @property
+    @log_eel
     def status(self) -> CalculationStatusEnum:
         """Get the current status of the calculation.
 
@@ -114,6 +126,7 @@ class PythonCallableCalculation(BaseCalculation):
         return calc_status
 
     @property
+    @log_eel
     async def stdout(self) -> str | None:
         """Retrieve the standard output of the calculation.
 
@@ -129,6 +142,7 @@ class PythonCallableCalculation(BaseCalculation):
             return "Retrieval of STDOUT not implemented yet for PythonCallableCalculation"
 
     @property
+    @log_eel
     async def stderr(self) -> str | None:
         """Retrieve the standard error of the calculation.
 
@@ -153,7 +167,7 @@ class PythonCallableCalculation(BaseCalculation):
         # spawned which need to be killed. Unfortunately pool.terminate() doesn't
         # do this, so we have to find the parent processes in the pool and kill their
         # child processes too
-        processes = [psutil.Process(worker.pid) for worker in self.pool._pool if worker.is_alive()]
+        processes = [psutil.Process(worker.pid) for worker in self.pool._pool if worker.is_alive()]  # type: ignore
         for process in processes:
             child_processes = process.children(recursive=True)
             for child in child_processes:
@@ -162,5 +176,6 @@ class PythonCallableCalculation(BaseCalculation):
         self._terminated = True
         logger.debug("Multiprocessing pool terminated.")
 
+    @log_eel
     def get_error_message(self) -> str:
         return ""

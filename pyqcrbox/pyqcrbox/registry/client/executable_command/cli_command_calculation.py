@@ -48,7 +48,7 @@ class CLICmdCalculation(BaseCalculation):
             An instance of the DataFile Manager.
 
         """
-        logger.info("Writing output from a CLI Command is not yet supported!")
+        logger.warning("Saving the output from a CLI Command is not supported!")
 
     async def wait_until_finished(self):
         """Wait until the calculation is finished."""

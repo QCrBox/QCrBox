@@ -1,10 +1,12 @@
 import asyncio
+from pathlib import Path
 
 import anyio
 import svcs
 
 from pyqcrbox import logger
 from pyqcrbox.data_management import DataManager
+from pyqcrbox.debug import log_eel
 from pyqcrbox.registry.client.executable_command.error import (
     FinaliseCommandFailure,
     PrepareCommandFailure,
@@ -57,6 +59,7 @@ class InteractiveSessionCalculation(BaseCalculation):
     async def stderr(self) -> None:
         return None
 
+    @log_eel
     async def save_output_to_data_manager(self, data_manager: DataManager) -> None:
         """Save the output of the Interactive Session to the Data File Manager.
 
@@ -75,8 +78,14 @@ class InteractiveSessionCalculation(BaseCalculation):
 
         output_file = self.finalise_calc.return_value
         if not output_file:
-            logger.info("No output file from interactive session")
+            logger.warning("The finalise calculation for the interactive session does not return an output file")
             return
+
+        output_file = Path(output_file)
+        if not output_file.exists() or not output_file.is_file():
+            exc_msg = f"The return value '{output_file}' from the calculation is not a file"
+            logger.error(f"Unable to save output of calculation {self.calculation_id}: '{exc_msg}'")
+            raise ValueError(exc_msg)
 
         try:
             output_data_file_id = await data_manager.import_file(output_file)
@@ -85,11 +94,9 @@ class InteractiveSessionCalculation(BaseCalculation):
             logger.error(f"Failed to create dataset for output from 'finalise' command, {output_file=!r}")
             raise
 
-        logger.info(
-            "The output from the interactive session has been placed into dataset %s",
-            self.output_dataset_id,
-        )
+        logger.info(f"The output from the interactive session has been placed into dataset {self.output_dataset_id}")
 
+    @log_eel
     async def wait_until_finished(self) -> None:
         """Asynchronously wait for all calculation phases to complete.
 
@@ -151,6 +158,7 @@ class InteractiveSessionCalculation(BaseCalculation):
         self.is_closed = True
         self.session_closed_event.set()
 
+    @log_eel
     async def terminate(self) -> None:
         """Terminate the interactive session.
 
@@ -191,6 +199,7 @@ class InteractiveSessionCalculation(BaseCalculation):
             self._error_dialog_process.terminate()
             self._error_dialog_process.join()
 
+    @log_eel
     def get_error_message(self) -> str:
         """Get the last error message for this interactive session.
 
