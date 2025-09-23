@@ -181,10 +181,10 @@ class QCrBoxServer(QCrBoxServerClientBase):
             )
             return command_request_final_status
 
+        # This sends the message to the client to execute - TODO: move into its own method
         msg_subject = f"{invocation_response_from_client.private_inbox_prefix}.cmd.execute"
-        await self.nats_broker.publish(request_to_client, subject=msg_subject)
         logger.debug(f"Sending msg to client to execute command: {msg_subject=} {request_to_client=}")
-
+        await self.nats_broker.publish(request_to_client, subject=msg_subject)
         self.calculations[calculation_id].executing_client = ExecutingClientDetails(
             client_id=invocation_response_from_client.client_id,
             private_inbox_prefix=invocation_response_from_client.private_inbox_prefix,
