@@ -128,6 +128,9 @@ class DataFileParameter(BaseParameter):
 
     data_file_id: str
 
+    # We'll use this to track where the file has been written to disk
+    _exported_file_path: str | Path | None
+
     @log_eel
     async def prepare_for_execution(self, target_dir: str, target_filename: str | None = None) -> str:
         """Prepare the CIF file for command execution.
@@ -158,7 +161,9 @@ class DataFileParameter(BaseParameter):
         async with svcs.Container(QCRBOX_GLOBAL_SERVICES_REGISTRY) as container:
             data_manager = await container.aget(DataManager)
             try:
-                exported_file_path = await data_manager.export_data_file(self.data_file_id, target_dir, target_filename)
+                self._exported_file_path = await data_manager.export_data_file(
+                    self.data_file_id, target_dir, target_filename
+                )
             except nats_errors.ObjectNotFoundError as exc:
                 if await check_if_id_is_a_dataset(data_manager, self.data_file_id):
                     exc_msg = f"Provided data file ID {self.data_file_id} is a dataset ID"
@@ -166,7 +171,7 @@ class DataFileParameter(BaseParameter):
                     exc_msg = f"No data file was found with id {self.data_file_id}"
                 raise ValueError(exc_msg) from exc
 
-        return str(exported_file_path)
+        return str(self._exported_file_path)
 
 
 class Cif2CifOptions(QCrBoxPydanticBaseModel):
@@ -191,6 +196,10 @@ class CifDataFileParameter(QCrBoxPydanticBaseModel):
     """
 
     data_file_id: str
+
+    # We'll use this to track where the file has been written to disk
+    _exported_file_path: str | Path | None
+    _was_converted: bool = False
 
     @log_eel
     async def to_specific_format(self, input_cif_path: str, cif2cif_options: Cif2CifOptions) -> str:
@@ -230,9 +239,14 @@ class CifDataFileParameter(QCrBoxPydanticBaseModel):
                 cif2cif_options.command_name,
                 cif2cif_options.parameter_name,
             )
+            # We will replace the original cif on disk with the converted cif
+            # (output_cif_path) by copying the output from cif_file_to_specific_by_yml
             shutil.copy(output_cif_path, input_cif_path)
+            output_cif_path.unlink()
         except NoKeywordsError as exc:
             logger.warning(f"{cif2cif_options.parameter_name} has no required or optional CIF entries defined: {exc}")
+
+        self._was_converted = True
 
         return input_cif_path
 
@@ -308,7 +322,9 @@ class CifDataFileParameter(QCrBoxPydanticBaseModel):
         async with svcs.Container(QCRBOX_GLOBAL_SERVICES_REGISTRY) as container:
             data_manager = await container.aget(DataManager)
             try:
-                exported_file_path = await data_manager.export_data_file(self.data_file_id, target_dir, target_filename)
+                self._exported_file_path = await data_manager.export_data_file(
+                    self.data_file_id, target_dir, target_filename
+                )
             except nats_errors.ObjectNotFoundError as exc:
                 if await check_if_id_is_a_dataset(data_manager, self.data_file_id):
                     exc_msg = f"The provided `data_file_id` '{self.data_file_id}' is a `dataset_id`"
@@ -318,11 +334,11 @@ class CifDataFileParameter(QCrBoxPydanticBaseModel):
 
             if cif2cif_options:
                 logger.debug(f"Converting CIF to specific format with params: {cif2cif_options}")
-                exported_file_path = await self.to_specific_format(exported_file_path, cif2cif_options)
+                self._exported_file_path = await self.to_specific_format(self._exported_file_path, cif2cif_options)
 
-        logger.debug(f"Exported CIF data file to: {exported_file_path}")
+        logger.debug(f"Exported CIF data file to: {self._exported_file_path}")
 
-        return str(exported_file_path)
+        return str(self._exported_file_path)
 
 
 _custom_dtypes = {

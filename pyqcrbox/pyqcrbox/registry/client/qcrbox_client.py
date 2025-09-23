@@ -267,6 +267,13 @@ class QCrBoxClient(QCrBoxServerClientBase):
         if command.type != "interactive_session":
             logger.debug("Adding non-interactive output to DataManager")
             try:
+                # Find the CIF parameter and pass that... if it was converted. But we need to be careful
+                from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import CifDataFileParameter
+
+                # because some commands will have TWO cif files.
+                cif_parameter = next(filter(lambda p: isinstance(p, CifDataFileParameter), parsed_parameters.values()))
+                logger.debug(f"Found cif parameters to merge...... {cif_parameter}")
+
                 await calc.save_output_to_data_manager(await self.svcs_container.aget(DataManager))
             except (RuntimeError, FileNotFoundError) as exc:
                 logger.exception(
