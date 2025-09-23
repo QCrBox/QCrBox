@@ -210,7 +210,7 @@ class InteractiveSession(BaseCommand):
 
         return prepared_params
 
-    async def add_to_interactive_session_database(
+    async def add_to_data_manager(
         self,
         data_manager: DataManager,
         execute_request: CommandExecutionRequestNATS,

@@ -53,11 +53,11 @@ class PythonCallableCalculation(BaseCalculation):
         Parameters
         ----------
         data_manager : DataManager
-            An instance of the DataFile Manager.
+            An instance of the data manager.
 
         """
         if not self.return_value:
-            logger.info("This calculation has no return value or data file to add to the Data File Manager.")
+            logger.info("This calculation has no return value, nothing to store in the data manager")
             return
 
         try:

@@ -16,6 +16,11 @@ class BaseCalculation(metaclass=ABCMeta):
         Unique identifier for the calculation.
     calc_finished_event : anyio.Event
         Event that signals when the calculation is finished.
+    output_dataset_id : str | None
+        The dataset id which contains output from the calculation.
+    exception_raised : Exception | None
+        If set, this will contain a reference to an exception that was raised
+        during execution of the calculation.
 
     """
 
@@ -55,7 +60,6 @@ class BaseCalculation(metaclass=ABCMeta):
     @abstractmethod
     async def wait_until_finished(self) -> None:
         """Wait until the calculation is finished."""
-        pass
 
     @property
     @abstractmethod
@@ -68,7 +72,6 @@ class BaseCalculation(metaclass=ABCMeta):
             The current status of the calculation.
 
         """
-        pass
 
     async def get_status_details(self) -> CalculationStatusDetails:
         """Retrieve detailed status information for the calculation.
@@ -110,7 +113,6 @@ class BaseCalculation(metaclass=ABCMeta):
             The standard output, or None if not available.
 
         """
-        pass
 
     @property
     @abstractmethod
@@ -123,9 +125,7 @@ class BaseCalculation(metaclass=ABCMeta):
             The standard error, or None if not available.
 
         """
-        pass
 
     @abstractmethod
     async def terminate(self) -> None:
         """Terminate the calculation."""
-        pass

@@ -162,6 +162,12 @@ class BaseCommand(metaclass=ABCMeta):
         working_dir : str
             The working directory to potentially write any files to.
 
+        Returns
+        -------
+        dict[str, Any]:
+            A mapping of parameter name to parameter values, which should be
+            passed to a command's execute_in_background method.
+
         """
 
     @abstractmethod

@@ -207,12 +207,12 @@ class QCrBoxClient(QCrBoxServerClientBase):
             command_parameters = await command.prepare_params(
                 self.application_spec, execute_request.command_arguments, self.working_dir
             )
-            logger.debug(f"Executing command {command!r} in the background with arguments {command_parameters!r}")
+            logger.debug(f"Executing command {command!r} in the background with arguments: {command_parameters!r}")
 
             # TODO: we should have the interactive session handle this, or add it
             #       as the same time we add to the calculation datastore
             if isinstance(command, InteractiveSession):
-                await command.add_to_interactive_session_database(data_manager, execute_request, self.private_inbox)
+                await command.add_to_data_manager(data_manager, execute_request, self.private_inbox)
 
             # TODO: Issue #520 - create a _cwd
             calc = await command.execute_in_background(
@@ -264,7 +264,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
                 await calc.save_output_to_data_manager(await self.svcs_container.aget(DataManager))
             except (RuntimeError, FileNotFoundError) as exc:
                 logger.exception(
-                    f"Failed to add output for calculation {calc.calculation_id} to DataManager due to {exc}"
+                    f"Failed to add output for calculation {calc.calculation_id} to data manager due to: {exc}"
                 )
             self.status.set_idle()
 
