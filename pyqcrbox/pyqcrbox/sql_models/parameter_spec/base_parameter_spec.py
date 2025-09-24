@@ -202,7 +202,7 @@ class CifDataFileParameter(QCrBoxPydanticBaseModel):
     _was_converted: bool = False
 
     @log_eel
-    async def to_specific_format(self, input_cif_path: str, cif2cif_options: Cif2CifOptions) -> str:
+    async def to_specific_format(self, input_cif_path: str, transform_options: Cif2CifOptions) -> str:
         """Convert the CIF to a specific format.
 
         At the moment, this does an in-place conversion by overwriting the
@@ -212,7 +212,7 @@ class CifDataFileParameter(QCrBoxPydanticBaseModel):
         ----------
         input_cif_path : str
             The path to the CIF file on the disk, in its original format.
-        cif2cif_options : Cif2CifOptions
+        transform_options : Cif2CifOptions
             Options required for Cif2Cif conversion.
 
         Returns
@@ -231,34 +231,32 @@ class CifDataFileParameter(QCrBoxPydanticBaseModel):
         output_cif_path = Path(input_cif_path).parent / "converted.cif"
 
         try:
-            logger.debug(f"Converting CIF to specific format with parameters: {cif2cif_options}")
+            logger.debug(f"Converting CIF to specific format with parameters: {transform_options}")
             cif_file_to_specific_by_yml(
                 input_cif_path,
                 output_cif_path,
-                cif2cif_options.application_yaml,
-                cif2cif_options.command_name,
-                cif2cif_options.parameter_name,
+                transform_options.application_yaml,
+                transform_options.command_name,
+                transform_options.parameter_name,
             )
             # We will replace the original cif on disk with the converted cif
             # (output_cif_path) by copying the output from cif_file_to_specific_by_yml
             shutil.copy(output_cif_path, input_cif_path)
             output_cif_path.unlink()
+            self._was_converted = True
         except NoKeywordsError as exc:
-            logger.warning(f"{cif2cif_options.parameter_name} has no required or optional CIF entries defined: {exc}")
-
-        self._was_converted = True
+            logger.warning(f"{transform_options.parameter_name} has no required or optional CIF entries defined: {exc}")
+        except ValueError as exc:
+            logger.warning(f"There was a problem converting {transform_options.parameter_name}: {exc}")
 
         return input_cif_path
 
     @log_eel
-    async def to_unified_format(self, original_cif_path: str, new_cif_path: str, cif2cif_options: Cif2CifOptions):
+    async def to_unified_format(self, new_cif_path: str, merge_options: Cif2CifOptions):
         """Merge an original and converted CIF together into a unified CIF format.
 
         Parameters
         ----------
-        input_cif_path : str
-            The original CIF, prior to any conversions including to a specific
-            format.
         new_cif_path : str
             The CIF after it has been converted to a new format.
         cif2cif_options : Cif2CifOptions
@@ -266,20 +264,45 @@ class CifDataFileParameter(QCrBoxPydanticBaseModel):
 
         """
         # Lazily import module for same reason as in `to_specific_format`
-        from qcrboxtools.cif.cif2cif import cif_file_merge_to_unified_by_yml
+        from qcrboxtools.cif.cif2cif import NoKeywordsError, cif_file_merge_to_unified_by_yml
 
+        if not self._exported_file_path:
+            logger.warning("CIF has not been exported to disk, unable to convert to unified format")
+            return
+
+        original_cif_path = self._exported_file_path
         merge_cif_path = Path(original_cif_path).parent / "unified.cif"
-
-        cif_file_merge_to_unified_by_yml(
-            original_cif_path,
-            new_cif_path,
-            merge_cif_path,  # this is the output, e.g. the merged original and new
-            cif2cif_options.application_yaml,
-            cif2cif_options.command_name,
-            cif2cif_options.parameter_name,  # in this case, it will be the parameter name for output_cif_path
+        logger.debug(
+            f"Merging {original_cif_path} and {new_cif_path} together to create unified cif at {merge_cif_path}"
         )
+        logger.debug(f"Merge options: {merge_options}")
 
-        shutil.copy(merge_cif_path, original_cif_path)
+        try:
+            cif_file_merge_to_unified_by_yml(
+                original_cif_path,
+                merge_cif_path,  # this is the output, e.g. the merged original and new
+                new_cif_path,
+                merge_options.application_yaml,
+                merge_options.command_name,
+                merge_options.parameter_name,
+            )
+        except NoKeywordsError as exc:
+            logger.warning(f"{merge_options.parameter_name} has no required or optional CIF entries defined: {exc}")
+            return self._exported_file_path
+        except ValueError as exc:
+            logger.warning(f"There was a problem converting {merge_options.parameter_name}: {exc}")
+            return self._exported_file_path
+
+        with merge_cif_path.open("r") as file_in:
+            contents = file_in.read()
+            logger.debug(f"Created new file, we hope, {merge_cif_path}: {contents}")
+
+        shutil.copy(merge_cif_path, new_cif_path)
+        merge_cif_path.unlink()
+
+        logger.debug(f"Returning merge path: {new_cif_path}")
+
+        return new_cif_path
 
     @log_eel
     async def prepare_for_execution(

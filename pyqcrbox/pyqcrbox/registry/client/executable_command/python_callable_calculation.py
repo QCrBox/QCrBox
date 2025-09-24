@@ -9,6 +9,7 @@ from pyqcrbox import logger
 from pyqcrbox.data_management.data_manager import DataManager
 from pyqcrbox.debug import log_eel
 from pyqcrbox.sql_models import CalculationStatusEnum
+from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import Cif2CifOptions, CifDataFileParameter
 
 from .base_calculation import BaseCalculation
 
@@ -44,7 +45,13 @@ class PythonCallableCalculation(BaseCalculation):
         self._terminated = False
 
     @log_eel
-    async def save_output_to_data_manager(self, data_manager: DataManager) -> None:
+    async def save_output_to_data_manager(
+        self,
+        data_manager: DataManager,
+        *,
+        merge_options: Cif2CifOptions | None = None,
+        original_cif: CifDataFileParameter | None = None,
+    ) -> None:
         """Save the output of the calculation to the Data File Manager.
 
         It is assumed that the return value of the PythonCallable is the data to
@@ -55,6 +62,10 @@ class PythonCallableCalculation(BaseCalculation):
         ----------
         data_manager : DataManager
             An instance of the data manager.
+        merge_options : Cif2CifOptions | None
+            Options which will be used to create a unified CIF.
+        original_cif: CifDataFileParameter | None
+            The original CIF prior to being transformed to a new CIF format.
 
         """
         if not self.return_value:
@@ -70,6 +81,10 @@ class PythonCallableCalculation(BaseCalculation):
             exc_msg = f"The return value '{output_file}' from the calculation is not a file"
             logger.error(f"Unable to save output of calculation {self.calculation_id}: '{exc_msg}'")
             raise ValueError(exc_msg)
+
+        if original_cif and merge_options:
+            logger.debug("Merging to unified format in PythonCallableCalculation")
+            output_file = await original_cif.to_unified_format(output_file, merge_options)
 
         try:
             data_file_id = await data_manager.import_file(output_file)

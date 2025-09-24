@@ -268,13 +268,29 @@ class QCrBoxClient(QCrBoxServerClientBase):
             logger.debug("Adding non-interactive output to DataManager")
             try:
                 # Find the CIF parameter and pass that... if it was converted. But we need to be careful
-                from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import CifDataFileParameter
-
                 # because some commands will have TWO cif files.
-                cif_parameter = next(filter(lambda p: isinstance(p, CifDataFileParameter), parsed_parameters.values()))
-                logger.debug(f"Found cif parameters to merge...... {cif_parameter}")
+                from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import Cif2CifOptions, CifDataFileParameter
 
-                await calc.save_output_to_data_manager(await self.svcs_container.aget(DataManager))
+                cif_parameter, parameter_name = None, None
+                for name, param in parsed_parameters.items():
+                    if isinstance(param, CifDataFileParameter):
+                        parameter_name = name
+                        cif_parameter = param
+                        break
+
+                logger.debug(f"Found CIF parameter: {parameter_name} = {cif_parameter}")
+
+                if cif_parameter and parameter_name:
+                    merge_options = Cif2CifOptions(
+                        application_yaml=self.application_spec.yaml_file_path,
+                        command_name=execute_request.command_name,
+                        parameter_name=parameter_name,
+                    )
+                    await calc.save_output_to_data_manager(
+                        data_manager, merge_options=merge_options, original_cif=cif_parameter
+                    )
+                else:
+                    await calc.save_output_to_data_manager(data_manager)
             except (RuntimeError, FileNotFoundError) as exc:
                 logger.exception(
                     f"Failed to add output for calculation {calc.calculation_id} to data manager due to: {exc}"

@@ -5,6 +5,7 @@ import anyio
 
 from pyqcrbox.data_management import DataManager
 from pyqcrbox.sql_models import CalculationStatusDetails, CalculationStatusEnum
+from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import Cif2CifOptions, CifDataFileParameter
 
 
 class BaseCalculation(metaclass=ABCMeta):
@@ -47,13 +48,23 @@ class BaseCalculation(metaclass=ABCMeta):
         return f"<{clsname}: calculation_id={self.calculation_id}>"
 
     @abstractmethod
-    async def save_output_to_data_manager(self, data_manager: DataManager) -> None:
+    async def save_output_to_data_manager(
+        self,
+        data_manager: DataManager,
+        *,
+        merge_options: Cif2CifOptions | None = None,
+        original_cif: CifDataFileParameter | None = None,
+    ) -> None:
         """Save the output of the calculation to the Data File Manager.
 
         Parameters
         ----------
         data_manager : DataManager
             An instance of the DataFile Manager.
+        merge_options : Cif2CifOptions | None
+            Options which will be used to create a unified CIF.
+        original_cif: CifDataFileParameter | None
+            The original CIF prior to being transformed to a new CIF format.
 
         """
 
