@@ -2,8 +2,8 @@
   "lockfile_version": "1",
   "packages": {
     "bashInteractive@latest": {
-      "last_modified": "2025-02-20T02:45:56Z",
-      "resolved": "github:NixOS/nixpkgs/dad564433178067be1fbdfcce23b546254b6d641#bashInteractive",
+      "last_modified": "2025-02-18T07:26:52Z",
+      "resolved": "github:NixOS/nixpkgs/632f04521e847173c54fa72973ec6c39a371211c#bashInteractive",
       "source": "devbox-search",
       "version": "5.2p37",
       "systems": {
@@ -126,8 +126,8 @@
       }
     },
     "curl@latest": {
-      "last_modified": "2025-08-11T16:06:55Z",
-      "resolved": "github:NixOS/nixpkgs/4e942f9ef5b35526597c354d1ded817d1c285ef1#curl",
+      "last_modified": "2025-08-12T09:17:37Z",
+      "resolved": "github:NixOS/nixpkgs/372d9eeeafa5b15913201e2b92e8e539ac7c64d1#curl",
       "source": "devbox-search",
       "version": "8.14.1",
       "systems": {
@@ -298,8 +298,8 @@
       }
     },
     "docker@latest": {
-      "last_modified": "2025-08-05T11:35:34Z",
-      "resolved": "github:NixOS/nixpkgs/a683adc19ff5228af548c6539dbc3440509bfed3#docker",
+      "last_modified": "2025-08-08T08:05:48Z",
+      "resolved": "github:NixOS/nixpkgs/a3f3e3f2c983e957af6b07a1db98bafd1f87b7a1#docker",
       "source": "devbox-search",
       "version": "28.3.3",
       "systems": {
@@ -510,8 +510,8 @@
       }
     },
     "git@latest": {
-      "last_modified": "2025-07-28T17:09:23Z",
-      "resolved": "github:NixOS/nixpkgs/648f70160c03151bc2121d179291337ad6bc564b#git",
+      "last_modified": "2025-08-12T09:17:37Z",
+      "resolved": "github:NixOS/nixpkgs/372d9eeeafa5b15913201e2b92e8e539ac7c64d1#git",
       "source": "devbox-search",
       "version": "2.50.1",
       "systems": {
@@ -582,8 +582,8 @@
       }
     },
     "github:NixOS/nixpkgs/nixpkgs-unstable": {
-      "last_modified": "2025-08-19T04:17:39Z",
-      "resolved": "github:NixOS/nixpkgs/97eb7ee0da337d385ab015a23e15022c865be75c?lastModified=1755577059&narHash=sha256-5hYhxIpco8xR%2BIpP3uU56%2B4%2BBw7mf7EMyxS%2FHqUYHQY%3D"
+      "last_modified": "2025-09-21T09:21:16Z",
+      "resolved": "github:NixOS/nixpkgs/a1f79a1770d05af18111fbbe2a3ab2c42c0f6cd0?lastModified=1758446476&narHash=sha256-5rdAi7CTvM%2FkSs6fHe1bREIva5W3TbImsto%2BdxG4mBo%3D"
     },
     "jq@latest": {
       "last_modified": "2025-08-12T09:17:37Z",
@@ -1371,8 +1371,8 @@
       }
     },
     "readline@latest": {
-      "last_modified": "2025-08-12T09:17:37Z",
-      "resolved": "github:NixOS/nixpkgs/372d9eeeafa5b15913201e2b92e8e539ac7c64d1#readline",
+      "last_modified": "2025-08-10T04:38:50Z",
+      "resolved": "github:NixOS/nixpkgs/641d909c4a7538f1539da9240dedb1755c907e40#readline",
       "source": "devbox-search",
       "version": "8.3p1",
       "systems": {
@@ -1535,14 +1535,14 @@
       }
     },
     "stdenv.cc.cc.lib": {
-      "resolved": "github:NixOS/nixpkgs/97eb7ee0da337d385ab015a23e15022c865be75c?narHash=sha256-5hYhxIpco8xR%2BIpP3uU56%2B4%2BBw7mf7EMyxS%2FHqUYHQY%3D#stdenv.cc.cc.lib",
+      "resolved": "github:NixOS/nixpkgs/a1f79a1770d05af18111fbbe2a3ab2c42c0f6cd0?narHash=sha256-5rdAi7CTvM%2FkSs6fHe1bREIva5W3TbImsto%2BdxG4mBo%3D#stdenv.cc.cc.lib",
       "source": "nixpkg",
       "systems": {
-        "aarch64-darwin": {
+        "x86_64-linux": {
           "outputs": [
             {
               "name": "lib",
-              "path": "/nix/store/nsv0fapi99s8qkqrf3m446chr8jsacc2-clang-19.1.7-lib",
+              "path": "/nix/store/41ym1jm1b7j3rhglk82gwg9jml26z1km-gcc-14.3.0-lib",
               "default": true
             }
           ]
