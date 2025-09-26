@@ -50,8 +50,8 @@ class PythonCallableCalculation(BaseCalculation):
         data_manager: DataManager,
         *,
         merge_options: Cif2CifOptions | None = None,
-        original_cif: CifDataFileParameter | None = None,
-    ) -> None:
+        input_cif: CifDataFileParameter | None = None,
+    ) -> str | None:
         """Save the output of the calculation to the Data File Manager.
 
         It is assumed that the return value of the PythonCallable is the data to
@@ -64,13 +64,19 @@ class PythonCallableCalculation(BaseCalculation):
             An instance of the data manager.
         merge_options : Cif2CifOptions | None
             Options which will be used to create a unified CIF.
-        original_cif: CifDataFileParameter | None
+        input_cif: CifDataFileParameter | None
             The original CIF prior to being transformed to a new CIF format.
+
+        Returns
+        -------
+        str | None
+            The dataset ID created to store the output.
+
 
         """
         if not self.return_value:
             logger.info("This calculation has no return value, nothing to store in the data manager")
-            return
+            return None
         if not isinstance(self.return_value, str):
             exc_msg = f"The return value from the calculation must be an str, not type {type(self.return_value)}"
             logger.error(f"Unable to save output of calculation {self.calculation_id}: '{exc_msg}'")
@@ -82,9 +88,9 @@ class PythonCallableCalculation(BaseCalculation):
             logger.error(f"Unable to save output of calculation {self.calculation_id}: '{exc_msg}'")
             raise ValueError(exc_msg)
 
-        if original_cif and merge_options:
+        if input_cif and merge_options:
             logger.debug("Merging to unified format in PythonCallableCalculation")
-            output_file = await original_cif.to_unified_format(output_file, merge_options)
+            output_file = await input_cif.to_unified_format(output_file, merge_options)
 
         try:
             data_file_id = await data_manager.import_file(output_file)
@@ -94,6 +100,8 @@ class PythonCallableCalculation(BaseCalculation):
             raise
 
         logger.info(f"Created Dataset {self.output_dataset_id} containing data file {data_file_id}")
+
+        return self.output_dataset_id
 
     @log_eel
     async def wait_until_finished(self):

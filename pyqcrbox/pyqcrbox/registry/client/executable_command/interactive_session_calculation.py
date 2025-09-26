@@ -66,8 +66,8 @@ class InteractiveSessionCalculation(BaseCalculation):
         data_manager: DataManager,
         *,
         merge_options: Cif2CifOptions | None = None,
-        original_cif: CifDataFileParameter | None = None,
-    ) -> None:
+        input_cif: CifDataFileParameter | None = None,
+    ) -> str | None:
         """Save the output of the Interactive Session to the Data File Manager.
 
         It is assumed that the return value of the finalise command, which has to be
@@ -80,8 +80,13 @@ class InteractiveSessionCalculation(BaseCalculation):
             An instance of the DataFile Manager.
         merge_options : Cif2CifOptions | None
             Options which will be used to create a unified CIF.
-        original_cif: CifDataFileParameter | None
+        input_cif: CifDataFileParameter | None
             The original CIF prior to being transformed to a new CIF format.
+
+        Returns
+        -------
+        str | None
+            The dataset ID created to store the output.
 
         """
         if not isinstance(self.finalise_calc, PythonCallableCalculation):
@@ -90,7 +95,7 @@ class InteractiveSessionCalculation(BaseCalculation):
         output_file = self.finalise_calc.return_value
         if not output_file:
             logger.warning("The finalise calculation for the interactive session does not return an output file")
-            return
+            return None
 
         output_file = Path(output_file)
         if not output_file.exists() or not output_file.is_file():
@@ -98,9 +103,9 @@ class InteractiveSessionCalculation(BaseCalculation):
             logger.error(f"Unable to save output of calculation {self.calculation_id}: '{exc_msg}'")
             raise ValueError(exc_msg)
 
-        if original_cif and merge_options:
+        if input_cif and merge_options:
             logger.debug("Merging to unified format in PythonCallableCalculation")
-            output_file = await original_cif.to_unified_format(output_file, merge_options)
+            output_file = await input_cif.to_unified_format(output_file, merge_options)
 
         try:
             output_data_file_id = await data_manager.import_file(output_file)
@@ -110,6 +115,8 @@ class InteractiveSessionCalculation(BaseCalculation):
             raise
 
         logger.info(f"The output from the interactive session has been placed into dataset {self.output_dataset_id}")
+
+        return self.output_dataset_id
 
     @log_eel
     async def wait_until_finished(self) -> None:

@@ -53,8 +53,8 @@ class BaseCalculation(metaclass=ABCMeta):
         data_manager: DataManager,
         *,
         merge_options: Cif2CifOptions | None = None,
-        original_cif: CifDataFileParameter | None = None,
-    ) -> None:
+        input_cif: CifDataFileParameter | None = None,
+    ) -> str | None:
         """Save the output of the calculation to the Data File Manager.
 
         Parameters
@@ -63,8 +63,13 @@ class BaseCalculation(metaclass=ABCMeta):
             An instance of the DataFile Manager.
         merge_options : Cif2CifOptions | None
             Options which will be used to create a unified CIF.
-        original_cif: CifDataFileParameter | None
+        input_cif: CifDataFileParameter | None
             The original CIF prior to being transformed to a new CIF format.
+
+        Returns
+        -------
+        str | None
+            The dataset ID created to store the output.
 
         """
 

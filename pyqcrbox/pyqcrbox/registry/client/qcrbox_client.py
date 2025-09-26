@@ -10,11 +10,13 @@ from pyqcrbox.data_management import DataManager
 from pyqcrbox.debug import log_eel
 from pyqcrbox.helpers import generate_private_routing_key
 from pyqcrbox.registry.client.executable_command.base_calculation import BaseCalculation
+from pyqcrbox.registry.client.executable_command.base_command import BaseCommand
 from pyqcrbox.registry.client.executable_command.cli_command import CLICommand
 from pyqcrbox.registry.client.executable_command.interactive_session import InteractiveSession
 from pyqcrbox.registry.client.executable_command.interactive_session_calculation import InteractiveSessionCalculation
 from pyqcrbox.registry.client.executable_command.python_callable import PythonCallable
 from pyqcrbox.sql_models import CalculationStatusDetails, CalculationStatusEnum
+from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import BaseParameter, Cif2CifOptions, CifDataFileParameter
 
 from ..shared import QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup
 from .api_endpoints import create_client_asgi_server
@@ -101,6 +103,179 @@ class QCrBoxClient(QCrBoxServerClientBase):
             logger.error("Application registration failed (no response from server)")
             self.shutdown()
 
+    async def _can_execute_command(self) -> bool:
+        """Check if the client can execute a requested command or not.
+
+        Returns
+        -------
+        bool
+            Returns False if the client is busy, indicating that a the client
+            cannot execute the command.
+
+        """
+        if self.status.status != ClientStatusEnum.PENDING:
+            logger.error(f"Cannot execute command, client not PENDING (status: {self.status})")
+            return False
+
+        self.status.set_busy()
+
+        return True
+
+    @log_eel
+    async def _prepare_and_launch_command(
+        self, execute_request: msg_specs.CommandExecutionRequestNATS
+    ) -> tuple[BaseCommand, dict[str, BaseParameter | CifDataFileParameter], BaseCalculation]:
+        """Launch the requested command.
+
+        Parameters
+        ----------
+        execute_request : msg_specs.CommandExecutionRequestNATS
+            The execution request message for the command, as sent via the NATS
+            broker.
+
+        Returns
+        -------
+        BaseCommand
+            A BaseCommand class for command which was launched successfully.
+        dict[str, BaseParameter | CifDataFileParameter]
+            A dict mapping of the parameter name and the QCrBox class
+            representations of the value of that parameter. This is a collection
+            of the parameters used by the command.
+        BaseCalculation
+            A BaseCalculation class used for tracking the command executing in
+            the background.
+
+        """
+        command = ExecutableCommand(self.application_spec.get_command_spec_by_name(execute_request.command_name))
+        parsed_parameters, prepared_parameters = await command.prepare_params(
+            self.application_spec, execute_request.command_arguments, self.working_dir
+        )
+        if isinstance(command, InteractiveSession):
+            await command.store_interactive_session_details(self.data_manager, execute_request, self.private_inbox)
+
+        logger.debug(f"Executing command {command!r} with arguments: {prepared_parameters!r}")
+        calc = await command.execute_in_background(
+            **prepared_parameters, _calculation_id=execute_request.calculation_id, _cwd=self.working_dir
+        )
+
+        return command, parsed_parameters, calc
+
+    @log_eel
+    async def _handle_non_interactive_output(
+        self,
+        command_name: str,
+        command_parameters: dict[str, BaseParameter | CifDataFileParameter],
+        calc: BaseCalculation,
+    ) -> None:
+        """Handle saving the output from non-interactive commands/calculations.
+
+        Parameters
+        ----------
+        command_name : str
+            The name of the command.
+        command_parameters : dict[str, BaseParameter | CifDataFileParameter]
+            The parameters which were used to execute the command. These will be
+            parsed as QCrBox data types.
+        calc : BaseCalculation
+            The BaseCalculation object used to track the execution of the
+            non-interactive command.
+
+        """
+        logger.debug(f"Attempting to store output from non-interactive command {command_name} to data manager")
+
+        try:
+            cif_parameter, parameter_name = None, None
+            for name, param in command_parameters.items():
+                if isinstance(param, CifDataFileParameter):
+                    parameter_name, cif_parameter = name, param
+                    break
+
+            # If we have found a CIF parameter, then we will pass it to the save
+            # method to attempt to merge the original cif (the parameter) with
+            # the cif output from the command
+            if cif_parameter and parameter_name:
+                merge_options = Cif2CifOptions(
+                    application_yaml=self.application_spec.yaml_file_path,  # type: ignore
+                    command_name=command_name,
+                    parameter_name=parameter_name,
+                )
+                dataset_id = await calc.save_output_to_data_manager(
+                    self.data_manager, merge_options=merge_options, input_cif=cif_parameter
+                )
+            else:
+                dataset_id = await calc.save_output_to_data_manager(self.data_manager)
+        except (RuntimeError, FileNotFoundError) as exc:
+            logger.error(f"Failed to store output calculation {calc.calculation_id} in data manager: {exc}")
+        else:
+            logger.debug(f"Output for non-interactive has been added to the data manager into dataset {dataset_id}")
+
+        self.status.set_idle()
+
+    @log_eel
+    async def _handle_command_launch_failure(self, calculation_id: str, exception: Exception) -> None:
+        """Handle when launching a command fails.
+
+        This method differs from `handle_calculation_failure` as it is used for
+        handling failures when a command fails during configuration or when attempting
+        to launch it as a background async task.
+
+        Parameters
+        ----------
+        calculation_id : str
+            The calculation ID of the command which failed to launch.
+        exception : Exception
+            The raised exception causing the failure mode.
+
+        """
+        logger.error(f"Failed to launch command with exception: {exception!r}")
+        await self.data_manager.update_calculation_status(
+            CalculationStatusDetails(
+                calculation_id=calculation_id,
+                status=CalculationStatusEnum.FAILED,
+                extra_info={"error_msg": f"Exception raised in background task: {exception!r}"},
+            ),
+        )
+        self.status.set_idle()
+
+    @log_eel
+    async def _handle_calculation_failure(self, calculation: BaseCalculation, exception: Exception) -> None:
+        """Handle when the calculation execution fails, usually due to a raised exception.
+
+        This updates the calculation status to FAILED and sets the client back to
+        being idle. You therefore need to return from ASAP `handle_command_execution`
+        after calling this function.
+
+        Parameters
+        ----------
+        calculation: BaseCalculation
+            The calculation which failed.
+        exception : Exception
+            The exception raised by the command.
+
+        """
+        logger.error(f"Command calculation failed in background task with exception: {exception!r}")
+        await self.data_manager.update_calculation_status(
+            CalculationStatusDetails(
+                calculation_id=calculation.calculation_id,
+                status=CalculationStatusEnum.FAILED,
+                extra_info={"error_msg": f"Exception raised in background task: {exception!r}"},
+            ),
+        )
+
+        # Handle any special cases where something extra needs to be done to close
+        # off the command/calculation
+        match calculation:
+            case InteractiveSessionCalculation():
+                calculation.is_closed = True
+                calculation.session_closed_event.set()
+            case PythonCallable():
+                pass
+            case CLICommand():
+                pass
+
+        # Set client back to being idle, otherwise it won't accept new requests
+        self.status.set_idle()
+
     @log_eel
     async def handle_command_invocation_request_from_server(
         self, msg: msg_specs.CommandInvocationRequestNATS
@@ -163,8 +338,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         logger.info(
             f"Received request to discard command invocation (client status: {self.status.status}): {msg!r}",
         )
-        data_manager = await self.svcs_container.aget(DataManager)
-        await data_manager.update_calculation_status(
+        await self.data_manager.update_calculation_status(
             CalculationStatusDetails(
                 calculation_id=msg.calculation_id,
                 status=CalculationStatusEnum.FAILED,
@@ -176,196 +350,41 @@ class QCrBoxClient(QCrBoxServerClientBase):
 
     @log_eel
     async def handle_command_execution(self, execute_request: msg_specs.CommandExecutionRequestNATS) -> None:
-        """Handle command execution requests.
-
-        This method handles both interactive sessions and non-interactive commands
-        (python_callable and cli_command). When a command is executed in the background,
-        a calculation object is returned which we wait for to finish. This handler
-        does not return until the whole calculation has finished. For an interactive
-        session, this means the prepare, run and finalise steps have to have run.
-
-        TODO: Issue #520 - create a working directory for the command execution
+        """Handle when a command execution is requested.
 
         Parameters
         ----------
         execute_request : msg_specs.CommandExecutionRequestNATS
-            A NATS message containing data about the command to be executed.
+            A command execution request.
 
         """
         logger.info(f"Received command execution request: {execute_request!r} (current status: {self.status.status})")
-        if self.status.status != ClientStatusEnum.PENDING:
-            logger.error(
-                f"Trying to execute a command when client is not PENDING (current status: {self.status.status})"
-            )
+        if not await self._can_execute_command():
             return
-        self.status.set_busy()
-
-        calc = None
-        data_manager = await self.svcs_container.aget(DataManager)
 
         try:
-            command = ExecutableCommand(self.application_spec.get_command_spec_by_name(execute_request.command_name))
-
-            # The difference between parsed and prepared parameters is that the
-            # parsed ones are internal QCrBox representations of the parameters passed
-            # for command execution. The prepared parameters variable is a mapping of
-            # parameter name and the actual "prepared" values, e.g. locations on the file system.
-            parsed_parameters, prepared_parameters = await command.prepare_params(
-                self.application_spec, execute_request.command_arguments, self.working_dir
-            )
-            logger.debug(f"Executing command {command!r} in the background with arguments: {prepared_parameters!r}")
-
-            # TODO: we should have the interactive session handle this, or add it
-            #       as the same time we add to the calculation datastore
-            if isinstance(command, InteractiveSession):
-                await command.store_interactive_session_details(data_manager, execute_request, self.private_inbox)
-
-            # TODO: Issue #520 - create a _cwd
-            calc = await command.execute_in_background(
-                **prepared_parameters, _calculation_id=execute_request.calculation_id, _cwd=self.working_dir
-            )
+            command, command_parameters, calc = await self._prepare_and_launch_command(execute_request)
         except Exception as exc:
-            logger.exception(f"Exception raised during command execution: {exc}")
-            # If calc is not set, then the calculation failed to start in the background
-            # which is easier to deal with. If the calculation actually started, then we need
-            # to do some other stuff
-            if calc and isinstance(calc, BaseCalculation):
-                await self.handle_calculation_failure(calc, exc)
-            else:
-                await self.handle_command_launch_failure(execute_request.calculation_id, exc)
+            logger.error(f"Exception raised during command launch: {exc}")
+            await self._handle_command_launch_failure(execute_request.calculation_id, exc)
             return
 
-        # Keep track of the calculation, which should still be running in the background
         self.calculations[execute_request.calculation_id] = calc
-        logger.debug(f"Updating calculation status for {calc.calculation_id} after `execute_in_background()`")
-        try:
-            await data_manager.update_calculation_status(await calc.get_status_details())
-        except Exception as exc:  # TODO: switch back to (nats.js.errors.KeyNotFoundError, KeyError)
-            logger.error(
-                f"Failed to update calculation status for {calc.calculation_id}, as it doesn't exist in the Data "
-                "Manager. Unable to continue."
-            )
-            await self.handle_calculation_failure(calc, exc)
-            return
+        await self.data_manager.update_calculation_status(await calc.get_status_details())
 
-        # Wait until its finished and when finished, update the details. The calculation can
-        # will raise an exception if (one of the interactive) commands failed
-        logger.debug("Waiting for calculation to finish after launching in the background")
+        logger.debug(f"Waiting for calculation {calc.calculation_id} to finish")
         try:
             await calc.wait_until_finished()
         except Exception as exc:
-            logger.error(f"Calculation failed in background task with exception: {exc!r}")
-            await self.handle_calculation_failure(calc, exc)
+            await self._handle_calculation_failure(calc, exc)
             return
+        logger.debug(f"Calculation {calc.calculation_id} has finished")
 
-        logger.debug(f"Exited from calc.wait_until_finished(): {command.type}")
-        logger.debug(f"Calculation: {calc}")
-
-        # For non-interactive commands, we need to reset the client to being idle here and
-        # save the output to the DataManager. For interactive sessions, that is done
-        # instead in `close_interactive_session`
         if command.type != "interactive_session":
-            logger.debug("Adding non-interactive output to DataManager")
-            try:
-                # Find the CIF parameter and pass that... if it was converted. But we need to be careful
-                # because some commands will have TWO cif files.
-                from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import Cif2CifOptions, CifDataFileParameter
-
-                cif_parameter, parameter_name = None, None
-                for name, param in parsed_parameters.items():
-                    if isinstance(param, CifDataFileParameter):
-                        parameter_name = name
-                        cif_parameter = param
-                        break
-
-                logger.debug(f"Found CIF parameter: {parameter_name} = {cif_parameter}")
-
-                if cif_parameter and parameter_name:
-                    merge_options = Cif2CifOptions(
-                        application_yaml=self.application_spec.yaml_file_path,
-                        command_name=execute_request.command_name,
-                        parameter_name=parameter_name,
-                    )
-                    await calc.save_output_to_data_manager(
-                        data_manager, merge_options=merge_options, original_cif=cif_parameter
-                    )
-                else:
-                    await calc.save_output_to_data_manager(data_manager)
-            except (RuntimeError, FileNotFoundError) as exc:
-                logger.exception(
-                    f"Failed to add output for calculation {calc.calculation_id} to data manager due to: {exc}"
-                )
-            self.status.set_idle()
+            await self._handle_non_interactive_output(execute_request.command_name, command_parameters, calc)
 
         logger.debug("Updating calculation status after calculation has finished")
-        await data_manager.update_calculation_status(await calc.get_status_details())
-
-    @log_eel
-    async def handle_command_launch_failure(self, calculation_id: str, exception: Exception) -> None:
-        """Handle when launching a command fails.
-
-        This method differs from `handle_calculation_failure` as it is used for
-        handling failures when a command fails during configuration or when attempting
-        to launch it as a background async task.
-
-        Parameters
-        ----------
-        calculation_id : str
-            The calculation ID of the command which failed to launch.
-        exception : Exception
-            The raised exception causing the failure mode.
-
-        """
-        logger.error(f"Failed to launch command with exception: {exception!r}")
-        data_manager = await self.svcs_container.aget(DataManager)
-        await data_manager.update_calculation_status(
-            CalculationStatusDetails(
-                calculation_id=calculation_id,
-                status=CalculationStatusEnum.FAILED,
-                extra_info={"error_msg": f"Exception raised in background task: {exception!r}"},
-            ),
-        )
-        self.status.set_idle()
-
-    @log_eel
-    async def handle_calculation_failure(self, calculation: BaseCalculation, exception: Exception) -> None:
-        """Handle when the calculation execution fails, usually due to a raised exception.
-
-        This updates the calculation status to FAILED and sets the client back to
-        being idle. You therefore need to return from ASAP `handle_command_execution`
-        after calling this function.
-
-        Parameters
-        ----------
-        calculation: BaseCalculation
-            The calculation which failed.
-        exception : Exception
-            The exception raised by the command.
-
-        """
-        logger.error(f"Command calculation failed in background task with exception: {exception!r}")
-        data_manager = await self.svcs_container.aget(DataManager)
-        await data_manager.update_calculation_status(
-            CalculationStatusDetails(
-                calculation_id=calculation.calculation_id,
-                status=CalculationStatusEnum.FAILED,
-                extra_info={"error_msg": f"Exception raised in background task: {exception!r}"},
-            ),
-        )
-
-        # Handle any special cases where something extra needs to be done to close
-        # off the command/calculation
-        match calculation:
-            case InteractiveSessionCalculation():
-                calculation.is_closed = True
-                calculation.session_closed_event.set()
-            case PythonCallable():
-                pass
-            case CLICommand():
-                pass
-
-        # Set client back to being idle, otherwise it won't accept new requests
-        self.status.set_idle()
+        await self.data_manager.update_calculation_status(await calc.get_status_details())
 
     @log_eel
     async def handle_stop_running_command(
@@ -445,8 +464,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         # it'll still be be marked as RUNNING in the calculation database
         logger.debug("Setting container to idle and updating calculation status after forced termination")
         self.status.set_idle()
-        data_manager = await self.svcs_container.aget(DataManager)
-        await data_manager.update_calculation_status(await calc.get_status_details())
+        await self.data_manager.update_calculation_status(await calc.get_status_details())
 
         return msg_specs.StoppedCalculationResponse(
             calculation_id=calculation_id,
