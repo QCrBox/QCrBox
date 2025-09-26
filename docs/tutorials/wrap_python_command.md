@@ -1,11 +1,14 @@
 # Wrapping a Python module and exposing functionality to run within QCrBox
 
-This guide walks you through the process of encapsulating a Python module within a QCrBox container. Specifically, we'll focus on a module that queries the [Crystallographic Open Database (COD)](https://www.crystallography.net/cod/) for structures with similar elements and unit cell parameters. Our goal is to make this module's functionality accessible within a QCrBox container. The resulting container is already present in QCrBox as `cod_check`. However, we will go through the necessary steps to recreate the functionality.
+This guide walks you through the process of encapsulating a Python module within a QCrBox container. Specifically, we'll focus on a module that queries the [Crystallographic Open Database (COD)](https://www.crystallography.net/cod/) for structures with similar elements and unit cell parameters. Our goal is to make this module's functionality accessible within a QCrBox container. The resulting container is already present in QCrBox as `cod_check`. However, we will go through the necessary steps to recreate the functionality:
 
-FIXME: add context: this would happen following data collection and integration (e.g. following use of CrysalisPro)
-
-FIXME: overview of steps
-FIXME: demonstrate the existing cod check services component via the front-end (refer to later as process for validating the tutorial outcome)
+1. Use `qcb` commands to create a new application service from a template, with initial boilerplate configuration files to get us started.
+1. Copy in an example Python module we'll use to conduct COD queries on our CIF file.
+1. Define an interface using YAML that describes the commands that will expose capabilities of our Python module for use by QCrBox.
+1. Write some Python glue code that contains functions that are called when our service commands are invoked - essentially one Python function for each command. This glue code will call our Python module to do the actual processing, passing any parameters received from QCrBox.
+1. Write a Dockerfile that describes how to set up our service container with our application installed.
+1. Build our new application service container using `qcb`.
+1. Test our new container using QCrBox's web management front-end.
 
 
 ## Prerequisites
@@ -442,14 +445,26 @@ docker logs qcrbox-cod_check_tutorial-1
 ```
 
 Here we can see that the container's request to register with the QCrBox Registry service has been successful, so the container is ready to accept commands from a user workflow.
-
-FIXME: add diagnostic tips, e.g. pydantic errors - check YAML
+You may see errors from Pydantic, which ensures the YAML is correctly formatted. If this is the case, check and correct any errors in the `config_cod_check_tutorial.yaml` file.
 
 ## Validating our New Container using the QCrBox Frontend
 
-FIXME: add instructions for validating using QCrBox Frontend
+You can use the QCrBox web management front-end to check your new application container is working, once you [have it installed and running](https://github.com/QCrBox/QCrBoxFrontend).
 
-FIXME: need a way to suggest how to diagnose problems
+First, let's check we have our server configured to run a test, and then upload a test CIF file to feed into our new container:
+
+1. Log in to the QCrBox front-end.
+1. Create a new user group containing your QCrBox account if you haven't already:
+   1. Select `Groups` from the top navigation bar and `+ Create New Group`.
+   1. Select `Users` from the navigation bar, and `Edit` on the line with your user account, ensuring that the new group is selected in the `Groups` field.
+   1. Select `Save`.
+1. Upload a CIF file to the front-end we'll use to test our new container:
+   1. Download the [following CIF file](qcrbox_work.cif) to your local machine.
+   1. Select `Home` from the navigation bar, then select `Browse...` and the downloaded CIF file, and select `Upload`.
+1. Select the uploaded CIF file below `Load Existing File:`, and select `Load`.
+
+
+
 
 ## Conclusion and final remarks
 
