@@ -25,13 +25,6 @@ def parse_input(input_cif, cellpar_deviation_perc, listed_elements_only):
     # Convert cellpar_deviation to the correct type and convert the given percentage to a decimal
     cellpar_deviation = float(cellpar_deviation_perc) / 100.0
 
-    # Validate 'listed_elements_only' as a boolean value
-    if listed_elements_only.lower() not in ("true", "false"):
-        raise ValueError("'listed_elements_only' must be a boolean (true or false).")
-
-    # Convert 'listed_elements_only' to a boolean
-    listed_elements_only = listed_elements_only.lower() == "true"
-
     # Use the parent directory of the input CIF file as the working directory
     work_folder = input_cif.parent
 
