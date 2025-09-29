@@ -39,6 +39,8 @@ However, there will be an initial period of stabilisation where this is not adhe
 - Renamed `DataFileManager` to `DataManager` to better reflect that is manages more than just data files
 - Added a new tests to test the DataManager service, non-interactive commands and new API endpoints.
 - Additional fields have been added to the payload for the dataset API endpoints.
+- Inputs and outputs for commands are stored in their own temporary directories, to prevent situations where
+  input/output form previous commands would interfere. These directories are removed once a command has finished.
 - And lots more!
 
 ### Issues Fixed
