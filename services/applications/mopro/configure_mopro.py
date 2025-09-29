@@ -193,7 +193,7 @@ def run_inp_file(
 ):
     work_folder = Path(input_cif).parent
     work_cif_path = work_folder / "work.cif"
-    cif_file_to_specific_by_yml(input_cif, work_cif_path, YAML_PATH, "run_inp_file", "input_cif_path")
+    cif_file_to_specific_by_yml(input_cif, work_cif_path, YAML_PATH, "run_inp_file", "input_cif")
     cif2hkl4(input_cif, 0, work_cif_path.with_suffix(".hkl"))
 
     mopro_ini_path = MOPRO_ROAMING_DIR / "mopro.ini"
