@@ -26,8 +26,6 @@ To begin, initialize a new QCrBox container for our module:
 1. Type `qcb init cod_check_tutorial` and press Enter.
 1. You will be prompted to provide basic information about your application through a guided dialogue. Follow the prompts to complete the setup.
 
-FIXME: replace command output below with revised version without CLI option which is deprecated
-
 ```
 Please provide some basic information about your application.
 The following dialog will guide you through the relevant settings.
@@ -493,6 +491,6 @@ that correspond to what we expect as we specified in our `config_cod_check_tutor
 
 ## Conclusion and final remarks
 
-We have now exposed two commands in QCrbox from a Python module. One that only analyses a cif file to produce some output, and another one that works from an input cif file to an output cif. If you want to interact with what you have build, a ipython notebook you can put into the examples folder can be found [here.](./example_support/cod_wrapper.ipynb)
+We have now exposed two commands in QCrbox from a Python module. One that only analyses a cif file to produce some output, and another one that works from an input cif file to an output cif.
 
 For more examples you might consider looking into the already implemented programs in `services/applications`. If this tutorial is unclear at any point please raise an issue on Github with the specific problem that you ran into.
