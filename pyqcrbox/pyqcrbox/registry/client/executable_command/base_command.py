@@ -31,6 +31,7 @@ class BaseCommand(metaclass=ABCMeta):
     def __init__(self, cmd_spec: "CommandSpecDiscriminatedUnion"):
         self.cmd_spec = cmd_spec
         self.type = cmd_spec.implemented_as
+        self.name = cmd_spec.name
 
     def __repr__(self):
         """Return a string representation of the command instance.

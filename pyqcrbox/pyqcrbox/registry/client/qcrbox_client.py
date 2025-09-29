@@ -6,7 +6,6 @@ import anyio
 from litestar import Litestar
 
 from pyqcrbox import helpers, logger, msg_specs, settings, sql_models
-from pyqcrbox.data_management import DataManager
 from pyqcrbox.debug import log_eel
 from pyqcrbox.helpers import generate_private_routing_key
 from pyqcrbox.registry.client.executable_command.base_calculation import BaseCalculation
@@ -184,16 +183,18 @@ class QCrBoxClient(QCrBoxServerClientBase):
         logger.debug(f"Attempting to store output from non-interactive command {command_name} to data manager")
 
         try:
-            cif_parameter, parameter_name = None, None
-            for name, param in command_parameters.items():
-                if isinstance(param, CifDataFileParameter):
-                    parameter_name, cif_parameter = name, param
-                    break
+            # FIXME: Try and find the input cif to the command -- this doesn't really
+            # work if there are multiple to do... BUT... it seems to be an OK
+            # hack for the current developer release
+            parameter_name, cif_parameter = next(
+                filter(lambda item: isinstance(item[1], CifDataFileParameter), command_parameters.items()),
+                (None, None),
+            )
 
             # If we have found a CIF parameter, then we will pass it to the save
             # method to attempt to merge the original cif (the parameter) with
             # the cif output from the command
-            if cif_parameter and parameter_name:
+            if cif_parameter and parameter_name and isinstance(cif_parameter, CifDataFileParameter):
                 merge_options = Cif2CifOptions(
                     application_yaml=self.application_spec.yaml_file_path,  # type: ignore
                     command_name=command_name,
@@ -363,7 +364,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
             return
 
         try:
-            command, command_parameters, calc = await self._prepare_and_launch_command(execute_request)
+            command, parameters, calc = await self._prepare_and_launch_command(execute_request)
         except Exception as exc:
             logger.error(f"Exception raised during command launch: {exc}")
             await self._handle_command_launch_failure(execute_request.calculation_id, exc)
@@ -381,7 +382,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         logger.debug(f"Calculation {calc.calculation_id} has finished")
 
         if command.type != "interactive_session":
-            await self._handle_non_interactive_output(execute_request.command_name, command_parameters, calc)
+            await self._handle_non_interactive_output(command.name, parameters, calc)
 
         logger.debug("Updating calculation status after calculation has finished")
         await self.data_manager.update_calculation_status(await calc.get_status_details())
