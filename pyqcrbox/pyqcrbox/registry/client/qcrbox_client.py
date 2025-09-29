@@ -448,10 +448,10 @@ class QCrBoxClient(QCrBoxServerClientBase):
         # and update the status of the calculation. If we don't update the status here,
         # it'll still be be marked as RUNNING in the calculation database
         logger.debug("Setting container to idle and updating calculation status after forced termination")
-        self.status.set_idle()
+        self._remove_calculation_work_dir(self.working_dir / f"{calc.calculation_id}")
         data_file_manager = await self.svcs_container.aget(DataManager)
         await data_file_manager.update_calculation_status(await calc.get_status_details())
-        self._remove_calculation_work_dir(Path(self.working_dir) / f"{calculation_id}")
+        self.status.set_idle()
 
         return msg_specs.StoppedCalculationResponse(
             calculation_id=calculation_id,
@@ -505,7 +505,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
                 session_id=session_id, status=CalculationStatusEnum.FAILED, output_dataset_id=None
             )
             return response
-        self._remove_calculation_work_dir(Path(self.working_dir) / f"{calc.calculation_id}")
+        self._remove_calculation_work_dir(self.working_dir / f"{calc.calculation_id}")
         self.status.set_idle()
         logger.debug("Interactive session has been closed and client set to idle")
 
