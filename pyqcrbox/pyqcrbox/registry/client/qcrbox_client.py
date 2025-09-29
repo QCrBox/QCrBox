@@ -1,5 +1,6 @@
 import argparse
 import os
+import shutil
 from pathlib import Path
 
 import anyio
@@ -31,7 +32,6 @@ class QCrBoxClient(QCrBoxServerClientBase):
         *,
         client_id: str = "anonymous_client",
         private_routing_key: str | None = None,
-        work_root_dir: Path | None = None,
         asgi_server: Litestar | None = None,
     ):
         super().__init__(asgi_server=asgi_server)
@@ -201,6 +201,16 @@ class QCrBoxClient(QCrBoxServerClientBase):
         calc = None
         data_file_manager = await self.svcs_container.aget(DataManager)
 
+        command_working_dir = self.working_dir / f"{execute_request.calculation_id}"
+        if command_working_dir.exists():
+            try:
+                shutil.rmtree(command_working_dir)
+            except Exception as exc:
+                logger.error(f"Unable to remove existing directory for calculation id at path {command_working_dir}")
+                await self.handle_command_launch_failure(execute_request.calculation_id, exc)
+                return
+        command_working_dir.mkdir(parents=True)
+
         try:
             command = ExecutableCommand(self.application_spec.get_command_spec_by_name(execute_request.command_name))
             logger.debug(f"Command to execute: {command}")
@@ -208,10 +218,10 @@ class QCrBoxClient(QCrBoxServerClientBase):
                 await command.add_to_interactive_session_database(
                     data_file_manager, execute_request, self.private_inbox
                 )
-            parameters = await command.prepare_params(self.working_dir, execute_request.command_arguments)
+            parameters = await command.prepare_params(command_working_dir, execute_request.command_arguments)
             logger.debug(f"Executing command {command!r} in the background with arguments {parameters!r}")
             calc = await command.execute_in_background(
-                **parameters, _calculation_id=execute_request.calculation_id, _cwd=self.working_dir
+                **parameters, _calculation_id=execute_request.calculation_id, _cwd=command_working_dir
             )
             if not isinstance(calc, BaseCalculation):
                 raise RuntimeError("Command execution did not return a calculation object.")
