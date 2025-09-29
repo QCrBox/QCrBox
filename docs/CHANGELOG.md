@@ -50,6 +50,7 @@ However, there will be an initial period of stabilisation where this is not adhe
 - Fixed an issue where `qcb up` would use the wrong version ID for `pyqcrbox` when building service containers.
 - Fixed an issue where `qcb list` would use the wrong URL and port number for the registry API.
 - Fixed linting issues raised by `ruff` for `qcb`.
+- Fixed an issue where environment variables were unset causing applications not to launch
 - And lots more!
 
 ### Documentation
