@@ -26,6 +26,8 @@ However, there will be an initial period of stabilisation where this is not adhe
   ensure compatibility.
 - Validation criteria can optionally be set for command parameters, which validates a user's input for the value of a
   parameter.
+- CIF files can be transformed between formats required for command execution. When a command has completed, the output
+  CIF is merged with the original CIF to create a unified file.
 
 ### Removed Features
 
@@ -39,6 +41,8 @@ However, there will be an initial period of stabilisation where this is not adhe
 - Renamed `DataFileManager` to `DataManager` to better reflect that is manages more than just data files
 - Added a new tests to test the DataManager service, non-interactive commands and new API endpoints.
 - Additional fields have been added to the payload for the dataset API endpoints.
+- Parameter parsing and preparation are not deal with by commands, rather than the registry.
+- Command execution has been cleaned up into smaller, more testable, methods to streamline execution.
 - And lots more!
 
 ### Issues Fixed
@@ -50,6 +54,8 @@ However, there will be an initial period of stabilisation where this is not adhe
 - Fixed an issue where `qcb up` would use the wrong version ID for `pyqcrbox` when building service containers.
 - Fixed an issue where `qcb list` would use the wrong URL and port number for the registry API.
 - Fixed linting issues raised by `ruff` for `qcb`.
+- Fixed an issue where the `base-ancestor` image wouldn't build because `conda` couldn't resolve the environment
+  dependencies.
 - And lots more!
 
 ### Documentation
@@ -57,6 +63,7 @@ However, there will be an initial period of stabilisation where this is not adhe
 - Added how to guide on using the QCrBox Azure Container Repository.
 - Updated the how to guide on testing QCrBox.
 - Added a technical reference page on parameter specification.
+- Added further in-code and developer documentation.
 
 ## [icdm-2025]
 
