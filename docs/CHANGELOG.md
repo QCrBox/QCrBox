@@ -35,6 +35,7 @@ However, there will be an initial period of stabilisation where this is not adhe
 
 ### Enhancements
 
+- Added validation steps to the QCrBox Python application wrapping tutorial.
 - The registry API now uses LiteStar dependency injection, improving management of the NATS server.
 - Renamed `DataFileManager` to `DataManager` to better reflect that is manages more than just data files
 - Added a new tests to test the DataManager service, non-interactive commands and new API endpoints.
@@ -43,6 +44,7 @@ However, there will be an initial period of stabilisation where this is not adhe
 
 ### Issues Fixed
 
+- Updated tutorial docs to match the core QCrBox platform changes.
 - Fixed an unneeded and failing type validation check in the COD Check example service due to parameter handling updates.
 - Fixed an issue where the `DataManager` would lose connection to the NATS server when it had too many files.
 - Replaces an obscure error message when a wrong `QCrBox.cif_data_file` or `QCrBox.data_file` parameter with a more
