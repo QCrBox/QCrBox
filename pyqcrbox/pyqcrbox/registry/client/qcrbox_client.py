@@ -101,6 +101,50 @@ class QCrBoxClient(QCrBoxServerClientBase):
             logger.error("Application registration failed (no response from server)")
             self.shutdown()
 
+    async def _create_calculation_work_dir(self, calculation_id: str) -> Path:
+        """Create a working directory for the calculation.
+
+        The name of the directory will be the calculation ID, in the working
+        directory for the client.
+
+        Parameters
+        ----------
+        calculation_id : str
+            The ID for the calculation.
+
+        Returns
+        -------
+        Path
+            The path to the working directory for the calculation.
+
+        """
+        command_working_dir = self.working_dir / f"{calculation_id}"
+        logger.debug(f"Creating new directory {command_working_dir} for command execution")
+
+        # This should/could never happen, but you never know...
+        if command_working_dir.exists():
+            shutil.rmtree(command_working_dir)
+
+        command_working_dir.mkdir(parents=True)
+
+        return command_working_dir
+
+    @log_eel
+    def _remove_calculation_work_dir(self, path: Path) -> None:
+        """Remove the directory containing calculation output.
+
+        Parameters
+        ----------
+        path : Path
+            The path to the command/calculation's directory.
+
+        """
+        logger.debug(f"Removing directory {path} with contents: {os.listdir(path)}")
+        shutil.rmtree(
+            path, ignore_errors=True
+        )  # No need to worry about errors, it will be cleaned up later if it matters
+        logger.debug(f"Removed {path}")
+
     @log_eel
     async def handle_command_invocation_request_from_server(
         self, msg: msg_specs.CommandInvocationRequestNATS
@@ -200,16 +244,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
 
         calc = None
         data_file_manager = await self.svcs_container.aget(DataManager)
-
-        command_working_dir = self.working_dir / f"{execute_request.calculation_id}"
-        if command_working_dir.exists():
-            try:
-                shutil.rmtree(command_working_dir)
-            except Exception as exc:
-                logger.error(f"Unable to remove existing directory for calculation id at path {command_working_dir}")
-                await self.handle_command_launch_failure(execute_request.calculation_id, exc)
-                return
-        command_working_dir.mkdir(parents=True)
+        cmd_work_dir = await self._create_calculation_work_dir(execute_request.calculation_id)
 
         try:
             command = ExecutableCommand(self.application_spec.get_command_spec_by_name(execute_request.command_name))
@@ -218,10 +253,10 @@ class QCrBoxClient(QCrBoxServerClientBase):
                 await command.add_to_interactive_session_database(
                     data_file_manager, execute_request, self.private_inbox
                 )
-            parameters = await command.prepare_params(command_working_dir, execute_request.command_arguments)
+            parameters = await command.prepare_params(cmd_work_dir, execute_request.command_arguments)
             logger.debug(f"Executing command {command!r} in the background with arguments {parameters!r}")
             calc = await command.execute_in_background(
-                **parameters, _calculation_id=execute_request.calculation_id, _cwd=command_working_dir
+                **parameters, _calculation_id=execute_request.calculation_id, _cwd=cmd_work_dir
             )
             if not isinstance(calc, BaseCalculation):
                 raise RuntimeError("Command execution did not return a calculation object.")
@@ -263,6 +298,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
                 logger.exception(
                     f"Failed to add output for calculation {calc.calculation_id} to DataManager due to {exc}"
                 )
+            self._remove_calculation_work_dir(cmd_work_dir)
             self.status.set_idle()
 
         logger.debug("Updating calculation status after calculation has finished")
@@ -415,6 +451,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         self.status.set_idle()
         data_file_manager = await self.svcs_container.aget(DataManager)
         await data_file_manager.update_calculation_status(await calc.get_status_details())
+        self._remove_calculation_work_dir(Path(self.working_dir) / f"{calculation_id}")
 
         return msg_specs.StoppedCalculationResponse(
             calculation_id=calculation_id,
@@ -468,6 +505,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
                 session_id=session_id, status=CalculationStatusEnum.FAILED, output_dataset_id=None
             )
             return response
+        self._remove_calculation_work_dir(Path(self.working_dir) / f"{calc.calculation_id}")
         self.status.set_idle()
         logger.debug("Interactive session has been closed and client set to idle")
 
