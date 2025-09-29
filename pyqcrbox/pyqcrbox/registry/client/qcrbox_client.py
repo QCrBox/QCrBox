@@ -329,6 +329,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
                 extra_info={"error_msg": f"Exception raised in background task: {exception!r}"},
             ),
         )
+        self._remove_calculation_work_dir(self.working_dir / f"{calculation_id}")
         self.status.set_idle()
 
     @log_eel
@@ -367,6 +368,8 @@ class QCrBoxClient(QCrBoxServerClientBase):
                 pass
             case CLICommand():
                 pass
+
+        self._remove_calculation_work_dir(self.working_dir / f"{calculation.calculation_id}")
 
         # Set client back to being idle, otherwise it won't accept new requests
         self.status.set_idle()
