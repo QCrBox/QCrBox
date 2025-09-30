@@ -1,0 +1,8 @@
+data_xcalibur
+_cell_length_a                    5.9554
+_cell_length_b                    9.037
+_cell_length_c                    18.389
+_cell_angle_alpha                 90.0
+_cell_angle_beta                  90.0
+_cell_angle_gamma                 90.0
+_chemical_formula_sum             'C44 H40 O8 S4 '
