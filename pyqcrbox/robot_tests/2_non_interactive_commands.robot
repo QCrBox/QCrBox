@@ -122,7 +122,7 @@ Check that an error is returned if a dataset ID is used instead of a data file I
     ${calculation_status}=    Get Calculation Status    ${calculation_id}
     Should Be Equal    ${calculation_status["status"]}    failed
     ${error_msg}=    Set Variable    ${calculation_status["status_events"][-1]["extra_info"]["error_msg"]}
-    Should Contain    ${error_msg}    is a dataset ID
+    Should Contain    ${error_msg}    is a dataset
 
 
 *** Keywords ***

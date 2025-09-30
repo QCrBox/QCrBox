@@ -350,9 +350,9 @@ class CifDataFileParameter(QCrBoxPydanticBaseModel):
                 )
             except nats_errors.ObjectNotFoundError as exc:
                 if await check_if_id_is_a_dataset(data_manager, self.data_file_id):
-                    exc_msg = f"The provided `data_file_id` '{self.data_file_id}' is a `dataset_id`"
+                    exc_msg = f"The provided data file ID '{self.data_file_id}' is a dataset ID"
                 else:
-                    exc_msg = f"No data file was found with the provided `data_file_id` '{self.data_file_id}'"
+                    exc_msg = f"No data file was found with the provided data file ID {self.data_file_id}'"
                 raise ValueError(exc_msg) from exc
 
             if cif2cif_options:
