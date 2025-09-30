@@ -139,11 +139,14 @@ class QCrBoxClient(QCrBoxServerClientBase):
             The path to the command/calculation's directory.
 
         """
+        if settings.registry.client.keep_calc_work_dir:
+            logger.info(f"Keeping calculation directory due to setting configuration: {path}")
+            return
         logger.debug(f"Removing directory {path} with contents: {os.listdir(path)}")
         shutil.rmtree(
             path, ignore_errors=True
         )  # No need to worry about errors, it will be cleaned up later if it matters
-        logger.debug(f"Removed {path}")
+        logger.debug(f"Removed calculation directory: {path}")
 
     @log_eel
     async def handle_command_invocation_request_from_server(
