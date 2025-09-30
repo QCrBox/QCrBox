@@ -20,9 +20,11 @@ commands:
         required_entry_sets: ["cell", "structure", "resolution"]
         required_entries: ["_space_group_symop_operation_xyz"]
         merge_su: True
-      - name: "output_tsc_name"
-        dtype: str
+      - name: "output_cif_name"
+        dtype: "QCrBox.output_cif"
         description: "Name to use for the output TSC file to after calculating the atomic form factors"
+        required_entry_sets: ["aspheric_form_factors"]
+        invalidated_entries: [".*refine.*", "_iucr.*"]
       - name: "functional"
         dtype: "str"
         description: "The DFT functional to use for the GPAW calculation"
@@ -116,6 +118,17 @@ cif_entry_sets:
       "_geom_bond_distance", "_geom_bond_site_symmetry_2",
       "_geom_angle_atom_site_label_1", "_geom_angle_atom_site_label_2", "_geom_angle_atom_site_label_3",
       "_geom_angle", "_geom_angle_site_symmetry_1", "_geom_angle_site_symmetry_3"
+    ]
+  - name: "aspheric_form_factors"
+    required: [
+      "_wfns.software", "_wfns.type", "_wfns.method",  
+      "_wfn_moiety.id",  "_wfn_moiety.atom_id",
+      "_wfn_moiety.asu_atom_site_label", "_wfn_moiety.atom_type_symbol",
+      "_wfn_moiety.symm_code", "_wfn_moiety.cartn_x",
+      "_wfn_moiety.cartn_y", "_wfn_moiety.cartn_z",
+      "_wfn_moiety.aff_index",
+      "_aspheric_ff.index_h", "_aspheric_ff.index_k", "_aspheric_ff.index_l", 
+      "_aspheric_ff.form_factor_real", "_aspheric_ff.form_factor_imag"
     ]
 
 qcrbox_yaml_spec_version: "0.1"

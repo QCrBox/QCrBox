@@ -3,17 +3,23 @@ import subprocess
 from pathlib import Path
 
 from qcrboxtools.cif.cif2cif import cif_file_merge_to_unified_by_yml, cif_file_to_specific_by_yml
+from qcrboxtools.cif.read import read_cif_as_unified
 from qcrboxtools.cif.file_converter.hkl import cif2hkl4
-
+from qcrboxtools.cif.file_converter.tsc import read_tsc_file
 from pyqcrbox import sql_models
 from pyqcrbox.registry.client import QCrBoxClient
+
+from iotbx.cif.model import cif, block
 
 YAML_PATH = "/opt/qcrbox/config_xharpy_gpaw.yaml"
 
 
-def atom_form_fact_gpaw(input_cif, output_tsc_name, functional, gridspacing):
+def atom_form_fact_gpaw(input_cif, output_cif_name, functional, gridspacing):
     work_cif_path = Path(input_cif).parent / "work.cif"
     cif_file_to_specific_by_yml(input_cif, work_cif_path, YAML_PATH, "atom_form_fact_gpaw", "input_cif")
+
+    output_tsc_name = Path(input_cif).parent / "output.tsc"
+    output_tsc_cif_name = Path(input_cif).parent / "output_with_tsc.cif"
     subprocess.check_call(
         [
             "python",
@@ -32,7 +38,26 @@ def atom_form_fact_gpaw(input_cif, output_tsc_name, functional, gridspacing):
         ]
     )
 
-    return str(output_tsc_name)
+    tsc_obj = read_tsc_file(output_tsc_name)
+    structure_cif_block = read_cif_as_unified(input_cif, 0)
+    aff_source = "partitioned finite grid density"
+    aff_partitioning_name = "hirshfeld"
+    aff_partitioning_software = "XHARPy"
+    new_block = tsc_obj.to_cif(structure_cif_block, aff_source, aff_partitioning_name, aff_partitioning_software)
+    new_block.add_data_item("_wfns.software", "GPAW")
+    new_block.add_data_item("_wfns.type", "FD/PAW")
+    new_block.add_data_item("_wfns.method", functional)
+
+    new_cif = cif()
+    new_cif['tscblock'] = new_block
+    with open(output_tsc_cif_name, 'w', encoding='UTF-8') as output_tsc_cif:
+        output_tsc_cif.write(str(new_cif))
+
+    cif_file_merge_to_unified_by_yml(
+        output_tsc_cif_name, output_cif_name, input_cif, YAML_PATH, "atom_form_fact_gpaw", "output_cif_name"
+    )
+
+    return str(output_cif_name)
 
 
 def ha_refine(input_cif, output_cif_name, functional, gridspacing):
@@ -89,7 +114,7 @@ def ha_refine(input_cif, output_cif_name, functional, gridspacing):
         work_cif_path, output_cif_path, input_cif, YAML_PATH, "ha_refine", "output_cif_name"
     )
 
-    shutil.rmtree(output_dir)
+    #shutil.rmtree(output_dir)
 
     return str(output_cif_path)
 
