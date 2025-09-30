@@ -3,6 +3,7 @@ import importlib
 import inspect
 import multiprocessing.pool
 import multiprocessing.process
+import os
 import traceback
 from pathlib import Path
 from typing import Any
@@ -187,11 +188,13 @@ class PythonCallable(BaseCommand):
             calc_finished_event.set()  # type: ignore
             calc_finished_event = None
 
-        self.pool = multiprocessing.pool.Pool(_num_processes)
-        if _cwd:
-            logger.warning(
-                "TODO: Change into working directory before executing the python callable (and switch back afterwards)!"
-            )
+        def init_working_dir():
+            if _cwd:
+                logger.debug(f"Setting working dir to _cwd {_cwd}")
+                os.chdir(_cwd)
+            logger.info(f"Executing command in directory: {os.getcwd()}")
+
+        self.pool = multiprocessing.pool.Pool(_num_processes, initializer=init_working_dir)
         param_values = {k: kwargs[k] for k in self.parameter_names if k in kwargs}
 
         pending_result = self.pool.apply_async(
