@@ -62,7 +62,7 @@ def atom_form_fact_gpaw(input_cif, output_cif_name, functional, gridspacing):
 
 def ha_refine(input_cif, output_cif_name, functional, gridspacing):
     input_cif = Path(input_cif)
-    output_dir = Path("./xharpy_output")
+    output_dir = Path("./xharpy_output").absolute()
     if output_dir.exists():
         shutil.rmtree(output_dir)
     output_dir.mkdir()
@@ -85,11 +85,11 @@ def ha_refine(input_cif, output_cif_name, functional, gridspacing):
             "-m",
             "xharpy.cli_refine",
             "--cif_name",
-            work_cif_path,
+            str(work_cif_path),
             "--cif_index",
             "0",
             "--hkl_name",
-            output_dir / "shelx.hkl",
+            str(output_dir / "shelx.hkl"),
             "--lst_name",
             "./dummy.lst",
             "--extinction",
@@ -97,7 +97,7 @@ def ha_refine(input_cif, output_cif_name, functional, gridspacing):
             "--xc",
             functional,
             "--gridspacing",
-            gridspacing,
+            str(gridspacing),
             "--kpoints",
             "1",
             "1",
@@ -105,7 +105,7 @@ def ha_refine(input_cif, output_cif_name, functional, gridspacing):
             "--mpi_cores",
             "auto",
             "--output_folder",
-            output_dir,
+            str(output_dir),
         ]
     )
 
@@ -113,8 +113,6 @@ def ha_refine(input_cif, output_cif_name, functional, gridspacing):
     cif_file_merge_to_unified_by_yml(
         work_cif_path, output_cif_path, input_cif, YAML_PATH, "ha_refine", "output_cif_name"
     )
-
-    #shutil.rmtree(output_dir)
 
     return str(output_cif_path)
 
