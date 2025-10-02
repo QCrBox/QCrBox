@@ -47,4 +47,40 @@ commands:
         dtype: str
         description: An unused dummy parameter
 
+  - name: change_cif_name
+    description: A Python function which changes the file name of a CIF
+    implemented_as: python_callable
+    import_path: sample_functions
+    parameters:
+      - name: input_cif
+        dtype: QCrBox.cif_data_file
+        description: The main CIF
+        required_entry_sets: [ "cell_elements" ]
+      - name: output_cif_name
+        dtype: str
+        description: The name of the output CIF file
+        # required_entry_sets: [ "cell_elements" ]
+        # invalidated_entries: [ ]
+
+  - name: print_two_cif
+    description: A Python function which prints the contents of two CIF files
+    implemented_as: python_callable
+    import_path: sample_functions
+    parameters:
+      - name: cif1
+        dtype: QCrBox.cif_data_file
+        description: The first CIF file
+      # Note that we can only have ONE cif_data_file, other CIFs have to be data_files
+      - name: cif2
+        dtype: QCrBox.data_file
+        description: The second CIF file
+        # required_entry_sets: [ "cell_elements" ]
+
+cif_entry_sets:
+  - name: "cell_elements"
+    required: [
+      "_cell_length_a", "_cell_length_b", "_cell_length_c", "_cell_angle_alpha",
+      "_cell_angle_beta", "_cell_angle_gamma", "_chemical_formula_sum"
+    ]
+
 qcrbox_yaml_spec_version: "0.1"
