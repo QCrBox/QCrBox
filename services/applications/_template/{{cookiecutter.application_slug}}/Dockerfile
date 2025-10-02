@@ -1,9 +1,9 @@
 ARG QCRBOX_DOCKER_TAG
-{% if cookiecutter.application_type == "CLI" %}
+{% if cookiecutter.application_type == "Non-interactive Command" %}
 FROM qcrbox/base-application:${QCRBOX_DOCKER_TAG}
-{% elif cookiecutter.application_type == "GUI (Linux)" %}
+{% elif cookiecutter.application_type == "Interactive GUI (Linux)" %}
 FROM qcrbox/base-novnc:${QCRBOX_DOCKER_TAG}
-{% elif cookiecutter.application_type == "GUI (Windows)" %}
+{% elif cookiecutter.application_type == "Interactive GUI (Windows)" %}
 FROM qcrbox/base-wine:${QCRBOX_DOCKER_TAG}
 {% else %}
 FROM qcrbox/INVALID-INVALID-INVALID
