@@ -46,6 +46,9 @@ However, there will be an initial period of stabilisation where this is not adhe
 - Command execution has been cleaned up into smaller, more testable, methods to streamline execution.
 - Inputs and outputs for commands are stored in their own temporary directories, to prevent situations where
   input/output form previous commands would interfere. These directories are removed once a command has finished.
+- The application types in `qcb init` have been given more descriptive names: "CLI" -> "Non-interactive Command" and
+  "GUI (Linux)" -> "Interactive GUI (Linux)". We have also reintroduced the "Interactive GUI (Windows)" application
+  which lets you build an interactive application based on a Windows application running via Wine.
 - And lots more!
 
 ### Issues Fixed

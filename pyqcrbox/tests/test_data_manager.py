@@ -100,7 +100,7 @@ async def test_appending_to_dataset(data_manager: DataManager, sample_cif_file: 
     )
 
     # Now append another file and check it's in there too
-    appended_dataset_id = await data_manager.update_data_file_in_dataset(dataset_id, data_file_id_2)
+    appended_dataset_id = await data_manager.add_data_file_to_dataset(dataset_id, data_file_id_2)
     assert appended_dataset_id == dataset_id, (
         "Dataset ID returned for appended dataset doesn't match original dataset ID"
     )

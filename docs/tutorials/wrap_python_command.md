@@ -31,9 +31,10 @@ Please provide some basic information about your application.
 The following dialog will guide you through the relevant settings.
 
   [1/7] Select application_type
-    1 - CLI
-    2 - GUI (Linux)
-    Choose from [1/2] (1): 1
+    1 - Non-interactive Command
+    2 - Interactive GUI (Linux)
+    3 - Interactive GUI (Windows)
+    Choose from [1/2/3] (1):
   [2/7] application_slug (cod_check_tutorial):
   [3/7] application_name (Cod Check): COD Check Tutorial
   [4/7] application_version (x.y.z): 0.0.1
