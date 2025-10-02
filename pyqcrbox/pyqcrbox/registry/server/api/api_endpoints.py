@@ -506,7 +506,7 @@ async def append_to_dataset(
     return QCrBoxResponse(
         content={
             "status": "success",
-            "message": f"Appended data file {appended_file.qcrbox_file_id} to dataset {dataset_id!r}",
+            "message": f"Appended data file {appended_file.qcrbox_file_id!r} to dataset {dataset_id!r}",
             "payload": {
                 "datasets": [dataset],
                 "data_files": list(dataset.data_files.values()),
