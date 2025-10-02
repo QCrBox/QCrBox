@@ -70,6 +70,7 @@ class DataManager(ABC):
             A Dataset object containing metadata about the dataset.
 
         """
+        logger.debug(f"Storing dataset: {dataset.model_dump_json()}")
         await self._store_in_kv(DataManagerKeys.DATASETS, dataset.dataset_id, dataset.model_dump_json().encode())
 
     async def _store_data_file_contents(self, key: str, file_contents: bytes) -> None:
@@ -83,6 +84,7 @@ class DataManager(ABC):
             The contents of the file, as a bytes stream.
 
         """
+        logger.debug(f"Storing file contents, key = {key}")
         await self._store_in_object_store(DataManagerKeys.DATA_FILE_CONTENTS, key, file_contents)
 
     async def _store_data_file_metadata(self, data_file: DataFile) -> None:
@@ -94,6 +96,7 @@ class DataManager(ABC):
             A DataFileMetadata object containing metadata about the data file.
 
         """
+        logger.debug(f"Storing data file: {data_file.model_dump_json()}")
         await self._store_in_kv(
             DataManagerKeys.DATA_FILES, data_file.qcrbox_file_id, data_file.model_dump_json().encode()
         )
@@ -115,6 +118,7 @@ class DataManager(ABC):
             The ID of the created dataset.
 
         """
+        logger.debug(f"Creating a new dataset with data files: {data_file_ids}")
         if isinstance(data_file_ids, str):
             data_file_ids = [data_file_ids]
         data_files = [await self.get_data_file(data_file_id) for data_file_id in data_file_ids]
@@ -125,11 +129,12 @@ class DataManager(ABC):
 
         for data_file in data_files:
             data_file.qcrbox_dataset_id = dataset_id
+            logger.debug(f"Associating data file with dataset {dataset_id}: data_file = {data_file.model_dump_json()}")
             await self._store_data_file_metadata(data_file)
 
         return dataset_id
 
-    async def update_data_file_in_dataset(self, dataset_id: str, data_file_id: str) -> str:
+    async def add_data_file_to_dataset(self, dataset_id: str, data_file_id: str) -> str:
         """Append a new data file to a dataset.
 
         If the file already exists in the dataset (the file being added has the
@@ -148,6 +153,7 @@ class DataManager(ABC):
             The ID of the updated dataset.
 
         """
+        logger.debug(f"Updating data file {data_file_id} in dataset {dataset_id}")
         data_file = await self.get_data_file(data_file_id)
 
         dataset = await self.get_dataset(dataset_id)
@@ -155,6 +161,9 @@ class DataManager(ABC):
         await self._store_dataset(dataset)
 
         data_file.qcrbox_dataset_id = dataset_id
+        logger.debug(
+            f"Associating data file {data_file_id} with dataset {dataset_id}: data_file = {data_file.model_dump_json()}"
+        )
         await self._store_data_file_metadata(data_file)
 
         return dataset.dataset_id
@@ -200,12 +209,14 @@ class DataManager(ABC):
             The ID of the data file to delete.
 
         """
+        logger.debug(f"Removing data file {data_file_id}")
         data_file = await self.get_data_file(data_file_id)
 
         await self._delete_from_kv(DataManagerKeys.DATA_FILES, data_file_id)
         await self._delete_from_object_store(DataManagerKeys.DATA_FILE_CONTENTS, data_file_id)
 
         if data_file.qcrbox_dataset_id:
+            logger.debug(f"Removing data file {data_file_id} from parent dataset {data_file.qcrbox_dataset_id}")
             parent_dataset = await self.get_dataset(data_file.qcrbox_dataset_id)
             parent_dataset.data_files.pop(data_file.filename)
             await self._store_dataset(parent_dataset)
@@ -225,7 +236,7 @@ class DataManager(ABC):
             logger.error(f"No dataset found for id {dataset_id!r}")
             raise
         dataset = Dataset.model_validate_json(dataset_as_bytes.decode())
-        logger.debug(f"Removing dataset id={dataset_id!r} and data files {list(dataset.data_files.keys())}")
+        logger.debug(f"Removing dataset {dataset_id} and data files {list(dataset.data_files.keys())}")
 
         for _, file_metadata in dataset.data_files.items():
             await self.delete_data_file(file_metadata.qcrbox_file_id)
