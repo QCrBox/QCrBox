@@ -502,14 +502,15 @@ async def append_to_dataset(
     """Append a new data file to a dataset."""
     dataset_id = await api_helpers.append_to_dataset(id, data, data_manager=data_manager)
     dataset = await api_helpers.get_dataset_info(dataset_id, data_manager=data_manager)
+    appended_file = dataset.data_files[data.filename]
     return QCrBoxResponse(
         content={
             "status": "success",
-            "message": f"Appended file to dataset: {dataset_id!r}",
+            "message": f"Appended data file {appended_file.qcrbox_file_id} to dataset {dataset_id!r}",
             "payload": {
                 "datasets": [dataset],
                 "data_files": list(dataset.data_files.values()),
-                "appended_file": dataset.data_files[data.filename],
+                "appended_file": appended_file,
             },
         },
         status_code=201,
