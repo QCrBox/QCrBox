@@ -122,15 +122,15 @@ class DataManager(ABC):
         if isinstance(data_file_ids, str):
             data_file_ids = [data_file_ids]
         data_files = [await self.get_data_file(data_file_id) for data_file_id in data_file_ids]
-
         dataset_id = generate_dataset_id()
-        dataset_info = Dataset(dataset_id=dataset_id, data_files={f.filename: f for f in data_files})
-        await self._store_dataset(dataset_info)
 
         for data_file in data_files:
             data_file.qcrbox_dataset_id = dataset_id
             logger.debug(f"Associating data file with dataset {dataset_id}: data_file = {data_file.model_dump_json()}")
             await self._store_data_file_metadata(data_file)
+
+        dataset_info = Dataset(dataset_id=dataset_id, data_files={f.filename: f for f in data_files})
+        await self._store_dataset(dataset_info)
 
         return dataset_id
 
@@ -155,15 +155,14 @@ class DataManager(ABC):
         """
         logger.debug(f"Updating data file {data_file_id} in dataset {dataset_id}")
         data_file = await self.get_data_file(data_file_id)
-
         dataset = await self.get_dataset(dataset_id)
-        dataset.data_files[data_file.filename] = data_file
-        await self._store_dataset(dataset)
 
         data_file.qcrbox_dataset_id = dataset_id
         logger.debug(
             f"Associating data file {data_file_id} with dataset {dataset_id}: data_file = {data_file.model_dump_json()}"
         )
+        dataset.data_files[data_file.filename] = data_file
+        await self._store_dataset(dataset)
         await self._store_data_file_metadata(data_file)
 
         return dataset.dataset_id
@@ -293,8 +292,10 @@ class DataManager(ABC):
 
         """
         metadata_as_bytes = await self._retrieve_from_kv(DataManagerKeys.DATA_FILES, data_file_id)
+        data_file = DataFile.model_validate_json(metadata_as_bytes.decode())
+        logger.debug(f"Retrieved data file: {data_file.model_dump_json()}")
 
-        return DataFile.model_validate_json(metadata_as_bytes.decode())
+        return data_file
 
     async def get_data_files(self) -> list[DataFile]:
         """Get the metadata for all the data files.
@@ -330,7 +331,10 @@ class DataManager(ABC):
             exc_msg = f"Dataset not found: {dataset_id!r}"
             raise DatasetNotFoundError(exc_msg) from exc
 
-        return Dataset.model_validate_json(dataset_info_as_bytes.decode())
+        dataset = Dataset.model_validate_json(dataset_info_as_bytes.decode())
+        logger.debug(f"Retrieved dataset: {dataset.model_dump_json()}")
+
+        return dataset
 
     async def get_datasets(self) -> list[Dataset]:
         """Get metadata for each dataset in the data manager.
