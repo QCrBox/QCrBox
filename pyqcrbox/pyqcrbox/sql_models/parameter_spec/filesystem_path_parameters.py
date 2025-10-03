@@ -54,5 +54,5 @@ class CifDataFileParameterSpec(BaseCifFileParameterSpec):
 
 class OutputCifParameterSpec(BaseCifFileParameterSpec):
     dtype: Literal["QCrBox.output_cif"]
-    invalidated_entries: list[str]
+    invalidated_entries: list[str] = []
     output_block: int = 0  # default: select first block from output cif file

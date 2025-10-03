@@ -58,6 +58,8 @@ _builtin_dtypes = {
 class BaseParameter(QCrBoxPydanticBaseModel, ABC):
     """Base parameter abstract class."""
 
+    dtype: str
+
     @abstractmethod
     async def prepare_for_execution(self, target_dir: str, target_filename: str | None = None) -> Any:
         """Prepare a parameter for command execution.
@@ -127,6 +129,7 @@ class DataFileParameter(BaseParameter):
     """
 
     data_file_id: str
+    dtype: str = "QCrBox.data_file"
 
     # We'll use this to track where the file has been written to disk
     _exported_file_path: str | Path | None
@@ -196,6 +199,7 @@ class CifDataFileParameter(QCrBoxPydanticBaseModel):
     """
 
     data_file_id: str
+    dtype: str = "QCrBox.cif_data_file"
 
     # We'll use this to track where the file has been written to disk
     _exported_file_path: str | Path | None
@@ -242,12 +246,14 @@ class CifDataFileParameter(QCrBoxPydanticBaseModel):
             # We will replace the original cif on disk with the converted cif
             # (output_cif_path) by copying the output from cif_file_to_specific_by_yml
             shutil.copy(output_cif_path, input_cif_path)
-            output_cif_path.unlink()
+            # output_cif_path.unlink()
             self._was_converted = True
         except NoKeywordsError as exc:
             logger.warning(f"{transform_options.parameter_name} has no required or optional CIF entries defined: {exc}")
-        except ValueError as exc:
-            logger.warning(f"There was a problem converting {transform_options.parameter_name}: {exc}")
+        except Exception as exc:
+            logger.error(
+                f"There was a problem translating {self._exported_file_path} using parameter {transform_options.parameter_name}: {exc}"
+            )
 
         return input_cif_path
 
@@ -267,11 +273,10 @@ class CifDataFileParameter(QCrBoxPydanticBaseModel):
         from qcrboxtools.cif.cif2cif import NoKeywordsError, cif_file_merge_to_unified_by_yml
 
         if not self._exported_file_path:
-            logger.warning("CIF has not been exported to disk, unable to convert to unified format")
-            return
+            raise ValueError("CIF has not been exported to disk, unable to convert to unified format")
 
-        original_cif_path = self._exported_file_path
-        merge_cif_path = Path(original_cif_path).parent / "unified.cif"
+        original_cif_path = Path(self._exported_file_path)
+        merge_cif_path = original_cif_path.parent / f"{original_cif_path.stem}-unified.cif"
         logger.debug(
             f"Merging {original_cif_path} and {new_cif_path} together to create unified cif at {merge_cif_path}"
         )
@@ -279,30 +284,26 @@ class CifDataFileParameter(QCrBoxPydanticBaseModel):
 
         try:
             cif_file_merge_to_unified_by_yml(
-                original_cif_path,
-                merge_cif_path,  # this is the output, e.g. the merged original and new
                 new_cif_path,
+                merge_cif_path,  # this is the output, e.g. the merged original and new
+                original_cif_path,
                 merge_options.application_yaml,
                 merge_options.command_name,
                 merge_options.parameter_name,
             )
+            with merge_cif_path.open("r") as file_in:
+                logger.debug(f"Created new file, we hope, {merge_cif_path}: {file_in.read()}")
+            self._exported_file_path = merge_cif_path
+            shutil.copy(merge_cif_path, new_cif_path)
+            logger.debug(f"Returning merge path: {merge_cif_path=} {self._exported_file_path=}")
         except NoKeywordsError as exc:
             logger.warning(f"{merge_options.parameter_name} has no required or optional CIF entries defined: {exc}")
-            return self._exported_file_path
-        except ValueError as exc:
-            logger.warning(f"There was a problem converting {merge_options.parameter_name}: {exc}")
-            return self._exported_file_path
+        except Exception as exc:
+            logger.error(
+                f"There was a problem merging {self._exported_file_path} using parameter {merge_options.parameter_name}: {exc}"
+            )
 
-        with merge_cif_path.open("r") as file_in:
-            contents = file_in.read()
-            logger.debug(f"Created new file, we hope, {merge_cif_path}: {contents}")
-
-        shutil.copy(merge_cif_path, new_cif_path)
-        merge_cif_path.unlink()
-
-        logger.debug(f"Returning merge path: {new_cif_path}")
-
-        return new_cif_path
+        return self._exported_file_path
 
     @log_eel
     async def prepare_for_execution(
@@ -429,15 +430,19 @@ def parse_parameter_as_its_dtype(v: Any, dtype_str: str) -> Any:
         The parameter as the specified data type.
 
     """
-    logger.debug(f"parse_parameter_as_its_dtype: {dtype_str=} value={v}")
+    logger.debug(f"Parsing parameter into QCrBox dtype: {dtype_str=} value={v}")
 
     if dtype_str not in _known_dtypes:
         raise ValueError(f"Unsupported parameter type: {dtype_str}")
 
+    # Anything like QCrBox.output_cif, QCrBox.output_path will be handled by this
+    # as well as primitive python types
     if dtype_str in _builtin_dtypes:
         dtype = _builtin_dtypes[dtype_str]
         return BuiltinParameter(dtype=dtype.__name__, value=dtype(v))
 
+    # This deals with the custom QCrBox types, such as QCrBox.data_file, which
+    # are unable to be expressed as a simple primitive type
     return _known_dtypes[dtype_str](**v)
 
 

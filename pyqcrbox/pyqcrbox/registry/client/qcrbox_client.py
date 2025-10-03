@@ -198,42 +198,58 @@ class QCrBoxClient(QCrBoxServerClientBase):
     @log_eel
     async def _handle_non_interactive_output(
         self,
-        command_name: str,
-        command_parameters: dict[str, BaseParameter | CifDataFileParameter],
+        command: BaseCommand,
         calc: BaseCalculation,
+        command_parameters: dict[str, BaseParameter | CifDataFileParameter],
     ) -> None:
         """Handle saving the output from non-interactive commands/calculations.
 
         Parameters
         ----------
-        command_name : str
-            The name of the command.
-        command_parameters : dict[str, BaseParameter | CifDataFileParameter]
-            The parameters which were used to execute the command. These will be
-            parsed as QCrBox data types.
+        command_name : BaseCommand
+            The BaseCommand object used to launch the command.
         calc : BaseCalculation
             The BaseCalculation object used to track the execution of the
             non-interactive command.
+        command_parameters : dict[str, BaseParameter | CifDataFileParameter]
+            The parameters which were used to execute the command. These will be
+            parsed as QCrBox data types.
 
         """
-        logger.debug(f"Attempting to store output from non-interactive command {command_name} to data manager")
+        logger.debug(f"Attempting to store output from non-interactive command {command.name} to data manager")
+        logger.debug(f"Parsed command parameters = {command_parameters.items()}")
+        logger.debug(f"Raw command parameters = {command.cmd_spec.parameters}")
+
+        # FIXME: Try and find the input cif to the command -- this doesn't really
+        # work if there are multiple to do... BUT... it seems to be an OK
+        # hack for the current developer release
+        parameter_name, cif_parameter = next(
+            (
+                (name, param)
+                for name, param in command_parameters.items()
+                if getattr(param, "dtype", None) == "QCrBox.cif_data_file"
+            ),
+            (None, None),
+        )
+        logger.debug(f"1st pass for cif2cif: {parameter_name = } {cif_parameter = } ")
+
+        # NOTE TO SELF -- the dtype output_cif is being set to str.... so... we need to be more clever
+        # So we should try also look for output_cif.... that seems to have required entries
+        # If we can find an QCrBox.output_cif, then we should use that to merge. I think. Or
+        # do we translate the merged CIF into that? Let's look at what mopro does, I think.
+        parameter_name = next(
+            (item.name for item in command.cmd_spec.parameters if item.dtype == "QCrBox.output_cif"), parameter_name
+        )
+        logger.debug(f"2nd pass for cif2cif: {parameter_name = } {cif_parameter = }")
 
         try:
-            # FIXME: Try and find the input cif to the command -- this doesn't really
-            # work if there are multiple to do... BUT... it seems to be an OK
-            # hack for the current developer release
-            parameter_name, cif_parameter = next(
-                filter(lambda item: isinstance(item[1], CifDataFileParameter), command_parameters.items()),
-                (None, None),
-            )
-
             # If we have found a CIF parameter, then we will pass it to the save
             # method to attempt to merge the original cif (the parameter) with
             # the cif output from the command
             if cif_parameter and parameter_name and isinstance(cif_parameter, CifDataFileParameter):
                 merge_options = Cif2CifOptions(
                     application_yaml=self.application_spec.yaml_file_path,  # type: ignore
-                    command_name=command_name,
+                    command_name=command.name,
                     parameter_name=parameter_name,
                 )
                 dataset_id = await calc.save_output_to_data_manager(
@@ -241,7 +257,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
                 )
             else:
                 dataset_id = await calc.save_output_to_data_manager(self.data_manager)
-        except (RuntimeError, FileNotFoundError) as exc:
+        except Exception as exc:
             logger.error(f"Failed to store output calculation {calc.calculation_id} in data manager: {exc}")
         else:
             logger.debug(f"Output for non-interactive has been added to the data manager into dataset {dataset_id}")
@@ -425,7 +441,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
 
         if command.type != "interactive_session":
             # Note that this method will also remove the calculation directory
-            await self._handle_non_interactive_output(command.name, parameters, calc)
+            await self._handle_non_interactive_output(command, calc, parameters)
 
         logger.debug("Updating calculation status after calculation has finished")
         await self.data_manager.update_calculation_status(await calc.get_status_details())
