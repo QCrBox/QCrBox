@@ -110,7 +110,6 @@ class PythonCallableCalculation(BaseCalculation):
         _ = self.status  # FIXME: This is a workaround to ensure the return value is set.
 
     @property
-    @log_eel
     def status(self) -> CalculationStatusEnum:
         """Get the current status of the calculation.
 
@@ -149,7 +148,6 @@ class PythonCallableCalculation(BaseCalculation):
         return calc_status
 
     @property
-    @log_eel
     async def stdout(self) -> str | None:
         """Retrieve the standard output of the calculation.
 
@@ -165,7 +163,6 @@ class PythonCallableCalculation(BaseCalculation):
             return "Retrieval of STDOUT not implemented yet for PythonCallableCalculation"
 
     @property
-    @log_eel
     async def stderr(self) -> str | None:
         """Retrieve the standard error of the calculation.
 
