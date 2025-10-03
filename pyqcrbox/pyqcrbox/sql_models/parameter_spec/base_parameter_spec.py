@@ -365,7 +365,7 @@ _custom_dtypes = {
 _known_dtypes = _builtin_dtypes | _custom_dtypes
 
 def get_cif_merge_parameter(
-    command: BaseCommand, parsed_parameters: dict[str, BaseParameter | CifDataFileParameter]
+    command: "BaseCommand", parsed_parameters: dict[str, BaseParameter | CifDataFileParameter]
 ) -> tuple[str | None, CifDataFileParameter | None]:
     """Get the parameter which will be used to merge to create the output CIF.
 
