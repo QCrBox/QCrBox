@@ -14,7 +14,7 @@ def create_nats_broker():
         logger=logger,
     )
 
-async def create_data_file_manager(container: svcs.Container):
+async def create_data_manager(container: svcs.Container):
     nats_broker = await container.aget(NatsBroker)
     return NatsDataManager(nats_broker)
 
@@ -22,4 +22,4 @@ async def create_data_file_manager(container: svcs.Container):
 
 QCRBOX_GLOBAL_SERVICES_REGISTRY = svcs.Registry()
 QCRBOX_GLOBAL_SERVICES_REGISTRY.register_factory(NatsBroker, create_nats_broker)
-QCRBOX_GLOBAL_SERVICES_REGISTRY.register_factory(DataManager, create_data_file_manager)
+QCRBOX_GLOBAL_SERVICES_REGISTRY.register_factory(DataManager, create_data_manager)

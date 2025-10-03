@@ -52,7 +52,7 @@ class CalculationDetails(BaseModel):
 def build_litestar_dependencies(container: svcs.Container) -> dict:
     return {
         "nats_broker": Provide(lambda: container.aget(NatsBroker)),
-        "data_file_manager": Provide(lambda: container.aget(DataManager)),
+        "data_manager": Provide(lambda: container.aget(DataManager)),
     }
 
 
@@ -69,9 +69,6 @@ class QCrBoxServer(QCrBoxServerClientBase):
         self.nats_broker.subscriber("register-application")(self.handle_application_registration)
         self.nats_broker.subscriber("server.cmd.handle_command_invocation_by_user")(
             self.handle_command_invocation_by_user
-        )
-        self.nats_broker.subscriber("server.cmd.handle_command_invocation_client_response")(
-            self.handle_command_invocation_client_response
         )
 
     async def handle_application_registration(self, msg: msg_specs.RegisterApplication) -> QCrBoxGenericResponse:
@@ -157,6 +154,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
 
         # Send invocation request to client(s) and get back their response which
         # indicates if the client can execute the requested command or not
+        logger.info("Sending message to client(s) to request command to execute")
         invocation_response_from_client = await self.nats_broker.publish(
             message=invocation_request_to_client,
             subject=f"client.cmd.handle_invocation_request.{invocation_request_to_client.nats_subject_parts}",
@@ -167,23 +165,37 @@ class QCrBoxServer(QCrBoxServerClientBase):
         invocation_response_from_client = msg_specs.CommandInvocationClientResponseNATS(
             **invocation_response_from_client  # type: ignore
         )
-        await self.nats_broker.publish(
-            message=invocation_response_from_client, subject="server.cmd.handle_command_invocation_client_response"
-        )
+        logger.info(f"Received client response: {msg!r}")
+        request_to_client = await self.handle_command_invocation_client_response(invocation_response_from_client)
 
-        # Whatever happens, try and the request to the calculations database. This method
-        # also returns the status to return to the API, e.g. either failure or submitted
+        # Whatever happens, add the request to the calculations database. This method
+        # also returns the status to return to the API, e.g. either failure or submitted.
         command_request_final_status = await self.add_command_request_to_database(
             invocation_request_to_client, invocation_response_from_client
         )
         logger.debug(f"Command invocation final status before execution: {command_request_final_status}")
+
+        if isinstance(request_to_client, msg_specs.DiscardCommandInvocationNATS):
+            logger.debug(
+                "Command invocation has been discarded for whatever reason... not sending execute request to client"
+            )
+            return command_request_final_status
+
+        # This sends the message to the client to execute - TODO: move into its own method
+        msg_subject = f"{invocation_response_from_client.private_inbox_prefix}.cmd.execute"
+        logger.debug(f"Sending msg to client to execute command: {msg_subject=} {request_to_client=}")
+        await self.nats_broker.publish(request_to_client, subject=msg_subject)
+        self.calculations[calculation_id].executing_client = ExecutingClientDetails(
+            client_id=invocation_response_from_client.client_id,
+            private_inbox_prefix=invocation_response_from_client.private_inbox_prefix,
+        )
 
         return command_request_final_status
 
     @log_eel
     async def handle_command_invocation_client_response(
         self, msg: msg_specs.CommandInvocationClientResponseNATS
-    ) -> None:
+    ) -> msg_specs.CommandExecutionRequestNATS | msg_specs.DiscardCommandInvocationNATS:
         """Handle a client response for a user command invocation request.
 
         This function will either send a request to discard the command execution
@@ -196,17 +208,24 @@ class QCrBoxServer(QCrBoxServerClientBase):
             The response message sent back from the client upon a command invocation
             request by a user.
 
+        Returns
+        -------
+        msg_specs.CommandExecutionRequestNATS | msg_specs.DiscardCommandInvocationNATS
+            The message sent to the client, either a command execution request or
+            a request to discard the command request.
+
         """
-        logger.info(f"Received client response: {msg!r}")
+        logger.debug(f"Processing client invocation response: {msg!r}")
 
         # If the client is not available, discard request and return
         if not msg.client_is_available:
             logger.info(f"Client {msg.client_id!r} not available, discarding the request: {msg!r}")
+            discard_request = msg_specs.DiscardCommandInvocationNATS(calculation_id=msg.calculation_id)
             await self.nats_broker.publish(
-                msg_specs.DiscardCommandInvocationNATS(calculation_id=msg.calculation_id),
+                discard_request,
                 subject=f"{msg.private_inbox_prefix}.cmd.discard",
             )
-            return
+            return discard_request
 
         logger.debug(f"Retrieving details for calculation: {msg.calculation_id!r}")
         try:
@@ -215,35 +234,41 @@ class QCrBoxServer(QCrBoxServerClientBase):
             error_msg = f"Unable to find calculation: {msg.calculation_id!r}"
             logger.error(error_msg)
             raise RuntimeError(error_msg) from exc
+        logger.debug(f"Found calculation in QCrBoxServer: {calc}")
 
         # If for some reason the calculation has an `executing_client`, then that means
         # the calculation is already running on some client. We **shouldn't** ever get
         # here, but if we do we need to discard the current request.
         if calc.executing_client:
             logger.info(f"Calculation {msg.calculation_id} is already executing, discarding the request: {msg!r}")
+            discard_request = msg_specs.DiscardCommandInvocationNATS(calculation_id=msg.calculation_id)
             await self.nats_broker.publish(
-                msg_specs.DiscardCommandInvocationNATS(calculation_id=msg.calculation_id),
+                discard_request,
                 subject=f"{msg.private_inbox_prefix}.cmd.discard",
             )
+            return discard_request
 
         # If the client is available and the calculation is not already executing somewhere,
         # then we can send a request to the client to execute the command
         logger.info(
             f"Requesting client {msg.client_id!r} ({msg.private_inbox_prefix!r}) to execute command request: {msg!r}"
         )
-        response_to_client = msg_specs.CommandExecutionRequestNATS(
+        execution_request = msg_specs.CommandExecutionRequestNATS(
             application_slug=calc.application_slug,
             application_version=calc.application_version,
             command_name=calc.command_name,
             command_arguments=calc.command_arguments,
             calculation_id=calc.calculation_id,
         )
-        logger.debug(f"Message to client for command execution: {response_to_client}")
-        await self.nats_broker.publish(response_to_client, subject=f"{msg.private_inbox_prefix}.cmd.execute")
-        calc.executing_client = ExecutingClientDetails(
-            client_id=msg.client_id,
-            private_inbox_prefix=msg.private_inbox_prefix,
-        )
+        logger.debug(f"Message to client for command execution: {execution_request}")
+
+        # await self.nats_broker.publish(execution_request, subject=f"{msg.private_inbox_prefix}.cmd.execute")
+        # calc.executing_client = ExecutingClientDetails(
+        #     client_id=msg.client_id,
+        #     private_inbox_prefix=msg.private_inbox_prefix,
+        # )
+
+        return execution_request
 
     @log_eel
     async def add_command_request_to_database(
@@ -273,8 +298,8 @@ class QCrBoxServer(QCrBoxServerClientBase):
         # If the client is not available, we don't need to add this request to the
         # database as the calculation won't be happening
         if not client_invocation_response.client_is_available:
+            logger.error("Client is not available to execute command request, command has been discarded")
             client_id = client_invocation_response.client_id
-            logger.error("Client is not available to execute command request")
             return msg_specs.QCrBoxGenericResponse(
                 response_to="server.cmd.handle_command_invocation_by_user",
                 status=CalculationStatusEnum.FAILED,
@@ -292,9 +317,9 @@ class QCrBoxServer(QCrBoxServerClientBase):
 
         # Don't allow the same calculation to be added to the database multiple times.
         # This **shouldn't** ever happen.
-        data_file_manager = await self.svcs_container.aget(DataManager)
+        data_manager = await self.svcs_container.aget(DataManager)
         try:
-            await data_file_manager.store_calculation(calculation_db_entry)
+            await data_manager.store_calculation(calculation_db_entry)
         except CalculationAlreadyExistsError:
             logger.error(f"Trying to add a calculation to the database which already exists: {calculation_db_entry}")
             return msg_specs.QCrBoxGenericResponse(
@@ -302,8 +327,9 @@ class QCrBoxServer(QCrBoxServerClientBase):
                 status=CalculationStatusEnum.FAILED,
                 payload={"error": "Tried to add a new calculation to one which already exists"},
             )
-        logger.debug("Updating calculation status to SUBMITTED after command request accepted")
-        await data_file_manager.update_calculation_status(
+
+        logger.debug("Updating calculation status to submitted after command request accepted")
+        await data_manager.update_calculation_status(
             CalculationStatusDetails(
                 calculation_id=user_invocation_request.calculation_id,
                 status=CalculationStatusEnum.SUBMITTED,
@@ -312,6 +338,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
                 extra_info={},
             )
         )
+        logger.debug("Calculation has been set to submitted in data manager")
 
         return msg_specs.QCrBoxGenericResponse(
             response_to="server.cmd.handle_command_invocation_by_user",

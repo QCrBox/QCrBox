@@ -30,6 +30,36 @@ class Namespace(UserDict):
 
 
 class ApplicationSpecBase(QCrBoxPydanticBaseModel):
+    """Base class for application specification.
+
+    Attributes
+    ----------
+    name : str
+        The name of the application.
+    slug : str
+        The application slug, used to invoke the application and its commands.
+    version : str
+        The version number of the application, used to invoke the application
+        and its commands.
+    pyqcrbox_version : str
+        The version of pyqcrbox the application was built with.
+    description : str
+        A description of the application.
+    url : str
+        A URL to the homepage of the application, if it has one.
+    email : str
+        The e-mail address of the application author, ideally the person who
+        bundled the application together for QCrBox.
+    doi : str
+        A data object identifier for the application.
+    yaml_file_path : str
+        The file path to the YAML file containing the application specification.
+    gui_port : str
+        The port used for no-VNC, required for graphical/interactive
+        applications.
+
+    """
+
     name: str
     slug: str
     version: str
@@ -40,8 +70,6 @@ class ApplicationSpecBase(QCrBoxPydanticBaseModel):
     doi: str | None = None
     yaml_file_path: str | None = Field(exclude=True, default=None)
     gui_port: str | None = None
-
-    _cmds_by_name: Namespace = PrivateAttr
 
     @field_validator("yaml_file_path", mode="before")
     @classmethod
@@ -59,38 +87,28 @@ class ApplicationSpecBase(QCrBoxPydanticBaseModel):
         else:
             return None
 
-    @property
-    def non_interactive_commands(self) -> list[CommandSpecDiscriminatedUnion]:
-        return [cmd for cmd in self.commands if not cmd.is_interactive]
-
-    @property
-    def interactive_commands(self) -> list[CommandSpecDiscriminatedUnion]:
-        return [cmd for cmd in self.commands if cmd.is_interactive]
-
-    @property
-    def cmds_by_name(self):
-        return self._cmds_by_name
-
-    @model_validator(mode="after")
-    def populate_cmds_by_name(self) -> Self:
-        data = {cmd.name: cmd for cmd in self.commands}
-        self._cmds_by_name = Namespace(**data)
-        return self
-
-    @property
-    def command_names(self) -> list[str]:
-        return list(self.cmds_by_name.keys())
-
-    def get_command_spec_by_name(self, cmd_name: str) -> CommandSpecDiscriminatedUnion:
-        return self.cmds_by_name[cmd_name]
-
 
 class ApplicationSpec(ApplicationSpecBase):
-    # model_config = ConfigDict(arbitrary_types_allowed=True)
+    """Application specification class.
+
+    Attributes
+    ----------
+    qcrbox_yaml_spec_version : str
+        The YAML specification version used to parse the YAML file.
+    commands : list[CommandSpec]
+        A list of command specifications, for commands associated with the
+        application.
+    cif_entry_sets : list[CifEntrySet]
+        A list of CifEntrySet specifications, which links labels used in a
+        parameter specification to a collection of CIF entries/rows.
+
+    """
 
     qcrbox_yaml_spec_version: str
     commands: list[CommandSpecDiscriminatedUnion] = []
     cif_entry_sets: list[CifEntrySet] = []
+
+    _cmds_by_name: Namespace = PrivateAttr  # type: ignore
 
     @classmethod
     def from_yaml_file(cls, file_path: str | Path):
@@ -98,7 +116,11 @@ class ApplicationSpec(ApplicationSpecBase):
         yaml_file_dir = str(yaml_file_path.parent.absolute())
         sys.path.insert(0, yaml_file_dir)
         yaml_data = yaml.safe_load(yaml_file_path.open())
-        return cls(**yaml_data, yaml_file_path=yaml_file_path)
+        return cls(**yaml_data, yaml_file_path=str(yaml_file_path))
+
+    @property
+    def non_interactive_commands(self) -> list[CommandSpecDiscriminatedUnion]:
+        return [cmd for cmd in self.commands if not cmd.is_interactive]
 
     @property
     def interactive_commands(self) -> list[CommandSpecDiscriminatedUnion]:
@@ -127,6 +149,23 @@ class ApplicationSpec(ApplicationSpecBase):
             ):
                 raise ValueError(f"Non-interactive command cannot be a {ImplementedAs.cli_command!r}")
         return commands
+
+    @property
+    def cmds_by_name(self):
+        return self._cmds_by_name
+
+    @model_validator(mode="after")
+    def populate_cmds_by_name(self) -> Self:
+        data = {cmd.name: cmd for cmd in self.commands}
+        self._cmds_by_name = Namespace(**data)
+        return self
+
+    @property
+    def command_names(self) -> list[str]:
+        return list(self.cmds_by_name.keys())
+
+    def get_command_spec_by_name(self, cmd_name: str) -> CommandSpecDiscriminatedUnion:
+        return self.cmds_by_name[cmd_name]
 
     @model_validator(mode="after")
     def add_interactive_lifecycle_commands(self):

@@ -26,6 +26,8 @@ However, there will be an initial period of stabilisation where this is not adhe
   ensure compatibility.
 - Validation criteria can optionally be set for command parameters, which validates a user's input for the value of a
   parameter.
+- CIF files can be transformed between formats required for command execution. When a command has completed, the output
+  CIF is merged with the original CIF to create a unified file.
 
 ### Removed Features
 
@@ -40,6 +42,8 @@ However, there will be an initial period of stabilisation where this is not adhe
 - Renamed `DataFileManager` to `DataManager` to better reflect that is manages more than just data files
 - Added a new tests to test the DataManager service, non-interactive commands and new API endpoints.
 - Additional fields have been added to the payload for the dataset API endpoints.
+- Parameter parsing and preparation are not deal with by commands, rather than the registry.
+- Command execution has been cleaned up into smaller, more testable, methods to streamline execution.
 - Inputs and outputs for commands are stored in their own temporary directories, to prevent situations where
   input/output form previous commands would interfere. These directories are removed once a command has finished.
 - The application types in `qcb init` have been given more descriptive names: "CLI" -> "Non-interactive Command" and
@@ -57,6 +61,8 @@ However, there will be an initial period of stabilisation where this is not adhe
 - Fixed an issue where `qcb up` would use the wrong version ID for `pyqcrbox` when building service containers.
 - Fixed an issue where `qcb list` would use the wrong URL and port number for the registry API.
 - Fixed linting issues raised by `ruff` for `qcb`.
+- Fixed an issue where the `base-ancestor` image wouldn't build because `conda` couldn't resolve the environment
+  dependencies.
 - Fixed an issue where environment variables were unset causing applications not to launch
 - And lots more!
 
@@ -65,6 +71,7 @@ However, there will be an initial period of stabilisation where this is not adhe
 - Added how to guide on using the QCrBox Azure Container Repository.
 - Updated the how to guide on testing QCrBox.
 - Added a technical reference page on parameter specification.
+- Added further in-code and developer documentation.
 
 ## [icdm-2025]
 
@@ -120,7 +127,6 @@ However, there will be an initial period of stabilisation where this is not adhe
 - Browser windows now open correctly under WSL. ([#274](https://github.com/QCrBox/QCrBox/issues/274)
 - Fixed a build issue under WSL. ([#335](https://github.com/QCrBox/QCrBox/issues/335))
 
-
 ### Documentation
 
 - How-to guide on building and running components using the `qcb` command line tool. ([#167](https://github.com/QCrBox/QCrBox/issues/167))
@@ -128,24 +134,23 @@ However, there will be an initial period of stabilisation where this is not adhe
 - Updated instructions for setting up a development environment using the new installation script. ([#287](https://github.com/QCrBox/QCrBox/issues/287))
 - The website has been extended with a landing page and a description of the project phases and roadmap.
 
-
 ## [v0.0.1]
 
 ### New Features
 
 - Docker base images:
-    - `base-application`
-    - `base-novnc` [#39](https://github.com/QCrBox/QCrBox/issues/39)
+  - `base-application`
+  - `base-novnc` [#39](https://github.com/QCrBox/QCrBox/issues/39)
 - Core components:
-    - `qcrbox-message-bus` [#9](https://github.com/QCrBox/QCrBox/issues/9)
-    - `qcrbox-registry` [#13](https://github.com/QCrBox/QCrBox/issues/13)
-    - `qcrbox-nextflow` [#60](https://github.com/QCrBox/QCrBox/issues/60)
-    - `qcrboxtools` [#120](https://github.com/QCrBox/QCrBox/issues/120)
+  - `qcrbox-message-bus` [#9](https://github.com/QCrBox/QCrBox/issues/9)
+  - `qcrbox-registry` [#13](https://github.com/QCrBox/QCrBox/issues/13)
+  - `qcrbox-nextflow` [#60](https://github.com/QCrBox/QCrBox/issues/60)
+  - `qcrboxtools` [#120](https://github.com/QCrBox/QCrBox/issues/120)
 - Crystallographic applications:
-    - CrystalExplorer [#44](https://github.com/QCrBox/QCrBox/issues/44)
-    - Olex2 [#46](https://github.com/QCrBox/QCrBox/issues/46)
-    - Eval [#116](https://github.com/QCrBox/QCrBox/issues/116)
-    - XHARPy ([#124](https://github.com/QCrBox/QCrBox/issues/124))
+  - CrystalExplorer [#44](https://github.com/QCrBox/QCrBox/issues/44)
+  - Olex2 [#46](https://github.com/QCrBox/QCrBox/issues/46)
+  - Eval [#116](https://github.com/QCrBox/QCrBox/issues/116)
+  - XHARPy ([#124](https://github.com/QCrBox/QCrBox/issues/124))
 - CLI tool (`qcb`) for common development and deployment tasks. ([#10](https://github.com/QCrBox/QCrBox/issues/10), [#164](https://github.com/QCrBox/QCrBox/issues/164))
 - Python package (`qcrbox`) to interact with QCrBox from Python code. ([#14](https://github.com/QCrBox/QCrBox/issues/14))
 - The base image now includes [cctbx](https://cci.lbl.gov/docs/cctbx/) and [QCrBoxTools](https://github.com/Niolon/QCrBoxTools.git). ([#53](https://github.com/QCrBox/QCrBox/issues/53))
@@ -162,14 +167,12 @@ However, there will be an initial period of stabilisation where this is not adhe
 - Tutorial on how to integrate Python functionality into QCrBox. ([#80](https://github.com/QCrBox/QCrBox/issues/80)
 - Jupyter notebooks with examples on how to interact with commands exposed by QCrBox (for Olex2, Eval14/15, XHARPy, CrystalExplorer, QCrBoxTools). ([#126](https://github.com/QCrBox/QCrBox/issues/126))
 
-
 ### Bugs fixed
 
 - Ensured that the `qcb` tool works cross-platform, including on Windows. ([#76](https://github.com/QCrBox/QCrBox/issues/76))
 - Line endings of text files checked out in the git working tree are always normalised to `LF` to avoid runtime errors on Windows. ([#132](https://github.com/QCrBox/QCrBox/issues/132))
 - Command registration and internal error handling by the server. ([#172](https://github.com/QCrBox/QCrBox/issues/172))
 - The build process using `qcb` on Windows has been fixed and made more robust. ([#156](https://github.com/QCrBox/QCrBox/issues/156))
-
 
 ### Internal changes & improvements
 
@@ -178,7 +181,6 @@ However, there will be an initial period of stabilisation where this is not adhe
 - Python code is linted and auto-formatted using [ruff](https://docs.astral.sh/ruff/). [#64](https://github.com/QCrBox/QCrBox/issues/64)
 - Each application's docker compose configuration now lives in its dedicated subfolder (`services/application/<application_folder>`) instead of in the toplevel `docker-compose.yml` file. ([#78](https://github.com/QCrBox/QCrBox/issues/78))
 - The folder structure in `qcrbox/cli/subcommands` has been simplified by removing an extra level of subfolders. ([#90](https://github.com/QCrBox/QCrBox/issues/90))
-
 
 [unreleased]: https://github.com/QCrBox/QCrBox/compare/v0.0.2...master
 [v0.0.2]: https://github.com/QCrBox/QCrBox/compare/v0.0.1...v0.0.2

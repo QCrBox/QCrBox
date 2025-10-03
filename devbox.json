@@ -13,33 +13,33 @@
     "micromamba":                "latest",
     "bashInteractive":           "latest",
     "fzf":                       "latest",
-    "python":                    "3.12",
+    "python":                    "3.11.13",
     "python312Packages.tkinter": "latest",
     "uv":                        "latest",
     "fd":                        "latest",
     "ripgrep":                   "latest",
     "delta":                     "latest",
-    "stdenv.cc.cc.lib":          "",
     "lesspipe":                  "latest",
     "nix-ld": {
-      "version":   "latest",
+      "version": "latest",
       "platforms": [
         "x86_64-linux"
       ]
     },
     "wslu": {
-      "version":   "latest",
+      "version": "latest",
       "platforms": [
         "aarch64-linux",
         "x86_64-linux"
       ]
     },
-    "ncurses": "latest",
-    "jq": "latest",
-    "nats-server": "latest",
-    "natscli": "latest",
-    "nats-top": "latest",
-    "entr": "latest"
+    "ncurses":          "latest",
+    "jq":               "latest",
+    "nats-server":      "latest",
+    "natscli":          "latest",
+    "nats-top":         "latest",
+    "entr":             "latest",
+    "stdenv.cc.cc.lib": ""
   },
   "env": {
     "MAMBA_ROOT_PREFIX":     "${PWD}/.devbox/virtenv/python/.conda",
@@ -49,12 +49,16 @@
     "init_hook": [
       "source $VENV_DIR/bin/activate",
       "source ./scripts/devbox/initialise_shell_environment.sh",
-      "uv pip install -e ./pyqcrbox[all]",
+      "uv pip install -r ./pyqcrbox/requirements-all.txt",
+      "uv pip install -e ./pyqcrbox --no-deps",
       "test -x .git/hooks/pre-commit || pre-commit install"
     ],
     "scripts": {
       "build-test-mode": [
-        "qcb down && qcb up --test && sleep 10"
+        "qcb down",
+        "docker images -q 'qcrbox/*' | grep -q . && docker rmi $(docker images -q 'qcrbox/*')",
+        "qcb up --test",
+        "sleep 10"
       ],
       "robot-framework": [
         "cd ./pyqcrbox/robot_tests",

@@ -6,7 +6,7 @@ from pyqcrbox import logger
 class ClientStatusEnum(StrEnum):
     IDLE = "idle"
     PENDING = "pending"
-    BUSY = "BUSY"
+    BUSY = "busy"
     INTERNAL_ERROR = "internal_error"
 
 
@@ -16,6 +16,9 @@ class ClientStatus:
         self._status = ClientStatusEnum(initial_status)
 
     def __str__(self):
+        return str(self._status)
+
+    def __repr__(self):
         return str(self._status)
 
     @property

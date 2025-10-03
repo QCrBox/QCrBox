@@ -105,7 +105,7 @@ class SeverSettings(QCrBoxSettingsBaseModel):
 class ClientSettings(QCrBoxSettingsBaseModel):
     host: str = "127.0.0.1"
     port: int = 8002
-    keep_calc_work_dir: bool = False
+    keep_calc_work_dir: bool = True
 
 
 class RegistrySettings(QCrBoxSettingsBaseModel):
@@ -129,6 +129,7 @@ class StructlogRendererEnum(Enum):
 
 
 class LoggingSettings(QCrBoxSettingsBaseModel):
+    log_func_entry_exit: bool = False
     log_level: str = "DEBUG" if IS_RUNNING_DEBUG_MODE or IS_RUNNING_INSIDE_TESTS else "INFO"
     renderer: StructlogRendererEnum = StructlogRendererEnum.JSON
 

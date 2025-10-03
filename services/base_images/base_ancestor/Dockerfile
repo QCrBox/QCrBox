@@ -58,10 +58,11 @@ ARG QCRBOX_MAMBA_ENV_NAME=qcrbox
 ARG QCRBOX_MAMBA_ENV_PATH=${MAMBA_ROOT_PREFIX}/envs/${QCRBOX_MAMBA_ENV_NAME}
 COPY mambarc ${MAMBA_ROOT_PREFIX}/.mambarc
 RUN eval "$(micromamba shell hook --shell bash)" && \
-    ${MAMBA_EXE} create -y -n ${QCRBOX_MAMBA_ENV_NAME} \
-    python=3.11 \
-    pip setuptools wheel conda-build \
-    cctbx-base==2025.5 && \
+    ${MAMBA_EXE} create -n ${QCRBOX_MAMBA_ENV_NAME} && \
+    ${MAMBA_EXE} activate ${QCRBOX_MAMBA_ENV_NAME} && \
+    ${MAMBA_EXE} install -y python=3.11.13 && \
+    ${MAMBA_EXE} install -y pip setuptools wheel conda-build && \
+    ${MAMBA_EXE} install -y cctbx-base==2025.5 && \
     ${MAMBA_EXE} clean -y --all --force-pkgs-dirs
 
 ##

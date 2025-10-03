@@ -5,8 +5,8 @@ __all__ = ["logger", "settings"]
 
 try:
     __version__ = version("pyqcrbox")
-except PackageNotFoundError:
-    raise RuntimeError("The 'pyqcrbox' package is not correctly installed. Please install it with pip.")
+except PackageNotFoundError as exc:
+    raise RuntimeError("The 'pyqcrbox' package is not correctly installed. Please install it with pip.") from exc
 
 
 # Import logging module first to ensure the loggers

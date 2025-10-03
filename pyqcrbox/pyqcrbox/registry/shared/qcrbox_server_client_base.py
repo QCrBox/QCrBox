@@ -16,6 +16,7 @@ from litestar import Litestar
 from litestar.testing import AsyncTestClient, TestClient
 
 from pyqcrbox._version import __version__ as pyqcrbox_version
+from pyqcrbox.data_management import DataManager
 from pyqcrbox.logging import logger
 from pyqcrbox.services.persistence import NatsPersistenceAdapter, SQLitePersistenceAdapter
 from pyqcrbox.services.services_registry import QCRBOX_GLOBAL_SERVICES_REGISTRY
@@ -34,8 +35,10 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
     def __init__(self, *, asgi_server: Litestar | None = None):
         self.svcs_container = svcs.Container(QCRBOX_GLOBAL_SERVICES_REGISTRY)
         self.nats_broker = asyncio.run(self.svcs_container.aget(NatsBroker))  # !! bad !!
+        self.data_manager = asyncio.run(self.svcs_container.aget(DataManager))  # !! bad !!
         self.nats_persistence_adapter = NatsPersistenceAdapter()
         self.sqlite_persistence_adapter = SQLitePersistenceAdapter()
+
 
         # If not passed explicitly, the ASGI server and uvicorn server
         # will be set up when `.serve()` is called.
@@ -148,6 +151,7 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
         async with svcs.Container(QCRBOX_GLOBAL_SERVICES_REGISTRY) as container:
             self.svcs_container = container
             self.nats_broker = await self.svcs_container.aget(NatsBroker)
+            self.data_manager = await self.svcs_container.aget(DataManager)
 
             await self._create_private_nats_inbox()
             self._set_up_nats_broker()
