@@ -15,6 +15,7 @@ However, there will be an initial period of stabilisation where this is not adhe
 
 ### New Features
 
+- Added a troubleshooting and FAQ page.
 - Included support for non-interactive commands, including stopping any long-running commands.
 - Added `--prebuilt-images` option to `qcb up` to bring QCrBox up using tested images from the QCrBox container
   repository.
