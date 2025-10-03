@@ -250,7 +250,7 @@ class CifDataFileParameter(QCrBoxPydanticBaseModel):
             self._was_converted = True
         except NoKeywordsError as exc:
             logger.warning(f"{transform_options.parameter_name} has no required or optional CIF entries defined: {exc}")
-        except Exception as exc:
+        except (BaseException, Exception) as exc:
             logger.error(
                 f"There was a problem translating {self._exported_file_path} using parameter {transform_options.parameter_name}: {exc}"
             )
@@ -298,7 +298,7 @@ class CifDataFileParameter(QCrBoxPydanticBaseModel):
             logger.debug(f"Returning merge path: {merge_cif_path=} {self._exported_file_path=}")
         except NoKeywordsError as exc:
             logger.warning(f"{merge_options.parameter_name} has no required or optional CIF entries defined: {exc}")
-        except Exception as exc:
+        except (BaseException, Exception) as exc:
             logger.error(
                 f"There was a problem merging {self._exported_file_path} using parameter {merge_options.parameter_name}: {exc}"
             )
