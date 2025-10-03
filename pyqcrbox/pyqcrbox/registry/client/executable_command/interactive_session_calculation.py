@@ -157,29 +157,6 @@ class InteractiveSessionCalculation(BaseCalculation):
         logger.debug("Waiting for 'calc_finished' event to be set upon calculation termination")
         await self.calc_finished_event.wait()
 
-        if self.finalise_calc:
-            assert isinstance(self.finalise_calc, PythonCallableCalculation)
-            logger.debug(f"Waiting for 'finalise' command to finish: {self.finalise_calc!r}")
-            await self.finalise_calc.wait_until_finished()
-            if self.finalise_calc.exception_raised:
-                calc_status = self.finalise_calc.status
-                logger.error(
-                    f"Exception raised by finalise_cmd ({calc_status}): {self.finalise_calc.exception_raised!r}"
-                )
-                self._error_dialog_process = error_dialog_box(
-                    f"An error occurred in the finalise command: {self.finalise_calc.exception_raised}"
-                )
-                self.exception = FinaliseCommandFailure("Finalise command failed", self.finalise_calc.exception_raised)
-                raise self.exception from self.finalise_calc.exception_raised
-            logger.debug("Finalise command has finished")
-
-            async with svcs.Container(QCRBOX_GLOBAL_SERVICES_REGISTRY) as container:
-                data_manager = await container.aget(DataManager)
-                await self.save_output_to_data_manager(data_manager)
-
-        self.is_closed = True
-        self.session_closed_event.set()
-
     @log_eel
     async def terminate(self) -> None:
         """Terminate the interactive session.

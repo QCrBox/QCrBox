@@ -248,6 +248,73 @@ class QCrBoxClient(QCrBoxServerClientBase):
         self.status.set_idle()
 
     @log_eel
+    async def _handle_interactive_output(
+        self,
+        command: BaseCommand,
+        calc: InteractiveSessionCalculation,
+        command_parameters: dict[str, BaseParameter | CifDataFileParameter],
+    ) -> None:
+        """Handle saving the output from interactive commands/calculations.
+
+        Parameters
+        ----------
+        command_name : BaseCommand
+            The BaseCommand object used to launch the command.
+        calc : BaseCalculation
+            The BaseCalculation object used to track the execution of the
+            non-interactive command.
+        command_parameters : dict[str, BaseParameter | CifDataFileParameter]
+            The parameters which were used to execute the command. These will be
+            parsed as QCrBox data types.
+
+        """
+        from pyqcrbox.registry.client.executable_command.error import FinaliseCommandFailure, error_dialog_box
+
+        logger.debug(f"Adding output from interactive command {command.name} into data manager")
+
+        if not calc.finalise_calc:
+            logger.info(f"Interactive session {calc.calculation_id} has no finalise method, so cannot get output")
+            return
+
+        logger.debug("Waiting for finalise command to finish running to get output")
+        await calc.finalise_calc.wait_until_finished()
+
+        if calc.finalise_calc.exception_raised:
+            calc_status = calc.finalise_calc.status
+            logger.error(f"Exception raised by finalise_cmd ({calc_status}): {calc.finalise_calc.exception_raised!r}")
+            calc._error_dialog_process = error_dialog_box(
+                f"An error occurred in the finalise command: {calc.finalise_calc.exception_raised}"
+            )
+            calc.exception = FinaliseCommandFailure("Finalise command failed", calc.finalise_calc.exception_raised)
+            raise calc.exception from calc.finalise_calc.exception_raised
+
+        logger.debug("Finalise command has finished")
+
+        try:
+            parameter_name, cif_parameter = get_cif_merge_parameter(command, command_parameters)
+
+            # If we found a QCrBox.cif_data_file or QCrBox.output_cif in the above
+            # function call, then we will attempt to created a merged CIF
+            if cif_parameter and parameter_name:
+                merge_options = Cif2CifOptions(
+                    application_yaml=self.application_spec.yaml_file_path,  # type: ignore
+                    command_name=command.name,
+                    parameter_name=parameter_name,
+                )
+                dataset_id = await calc.save_output_to_data_manager(
+                    self.data_manager, merge_options=merge_options, input_cif=cif_parameter
+                )
+            else:
+                dataset_id = await calc.save_output_to_data_manager(self.data_manager)
+        except Exception as exc:
+            logger.error(f"Failed to store output calculation {calc.calculation_id} in data manager: {exc}")
+        else:
+            logger.debug(f"Output for non-interactive has been added to the data manager into dataset {dataset_id}")
+
+        calc.is_closed = True
+        calc.session_closed_event.set()
+
+    @log_eel
     async def _handle_command_launch_failure(self, calculation_id: str, exception: Exception) -> None:
         """Handle when launching a command fails.
 
@@ -424,6 +491,8 @@ class QCrBoxClient(QCrBoxServerClientBase):
         if command.type != "interactive_session":
             # Note that this method will also remove the calculation directory
             await self._handle_non_interactive_output(command, calc, parameters)
+        else:
+            await self._handle_interactive_output(command, calc, parameters)
 
         logger.debug("Updating calculation status after calculation has finished")
         await self.data_manager.update_calculation_status(await calc.get_status_details())
@@ -553,14 +622,8 @@ class QCrBoxClient(QCrBoxServerClientBase):
 
         calc = self.calculations[session_id]
         logger.debug(f"Attempting to close interactive session: {calc}")
-        try:
-            await calc.terminate()
-        except AttributeError:
-            logger.exception(f"Unable to terminate interactive session: {calc!r}")
-            response = msg_specs.CloseInteractiveSessionResponse(
-                session_id=session_id, status=CalculationStatusEnum.FAILED, output_dataset_id=None
-            )
-            return response
+        await calc.terminate()
+
         self._remove_calculation_work_dir()
         self.status.set_idle()
         logger.debug("Interactive session has been closed and client set to idle")
