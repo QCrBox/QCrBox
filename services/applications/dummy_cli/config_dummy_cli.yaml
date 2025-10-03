@@ -57,10 +57,22 @@ commands:
         description: The main CIF
         required_entry_sets: [ "cell_elements" ]
       - name: output_cif_name
-        dtype: str
+        dtype: QCrBox.output_cif
         description: The name of the output CIF file
-        # required_entry_sets: [ "cell_elements" ]
-        # invalidated_entries: [ ]
+        required_entries: [
+          "_atom_site_label", "_atom_site_fract_x", "_atom_site_fract_y", "_atom_site_fract_z",
+          "_atom_site_occupancy", "_atom_site_U_iso_or_equiv", "_atom_site_type_symbol",
+          one_of: ["_symmetry_equiv_pos_as_xyz", "_space_group_symop_operation_xyz"]
+        ]
+        optional_entries: [
+          "_atom_site_aniso_label", "_atom_site_aniso_U_11", "_atom_site_aniso_U_22",
+          "_atom_site_aniso_U_33", "_atom_site_aniso_U_12", "_atom_site_aniso_U_13",
+          "_atom_site_aniso_U_23", "_atom_site_adp_type", "_atom_site_site_symmetry_order",
+          "_atom_site_calc_flag", "_atom_site_refinement_flags_posn", "_atom_site_refinement_flags_adp"
+        ]
+        invalidated_entries: [
+          "_atom_site.*", "_geom.*", ".*refine.*", "_iucr.*", "_shelx.*"
+        ]
 
   - name: print_two_cif
     description: A Python function which prints the contents of two CIF files
@@ -74,7 +86,6 @@ commands:
       - name: cif2
         dtype: QCrBox.data_file
         description: The second CIF file
-        # required_entry_sets: [ "cell_elements" ]
 
 cif_entry_sets:
   - name: "cell_elements"
