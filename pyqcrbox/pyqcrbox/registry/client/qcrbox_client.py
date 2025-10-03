@@ -16,7 +16,12 @@ from pyqcrbox.registry.client.executable_command.interactive_session import Inte
 from pyqcrbox.registry.client.executable_command.interactive_session_calculation import InteractiveSessionCalculation
 from pyqcrbox.registry.client.executable_command.python_callable import PythonCallable
 from pyqcrbox.sql_models import CalculationStatusDetails, CalculationStatusEnum
-from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import BaseParameter, Cif2CifOptions, CifDataFileParameter
+from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import (
+    BaseParameter,
+    Cif2CifOptions,
+    CifDataFileParameter,
+    get_cif_merge_parameter,
+)
 
 from ..shared import QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup
 from .api_endpoints import create_client_asgi_server
@@ -216,37 +221,14 @@ class QCrBoxClient(QCrBoxServerClientBase):
             parsed as QCrBox data types.
 
         """
-        logger.debug(f"Attempting to store output from non-interactive command {command.name} to data manager")
-        logger.debug(f"Parsed command parameters = {command_parameters.items()}")
-        logger.debug(f"Raw command parameters = {command.cmd_spec.parameters}")
-
-        # FIXME: Try and find the input cif to the command -- this doesn't really
-        # work if there are multiple to do... BUT... it seems to be an OK
-        # hack for the current developer release
-        parameter_name, cif_parameter = next(
-            (
-                (name, param)
-                for name, param in command_parameters.items()
-                if getattr(param, "dtype", None) == "QCrBox.cif_data_file"
-            ),
-            (None, None),
-        )
-        logger.debug(f"1st pass for cif2cif: {parameter_name = } {cif_parameter = } ")
-
-        # NOTE TO SELF -- the dtype output_cif is being set to str.... so... we need to be more clever
-        # So we should try also look for output_cif.... that seems to have required entries
-        # If we can find an QCrBox.output_cif, then we should use that to merge. I think. Or
-        # do we translate the merged CIF into that? Let's look at what mopro does, I think.
-        parameter_name = next(
-            (item.name for item in command.cmd_spec.parameters if item.dtype == "QCrBox.output_cif"), parameter_name
-        )
-        logger.debug(f"2nd pass for cif2cif: {parameter_name = } {cif_parameter = }")
+        logger.debug(f"Adding output from non-interactive command {command.name} into data manager")
 
         try:
-            # If we have found a CIF parameter, then we will pass it to the save
-            # method to attempt to merge the original cif (the parameter) with
-            # the cif output from the command
-            if cif_parameter and parameter_name and isinstance(cif_parameter, CifDataFileParameter):
+            parameter_name, cif_parameter = get_cif_merge_parameter(command, command_parameters)
+
+            # If we found a QCrBox.cif_data_file or QCrBox.output_cif in the above
+            # function call, then we will attempt to created a merged CIF
+            if cif_parameter and parameter_name:
                 merge_options = Cif2CifOptions(
                     application_yaml=self.application_spec.yaml_file_path,  # type: ignore
                     command_name=command.name,

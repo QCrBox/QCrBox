@@ -15,6 +15,7 @@ from ..base import QCrBoxPydanticBaseModel
 
 if TYPE_CHECKING:
     from pyqcrbox.data_management import DataManager
+    from pyqcrbox.registry.client.executable_command import BaseCommand
 
 
 async def check_if_id_is_a_dataset(data_manager: "DataManager", id_to_check: str) -> bool:
@@ -203,10 +204,9 @@ class CifDataFileParameter(QCrBoxPydanticBaseModel):
 
     # We'll use this to track where the file has been written to disk
     _exported_file_path: str | Path | None
-    _was_converted: bool = False
 
     @log_eel
-    async def to_specific_format(self, input_cif_path: str, transform_options: Cif2CifOptions) -> str:
+    async def to_specific_format(self, input_cif_path: str | Path, transform_options: Cif2CifOptions) -> str:
         """Convert the CIF to a specific format.
 
         At the moment, this does an in-place conversion by overwriting the
@@ -214,7 +214,7 @@ class CifDataFileParameter(QCrBoxPydanticBaseModel):
 
         Parameters
         ----------
-        input_cif_path : str
+        input_cif_path : str | Path
             The path to the CIF file on the disk, in its original format.
         transform_options : Cif2CifOptions
             Options required for Cif2Cif conversion.
@@ -230,9 +230,10 @@ class CifDataFileParameter(QCrBoxPydanticBaseModel):
         # hard to install
         from qcrboxtools.cif.cif2cif import NoKeywordsError, cif_file_to_specific_by_yml
 
-        if not Path(input_cif_path).exists():
+        input_cif_path = Path(input_cif_path)
+        if not input_cif_path.exists():
             raise OSError("CIF has not yet been exported to disk")
-        output_cif_path = Path(input_cif_path).parent / "converted.cif"
+        output_cif_path = input_cif_path.parent / f"{input_cif_path.stem}-converted.cif"
 
         try:
             logger.debug(f"Converting CIF to specific format with parameters: {transform_options}")
@@ -244,21 +245,17 @@ class CifDataFileParameter(QCrBoxPydanticBaseModel):
                 transform_options.parameter_name,
             )
             # We will replace the original cif on disk with the converted cif
-            # (output_cif_path) by copying the output from cif_file_to_specific_by_yml
+            # by copying the output from cif_file_to_specific_by_yml
             shutil.copy(output_cif_path, input_cif_path)
-            # output_cif_path.unlink()
-            self._was_converted = True
         except NoKeywordsError as exc:
             logger.warning(f"{transform_options.parameter_name} has no required or optional CIF entries defined: {exc}")
-        except (BaseException, Exception) as exc:
-            logger.error(
-                f"There was a problem translating {self._exported_file_path} using parameter {transform_options.parameter_name}: {exc}"
-            )
+        except (BaseException, Exception) as exc:  # QCrBoxTools uses BaseException as the exception subclass
+            logger.error(f"Unable to translate {transform_options.parameter_name} due to exception: {exc}")
 
-        return input_cif_path
+        return str(input_cif_path)
 
     @log_eel
-    async def to_unified_format(self, new_cif_path: str, merge_options: Cif2CifOptions):
+    async def to_unified_format(self, new_cif_path: str, merge_options: Cif2CifOptions) -> str:
         """Merge an original and converted CIF together into a unified CIF format.
 
         Parameters
@@ -277,10 +274,7 @@ class CifDataFileParameter(QCrBoxPydanticBaseModel):
 
         original_cif_path = Path(self._exported_file_path)
         merge_cif_path = original_cif_path.parent / f"{original_cif_path.stem}-unified.cif"
-        logger.debug(
-            f"Merging {original_cif_path} and {new_cif_path} together to create unified cif at {merge_cif_path}"
-        )
-        logger.debug(f"Merge options: {merge_options}")
+        logger.debug(f"Merging {original_cif_path} and {new_cif_path} together at {merge_cif_path}: {merge_options}")
 
         try:
             cif_file_merge_to_unified_by_yml(
@@ -291,19 +285,17 @@ class CifDataFileParameter(QCrBoxPydanticBaseModel):
                 merge_options.command_name,
                 merge_options.parameter_name,
             )
-            with merge_cif_path.open("r") as file_in:
-                logger.debug(f"Created new file, we hope, {merge_cif_path}: {file_in.read()}")
-            self._exported_file_path = merge_cif_path
+            logger.debug(f"CIFs merged successfully into file {merge_cif_path=}")
             shutil.copy(merge_cif_path, new_cif_path)
-            logger.debug(f"Returning merge path: {merge_cif_path=} {self._exported_file_path=}")
+            self._exported_file_path = str(merge_cif_path)
         except NoKeywordsError as exc:
             logger.warning(f"{merge_options.parameter_name} has no required or optional CIF entries defined: {exc}")
         except (BaseException, Exception) as exc:
             logger.error(
-                f"There was a problem merging {self._exported_file_path} using parameter {merge_options.parameter_name}: {exc}"
+                f"There was a problem merging {self._exported_file_path} using {merge_options} due to exception: {exc}"
             )
 
-        return self._exported_file_path
+        return str(self._exported_file_path)
 
     @log_eel
     async def prepare_for_execution(
@@ -371,6 +363,51 @@ _custom_dtypes = {
 }
 
 _known_dtypes = _builtin_dtypes | _custom_dtypes
+
+def get_cif_merge_parameter(
+    command: BaseCommand, parsed_parameters: dict[str, BaseParameter | CifDataFileParameter]
+) -> tuple[str | None, CifDataFileParameter | None]:
+    """Get the parameter which will be used to merge to create the output CIF.
+
+    Parameters
+    ----------
+    command : BaseCommand
+        The BaseCommand object used to launch the command.
+    parsed_parameters : dict[str, BaseParameter | CifDataFileParameter]
+        A list of QCrBox data types which were used to execute the command.
+
+    Returns
+    -------
+    str
+        The name of the parameter to used for merging
+    CifDataFileParameter
+        The QCrBox data type for the input CIF. This is the CIF which will
+        be merged with the output.
+
+    """
+    # First, find the first QCrBox.cif_data_file parameter as we will be
+    # presuming that this is the input CIF for the command.
+    parameter_name, cif_parameter = next(
+        ((name, param) for name, param in parsed_parameters.items() if isinstance(param, CifDataFileParameter)),
+        (None, None),
+    )
+    logger.debug(f"Input CIF {parameter_name =} and parsed parameter {cif_parameter =}")
+
+    # If there is a parameter which is of type QCrBox.output_cif, then we need
+    # to instead use that when we use QCrBoxTools to create a merged/unified
+    # CIF as this type of parameter defines the output entries
+    output_parameter = next(
+        (item.name for item in command.cmd_spec.parameters if item.dtype == "QCrBox.output_cif"), parameter_name
+    )
+    if output_parameter != parameter_name:
+        parameter_name = output_parameter
+        logger.debug(
+            f"QCrBox.output_cif parameter found for {command.name} ({output_parameter}), using that for Cif2Cif"
+        )
+    else:
+        logger.debug(f"No QcrBox.output_cif parameter found for {command.name}, using input CIF settings for Cif2Cif")
+
+    return parameter_name, cif_parameter
 
 
 def verify_dtype_is_a_known_type(v: str) -> str:
