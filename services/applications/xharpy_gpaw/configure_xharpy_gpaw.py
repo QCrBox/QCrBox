@@ -9,7 +9,7 @@ from qcrboxtools.cif.file_converter.tsc import read_tsc_file
 from pyqcrbox import sql_models
 from pyqcrbox.registry.client import QCrBoxClient
 
-from iotbx.cif.model import cif, block
+from iotbx.cif.model import cif
 
 YAML_PATH = "/opt/qcrbox/config_xharpy_gpaw.yaml"
 
