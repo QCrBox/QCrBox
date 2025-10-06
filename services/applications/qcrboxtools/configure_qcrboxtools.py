@@ -7,7 +7,7 @@ from qcrboxtools.cif.iso2aniso import cif_iso2aniso
 from pyqcrbox import sql_models
 from pyqcrbox.registry.client import QCrBoxClient
 
-YAML_PATH = "./config_qcrboxtools.yaml"
+YAML_PATH = Path(__file__).parent / "config_qcrboxtools.yaml"
 
 
 

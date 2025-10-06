@@ -10,7 +10,7 @@ from qcrboxtools.cif.cif2cif import cif_file_merge_to_unified_by_yml, cif_file_t
 from qcrboxtools.cif.merge import replace_structure_from_cif
 from qcrboxtools.robots.olex2 import Olex2Socket
 
-YAML_PATH = "./config_olex2.yaml"
+YAML_PATH = Path(__file__).parent / "config_olex2.yaml"
 
 
 def run__interactive(input_file):

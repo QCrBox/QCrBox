@@ -14,7 +14,7 @@ from simple_cod_module import (
 from pyqcrbox import sql_models
 from pyqcrbox.registry.client import QCrBoxClient
 
-YAML_PATH = "./config_cod_check.yaml"
+YAML_PATH = Path(__file__).parent / "config_cod_check.yaml"
 
 
 def parse_input(input_cif, cellpar_deviation_perc, listed_elements_only):

@@ -11,7 +11,7 @@ from qcrboxtools.util.wine import WinePathHelper
 from pyqcrbox import sql_models
 from pyqcrbox.registry.client import QCrBoxClient
 
-YAML_PATH = "./config_mopro.yaml"
+YAML_PATH = Path(__file__).parent / "config_mopro.yaml"
 
 LIBMOPRO_PATH = PureWindowsPath(os.environ["MOPRO_LIB_PATH"])
 MOPRO_EXE_PATH = PureWindowsPath(os.environ["MOPRO_PATH"])

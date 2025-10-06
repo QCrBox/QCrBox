@@ -20,7 +20,7 @@ from qcrboxtools.robots.eval import (
 from pyqcrbox import sql_models
 from pyqcrbox.registry.client import QCrBoxClient
 
-YAML_PATH = "./config_eval1x.yaml"
+YAML_PATH = Path(__file__).parent / "config_eval1x.yaml"
 
 def integrate(
     input_folder,

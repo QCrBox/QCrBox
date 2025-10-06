@@ -8,7 +8,7 @@ from qcrboxtools.cif.file_converter.shelxt import ins2symop_loop
 from pyqcrbox import sql_models
 from pyqcrbox.registry.client import QCrBoxClient
 
-YAML_PATH = "./config_crysalis-pro.yaml"
+YAML_PATH = Path(__file__).parent / "config_crysalis-pro.yaml"
 
 def split_hkl_line(line: str):
     if len(line) < 30:
