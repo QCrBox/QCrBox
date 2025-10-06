@@ -76,6 +76,10 @@ In the event of disaster, it is possible to destroy the containers and restart Q
 devbox run restart
 ```
 
+## Install QCrBox front-end
+
+In order to drive the QCrBox platform, ensure you also have deployed the QCrBox web front-end. You can find instructions to deploy it [here](https://github.com/QCrBox/QCrBoxFrontend/blob/main/documentation/deployment_instructions.md).
+
 ## Prerequisites
 
 The following dependencies need to be installed manually.
