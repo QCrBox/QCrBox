@@ -36,36 +36,6 @@ commands:
           "_atom_site.*"
         ]
 
-  - name: "check_structure_convergence"
-    description: "Check the convergence of a structure, to be used for refinement with changing atomic form factors"
-    implemented_as: "python_callable"
-    import_path: "configure_qcrboxtools"
-    parameters:
-      - name: "cif1"
-        dtype: "QCrBox.cif_data_file"
-        default_value: None
-        description: "Path to the first CIF file to be compared"
-        required_entry_sets: ["comparison"]
-        merge_su: False
-      - name: "cif2"
-        dtype: "QCrBox.cif_data_file"
-        default_value: None
-        description: "Path to the second CIF file to be compared"
-        required_entry_sets: ["comparison"]
-        merge_su: False
-      - name: "convergence_criterion"
-        dtype: str
-        default_value: "max_abs_position"
-        # allowed_values: "max_abs_position|max_position_su|max_abs_uij|max_uij_su"
-        description: "The converge criterion to use"
-      - name: "criterion_value"
-        dtype: str
-        description: "The value of the criterion to check converge against "
-      - name: "output_json_path"
-        dtype: "QCrBox.output_path"
-        default_value: None
-        description: "Path to save the result as JSON file to after comparing the CIF files"
-
   - name: "iso2aniso"
     description: "Convert isotropic ADPs to anisotropic ADPs in a CIF file"
     implemented_as: "python_callable"
@@ -97,22 +67,6 @@ commands:
           "_refln.*calc.*", "_shelx.*", "_iucr.refine_instructions_details",
           '_refine(?!_ls\.weighting|_ls\.extinction)'
         ]
-
-  - name: "to_unified_cif"
-    implemented_as: "python_callable"
-    description: "Convert a CIF file to a unified CIF file"
-    import_path: "configure_qcrboxtools"
-    parameters:
-      - name: "input_cif"
-        dtype: "QCrBox.cif_data_file"
-        description: "Path to the CIF file to be converted"
-        optional_entries: ["all_unified"]
-        merge_su: False
-      - name: "output_cif_name"
-        dtype: "QCrBox.output_cif"
-        description: "Path to save the CIF file to after converting"
-        optional_entries: ["all_unified"]
-        invalidated_entries: []
 
 cif_entry_sets:
   - name: "molecular_structure"
