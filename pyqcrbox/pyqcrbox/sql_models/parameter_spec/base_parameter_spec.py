@@ -234,6 +234,7 @@ class CifDataFileParameter(QCrBoxPydanticBaseModel):
         if not input_cif_path.exists():
             raise OSError("CIF has not yet been exported to disk")
         output_cif_path = input_cif_path.parent / f"{input_cif_path.stem}-converted.cif"
+        self._exported_file_path = input_cif_path
 
         try:
             logger.debug(f"Converting CIF to specific format with parameters: {transform_options}")
@@ -252,7 +253,9 @@ class CifDataFileParameter(QCrBoxPydanticBaseModel):
         except (BaseException, Exception) as exc:  # QCrBoxTools uses BaseException as the exception subclass
             logger.error(f"Unable to translate {transform_options.parameter_name} due to exception: {exc}")
 
-        return str(input_cif_path)
+        logger.debug(f"Returning {self._exported_file_path} from CifDataFileParameter.to_specific_format()")
+
+        return str(self._exported_file_path)
 
     @log_eel
     async def to_unified_format(self, new_cif_path: str, merge_options: Cif2CifOptions) -> str:
@@ -274,6 +277,7 @@ class CifDataFileParameter(QCrBoxPydanticBaseModel):
 
         original_cif_path = Path(self._exported_file_path)
         merge_cif_path = original_cif_path.parent / f"{original_cif_path.stem}-unified.cif"
+        self._exported_file_path = new_cif_path
         logger.debug(f"Merging {original_cif_path} and {new_cif_path} together at {merge_cif_path}: {merge_options}")
 
         try:
@@ -287,13 +291,15 @@ class CifDataFileParameter(QCrBoxPydanticBaseModel):
             )
             logger.debug(f"CIFs merged successfully into file {merge_cif_path=}")
             shutil.copy(merge_cif_path, new_cif_path)
-            self._exported_file_path = str(merge_cif_path)
+            self._exported_file_path = str(new_cif_path)
         except NoKeywordsError as exc:
             logger.warning(f"{merge_options.parameter_name} has no required or optional CIF entries defined: {exc}")
         except (BaseException, Exception) as exc:
             logger.error(
                 f"There was a problem merging {self._exported_file_path} using {merge_options} due to exception: {exc}"
             )
+
+        logger.debug(f"Returning {self._exported_file_path} from CifDataFileParameter.to_unified_format()")
 
         return str(self._exported_file_path)
 
