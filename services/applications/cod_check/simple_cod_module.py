@@ -127,41 +127,6 @@ def cod_params(
     return params
 
 
-def get_number_fitting_cod_entries(
-    elements: List[str],
-    cell_dict: Dict[str, float],
-    cellpar_deviation: float,
-    listed_elements_only: bool,
-) -> int:
-    """
-    Get the count of COD entries fitting given criteria.
-
-    Parameters
-    ----------
-    elements : List[str]
-        List of chemical element symbols.
-    cell_dict : Dict[str, float]
-        Dictionary with unit cell parameter names as keys and their values as floats.
-    cellpar_deviation : float
-        Allowed deviation fraction for cell parameters.
-    listed_elements_only : bool
-        If True, limit the search to entries strictly containing the listed elements.
-
-    Returns
-    -------
-    int
-        The count of entries in the COD that match the criteria.
-
-    """
-    params = cod_params(elements, cell_dict, cellpar_deviation, listed_elements_only)
-    params["format"] = "count"
-
-    headers = {"content_type": "charset=utf-8"}
-
-    result = requests.request("GET", COD_REST_URL, headers=headers, params=params, timeout=60)
-    return int(result.text)
-
-
 def get_celldiff_score(struc_dict: Dict[str, float], cell_dict: Dict[str, float]) -> float:
     """
     Calculate the cell difference score between two sets of cell parameters.

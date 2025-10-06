@@ -9,7 +9,6 @@ from simple_cod_module import (
     cif_to_search_pars,
     download_cod_cif,
     get_fitting_cod_entries,
-    get_number_fitting_cod_entries,
 )
 
 from pyqcrbox import sql_models
@@ -36,7 +35,7 @@ def parse_input(input_cif, cellpar_deviation_perc, listed_elements_only):
         input_cif_path=input_cif,
         output_cif_path=work_cif_path,
         yml_path=YAML_PATH,  # Referencing the edited YAML configuration
-        command="get_number_fitting_cod_entries",  # Command name as specified in the YAML
+        command="merge_closest_cod_entry",  # Command name as specified in the YAML
         parameter="input_cif",  # Parameter name as specified in the YAML
     )
     return work_cif_path, cellpar_deviation, listed_elements_only

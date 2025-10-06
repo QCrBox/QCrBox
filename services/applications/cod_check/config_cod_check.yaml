@@ -8,29 +8,6 @@ description: "Can be used to check whether there is a similar structure in the c
 url: "https://my.official.module.url"
 
 commands:
-  - name: "get_number_fitting_cod_entries"
-    description: "Get the number of fitting COD that fit the unit cell parameters and elements."
-    implemented_as: "python_callable"
-    import_path: "configure_cod_check"
-    callable_name: "qcb_get_number_fitting_cod_entries"
-    parameters:
-      - name: "input_cif"
-        description: "Path to the input CIF file."
-        dtype: "QCrBox.cif_data_file"
-        required_entries: [
-          "_cell_length_a", "_cell_length_b", "_cell_length_c",
-          "_cell_angle_alpha", "_cell_angle_beta", "_cell_angle_gamma",
-          "_chemical_formula_sum"
-        ]
-      - name: "cellpar_deviation_perc"
-        description: "The percentage deviation allowed for the unit cell parameters."
-        dtype: "float"
-        default_value: 2.0
-      - name: "listed_elements_only"
-        description: "If True, only the elements listed in the CIF file can be present, otherwise given elements must be present but additional elements are possible."
-        dtype: "bool"
-        default_value: false
-
   - name: "merge_closest_cod_entry"
     implemented_as: "python_callable"
     import_path: "configure_cod_check"
