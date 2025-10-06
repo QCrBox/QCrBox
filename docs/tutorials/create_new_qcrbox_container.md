@@ -4,7 +4,7 @@ This short guide shows you how to create a new QCrBox application container, whi
 
 ## Prerequisites
 
-Before starting, ensure your development environment is set up following the guide located [here](../how_to_guides/set_up_a_dev_environment.md). In addition, it's likely helpful to bring yourself up to speed on the platform's [Technical Reference documentation](../technical_reference/contents.md), in particular [Architecture & key components](../technical_reference/architecture.md).
+Before starting, ensure your development environment is set up following the guide located [here](../how_to_guides/set_up_a_dev_environment.md), and that you have `devbox shell` running in your terminal. In addition, it's likely helpful to bring yourself up to speed on the platform's [Technical Reference documentation](../technical_reference/contents.md), in particular [Architecture & key components](../technical_reference/architecture.md).
 
 ## Initial Setup
 

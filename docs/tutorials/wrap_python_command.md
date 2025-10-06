@@ -12,7 +12,7 @@ This guide walks you through the process of encapsulating a Python module within
 
 ## Prerequisites
 
-Before starting, ensure your development environment is set up following the guide located [here](../how_to_guides/set_up_a_dev_environment.md). In addition, it's likely helpful to bring yourself up to speed on the platform's [Technical Reference documentation](../technical_reference/contents.md), in particular [Architecture & key components](../technical_reference/architecture.md).
+Before starting, ensure your development environment is set up following the guide located [here](../how_to_guides/set_up_a_dev_environment.md), and that you have `devbox shell` running in your terminal. In addition, it's likely helpful to bring yourself up to speed on the platform's [Technical Reference documentation](../technical_reference/contents.md), in particular [Architecture & key components](../technical_reference/architecture.md).
 
 During this tutorial you will work with Docker, Python, and an understanding of YAML configurations.  If you're new to these concepts you can just type in the commands as listed in the tutorial. Alternatively, you can consult additional resources on [Docker](https://docs.docker.com/get-started/overview/), [Python modules](https://docs.python.org/3/tutorial/modules.html), and [YAML](https://yaml.org/spec/1.2/spec.html) for foundational knowledge.
 
@@ -92,7 +92,7 @@ from qcrboxtools.cif.cif2cif import cif_file_to_specific_by_yml
 from simple_cod_module import cif_to_search_pars, get_number_fitting_cod_entries
 ```
 
-The function `cif_file_to_specific_by_yml` is designed to manage the CIF files' input and output, converting the CIF keywords used by QCrBox into those required by `simple_cod_module`. Additionally, we'll utilize two specific functions from `simple_cod_module` to execute our desired logic.
+The function `cif_file_to_specific_by_yml` is designed to manage the CIF file illustratings' input and output, converting the CIF keywords used by QCrBox into those required by `simple_cod_module`. Additionally, we'll utilize two specific functions from `simple_cod_module` to execute our desired logic.
 
 Let's proceed to define the necessary Python functions within `configure_cod_check_tutorial.py`.
 Add this below the `import`s:
@@ -330,7 +330,7 @@ The cif output path parameter should be modified to:
 
 Again while the required and optional entries determine what is copied from our evaluation (here the database lookup), the invalidated entries will exclude entries from the input cif. The remaining entries from both files are then merged and output in the location of `output_cif_path`.
 
-## Developing the Python Glue Code for Our Merge Command.
+## Developing the Python Glue Code for Our Merge Command
 
 We will now modify the `configure_cod_check_tutorial.py` file to add the new functionality. We will use more functionality from both QCrBoxtools and our COD module. Our import section should now look like this:
 
@@ -432,7 +432,7 @@ You may see errors from Pydantic, which ensures the YAML is correctly formatted.
 
 ## Validating our New Container using the QCrBox Frontend
 
-You can use the QCrBox web management front-end to check your new application container is working, once you [have it installed and running](https://github.com/QCrBox/QCrBoxFrontend).
+You can use the QCrBox web management front-end to check your new application container is working, once you have the front-end installed and running ([see the installation instructions here](https://github.com/QCrBox/QCrBoxFrontend)).
 
 First, let's check we have our server configured to run a test, and then upload a test CIF file to feed into our new container:
 
@@ -457,7 +457,6 @@ Hopefully, once complete, you should see an output `qcrbox_work_merge_closest_co
 Select the download icon to download the resultant CIF file to your local machine.
 If you examine the contents of this output file, you should see three `loop` entries added to the file,
 that correspond to what we expect as we specified in our `config_cod_check_tutorial.yaml` file.
-
 
 ## Conclusion and final remarks
 
