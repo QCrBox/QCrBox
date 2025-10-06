@@ -10,6 +10,8 @@ This guide walks you through the process of encapsulating a Python module within
 1. Build our new application service container using `qcb`.
 1. Test our new container using QCrBox's web management front-end.
 
+If you run into any problems when progressing through this tutorial, there's a [troubleshooting guide](../technical_reference/troubleshooting.md) which may be helpful.
+
 
 ## Prerequisites
 
