@@ -81,7 +81,7 @@ commands:
       - name: "output_cif_path"
         dtype: "QCrBox.output_cif"
         description: "Path to save the CIF file to after running the commands."
-        required_entry_sets: ["olex_structure_output"]
+        optional_entry_sets: ["olex_structure_output"]
         custom_categories: ["iucr", "shelx"]
         invalidated_entries: ["_shelx_.*"]
       - name: "cmd_file_path"

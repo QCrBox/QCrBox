@@ -45,7 +45,7 @@ def run_commands(input_cif_path: str, output_cif_path: str, cmd_file_path: str):
     output_cif_path = Path(output_cif_path)
     work_cif_path = input_cif_path.parent / "qcrbox_work.cif"
 
-    cif_file_to_specific_by_yml(input_cif_path, work_cif_path, YAML_PATH, "run_cmds_file", "input_cif_path")
+    cif_file_to_specific_by_yml(input_cif_path, work_cif_path, YAML_PATH, "run_commands", "input_cif_path")
 
     olex2_socket = Olex2Socket()
 
@@ -56,6 +56,6 @@ def run_commands(input_cif_path: str, output_cif_path: str, cmd_file_path: str):
     olex2_socket.send_command(work_cif_path, tsc_path, cmd_string)
 
     cif_file_merge_to_unified_by_yml(
-        work_cif_path, output_cif_path, input_cif_path, YAML_PATH, "run_cmds_file", "output_cif_path"
+        work_cif_path, output_cif_path, input_cif_path, YAML_PATH, "run_commands", "output_cif_path"
     )
     return str(output_cif_path)
