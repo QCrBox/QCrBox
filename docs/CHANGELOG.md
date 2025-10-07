@@ -15,6 +15,7 @@ However, there will be an initial period of stabilisation where this is not adhe
 
 ### New Features
 
+- Added a troubleshooting and FAQ page.
 - Included support for non-interactive commands, including stopping any long-running commands.
 - Added `--prebuilt-images` option to `qcb up` to bring QCrBox up using tested images from the QCrBox container
   repository.
@@ -64,6 +65,7 @@ However, there will be an initial period of stabilisation where this is not adhe
 - Fixed an issue where the `base-ancestor` image wouldn't build because `conda` couldn't resolve the environment
   dependencies.
 - Fixed an issue where environment variables were unset causing applications not to launch
+- Fixed an issue where the output cif parameter was not being used correctly
 - Fixed an issue where `qcb init` would not create a valid template for interactive applications
 - And lots more!
 

@@ -49,9 +49,7 @@ class BaseCommand(metaclass=ABCMeta):
     # The fact that a parsed parameter can be BaseParameter or CifDataFileParameter
     # is unsatisfying and warrants changing
 
-    def _parse_params_into_dtype(
-        self, command_arguments: dict[str, str]
-    ) -> dict[str, BaseParameter | CifDataFileParameter]:
+    def _parse_params_into_dtype(self, command_arguments: dict[str, str]) -> dict[str, BaseParameter]:
         """Convert a command arguments into a BaseParameter derived classes.
 
         Create a mapping of the parameters, where each item in the output
@@ -89,7 +87,7 @@ class BaseCommand(metaclass=ABCMeta):
 
     async def _prepare_params_for_execution(
         self,
-        parsed_params: dict[str, BaseParameter | CifDataFileParameter],
+        parsed_params: dict[str, BaseParameter],
         application_spec: ApplicationSpec,
         working_dir: str,
     ) -> dict[str, Any]:
@@ -101,7 +99,7 @@ class BaseCommand(metaclass=ABCMeta):
 
         Parameters
         ----------
-        parsed_params : dict[str, BaseParameter | CifDataFileParameter]
+        parsed_params : dict[str, BaseParameter]
             A mapping of argument/parameter name to a BaseParameter derived
             class which is used for command execution.
         application_spec : ApplicationSpec
@@ -145,7 +143,7 @@ class BaseCommand(metaclass=ABCMeta):
         application_spec: ApplicationSpec,
         command_arguments: dict[str, str],
         working_dir: str | Path,
-    ) -> tuple[dict[str, BaseParameter | CifDataFileParameter], dict[str, Any]]:
+    ) -> tuple[dict[str, BaseParameter], dict[str, Any]]:
         """Prepare the parameters required for command execution.
 
         If there are optional arguments for the command which are not included
@@ -166,7 +164,7 @@ class BaseCommand(metaclass=ABCMeta):
 
         Returns
         -------
-        dict[str, BaseParameter | CifDataFileParameter]
+        dict[str, BaseParameter]
             A mapping of argument/parameter name to a BaseParameter derived
             class which is used for command execution.
         dict[str, Any]

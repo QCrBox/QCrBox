@@ -14,7 +14,7 @@ from pyqcrbox.registry.client.executable_command.python_callable import PythonCa
 from pyqcrbox.sql_models import InteractiveSessionSpec
 from pyqcrbox.sql_models.application_spec import ApplicationSpec
 from pyqcrbox.sql_models.interactive_session_info import InteractiveSessionInfo
-from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import BaseParameter, CifDataFileParameter
+from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import BaseParameter
 
 from .interactive_session_calculation import InteractiveSessionCalculation
 
@@ -177,7 +177,7 @@ class InteractiveSession(BaseCommand):
         application_spec: ApplicationSpec,
         command_arguments: dict[str, str],
         working_dir: str | Path,
-    ) -> tuple[dict[str, BaseParameter | CifDataFileParameter], dict[str, Any]]:
+    ) -> tuple[dict[str, BaseParameter], dict[str, Any]]:
         """Prepare the parameters required for command execution.
 
         If there are optional arguments for the command which are not included
@@ -198,7 +198,7 @@ class InteractiveSession(BaseCommand):
 
         Returns
         -------
-        dict[str, BaseParameter | CifDataFileParameter]
+        dict[str, BaseParameter]
             A mapping of argument/parameter name to a BaseParameter derived
             class which is used for command execution.
         dict[str, Any]
