@@ -69,7 +69,7 @@ async def test_export_data_file(data_manager: DataManager, sample_cif_file: Path
     output_filename = "output.cif"
     expected_output_file_path = output_dir / output_filename
 
-    exported_file_path = await data_manager.export_data_file(qcrbox_file_id, output_dir, output_filename)
+    exported_file_path = Path(await data_manager.export_data_file(qcrbox_file_id, output_dir, output_filename))
     assert exported_file_path.exists()
     assert exported_file_path == expected_output_file_path
 
@@ -100,7 +100,7 @@ async def test_appending_to_dataset(data_manager: DataManager, sample_cif_file: 
     )
 
     # Now append another file and check it's in there too
-    appended_dataset_id = await data_manager.update_data_file_in_dataset(dataset_id, data_file_id_2)
+    appended_dataset_id = await data_manager.add_data_file_to_dataset(dataset_id, data_file_id_2)
     assert appended_dataset_id == dataset_id, (
         "Dataset ID returned for appended dataset doesn't match original dataset ID"
     )

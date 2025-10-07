@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: MPL-2.0
 import multiprocessing.pool
+from pathlib import Path
 
 import anyio
 import psutil
@@ -8,6 +9,7 @@ from pyqcrbox import logger
 from pyqcrbox.data_management.data_manager import DataManager
 from pyqcrbox.debug import log_eel
 from pyqcrbox.sql_models import CalculationStatusEnum
+from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import Cif2CifOptions, CifDataFileParameter
 
 from .base_calculation import BaseCalculation
 
@@ -43,7 +45,13 @@ class PythonCallableCalculation(BaseCalculation):
         self._terminated = False
 
     @log_eel
-    async def save_to_data_file_manager(self, data_file_manager: DataManager) -> None:
+    async def save_output_to_data_manager(
+        self,
+        data_manager: DataManager,
+        *,
+        merge_options: Cif2CifOptions | None = None,
+        input_cif: CifDataFileParameter | None = None,
+    ) -> str | None:
         """Save the output of the calculation to the Data File Manager.
 
         It is assumed that the return value of the PythonCallable is the data to
@@ -52,22 +60,48 @@ class PythonCallableCalculation(BaseCalculation):
 
         Parameters
         ----------
-        data_file_manager : DataManager
-            An instance of the DataFile Manager.
+        data_manager : DataManager
+            An instance of the data manager.
+        merge_options : Cif2CifOptions | None
+            Options which will be used to create a unified CIF.
+        input_cif: CifDataFileParameter | None
+            The original CIF prior to being transformed to a new CIF format.
+
+        Returns
+        -------
+        str | None
+            The dataset ID created to store the output.
+
 
         """
         if not self.return_value:
-            logger.info("This calculation has no return value or data file to add to the Data File Manager.")
-            return
+            logger.info("This calculation has no return value, nothing to store in the data manager")
+            return None
+        if not isinstance(self.return_value, str):
+            exc_msg = f"The return value from the calculation must be an str, not type {type(self.return_value)}"
+            logger.error(f"Unable to save output of calculation {self.calculation_id}: '{exc_msg}'")
+            raise ValueError(exc_msg)
+
+        output_file = Path(self.return_value)
+        if not output_file.exists() or not output_file.is_file():
+            exc_msg = f"The return value '{output_file}' from the calculation is not a file"
+            logger.error(f"Unable to save output of calculation {self.calculation_id}: '{exc_msg}'")
+            raise ValueError(exc_msg)
+
+        if input_cif and merge_options:
+            logger.debug("Merging to unified format in PythonCallableCalculation")
+            output_file = await input_cif.to_unified_format(output_file, merge_options)
 
         try:
-            data_file_id = await data_file_manager.import_file(self.return_value)
-            self.output_dataset_id = await data_file_manager.create_dataset_from_data_files(data_file_id)
+            data_file_id = await data_manager.import_file(output_file)
+            self.output_dataset_id = await data_manager.create_dataset_from_data_files(data_file_id)
         except FileNotFoundError:
-            logger.error(f"Failed to add data file and create dataset for {self.return_value}")
+            logger.error(f"Failed to add data file and create dataset for {output_file}")
             raise
 
         logger.info(f"Created Dataset {self.output_dataset_id} containing data file {data_file_id}")
+
+        return self.output_dataset_id
 
     @log_eel
     async def wait_until_finished(self):
@@ -153,7 +187,7 @@ class PythonCallableCalculation(BaseCalculation):
         # spawned which need to be killed. Unfortunately pool.terminate() doesn't
         # do this, so we have to find the parent processes in the pool and kill their
         # child processes too
-        processes = [psutil.Process(worker.pid) for worker in self.pool._pool if worker.is_alive()]
+        processes = [psutil.Process(worker.pid) for worker in self.pool._pool if worker.is_alive()]  # type: ignore
         for process in processes:
             child_processes = process.children(recursive=True)
             for child in child_processes:
@@ -162,5 +196,6 @@ class PythonCallableCalculation(BaseCalculation):
         self._terminated = True
         logger.debug("Multiprocessing pool terminated.")
 
+    @log_eel
     def get_error_message(self) -> str:
         return ""

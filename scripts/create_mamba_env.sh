@@ -18,7 +18,7 @@ if ! [ -e ${QCRBOX_MAMBA_ENV_PATH} ]; then
     eval "$(micromamba shell hook --shell bash)";
     micromamba create -n qcrbox;
     micromamba activate qcrbox;
-    micromamba install -y python=3.12;
+    micromamba install -y python=3.11.13;
     micromamba install -y pip setuptools wheel build conda-build;
     micromamba install -y cctbx-base;
 

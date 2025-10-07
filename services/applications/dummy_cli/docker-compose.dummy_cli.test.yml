@@ -18,3 +18,8 @@ services:
       QCRBOX__NATS__HOST: "qcrbox-nats"
       QCRBOX__REGISTRY__SERVER__HOST: "qcrbox-registry"
       QCRBOX__REGISTRY__SERVER__PORT: "8000"
+    logging:
+      driver: "syslog"
+      options:
+        syslog-address: udp://127.0.0.1:514
+        tag: "dummy_cli"

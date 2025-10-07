@@ -2,7 +2,7 @@ import inspect
 from collections.abc import Callable
 from functools import wraps
 
-from pyqcrbox import logger
+from pyqcrbox import logger, settings
 
 
 def _log_enter(func_name: str) -> None:
@@ -29,6 +29,8 @@ def log_eel(func: Callable) -> Callable:
         The wrapped function with logging.
 
     """
+    if not settings.logging.log_func_entry_exit:
+        return func
 
     def _get_func_name(args):
         func_name = func.__name__

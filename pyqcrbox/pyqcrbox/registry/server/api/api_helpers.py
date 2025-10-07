@@ -458,7 +458,7 @@ async def append_to_dataset(
 
     """
     qcrbox_data_file_id = await import_data_file(data, data_manager=data_manager)
-    qcrbox_dataset_id = await data_manager.update_data_file_in_dataset(dataset_id, qcrbox_data_file_id)
+    qcrbox_dataset_id = await data_manager.add_data_file_to_dataset(dataset_id, qcrbox_data_file_id)
 
     return qcrbox_dataset_id
 

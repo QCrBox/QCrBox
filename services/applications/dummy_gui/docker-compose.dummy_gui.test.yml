@@ -37,3 +37,8 @@ services:
 
       traefik.http.services.dummy-gui-service.loadbalancer.server.scheme: http
       traefik.http.services.dummy-gui-service.loadbalancer.server.port: 8080
+    logging:
+      driver: "syslog"
+      options:
+        syslog-address: udp://127.0.0.1:514
+        tag: "dummy_gui"

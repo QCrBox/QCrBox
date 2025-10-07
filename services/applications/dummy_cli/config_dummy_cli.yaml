@@ -47,4 +47,51 @@ commands:
         dtype: str
         description: An unused dummy parameter
 
+  - name: change_cif_name
+    description: A Python function which changes the file name of a CIF
+    implemented_as: python_callable
+    import_path: sample_functions
+    parameters:
+      - name: input_cif
+        dtype: QCrBox.cif_data_file
+        description: The main CIF
+        required_entry_sets: [ "cell_elements" ]
+      - name: output_cif_name
+        dtype: QCrBox.output_cif
+        description: The name of the output CIF file
+        required_entries: [
+          "_atom_site_label", "_atom_site_fract_x", "_atom_site_fract_y", "_atom_site_fract_z",
+          "_atom_site_occupancy", "_atom_site_U_iso_or_equiv", "_atom_site_type_symbol",
+          one_of: ["_symmetry_equiv_pos_as_xyz", "_space_group_symop_operation_xyz"]
+        ]
+        optional_entries: [
+          "_atom_site_aniso_label", "_atom_site_aniso_U_11", "_atom_site_aniso_U_22",
+          "_atom_site_aniso_U_33", "_atom_site_aniso_U_12", "_atom_site_aniso_U_13",
+          "_atom_site_aniso_U_23", "_atom_site_adp_type", "_atom_site_site_symmetry_order",
+          "_atom_site_calc_flag", "_atom_site_refinement_flags_posn", "_atom_site_refinement_flags_adp"
+        ]
+        invalidated_entries: [
+          "_atom_site.*", "_geom.*", ".*refine.*", "_iucr.*", "_shelx.*"
+        ]
+
+  - name: print_two_cif
+    description: A Python function which prints the contents of two CIF files
+    implemented_as: python_callable
+    import_path: sample_functions
+    parameters:
+      - name: cif1
+        dtype: QCrBox.cif_data_file
+        description: The first CIF file
+      # Note that we can only have ONE cif_data_file, other CIFs have to be data_files
+      - name: cif2
+        dtype: QCrBox.data_file
+        description: The second CIF file
+
+cif_entry_sets:
+  - name: "cell_elements"
+    required: [
+      "_cell_length_a", "_cell_length_b", "_cell_length_c", "_cell_angle_alpha",
+      "_cell_angle_beta", "_cell_angle_gamma", "_chemical_formula_sum"
+    ]
+
 qcrbox_yaml_spec_version: "0.1"

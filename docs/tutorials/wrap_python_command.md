@@ -1,28 +1,44 @@
 # Wrapping a Python module and exposing functionality to run within QCrBox
 
-This guide walks you through the process of encapsulating a Python module within a QCrBox container. Specifically, we'll focus on a module that queries the [Crystallographic Open Database (COD)](https://www.crystallography.net/cod/) for structures with similar elements and unit cell parameters. Our goal is to make this module's functionality accessible within a QCrBox container. The resulting container is already present in QCrBox as `cod_check`. However, we will go through the necessary steps to recreate the functionality.
+This guide walks you through the process of encapsulating a Python module within a QCrBox container. Specifically, we'll focus on a module that queries the [Crystallographic Open Database (COD)](https://www.crystallography.net/cod/) for structures with similar elements and unit cell parameters. Our goal is to make this module's functionality accessible within a QCrBox container. The resulting container is already present in QCrBox as `cod_check`. However, we will go through the necessary steps to recreate the functionality:
+
+1. Use `qcb` commands to create a new application service from a template, with initial boilerplate configuration files to get us started.
+1. Copy in an example Python module we'll use to conduct COD queries on our CIF file.
+1. Define an interface using YAML that describes the commands that will expose capabilities of our Python module for use by QCrBox.
+1. Write some Python glue code that contains functions that are called when our service commands are invoked - essentially one Python function for each command. This glue code will call our Python module to do the actual processing, passing any parameters received from QCrBox.
+1. Write a Dockerfile that describes how to set up our service container with our application installed.
+1. Build our new application service container using `qcb`.
+1. Test our new container using QCrBox's web management front-end.
+
+If you run into any problems when progressing through this tutorial, there's a [troubleshooting guide](../technical_reference/troubleshooting.md) which may be helpful.
+
 
 ## Prerequisites
 
-Before starting, ensure your development environment is set up following the guide located [here](../how_to_guides/set_up_a_dev_environment.md). During this tutorial you will work with Docker, Python, and an understanding of YAML configurations.  If you're new to these concepts you can just type in the commands as listed in the tutorial. Alternatively, you can consult additional resources on [Docker](https://docs.docker.com/get-started/overview/), [Python modules](https://docs.python.org/3/tutorial/modules.html), and [YAML](https://yaml.org/spec/1.2/spec.html) for foundational knowledge.
+Before starting, ensure your development environment is set up following the guide located [here](../how_to_guides/set_up_a_dev_environment.md). In addition, it's likely helpful to bring yourself up to speed on the platform's [Technical Reference documentation](../technical_reference/contents.md), in particular [Architecture & key components](../technical_reference/architecture.md).
+
+During this tutorial you will work with Docker, Python, and an understanding of YAML configurations.  If you're new to these concepts you can just type in the commands as listed in the tutorial. Alternatively, you can consult additional resources on [Docker](https://docs.docker.com/get-started/overview/), [Python modules](https://docs.python.org/3/tutorial/modules.html), and [YAML](https://yaml.org/spec/1.2/spec.html) for foundational knowledge.
 
 ## Initial Setup
 
 To begin, initialize a new QCrBox container for our module:
 
-1. Open your terminal.
-2. Type `qcb init cod_check_tutorial` and press Enter.
-3. You will be prompted to provide basic information about your application through a guided dialogue. Follow the prompts to complete the setup.
+1. Open your terminal and change directory to the directory where you have installed QCrBox.
+1. Start a Devbox shell using `devbox shell`.
+1. Type `qcb init cod_check_tutorial` and press Enter.
+1. You will be prompted to provide basic information about your application through a guided dialogue. Follow the prompts to complete the setup.
 
 ```
 Please provide some basic information about your application.
 The following dialog will guide you through the relevant settings.
 
   [1/7] Select application_type
-    1 - CLI
-    Choose from [1] (1): 1
+    1 - Non-interactive Command
+    2 - Interactive GUI (Linux)
+    3 - Interactive GUI (Windows)
+    Choose from [1/2/3] (1):
   [2/7] application_slug (cod_check_tutorial):
-  [3/7] application_name (Cod Check): COD Check
+  [3/7] application_name (Cod Check): COD Check Tutorial
   [4/7] application_version (x.y.z): 0.0.1
   [5/7] description (Brief description of the application.): Can be used to check whether there is a similar structure in the crystallographic open database and output similar structures.
   [6/7] url (): https://my.official.module.url
@@ -33,58 +49,61 @@ Created scaffolding for new application in 'T:\QCrBox_location\services\applicat
 
 ## Understanding the Generated Scaffolding
 
-Navigate to the application's folder to see the files generated by the boilerplace CLI. You'll find:
+Navigate to the application's folder to see the boilerplate files generated by `qcb init`. You'll find:
 
 - `docker-compose.cod_check_tutorial.*.yml`: Docker Compose files, typically unchanged for non-GUI applications.
-- `sample_cmd.sh`: An example bash file for CLI applications. This can be deleted.
+- `dummy_gui.py`: An example Python script to demonstrate a trivial GUI application. This can also be deleted.
 - `Dockerfile`: Contains instructions to build the container.
-- `config_cod_check_tutorial.yaml`: Future versions will use this to define exposed functions. Currently, it requests CIF keywords.
+- `config_cod_check_tutorial.yaml`: This defines the exposed functions as QCrBox "commands". At the moment, it contains example commands for a non-interactive sleep function and an interactive GUI session, but we'll replace these to specify QCrBox commands for our Python code.
 - `configure_cod_check_tutorial.py`: Here, we'll implement our module's functionality and register it with QCrBox.
 
-Next, download the Python file [here](./example_support/simple_cod_module.py) and copy `simple_cod_module.py` into the `cod_check_tutorial` folder.
+Next, download the Python file [here](simple_cod_module.py) and copy `simple_cod_module.py` into the `cod_check_tutorial` folder.
 
 ## Adding the First Command to `config_cod_check_tutorial.yaml`
 
 In the first step of this tutorial, we aim to introduce a command that outputs the number of structures with matching unit cell parameters and elements, as specified in a CIF file, to a JSON file within the work folder. Refer to the `simple_cod_module.py` script to understand the functionalities we're integrating. We will use the `cif_to_search_pars` function to generate search parameters and then employ `get_number_fitting_cod_entries` to find the count of matching structures.
 
-The initial setup, generated by `qcb init`, has already populated the top section of the YAML file. Your task now is to customize this section with our specific command details. Start by renaming `name` from the placeholder to `"get_number_fitting_cod_entries"` and change `implemented_as` from `"cli_command"` to `"python_callable"`. Also add the module we will import from by adding `import_path: "configure_cod_check_tutorial"` and the function we want to expose by adding `callable_name: "get_number_fitting_cod_entries"`.
-Note that if the function name is the same as the exposed command name (for example: `get_number_fitting_cod_entries`) then `callable_name` can be omitted and the value of the `name` entry is used.
+The initial setup, generated by `qcb init`, has already populated the top section of the `config_cod_check_tutorial.yaml` file. Our task now is to customize this section with our specific command details. Let's start with the top-level parameters for our first QCrBox command (starting from below `commands:`):
 
-The command will require three parameters:
+1. Rename `name` from the placeholder to `"get_number_fitting_cod_entries"`.
+1. Modify `description` as you wish.
+1. Add the module we will import from by replacing the value for `import_path:` with `"configure_cod_check_tutorial"`, and the function we want to expose by adding `callable_name: "get_number_fitting_cod_entries"` just below this.
 
-  1. `input_cif_path` (QCrBox.input_cif): Specifies which CIF file to use for checking similar structures. The type of this argument is special in that is requires the specification of cif entries. We will add a placeholder to be filled in the next section.
-  2. `cellpar_deviation_perc` (float): Defines the maximum allowable deviation, in percentage, for unit cell parameters between COD structures and our target structure. The default value is set at 2.0%.
-  3. `listed_elements_only` (boolean): When set to True, the search will only include entries containing the exact elements listed in the `input_cif` file. If False, the search will accept entries with additional elements beyond those listed. By default, this is set to False.
+Note that if the Python function name we wish to call is the same as the exposed command name (for example: `get_number_fitting_cod_entries`) then `callable_name` can be omitted and the value of the `name` entry is used.
+
+The command will require three parameters which we specify within the `parameters` section. Here's what we'll specify:
+
+  1. `input_cif` (QCrBox.input_cif): Specifies which CIF file to pass to the COD module to check for similar structures. The type of this argument is special in that is requires the specification of cif entries. We will add a placeholder to be filled in the next section.
+  1. `cellpar_deviation_perc` (float): Defines the maximum allowable deviation, in percentage, for unit cell parameters between COD structures and our target structure. The default value is set at 2.0%.
+  1. `listed_elements_only` (boolean): When set to `true`, the search will only include entries containing the exact elements listed in the `input_cif` file. If `false`, the search will accept entries with additional elements beyond those listed. By default, this is set to `false`.
 
 Here is how you should structure the command in the YAML file:
 
 ```yaml
 commands:
   - name: "get_number_fitting_cod_entries"
+    description: "Get the number of fitting COD that fit the unit cell parameters and elements."
     implemented_as: "python_callable"
     import_path: "configure_cod_check_tutorial"
     callable_name: "qcb_get_number_fitting_cod_entries"
     parameters:
-      - name: "input_cif_path"
-        dtype: "QCrBox.input_cif"
-        description: "Path to CIF file to refine"
+      - name: "input_cif"
+        dtype: "QCrBox.cif_data_file"
+        description: "Path to the input CIF file"
         required_entries: [...]
-        required: True
       - name: "cellpar_deviation_perc"
         dtype: "float"
-        description: "Maximum deviation in cell parameters (lengths and angles) in %"
+        description: "The percentage deviation allowed for the unit cell parameters."
         default_value: 2.0
-        required: false
       - name: "listed_elements_only"
         dtype: "bool"
-        description: "If true: only elements present in CIF file can be present in databank entry, if false: additional elements can be present"
+        description: "If True, only the elements listed in the CIF file can be present, otherwise given elements must be present but additional elements are possible."
         default_value: false
-        required: false
 ```
 
 ### Specifying Required CIF Entries For Input
 
-Next, we must identify which CIF entries have to be in the input cif file for our command to function. Inspect the `cif_to_search_pars` function to determine these entries. If you're adding only one command, list these required entries directly in the input_cif_path parameter definition. Ensure that `required_entries:` aligns with the `name:` and `type:` sections of that parameter for proper structure.
+Next, we must identify which CIF entries have to be in the input cif file for our command to function. Inspect the `cif_to_search_pars` function in the `simple_cod_module.py` script to determine these entries. If you're adding only one command, list these required entries directly in the input_cif_path parameter definition. Ensure that `required_entries:` aligns with the `name:` and `type:` sections of that parameter for proper structure.
 
 ```yaml
         required_entries: [
@@ -98,14 +117,13 @@ For scenarios where certain CIF entries are beneficial but not mandatory, you co
 
 ## Implementing the Python Glue Code
 
-> **Important Note:**
-> Currently, some functionality that will eventually be automated—specifically, the registration of our application and commands in Python, as well as CIF file handling and conversion—requires manual implementation. This step is temporary and is planned to be automated in future updates, following the developer alpha release. We're releasing this functionality now to provide a foundation for exploration and development.
+> **Important Note:** Currently, some functionality that will eventually be automatically specificed, including the registration of our application and commands in Python, as well as CIF file handling and conversion—requires manual implementation. This step is temporary and is planned to be automated in future updates, following the developer alpha release. We're releasing this functionality now to provide a foundation for exploration and development.
 
-Next, we need to implement the module and function we have referenced in the YAML file. To begin, open the `configure_cod_check_tutorial.py` file. Start by importing necessary functions from the Python base libraries as well as two different modules.
+Next, we need to implement the module and function we have referenced in the YAML file. To begin, open the `configure_cod_check_tutorial.py` file. Start by importing necessary functions from the Python base libraries as well as two different modules, by adding the following to the top of the file:
 
 ```python
-from pathlib import Path
 import json
+from pathlib import Path
 
 from qcrboxtools.cif.cif2cif import cif_file_to_specific_by_yml
 from simple_cod_module import cif_to_search_pars, get_number_fitting_cod_entries
@@ -113,44 +131,38 @@ from simple_cod_module import cif_to_search_pars, get_number_fitting_cod_entries
 
 The function `cif_file_to_specific_by_yml` is designed to manage the CIF files' input and output, converting the CIF keywords used by QCrBox into those required by `simple_cod_module`. Additionally, we'll utilize two specific functions from `simple_cod_module` to execute our desired logic.
 
-Let's proceed to define the necessary Python functions within `configure_cod_check_tutorial.py`:
+Let's proceed to define the necessary Python functions within `configure_cod_check_tutorial.py`.
+Add this below the `import`s:
 
 ```python
 YAML_PATH = "./config_cod_check_tutorial.yaml"
 
-def parse_input(input_cif_path, cellpar_deviation_perc, listed_elements_only):
+def parse_input(input_cif, cellpar_deviation_perc, listed_elements_only):
     # Convert string paths to Path objects for easier file handling
-    input_cif_path = Path(input_cif_path)
+    input_cif = Path(input_cif)
 
     # Convert cellpar_deviation to the correct type and convert the given percentage to a decimal
     cellpar_deviation = float(cellpar_deviation_perc) / 100.0
 
-    # Validate 'listed_elements_only' as a boolean value
-    if listed_elements_only.lower() not in ("true", "false"):
-        raise ValueError("'listed_elements_only' must be a boolean (true or false).")
-
-    # Convert 'listed_elements_only' to a boolean
-    listed_elements_only = listed_elements_only.lower() == "true"
-
     # Use the parent directory of the input CIF file as the working directory
-    work_folder = input_cif_path.parent
+    work_folder = input_cif.parent
 
     # Specify the path for the modified CIF file
     work_cif_path = work_folder / "qcrbox_work.cif"
 
     # Adjust the CIF file according to the requirements of 'simple_cod_module'
     cif_file_to_specific_by_yml(
-        input_cif_path=input_cif_path,
+        input_cif_path=input_cif,
         output_cif_path=work_cif_path,
         yml_path=YAML_PATH,  # Referencing the edited YAML configuration
         command="get_number_fitting_cod_entries",  # Command name as specified in the YAML
-        parameter="input_cif_path",  # Parameter name as specified in the YAML
+        parameter="input_cif",  # Parameter name as specified in the YAML
     )
     return work_cif_path, cellpar_deviation, listed_elements_only
 
-def qcb_get_number_fitting_cod_entries(input_cif_path, cellpar_deviation_perc, listed_elements_only):
+def qcb_get_number_fitting_cod_entries(input_cif, cellpar_deviation_perc, listed_elements_only):
     # Transform input parameters from string to appropriate Python objects
-    work_cif_path, cellpar_deviation, listed_elements_only = parse_input(input_cif_path, cellpar_deviation_perc, listed_elements_only)
+    work_cif_path, cellpar_deviation, listed_elements_only = parse_input(input_cif, cellpar_deviation_perc, listed_elements_only)
 
     # Retrieve the number of matching entries
     elements, cell_dict = cif_to_search_pars(work_cif_path)
@@ -159,6 +171,8 @@ def qcb_get_number_fitting_cod_entries(input_cif_path, cellpar_deviation_perc, l
     # Save the output as a JSON file
     with open(work_cif_path.parent / "nentries.json", "w", encoding="UTF-8") as fobj:
         json.dump({"n_entries": n_entries}, fobj)
+
+    return str(work_cif_path)
 ```
 
 The `parse_input` function will eventually be phased out as QCrBox plans will take over the input parameter handling and CIF file conversion making the explicit implementation obsolete.
@@ -168,21 +182,20 @@ The `parse_input` function will eventually be phased out as QCrBox plans will ta
 To integrate our command with QCrBox, it's necessary to register it within the system. Update the script's concluding section as follows:
 
 ```python
-client = QCrBoxRegistryClient()
-application = client.register_application("COD Check", version="0.0.1")
-
-# Register the command with QCrBox, linking it to our Python function
-application.register_python_callable("get_number_fitting_cod_entries", qcb_get_number_fitting_cod_entries)
-
-client.run()
+if __name__ == "__main__":
+    application_spec = ApplicationSpec.from_yaml_file(YAML_PATH)
+    client = QCrBoxClient(application_spec=application_spec)
+    client.run()
 ```
 
 QCrBox recognizes the parameter names from our Python function, using them directly as command parameters within the for the commands exposed by the QCrBox container.
 
+It's necessary to put the client launching code within a if __name__ == "__main__" block at the end, since this only needs to run once when a container is started. Otherwise, each time a command is run, the Python script is imported and if the client invocation code is not guarded then the command execution will either hang or crash the application's container.
+
 
 ## Configuring the Dockerfile
 
-The Dockerfile is preconfigured with some entries that we won't need. Here's a simplified explanation and modifications required:
+The `Dockerfile` file is preconfigured with some entries that we won't need. Here's a simplified explanation and modifications required:
 
 1. **Base Image Setup**: The file begins with specifying the base image for the application. We use the `qcrbox/base-application` as our starting point, utilizing the latest version available.
     ```Dockerfile
@@ -218,14 +231,21 @@ The Dockerfile is preconfigured with some entries that we won't need. Here's a s
         RUN pip install requests
         ```
 
-6. **Delete unnecessary lines**: The following two lines are not necessary for a Python application and should be deleted
-    ```Dockerfile
-    COPY sample_cmd.sh /opt/cod_check_tutorial/bin/
-    ````
+6. **Delete unnecessary lines**: Any other lines in the Dockerfile can be safely deleted.
 
-    ```Dockerfile
-    ENV PATH="$PATH:/opt/cod_check_tutorial/bin/"
-    ````
+You should end up with a `Dockerfile` that looks like the following (assuming the use of `micromamba` and not `pip`):
+
+```Dockerfile
+ARG QCRBOX_DOCKER_TAG
+FROM qcrbox/base-application:${QCRBOX_DOCKER_TAG}
+SHELL ["/bin/bash", "-c"]
+
+COPY configure_cod_check_tutorial.py ./
+COPY config_cod_check_tutorial.yaml ./
+COPY ./simple_cod_module.py ./
+
+RUN micromamba install -n qcrbox requests --yes
+```
 
 ## Building the container with the first command exposed
 
@@ -235,49 +255,53 @@ To create a QCrBox image for our application, we'll execute a specific build com
 qcb build cod_check_tutorial
 ```
 
-> **Important Note:** By default, `qcb build` without additional arguments performs a full rebuild of all dependencies to ensure everything is up-to-date. If you have recently completed a build and wish to save time, you can opt for the `--no-deps` argument. This option focuses solely on building the QCrBox image without updating the dependencies.
+> **Important Note:** By default, `qcb build` without additional arguments performs a full rebuild of all dependencies to ensure everything is up-to-date. If you have recently completed a build and wish to save time, you can opt for the `--no-build-deps` argument. This option focuses solely on building the QCrBox image without updating the dependencies.
 
 After completing the build process, you can launch your newly created QCrBox image with the following command:
 
 ```bash
-qcb up cod_check_tutorial --no-rebuild-deps
+qcb up cod_check_tutorial --no-build-deps
 ```
 
-This command starts the container without recompiling the image or its dependencies, assuming they were recently built. If you aim to update both dependencies and the image before launching, simply omit the `--no-rebuild-deps` flag. This ensures that your QCrBox image and all related components are fully up-to-date.
+This command starts the container without recompiling the image or its dependencies, assuming they were recently built. If you aim to update both dependencies and the image before launching, simply omit the `--no-build-deps` flag. This ensures that your QCrBox image and all related components are fully up-to-date.
 
 
 ## Build a function to load in a structure from the best matching unit cell
 
-Our goal is to incorporate atomic parameters from the most compatible structure within the COD into our CIF file. This allows us to bypass the structure solution phase if matching information is readily available. To achieve this, we introduce a new command into the `config_cod_check_tutorial.yaml` file. Append the following new command definition at the end of the file:
+Our next goal is to incorporate atomic parameters from the most compatible structure within the COD into our CIF file. This allows us to bypass the structure solution phase if matching information is readily available. To achieve this, we introduce a new command into the `config_cod_check_tutorial.yaml` file. Append the following new command definition at the end of the file:
 
 ```YAML
   - name: "merge_closest_cod_entry"
+    description: "Merge the closest COD entry into the CIF file"
     implemented_as: "python_callable"
-    import_name: "configure_cod_check_tutorial"
-    callable_name: "merge_closest_cod_entry"  # can be omitted in this case because it is identical to `name` above
+    import_path: "configure_cod_check_tutorial"
+    callable_name: "merge_closest_cod_entry"
     parameters:
-      - name: "input_cif_path"
-        type: "QCrBox.input_cif"
+      - name: "input_cif"
+        dtype: "QCrBox.cif_data_file"
+        description: "Path to the input CIF file."
         required_entries: [
           "_cell_length_a", "_cell_length_b", "_cell_length_c",
           "_cell_angle_alpha", "_cell_angle_beta", "_cell_angle_gamma",
           "_chemical_formula_sum"
         ]
-        default_value: None
-      - name: "output_cif_path"
-        type: "QCrBox.output_cif"
+      - name: "output_cif_name"
+        dtype: "QCrBox.output_cif"
+        description: "Name of the the output CIF file."
         required_entries: [...]
       - name: "cellpar_deviation_perc"
-        type: "float"
+        dtype: "float"
+        description: "The percentage deviation allowed for the unit cell parameters."
         default_value: 2.0
-        required: false
       - name: "listed_elements_only"
-        type: "bool"
+        dtype: "bool"
+        description: "If True, only the elements listed in the CIF file can be present, otherwise given elements must be present but additional elements are possible."
         default_value: false
-        required: false
 ```
 
-You might notice two things: Firstly, we now have an `output_cif_path` parameter, which we will tackle in the next section. Secondly, our required cif entries for the `input_cif_path` are exactly the same, as they are used by the same function within the `simple_cod_module.py` file. Repeating the required cif entries might be fine in this case, as the number of entries is rather low, However, we would like to only define the set of entries once. In QCrBox we can do that using cif_entry_sets. At the end of the file we create a new entry set for our commands:
+You might notice two things: Firstly, we now have an `output_cif_name` parameter, which we will tackle in the next section. Secondly, our required cif entries for the `input_cif` are exactly the same, as they are used by the same function within the `simple_cod_module.py` file. Repeating the required cif entries might be fine in this case, as the number of entries is rather low, However, we would like to only define the set of entries once. In QCrBox we can do that using cif_entry_sets. At the end of the file we create a new entry set for our commands (replacing the existing unused example one):
+
+> **Important Note:** Currently, functionality that will automatically convert/merge output CIF files has not yet been fully implemented. Therefore imposing that an output CIF file has a required (or optional, etc.) set of entries needs a manual implementation within the application command. This is temporary and it is planned to be automated in future updates, following the developer alpha release. We're releasing this functionality now to provide a foundation for exploration and development.
 
 ```YAML
 cif_entry_sets:
@@ -288,17 +312,15 @@ cif_entry_sets:
     ]
 ```
 
-Instead of writing the entries into the individual functions we now replace the `required_entry` sections to have our command definition look like this:
+Instead of writing the entries into the individual functions we now replace the `required_entries` section for `input_cif_path` to have our parameter definition look like this:
 
 ```YAML
-  - name: "merge_closest_cod_entry"
-    implemented_as: "python_callable"
-    parameters:
+...
       - name: "input_cif_path"
         dtype: "QCrBox.input_cif"
         required_entry_sets: ["cell_elements"]
         default_value: None
-      - name: "output_cif_path"
+      - name: "output_cif_name"
         dtype: "QCrBox.output_cif"
         required_entries: [...]
       - name: "cellpar_deviation_perc"
@@ -311,7 +333,7 @@ Instead of writing the entries into the individual functions we now replace the 
         required: false
 ```
 
-Try to update the definition of the `get_number_fitting_cod_entries` on your own. Note that you can have multiple cif entry sets. You can also combine entry sets with individual keywords to mix and match whatever your commands need.
+Try to update the input_cif_path definition of the `get_number_fitting_cod_entries_tutorial` on your own, using the same format. Note that you can have multiple cif entry sets. You can also combine entry sets with individual keywords to mix and match whatever your commands need. Don't change the `required_entries` part in the `output_cif_name` yet!
 
 ## Defining Cif Output Entries Within the YAML file
 
@@ -319,67 +341,67 @@ Now, we want to define the output cif entries for our function. Again for the fi
 
 The first two entries are again `required_entries` and `optional_entries` and their set counterparts. For cif output, required values are values that have to be in a cif file that comes from a successful calculation, whereas optional entries can be in a successful calculation.
 
-Finally, `invalidated_entries` are entries that are no longer valid with a transformation. In the given example we have changed atom positions and displacement parameters. Accordingly, anything depending on these parameters should not be kept from the original input cif file. We should delete all derived `_geom` parameters and all quality indicators (as our diffraction data might be different from the one from the COD). Invalidated entries should be given to match regular expressions as used by the [python re module](https://docs.python.org/3/library/re.html).
+Finally, `invalidated_entries` are entries that are no longer valid with a transformation. In the given example we have changed atom positions and displacement parameters. Accordingly, anything depending on these parameters should not be kept from the original input cif file. We should delete all derived `_geom` parameters and all quality indicators (as our diffraction data might be different from the one from the COD). Invalidated entries should be given to match regular expressions as used by the [python `re` module](https://docs.python.org/3/library/re.html).
 
 The cif output path parameter should be modified to:
 
 ```YAML
-      - name: "output_cif_path"
+      - name: "output_cif_name"
         type: "QCrBox.output_cif"
+        description: "Name of the the output CIF file."
         required_entries: [
           "_atom_site_label", "_atom_site_fract_x", "_atom_site_fract_y", "_atom_site_fract_z",
-          "_atom_site_occupancy", "_atom_site_U_iso_or_equiv", "_symmetry_equiv_pos_as_xyz",
+          "_atom_site_occupancy", "_atom_site_U_iso_or_equiv", "_atom_site_type_symbol",
+          one_of: ["_symmetry_equiv_pos_as_xyz", "_space_group_symop_operation_xyz"]
         ]
         optional_entries: [
           "_atom_site_aniso_label", "_atom_site_aniso_U_11", "_atom_site_aniso_U_22",
           "_atom_site_aniso_U_33", "_atom_site_aniso_U_12", "_atom_site_aniso_U_13",
-          "_atom_site_aniso_U_23"
+          "_atom_site_aniso_U_23", "_atom_site_adp_type", "_atom_site_site_symmetry_order",
+          "_atom_site_calc_flag", "_atom_site_refinement_flags_posn", "_atom_site_refinement_flags_adp"
         ]
         invalidated_entries: [
           "_atom_site.*", "_geom.*", ".*refine.*", "_iucr.*", "_shelx.*"
         ]
-        required: True
 ```
 
 Again while the required and optional entries determine what is copied from our evaluation (here the database lookup), the invalidated entries will exclude entries from the input cif. The remaining entries from both files are then merged and output in the location of `output_cif_path`.
 
 ## Developing the Python Glue Code for Our Merge Command.
 
-We will now modify the `configure_cod_check_tutorial.py` file to add the new functionality. We will use more functionality from both QCrBoxtools and our COD module. Our input section should now look like this:
+We will now modify the `configure_cod_check_tutorial.py` file to add the new functionality. We will use more functionality from both QCrBoxtools and our COD module. Our import section should now look like this:
 
 ```python
-from qcrbox.registry.client import QCrBoxRegistryClient
+import json
+from pathlib import Path
+
 from qcrboxtools.cif.cif2cif import (
     cif_file_merge_to_unified_by_yml,
     cif_file_to_specific_by_yml,
 )
-from qcrboxtools.cif.merge import replace_structure_from_cif
-
 from simple_cod_module import (
     cif_to_search_pars,
     get_number_fitting_cod_entries,
     get_fitting_cod_entries,
     download_cod_cif,
 )
+from pyqcrbox.registry.client import QCrBoxClient
+from pyqcrbox.sql_models import ApplicationSpec
 ```
 
-The `cif_file_merge_to_unified_by_yml` is the counterpart of the first function from cif2cif. We can use it to cut a non-unified cif to the entries we expect to be changed, convert it to the unified set of entries and then merge to input file we have used for our search and which should contain the X-ray data, as well as the unit cell parameters. The `replace_structure_from_cif` function will do the actual replacement. The function `get_fitting_cod_entries` returns a list of dictionaries of cod entries, sorted by the sum of squared differences in the unit cell parameters. Finally, `download_cod_cif` can be used to download an entry from the cod.
+The `cif_file_merge_to_unified_by_yml` is the counterpart of the first function from cif2cif. We can use it to cut a non-unified cif to the entries we expect to be changed, convert it to the unified set of entries and then merge to input file we have used for our search and which should contain the X-ray data, as well as the unit cell parameters. The function `get_fitting_cod_entries` returns a list of dictionaries of cod entries, sorted by the sum of squared differences in the unit cell parameters. Finally, `download_cod_cif` can be used to download an entry from the cod.
 
-We can now implement our function
+We can now implement our function as follows:
 
 ```python
-def merge_closest_cod_entry(
-    input_cif_path,
-    output_cif_path,
-    cellpar_deviation_perc,
-    listed_elements_only
-):
+def merge_closest_cod_entry(input_cif, output_cif_name, cellpar_deviation_perc, listed_elements_only):
     # cast the input parameters from strings to python objects
     work_cif_path, cellpar_deviation, listed_elements_only = parse_input(
-        input_cif_path, cellpar_deviation_perc, listed_elements_only
+        input_cif, cellpar_deviation_perc, listed_elements_only
     )
 
-    output_cif_path = Path(output_cif_path)
+    input_cif = Path(input_cif)
+    output_cif_path = input_cif.parent / output_cif_name
 
     # get the list of fitting entries
     elements, cell_dict = cif_to_search_pars(work_cif_path)
@@ -397,29 +419,85 @@ def merge_closest_cod_entry(
     cif_file_merge_to_unified_by_yml(
         input_cif_path=cod_cif_path,
         output_cif_path=output_cif_path,
-        merge_cif_path=input_cif_path,
+        merge_cif_path=input_cif,
         yml_path=YAML_PATH,
         command="merge_closest_cod_entry",
-        parameter="output_cif_path",
+        parameter="output_cif_name",
     )
+
+    return output_cif_path
 ```
-
-And finally we register that function with QCrBox by adding
-
-```python
-application.register_python_callable("merge_closest_cod_entry", merge_closest_cod_entry)
-```
-
-right before `client.run()`
 
 ## Rebuilding and Restarting the Container
-If you have not done so you can shut down QCrBox by typing `qcb down`. You can now restart and rebuild the container by typing. Rebuilding without dependencies might be faster if you have just rebuid everything.
+
+You can now restart and rebuild the container by typing the following. Rebuilding without dependencies (using the `--no-build-deps` command flag with `qcb up` as stated earlier) might be faster if you have just rebuilt everything.
 
 ```bash
+qcb down
 qcb up cod_check_tutorial
 ```
 
+Note that this will only bring up the `cod_check_tutorial` container and any other containers that it depends on, such as the core QCrBox containers. Any other application containers won't come up.
+
+To check if the container has started correctly we can examine its Docker logs. Use `docker ps -a` to identify the container name running with the image `qcrbox/cod_check_tutorial`, and then use `docker logs` followed by the container name, e.g.
+
+```bash
+docker ps -a
+```
+
+```output
+CONTAINER ID   IMAGE                              COMMAND                  CREATED         STATUS                   PORTS                                                      NAMES
+2befc90b717c   qcrbox/cod_check_tutorial:latest   "/opt/qcrbox/entrypo…"   4 minutes ago   Up 4 minutes (healthy)                                                              qcrbox-cod_check_tutorial-1
+```
+
+Here we can see that the container has been created and has been up for 4 minutes, and is reporting a healthy status.
+We can also check the status of the service directly by examining its logs:
+
+```bash
+docker logs qcrbox-cod_check_tutorial-1
+```
+
+```output
+...
+"event": "Received response to registration request: resp={'response_to': 'qcrbox_rk_0xa167db740e034919bfa10dfc416a7694', 'status': 'success', 'msg': 'Successfully registered cod_check_tutorial 0.0.1 (qcrbox_rk_0xa167db740e034919bfa10dfc416a7694)', 'payload': None}", "extra": {}, "level": "debug", "timestamp": "2025-09-12T10:17:31.568029Z"}
+```
+
+You can also check if an application is registered by using the registry's API directly, by going to http://127.0.0.1:11000/api/applications. You should find the new service in the list, complete with it's YAML interface definition.
+
+Here we can see that the container's request to register with the QCrBox Registry service has been successful, so the container is ready to accept commands from a user workflow.
+You may see errors from Pydantic, which ensures the YAML is correctly formatted. If this is the case, check and correct any errors in the `config_cod_check_tutorial.yaml` file.
+
+## Validating our New Container using the QCrBox Frontend
+
+You can use the QCrBox web management front-end to check your new application container is working, once you [have it installed and running](https://github.com/QCrBox/QCrBoxFrontend).
+
+First, let's check we have our server configured to run a test, and then upload a test CIF file to feed into our new container:
+
+1. Log in to the QCrBox front-end.
+1. Create a new user group containing your QCrBox account if you haven't already:
+   1. Select `Groups` from the top navigation bar and `+ Create New Group`.
+   1. Select `Users` from the navigation bar, and `Edit` on the line with your user account, ensuring that the new group is selected in the `Groups` field.
+   1. Select `Save`.
+1. Upload a CIF file to the front-end we'll use to test our new container:
+   1. Download the [following CIF file](qcrbox_work.cif) to your local machine.
+   1. Select `Home` from the navigation bar, then select `Browse...` and the downloaded CIF file, and select `Upload`.
+1. Select the uploaded CIF file below `Load Existing File:`, and select `Load`.
+
+Now we can run our new service against our uploaded test CIF file:
+
+1. Select the `COD Check Tutorial: Merge Closest Cod Entry` command from the dropdown list on the right (note: do not select the one prefixed with `COD Check`, since that's an existing service), and select `Select Application`.
+1. In the parameters choices that appear, you should see the default `Cellpar deviation perc` that we specified as `2.0`, and an unchecked `Listed elements only` option, so let's keep those values.
+1. Select `Launch Application`.
+
+You should now see that the command is being executed.
+Hopefully, once complete, you should see an output `qcrbox_work_merge_closest_cod_entry.cif` file available in the workflow view on the left.
+Select the download icon to download the resultant CIF file to your local machine.
+If you examine the contents of this output file, you should see three `loop` entries added to the file,
+that correspond to what we expect as we specified in our `config_cod_check_tutorial.yaml` file.
+
+
 ## Conclusion and final remarks
-We have now exposed two commands in QCrbox from a Python module. One that only analyses a cif file to produce some output, and another one that works from an input cif file to an output cif. If you want to interact with what you have build, a ipython notebook you can put into the examples folder can be found [here.](./example_support/cod_wrapper.ipynb)
+
+We have now exposed two commands in QCrbox from a Python module. One that only analyses a cif file to produce some output, and another one that works from an input cif file to an output cif.
 
 For more examples you might consider looking into the already implemented programs in `services/applications`. If this tutorial is unclear at any point please raise an issue on Github with the specific problem that you ran into.

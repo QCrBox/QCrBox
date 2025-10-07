@@ -91,7 +91,7 @@ class NATSSettings(QCrBoxSettingsBaseModel):
         return f"nats://{self.host}:{self.port}/"
 
 
-class ServerAPISettings(QCrBoxSettingsBaseModel):
+class SeverSettings(QCrBoxSettingsBaseModel):
     host: str = "127.0.0.1"
     port: int = 11000
     enable_autoreload: bool = False
@@ -102,14 +102,15 @@ class ServerAPISettings(QCrBoxSettingsBaseModel):
         return f"http://{self.host}:{self.port}/api"
 
 
-class ClientAPISettings(QCrBoxSettingsBaseModel):
+class ClientSettings(QCrBoxSettingsBaseModel):
     host: str = "127.0.0.1"
     port: int = 8002
+    keep_calc_work_dir: bool = True
 
 
 class RegistrySettings(QCrBoxSettingsBaseModel):
-    server: ServerAPISettings = ServerAPISettings()
-    client: ClientAPISettings = ClientAPISettings()
+    server: SeverSettings = SeverSettings()
+    client: ClientSettings = ClientSettings()
 
 
 class TestingSettings(QCrBoxSettingsBaseModel):
@@ -128,6 +129,7 @@ class StructlogRendererEnum(Enum):
 
 
 class LoggingSettings(QCrBoxSettingsBaseModel):
+    log_func_entry_exit: bool = False
     log_level: str = "DEBUG" if IS_RUNNING_DEBUG_MODE or IS_RUNNING_INSIDE_TESTS else "INFO"
     renderer: StructlogRendererEnum = StructlogRendererEnum.JSON
 

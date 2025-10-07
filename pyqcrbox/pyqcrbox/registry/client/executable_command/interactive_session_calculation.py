@@ -1,10 +1,12 @@
 import asyncio
+from pathlib import Path
 
 import anyio
 import svcs
 
 from pyqcrbox import logger
 from pyqcrbox.data_management import DataManager
+from pyqcrbox.debug import log_eel
 from pyqcrbox.registry.client.executable_command.error import (
     FinaliseCommandFailure,
     PrepareCommandFailure,
@@ -13,6 +15,7 @@ from pyqcrbox.registry.client.executable_command.error import (
 )
 from pyqcrbox.services import QCRBOX_GLOBAL_SERVICES_REGISTRY
 from pyqcrbox.sql_models import CalculationStatusEnum
+from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import Cif2CifOptions, CifDataFileParameter
 
 from .base_calculation import BaseCalculation
 from .python_callable_calculation import PythonCallableCalculation
@@ -57,7 +60,14 @@ class InteractiveSessionCalculation(BaseCalculation):
     async def stderr(self) -> None:
         return None
 
-    async def save_to_data_file_manager(self, data_file_manager: DataManager) -> None:
+    @log_eel
+    async def save_output_to_data_manager(
+        self,
+        data_manager: DataManager,
+        *,
+        merge_options: Cif2CifOptions | None = None,
+        input_cif: CifDataFileParameter | None = None,
+    ) -> str | None:
         """Save the output of the Interactive Session to the Data File Manager.
 
         It is assumed that the return value of the finalise command, which has to be
@@ -66,8 +76,17 @@ class InteractiveSessionCalculation(BaseCalculation):
 
         Parameters
         ----------
-        data_file_manager : DataManager
+        data_manager : DataManager
             An instance of the DataFile Manager.
+        merge_options : Cif2CifOptions | None
+            Options which will be used to create a unified CIF.
+        input_cif: CifDataFileParameter | None
+            The original CIF prior to being transformed to a new CIF format.
+
+        Returns
+        -------
+        str | None
+            The dataset ID created to store the output.
 
         """
         if not isinstance(self.finalise_calc, PythonCallableCalculation):
@@ -75,21 +94,31 @@ class InteractiveSessionCalculation(BaseCalculation):
 
         output_file = self.finalise_calc.return_value
         if not output_file:
-            logger.info("No output file from interactive session")
-            return
+            logger.warning("The finalise calculation for the interactive session does not return an output file")
+            return None
+
+        output_file = Path(output_file)
+        if not output_file.exists() or not output_file.is_file():
+            exc_msg = f"The return value '{output_file}' from the calculation is not a file"
+            logger.error(f"Unable to save output of calculation {self.calculation_id}: '{exc_msg}'")
+            raise ValueError(exc_msg)
+
+        if input_cif and merge_options:
+            logger.debug("Merging to unified format in PythonCallableCalculation")
+            output_file = await input_cif.to_unified_format(output_file, merge_options)
 
         try:
-            output_data_file_id = await data_file_manager.import_file(output_file)
-            self.output_dataset_id = await data_file_manager.create_dataset_from_data_files(output_data_file_id)
+            output_data_file_id = await data_manager.import_file(output_file)
+            self.output_dataset_id = await data_manager.create_dataset_from_data_files(output_data_file_id)
         except FileNotFoundError:
             logger.error(f"Failed to create dataset for output from 'finalise' command, {output_file=!r}")
             raise
 
-        logger.info(
-            "The output from the interactive session has been placed into dataset %s",
-            self.output_dataset_id,
-        )
+        logger.info(f"The output from the interactive session has been placed into dataset {self.output_dataset_id}")
 
+        return self.output_dataset_id
+
+    @log_eel
     async def wait_until_finished(self) -> None:
         """Asynchronously wait for all calculation phases to complete.
 
@@ -128,29 +157,7 @@ class InteractiveSessionCalculation(BaseCalculation):
         logger.debug("Waiting for 'calc_finished' event to be set upon calculation termination")
         await self.calc_finished_event.wait()
 
-        if self.finalise_calc:
-            assert isinstance(self.finalise_calc, PythonCallableCalculation)
-            logger.debug(f"Waiting for 'finalise' command to finish: {self.finalise_calc!r}")
-            await self.finalise_calc.wait_until_finished()
-            if self.finalise_calc.exception_raised:
-                calc_status = self.finalise_calc.status
-                logger.error(
-                    f"Exception raised by finalise_cmd ({calc_status}): {self.finalise_calc.exception_raised!r}"
-                )
-                self._error_dialog_process = error_dialog_box(
-                    f"An error occurred in the finalise command: {self.finalise_calc.exception_raised}"
-                )
-                self.exception = FinaliseCommandFailure("Finalise command failed", self.finalise_calc.exception_raised)
-                raise self.exception from self.finalise_calc.exception_raised
-            logger.debug("Finalise command has finished")
-
-            async with svcs.Container(QCRBOX_GLOBAL_SERVICES_REGISTRY) as container:
-                data_file_manager = await container.aget(DataManager)
-                await self.save_to_data_file_manager(data_file_manager)
-
-        self.is_closed = True
-        self.session_closed_event.set()
-
+    @log_eel
     async def terminate(self) -> None:
         """Terminate the interactive session.
 
@@ -191,6 +198,7 @@ class InteractiveSessionCalculation(BaseCalculation):
             self._error_dialog_process.terminate()
             self._error_dialog_process.join()
 
+    @log_eel
     def get_error_message(self) -> str:
         """Get the last error message for this interactive session.
 

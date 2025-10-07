@@ -5,6 +5,7 @@ import anyio
 
 from pyqcrbox.data_management import DataManager
 from pyqcrbox.sql_models import CalculationStatusDetails, CalculationStatusEnum
+from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import Cif2CifOptions, CifDataFileParameter
 
 
 class BaseCalculation(metaclass=ABCMeta):
@@ -16,6 +17,11 @@ class BaseCalculation(metaclass=ABCMeta):
         Unique identifier for the calculation.
     calc_finished_event : anyio.Event
         Event that signals when the calculation is finished.
+    output_dataset_id : str | None
+        The dataset id which contains output from the calculation.
+    exception_raised : Exception | None
+        If set, this will contain a reference to an exception that was raised
+        during execution of the calculation.
 
     """
 
@@ -42,20 +48,34 @@ class BaseCalculation(metaclass=ABCMeta):
         return f"<{clsname}: calculation_id={self.calculation_id}>"
 
     @abstractmethod
-    async def save_to_data_file_manager(self, data_file_manager: DataManager) -> None:
+    async def save_output_to_data_manager(
+        self,
+        data_manager: DataManager,
+        *,
+        merge_options: Cif2CifOptions | None = None,
+        input_cif: CifDataFileParameter | None = None,
+    ) -> str | None:
         """Save the output of the calculation to the Data File Manager.
 
         Parameters
         ----------
-        data_file_manager : DataManager
+        data_manager : DataManager
             An instance of the DataFile Manager.
+        merge_options : Cif2CifOptions | None
+            Options which will be used to create a unified CIF.
+        input_cif: CifDataFileParameter | None
+            The original CIF prior to being transformed to a new CIF format.
+
+        Returns
+        -------
+        str | None
+            The dataset ID created to store the output.
 
         """
 
     @abstractmethod
     async def wait_until_finished(self) -> None:
         """Wait until the calculation is finished."""
-        pass
 
     @property
     @abstractmethod
@@ -68,7 +88,6 @@ class BaseCalculation(metaclass=ABCMeta):
             The current status of the calculation.
 
         """
-        pass
 
     async def get_status_details(self) -> CalculationStatusDetails:
         """Retrieve detailed status information for the calculation.
@@ -110,7 +129,6 @@ class BaseCalculation(metaclass=ABCMeta):
             The standard output, or None if not available.
 
         """
-        pass
 
     @property
     @abstractmethod
@@ -123,9 +141,7 @@ class BaseCalculation(metaclass=ABCMeta):
             The standard error, or None if not available.
 
         """
-        pass
 
     @abstractmethod
     async def terminate(self) -> None:
         """Terminate the calculation."""
-        pass

@@ -9,7 +9,8 @@ import anyio
 
 from pyqcrbox import logger
 from pyqcrbox.sql_models import CLICommandSpec
-from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import BaseParameter, parse_parameter_as_its_dtype
+from pyqcrbox.sql_models.application_spec import ApplicationSpec
+from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import BaseParameter
 
 from .base_command import BaseCommand
 from .cli_command_calculation import CLICmdCalculation
@@ -68,32 +69,48 @@ class CLICommand(BaseCommand):
         return self.call_pattern
 
     async def prepare_params(
-        self, working_dir: str | Path, command_arguments: dict[str, BaseParameter]
-    ) -> dict[str, Any]:
-        """Prepare the parameters required for the CLI command.
+        self,
+        application_spec: ApplicationSpec,
+        command_arguments: dict[str, str],
+        working_dir: str | Path,
+    ) -> tuple[dict[str, BaseParameter], dict[str, Any]]:
+        """Prepare the parameters required for command execution.
 
-        Any optional arguments which are not included are found in the command
-        specification default values list.
+        If there are optional arguments for the command which are not included
+        in the `command_arguments` dictionary, then the value for these arguments
+        will be taken from the command specification used to initialise
+        the BaseCommand class.
 
         Parameters
         ----------
+        application_spec : ApplicationSpec
+            The application specification for application the command belongs to.
+        command_arguments : dict[str, str]
+            The names and values of the parameters for the command in a dict
+            mapping of { param_name: param_value } where `param_value` will be
+            parsed from an string representation.
         working_dir : str
             The working directory to potentially write any files to.
-        command_arguments : dict[str, BaseParameter]
-            The names and values of the parameters for the CLI command in a dict
-            mapping of { param_name: param_value }
+
+        Returns
+        -------
+        dict[str, BaseParameter]
+            A mapping of argument/parameter name to a BaseParameter derived
+            class which is used for command execution.
+        dict[str, Any]
+            A mapping of parameter name to parameter values, which should be
+            passed to a command's execute_in_background method.
 
         """
-        parsed_params = {}
-        for param_name, param_value in command_arguments.items():
-            param_spec = self.cmd_spec.get_parameter_by_name(param_name)
-            parsed_params[param_name] = parse_parameter_as_its_dtype(param_value, param_spec.dtype)
+        parsed_params = self._parse_params_into_dtype(command_arguments)
 
+        # Combine parsed_params with default values in the command spec, this is
+        # only required for optional arguments
         parsed_params = self.cmd_spec.parameter_default_values | parsed_params
 
-        return {
-            name: await param.prepare_for_execution(target_dir=working_dir) for name, param in parsed_params.items()
-        }
+        prepared_params = await self._prepare_params_for_execution(parsed_params, application_spec, str(working_dir))
+
+        return parsed_params, prepared_params
 
     async def bind(self, working_dir: str | Path, **param_values):
         """Bind parameter values to the call pattern for the CLI command.
