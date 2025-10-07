@@ -77,8 +77,10 @@ class PythonCallableCalculation(BaseCalculation):
         if not self.return_value:
             logger.info("This calculation has no return value, nothing to store in the data manager")
             return None
-        if not isinstance(self.return_value, str):
-            exc_msg = f"The return value from the calculation must be an str, not type {type(self.return_value)}"
+        if not isinstance(self.return_value, (str, Path)):
+            exc_msg = (
+                f"The return value from the calculation must be str or pathlib.Path, not {type(self.return_value)}"
+            )
             logger.error(f"Unable to save output of calculation {self.calculation_id}: '{exc_msg}'")
             raise ValueError(exc_msg)
 
