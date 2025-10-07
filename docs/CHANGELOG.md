@@ -66,6 +66,7 @@ However, there will be an initial period of stabilisation where this is not adhe
   dependencies.
 - Fixed an issue where environment variables were unset causing applications not to launch
 - Fixed an issue where the output cif parameter was not being used correctly
+- Fixed an issue where `qcb init` would not create a valid template for interactive applications
 - And lots more!
 
 ### Documentation

@@ -18,7 +18,9 @@ COPY --chown=qcrbox:qcrbox \
      configure_{{ cookiecutter.application_slug }}.py \
      ${QCRBOX_HOME}
 
+{%- if cookiecutter.application_type in ["Interactive GUI (Linux)", "Interactive GUI (Windows)"] %}
 COPY --chown=qcrbox:qcrbox --chmod=755 dummy_gui.py ${QCRBOX_HOME}/bin/
+{%- endif %}
 
 USER ${QCRBOX_USER}
 WORKDIR ${QCRBOX_HOME}
