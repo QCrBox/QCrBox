@@ -35,7 +35,7 @@ commands:
       run:
         implemented_as: "cli_command"
         description: "Run command to launch the dummy GUI"
-        call_pattern: "python dummy_gui.py {greeting}"
+        call_pattern: "python /opt/qcrbox/bin/dummy_gui.py {greeting}"
         used_basecommand_parameters: ["greeting"]
 {%- endif %}
 
