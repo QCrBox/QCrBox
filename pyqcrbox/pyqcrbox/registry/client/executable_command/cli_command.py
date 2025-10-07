@@ -10,7 +10,7 @@ import anyio
 from pyqcrbox import logger
 from pyqcrbox.sql_models import CLICommandSpec
 from pyqcrbox.sql_models.application_spec import ApplicationSpec
-from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import BaseParameter, CifDataFileParameter
+from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import BaseParameter
 
 from .base_command import BaseCommand
 from .cli_command_calculation import CLICmdCalculation
@@ -73,7 +73,7 @@ class CLICommand(BaseCommand):
         application_spec: ApplicationSpec,
         command_arguments: dict[str, str],
         working_dir: str | Path,
-    ) -> tuple[dict[str, BaseParameter | CifDataFileParameter], dict[str, Any]]:
+    ) -> tuple[dict[str, BaseParameter], dict[str, Any]]:
         """Prepare the parameters required for command execution.
 
         If there are optional arguments for the command which are not included
@@ -94,7 +94,7 @@ class CLICommand(BaseCommand):
 
         Returns
         -------
-        dict[str, BaseParameter | CifDataFileParameter]
+        dict[str, BaseParameter]
             A mapping of argument/parameter name to a BaseParameter derived
             class which is used for command execution.
         dict[str, Any]
