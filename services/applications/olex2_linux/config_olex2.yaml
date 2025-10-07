@@ -39,11 +39,11 @@ commands:
         callable_name: "finalise__interactive"
         used_basecommand_parameters: ["input_file"]
         description: "Finalise and return the CIF file to QCrBox"
-  - name: "Refine IAM"
+  - name: "Refine"
     implemented_as: "python_callable"
     description: "Refine a CIF file using the IAM method."
     import_path: "olex2_glue"
-    callable_name: "refine_iam"
+    callable_name: "refine"
     parameters:
       - name: "input_cif_path"
         dtype: "QCrBox.cif_data_file"
@@ -58,43 +58,35 @@ commands:
         custom_categories: ["iucr", "shelx"]
         invalidated_entries: ["_shelx_.*"]
       - name: "ls_cycles"
-        dtype: str
-        default_value: "5"
+        dtype: int
+        default_value: 5
         description: "Number of least squares cycles to run."
       - name: "weight_cycles"
-        dtype: str
-        default_value: "5"
+        dtype: int
+        default_value: 5
         description: "Number of weight cycles to run. Each weight cycle consists of the full number of least squares cycles."
-  - name: "Refine with TSC(B)"
+  - name: "run_commands"
     implemented_as: "python_callable"
-    description: "Refine a CIF file using aspheric form factors from a tsc(b) file."
-    doi: 10.1039/D0SC05526C
+    description: "Run a series of Olex2 commands from a text file. Will always return the CIF file, independent of whether the commands actually produce a new CIF file"
     import_path: "olex2_glue"
-    callable_name: "refine_tsc"
+    callable_name: "run_commands"
     parameters:
       - name: "input_cif_path"
         dtype: "QCrBox.cif_data_file"
-        description: "Path to the CIF file to refine."
+        description: "Path to the CIF file to run the commands on."
         required_entry_sets: ["cell_data", "diffraction_data", "atom_data"]
+        optional_entry_sets: ["all_olex_optional"]
         merge_su: Yes
         custom_categories: ["iucr", "shelx"]
       - name: "output_cif_path"
         dtype: "QCrBox.output_cif"
-        description: "Path to save the refined CIF file to."
+        description: "Path to save the CIF file to after running the commands."
         required_entry_sets: ["olex_structure_output"]
         custom_categories: ["iucr", "shelx"]
         invalidated_entries: ["_shelx_.*"]
-      - name: "tsc_path"
+      - name: "cmd_file_path"
         dtype: "QCrBox.data_file"
-        description: "Path to the TSC file to use."
-      - name: "ls_cycles"
-        dtype: str
-        default_value: "5"
-        description: "Number of least squares cycles to run."
-      - name: "weight_cycles"
-        dtype: str
-        default_value: "5"
-        description: "Number of weight cycles to run. Each weight cycle consists of the full number of least squares cycles."
+        description: "Path to the text file containing the Olex2 commands to run."
 
 cif_entry_sets:
   - name: "cell_data"
@@ -152,6 +144,18 @@ cif_entry_sets:
       "_atom_site_aniso_U_23",
       "_iucr_refine_instructions_details",
       "_shelx_res_file"
+    ]
+  - name: "aspheric_form_factors"
+    required: [
+      "_aspheric_ffs.source",
+      "_aspheric_ffs_partitioning.name",
+      "_aspheric_ffs_partitioning.software",
+      "_wfn_moiety.asu_atom_site_label",
+      "_aspheric_ff.index_h",
+      "_aspheric_ff.index_k",
+      "_aspheric_ff.index_l",
+      "_aspheric_ff.form_factor_real",
+      "_aspheric_ff.form_factor_imag",
     ]
   - name: all_olex_optional
     optional : [
@@ -411,5 +415,7 @@ cif_entry_sets:
     optional: [
       "_olex2_refine_details"
     ]
+
+
 
 qcrbox_yaml_spec_version: "0.1"
