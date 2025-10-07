@@ -64,6 +64,7 @@ However, there will be an initial period of stabilisation where this is not adhe
 - Fixed an issue where the `base-ancestor` image wouldn't build because `conda` couldn't resolve the environment
   dependencies.
 - Fixed an issue where environment variables were unset causing applications not to launch
+- Fixed an issue where `qcb init` would not create a valid template for interactive applications
 - And lots more!
 
 ### Documentation
