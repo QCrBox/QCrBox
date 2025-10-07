@@ -189,7 +189,7 @@ class Cif2CifOptions(QCrBoxPydanticBaseModel):
         return f"Cif2CifOptions({self.application_yaml=}, {self.command_name=}, {self.parameter_name=})"
 
 
-class CifDataFileParameter(QCrBoxPydanticBaseModel):
+class CifDataFileParameter(BaseParameter):
     """Class for handling CIF datafile parameters.
 
     Attributes
@@ -365,7 +365,7 @@ _custom_dtypes = {
 _known_dtypes = _builtin_dtypes | _custom_dtypes
 
 def get_cif_merge_parameter(
-    command: "BaseCommand", parsed_parameters: dict[str, BaseParameter | CifDataFileParameter]
+    command: "BaseCommand", parsed_parameters: dict[str, BaseParameter]
 ) -> tuple[str | None, CifDataFileParameter | None]:
     """Get the parameter which will be used to merge to create the output CIF.
 
@@ -373,7 +373,7 @@ def get_cif_merge_parameter(
     ----------
     command : BaseCommand
         The BaseCommand object used to launch the command.
-    parsed_parameters : dict[str, BaseParameter | CifDataFileParameter]
+    parsed_parameters : dict[str, BaseParameter]
         A list of QCrBox data types which were used to execute the command.
 
     Returns
