@@ -333,7 +333,8 @@ class CifDataFileParameter(BaseParameter):
         if not merge_options.output_path:
             unified_cif_path = str(original_cif_path.parent / f"{exported_cif_path.stem}.cif")
         else:
-            unified_cif_path = merge_options.output_path
+            new_name = Path(merge_options.output_path).with_suffix(".cif").name
+            unified_cif_path = exported_cif_path.parent / new_name
         logger.debug(
             f"Merging {str(original_cif_path)} and {str(new_cif_path)} together at {unified_cif_path}: {merge_options}"
         )
