@@ -256,6 +256,11 @@ async def invoke_command(
     )
     try:
         response = await api_helpers.invoke_command(command_spec, nats_broker=nats_broker)
+    except (nats.errors.NoRespondersError, nats.errors.NoServersError) as exc:
+        raise QCrBoxAPIException(
+            detail=f"Failed to invoke command, unable to find {data.application_slug}-{data.application_version} container inbox",
+            status_code=404,
+        ) from exc
     except Exception as exc:
         raise QCrBoxAPIException(
             detail=f"Failed to invoke command due to an error in the server {str(exc)}", status_code=400
@@ -623,9 +628,14 @@ async def create_interactive_session_with_arguments(
     )
     try:
         response = await api_helpers.invoke_command(command_spec, nats_broker=nats_broker)
+    except (nats.errors.NoRespondersError, nats.errors.NoServersError) as exc:
+        raise QCrBoxAPIException(
+            detail=f"Failed to invoke command, unable to find {data.application_slug}-{data.application_version} container inbox",
+            status_code=404,
+        ) from exc
     except Exception as exc:
         raise QCrBoxAPIException(
-            detail=f"Failed to invoke command due to exception {str(exc)}", status_code=400
+            detail=f"Failed to invoke command due to exception {str(exc)}", status_code=500
         ) from exc
 
     if response["status"] != CalculationStatusEnum.SUBMITTED:
