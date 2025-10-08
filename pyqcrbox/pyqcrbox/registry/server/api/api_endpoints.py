@@ -141,6 +141,7 @@ async def get_calculation_by_id(
     except api_helpers.CalculationNotFoundError as exc:
         raise QCrBoxAPIException(detail=f"Calculation not found: {id!r}", status_code=404) from exc
 
+
 @post(
     path="/calculations/{id:str}/stop",
     media_type=MediaType.JSON,
@@ -285,7 +286,6 @@ async def invoke_command(
     )
 
 
-
 # Data files -----------------------------------------------------------------------------------------------------------
 
 
@@ -362,6 +362,7 @@ async def download_data_file_by_id(
         media_type="application/octet-stream",
         headers={"Content-Disposition": f"attachment; filename={data_file_name!r}"},
     )
+
 
 @delete(
     path="/data-files/{id:str}",
@@ -494,6 +495,7 @@ async def create_dataset(
         },
         status_code=201,
     )
+
 
 @post(
     path="/datasets/{id:str}/append",
