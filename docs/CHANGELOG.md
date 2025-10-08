@@ -50,6 +50,7 @@ However, there will be an initial period of stabilisation where this is not adhe
 - The application types in `qcb init` have been given more descriptive names: "CLI" -> "Non-interactive Command" and
   "GUI (Linux)" -> "Interactive GUI (Linux)". We have also reintroduced the "Interactive GUI (Windows)" application
   which lets you build an interactive application based on a Windows application running via Wine.
+- Improved error message return from command invocation/ending API endpoints when NATS is the reason for failure
 - And lots more!
 
 ### Issues Fixed
