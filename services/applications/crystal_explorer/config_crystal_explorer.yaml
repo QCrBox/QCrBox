@@ -16,9 +16,9 @@ commands:
       - name: "input_cif"
         dtype: "QCrBox.cif_data_file"
         description: "The CIF file to be analyzed"
-        #required_entry_sets: ["cif_structure_ddl1"]
-        #merge_su: Yes
-        #custom_categories: ["iucr", "shelx"]
+        required_entry_sets: ["cif_structure_ddl1"]
+        merge_su: Yes
+        custom_categories: ["iucr", "shelx"]
     interactive_lifecycle:
       run:
         implemented_as: "cli_command"

@@ -58,7 +58,7 @@ commands:
         description: "The MoPro restraints file"
       - name: "table_type"
         dtype: "str"
-        default_value: "MoPro v20"
+        default_value: "MoPro v24"
         description: "to be added"
       - name: "wavefunction_type"
         dtype: "str"

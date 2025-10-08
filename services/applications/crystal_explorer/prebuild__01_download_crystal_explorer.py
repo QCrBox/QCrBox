@@ -5,7 +5,6 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 import requests
-
 from pyqcrbox.logging import logger
 
 

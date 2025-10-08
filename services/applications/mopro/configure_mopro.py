@@ -3,13 +3,13 @@ import re
 import subprocess
 from pathlib import Path, PureWindowsPath
 
+from pyqcrbox import sql_models
+from pyqcrbox.registry.client import QCrBoxClient
+
 from qcrboxtools.cif.cif2cif import cif_file_merge_to_unified_by_yml, cif_file_to_specific_by_yml, cif_file_to_unified
 from qcrboxtools.cif.file_converter.hkl import cif2hkl4
 from qcrboxtools.robots.mopro import MoProImportRobot, MoProInpFile, MoProRobot
 from qcrboxtools.util.wine import WinePathHelper
-
-from pyqcrbox import sql_models
-from pyqcrbox.registry.client import QCrBoxClient
 
 YAML_PATH = Path(__file__).parent / "config_mopro.yaml"
 

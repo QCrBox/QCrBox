@@ -45,13 +45,13 @@ commands:
     import_path: "olex2_glue"
     callable_name: "refine"
     parameters:
-      - name: "input_cif_path"
+      - name: "input_cif"
         dtype: "QCrBox.cif_data_file"
         description: "Path to the CIF file to refine."
         required_entry_sets: ["cell_data", "diffraction_data", "atom_data"]
         merge_su: Yes
         custom_categories: ["iucr", "shelx"]
-      - name: "output_cif_path"
+      - name: "output_cif_name"
         dtype: "QCrBox.output_cif"
         description: "Path to save the refined CIF file to."
         required_entry_sets: ["olex_structure_output"]
@@ -71,20 +71,20 @@ commands:
     import_path: "olex2_glue"
     callable_name: "run_commands"
     parameters:
-      - name: "input_cif_path"
+      - name: "input_cif"
         dtype: "QCrBox.cif_data_file"
         description: "Path to the CIF file to run the commands on."
         required_entry_sets: ["cell_data", "diffraction_data", "atom_data"]
         optional_entry_sets: ["all_olex_optional"]
         merge_su: Yes
         custom_categories: ["iucr", "shelx"]
-      - name: "output_cif_path"
+      - name: "output_cif_name"
         dtype: "QCrBox.output_cif"
         description: "Path to save the CIF file to after running the commands."
         optional_entry_sets: ["olex_structure_output"]
         custom_categories: ["iucr", "shelx"]
         invalidated_entries: ["_shelx_.*"]
-      - name: "cmd_file_path"
+      - name: "cmd_file"
         dtype: "QCrBox.data_file"
         description: "Path to the text file containing the Olex2 commands to run."
 

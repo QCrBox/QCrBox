@@ -1,10 +1,11 @@
+import shutil
 from pathlib import Path
 
-from qcrboxtools.cif.cif2cif import cif_file_merge_to_unified_by_yml, cif_file_to_specific_by_yml
-from qcrboxtools.robots.olex2 import Olex2Socket
 from qcrboxtools.cif.file_converter.tsc import TSCBFile
+from qcrboxtools.robots.olex2 import Olex2Socket
 
 YAML_PATH = "/opt/qcrbox/config_olex2.yaml"
+
 
 def generate_tscb_if_needed(input_cif):
     try:
@@ -15,47 +16,43 @@ def generate_tscb_if_needed(input_cif):
     except ValueError:
         return None
 
+
 def refine(
-    input_cif_path: str,
-    output_cif_path: str,
+    input_cif: str,
+    output_cif_name: str,
     ls_cycles: int,
     weight_cycles: int,
 ):
-    input_cif_path = Path(input_cif_path)
-    output_cif_path = Path(output_cif_path)
+    input_cif_path = Path(input_cif)
+    output_cif_path = input_cif_path.parent / output_cif_name
     tsc_path = generate_tscb_if_needed(input_cif_path)
 
     work_cif_path = input_cif_path.parent / "qcrbox_work.cif"
 
-    cif_file_to_specific_by_yml(input_cif_path, work_cif_path, YAML_PATH, "Refine", "input_cif_path")
-
+    shutil.copy(input_cif_path, work_cif_path)
     olex2_socket = Olex2Socket()
 
     _ = olex2_socket.run_full_refinement(work_cif_path, tsc_path, n_cycles=ls_cycles, refine_starts=weight_cycles)
 
-    cif_file_merge_to_unified_by_yml(
-        work_cif_path, output_cif_path, input_cif_path, YAML_PATH, "Refine", "output_cif_path"
-    )
+    shutil.copy(work_cif_path, output_cif_path)
 
     return str(output_cif_path)
 
 
-def run_commands(input_cif_path: str, output_cif_path: str, cmd_file_path: str):
-    input_cif_path = Path(input_cif_path)
-    output_cif_path = Path(output_cif_path)
+def run_commands(input_cif: str, output_cif_name: str, cmd_file: str):
+    input_cif_path = Path(input_cif)
+    output_cif_path = Path(output_cif_name)
     work_cif_path = input_cif_path.parent / "qcrbox_work.cif"
 
-    cif_file_to_specific_by_yml(input_cif_path, work_cif_path, YAML_PATH, "run_commands", "input_cif_path")
-
+    shutil.copy(input_cif_path, work_cif_path)
     olex2_socket = Olex2Socket()
 
     tsc_path = generate_tscb_if_needed(input_cif_path)
 
-    cmd_string = Path(cmd_file_path).read_text(encoding="UTF-8")
+    cmd_string = Path(cmd_file).read_text(encoding="UTF-8")
 
     olex2_socket.send_command(work_cif_path, tsc_path, cmd_string)
 
-    cif_file_merge_to_unified_by_yml(
-        work_cif_path, output_cif_path, input_cif_path, YAML_PATH, "run_commands", "output_cif_path"
-    )
+    shutil.copy(work_cif_path, output_cif_path)
+
     return str(output_cif_path)

@@ -41,9 +41,9 @@ commands:
       - name: "input_cif"
         dtype: "QCrBox.cif_data_file"
         description: "Name to use for the output CIF file containing the structure to refine"
-        required_entry_sets: ["cell", "structure", "diffraction_intensities", "atomic_information"]
-        optional_entry_sets: ["geometry_lookup"]
+        required_entry_sets: ["cell", "structure", "diffraction_intensities", "atomic_information", "geometry_lookup"]
         required_entries: ["_space_group_symop_operation_xyz", "_space_group_crystal_system"]
+        optional_entries: ["_refine_ls.extinction_coef"]
         merge_su: True
         custom_categories: ["shelx"]
       - name: "output_cif_name"
