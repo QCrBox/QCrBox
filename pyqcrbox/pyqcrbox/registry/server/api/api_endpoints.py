@@ -11,7 +11,7 @@ from faststream.nats import NatsBroker
 from litestar import MediaType, Request, Router, delete, get, post
 from litestar.datastructures import UploadFile
 from litestar.enums import RequestEncodingType
-from litestar.exceptions import HTTPException
+from litestar.exceptions import ClientException, HTTPException
 from litestar.params import Body, Parameter
 from litestar.response import Response
 from litestar.status_codes import HTTP_500_INTERNAL_SERVER_ERROR
@@ -242,7 +242,7 @@ async def get_command_by_id(id: int) -> schema.QCrBoxResponse[schema.CommandsRes
     summary="Invoke a command with arguments",
     tags=["commands"],
     operation_id="invoke_command",
-    responses={400: schema.BAD_REQUEST_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
+    responses={400: schema.BAD_REQUEST_ERROR, 404: schema.NOT_FOUND_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
 async def invoke_command(
     data: Annotated[schema.InvokeCommandParameters, Body()],
@@ -261,6 +261,11 @@ async def invoke_command(
         raise QCrBoxAPIException(
             detail=f"Failed to invoke command, unable to find {data.application_slug}-{data.application_version} container inbox",
             status_code=404,
+        ) from exc
+    except ClientException as exc:
+        raise QCrBoxAPIException(
+            detail=f"Failed to invoke command due to incorrect request: {data}",
+            status_code=400,
         ) from exc
     except Exception as exc:
         raise QCrBoxAPIException(
@@ -616,7 +621,7 @@ async def get_interactive_session_by_id(
     summary="Create interactive session",
     tags=["interactive-sessions"],
     operation_id="create_interactive_session",
-    responses={400: schema.BAD_REQUEST_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
+    responses={400: schema.BAD_REQUEST_ERROR, 404: schema.NOT_FOUND_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
 async def create_interactive_session_with_arguments(
     data: Annotated[schema.CreateInteractiveSessionParameters, Body()], nats_broker: NatsBroker
@@ -634,6 +639,11 @@ async def create_interactive_session_with_arguments(
         raise QCrBoxAPIException(
             detail=f"Failed to invoke command, unable to find {data.application_slug}-{data.application_version} container inbox",
             status_code=404,
+        ) from exc
+    except ClientException as exc:
+        raise QCrBoxAPIException(
+            detail=f"Failed to invoke command due to incorrect request: {data}",
+            status_code=400,
         ) from exc
     except Exception as exc:
         raise QCrBoxAPIException(
