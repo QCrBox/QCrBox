@@ -223,7 +223,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         logger.debug(f"Adding output from non-interactive command {command.name} into data manager")
 
         try:
-            parameter_name, cif_parameter = get_cif_merge_parameter(command, command_parameters)
+            parameter_name, cif_parameter, output_path = await get_cif_merge_parameter(command, command_parameters)
 
             # If we found a QCrBox.cif_data_file or QCrBox.output_cif in the above
             # function call, then we will attempt to created a merged CIF
@@ -232,6 +232,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
                     application_yaml=self.application_spec.yaml_file_path,  # type: ignore
                     command_name=command.name,
                     parameter_name=parameter_name,
+                    output_path=output_path,
                 )
                 dataset_id = await calc.save_output_to_data_manager(
                     self.data_manager, merge_options=merge_options, input_cif=cif_parameter
@@ -290,7 +291,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         logger.debug("Finalise command has finished")
 
         try:
-            parameter_name, cif_parameter = get_cif_merge_parameter(command, command_parameters)
+            parameter_name, cif_parameter, output_path = await get_cif_merge_parameter(command, command_parameters)
 
             # If we found a QCrBox.cif_data_file or QCrBox.output_cif in the above
             # function call, then we will attempt to created a merged CIF
@@ -299,6 +300,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
                     application_yaml=self.application_spec.yaml_file_path,  # type: ignore
                     command_name=command.name,
                     parameter_name=parameter_name,
+                    output_path=output_path,
                 )
                 dataset_id = await calc.save_output_to_data_manager(
                     self.data_manager, merge_options=merge_options, input_cif=cif_parameter
