@@ -184,7 +184,7 @@ class Cif2CifOptions(QCrBoxPydanticBaseModel):
     application_yaml: str
     command_name: str
     parameter_name: str
-    output_path: str | None
+    output_path: str | None = None
 
     def __str__(self) -> str:
         return (
@@ -316,22 +316,22 @@ class CifDataFileParameter(BaseParameter):
         if not self._exported_file_path:
             raise ValueError("CIF has not been exported to disk, unable to convert to unified format")
 
-        exported_cif = Path(self._exported_file_path)
+        exported_cif_path = Path(self._exported_file_path)
         try:
             original_cif_path = Path(
                 await self._export_from_data_manager(
-                    str(exported_cif.parent),
-                    f"{exported_cif.stem}-{uuid.uuid4()}.cif",  # append a uuid to avoid overwriting
+                    str(exported_cif_path.parent),
+                    f"{exported_cif_path.stem}-{uuid.uuid4()}.cif",  # append a uuid to avoid overwriting
                 )
             )
         except (BaseException, Exception) as exc:
             logger.error(
-                f"Problem merging {str(exported_cif)} and {str(new_cif_path)} using {merge_options}: {exc}",
+                f"Problem merging {str(exported_cif_path)} and {str(new_cif_path)} using {merge_options}: {exc}",
             )
             return new_cif_path
 
         if not merge_options.output_path:
-            unified_cif_path = str(original_cif_path.parent / f"{original_cif_path.stem}-unified.cif")
+            unified_cif_path = str(original_cif_path.parent / f"{exported_cif_path.stem}.cif")
         else:
             unified_cif_path = merge_options.output_path
         logger.debug(
