@@ -5,6 +5,7 @@
 import traceback
 from typing import Annotated
 
+import nats.errors
 import nats.js.errors
 from faststream.nats import NatsBroker
 from litestar import MediaType, Request, Router, delete, get, post
@@ -159,6 +160,10 @@ async def stop_running_calculation(
         )
     except KeyError as exc:
         raise QCrBoxAPIException(detail=f"No calculation with ID {id!r}", status_code=404) from exc
+    except (nats.errors.NoRespondersError, nats.errors.NoServersError) as exc:
+        raise QCrBoxAPIException(
+            detail=f"Unable to contact application to request to stop calculation {id!r}", status_code=404
+        ) from exc
     except TypeError as exc:
         raise QCrBoxAPIException(
             detail="There was an internal server error when processing your request", status_code=500
@@ -664,6 +669,10 @@ async def close_interactive_session(
         )
     except KeyError as exc:
         raise QCrBoxAPIException(detail=f"Interactive session not found: {id!r}", status_code=404) from exc
+    except (nats.errors.NoRespondersError, nats.errors.NoServersError) as exc:
+        raise QCrBoxAPIException(
+            detail=f"Unable to contact application to request to close session {id!r}", status_code=404
+        ) from exc
     except TypeError as exc:
         raise QCrBoxAPIException(
             detail="There was an internal server error when processing your request", status_code=500
