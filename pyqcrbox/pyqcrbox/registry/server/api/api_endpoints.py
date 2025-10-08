@@ -5,12 +5,13 @@
 import traceback
 from typing import Annotated
 
+import nats.errors
 import nats.js.errors
 from faststream.nats import NatsBroker
 from litestar import MediaType, Request, Router, delete, get, post
 from litestar.datastructures import UploadFile
 from litestar.enums import RequestEncodingType
-from litestar.exceptions import HTTPException
+from litestar.exceptions import ClientException, HTTPException
 from litestar.params import Body, Parameter
 from litestar.response import Response
 from litestar.status_codes import HTTP_500_INTERNAL_SERVER_ERROR
@@ -140,6 +141,7 @@ async def get_calculation_by_id(
     except api_helpers.CalculationNotFoundError as exc:
         raise QCrBoxAPIException(detail=f"Calculation not found: {id!r}", status_code=404) from exc
 
+
 @post(
     path="/calculations/{id:str}/stop",
     media_type=MediaType.JSON,
@@ -159,6 +161,10 @@ async def stop_running_calculation(
         )
     except KeyError as exc:
         raise QCrBoxAPIException(detail=f"No calculation with ID {id!r}", status_code=404) from exc
+    except (nats.errors.NoRespondersError, nats.errors.NoServersError) as exc:
+        raise QCrBoxAPIException(
+            detail=f"Unable to contact application to request to stop calculation {id!r}", status_code=404
+        ) from exc
     except TypeError as exc:
         raise QCrBoxAPIException(
             detail="There was an internal server error when processing your request", status_code=500
@@ -236,7 +242,7 @@ async def get_command_by_id(id: int) -> schema.QCrBoxResponse[schema.CommandsRes
     summary="Invoke a command with arguments",
     tags=["commands"],
     operation_id="invoke_command",
-    responses={400: schema.BAD_REQUEST_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
+    responses={400: schema.BAD_REQUEST_ERROR, 404: schema.NOT_FOUND_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
 async def invoke_command(
     data: Annotated[schema.InvokeCommandParameters, Body()],
@@ -251,6 +257,16 @@ async def invoke_command(
     )
     try:
         response = await api_helpers.invoke_command(command_spec, nats_broker=nats_broker)
+    except (nats.errors.NoRespondersError, nats.errors.NoServersError) as exc:
+        raise QCrBoxAPIException(
+            detail=f"Failed to invoke command, unable to find {data.application_slug}-{data.application_version} container inbox",
+            status_code=404,
+        ) from exc
+    except ClientException as exc:
+        raise QCrBoxAPIException(
+            detail=f"Failed to invoke command due to incorrect request: {data}",
+            status_code=400,
+        ) from exc
     except Exception as exc:
         raise QCrBoxAPIException(
             detail=f"Failed to invoke command due to an error in the server {str(exc)}", status_code=400
@@ -273,7 +289,6 @@ async def invoke_command(
         },
         status_code=201,
     )
-
 
 
 # Data files -----------------------------------------------------------------------------------------------------------
@@ -352,6 +367,7 @@ async def download_data_file_by_id(
         media_type="application/octet-stream",
         headers={"Content-Disposition": f"attachment; filename={data_file_name!r}"},
     )
+
 
 @delete(
     path="/data-files/{id:str}",
@@ -485,6 +501,7 @@ async def create_dataset(
         status_code=201,
     )
 
+
 @post(
     path="/datasets/{id:str}/append",
     media_type=MediaType.JSON,
@@ -604,7 +621,7 @@ async def get_interactive_session_by_id(
     summary="Create interactive session",
     tags=["interactive-sessions"],
     operation_id="create_interactive_session",
-    responses={400: schema.BAD_REQUEST_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
+    responses={400: schema.BAD_REQUEST_ERROR, 404: schema.NOT_FOUND_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
 )
 async def create_interactive_session_with_arguments(
     data: Annotated[schema.CreateInteractiveSessionParameters, Body()], nats_broker: NatsBroker
@@ -618,9 +635,19 @@ async def create_interactive_session_with_arguments(
     )
     try:
         response = await api_helpers.invoke_command(command_spec, nats_broker=nats_broker)
+    except (nats.errors.NoRespondersError, nats.errors.NoServersError) as exc:
+        raise QCrBoxAPIException(
+            detail=f"Failed to invoke command, unable to find {data.application_slug}-{data.application_version} container inbox",
+            status_code=404,
+        ) from exc
+    except ClientException as exc:
+        raise QCrBoxAPIException(
+            detail=f"Failed to invoke command due to incorrect request: {data}",
+            status_code=400,
+        ) from exc
     except Exception as exc:
         raise QCrBoxAPIException(
-            detail=f"Failed to invoke command due to exception {str(exc)}", status_code=400
+            detail=f"Failed to invoke command due to exception {str(exc)}", status_code=500
         ) from exc
 
     if response["status"] != CalculationStatusEnum.SUBMITTED:
@@ -664,6 +691,10 @@ async def close_interactive_session(
         )
     except KeyError as exc:
         raise QCrBoxAPIException(detail=f"Interactive session not found: {id!r}", status_code=404) from exc
+    except (nats.errors.NoRespondersError, nats.errors.NoServersError) as exc:
+        raise QCrBoxAPIException(
+            detail=f"Unable to contact application to request to close session {id!r}", status_code=404
+        ) from exc
     except TypeError as exc:
         raise QCrBoxAPIException(
             detail="There was an internal server error when processing your request", status_code=500
