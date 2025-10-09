@@ -82,7 +82,7 @@ commands:
       run:
         implemented_as: "cli_command"
         description: "Run command for rendering the dummy GUI"
-        call_pattern: "python dummy_gui.py {input_file}"
+        call_pattern: "python /opt/qcrbox/dummy_gui.py {input_file}"
         used_basecommand_parameters: ["input_file"]
       finalise:
         implemented_as: "python_callable"
@@ -96,7 +96,7 @@ qcrbox_yaml_spec_version: "0.1"
 
 In this case, we define a single command which will use an `interactive_session`. When invoked, a QCrBox interactive session will create a VNC browser window for the user to interact with the application. This command will take a single input, a `QCrBox.cif_data_file`.
 
-In order for QCrBox to know what to do to during the `run` state, we need to specify how to run the application within the container. We define a `run` step as part of the command's `interactive_lifecycle`. Here, we indicate that this a `cli_command` and the command to run is `python dummy_gui.py {input_file}`. Note that `{input_file}` will be substituted with the actual input file name at runtime as specified in the `input_file` input parameter.
+In order for QCrBox to know what to do to during the `run` state, we need to specify how to run the application within the container. We define a `run` step as part of the command's `interactive_lifecycle`. Here, we indicate that this a `cli_command` and the command to run is `python /opt/qcrbox/dummy_gui.py {input_file}`. Note that we need to specify `/opt/qcrbox/` before our script name, and that `{input_file}` will be substituted with the actual input file name at runtime as specified in the `input_file` input parameter.
 
 Similarly, we also need to specify what will happen when the command reaches its `finalise` step, when the application is completed. In this case, we specify a `python_callable` function `finalise_interactive` which is held in out `dummy_gui_commands` Python script. We also pass in the `input_file` as before.
 
@@ -155,10 +155,36 @@ qcb up dummy_gui_tutorial --no-build-deps
 
 This command starts the container without recompiling the image or its dependencies, assuming they were recently built. If you aim to update both dependencies and the image before launching, simply omit the `--no-build-deps` flag. This ensures that your QCrBox image and all related components are fully up-to-date.
 
+## Validating our New Container using the QCrBox Frontend
 
-## What about a command line application?
+You can use the QCrBox web management front-end to check your new application container is working, once you have the front-end installed and running ([see the installation instructions here](https://github.com/QCrBox/QCrBoxFrontend)).
 
+First, let's check we have our server configured to run a test, and then upload a test CIF file to feed into our new container:
 
+1. Log in to the QCrBox front-end.
+1. Create a new user group containing your QCrBox account if you haven't already:
+   1. Select `Groups` from the top navigation bar and `+ Create New Group`.
+   1. Select `Users` from the navigation bar, and `Edit` on the line with your user account, ensuring that the new group is selected in the `Groups` field.
+   1. Select `Save`.
+1. Upload a CIF file to the front-end we'll use to test our new container:
+   1. Download the [following CIF file](qcrbox_work.cif) to your local machine.
+   1. Select `Home` from the navigation bar, then select `Browse...` and the downloaded CIF file, and select `Upload`.
+1. Select the uploaded CIF file below `Load Existing File:`, and select `Load`.
+
+Now we can run our new service against our uploaded test CIF file:
+
+1. Select the `Dummy GUI Tutorial: Interactive Session` command from the dropdown list on the right, and select `Select Application`.
+1. Select `Launch Application`.
+
+At this point a browser window is opened with an interactive VNC session, that enables you to operate the dummy GUI application as if it were running locally on your machine.
+You should next see a small window pop up with some text about the current current directory, and a single quit button.
+Once you select this the application will close, and the `finalise` step will run, executing the function in the `dummy_gui_commands` Python module; this essentially just produces an output CIF file with some text within it.
+You can now close the VNC window.
+
+Going back to the web front-end, you may now select the `End Session` button to shutdown the interactive session.
+Hopefully, once complete, you should see an output `qcrbox_work.out.cif` file available in the workflow view on the left.
+Select the download icon to download the resultant CIF file to your local machine.
+If you examine the contents of this output file, you should see the `Dummy GUI output file` within it.
 
 ## Conclusion and final remarks
 
