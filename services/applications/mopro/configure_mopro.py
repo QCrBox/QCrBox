@@ -166,7 +166,7 @@ def create_mopro_inis(work_dir, table_type, wavefunction_type):
         "{{mopro_viewer_path}}": os.environ["MOPRO_VIEWER_PATH"],
     }
 
-    for filename in Path("./templates").iterdir():
+    for filename in (Path(__file__).parent / "templates").iterdir():
         with Path(filename).open("r", encoding="UTF-8") as fobj:
             content = fobj.read()
         for key, value in replace_dict.items():
