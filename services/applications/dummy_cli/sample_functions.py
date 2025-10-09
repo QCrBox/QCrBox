@@ -31,7 +31,7 @@ def change_cif_name(input_cif: str, output_cif_name: str):
     output_cif_path = output_cif_path.with_suffix(".cif")
     shutil.copy(input_cif_path, output_cif_path)
 
-    return str(output_cif_path)
+    return output_cif_path
 
 
 def print_two_cif(cif1: str, cif2: str):
