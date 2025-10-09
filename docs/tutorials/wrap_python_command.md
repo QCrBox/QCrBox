@@ -10,6 +10,12 @@ This guide walks you through the process of encapsulating a Python module within
 1. Build our new application service container using `qcb`.
 1. Test our new container using QCrBox's web management front-end.
 
+<<<<<<< HEAD
+=======
+If you run into any problems when progressing through this tutorial, there's a [troubleshooting guide](../technical_reference/troubleshooting.md) which may be helpful.
+
+
+>>>>>>> dev
 ## Prerequisites
 
 Before starting, ensure your development environment is set up following the guide located [here](../how_to_guides/set_up_a_dev_environment.md), and that you have `devbox shell` running in your terminal. In addition, it's likely helpful to bring yourself up to speed on the platform's [Technical Reference documentation](../technical_reference/contents.md), in particular [Architecture & key components](../technical_reference/architecture.md).

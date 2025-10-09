@@ -19,7 +19,6 @@ from pyqcrbox.sql_models import CalculationStatusDetails, CalculationStatusEnum
 from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import (
     BaseParameter,
     Cif2CifOptions,
-    CifDataFileParameter,
     get_cif_merge_parameter,
 )
 
@@ -164,7 +163,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
     @log_eel
     async def _prepare_and_launch_command(
         self, execute_request: msg_specs.CommandExecutionRequestNATS
-    ) -> tuple[BaseCommand, dict[str, BaseParameter | CifDataFileParameter], BaseCalculation]:
+    ) -> tuple[BaseCommand, dict[str, BaseParameter], BaseCalculation]:
         """Launch the requested command.
 
         Parameters
@@ -177,7 +176,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         -------
         BaseCommand
             A BaseCommand class for command which was launched successfully.
-        dict[str, BaseParameter | CifDataFileParameter]
+        dict[str, BaseParameter]
             A dict mapping of the parameter name and the QCrBox class
             representations of the value of that parameter. This is a collection
             of the parameters used by the command.
@@ -205,7 +204,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         self,
         command: BaseCommand,
         calc: BaseCalculation,
-        command_parameters: dict[str, BaseParameter | CifDataFileParameter],
+        command_parameters: dict[str, BaseParameter],
     ) -> None:
         """Handle saving the output from non-interactive commands/calculations.
 
@@ -216,7 +215,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         calc : BaseCalculation
             The BaseCalculation object used to track the execution of the
             non-interactive command.
-        command_parameters : dict[str, BaseParameter | CifDataFileParameter]
+        command_parameters : dict[str, BaseParameter]
             The parameters which were used to execute the command. These will be
             parsed as QCrBox data types.
 
@@ -224,7 +223,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         logger.debug(f"Adding output from non-interactive command {command.name} into data manager")
 
         try:
-            parameter_name, cif_parameter = get_cif_merge_parameter(command, command_parameters)
+            parameter_name, cif_parameter, output_path = await get_cif_merge_parameter(command, command_parameters)
 
             # If we found a QCrBox.cif_data_file or QCrBox.output_cif in the above
             # function call, then we will attempt to created a merged CIF
@@ -233,6 +232,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
                     application_yaml=self.application_spec.yaml_file_path,  # type: ignore
                     command_name=command.name,
                     parameter_name=parameter_name,
+                    output_path=output_path,
                 )
                 dataset_id = await calc.save_output_to_data_manager(
                     self.data_manager, merge_options=merge_options, input_cif=cif_parameter
@@ -252,7 +252,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         self,
         command: BaseCommand,
         calc: InteractiveSessionCalculation,
-        command_parameters: dict[str, BaseParameter | CifDataFileParameter],
+        command_parameters: dict[str, BaseParameter],
     ) -> None:
         """Handle saving the output from interactive commands/calculations.
 
@@ -263,7 +263,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         calc : BaseCalculation
             The BaseCalculation object used to track the execution of the
             non-interactive command.
-        command_parameters : dict[str, BaseParameter | CifDataFileParameter]
+        command_parameters : dict[str, BaseParameter]
             The parameters which were used to execute the command. These will be
             parsed as QCrBox data types.
 
@@ -291,7 +291,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         logger.debug("Finalise command has finished")
 
         try:
-            parameter_name, cif_parameter = get_cif_merge_parameter(command, command_parameters)
+            parameter_name, cif_parameter, output_path = await get_cif_merge_parameter(command, command_parameters)
 
             # If we found a QCrBox.cif_data_file or QCrBox.output_cif in the above
             # function call, then we will attempt to created a merged CIF
@@ -300,6 +300,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
                     application_yaml=self.application_spec.yaml_file_path,  # type: ignore
                     command_name=command.name,
                     parameter_name=parameter_name,
+                    output_path=output_path,
                 )
                 dataset_id = await calc.save_output_to_data_manager(
                     self.data_manager, merge_options=merge_options, input_cif=cif_parameter

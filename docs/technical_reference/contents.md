@@ -6,3 +6,4 @@
 - [Docker container applications](docker-container-model.md) - an overview of the Docker containers used by the system and how they are organised within a modular reuse hierarchy
 - [Front-end Django server data model](django-data-model.md) - the data model used by the Django front-end in terms of the key conceptual data objects of the system and how they relate
 - [Key development and application technologies](key-technologies.md) - performant tools used by containers to configure their environments, as well as development tools
+- [Troubleshooting & FAQ](troubleshooting.md) - if you encounter any problems or questions when developing your own application containers, look here for potential solutions
