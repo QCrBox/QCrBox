@@ -1,15 +1,16 @@
 services:
   {{ cookiecutter.application_slug }}:
     image: "qcrbox/{{ cookiecutter.application_slug }}:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
-    build:
-      context: services/applications/{{ cookiecutter.application_slug }}/
-      args:
-        QCRBOX_DOCKER_TAG: ${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}
     environment:
       QCRBOX_APPLICATION_DISPLAY_NAME: "{{ cookiecutter.application_name }}"
       QCRBOX__NATS__HOST: "qcrbox-nats"
       QCRBOX__REGISTRY__SERVER__HOST: "qcrbox-registry"
       QCRBOX__REGISTRY__SERVER__PORT: "8000"
+{%- if cookiecutter.application_type in ["Interactive GUI (Linux)", "Interactive GUI (Windows)"] %}
+      QCRBOX__GUI__PORT: ${QCRBOX_{{ cookiecutter.application_slug.upper().replace("-", "_") }}_PORT}
+    ports:
+      - "${QCRBOX_BIND_ADDRESS}:${QCRBOX_{{ cookiecutter.application_slug.upper().replace("-", "_") }}_PORT:?Must set env var QCRBOX_{{ cookiecutter.application_slug.upper().replace("-", "_") }}_PORT}:8080"
+{%- endif %}
     depends_on:
       qcrbox-registry:
         condition: service_healthy
@@ -20,17 +21,22 @@ services:
     restart: unless-stopped
     labels:
       traefik.enable: true
-      traefik.http.routers.to-path-prefix.rule: Path(`/gui/{{ cookiecutter.application_slug }}`)
-      traefik.http.routers.to-path-prefix.middlewares: redirect-gui-path
-      traefik.http.routers.to-path-prefix.service: {{ cookiecutter.application_slug }}-service
-      traefik.http.middlewares.redirect-gui-path.redirectregex.regex: ^http://(.+)/gui/{{ cookiecutter.application_slug }}(/?)$$
-      traefik.http.middlewares.redirect-gui-path.redirectregex.replacement: http://{{ cookiecutter.application_slug }}.gui.$$1/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true
+      traefik.http.routers.to-{{cookiecutter.application_slug}}-path-prefix.rule: Path(`/gui/{{ cookiecutter.application_slug }}`)
+      traefik.http.routers.to-{{cookiecutter.application_slug}}-path-prefix.middlewares: redirect-gui-{{ cookiecutter.application_slug }}-path
+      traefik.http.routers.to-{{cookiecutter.application_slug}}-path-prefix.service: {{ cookiecutter.application_slug }}-service
+      traefik.http.middlewares.redirect-gui-{{cookiecutter.application_slug}}-path.redirectregex.regex: ^http://(.+)/gui/{{ cookiecutter.application_slug }}(/?)$$
+      traefik.http.middlewares.redirect-gui-{{cookiecutter.application_slug}}-path.redirectregex.replacement: http://{{ cookiecutter.application_slug }}.gui.$$1/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true
 
-      traefik.http.routers.to-subdomain.rule: HostRegexp(`^{{ cookiecutter.application_slug }}\.gui\..+$$`)
-      traefik.http.routers.to-subdomain.middlewares: redirect-gui-subdomain
-      traefik.http.routers.to-subdomain.service: {{ cookiecutter.application_slug }}-service
-      traefik.http.middlewares.redirect-gui-subdomain.redirectregex.regex: ^http://{{ cookiecutter.application_slug }}\.gui\.([^/]+)(/?)$$
-      traefik.http.middlewares.redirect-gui-subdomain.redirectregex.replacement: http://{{ cookiecutter.application_slug }}.gui.$$1/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true
+      traefik.http.routers.to-{{cookiecutter.application_slug}}-subdomain.rule: HostRegexp(`^{{ cookiecutter.application_slug }}\.gui\..+$$`)
+      traefik.http.routers.to-{{cookiecutter.application_slug}}-subdomain.middlewares: redirect-gui-{{ cookiecutter.application_slug }}-subdomain
+      traefik.http.routers.to-{{cookiecutter.application_slug}}-subdomain.service: {{ cookiecutter.application_slug }}-service
+      traefik.http.middlewares.redirect-gui-{{cookiecutter.application_slug}}-subdomain.redirectregex.regex: ^http://{{ cookiecutter.application_slug }}\.gui\.([^/]+)(/?)$$
+      traefik.http.middlewares.redirect-gui-{{cookiecutter.application_slug}}-subdomain.redirectregex.replacement: http://{{ cookiecutter.application_slug }}.gui.$$1/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true
 
       traefik.http.services.{{ cookiecutter.application_slug }}-service.loadbalancer.server.scheme: http
       traefik.http.services.{{ cookiecutter.application_slug }}-service.loadbalancer.server.port: 8080
+    logging:
+      driver: "syslog"
+      options:
+        syslog-address: udp://127.0.0.1:514
+        tag: {{ cookiecutter.application_slug }}

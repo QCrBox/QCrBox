@@ -50,6 +50,8 @@ However, there will be an initial period of stabilisation where this is not adhe
 - The application types in `qcb init` have been given more descriptive names: "CLI" -> "Non-interactive Command" and
   "GUI (Linux)" -> "Interactive GUI (Linux)". We have also reintroduced the "Interactive GUI (Windows)" application
   which lets you build an interactive application based on a Windows application running via Wine.
+- Improved error message return from command invocation/ending API endpoints when NATS is the reason for failure.
+- `PythonCallable` commands can now also return a `pathlib.Path` object in addition to a `str` of a file path.
 - And lots more!
 
 ### Issues Fixed
@@ -66,6 +68,9 @@ However, there will be an initial period of stabilisation where this is not adhe
   dependencies.
 - Fixed an issue where environment variables were unset causing applications not to launch
 - Fixed an issue where the output cif parameter was not being used correctly
+- Fixed an issue where `qcb init` would not create a valid template for interactive applications
+- Fixed an issue where cif files would become lost during command execution, which resulted in incorrect unified cifs
+  being returned to the registry.
 - And lots more!
 
 ### Documentation

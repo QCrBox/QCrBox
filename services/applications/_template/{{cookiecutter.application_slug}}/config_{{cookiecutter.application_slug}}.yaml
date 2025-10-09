@@ -23,6 +23,7 @@ commands:
         valid_value:
           numeric_range: [0, 10]
 
+{%- if cookiecutter.application_type in ["Interactive GUI (Linux)", "Interactive GUI (Windows)"] %}
   - name: "interactive_session"
     implemented_as: "interactive_session"
     description: "Start dummy GUI in interactive mode"
@@ -34,9 +35,9 @@ commands:
       run:
         implemented_as: "cli_command"
         description: "Run command to launch the dummy GUI"
-        call_pattern: "python dummy_gui.py {greeting}"
+        call_pattern: "python /opt/qcrbox/bin/dummy_gui.py {greeting}"
         used_basecommand_parameters: ["greeting"]
-
+{%- endif %}
 
 cif_entry_sets:
   - name: "example_entry_set"

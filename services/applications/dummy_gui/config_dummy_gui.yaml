@@ -19,7 +19,7 @@ commands:
       run:
         implemented_as: "cli_command"
         description: "Run command for rendering the dummy GUI"
-        call_pattern: "python dummy_gui.py {input_file}"
+        call_pattern: "python /opt/qcrbox/dummy_gui.py {input_file}"
         used_basecommand_parameters: ["input_file"]
       finalise:
         implemented_as: "python_callable"
