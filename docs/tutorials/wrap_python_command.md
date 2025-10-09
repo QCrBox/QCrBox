@@ -10,12 +10,9 @@ This guide walks you through the process of encapsulating a Python module within
 1. Build our new application service container using `qcb`.
 1. Test our new container using QCrBox's web management front-end.
 
-<<<<<<< HEAD
-=======
 If you run into any problems when progressing through this tutorial, there's a [troubleshooting guide](../technical_reference/troubleshooting.md) which may be helpful.
 
 
->>>>>>> dev
 ## Prerequisites
 
 Before starting, ensure your development environment is set up following the guide located [here](../how_to_guides/set_up_a_dev_environment.md), and that you have `devbox shell` running in your terminal. In addition, it's likely helpful to bring yourself up to speed on the platform's [Technical Reference documentation](../technical_reference/contents.md), in particular [Architecture & key components](../technical_reference/architecture.md).
@@ -466,6 +463,6 @@ that correspond to what we expect as we specified in our `config_cod_check_tutor
 
 ## Conclusion and final remarks
 
-We have now exposed two commands in QCrbox from a Python module. One that only analyses a cif file to produce some output, and another one that works from an input cif file to an output cif.
+We have now exposed a single command in QCrbox from a Python module that performs processing on an input CIF file to produce an output CIF.
 
 For more examples you might consider looking into the already implemented programs in `services/applications`. If this tutorial is unclear at any point please raise an issue on Github with the specific problem that you ran into.
