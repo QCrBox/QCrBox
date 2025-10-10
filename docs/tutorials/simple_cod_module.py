@@ -29,15 +29,15 @@ Dependencies:
 """
 
 from pathlib import Path
-from typing import Dict, List, Tuple
 
 import requests
+
 from qcrboxtools.cif.read import cifdata_str_or_index, read_cif_safe
 
 COD_REST_URL = "https://www.crystallography.net/cod/result"
 
 
-def cif_to_search_pars(input_cif_path: Path) -> Tuple[List[str], Dict[str, float]]:
+def cif_to_search_pars(input_cif_path: Path) -> tuple[list[str], dict[str, float]]:
     """
     Extracts elements and cell parameters from a CIF file for search purposes.
 
@@ -58,8 +58,8 @@ def cif_to_search_pars(input_cif_path: Path) -> Tuple[List[str], Dict[str, float
         - A list of strings, each representing an element found in the chemical formula.
         - A dictionary with keys for cell parameter names ('a', 'b', 'c', 'alpha',
           'beta', 'gamma') and their respective values as floats.
-    """
 
+    """
     # this read function also works with pathlib.Path objects
     cif_model = read_cif_safe(input_cif_path)
 
@@ -86,11 +86,11 @@ def cif_to_search_pars(input_cif_path: Path) -> Tuple[List[str], Dict[str, float
 
 
 def cod_params(
-    elements: List[str],
-    cell_dict: Dict[str, float],
+    elements: list[str],
+    cell_dict: dict[str, float],
     cellpar_deviation: float,
     listed_elements_only: bool,
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """
     Generate parameters for COD (Crystallography Open Database) REST API queries based
     on elements, cell parameters, and deviation tolerance.
@@ -121,48 +121,13 @@ def cod_params(
     mult_low = 1 - cellpar_deviation
     mult_high = 1 + cellpar_deviation
 
-    for append, mult in zip(("min", "max"), (mult_low, mult_high)):
+    for append, mult in zip(("min", "max"), (mult_low, mult_high), strict=False):
         for var, val in cell_dict.items():
             params[f"{var[:3]}{append}"] = val * mult
     return params
 
 
-def get_number_fitting_cod_entries(
-    elements: List[str],
-    cell_dict: Dict[str, float],
-    cellpar_deviation: float,
-    listed_elements_only: bool,
-) -> int:
-    """
-    Get the count of COD entries fitting given criteria.
-
-    Parameters
-    ----------
-    elements : List[str]
-        List of chemical element symbols.
-    cell_dict : Dict[str, float]
-        Dictionary with unit cell parameter names as keys and their values as floats.
-    cellpar_deviation : float
-        Allowed deviation fraction for cell parameters.
-    listed_elements_only : bool
-        If True, limit the search to entries strictly containing the listed elements.
-
-    Returns
-    -------
-    int
-        The count of entries in the COD that match the criteria.
-
-    """
-    params = cod_params(elements, cell_dict, cellpar_deviation, listed_elements_only)
-    params["format"] = "count"
-
-    headers = {"content_type": "charset=utf-8"}
-
-    result = requests.request("GET", COD_REST_URL, headers=headers, params=params, timeout=60)
-    return int(result.text)
-
-
-def get_celldiff_score(struc_dict: Dict[str, float], cell_dict: Dict[str, float]) -> float:
+def get_celldiff_score(struc_dict: dict[str, float], cell_dict: dict[str, float]) -> float:
     """
     Calculate the cell difference score between two sets of cell parameters.
 
@@ -186,11 +151,11 @@ def get_celldiff_score(struc_dict: Dict[str, float], cell_dict: Dict[str, float]
 
 
 def get_fitting_cod_entries(
-    elements: List[str],
-    cell_dict: Dict[str, float],
+    elements: list[str],
+    cell_dict: dict[str, float],
     cellpar_deviation: float,
     listed_elements_only: bool,
-) -> List[Dict]:
+) -> list[dict]:
     """
     Retrieve and sort COD entries fitting given criteria by their cell difference score.
 
@@ -250,6 +215,7 @@ def download_cod_cif(cod_id: int, output_path: Path, timeout: int = 600) -> None
     requests.exceptions.RequestException
         Raised for issues like connectivity problems, timeouts, or HTTP errors during
         the download process.
+
     """
     url = f"https://www.crystallography.net/cod/{cod_id}.cif"
 
