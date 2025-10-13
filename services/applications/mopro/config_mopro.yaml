@@ -16,18 +16,27 @@ commands:
       - name: "input_cif"
         dtype: "QCrBox.cif_data_file"
         description: "The CIF file to open in MoPro"
+        required_entry_sets: ["input"]
+        merge_su: True
+      - name: "output_cif_name"
+        dtype: "QCrBox.output_cif"
+        description: "Name of the output CIF"
+        required_entries: []
+        optional_entries: []
+        required_entry_sets: ["output"]
+        invalidated_entries: ["_refine_.*", "_computing_.*", "_geom_.*", "_atom_rho_.*", "_atom_local_axes_.*"]
     interactive_lifecycle:
       run:
         implemented_as: "python_callable"
         import_path: "configure_mopro"
         callable_name: "__run_interactive"
-        used_basecommand_parameters: ["input_cif"]
+        used_basecommand_parameters: ["input_cif", "output_cif_name"]
         description: "Launch MoProSuite with the provided input CIF"
       finalise:
         implemented_as: "python_callable"
         import_path: "configure_mopro"
         callable_name: "__finalise_interactive"
-        used_basecommand_parameters: ["input_cif"]
+        used_basecommand_parameters: ["input_cif", "output_cif_name"]
         description: "Prepare CIF to return back to QCrBox"
 
   - name: "run_inp_file"
