@@ -337,6 +337,10 @@ Select the download icon to download the resultant CIF file to your local machin
 If you examine the contents of this output file, you should see three `loop` entries added to the file,
 that correspond to what we expect as we specified in our `config_cod_check_tutorial.yaml` file.
 
+## What if I need to invoke a command line application?
+
+Instead of calling other Python functions from within the `configure*.py` script, you can instead invoke a command line program using the in-built and well established Python `subprocess` module. See [this comprehensive tutorial](https://realpython.com/python-subprocess/) which illustrates how to use `subprocess.run()` to invoke a command line application, as well as obtain any standard error or standard output from invoking commands.
+
 ## Conclusion and final remarks
 
 We have now exposed a single command in QCrbox from a Python module that performs processing on an input CIF file to produce an output CIF.
