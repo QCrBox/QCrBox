@@ -23,7 +23,7 @@ During this tutorial you will work with Docker, Python, and an understanding of 
 
 The first step is to create a new QCrBox application container to encapsulate our Python application within QCrBox. Follow the instructions within the [tutorial to create a new QCrBox container](./create_new_qcrbox_container.md), using the given inputs to the commands as shown in the guide.
 
-Next, download the Python file [here](simple_cod_module.py) and copy `simple_cod_module.py` into the `cod_check_tutorial` folder.
+Next, download the Python file [here](./simple_cod_module.py){:download} and copy `simple_cod_module.py` into the `cod_check_tutorial` folder.
 
 ## Adding the First Command to `config_cod_check_tutorial.yaml`
 
@@ -44,7 +44,7 @@ The command will require four parameters which we specify within the `parameters
   1. `cellpar_deviation_perc` (float): Defines the maximum allowable deviation, in percentage, for unit cell parameters between COD structures and our target structure. The default value is set at 2.0%.
   1. `listed_elements_only` (boolean): When set to `true`, the search will only include entries containing the exact elements listed in the `input_cif` file. If `false`, the search will accept entries with additional elements beyond those listed. By default, this is set to `false`.
 
-Here is how you should structure the command in the YAML file:
+Here is how you should structure the command in the YAML file (note the `[...]` - we'll amend these later!):
 
 ```yaml
 ...
@@ -85,7 +85,7 @@ Next, we must specify which CIF entries have to be in the input CIF file for our
         ]
 ```
 
-For scenarios where certain CIF entries are beneficial but not mandatory, you could list them under `optional_entries`. However, in this context, all listed entries are necessary, completing our current modifications to the YAML file. For further information about cif entry handling consult the yaml section from the [CIF HowTo](../how_to_guides/handle_cifs.md).
+For scenarios where certain CIF entries are beneficial but not mandatory, you could list them under `optional_entries`. However, in this context, all listed entries are necessary, completing our current modifications to the YAML file. For further information about cif entry handling consult the YAML section from the [CIF HowTo](../how_to_guides/handle_cifs.md).
 
 ### What if we need to Specify the same `required_entries` more than once?
 
@@ -162,12 +162,12 @@ from simple_cod_module import (
     get_fitting_cod_entries,
 )
 
-YAML_PATH = Path(__file__).parent / "config_cod_check.yaml"
+YAML_PATH = Path(__file__).parent / "config_cod_check_tutorial.yaml"
 ```
 
 We will use the `cif_to_search_pars` function to generate search parameters and then `employ get_number_fitting_cod_entries` to find the count of matching structures, which returns a list of dictionaries of COD entries, sorted by the sum of squared differences in the unit cell parameters. Finally, `download_cod_cif` can be used to download an entry from the COD.
 
-We can now implement our function as follows. Add this below:
+We can now implement our function as follows. Add this below (but before `if __name__ == "__main__"`):
 
 ```python
 def merge_closest_cod_entry(input_cif, output_cif_name, cellpar_deviation_perc, listed_elements_only):
@@ -203,7 +203,7 @@ if __name__ == "__main__":
 
 QCrBox recognizes the parameter names from our Python function, using them directly as command parameters within the for the commands exposed by the QCrBox container.
 
-It's necessary to put the client launching code within a if __name__ == "__main__" block at the end, since this only needs to run once when a container is started. Otherwise, each time a command is run, the Python script is imported and if the client invocation code is not guarded then the command execution will either hang or crash the application's container.
+It's necessary to put the client launching code within an `if __name__ == "__main__"` block at the end, since this only needs to run once when a container is started. Otherwise, each time a command is run, the Python script is imported and if the client invocation code is not guarded then the command execution will either hang or crash the application's container.
 
 
 ## Configuring the Dockerfile
@@ -301,7 +301,7 @@ docker logs qcrbox-cod_check_tutorial-1
 
 ```output
 ...
-"event": "Received response to registration request: resp={'response_to': 'qcrbox_rk_0xa167db740e034919bfa10dfc416a7694', 'status': 'success', 'msg': 'Successfully registered cod_check_tutorial 0.0.1 (qcrbox_rk_0xa167db740e034919bfa10dfc416a7694)', 'payload': None}", "extra": {}, "level": "debug", "timestamp": "2025-09-12T10:17:31.568029Z"}
+{"event": "Received response to registration request: resp={'response_to': 'qcrbox_rk_0xa167db740e034919bfa10dfc416a7694', 'status': 'success', 'msg': 'Successfully registered cod_check_tutorial 0.0.1 (qcrbox_rk_0xa167db740e034919bfa10dfc416a7694)', 'payload': None}", "extra": {}, "level": "debug", "timestamp": "2025-09-12T10:17:31.568029Z"}
 ```
 
 You can also check if an application is registered by using the registry's API directly, by going to http://127.0.0.1:11000/api/applications. You should find the new service in the list, complete with it's YAML interface definition.
