@@ -106,3 +106,6 @@ pyqcrbox/robot_tests/report.html
 
 # Favourites extension in VSCode
 .favorites.json
+
+# macOS specific
+.DS_Store
