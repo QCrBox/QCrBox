@@ -103,6 +103,29 @@ commands:
       - name: "output_cif_dummy"
         dtype: "QCrBox.output_cif"
 
+  - name: test_to_unified_cif
+    description: A Python function which is used to test that a cif can be returned as a unified cif
+    implemented_as: python_callable
+    import_path: sample_functions
+    parameters :
+      - name: "input_cif"
+        dtype: "QCrBox.cif_data_file"
+        merge_su: Yes
+        custom_categories: [test_value, test_loop]
+        required_entry_sets: [input_test1]
+        optional_entry_sets: [input_test2]
+        required_entries: [one_of: [_cell_length_b, _invalid_cif_value]]
+        optional_entries: [_atom_site_label]
+      - name: "to_merge_cif"
+        dtype: QCrBox.data_file
+      - name: "output_cif"
+        dtype: "QCrBox.output_cif"
+        custom_categories: [test_value, test_loop]
+        required_entry_sets: [output_test]
+        required_entries: [_test_loop_value_without_su]
+        optional_entries: [_nonexistent_keyword]
+        invalidated_entries: [_test_value_invalidated, _test_loop_value_invalidated]
+
 cif_entry_sets:
   - name: "cell_elements"
     required: [
@@ -114,7 +137,8 @@ cif_entry_sets:
     optional : [ _atom_site_fract_y ]
   - name: input_test2
     required : [ _invalid_keyword, _atom_site_fract_x ]
-
-
+  - name: output_test
+    required : [ _test_value_with_su ]
+    optional : [ _test_loop_id ]
 
 qcrbox_yaml_spec_version: "0.1"

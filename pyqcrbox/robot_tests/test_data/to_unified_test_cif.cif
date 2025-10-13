@@ -1,0 +1,12 @@
+data_merge_name
+_test_value.with_su 5.67
+_test_value.with_su_su 0.06
+_test_value.without_su 9.99
+_test_value.invalidated 9.01
+
+loop_
+_test_loop.id
+_test_loop.value_to_merge
+_test_loop.value_invalidated
+1 1.11 6.66
+2 2.22 7.77
