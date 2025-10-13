@@ -1,6 +1,15 @@
-# Wrapping a Python module and exposing functionality to run within QCrBox
+# Wrapping a GUI application to run within QCrBox
 
-This guide walks you through the process of encapsulating a simple interactive graphical user interface (GUI) application within a QCrBox container under Linux.
+This guide walks you through the process of encapsulating a simple interactive graphical user interface (GUI) application within a QCrBox container under Linux. Our goal is to make this application's functionality accessible within a QCrBox container. The resulting container is already present in QCrBox as `dummy_gui`. However, we will go through the necessary steps to recreate the functionality:
+
+1. Use `qcb` commands to create a new application service from a template, with initial boilerplate configuration files to get us started.
+1. Make use of a small, simple dummy GUI application within our container.
+1. Define an interface using YAML for use by QCrBox, that describes how to invoke the GUI application to accomplish a basic task, passing an input CIF file as an argument.
+1. Write a Dockerfile that describes how to set up our service container with our GUI application installed.
+1. Build our new application service container using `qcb`.
+1. Test our new container using QCrBox's web management front-end.
+
+If you run into any problems when progressing through this tutorial, there's a [troubleshooting guide](../technical_reference/troubleshooting.md) which may be helpful.
 
 ## Prerequisites
 
