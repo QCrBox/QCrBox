@@ -5,6 +5,7 @@ Documentation
 Library             Collections
 Library             DateTime
 Library             OperatingSystem
+Library    String
 Library             JSONLibrary
 Resource            resources/api.resource
 Resource            resources/keywords.resource
@@ -12,7 +13,6 @@ Resource            resources/keywords.resource
 Suite Setup         Setup Suite
 Suite Teardown      Teardown Suite
 Test Timeout        2 minutes
-
 
 *** Variables ***
 ${REGISTRY_ADDRESS}         %{QCRBOX_BIND_ADDRESS=127.0.0.1}
@@ -163,10 +163,21 @@ Get Output Dataset
     RETURN    ${calculation_response["output_dataset_id"]}
 
 Get Dataset File Contents
-    [Documentation]    Get the contents of a dataset
+    [Documentation]    Get a cif file from a dataset, containing only that one cif file
     [Arguments]    ${dataset_id}
 
     ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /datasets/${dataset_id}/download    200
+    ${content_disposition}=    Get From Dictionary    ${response.headers}    Content-Disposition
     Should Not Be Empty    ${response.content}
+
+    ${parts}=    Split String    ${content_disposition}    filename=${EMPTY}
+    VAR    ${filename}=    ${parts}[1]
+    ${filename}=    Remove String    ${filename}
+    ${filename}=    Remove String    ${filename}    "
+    Should End With    ${filename}    .cif
+    Should Not Contain
+    ...    ${filename}
+    ...    .zip
+    ...    msg=The downloaded file is a .zip, but a .cif was expected. Filename: ${filename}
 
     RETURN    ${response.content}
