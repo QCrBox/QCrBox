@@ -87,11 +87,34 @@ commands:
         dtype: QCrBox.data_file
         description: The second CIF file
 
+  - name: test_cif_to_specific
+    description: A Python function which is used to test that the cif to specific format transformation works
+    implemented_as: python_callable
+    import_path: sample_functions
+    parameters:
+      - name: "input_cif"
+        dtype: "QCrBox.cif_data_file"
+        merge_su: Yes
+        custom_categories: [test_value, test_loop]
+        required_entry_sets: [input_test1]
+        optional_entry_sets: [input_test2]
+        required_entries: [one_of: [_cell_length_b, _invalid_cif_value]]
+        optional_entries: [_atom_site_label]
+      - name: "output_cif_dummy"
+        dtype: "QCrBox.output_cif"
+
 cif_entry_sets:
   - name: "cell_elements"
     required: [
       "_cell_length_a", "_cell_length_b", "_cell_length_c", "_cell_angle_alpha",
       "_cell_angle_beta", "_cell_angle_gamma", "_chemical_formula_sum"
     ]
+  - name: input_test1
+    required : [ _cell_length_a ]
+    optional : [ _atom_site_fract_y ]
+  - name: input_test2
+    required : [ _invalid_keyword, _atom_site_fract_x ]
+
+
 
 qcrbox_yaml_spec_version: "0.1"

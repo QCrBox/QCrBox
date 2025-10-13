@@ -35,18 +35,36 @@ Check that returned cif is unmodified
 
     ${invoke_response}=    Invoke Command With Arguments    print_cif    ${command_arguments}
     ${calculation_id}=    Get Calculation ID    ${invoke_response}
-    ${output_dataset_id}=    Get Output Dataset    ${calculation_id}
+    ${output_dataset_id}=    Get Output Dataset ID    ${calculation_id}
 
     ${original_cif}=    Get Binary File    ${TEST_CIF_FILE}
+    ${original_cif}=    Convert To String    ${original_cif}
     ${processed_cif}=    Get Dataset File Contents    ${output_dataset_id}
-    Log    Original cif file: ${original_cif}
-    Log    Processed cif file: ${processed_cif}
     Should Be Equal    ${processed_cif}    ${original_cif}
 
-Check that returned cif has additional entries
+    [Teardown]    Delete Cif Dataset    ${output_dataset_id}
+
+Check that returned cif has modified entries from to_specific_format()
     [Documentation]    We should expect some additional entries to be in the cif after command execution
 
-    Log    Completed
+    ${dataset}=    Upload Cif    ${CURDIR}/test_data/to_specific_test_cif.cif    to_specific_test_cif.cif
+
+    VAR    &{input_cif}=    data_file_id=${dataset[0]["data_files"]["to_specific_test_cif.cif"]["qcrbox_file_id"]}
+    VAR    &{command_arguments}=    input_cif=${input_cif}    output_cif_dummy="foo"
+    ${output_dataset_id}=    Invoke Command And Get Output Dataset ID    test_cif_to_specific    ${command_arguments}
+
+    ${original_cif}=    Get Dataset File Contents    ${dataset[0]["qcrbox_dataset_id"]}
+    ${processed_cif}=    Get Dataset File Contents    ${output_dataset_id}
+    Should Not Be Equal    ${processed_cif}    ${original_cif}
+
+    FOR    ${sub}    IN    _cell_length_a    _cell_length_b    _atom_site_label    _atom_site_fract_y
+        Should Contain    ${processed_cif}    ${sub}
+    END
+    FOR    ${sub}    IN    _cell.length_a_su    _cell.length_b_su    _atom_site.fract_x_su     _atom_site.fract_z
+        Should Not Contain    ${processed_cif}    ${sub}
+    END
+
+    [Teardown]    Run Keywords    Delete Cif Dataset    ${dataset[0]["qcrbox_dataset_id"]}    AND    Delete Cif Dataset    ${output_dataset_id}
 
 Check that returned cif has invalidated entries
     [Documentation]    We should expect a cif not to have certain entries which were removed by QCrBox
@@ -70,17 +88,23 @@ Teardown Suite
     Delete Cif Dataset    ${TEST_DATASET_ID}
     Log    Test suite completed
 
-Upload Test Cif
-    [Documentation]    Upload a cif file for testing purposes
+Upload Cif
+    [Documentation]    Upload a cif file
+    [Arguments]    ${path_to_file}    ${file_name}
 
-    ${file_contents}=    Get Binary File    ${TEST_CIF_FILE}
-    VAR    &{files}=    ${TEST_CIF_FILE_NAME}=${file_contents}
+    ${file_contents}=    Get Binary File    ${path_to_file}
+    VAR    &{files}=    ${file_name}=${file_contents}
 
     ${response}=    Send API Request    POST    ${SESSION_ALIAS}    /datasets    201    files=${files}
     ${payload}=    Check Response And Get Payload    ${response}
-
     Check Response Has Attributes    ${payload}    datasets
-    VAR    ${datasets}=    ${payload["datasets"]}
+
+    RETURN    ${payload["datasets"]}
+
+Upload Test Cif
+    [Documentation]    Upload the global cif file for testing purposes
+
+    ${datasets}=    Upload Cif    ${TEST_CIF_FILE}    ${TEST_CIF_FILE_NAME}
     VAR    ${test_dataset_id}=    ${datasets[0]["qcrbox_dataset_id"]}
     VAR    ${TEST_DATASET_ID}=    ${test_dataset_id}    scope=suite
     VAR    ${TEST_DATA_FILE_ID}=
@@ -109,6 +133,16 @@ Invoke Command With Arguments
     Log    Command invocation response: ${response_json}
 
     RETURN    ${response_json}
+
+Invoke Command And Get Output Dataset ID
+    [Documentation]    Invoke a command and get the output dataset
+    [Arguments]    ${command_name}    ${command_arguments}
+
+    ${invoke_response}=    Invoke Command With Arguments    ${command_name}    ${command_arguments}
+    ${calculation_id}=    Get Calculation ID    ${invoke_response}
+    ${output_dataset_id}=    Get Output Dataset ID    ${calculation_id}
+
+    RETURN    ${output_dataset_id}
 
 Get Calculation ID
     [Documentation]    Get the calculation ID from a command invocation response
@@ -154,7 +188,7 @@ Wait Until Calculation Successful
 
     RETURN    ${calculation_response}
 
-Get Output Dataset
+Get Output Dataset ID
     [Documentation]    Get the output dataset for a finished calculation
     [Arguments]    ${calculation_id}
 
@@ -168,7 +202,6 @@ Get Dataset File Contents
 
     ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /datasets/${dataset_id}/download    200
     ${content_disposition}=    Get From Dictionary    ${response.headers}    Content-Disposition
-    Should Not Be Empty    ${response.content}
 
     ${parts}=    Split String    ${content_disposition}    filename=${EMPTY}
     VAR    ${filename}=    ${parts}[1]
@@ -180,4 +213,6 @@ Get Dataset File Contents
     ...    .zip
     ...    msg=The downloaded file is a .zip, but a .cif was expected. Filename: ${filename}
 
-    RETURN    ${response.content}
+    ${output}=    Convert To String    ${response.content}
+
+    RETURN    ${output}

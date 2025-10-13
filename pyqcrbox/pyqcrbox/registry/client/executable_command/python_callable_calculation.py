@@ -77,7 +77,8 @@ class PythonCallableCalculation(BaseCalculation):
         if not self.return_value:
             logger.info("This calculation has no return value, nothing to store in the data manager")
             return None
-        if not isinstance(self.return_value, (str, Path)):
+        logger.info(f"Return value from PythonCallable: {self.return_value}")
+        if not isinstance(self.return_value, str | Path):
             exc_msg = (
                 f"The return value from the calculation must be str or pathlib.Path, not {type(self.return_value)}"
             )
@@ -94,6 +95,7 @@ class PythonCallableCalculation(BaseCalculation):
             logger.debug("Merging to unified format in PythonCallableCalculation")
             output_file = await input_cif.to_unified_format(output_file, merge_options)
 
+        logger.debug(f"Adding {output_file} to DataManager")
         try:
             data_file_id = await data_manager.import_file(output_file)
             self.output_dataset_id = await data_manager.create_dataset_from_data_files(data_file_id)

@@ -46,3 +46,12 @@ def print_two_cif(cif1: str, cif2: str):
     _print(cif2)
 
     return cif2
+
+
+def test_cif_to_specific(input_cif: str, output_cif_dummy: str) -> str:
+    """Returns the input_cif, which has been transformed to a specific format."""
+    print("Input cif file:", input_cif)
+    with open(input_cif, "r") as file_in:
+        print(file_in.read())
+
+    return input_cif
