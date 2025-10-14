@@ -2,13 +2,13 @@
 Documentation
 ...                 Test suite for the CIF2CIF translation and merging
 
-Library             Collections
-Library             DateTime
-Library             OperatingSystem
+Library    Collections
+Library    DateTime
+Library    OperatingSystem
 Library    String
-Library             JSONLibrary
-Resource            resources/api.resource
-Resource            resources/keywords.resource
+Library    JSONLibrary
+Resource    resources/api.resource
+Resource    resources/keywords.resource
 
 Suite Setup         Setup Suite
 Suite Teardown      Teardown Suite
@@ -20,29 +20,27 @@ ${REGISTRY_PORT}            %{QCRBOX_REGISTRY_PORT=11000}
 ${ENDPOINTS_API}            http://${REGISTRY_ADDRESS}:${REGISTRY_PORT}/api
 ${SESSION_ALIAS}            QCRBOX_REGISTRY_API_ENDPOINTS
 
-${TEST_CIF_FILE_NAME}       lalanine8_200k.cif
-${TEST_CIF_FILE}            ${CURDIR}/test_data/${TEST_CIF_FILE_NAME}
-${TEST_DATA_FILE_ID}        ${EMPTY}
-${TEST_DATASET_ID}          ${EMPTY}
-
 
 *** Test Cases ***
 Check that returned cif is unmodified
     [Documentation]    If no cif entries are set in the parameter yaml, an unmodified cif is expected to be returned
 
-    VAR    &{input_cif}=    data_file_id=${TEST_DATA_FILE_ID}
+    ${input_cif_dataset}=    Upload Cif    ${CURDIR}/test_data/lalanine8_200k.cif    lalanine8_200k.cif
+    VAR    &{input_cif}=    data_file_id=${input_cif_dataset[0]["data_files"]["lalanine8_200k.cif"]["qcrbox_file_id"]}
     VAR    &{command_arguments}=    input_cif=${input_cif}    print_times=3
 
     ${invoke_response}=    Invoke Command With Arguments    print_cif    ${command_arguments}
     ${calculation_id}=    Get Calculation ID    ${invoke_response}
     ${output_dataset_id}=    Get Output Dataset ID    ${calculation_id}
 
-    ${original_cif}=    Get Binary File    ${TEST_CIF_FILE}
+    ${original_cif}=    Get Binary File    ${CURDIR}/test_data/lalanine8_200k.cif
     ${original_cif}=    Convert To String    ${original_cif}
     ${processed_cif}=    Get Dataset File Contents    ${output_dataset_id}
     Should Be Equal    ${processed_cif}    ${original_cif}
 
-    [Teardown]    Delete Cif Dataset    ${output_dataset_id}
+    [Teardown]    Run Keywords
+    ...    Delete Cif Dataset    ${output_dataset_id}    AND
+    ...    Delete Cif Dataset    ${input_cif_dataset[0]["qcrbox_dataset_id"]}
 
 Check that returned cif has modified entries after being transformed to specific format
     [Documentation]    We should expect some additional entries to be in the cif after command execution
@@ -62,7 +60,7 @@ Check that returned cif has modified entries after being transformed to specific
     FOR    ${sub}    IN    _cell_length_a    _cell_length_b    _atom_site_label    _atom_site_fract_y
         Should Contain    ${processed_cif}    ${sub}
     END
-    FOR    ${sub}    IN    _cell.length_a_su    _cell.length_b_su    _atom_site.fract_x_su     _atom_site.fract_z
+    FOR    ${sub}    IN    _cell.length_a_su    _cell.length_b_su    _atom_site.fract_x_su    _atom_site.fract_z
         Should Not Contain    ${processed_cif}    ${sub}
     END
 
@@ -95,12 +93,12 @@ Check that returned cif is a unified cif
     ...    _test_loop.id
     ...    _test_loop.value_to_merge
     FOR    ${sub}    IN    @{should_include}
-       Should Contain    ${processed_cif}    ${sub}
+        Should Contain    ${processed_cif}    ${sub}
     END
 
     [Teardown]    Run Keywords
-    ...    Delete Cif Dataset    ${input_cif_dataset[0]["qcrbox_dataset_id"]}  AND
-    ...    Delete Cif Dataset    ${merge_cif_dataset[0]["qcrbox_dataset_id"]}  AND
+    ...    Delete Cif Dataset    ${input_cif_dataset[0]["qcrbox_dataset_id"]}    AND
+    ...    Delete Cif Dataset    ${merge_cif_dataset[0]["qcrbox_dataset_id"]}    AND
     ...    Delete Cif Dataset    ${output_dataset_id}
 
 
@@ -110,14 +108,12 @@ Setup Suite
 
     Create API Session    ${SESSION_ALIAS}    ${ENDPOINTS_API}
     Log Datetime Information
-    Upload Test Cif
     Log    Starting test suite
 
 Teardown Suite
     [Documentation]    Teardown the test environment for this suite
 
     Log Datetime Information
-    Delete Cif Dataset    ${TEST_DATASET_ID}
     Log    Test suite completed
 
 Upload Cif
@@ -132,16 +128,6 @@ Upload Cif
     Check Response Has Attributes    ${payload}    datasets
 
     RETURN    ${payload["datasets"]}
-
-Upload Test Cif
-    [Documentation]    Upload the global cif file for testing purposes
-
-    ${datasets}=    Upload Cif    ${TEST_CIF_FILE}    ${TEST_CIF_FILE_NAME}
-    VAR    ${test_dataset_id}=    ${datasets[0]["qcrbox_dataset_id"]}
-    VAR    ${TEST_DATASET_ID}=    ${test_dataset_id}    scope=suite
-    VAR    ${TEST_DATA_FILE_ID}=
-    ...    ${datasets[0]["data_files"]["${TEST_CIF_FILE_NAME}"]["qcrbox_file_id"]}
-    ...    scope=suite
 
 Delete Cif Dataset
     [Documentation]    Remove a dataset containing a test cif file
