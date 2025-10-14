@@ -46,3 +46,25 @@ def print_two_cif(cif1: str, cif2: str):
     _print(cif2)
 
     return cif2
+
+
+def test_cif_to_specific(input_cif: str, output_cif_dummy: str) -> str:
+    """Returns the input_cif, which has been transformed to a specific format."""
+    print("Input cif file:", input_cif)
+    with open(input_cif, "r") as file_in:
+        print(file_in.read())
+
+    return input_cif
+
+
+def test_to_unified_cif(input_cif: str, to_merge_cif: str, output_cif: str) -> str:
+    """Returns the input_cif, which will be merged with the original."""
+    print("Input cif file:", input_cif)
+    with open(input_cif, "r") as file_in:
+        print(file_in.read())
+
+    print("To merge cif file:", to_merge_cif)
+    with open(to_merge_cif, "r") as file_in:
+        print(file_in.read())
+
+    return to_merge_cif
