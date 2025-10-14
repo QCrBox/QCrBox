@@ -2,19 +2,17 @@
 Documentation
 ...                 Test suite for the API endpoints of the QCrBox registry
 
-# Standard libraries
-Library             DateTime
-Library             Collections
-Library             JSONLibrary
-Library             OperatingSystem
-# Keywords implemented in Robot
-Resource            resources/api.resource
-Resource            resources/keywords.resource
+Library    Collections
+Library    DateTime
+Library    OperatingSystem
+Library    JSONLibrary
+Resource    resources/api.resource
+Resource    resources/keywords.resource
+Resource    resources/responses.resource
 
-Suite Setup         Setup suite
-Suite Teardown      Teardown suite
+Suite Setup         Setup Suite
+Suite Teardown      Teardown Suite
 Test Timeout        2 minutes
-
 
 *** Variables ***
 ${REGISTRY_ADDRESS}         %{QCRBOX_BIND_ADDRESS=127.0.0.1}
@@ -63,24 +61,11 @@ Check /calculations/id returns 404 for incorrect id
 
 
 *** Keywords ***
-Setup suite
+Setup Suite
     Create API Session    ${SESSION_ALIAS}    ${ENDPOINTS_API}
     Log Datetime Information
     Log    Starting test suite
 
-Teardown suite
+Teardown Suite
     Log Datetime Information
     Log    Test suite completed
-
-Check Calculations Structure
-    [Arguments]    ${calculations}
-    FOR    ${calculation}    IN    @{calculations}
-        Check Response Content Has Attributes
-        ...    ${calculation}
-        ...    calculation_id
-        ...    application_slug
-        ...    application_version
-        ...    command_name
-        ...    status
-        ...    command_arguments
-    END

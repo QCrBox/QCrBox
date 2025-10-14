@@ -2,19 +2,17 @@
 Documentation
 ...                 Test suite for the API endpoints of the QCrBox registry
 
-# Standard libraries
-Library             DateTime
-Library             Collections
-Library             JSONLibrary
-Library             OperatingSystem
-# Keywords implemented in Robot
-Resource            resources/api.resource
-Resource            resources/keywords.resource
+Library    Collections
+Library    DateTime
+Library    OperatingSystem
+Library    JSONLibrary
+Resource    resources/api.resource
+Resource    resources/keywords.resource
+Resource    resources/responses.resource
 
-Suite Setup         Setup suite
-Suite Teardown      Teardown suite
+Suite Setup         Setup Suite
+Suite Teardown      Teardown Suite
 Test Timeout        2 minutes
-
 
 *** Variables ***
 ${REGISTRY_ADDRESS}                 %{QCRBOX_BIND_ADDRESS=127.0.0.1}
@@ -249,27 +247,13 @@ Get Calculation Status
 
     RETURN    ${calculation_status['status']}
 
-Check Calculations Structure
-    [Arguments]    ${calculations}
-    FOR    ${calculation}    IN    @{calculations}
-        Check Response Content Has Attributes
-        ...    ${calculation}
-        ...    calculation_id
-        ...    application_slug
-        ...    application_version
-        ...    command_name
-        ...    status
-        ...    command_arguments
-        ...    output_dataset_id
-    END
-
-Setup suite
+Setup Suite
     Create API Session    ${SESSION_ALIAS}    ${ENDPOINTS_API}
     Log Datetime Information
     Upload Test Dataset
     Log    Starting test suite
 
-Teardown suite
+Teardown Suite
     Log Datetime Information
     Delete Test Dataset
     Log    Test suite completed
@@ -301,17 +285,3 @@ Delete Test Dataset
 Delete Output Dataset
     ${response}=    Send API Request    DELETE    ${SESSION_ALIAS}    /datasets/${TEST_OUTPUT_DATSET_ID_1}    204
     ${response}=    Send API Request    DELETE    ${SESSION_ALIAS}    /datasets/${TEST_OUTPUT_DATSET_ID_2}    204
-
-Check Interactive Sessions Structure
-    [Arguments]    @{interactive_sessions}
-
-    FOR    ${interactive_session}    IN    @{interactive_sessions}
-        Check Response Content Has Attributes
-        ...    ${interactive_session}
-        ...    session_id
-        ...    client_private_inbox
-        ...    application_slug
-        ...    application_version
-        ...    command_name
-        ...    arguments
-    END

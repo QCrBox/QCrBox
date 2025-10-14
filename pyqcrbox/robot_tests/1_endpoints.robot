@@ -3,18 +3,18 @@ Documentation
 ...                 Test suite for the API endpoints of the QCrBox registry
 
 # Standard libraries
-Library             DateTime
 Library             Collections
-Library             JSONLibrary
+Library             DateTime
 Library             OperatingSystem
+Library             JSONLibrary
 # Keywords implemented in Robot
 Resource            resources/api.resource
 Resource            resources/keywords.resource
+Resource    resources/responses.resource
 
-Suite Setup         Setup suite
-Suite Teardown      Teardown suite
+Suite Setup         Setup Suite
+Suite Teardown      Teardown Suite
 Test Timeout        2 minutes
-
 
 *** Variables ***
 ${REGISTRY_ADDRESS}         %{QCRBOX_BIND_ADDRESS=127.0.0.1}
@@ -230,71 +230,11 @@ Check /datasets/id/download returns 404 for deleted dataset
 
 
 *** Keywords ***
-Setup suite
+Setup Suite
     Create API Session    ${SESSION_ALIAS}    ${ENDPOINTS_API}
     Log Datetime Information
     Log    Starting test suite
 
-Teardown suite
+Teardown Suite
     Log Datetime Information
     Log    Test suite completed
-
-Check Application Response Structure
-    [Arguments]    ${application}
-
-    Log    ${application}
-
-    Check Response Content Has Attributes
-    ...    ${application}
-    ...    name
-    ...    slug
-    ...    version
-    ...    description
-    ...    email
-    ...    doi
-    ...    gui_port
-    ...    url
-    ...    registered_at
-    ...    commands
-    FOR    ${command}    IN    @{application['commands']}
-        Check Command Response Structure    ${command}
-    END
-
-Check Command Response Structure
-    [Arguments]    ${command}
-
-    Log    ${command}
-
-    Check Response Content Has Attributes
-    ...    ${command}
-    ...    name
-    ...    description
-    ...    implemented_as
-    ...    parameters
-    ...    id
-    ...    application_id
-    ...    application
-    ...    version
-    ...    cmd_name
-    ...    merge_cif_su
-    ...    doi
-
-Check Datasets Structure
-    [Arguments]    @{datasets}
-    FOR    ${dataset}    IN    @{datasets}
-        Check Response Content Has Attributes    ${dataset}    qcrbox_dataset_id    data_files
-    END
-
-Check Interactive Sessions Structure
-    [Arguments]    @{interactive_sessions}
-
-    FOR    ${interactive_session}    IN    @{interactive_sessions}
-        Check Response Content Has Attributes
-        ...    ${interactive_session}
-        ...    session_id
-        ...    client_private_inbox
-        ...    application_slug
-        ...    application_version
-        ...    command_name
-        ...    arguments
-    END

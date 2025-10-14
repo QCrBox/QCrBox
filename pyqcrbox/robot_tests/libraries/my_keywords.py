@@ -36,7 +36,7 @@ def should_not_be_none(value: Any, name: str = "Value"):
 
 
 @keyword
-def check_json_has_attributes(json: dict, *attributes: list[str]) -> None:
+def check_json_has_attributes(json: dict, *attributes) -> None:
     """Check if the provided JSON has a list of keys/attributes.
 
     Parameters
