@@ -1,14 +1,8 @@
 *** Settings ***
 Documentation
-...                 Test suite for the API endpoints of the QCrBox registry
+...    Test suite for the calculations API endpoints
 
-Library    Collections
-Library    DateTime
-Library    OperatingSystem
-Library    JSONLibrary
-Resource    resources/api.resource
 Resource    resources/keywords.resource
-Resource    resources/responses.resource
 
 Suite Setup         Setup Suite
 Suite Teardown      Teardown Suite
@@ -18,13 +12,14 @@ Test Timeout        2 minutes
 ${REGISTRY_ADDRESS}         %{QCRBOX_BIND_ADDRESS=127.0.0.1}
 ${REGISTRY_PORT}            %{QCRBOX_REGISTRY_PORT=11000}
 ${ENDPOINTS_API}            http://${REGISTRY_ADDRESS}:${REGISTRY_PORT}/api
-${SESSION_ALIAS}            QCRBOX_REGISTRY_API_ENDPOINTS
-
+${SESSION_ALIAS}    QCRBOX_REGISTRY_API_ENDPOINTS
 ${TEST_CALCULATION_ID}      ${EMPTY}
 
 
 *** Test Cases ***
 Check /calculations returns a list of calculations
+    [Documentation]    A calculations responses, containing multiple calculations, should be returned
+
     ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /calculations    200
     ${payload}=    Check Response Structure And Get Payload    ${response}
 
@@ -35,37 +30,45 @@ Check /calculations returns a list of calculations
 
     Check Calculations Structure    ${calculations}
     ${test_calculation_id}=    Set Variable    ${calculations[0]["calculation_id"]}
-    Set Suite Variable    ${TEST_CALCULATION_ID}    ${test_calculation_id}
+    VAR    ${TEST_CALCULATION_ID}=    ${test_calculation_id}    scope=suite
 
 Check /calculation/id returns a calculation
+    [Documentation]    A calculations response, containing a single calculation, should be returned for a correct id
+
     ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /calculations/${TEST_CALCULATION_ID}    200
     ${payload}=    Check Response Structure And Get Payload    ${response}
 
     Check Response Content Has Attributes    ${payload}    calculations
-    ${calculations}=    Set Variable    ${payload["calculations"]}
+    VAR    ${calculations}=    ${payload["calculations"]}
     ${n_calculations}=    Get Length    ${calculations}
     Should Be Equal As Integers    ${n_calculations}    1    "Multiple calculations retrieved, when only one requested"
-
     Check Calculations Structure    ${calculations}
 
 Check /calculations/id returns 404 for incorrect id
+    [Documentation]    A 404 should be returned by the API if an incorrect id is supplied
+
     ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /calculations/-1    404
     ${content}=    Decode Response Content    ${response}
 
     Check Response Content Has Attributes    ${content}    status    error
     Should Be Equal    ${content["status"]}    error
 
-    ${error_payload}=    Set Variable    ${content["error"]}
+    VAR    ${error_payload}=    ${content["error"]}
     Check Response Content Has Attributes    ${error_payload}    code    message    details
     Should Be Equal As Integers    ${error_payload["code"]}    404
 
 
+
 *** Keywords ***
 Setup Suite
+    [Documentation]    Setup the test environment for this suite
+
     Create API Session    ${SESSION_ALIAS}    ${ENDPOINTS_API}
     Log Datetime Information
     Log    Starting test suite
 
 Teardown Suite
+    [Documentation]    Teardown the test environment for this suite
+
     Log Datetime Information
     Log    Test suite completed

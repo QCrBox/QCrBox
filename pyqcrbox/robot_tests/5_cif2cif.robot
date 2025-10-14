@@ -2,11 +2,6 @@
 Documentation
 ...                 Test suite for the CIF2CIF translation and merging
 
-Library    Collections
-Library    DateTime
-Library    OperatingSystem
-Library    String
-Library    JSONLibrary
 Resource    resources/keywords.resource
 
 Suite Setup         Setup Suite
