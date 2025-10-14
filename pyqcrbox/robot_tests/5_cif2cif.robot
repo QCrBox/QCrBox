@@ -25,15 +25,15 @@ ${SESSION_ALIAS}            QCRBOX_REGISTRY_API_ENDPOINTS
 Check that returned cif is unmodified
     [Documentation]    If no cif entries are set in the parameter yaml, an unmodified cif is expected to be returned
 
-    ${input_cif_dataset}=    Upload Cif    ${CURDIR}/test_data/lalanine8_200k.cif    lalanine8_200k.cif
-    VAR    &{input_cif}=    data_file_id=${input_cif_dataset[0]["data_files"]["lalanine8_200k.cif"]["qcrbox_file_id"]}
+    ${input_cif_dataset}=    Upload Cif    ${CURDIR}/test_data/to_specific_test_cif.cif    to_specific_test_cif.cif
+    VAR    &{input_cif}=    data_file_id=${input_cif_dataset[0]["data_files"]["to_specific_test_cif.cif"]["qcrbox_file_id"]}
     VAR    &{command_arguments}=    input_cif=${input_cif}    print_times=3
 
     ${invoke_response}=    Invoke Command With Arguments    print_cif    ${command_arguments}
     ${calculation_id}=    Get Calculation ID    ${invoke_response}
     ${output_dataset_id}=    Get Output Dataset ID    ${calculation_id}
 
-    ${original_cif}=    Get Binary File    ${CURDIR}/test_data/lalanine8_200k.cif
+    ${original_cif}=    Get Binary File    ${CURDIR}/test_data/to_specific_test_cif.cif
     ${original_cif}=    Convert To String    ${original_cif}
     ${processed_cif}=    Get Dataset File Contents    ${output_dataset_id}
     Should Be Equal    ${processed_cif}    ${original_cif}
