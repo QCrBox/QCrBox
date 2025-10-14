@@ -1,9 +1,8 @@
-Working with cif files in QCrBox
-================================
+# Working with cif files in QCrBox
 
 QCrBox transfers data between containers using the crystallographic information file format (CIF). However, cif supports a number of aliases for the same entry. In addition some entries have been deprecated over the years. This provides a challenge for interoperability as one program within QCrBox might require a specific cif entry format for its input, while the software package that output the information might use another.
 
-## Unified cif: The transfer format
+## Unified cifs: the transfer format
 
 As such we decided to convert all cif files to a state containing a unique set of keywords and split standard uncertainties (SUs).
 For the keyword names, we used the base definition of the current IUCr cif dictionaries, such as the [cif_core.dic](https://github.com/COMCIFS/cif_core/blob/master/cif_core.dic). Additionally, standard uncertainties are separated into their own keywords. This ensures that numerical convergence is actually possible.
@@ -27,7 +26,8 @@ _cell.length_b_su    0.004
 
 QCrBox does offer tools to convert between formats to make integration of software using any format as seamless as possible.
 
-## Nomenclature in this HowTo:
+## Nomenclature
+
 **Unified CIF**: See above
 
 **Specific CIF** CIF file create using specific keywords in a specific format, this can be the DDL1 style of keywords but it does not have to be.
@@ -44,34 +44,45 @@ QCrBox does offer tools to convert between formats to make integration of softwa
 
 **Custom CIF categories**: Programs or organisations might define their own CIF entries in their own namespace. The old convention is using an underscore after the namespace *e.g.* `_qcrbox_my_value`, while the new convention is `qcrbox.my_value`. Listing the categories as a custom category without a leading underscore will insure the correct back and forth conversion between the two.
 
-## Converting to Unified CIF using the QCrBoxtools container
-If you want to convert your cif file into the unified cif format without any more knowledge, there is an [example IPython notebook](https://github.com/QCrBox/QCrBox/blob/dev/wrapper/example_qcrboxtools.ipynb) that shows you how to do that, by using the exposed `to_unified_cif` command of that container.
+## Converting to unified cif using the QCrBoxTools application
 
-## Converting CIF files using the QCrBoxTools Python Library
+If you want to convert your cif file into the unified cif format, there is a command called `to_unified_cif` part of the QCrBoxTools application. This command will convert the provided cif into the unified format, without you needing to write any code.
+
+## Converting cif files using the QCrBoxTools Python Library
+
 The QCrBoxTools library is available within the python environment of every QCrBox container. It can be called either via a command line interface or within a python script. Additionally you can also install the library outside of QCrBox by getting the source [here](https://github.com/QCrBox/QCrBoxTools) and installing it into your local python environment.
 
 ### Using the command line interface
+
 The command line interface can be called by invoking:
+
 ```bash
 python -m qcrboxtools.cif <cmd> <input_cif_path> <output_cif_path> <ARGS>
 ```
+
 Invoke with `--help` instead of arguments to see the available options.
 
-### Using the python library.
+### Using the python library
+
 The required functions are located within the `qcrboxtools.cif.cif2cif` module if you want to work from and to files and in `qcrboxtools.cif.entries` and `qcrboxtools.cif.uncertainties` if you want to work with `iotbx.cif` objects. The docstrings of the functions should be covering the use cases. If they are unclear, please raise a GitHub issue.
 
 ## Working with QCrBox `config*.yml` files
 
-This section will focus on how to work with the CIF capabilities of the yaml file. For the other aspects of parameter definition look into the [tutorial](../tutorials/wrap_python_command.md). The specification of cif entries is tied to a parameter of the type `"QCrBox.input_cif"` or `"QCrBox.output_cif"`.
+This section will focus on how to work with the CIF capabilities of the yaml file (e.g. such as an application specification). For the other aspects of parameter definition look into the [tutorial](../tutorials/wrap_python_command.md). The specification of cif entries is tied to a parameter of the type `"QCrBox.cif_data_file"` or `"QCrBox.output_cif"`. If no entries are defined for the input cif, then no transfer between formats/entries will happen. The same is true for the output cif.
 
-### Defining input parameters.
+In QCrBox, the input cif will be transferred to the specific format before the requested command is executed. The original cif will be kept in the data manager in the original dataset. Once the command has finished and a cif has been returned, the original cif and the output cif are merged together into the unified format. This happens one of two ways: 1) a straight forwards merge of the original and output cif together if no `QCrBox.output_cif` parameter is defined, or, 2), merges the original and output cif together using the entries/options defined by the `QCrBox.output_cif` parameter.
+
+If, for whatever reason, the transfer between formats fails, a warning message will be returned and the unedited cif will be used for command execution or returned from the command. If the unedited cif is not compatible with the command, then the command will likely fail and return an error.
+
+### Defining input parameters
+
 ```YAML
 commands:
   - name: "my_command"
     ... # non-parameter entries are omitted
     parameters:
       - name: "example_input_parameter"
-        dtype: "QCrBox.input_cif"
+        dtype: "QCrBox.cif_data_file"
         description: "A helpful description for the average non-expert user"
         required_entries: [
           "_some_entry",
@@ -84,9 +95,11 @@ commands:
         custom_categories: ["iucr", "shelx"]
 ```
 
+To define an input cif, use the `QCrBox.cif_data_file` data type. **For the developer alpha release, you are limited to a single `QCrBox.cif_data_file` parameter if two independent cif files are required. That is because the second `QCrBox.cif_data_file` is assumed to be an ancestor of the first in the QCrBox frontend. If you need two cifs, the second cif *must* be a `QCrBox.data_file` which does not support transferring between formats. This parameter type is a generic type for file inputs.**
+
 Let us go through the options of this input parameter line by line:
 
-  - **`commands`**: Start of the command list. As specified in the YAML file, all following entries in the command list must be indended
+- **`commands`**: Start of the command list. As specified in the YAML file, all following entries in the command list must be indended
 
   - **`name`**: The name of the first (and here only) command within the command list
 
@@ -111,6 +124,7 @@ Let us go through the options of this input parameter line by line:
     - **`custom_categories`**: List of custom CIF categories to include in the output cif file (see [Nomenclature](#nomenclature-in-this-howto)).
 
 ### Defining output parameters
+
 ```YAML
 commands:
   - name: "my_command"
@@ -127,7 +141,8 @@ commands:
         custom_categories: ["iucr", "shelx"]
         invalidated_entries: ["_calculation_remnant", "_everything_fitting_regex.*"]
 ```
-QCrBox assumes that each command will only update part of the available information, while other information in the `input_cif` file remains valid. As such we need to define which entries from the `input_cif` should be kept and which values created by the executable within the command should be added.
+
+QCrBox assumes that each command will only update part of the available information, while other information in the `input_cif` file remains valid. As such we need to define which entries from the `input_cif` should be kept and which values created by the executable within the command should be added. **Note: you may only have one output cif parameter.**
 
 The `invalidated_entries` section is a list of [python re](https://docs.python.org/3/library/re.html) Regular Expressions that can be used to filter out values from the original cif file. For example a change in any of the parameters might invalidate the contained quality indicators within the `input_cif` file. We can filter them out using `"_refine.*"`. Invalidated entries only work on the `input_cif`.
 
@@ -135,8 +150,8 @@ The entries transferred from the cif file created during command execution can b
 
 In future `required` entries will also be used to check whether a command can be run given its precesing commands.
 
+### cif entry sets in a YAML file
 
-### CIF entry sets in a YAML file
 In order to keep the command definition somewhat compact and not redefine entries shared between commands, the YML also contains the possibility to define cif entry sets. The syntax is:
 
 ```YAML
