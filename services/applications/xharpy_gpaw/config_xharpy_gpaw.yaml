@@ -127,6 +127,9 @@ cif_entry_sets:
       "_wfn_moiety.symm_code", "_wfn_moiety.cartn_x",
       "_wfn_moiety.cartn_y", "_wfn_moiety.cartn_z",
       "_wfn_moiety.aff_index",
+      "_aspheric_ffs.source",
+      "_aspheric_ffs_partitioning.name",
+      "_aspheric_ffs_partitioning.software",
       "_aspheric_ff.index_h", "_aspheric_ff.index_k", "_aspheric_ff.index_l", 
       "_aspheric_ff.form_factor_real", "_aspheric_ff.form_factor_imag"
     ]

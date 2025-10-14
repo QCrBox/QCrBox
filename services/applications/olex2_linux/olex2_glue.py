@@ -4,7 +4,7 @@ from pathlib import Path
 from qcrboxtools.cif.file_converter.tsc import TSCBFile
 from qcrboxtools.robots.olex2 import Olex2Socket
 
-YAML_PATH = "/opt/qcrbox/config_olex2.yaml"
+YAML_PATH = Path(__file__).parent / "config_olex2.yaml"
 
 
 def generate_tscb_if_needed(input_cif):

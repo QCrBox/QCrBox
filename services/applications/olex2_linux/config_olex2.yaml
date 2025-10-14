@@ -18,9 +18,16 @@ commands:
         dtype: "QCrBox.cif_data_file"
         description: "The CIF file to open in Olex2"
         required_entry_sets: [ "cell_data", "diffraction_data" ]
-        optional_entry_sets: [ "atom_data" ]
+        optional_entry_sets: [ "atom_data", "aspheric_form_factors" ]
         merge_su: Yes
         custom_categories: [ "iucr", "shelx" ]
+      - name: "output_cif_name"
+        dtype: "QCrBox.output_cif"
+        description: "Name of the output CIF"
+        required_entries: []
+        optional_entries: []
+        required_entry_sets: ["olex2_only_interactive_output", "olex_structure_output"]
+        custom_categories: ["iucr", "shelx"]
     interactive_lifecycle:
       prepare:
         implemented_as: "python_callable"
@@ -37,7 +44,7 @@ commands:
         implemented_as: "python_callable"
         import_path: "configure_olex2"
         callable_name: "finalise__interactive"
-        used_basecommand_parameters: ["input_file"]
+        used_basecommand_parameters: ["input_file", "output_cif_name"]
         description: "Finalise and return the CIF file to QCrBox"
   - name: "Refine"
     implemented_as: "python_callable"
@@ -92,14 +99,16 @@ cif_entry_sets:
   - name: "cell_data"
     required : [
       "_space_group_IT_number",
-      "_space_group_symop_id",
       "_space_group_symop_operation_xyz",
       "_cell_length_a",
       "_cell_length_b",
       "_cell_length_c",
       "_cell_angle_alpha",
       "_cell_angle_beta",
-      "_cell_angle_gamma",
+      "_cell_angle_gamma"
+    ]
+    optional : [      
+      "_space_group_symop_id",
       "_cell_measurement_temperature"
     ]
   - name: "diffraction_data"
@@ -151,6 +160,7 @@ cif_entry_sets:
       "_aspheric_ffs_partitioning.name",
       "_aspheric_ffs_partitioning.software",
       "_wfn_moiety.asu_atom_site_label",
+      "_wfn_moiety.aff_index",
       "_aspheric_ff.index_h",
       "_aspheric_ff.index_k",
       "_aspheric_ff.index_l",

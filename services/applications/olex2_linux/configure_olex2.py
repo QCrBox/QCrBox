@@ -5,50 +5,34 @@ from pathlib import Path
 
 from pyqcrbox import logger, sql_models
 from pyqcrbox.registry.client import QCrBoxClient
+from qcrboxtools.cif.file_converter.tsc import TSCBFile
 
 YAML_PATH = Path(__file__).parent / "config_olex2.yaml"
 
+def generate_tscb_if_needed(input_cif):
+    try:
+        tscb_path = Path(input_cif).with_suffix(".tscb")
+        tscb_obj = TSCBFile.from_cif_file(input_cif)
+        tscb_obj.to_file(tscb_path)
+        logger.info(f"Generated TSCB file at {tscb_path}")
+        return tscb_path
+    except ValueError as e:
+        logger.info(f"XXX DEBUG MODE: Could not generate TSCB file from CIF with error:\n{str(e)}")
+        return None
 
-def run__interactive(input_file):
-    logger.info("XXX DEBUG MODE: Running Olex2 via PythonCallable")
-    input_cif_path = Path(input_file)
-    work_cif_path = input_cif_path.parent / "qcrbox_work.cif"
-    subprocess.run(
-        ["/bin/bash", "/opt/olex2/start", f"{work_cif_path}"],
-    )
+#def run__interactive(input_file):
+#    logger.info("XXX DEBUG MODE: Running Olex2 via PythonCallable")
+#    input_cif_path = Path(input_file)
+#    work_cif_path = input_cif_path.parent / "qcrbox_work.cif"
+#    subprocess.run(
+#        ["/bin/bash", "/opt/olex2/start", f"{work_cif_path}"],
+#    )
 
 
 def prepare__interactive(input_file):
     input_cif_path = Path(input_file)
-    work_cif_path = input_cif_path.parent / "qcrbox_work.cif"
-    logger.info(
-        f"XXX DEBUG MODE: prepare__interactive: input_file={input_cif_path} work_file={work_cif_path}",
-    )
 
-    # create a cif file using the requested cif entries in olex2 format
-    # try:
-    #     cif_file_to_specific_by_yml(
-    #         input_cif_path,
-    #         work_cif_path,
-    #         YAML_PATH,
-    #         "interactive_session",
-    #         "input_file",
-    #     )
-    # except ValueError:
-    #     logger.exception(f"Failed to create work file {work_cif_path}")
-    #     os.remove(input_cif_path)
-    #
-
-    # XXX WORKAROUND: we are going to do some file management by hand
-    # Create a backup of the original input file
-    shutil.copyfile(input_cif_path, input_cif_path.with_suffix(".cif.bak"))
-    # Copy the input file to the work file
-    try:
-        shutil.copyfile(input_cif_path, work_cif_path)
-    except shutil.SameFileError:
-        logger.error(
-            f"XXX DEBUG MODE: same file error probably due to a previous workflow failure: path={input_cif_path}",
-        )
+    generate_tscb_if_needed(input_cif_path)
 
     # Remove files that might trigger Olex2 crash detection
     olex2_datadir = Path(os.getenv("OLEX2_DATADIR"))
@@ -65,36 +49,19 @@ def prepare__interactive(input_file):
         pid_file.unlink()
 
 
-def finalise__interactive(input_file):
+def finalise__interactive(input_file, output_cif_name):
     input_file = Path(input_file)
     work_folder = input_file.parent
 
-    try:
-        newest_cif_path = next(
-            reversed(
-                sorted(
-                    (
-                        file_path
-                        for file_path in work_folder.glob("*.cif")
-                        if file_path.name != "output.cif" and file_path != input_file
-                    ),
-                    key=os.path.getmtime,
-                )
-            )
-        )
-    except StopIteration:
-        logger.error("No new CIF files found in work folder, returning input file")
-        newest_cif_path = input_file
+    newest_cif_path = max(
+        ( file_path for file_path in work_folder.glob("*.cif")),
+        key=os.path.getmtime,
+    )
 
-    # TODO if not existing, rerun newest res with ACTA
-    #
-    #
-    # # Go to unified keywords and split SUs into separate entries
-    # cif_file_merge_to_unified_by_yml(
-    #     newest_cif_path, output_cif_path, input_cif_path, YAML_PATH, "interactive", "output_cif_path"
-    # )
+    output_cif_path = work_folder / output_cif_name
+    shutil.copy(newest_cif_path, output_cif_path)
 
-    return newest_cif_path
+    return str(output_cif_path)
 
 
 # def toparams__interactive(input_cif_path, parameter_json_path, parameter_folder):
