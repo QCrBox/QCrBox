@@ -62,7 +62,7 @@
       ],
       "robot-framework": [
         "cd ./pyqcrbox/robot_tests",
-        "robot *.robot"
+        "robot ."
       ],
       "pytest": [
         "cd ./pyqcrbox",
