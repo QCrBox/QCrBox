@@ -15,6 +15,7 @@ However, there will be an initial period of stabilisation where this is not adhe
 
 ### New Features
 
+- Added a tutorial on adding a GUI container application to QCrBox.
 - Added a troubleshooting and FAQ page.
 - Included support for non-interactive commands, including stopping any long-running commands.
 - Added `--prebuilt-images` option to `qcb up` to bring QCrBox up using tested images from the QCrBox container
@@ -38,6 +39,8 @@ However, there will be an initial period of stabilisation where this is not adhe
 
 ### Enhancements
 
+- Split the Python container tutorial into two, so the application creation part is more generic and reusable for the interactive GUI tutorial.
+- Added link to front-end deployment instructions at the end of the development environment set up documentation.
 - Added validation steps to the QCrBox Python application wrapping tutorial.
 - The registry API now uses LiteStar dependency injection, improving management of the NATS server.
 - Renamed `DataFileManager` to `DataManager` to better reflect that is manages more than just data files
