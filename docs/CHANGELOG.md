@@ -52,6 +52,7 @@ However, there will be an initial period of stabilisation where this is not adhe
   which lets you build an interactive application based on a Windows application running via Wine.
 - Improved error message return from command invocation/ending API endpoints when NATS is the reason for failure.
 - `PythonCallable` commands can now also return a `pathlib.Path` object in addition to a `str` of a file path.
+- Additional automated developer tests have been added for the CIF2CIF translation for command execution.
 - And lots more!
 
 ### Issues Fixed
