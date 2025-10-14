@@ -31,7 +31,6 @@ Dependencies:
 from pathlib import Path
 
 import requests
-
 from qcrboxtools.cif.read import cifdata_str_or_index, read_cif_safe
 
 COD_REST_URL = "https://www.crystallography.net/cod/result"

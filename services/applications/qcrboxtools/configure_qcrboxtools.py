@@ -2,7 +2,6 @@ from pathlib import Path
 
 from pyqcrbox import sql_models
 from pyqcrbox.registry.client import QCrBoxClient
-
 from qcrboxtools.cif.cif2cif import cif_file_to_unified
 from qcrboxtools.cif.iso2aniso import cif_iso2aniso
 

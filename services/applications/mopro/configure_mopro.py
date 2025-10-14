@@ -6,7 +6,6 @@ from pathlib import Path, PureWindowsPath
 
 from pyqcrbox import sql_models
 from pyqcrbox.registry.client import QCrBoxClient
-
 from qcrboxtools.cif.cif2cif import cif_file_to_unified
 from qcrboxtools.cif.file_converter.hkl import cif2hkl4
 from qcrboxtools.robots.mopro import MoProImportRobot, MoProInpFile, MoProRobot
@@ -51,7 +50,7 @@ def __finalise_interactive(input_cif, output_cif_name):
     except FileNotFoundError:
         generate_cif_fcf(work_folder)
     return write_output_cif(work_folder, output_cif_name)
-    
+
 
 def generate_cif_fcf(work_folder):
     path_helper = WinePathHelper()
@@ -66,14 +65,12 @@ def generate_cif_fcf(work_folder):
     mopro = MoProRobot(executable_path=mopro_unix_path)
     mopro.run_file(newest_inp_file.with_name("mopro_writecif.inp"))
 
+
 def write_output_cif(work_folder, output_cif_name):
     output_cif_path = work_folder / output_cif_name
     try:
         newest_cif_path = find_newest_file_with_extension(
-            work_folder,
-            ".cif", 
-            files_to_exclude=["output.cif", "work.cif", "input.cif"], 
-            case_sensitive=False
+            work_folder, ".cif", files_to_exclude=["output.cif", "work.cif", "input.cif"], case_sensitive=False
         )
         newest_cif_text = newest_cif_path.read_text(encoding="utf-8", errors="replace")
 
@@ -86,26 +83,20 @@ def write_output_cif(work_folder, output_cif_name):
         output_cif_path.write_text(cleaned_text, encoding="utf-8")
 
         return output_cif_path
-    except StopIteration:
-        raise FileNotFoundError("CIF or FCF files missing in the working directory.")
+    except StopIteration as e:
+        raise FileNotFoundError("CIF or FCF files missing in the working directory.") from e
 
-
-    
 
 def clean_cif_text(cif_text):
-    """
-    Clean the CIF text by removing non-character symbols and replacing invalid newline characters
-    for specific entries.
-    """
     non_character_pattern = re.compile(r"[^\w\s\.,!?;:\'\"\-()\[\]{}<>|/\\@#%&*+=`~\^]")
     cleaned_text = non_character_pattern.sub("?", cif_text)
 
     # Replace invalid newline characters for specific entries (from fcf)
     replace_entries = (
-            "_symmetry_space_group_name_Hall",
-            "_symmetry_space_group_name_H-M_alt",
-            "_space_group_IT_number",
-        )
+        "_symmetry_space_group_name_Hall",
+        "_symmetry_space_group_name_H-M_alt",
+        "_space_group_IT_number",
+    )
     for entry in replace_entries:
         pattern = re.compile(rf"(\n\s*{entry} .*\n)", re.IGNORECASE)
         match = pattern.search(cleaned_text)
@@ -114,25 +105,23 @@ def clean_cif_text(cif_text):
             cleaned_text = re.sub(pattern, value, cleaned_text)
     return cleaned_text
 
+
 def find_newest_file_with_extension(work_folder, extension, files_to_exclude=None, case_sensitive=False):
     if files_to_exclude is None:
         files_to_exclude = []
     excluded_files_set = set(files_to_exclude)
 
-    if extension.startswith("."):
-        ending = extension[1:]
-    else:
-        ending = extension
-    
-    if case_sensitive:
-        search = ending
-    else:
-        search = "".join(f"[{char.lower()}{char.upper()}]" for char in ending)
+    ending = extension[1:] if extension.startswith(".") else extension
 
-    matching_files = [file_path for file_path in work_folder.glob(f"*.{search}") if file_path.name not in excluded_files_set]
+    search = ending if case_sensitive else "".join(f"[{char.lower()}{char.upper()}]" for char in ending)
+
+    matching_files = [
+        file_path for file_path in work_folder.glob(f"*.{search}") if file_path.name not in excluded_files_set
+    ]
     if not matching_files:
         raise FileNotFoundError(f"No files with extension {extension} found in {work_folder}")
     return max(matching_files, key=os.path.getmtime)
+
 
 def table_path(table_type):
     match table_type:

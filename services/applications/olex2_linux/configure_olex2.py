@@ -1,6 +1,7 @@
 import os
 import shutil
-import subprocess
+
+# import subprocess
 from pathlib import Path
 
 from pyqcrbox import logger, sql_models
@@ -8,6 +9,7 @@ from pyqcrbox.registry.client import QCrBoxClient
 from qcrboxtools.cif.file_converter.tsc import TSCBFile
 
 YAML_PATH = Path(__file__).parent / "config_olex2.yaml"
+
 
 def generate_tscb_if_needed(input_cif):
     try:
@@ -20,7 +22,8 @@ def generate_tscb_if_needed(input_cif):
         logger.info(f"XXX DEBUG MODE: Could not generate TSCB file from CIF with error:\n{str(e)}")
         return None
 
-#def run__interactive(input_file):
+
+# def run__interactive(input_file):
 #    logger.info("XXX DEBUG MODE: Running Olex2 via PythonCallable")
 #    input_cif_path = Path(input_file)
 #    work_cif_path = input_cif_path.parent / "qcrbox_work.cif"
@@ -54,7 +57,7 @@ def finalise__interactive(input_file, output_cif_name):
     work_folder = input_file.parent
 
     newest_cif_path = max(
-        ( file_path for file_path in work_folder.glob("*.cif")),
+        (file_path for file_path in work_folder.glob("*.cif")),
         key=os.path.getmtime,
     )
 

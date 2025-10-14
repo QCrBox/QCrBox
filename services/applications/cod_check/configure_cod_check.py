@@ -2,6 +2,7 @@ from pathlib import Path
 
 from pyqcrbox import sql_models
 from pyqcrbox.registry.client import QCrBoxClient
+
 from simple_cod_module import (
     cif_to_search_pars,
     download_cod_cif,

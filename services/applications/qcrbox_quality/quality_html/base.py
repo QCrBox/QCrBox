@@ -80,7 +80,7 @@ class QualityIndicatorBox:
 
         """
         read_value = cif_block.get(entry, "N/A")
-        if read_value in ("N/A", '?'):
+        if read_value in ("N/A", "?"):
             value = "N/A"
             quality_level = DataQuality.INFORMATION
         elif unit == "%":
