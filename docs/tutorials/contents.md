@@ -8,3 +8,4 @@ If you run into any problems when progressing through this tutorial, there's a [
 - [Integrating Python functionality into QCrBox](./wrap_python_command.md)
 - [Integrating an Interactive GUI-based Application into QCrBox](./wrap_gui_command.md)
 - [Creating a new QCrBox application container](./create_new_qcrbox_container.md) - this is a quick, generic tutorial for creating a new container "shell" from a template. The tutorials above contain links to this tutorial, so you should do either or both of those first unless you have already
+- [Writing an application container test plan](./writing_test_plan.md) - it is recommended to create test plans for containers that are executed prior to release (or by users) to ensure containers function as expected

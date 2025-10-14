@@ -15,6 +15,7 @@ However, there will be an initial period of stabilisation where this is not adhe
 
 ### New Features
 
+- Added a brief guide on writing a test plan for an application container.
 - Added a tutorial on adding a GUI container application to QCrBox.
 - Added a troubleshooting and FAQ page.
 - Included support for non-interactive commands, including stopping any long-running commands.
