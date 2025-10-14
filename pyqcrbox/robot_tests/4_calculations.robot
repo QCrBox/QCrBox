@@ -17,7 +17,7 @@ ${TEST_CALCULATION_ID}      ${EMPTY}
 
 
 *** Test Cases ***
-Check /calculations returns a list of calculations
+Get a list of calculations
     [Documentation]    A calculations responses, containing multiple calculations, should be returned
 
     ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /calculations    200
@@ -32,7 +32,7 @@ Check /calculations returns a list of calculations
     ${test_calculation_id}=    Set Variable    ${calculations[0]["calculation_id"]}
     VAR    ${TEST_CALCULATION_ID}=    ${test_calculation_id}    scope=suite
 
-Check /calculation/id returns a calculation
+Check you can request details for a specific calculation
     [Documentation]    A calculations response, containing a single calculation, should be returned for a correct id
 
     ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /calculations/${TEST_CALCULATION_ID}    200
@@ -44,7 +44,7 @@ Check /calculation/id returns a calculation
     Should Be Equal As Integers    ${n_calculations}    1    "Multiple calculations retrieved, when only one requested"
     Check Calculations Structure    ${calculations}
 
-Check /calculations/id returns 404 for incorrect id
+Check a 404 is returned for an incorrect calculation id
     [Documentation]    A 404 should be returned by the API if an incorrect id is supplied
 
     ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /calculations/-1    404
@@ -56,7 +56,6 @@ Check /calculations/id returns 404 for incorrect id
     VAR    ${error_payload}=    ${content["error"]}
     Check Response Content Has Attributes    ${error_payload}    code    message    details
     Should Be Equal As Integers    ${error_payload["code"]}    404
-
 
 
 *** Keywords ***

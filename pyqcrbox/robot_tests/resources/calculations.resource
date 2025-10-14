@@ -11,26 +11,35 @@ Resource    datasets.resource
 *** Keywords ***
 Invoke Command With Arguments
     [Documentation]    Invoke a command with the provided arguments
-    [Arguments]    ${command_name}    ${command_arguments}
+    [Arguments]    ${application_slug}
+    ...    ${application_version}
+    ...    ${command_name}
+    ...    ${command_arguments}
+    ...    ${endpoint}=/commands
 
     VAR    &{command_request}=
-    ...    application_slug=dummy_cli
-    ...    application_version=0.1.0
+    ...    application_slug=${application_slug}
+    ...    application_version=${application_version}
     ...    command_name=${command_name}
     ...    command_arguments=${command_arguments}
     Log    Command invocation request: ${command_request}
 
-    ${response}=    Send API Request    POST    ${SESSION_ALIAS}    /commands    201    json_data=${command_request}
-    VAR    ${response_json}=    ${response.json()}
-    Log    Command invocation response: ${response_json}
+    ${response}=    Send API Request    POST    ${SESSION_ALIAS}    ${endpoint}    201    json_data=${command_request}
+    # VAR    ${response_json}=    ${response.json()}
+    Log    Command invocation response: ${response.json()}
 
-    RETURN    ${response_json}
+    RETURN    ${response}
 
 Invoke Command And Get Output Dataset ID
     [Documentation]    Invoke a command and get the output dataset
-    [Arguments]    ${command_name}    ${command_arguments}
+    [Arguments]    ${application_slug}    ${application_version}    ${command_name}    ${command_arguments}
 
-    ${invoke_response}=    Invoke Command With Arguments    ${command_name}    ${command_arguments}
+    ${invoke_response}=    Invoke Command With Arguments
+    ...    ${application_slug}
+    ...    ${application_version}
+    ...    ${command_name}
+    ...    ${command_arguments}
+    ${invoke_response}=    Decode Response Content    ${invoke_response}
     ${calculation_id}=    Get Calculation ID    ${invoke_response}
     ${output_dataset_id}=    Get Output Dataset ID    ${calculation_id}
 
