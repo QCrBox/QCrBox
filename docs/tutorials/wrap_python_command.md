@@ -91,8 +91,6 @@ For scenarios where certain CIF entries are beneficial but not mandatory, you co
 
 We may need to define another command that uses the exact same entries for input (or output). We might simply copy and paste these entries, however, perhaps we would like to only define the set of entries once. In QCrBox we can do that using `cif_entry_sets`. For example, at the end of the file we create a new entry set for our commands (replacing the existing unused example one):
 
-> **Important Note:** Currently, functionality that will automatically convert/merge output CIF files has not yet been fully implemented. Therefore imposing that an output CIF file has a required (or optional, etc.) set of entries needs a manual implementation within the application command. This is temporary and it is planned to be automated in future updates, following the developer alpha release. We're releasing this functionality now to provide a foundation for exploration and development.
-
 ```YAML
 cif_entry_sets:
   - name: "cell_elements"
@@ -143,11 +141,9 @@ The CIF output path parameter should be modified to:
         ]
 ```
 
-Again while the required and optional entries determine what is copied from our evaluation (here the database lookup), the invalidated entries will exclude entries from the input cif. The remaining entries from both files are then merged and output in the location of `output_cif_path`.
+Again while the required and optional entries determine what is copied from our evaluation (here the database lookup), the invalidated entries will exclude entries from the input cif. The remaining entries from both files are then merged and output in the location of `output_cif_name`.
 
 ## Implementing the Python Glue Code
-
-> **Important Note:** Currently, some functionality that will eventually be automatically specificed, including the registration of our application and commands in Python, as well as CIF file handling and conversion—requires manual implementation. This step is temporary and is planned to be automated in future updates, following the developer alpha release. We're releasing this functionality now to provide a foundation for exploration and development.
 
 Next, we need to implement the module and function we have referenced in the YAML file. To begin, open the `configure_cod_check_tutorial.py` file. Start by importing necessary functions from the Python base libraries as well as two different modules, by adding the following to the top of the file:
 
