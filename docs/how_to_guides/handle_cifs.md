@@ -44,11 +44,11 @@ QCrBox does offer tools to convert between formats to make integration of softwa
 
 **Custom CIF categories**: Programs or organisations might define their own CIF entries in their own namespace. The old convention is using an underscore after the namespace *e.g.* `_qcrbox_my_value`, while the new convention is `qcrbox.my_value`. Listing the categories as a custom category without a leading underscore will insure the correct back and forth conversion between the two.
 
-## Converting to Unified CIF using the QCrBoxTools application
+## Converting to unified cif using the QCrBoxTools application
 
-If you want to convert your cif file into the unified cif format without any more knowledge, there is a command called `to_unified_cif` part of the QCrBoxTools application.
+If you want to convert your cif file into the unified cif format, there is a command called `to_unified_cif` part of the QCrBoxTools application. This command will convert the provided cif into the unified format, without you needing to write any code.
 
-## Converting CIF files using the QCrBoxTools Python Library
+## Converting cif files using the QCrBoxTools Python Library
 
 The QCrBoxTools library is available within the python environment of every QCrBox container. It can be called either via a command line interface or within a python script. Additionally you can also install the library outside of QCrBox by getting the source [here](https://github.com/QCrBox/QCrBoxTools) and installing it into your local python environment.
 
@@ -150,7 +150,7 @@ The entries transferred from the cif file created during command execution can b
 
 In future `required` entries will also be used to check whether a command can be run given its precesing commands.
 
-### CIF entry sets in a YAML file
+### cif entry sets in a YAML file
 
 In order to keep the command definition somewhat compact and not redefine entries shared between commands, the YML also contains the possibility to define cif entry sets. The syntax is:
 
