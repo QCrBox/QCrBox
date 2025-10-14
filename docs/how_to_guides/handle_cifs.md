@@ -72,7 +72,7 @@ This section will focus on how to work with the CIF capabilities of the yaml fil
 
 In QCrBox, the input cif will be transferred to the specific format before the requested command is executed. The original cif will be kept in the data manager in the original dataset. Once the command has finished and a cif has been returned, the original cif and the output cif are merged together into the unified format. This happens one of two ways: 1) a straight forwards merge of the original and output cif together if no `QCrBox.output_cif` parameter is defined, or, 2), merges the original and output cif together using the entries/options defined by the `QCrBox.output_cif` parameter.
 
-If, for whatever reason, the transfer between formats fails, an warning message will be returned and the unedited cif will be used for command execution or returned from the command. If the unedited cif is not compatible with the command, then the command will likely fail and return an error.
+If, for whatever reason, the transfer between formats fails, a warning message will be returned and the unedited cif will be used for command execution or returned from the command. If the unedited cif is not compatible with the command, then the command will likely fail and return an error.
 
 ### Defining input parameters
 
