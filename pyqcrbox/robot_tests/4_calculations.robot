@@ -28,9 +28,9 @@ ${TEST_CALCULATION_ID}      ${EMPTY}
 *** Test Cases ***
 Check /calculations returns a list of calculations
     ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /calculations    200
-    ${payload}=    Check Response And Get Payload    ${response}
+    ${payload}=    Check Response Structure And Get Payload    ${response}
 
-    Check Response Has Attributes    ${payload}    calculations
+    Check Response Content Has Attributes    ${payload}    calculations
     ${calculations}=    Set Variable    ${payload["calculations"]}
     ${n_calculations}=    Get Length    ${calculations}
     Should Be True    ${n_calculations} > 0    "No calculations retrieved, when we are expecting at least 1"
@@ -41,9 +41,9 @@ Check /calculations returns a list of calculations
 
 Check /calculation/id returns a calculation
     ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /calculations/${TEST_CALCULATION_ID}    200
-    ${payload}=    Check Response And Get Payload    ${response}
+    ${payload}=    Check Response Structure And Get Payload    ${response}
 
-    Check Response Has Attributes    ${payload}    calculations
+    Check Response Content Has Attributes    ${payload}    calculations
     ${calculations}=    Set Variable    ${payload["calculations"]}
     ${n_calculations}=    Get Length    ${calculations}
     Should Be Equal As Integers    ${n_calculations}    1    "Multiple calculations retrieved, when only one requested"
@@ -52,30 +52,30 @@ Check /calculation/id returns a calculation
 
 Check /calculations/id returns 404 for incorrect id
     ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /calculations/-1    404
-    ${content}=    Get Response Content    ${response}
+    ${content}=    Decode Response Content    ${response}
 
-    Check Response Has Attributes    ${content}    status    error
+    Check Response Content Has Attributes    ${content}    status    error
     Should Be Equal    ${content["status"]}    error
 
     ${error_payload}=    Set Variable    ${content["error"]}
-    Check Response Has Attributes    ${error_payload}    code    message    details
+    Check Response Content Has Attributes    ${error_payload}    code    message    details
     Should Be Equal As Integers    ${error_payload["code"]}    404
 
 
 *** Keywords ***
 Setup suite
     Create API Session    ${SESSION_ALIAS}    ${ENDPOINTS_API}
-    Log datetime information
+    Log Datetime Information
     Log    Starting test suite
 
 Teardown suite
-    Log datetime information
+    Log Datetime Information
     Log    Test suite completed
 
 Check Calculations Structure
     [Arguments]    ${calculations}
     FOR    ${calculation}    IN    @{calculations}
-        Check Response Has Attributes
+        Check Response Content Has Attributes
         ...    ${calculation}
         ...    calculation_id
         ...    application_slug

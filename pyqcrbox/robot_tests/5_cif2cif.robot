@@ -146,8 +146,8 @@ Upload Cif
     VAR    &{files}=    ${file_name}=${file_contents}
 
     ${response}=    Send API Request    POST    ${SESSION_ALIAS}    /datasets    201    files=${files}
-    ${payload}=    Check Response And Get Payload    ${response}
-    Check Response Has Attributes    ${payload}    datasets
+    ${payload}=    Check Response Structure And Get Payload    ${response}
+    Check Response Content Has Attributes    ${payload}    datasets
 
     RETURN    ${payload["datasets"]}
 
@@ -195,9 +195,9 @@ Get Calculation Status
     [Arguments]    ${calculation_id}
 
     ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /calculations/${calculation_id}    200
-    ${payload}=    Check Response And Get Payload    ${response}
+    ${payload}=    Check Response Structure And Get Payload    ${response}
 
-    Check Response Has Attributes    ${payload}    calculations
+    Check Response Content Has Attributes    ${payload}    calculations
     VAR    ${calculations}=    ${payload["calculations"]}
     ${n_calculations}=    Get Length    ${calculations}
     Should Be Equal As Integers    ${n_calculations}    1    "Multiple calculations retrieved, when only one requested"

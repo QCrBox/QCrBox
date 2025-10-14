@@ -40,8 +40,8 @@ ${TEST_DATASET_ID}          ${EMPTY}
 
 Check healthz returns health status
     ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /healthz    200
-    ${content}=    Get Response Content    ${response}
-    Check Response Has Attributes    ${content}    status    timestamp
+    ${content}=    Decode Response Content    ${response}
+    Check Response Content Has Attributes    ${content}    status    timestamp
     Should Be Equal    ${content["status"]}    ok
 
 #
@@ -50,9 +50,9 @@ Check healthz returns health status
 
 Check /applications returns list of registered applications
     ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /applications    200
-    ${payload}=    Check Response And Get Payload    ${response}
+    ${payload}=    Check Response Structure And Get Payload    ${response}
 
-    Check Response Has Attributes    ${payload}    applications
+    Check Response Content Has Attributes    ${payload}    applications
     ${applications}=    Set Variable    ${payload["applications"]}
 
     ${n_applications}=    Get Length    ${applications}
@@ -71,9 +71,9 @@ Check /datasets can upload a data file to a dataset
     ${files}=    Create Dictionary    ${TEST_CIF_FILE_NAME}=${file_contents}
 
     ${response}=    Send API Request    POST    ${SESSION_ALIAS}    /datasets    201    files=${files}
-    ${payload}=    Check Response And Get Payload    ${response}
+    ${payload}=    Check Response Structure And Get Payload    ${response}
 
-    Check Response Has Attributes    ${payload}    datasets    data_files
+    Check Response Content Has Attributes    ${payload}    datasets    data_files
     ${datasets}=    Set Variable    ${payload["datasets"]}
     ${n_datasets}=    Get Length    ${datasets}
     Should Be Equal As Integers
@@ -100,9 +100,9 @@ Check /datasets/id/append can add a new data file to a dataset
     ...    /datasets/${TEST_DATASET_ID}/append
     ...    201
     ...    files=${files}
-    ${payload}=    Check Response And Get Payload    ${response}
+    ${payload}=    Check Response Structure And Get Payload    ${response}
 
-    Check Response Has Attributes    ${payload}    datasets    data_files    appended_file
+    Check Response Content Has Attributes    ${payload}    datasets    data_files    appended_file
     ${datasets}=    Set Variable    ${payload["datasets"]}
     ${n_datasets}=    Get Length    ${datasets}
     Should Be Equal As Integers
@@ -122,9 +122,9 @@ Check /datasets/id/append can add a new data file to a dataset
 
 Check /datasets returns a list of datasets
     ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /datasets    200
-    ${payload}=    Check Response And Get Payload    ${response}
+    ${payload}=    Check Response Structure And Get Payload    ${response}
 
-    Check Response Has Attributes    ${payload}    datasets
+    Check Response Content Has Attributes    ${payload}    datasets
     ${datasets}=    Set Variable    ${payload["datasets"]}
     ${n_datasets}=    Get Length    ${datasets}
     Should Be True    ${n_datasets} > 0    "No datasets retrieved, even though at least one has been uploaded"
@@ -133,9 +133,9 @@ Check /datasets returns a list of datasets
 
 Check /datasets/id returns the correct dataset
     ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /datasets/${TEST_DATASET_ID}    200
-    ${payload}=    Check Response And Get Payload    ${response}
+    ${payload}=    Check Response Structure And Get Payload    ${response}
 
-    Check Response Has Attributes    ${payload}    datasets    data_files
+    Check Response Content Has Attributes    ${payload}    datasets    data_files
     ${datasets}=    Set Variable    ${payload["datasets"]}
     ${n_datasets}=    Get Length    ${datasets}
     Should Be Equal As Integers
@@ -150,8 +150,8 @@ Check that /data-files/id can remove a data file
     ${response}=    Send API Request    DELETE    ${SESSION_ALIAS}    /data-files/${TEST_JSON_FILE_ID}    204
 
     ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /datasets/${TEST_DATASET_ID}    200
-    ${payload}=    Check Response And Get Payload    ${response}
-    Check Response Has Attributes    ${payload}    datasets
+    ${payload}=    Check Response Structure And Get Payload    ${response}
+    Check Response Content Has Attributes    ${payload}    datasets
     ${dataset}=    Set Variable    ${payload["datasets"][0]}
     Log    ${dataset}
 
@@ -174,9 +174,9 @@ Check /datasets/id/download downloads the dataset
 
 Check /commands returns a list of commands
     ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /commands    200
-    ${payload}=    Check Response And Get Payload    ${response}
+    ${payload}=    Check Response Structure And Get Payload    ${response}
 
-    Check Response Has Attributes    ${payload}    commands
+    Check Response Content Has Attributes    ${payload}    commands
     ${commands}=    Set Variable    ${payload["commands"]}
     ${n_commands}=    Get Length    ${commands}
     Should Be True    ${n_commands} > 0    "No commands registered, which is unexpected"
@@ -187,9 +187,9 @@ Check /commands returns a list of commands
 
 Check /commands/id returns a command
     ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /commands/1    200
-    ${payload}=    Check Response And Get Payload    ${response}
+    ${payload}=    Check Response Structure And Get Payload    ${response}
 
-    Check Response Has Attributes    ${payload}    commands
+    Check Response Content Has Attributes    ${payload}    commands
     ${commands}=    Set Variable    ${payload["commands"]}
     ${n_commands}=    Get Length    ${commands}
     Should Be True    ${n_commands} == 1    "/commands/id returned multiple commands"
@@ -208,35 +208,35 @@ Check /datasets/id can delete a dataset
 
 Check /datasets/id returns 404 for deleted dataset
     ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /datasets/${TEST_DATASET_ID}    404
-    ${content}=    Get Response Content    ${response}
+    ${content}=    Decode Response Content    ${response}
 
-    Check Response Has Attributes    ${content}    status    error
+    Check Response Content Has Attributes    ${content}    status    error
     Should Be Equal    ${content["status"]}    error
 
     ${error_payload}=    Set Variable    ${content["error"]}
-    Check Response Has Attributes    ${error_payload}    code    message    details
+    Check Response Content Has Attributes    ${error_payload}    code    message    details
     Should Be Equal As Integers    ${error_payload["code"]}    404
 
 Check /datasets/id/download returns 404 for deleted dataset
     ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /datasets/${TEST_DATASET_ID}/download    404
-    ${content}=    Get Response Content    ${response}
+    ${content}=    Decode Response Content    ${response}
 
-    Check Response Has Attributes    ${content}    status    error
+    Check Response Content Has Attributes    ${content}    status    error
     Should Be Equal    ${content["status"]}    error
 
     ${error_payload}=    Set Variable    ${content["error"]}
-    Check Response Has Attributes    ${error_payload}    code    message    details
+    Check Response Content Has Attributes    ${error_payload}    code    message    details
     Should Be Equal As Integers    ${error_payload["code"]}    404
 
 
 *** Keywords ***
 Setup suite
     Create API Session    ${SESSION_ALIAS}    ${ENDPOINTS_API}
-    Log datetime information
+    Log Datetime Information
     Log    Starting test suite
 
 Teardown suite
-    Log datetime information
+    Log Datetime Information
     Log    Test suite completed
 
 Check Application Response Structure
@@ -244,7 +244,7 @@ Check Application Response Structure
 
     Log    ${application}
 
-    Check Response Has Attributes
+    Check Response Content Has Attributes
     ...    ${application}
     ...    name
     ...    slug
@@ -265,7 +265,7 @@ Check Command Response Structure
 
     Log    ${command}
 
-    Check Response Has Attributes
+    Check Response Content Has Attributes
     ...    ${command}
     ...    name
     ...    description
@@ -282,14 +282,14 @@ Check Command Response Structure
 Check Datasets Structure
     [Arguments]    @{datasets}
     FOR    ${dataset}    IN    @{datasets}
-        Check Response Has Attributes    ${dataset}    qcrbox_dataset_id    data_files
+        Check Response Content Has Attributes    ${dataset}    qcrbox_dataset_id    data_files
     END
 
 Check Interactive Sessions Structure
     [Arguments]    @{interactive_sessions}
 
     FOR    ${interactive_session}    IN    @{interactive_sessions}
-        Check Response Has Attributes
+        Check Response Content Has Attributes
         ...    ${interactive_session}
         ...    session_id
         ...    client_private_inbox

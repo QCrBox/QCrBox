@@ -48,11 +48,11 @@ Check /interactive-sessions can create an interactive session
     ...    /interactive-sessions
     ...    201
     ...    json_data=${request_body}
-    ${payload}=    Check Response And Get Payload    ${response}
+    ${payload}=    Check Response Structure And Get Payload    ${response}
 
     Sleep    1s    "Waiting for interactive session to be submitted to registry"
 
-    Check Response Has Attributes    ${payload}    interactive_session_id
+    Check Response Content Has Attributes    ${payload}    interactive_session_id
     Set Suite Variable    ${TEST_INTERACTIVE_SESSION_ID}    ${payload["interactive_session_id"]}
 
 Check that interactive session is still running
@@ -65,9 +65,9 @@ Check that interactive session is still running
 
 Check /interactive-sessions returns a list of sessions
     ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /interactive-sessions    200
-    ${payload}=    Check Response And Get Payload    ${response}
+    ${payload}=    Check Response Structure And Get Payload    ${response}
 
-    Check Response Has Attributes    ${payload}    interactive_sessions
+    Check Response Content Has Attributes    ${payload}    interactive_sessions
     ${interactive_sessions}=    Set Variable    ${payload["interactive_sessions"]}
     Check Interactive Sessions Structure    @{interactive_sessions}
 
@@ -95,15 +95,15 @@ Check /interactive-sessions/id can close an interactive session
    ...    ${SESSION_ALIAS}
    ...    /interactive-sessions/${TEST_INTERACTIVE_SESSION_ID}/close
    ...    200
-   ${payload}=    Check Response And Get Payload    ${response}
+   ${payload}=    Check Response Structure And Get Payload    ${response}
 
-   Check Response Has Attributes    ${payload}    interactive_sessions
+   Check Response Content Has Attributes    ${payload}    interactive_sessions
    ${interactive_sessions}=    Set Variable    ${payload["interactive_sessions"]}
    ${n_sessions}=    Get Length    ${interactive_sessions}
    Should Be Equal As Integers    ${n_sessions}    1    "Close interactive session should return the closed session"
 
    ${closed_session}=    Set Variable    ${interactive_sessions[0]}
-   Check Response Has Attributes    ${closed_session}    session_id    status    output_dataset_id    error_msg
+   Check Response Content Has Attributes    ${closed_session}    session_id    status    output_dataset_id    error_msg
    Should Be Equal    ${closed_session["session_id"]}    ${TEST_INTERACTIVE_SESSION_ID}
    Set Suite Variable    ${TEST_OUTPUT_DATSET_ID_1}    ${closed_session["output_dataset_id"]}
 
@@ -121,26 +121,26 @@ Check /interactive-sessions can open a new session after the last was closed
    ...    /interactive-sessions
    ...    201
    ...    json_data=${request_body}
-   ${invoke_payload}=    Check Response And Get Payload    ${response}
+   ${invoke_payload}=    Check Response Structure And Get Payload    ${response}
 
    Sleep    1s    "Waiting for interactive session to be registered and start"
 
-   Check Response Has Attributes    ${invoke_payload}    interactive_session_id
+   Check Response Content Has Attributes    ${invoke_payload}    interactive_session_id
 
    ${response}=    Send API Request
    ...    POST
    ...    ${SESSION_ALIAS}
    ...    /interactive-sessions/${invoke_payload['interactive_session_id']}/close
    ...    200
-   ${close_payload}=    Check Response And Get Payload    ${response}
+   ${close_payload}=    Check Response Structure And Get Payload    ${response}
 
-   Check Response Has Attributes    ${close_payload}    interactive_sessions
+   Check Response Content Has Attributes    ${close_payload}    interactive_sessions
    ${interactive_sessions}=    Set Variable    ${close_payload["interactive_sessions"]}
    ${n_sessions}=    Get Length    ${interactive_sessions}
    Should Be Equal As Integers    ${n_sessions}    1    "Close interactive session should return the closed session"
 
    ${closed_session}=    Set Variable    ${interactive_sessions[0]}
-   Check Response Has Attributes    ${closed_session}    session_id    status    output_dataset_id    error_msg
+   Check Response Content Has Attributes    ${closed_session}    session_id    status    output_dataset_id    error_msg
    Should Be Equal    ${closed_session["session_id"]}    ${invoke_payload['interactive_session_id']}
    Set Suite Variable    ${TEST_OUTPUT_DATSET_ID_2}    ${closed_session["output_dataset_id"]}
 
@@ -157,9 +157,9 @@ Check /interactive-sessions fails for incorrect application
    ...    /interactive-sessions
    ...    400
    ...    json_data=${request_body}
-   ${content}=    Get Response Content    ${response}
+   ${content}=    Decode Response Content    ${response}
 
-   Check Response Has Attributes    ${content}    status    error
+   Check Response Content Has Attributes    ${content}    status    error
    Should Be Equal    ${content["status"]}    error
 
 Check /interactive-sessions/id returns interactive session
@@ -171,9 +171,9 @@ Check /interactive-sessions/id returns interactive session
    ...    ${SESSION_ALIAS}
    ...    /interactive-sessions/${TEST_INTERACTIVE_SESSION_ID}
    ...    200
-   ${payload}=    Check Response And Get Payload    ${response}
+   ${payload}=    Check Response Structure And Get Payload    ${response}
 
-   Check Response Has Attributes    ${payload}    interactive_sessions
+   Check Response Content Has Attributes    ${payload}    interactive_sessions
    ${interactive_sessions}=    Set Variable    ${payload["interactive_sessions"]}
    ${n_sessions}=    Get Length    ${interactive_sessions}
    Should Be Equal As Integers
@@ -185,13 +185,13 @@ Check /interactive-sessions/id returns interactive session
 
 Check /interactive-sessions/id returns 404 for incorrect id
    ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /interactive-sessions/999999    404
-   ${content}=    Get Response Content    ${response}
+   ${content}=    Decode Response Content    ${response}
 
-   Check Response Has Attributes    ${content}    status    error
+   Check Response Content Has Attributes    ${content}    status    error
    Should Be Equal    ${content["status"]}    error
 
    ${error_payload}=    Set Variable    ${content["error"]}
-   Check Response Has Attributes    ${error_payload}    code    message    details
+   Check Response Content Has Attributes    ${error_payload}    code    message    details
    Should Be Equal As Integers    ${error_payload["code"]}    404
 
 Check /commands can open an interactive session instead of /interactive-sessions
@@ -209,26 +209,26 @@ Check /commands can open an interactive session instead of /interactive-sessions
    ...    /commands
    ...    201
    ...    json_data=${request_body}
-   ${invoke_payload}=    Check Response And Get Payload    ${response}
+   ${invoke_payload}=    Check Response Structure And Get Payload    ${response}
 
    Sleep    1s    "Waiting for interactive session to be registered and start"
 
-   Check Response Has Attributes    ${invoke_payload}    calculation_id
+   Check Response Content Has Attributes    ${invoke_payload}    calculation_id
 
    ${response}=    Send API Request
    ...    POST
    ...    ${SESSION_ALIAS}
    ...    /interactive-sessions/${invoke_payload['calculation_id']}/close
    ...    200
-   ${close_payload}=    Check Response And Get Payload    ${response}
+   ${close_payload}=    Check Response Structure And Get Payload    ${response}
 
-   Check Response Has Attributes    ${close_payload}    interactive_sessions
+   Check Response Content Has Attributes    ${close_payload}    interactive_sessions
    ${interactive_sessions}=    Set Variable    ${close_payload["interactive_sessions"]}
    ${n_sessions}=    Get Length    ${interactive_sessions}
    Should Be Equal As Integers    ${n_sessions}    1    "Close interactive session should return the closed session"
 
    ${closed_session}=    Set Variable    ${interactive_sessions[0]}
-   Check Response Has Attributes    ${closed_session}    session_id    status    output_dataset_id    error_msg
+   Check Response Content Has Attributes    ${closed_session}    session_id    status    output_dataset_id    error_msg
    Should Be Equal    ${closed_session["session_id"]}    ${invoke_payload['calculation_id']}
 
 
@@ -237,9 +237,9 @@ Get Calculation Status
     [Arguments]    ${calculation_id}
 
     ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /calculations/${calculation_id}    200
-    ${payload}=    Check Response And Get Payload    ${response}
+    ${payload}=    Check Response Structure And Get Payload    ${response}
 
-    Check Response Has Attributes    ${payload}    calculations
+    Check Response Content Has Attributes    ${payload}    calculations
     ${calculations}=    Set Variable    ${payload["calculations"]}
     ${n_calculations}=    Get Length    ${calculations}
     Should Be Equal As Integers    ${n_calculations}    1    "Multiple calculations retrieved, when only one requested"
@@ -252,7 +252,7 @@ Get Calculation Status
 Check Calculations Structure
     [Arguments]    ${calculations}
     FOR    ${calculation}    IN    @{calculations}
-        Check Response Has Attributes
+        Check Response Content Has Attributes
         ...    ${calculation}
         ...    calculation_id
         ...    application_slug
@@ -265,12 +265,12 @@ Check Calculations Structure
 
 Setup suite
     Create API Session    ${SESSION_ALIAS}    ${ENDPOINTS_API}
-    Log datetime information
+    Log Datetime Information
     Upload Test Dataset
     Log    Starting test suite
 
 Teardown suite
-    Log datetime information
+    Log Datetime Information
     Delete Test Dataset
     Log    Test suite completed
 
@@ -279,9 +279,9 @@ Upload Test Dataset
     ${files}=    Create Dictionary    ${TEST_CIF_FILE_NAME}=${file_contents}
 
     ${response}=    Send API Request    POST    ${SESSION_ALIAS}    /datasets    201    files=${files}
-    ${payload}=    Check Response And Get Payload    ${response}
+    ${payload}=    Check Response Structure And Get Payload    ${response}
 
-    Check Response Has Attributes    ${payload}    datasets
+    Check Response Content Has Attributes    ${payload}    datasets
     ${datasets}=    Set Variable    ${payload["datasets"]}
     ${n_datasets}=    Get Length    ${datasets}
     Should Be Equal As Integers
@@ -306,7 +306,7 @@ Check Interactive Sessions Structure
     [Arguments]    @{interactive_sessions}
 
     FOR    ${interactive_session}    IN    @{interactive_sessions}
-        Check Response Has Attributes
+        Check Response Content Has Attributes
         ...    ${interactive_session}
         ...    session_id
         ...    client_private_inbox
