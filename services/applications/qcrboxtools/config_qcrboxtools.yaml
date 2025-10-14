@@ -9,7 +9,7 @@ url: "https://github.com/QCrBox/QCrBoxTools"
 
 commands:
   - name: "replace_structure_from_cif"
-    description: "Replace the structure (atoms/adps) in a CIF file with the structure from another CIF file"
+    description: "Replace the structure (atoms/ADPs) in a CIF file with the structure from another CIF file."
     implemented_as: "python_callable"
     import_path: "configure_qcrboxtools"
     parameters:
@@ -25,10 +25,10 @@ commands:
       - name: "structure_cif"
         dtype: "QCrBox.data_file"
         default_value: None
-        description: "Path to the CIF file containing the structure to be inserted"
+        description: "CIF file containing the structure to be used for replacing the structure in the input CIF file"
       - name: "output_cif_name"
         dtype: "QCrBox.output_cif"
-        description: "Name of the output CIF file after replacing the structure"
+        description: "Name of the output CIF file that is exported back into QCrBox."
         required_entry_sets: ["molecular_structure"]
         invalidated_entries: [
           "_geom.*", "_refln.*calc.*", "_shelx.*", "_iucr.refine_instructions_details",
@@ -37,7 +37,7 @@ commands:
         ]
 
   - name: "iso2aniso"
-    description: "Convert isotropic ADPs to anisotropic ADPs in a CIF file"
+    description: "Convert isotropic ADPs of non-hydrogen atoms in a CIF file to anisotropic ADPs."
     implemented_as: "python_callable"
     import_path: "configure_qcrboxtools"
     parameters:
@@ -57,7 +57,7 @@ commands:
         merge_su: False
       - name: "output_cif_name"
         dtype: "QCrBox.output_cif"
-        description: "Path to save the CIF file to after converting"
+        description: "Name to use for exporting the CIF file back to QCrBox after converting"
         required_entries: [
           "_atom_site_aniso.label", "_atom_site_aniso.u_11", "_atom_site_aniso.u_22",
           "_atom_site_aniso.u_33", "_atom_site_aniso.u_12", "_atom_site_aniso.u_13",

@@ -12,7 +12,7 @@ commands:
 
   - name: "interactive_session"
     implemented_as: "interactive_session"
-    description: "Start Olex2 in interactive mode; this can be used to solve, refine and finish small-molecule crystal structures."
+    description: "Start Olex2 in interactive mode; this can be used to solve, refine and finish small-molecule crystal structures. If aspherical form factors are embedded within the CIF file, these are automatically exported into a tscb file in the same folder."
     parameters:
       - name: "input_file"
         dtype: "QCrBox.cif_data_file"
@@ -23,7 +23,7 @@ commands:
         custom_categories: [ "iucr", "shelx" ]
       - name: "output_cif_name"
         dtype: "QCrBox.output_cif"
-        description: "Name of the output CIF"
+        description: "Name of the output CIF to be used to export the structure from Olex2 back to QCrBox"
         required_entries: []
         optional_entries: []
         required_entry_sets: ["olex2_only_interactive_output", "olex_structure_output"]
@@ -48,7 +48,7 @@ commands:
         description: "Finalise and return the CIF file to QCrBox"
   - name: "Refine"
     implemented_as: "python_callable"
-    description: "Refine a CIF file using the IAM method."
+    description: "Refine a CIF file. If aspherical form factors are present within the CIF file, these are used automatically, otherwise the default IAM atomic form factors are used."
     import_path: "olex2_glue"
     callable_name: "refine"
     parameters:
@@ -60,7 +60,7 @@ commands:
         custom_categories: ["iucr", "shelx"]
       - name: "output_cif_name"
         dtype: "QCrBox.output_cif"
-        description: "Path to save the refined CIF file to."
+        description: "Name to use for exporting the refined CIF file back to QCrBox."
         required_entry_sets: ["olex_structure_output"]
         custom_categories: ["iucr", "shelx"]
         invalidated_entries: ["_shelx_.*"]
@@ -87,7 +87,7 @@ commands:
         custom_categories: ["iucr", "shelx"]
       - name: "output_cif_name"
         dtype: "QCrBox.output_cif"
-        description: "Path to save the CIF file to after running the commands."
+        description: "Name to use for exporting the CIF file back to QCrBox after running the commands."
         optional_entry_sets: ["olex_structure_output"]
         custom_categories: ["iucr", "shelx"]
         invalidated_entries: ["_shelx_.*"]

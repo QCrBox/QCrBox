@@ -10,7 +10,7 @@ doi: "10.1107/S2052252522001385"
 
 commands:
   - name: "atom_form_fact_gpaw"
-    description: "Calculate the atomic form factors for a given structure using GPAW and XHARPy"
+    description: "Calculate the atomic form factors for a given structure using GPAW and XHARPy. These will be exported back as a table within the CIF file."
     implemented_as: "python_callable"
     import_path: "configure_xharpy_gpaw"
     parameters:
@@ -22,16 +22,16 @@ commands:
         merge_su: True
       - name: "output_cif_name"
         dtype: "QCrBox.output_cif"
-        description: "Name to use for the output TSC file to after calculating the atomic form factors"
+        description: "Name of the CIF file exported back to QCrBox containing the calculated atomic form factors"
         required_entry_sets: ["aspheric_form_factors"]
         invalidated_entries: [".*refine.*", "_iucr.*"]
       - name: "functional"
         dtype: "str"
-        description: "The DFT functional to use for the GPAW calculation"
+        description: "The DFT functional to use for the GPAW calculation. Sensible options are 'SCAN' or 'PBE'."
       - name: "gridspacing"
         dtype: "float"
         default_value: 0.16
-        description: "The grid spacing in Angstrom to use for the GPAW calculation"
+        description: "The grid spacing in Angstrom to use for the GPAW calculation. Smaller values indicate a larger basis. So improved atomic form factors at a longer computation time."
 
   - name: "ha_refine"
     description: "Do a Hirshfeld atom refinement using XHARPy and GPAW"
@@ -48,7 +48,7 @@ commands:
         custom_categories: ["shelx"]
       - name: "output_cif_name"
         dtype: "QCrBox.output_cif"
-        description: "Path to save the CIF file to after refining the structure"
+        description: "Name to use for exporting the CIF file back to QCrBox after refining the structure"
         required_entry_sets: ["structure", "atomic_information"]
         optional_entry_sets: ["geometry_lookup"]
         invalidated_entries: [
@@ -59,11 +59,11 @@ commands:
         custom_categories: ["shelx"]
       - name: "functional"
         dtype: "str"
-        description: "The DFT functional to use for the GPAW calculation"
+        description: "The DFT functional to use for the GPAW calculation. Sensible options are 'SCAN' or 'PBE'."
       - name: "gridspacing"
         dtype: "float"
         default_value: 0.16
-        description: "The grid spacing in Angstrom to use for the GPAW calculation"
+        description: "The grid spacing in Angstrom to use for the GPAW calculation. Smaller values indicate a larger basis. So improved atomic form factors at a longer computation time."
 
 
 cif_entry_sets:

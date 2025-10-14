@@ -11,7 +11,7 @@ doi: "10.1107/S0108767306053748"
 commands:
   - name: "interactive_session"
     implemented_as: "interactive_session"
-    description: "Launch an interactive session for using MoProSuite"
+    description: "Launch an interactive session of MoProSuite. The input cif file is used to prepeare a MoPro .par file. As such there is a loading time before MoPro opens. At the end the newest CIF file is exported back to QCrBox. If there is no CIF file, one is created from the newest par file"
     parameters:
       - name: "input_cif"
         dtype: "QCrBox.cif_data_file"
@@ -20,7 +20,7 @@ commands:
         merge_su: True
       - name: "output_cif_name"
         dtype: "QCrBox.output_cif"
-        description: "Name of the output CIF"
+        description: "Name of the output CIF file to be exported back into QCrBox after the interactive session"
         required_entries: []
         optional_entries: []
         required_entry_sets: ["output"]
@@ -42,7 +42,7 @@ commands:
   - name: "run_inp_file"
     implemented_as: "python_callable"
     import_path: "configure_mopro"
-    description: "Run MoProSuite to process an INP file"
+    description: "Run MoPro non-interactively using a set of provided files"
     parameters:
       - name: "input_cif"
         dtype: "QCrBox.cif_data_file"
@@ -51,28 +51,28 @@ commands:
         description: "Input CIF file"
       - name: "output_cif_name"
         dtype: "QCrBox.output_cif"
-        description: "Name of the output CIF"
+        description: "Name of the output CIF file to be exported back into QCrBox after the interactive session"
         required_entries: []
         optional_entries: []
         required_entry_sets: ["output"]
         invalidated_entries: ["_refine_.*", "_computing_.*", "_geom_.*", "_atom_rho_.*", "_atom_local_axes_.*"]
       - name: "inp_file"
         dtype: "QCrBox.data_file"
-        description: "The MoPro input file"
+        description: "The MoPro input file. HKL and PAR file entries will be overwritten from the provided CIF file"
       - name: "constraint_file"
         dtype: "QCrBox.data_file"
-        description: "The MoPro constraints file"
+        description: "The MoPro constraints file. Use an empty file if no constraints are needed"
       - name: "restraint_file"
         dtype: "QCrBox.data_file"
-        description: "The MoPro restraints file"
+        description: "The MoPro restraints file. Use an empty file if no restraints are needed"
       - name: "table_type"
         dtype: "str"
         default_value: "MoPro v24"
-        description: "to be added"
+        description: "The table file to be used. Most of the times the default is sensible. Alternative: Cform "
       - name: "wavefunction_type"
         dtype: "str"
         default_value: "Su Coppens"
-        description: "to be added"
+        description: "The wavefunction to be used for the atomic densities. 'Su Coppens' is recommended, 'Clementi Roetti' is the alternative."
 
 
 cif_entry_sets:
