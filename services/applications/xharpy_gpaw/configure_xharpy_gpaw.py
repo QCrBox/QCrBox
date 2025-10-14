@@ -4,7 +4,6 @@ from pathlib import Path
 from iotbx.cif.model import cif
 from pyqcrbox import sql_models
 from pyqcrbox.registry.client import QCrBoxClient
-
 from qcrboxtools.cif.file_converter.hkl import cif2hkl4
 from qcrboxtools.cif.file_converter.tsc import read_tsc_file
 from qcrboxtools.cif.read import read_cif_as_unified
@@ -34,6 +33,8 @@ def atom_form_fact_gpaw(input_cif, output_cif_name, functional, gridspacing):
             # "--kpoints", Param("kpoints"),
             "--gridspacing",
             str(gridspacing),
+            "--resolution",
+            "cif",
             "--auto_default",
         ]
     )
