@@ -52,18 +52,20 @@ At any time you can press Ctrl+C to abort.
 Created scaffolding for new application in '/home/user/QCrBox/services/applications/dummy_gui_tutorial'.
 ```
 
+Note that when a GUI application container is created, a `dummy_gui.py` file is also copied over as an exemplar application, but we'll be replacing that in the next step.
+
 For the purposes of this tutorial, we'll also need to obtain two extra files, so download the following:
 
-- [`dummy_gui.py`](./dummy_gui.py){:download}: This represents the GUI application we want to run within an interactive session. It's a simple Python program that takes an input CIF file and displays a bsic dialogue box with a selectable button. When the button is clicked, the program closes.
+- [`dummy_gui.py`](./dummy_gui.py){:download}: This represents the GUI application we want to run within an interactive session. It's a simple Python program that takes an input CIF file and displays a basic dialogue box with a selectable button. When the button is clicked, the program closes.
 - [`dummy_gui_commands.py`](./dummy_gui_commands.py){:download}: This is a small support module that in this case contains a single function used by QCrBox for when the GUI program is closed, to prepare the output CIF file that is expected, and return the output filename from the function. In this case, for tutorial purposes it simply creates an output file with an arbitrary string within it and returns that, but in a typical application this would be the output CIF file saved by the application.
 
 Ensure both of these files are placed in the `dummy_gui_tutorial` directory.
 
-As a reminder, when invoked, a QCrBox command goes through three states:
+As a reminder, when invoked, a QCrBox interactive command goes through three states:
 
-  - `prepare` - to set up the application and stage in the input files (e.g. CIF file) to be processed by the application
-  - `run` - to actually run the application until closure, controlled by the user interactively in this case
-  - `finalise` - to do any last minute post-processing and ensure an output CIF file is ready to be staged out of the application back to QCrBox
+- `prepare` - to set up the application and stage in the input files (e.g. CIF file) to be processed by the application
+- `run` - to actually run the application until closure, controlled by the user interactively in this case
+- `finalise` - to do any last minute post-processing and ensure an output CIF file is ready to be staged out of the application back to QCrBox
 
 It is during the `finalise` state that our function in `dummy_gui_commands.py` is called.
 
@@ -106,7 +108,7 @@ qcrbox_yaml_spec_version: "0.1"
 
 In this case, we define a single command which will use an `interactive_session`. When this command is invoked, a QCrBox interactive session will create a VNC browser window for the user to interact with the application. This command will take a single input, a `QCrBox.cif_data_file`.
 
-In order for QCrBox to know what to do to during the `run` state, we need to specify how to run the application within the container. We define a `run` step as part of the command's `interactive_lifecycle`. Here, we indicate that this a `cli_command` and the command to run is `python /opt/qcrbox/dummy_gui.py {input_file}`. Note that we need to specify `/opt/qcrbox/` before our script name, and that `{input_file}` will be substituted with the actual input file name at runtime as specified in the `input_file` input parameter.
+In order for QCrBox to know what to do to during the `run` state for an interactive command, we need to specify how to run the application within the container. We define a `run` step as part of the command's `interactive_lifecycle`. Here, we indicate that this a `cli_command` and the command to run is `python /opt/qcrbox/dummy_gui.py {input_file}`. Note that we need to specify `/opt/qcrbox/` before our script name, and that `{input_file}` will be substituted with the actual input file name at runtime as specified in the `input_file` input parameter. Again, for clarity, we can only specify `interactive_lifecycle` steps for interactive commands, not non-interactive ones which only have a `run` step.
 
 Similarly, we also need to specify what will happen when the command reaches its `finalise` step, when the application is completed. In this case, we specify a `python_callable` function `finalise_interactive` which is held in out `dummy_gui_commands` Python script. We also pass in the `input_file` as before.
 
@@ -157,7 +159,7 @@ The `.env.dev` file in the repository root directory contains a number of system
 QCRBOX_DUMMY_GUI_TUTORIAL_PORT=12010
 ```
 
-Note that the `DUMMY_GUI_TUTORIAL` part of the variable name needs to exactly match the uppercase form our our application we created.
+Note that the `DUMMY_GUI_TUTORIAL` part of the variable name needs to exactly match the uppercase form our our application we created. You can check the `environment` section in the container's generated `docker-compose.*.run.yml` file to see what the variable is named.
 
 ## Building the container
 
