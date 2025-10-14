@@ -6,7 +6,7 @@ SHELL ["/bin/bash", "-c"]
 USER root
 
 RUN apt-get update -y && \
-    apt-get install -y --fix-missing --no-install-recommends libgtk2.0-0 libglu1-mesa openmpi-bin && \
+    apt-get install -y --fix-missing --no-install-recommends libgtk2.0-0 libglu1-mesa openmpi-bin libncurses5 && \
     rm -rf /var/lib/apt/lists
 
 # Ensure the locale en_GB is available (otherwise Olex2
@@ -20,23 +20,29 @@ RUN cd /lib/x86_64-linux-gnu/ && \
 
 # create folder and then work as user to avoid a RUN chown
 
-RUN mkdir /opt/olex2 && \
-    chown -R ${QCRBOX_USER}:${QCRBOX_GROUP} /opt/olex2
+COPY ./olex2_files/olex2-linux64.zip /opt/olex2-linux64.zip
 
-COPY --chown=${QCRBOX_USER}:${QCRBOX_GROUP} ./olex2_files/olex2-linux64_hl.zip /opt/olex2
+RUN cd /opt && \
+    unzip -o olex2-linux64.zip && \
+    rm /opt/olex2-linux64.zip && \
+    chown -R ${QCRBOX_USER}:${QCRBOX_GROUP} /opt/olex2 
+
+
+# COPY --chown=${QCRBOX_USER}:${QCRBOX_GROUP} ./olex2_files/olex2-linux64_hl.zip /opt/olex2
 
 USER ${QCRBOX_USER}
 
 RUN cd /opt &&  \
-    unzip -o olex2/olex2-linux64_hl.zip && \
-    rm olex2/olex2-linux64_hl.zip && \
+    cp /opt/olex2/start /opt/olex2/startc && \   
+    #rm olex2-linux64_hl.zip && \
     # chmod +x olex2/olex2c-linux64 && \
     chmod +x olex2/startc && \
     ln -s /opt/olex2/lib/libssl.so.1.1 /opt/olex2/lib/libssl.so.10 && \
     ln -s /opt/olex2/lib/libcrypto.so.1.1 /opt/olex2/lib/libcrypto.so.10
 
 RUN sed -i 's|^#! /bin/sh|#! /bin/bash|' /opt/olex2/start && \
-    sed -i 's|^./olex2 "$@" &$|./olex2 "$@"|' /opt/olex2/start
+    sed -i 's|^./olex2 "$@" &$|./olex2 "$@"|' /opt/olex2/start && \
+    sed -i 's|./olex2 "$@"|./olex2c "$@" server 8899|' /opt/olex2/startc
 
 RUN mkdir -p ${QCRBOX_HOME}/.local/share && \
     mkdir -p ${QCRBOX_HOME}/.olex2/data/ && \
@@ -51,7 +57,7 @@ ENV OLEX2_DATADIR_STATIC=true
 COPY ./.idesktop ${QCRBOX_HOME}/.idesktop
 
 COPY ./configure_olex2.py ${QCRBOX_HOME}/
-COPY ./olex2_glue_cli.py ${QCRBOX_HOME}
+COPY ./olex2_glue.py ${QCRBOX_HOME}
 COPY ./config_olex2.yaml ${QCRBOX_HOME}
 
 

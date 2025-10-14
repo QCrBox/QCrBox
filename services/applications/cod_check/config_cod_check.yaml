@@ -4,37 +4,14 @@
 name: "COD Check"
 slug: "cod_check"
 version: "0.0.1"
-description: "Can be used to check whether there is a similar structure in the crystallographic open database and output similar structures."
+description: "A tool to check and merge Crystallography Open Database (COD) entries into CIF files."
 url: "https://my.official.module.url"
 
 commands:
-  - name: "get_number_fitting_cod_entries"
-    description: "Get the number of fitting COD that fit the unit cell parameters and elements."
-    implemented_as: "python_callable"
-    import_path: "configure_cod_check"
-    callable_name: "qcb_get_number_fitting_cod_entries"
-    parameters:
-      - name: "input_cif"
-        description: "Path to the input CIF file."
-        dtype: "QCrBox.cif_data_file"
-        required_entries: [
-          "_cell_length_a", "_cell_length_b", "_cell_length_c",
-          "_cell_angle_alpha", "_cell_angle_beta", "_cell_angle_gamma",
-          "_chemical_formula_sum"
-        ]
-      - name: "cellpar_deviation_perc"
-        description: "The percentage deviation allowed for the unit cell parameters."
-        dtype: "float"
-        default_value: 2.0
-      - name: "listed_elements_only"
-        description: "If True, only the elements listed in the CIF file can be present, otherwise given elements must be present but additional elements are possible."
-        dtype: "bool"
-        default_value: false
-
   - name: "merge_closest_cod_entry"
     implemented_as: "python_callable"
     import_path: "configure_cod_check"
-    description: "Merge the closest COD entry into the CIF file"
+    description: "Search the Crystallography Open Database (COD) for entries matching the structure in the input CIF file and merge the closest matching entry into the CIF file. If no matching entry is found, the input CIF file is returned unchanged."
     parameters:
       - name: "input_cif"
         description: "Path to the input CIF file."
@@ -63,11 +40,11 @@ commands:
           "_atom_site.*", "_geom.*", ".*refine.*", "_iucr.*", "_shelx.*"
         ]
       - name: "cellpar_deviation_perc"
-        description: "The percentage deviation allowed for the unit cell parameters."
+        description: "The percentage deviation allowed for the unit cell parameters for the structure to still be considered a match."
         dtype: "float"
         default_value: 2.0
       - name: "listed_elements_only"
-        description: "If True, only the elements listed in the CIF file can be present, otherwise given elements must be present but additional elements are possible."
+        description: "If True, only the elements listed in the chemical formula within the CIF file can be present, otherwise given elements must be present but additional elements are possible."
         dtype: "bool"
         default_value: false
 

@@ -12,15 +12,22 @@ commands:
 
   - name: "interactive_session"
     implemented_as: "interactive_session"
-    description: "Start Olex2 in interactive mode; this can be used to solve, refine and finish small-molecule crystal structures."
+    description: "Start Olex2 in interactive mode; this can be used to solve, refine and finish small-molecule crystal structures. If aspherical form factors are embedded within the CIF file, these are automatically exported into a tscb file in the same folder."
     parameters:
       - name: "input_file"
         dtype: "QCrBox.cif_data_file"
         description: "The CIF file to open in Olex2"
         required_entry_sets: [ "cell_data", "diffraction_data" ]
-        optional_entry_sets: [ "atom_data" ]
+        optional_entry_sets: [ "atom_data", "aspheric_form_factors" ]
         merge_su: Yes
         custom_categories: [ "iucr", "shelx" ]
+      - name: "output_cif_name"
+        dtype: "QCrBox.output_cif"
+        description: "Name of the output CIF to be used to export the structure from Olex2 back to QCrBox"
+        required_entries: []
+        optional_entries: []
+        required_entry_sets: ["olex2_only_interactive_output", "olex_structure_output"]
+        custom_categories: ["iucr", "shelx"]
     interactive_lifecycle:
       prepare:
         implemented_as: "python_callable"
@@ -37,21 +44,71 @@ commands:
         implemented_as: "python_callable"
         import_path: "configure_olex2"
         callable_name: "finalise__interactive"
-        used_basecommand_parameters: ["input_file"]
+        used_basecommand_parameters: ["input_file", "output_cif_name"]
         description: "Finalise and return the CIF file to QCrBox"
+  - name: "Refine"
+    implemented_as: "python_callable"
+    description: "Refine a CIF file. If aspherical form factors are present within the CIF file, these are used automatically, otherwise the default IAM atomic form factors are used."
+    import_path: "olex2_glue"
+    callable_name: "refine"
+    parameters:
+      - name: "input_cif"
+        dtype: "QCrBox.cif_data_file"
+        description: "Path to the CIF file to refine."
+        required_entry_sets: ["cell_data", "diffraction_data", "atom_data"]
+        merge_su: Yes
+        custom_categories: ["iucr", "shelx"]
+      - name: "output_cif_name"
+        dtype: "QCrBox.output_cif"
+        description: "Name to use for exporting the refined CIF file back to QCrBox."
+        required_entry_sets: ["olex_structure_output"]
+        custom_categories: ["iucr", "shelx"]
+        invalidated_entries: ["_shelx_.*"]
+      - name: "ls_cycles"
+        dtype: int
+        default_value: 5
+        description: "Number of least squares cycles to run."
+      - name: "weight_cycles"
+        dtype: int
+        default_value: 5
+        description: "Number of weight cycles to run. Each weight cycle consists of the full number of least squares cycles."
+  - name: "run_commands"
+    implemented_as: "python_callable"
+    description: "Run a series of Olex2 commands from a text file. Will always return the CIF file, independent of whether the commands actually produce a new CIF file"
+    import_path: "olex2_glue"
+    callable_name: "run_commands"
+    parameters:
+      - name: "input_cif"
+        dtype: "QCrBox.cif_data_file"
+        description: "Path to the CIF file to run the commands on."
+        required_entry_sets: ["cell_data", "diffraction_data", "atom_data"]
+        optional_entry_sets: ["all_olex_optional"]
+        merge_su: Yes
+        custom_categories: ["iucr", "shelx"]
+      - name: "output_cif_name"
+        dtype: "QCrBox.output_cif"
+        description: "Name to use for exporting the CIF file back to QCrBox after running the commands."
+        optional_entry_sets: ["olex_structure_output"]
+        custom_categories: ["iucr", "shelx"]
+        invalidated_entries: ["_shelx_.*"]
+      - name: "cmd_file"
+        dtype: "QCrBox.data_file"
+        description: "Path to the text file containing the Olex2 commands to run."
 
 cif_entry_sets:
   - name: "cell_data"
     required : [
       "_space_group_IT_number",
-      "_space_group_symop_id",
       "_space_group_symop_operation_xyz",
       "_cell_length_a",
       "_cell_length_b",
       "_cell_length_c",
       "_cell_angle_alpha",
       "_cell_angle_beta",
-      "_cell_angle_gamma",
+      "_cell_angle_gamma"
+    ]
+    optional : [      
+      "_space_group_symop_id",
       "_cell_measurement_temperature"
     ]
   - name: "diffraction_data"
@@ -96,6 +153,19 @@ cif_entry_sets:
       "_atom_site_aniso_U_23",
       "_iucr_refine_instructions_details",
       "_shelx_res_file"
+    ]
+  - name: "aspheric_form_factors"
+    required: [
+      "_aspheric_ffs.source",
+      "_aspheric_ffs_partitioning.name",
+      "_aspheric_ffs_partitioning.software",
+      "_wfn_moiety.asu_atom_site_label",
+      "_wfn_moiety.aff_index",
+      "_aspheric_ff.index_h",
+      "_aspheric_ff.index_k",
+      "_aspheric_ff.index_l",
+      "_aspheric_ff.form_factor_real",
+      "_aspheric_ff.form_factor_imag",
     ]
   - name: all_olex_optional
     optional : [
@@ -355,5 +425,7 @@ cif_entry_sets:
     optional: [
       "_olex2_refine_details"
     ]
+
+
 
 qcrbox_yaml_spec_version: "0.1"

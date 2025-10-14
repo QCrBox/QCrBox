@@ -1,17 +1,17 @@
 import os
 import re
+import shutil
 import subprocess
 from pathlib import Path, PureWindowsPath
 
-from qcrboxtools.cif.cif2cif import cif_file_merge_to_unified_by_yml, cif_file_to_specific_by_yml, cif_file_to_unified
+from pyqcrbox import sql_models
+from pyqcrbox.registry.client import QCrBoxClient
+from qcrboxtools.cif.cif2cif import cif_file_to_unified
 from qcrboxtools.cif.file_converter.hkl import cif2hkl4
 from qcrboxtools.robots.mopro import MoProImportRobot, MoProInpFile, MoProRobot
 from qcrboxtools.util.wine import WinePathHelper
 
-from pyqcrbox import sql_models
-from pyqcrbox.registry.client import QCrBoxClient
-
-YAML_PATH = "./config_mopro.yaml"
+YAML_PATH = Path(__file__).parent / "config_mopro.yaml"
 
 LIBMOPRO_PATH = PureWindowsPath(os.environ["MOPRO_LIB_PATH"])
 MOPRO_EXE_PATH = PureWindowsPath(os.environ["MOPRO_PATH"])
@@ -19,7 +19,7 @@ IMPORT_MOPRO_EXE_PATH = PureWindowsPath(os.environ["IMOPRO_PATH"])
 MOPRO_ROAMING_DIR = Path(os.environ["MOPRO_ROAMING_PROFILE_DIR"])
 
 
-def __run_interactive(input_cif):
+def __run_interactive(input_cif, output_cif_name):
     input_cif_path = Path(input_cif)
     work_dir = input_cif_path.parent
 
@@ -30,87 +30,97 @@ def __run_interactive(input_cif):
     imopro = MoProImportRobot(executable_path=imopro_unix_path)
     imopro.cif2par(input_cif_path)
 
-    mopro_gui_path = os.environ["MOPRO_GUI_PATH"]
-
-    command = ["wine", str(mopro_gui_path)]
-
     # write hkl
     unified_cif_path = work_dir / "unified_for_hkl.cif"
     cif_file_to_unified(input_cif_path, unified_cif_path)
     cif2hkl4(unified_cif_path, 0, input_cif_path.with_suffix(".hkl"))
     unified_cif_path.unlink()
 
+    mopro_gui_path = os.environ["MOPRO_GUI_PATH"]
+    command = ["wine", str(mopro_gui_path)]
+
     subprocess.call(command)
 
 
-def non_final_cif(filename):
-    if str(filename.name).lower().endswith("hkl.cif"):
-        return True
-    excluded_cif = ("output.cif", "work.cif", "input.cif")
-    return filename.name in excluded_cif
-
-
-def __finalise_interactive(input_cif):
+def __finalise_interactive(input_cif, output_cif_name):
     input_cif_path = Path(input_cif)
     work_folder = input_cif_path.parent
     try:
-        cif_paths = list(work_folder.glob("*.CIF")) + list(work_folder.glob("*.cif"))
-        newest_cif_path = next(
-            reversed(
-                sorted(
-                    (file_path for file_path in cif_paths if not non_final_cif(file_path)),
-                    key=os.path.getmtime,
-                )
-            )
+        return write_output_cif(work_folder, output_cif_name)
+    except FileNotFoundError:
+        generate_cif_fcf(work_folder)
+    return write_output_cif(work_folder, output_cif_name)
+
+
+def generate_cif_fcf(work_folder):
+    path_helper = WinePathHelper()
+    newest_inp_file = find_newest_file_with_extension(work_folder, ".inp", case_sensitive=False)
+    inp_file = MoProInpFile.from_file(newest_inp_file)
+    newest_par_file = find_newest_file_with_extension(work_folder, ".par", case_sensitive=False)
+    inp_file.files["PARA"] = path_helper.get_windows_path(newest_par_file)
+    inp_file.body = "\nWRIT CIFM\nWRIT FCFW\n"
+    inp_file.write(newest_inp_file.with_name("mopro_writecif.inp"))
+
+    mopro_unix_path = path_helper.get_unix_path(Path(os.environ["MOPRO_PATH"]))
+    mopro = MoProRobot(executable_path=mopro_unix_path)
+    mopro.run_file(newest_inp_file.with_name("mopro_writecif.inp"))
+
+
+def write_output_cif(work_folder, output_cif_name):
+    output_cif_path = work_folder / output_cif_name
+    try:
+        newest_cif_path = find_newest_file_with_extension(
+            work_folder, ".cif", files_to_exclude=["output.cif", "work.cif", "input.cif"], case_sensitive=False
         )
+        newest_cif_text = newest_cif_path.read_text(encoding="utf-8", errors="replace")
 
-        # MoPro might output invalid characters
+        newest_fcf_path = find_newest_file_with_extension(work_folder, ".fcf", case_sensitive=False)
+        newest_fcf_text = newest_fcf_path.read_text(encoding="utf-8", errors="replace")
 
-        cleaned_cif_path = newest_cif_path.with_name(f"{input_cif_path.stem}_mopro.cif")
-        clean_cif(newest_cif_path, cleaned_cif_path)
+        cif_text = newest_cif_text + "\n_iucr_refine_fcf_details\n;\n" + newest_fcf_text + "\n;\n"
 
-        newest_fcf_path = next(
-            reversed(
-                sorted(
-                    (file_path for file_path in work_folder.glob("*.fcf")),
-                    key=os.path.getmtime,
-                )
-            )
-        )
+        cleaned_text = clean_cif_text(cif_text)
+        output_cif_path.write_text(cleaned_text, encoding="utf-8")
 
-        fcf_content = newest_fcf_path.read_text(encoding="utf-8", errors="replace")
-
-        with cleaned_cif_path.open("a", encoding="utf-8") as fobj:
-            fobj.write("\n")
-            fobj.write("_iucr_refine_fcf_details\n;\n")
-            fobj.write(fcf_content)
-            fobj.write("\n;\n")
-
-        original_cif_text = input_cif_path.read_text(encoding="utf-8", errors="replace")
-        cleaned_cif_text = cleaned_cif_path.read_text(encoding="utf-8", errors="replace")
-        replace_entries = (
-            "_symmetry_space_group_name_Hall",
-            "_symmetry_space_group_name_H-M_alt",
-            "_space_group_IT_number",
-        )
-        for entry in replace_entries:
-            pattern = re.compile(rf"(\n\s*{entry} .*\n)", re.IGNORECASE)
-            match = pattern.search(original_cif_text)
-            if match:
-                value = match.group(1)
-                cleaned_cif_text = re.sub(pattern, value, cleaned_cif_text)
-        cleaned_cif_path.write_text(cleaned_cif_text, encoding="utf-8")
-
-        return cleaned_cif_path
-    except StopIteration:
-        pass
+        return output_cif_path
+    except StopIteration as e:
+        raise FileNotFoundError("CIF or FCF files missing in the working directory.") from e
 
 
-def clean_cif(cif_path, cleaned_cif_path):
-    text = cif_path.read_text(encoding="utf-8", errors="replace")
+def clean_cif_text(cif_text):
     non_character_pattern = re.compile(r"[^\w\s\.,!?;:\'\"\-()\[\]{}<>|/\\@#%&*+=`~\^]")
-    cleaned_text = non_character_pattern.sub("?", text)
-    cleaned_cif_path.write_text(cleaned_text, encoding="utf-8")
+    cleaned_text = non_character_pattern.sub("?", cif_text)
+
+    # Replace invalid newline characters for specific entries (from fcf)
+    replace_entries = (
+        "_symmetry_space_group_name_Hall",
+        "_symmetry_space_group_name_H-M_alt",
+        "_space_group_IT_number",
+    )
+    for entry in replace_entries:
+        pattern = re.compile(rf"(\n\s*{entry} .*\n)", re.IGNORECASE)
+        match = pattern.search(cleaned_text)
+        if match:
+            value = match.group(1)
+            cleaned_text = re.sub(pattern, value, cleaned_text)
+    return cleaned_text
+
+
+def find_newest_file_with_extension(work_folder, extension, files_to_exclude=None, case_sensitive=False):
+    if files_to_exclude is None:
+        files_to_exclude = []
+    excluded_files_set = set(files_to_exclude)
+
+    ending = extension[1:] if extension.startswith(".") else extension
+
+    search = ending if case_sensitive else "".join(f"[{char.lower()}{char.upper()}]" for char in ending)
+
+    matching_files = [
+        file_path for file_path in work_folder.glob(f"*.{search}") if file_path.name not in excluded_files_set
+    ]
+    if not matching_files:
+        raise FileNotFoundError(f"No files with extension {extension} found in {work_folder}")
+    return max(matching_files, key=os.path.getmtime)
 
 
 def table_path(table_type):
@@ -166,7 +176,7 @@ def create_mopro_inis(work_dir, table_type, wavefunction_type):
         "{{mopro_viewer_path}}": os.environ["MOPRO_VIEWER_PATH"],
     }
 
-    for filename in Path("./templates").iterdir():
+    for filename in (Path(__file__).parent / "templates").iterdir():
         with Path(filename).open("r", encoding="UTF-8") as fobj:
             content = fobj.read()
         for key, value in replace_dict.items():
@@ -193,7 +203,7 @@ def run_inp_file(
 ):
     work_folder = Path(input_cif).parent
     work_cif_path = work_folder / "work.cif"
-    cif_file_to_specific_by_yml(input_cif, work_cif_path, YAML_PATH, "run_inp_file", "input_cif_path")
+    shutil.copy2(input_cif, work_cif_path)
     cif2hkl4(input_cif, 0, work_cif_path.with_suffix(".hkl"))
 
     mopro_ini_path = MOPRO_ROAMING_DIR / "mopro.ini"
@@ -213,50 +223,21 @@ def run_inp_file(
     para_path = work_cif_path.with_name(work_cif_path.stem + "_00.par")
     inp_file.files["PARA"] = path_helper.get_windows_path(para_path)
     inp_file.files["DATA"] = path_helper.get_windows_path(work_cif_path.with_suffix(".hkl"))
-    if constraint_file.lower() != "none":
-        inp_file.files["CONS"] = path_helper.get_windows_path(Path(constraint_file))
-    else:
-        inp_file.files.pop("CONS", None)
-    if restraint_file.lower() != "none":
-        inp_file.files["REST"] = path_helper.get_windows_path(Path(restraint_file))
-    else:
-        inp_file.files.pop("REST", None)
-    inp_file.body += "\nWRIT CIFM\n"
+    inp_file.files["CONS"] = path_helper.get_windows_path(Path(constraint_file))
+    inp_file.files["REST"] = path_helper.get_windows_path(Path(restraint_file))
+
+    # inp_file.body += "\nWRIT CIFM\nWRIT FCFW\n"
     inp_file.write(work_folder / "mopro.inp")
 
     mopro_unix_path = path_helper.get_unix_path(Path(os.environ["MOPRO_PATH"]))
     mopro = MoProRobot(executable_path=mopro_unix_path)
     mopro.run_file(work_folder / "mopro.inp")
 
-    excluded_cif = ("output.cif", "work.cif", "input.cif")
-    newest_cif_path = next(
-        reversed(
-            sorted(
-                (
-                    file_path
-                    for file_path in work_folder.glob("*.cif", case_sensitive=False)
-                    if file_path.name not in excluded_cif
-                ),
-                key=os.path.getmtime,
-            )
-        )
-    )
-
-    # MoPro might output invalid characters
-    cleaned_cif_path = newest_cif_path.with_name(f"{input_cif.stem}_mopro.cif")
-    clean_cif(newest_cif_path, cleaned_cif_path)
-
-    output_cif_path = work_cif_path.parent / output_cif_name
-    cif_file_merge_to_unified_by_yml(
-        cleaned_cif_path,
-        output_cif_path,
-        input_cif,
-        YAML_PATH,
-        "run_inp_file",
-        "output_cif_name",
-    )
-
-    return str(output_cif_path)
+    try:
+        return write_output_cif(work_folder, output_cif_name)
+    except FileNotFoundError:
+        generate_cif_fcf(work_folder)
+    return write_output_cif(work_folder, output_cif_name)
 
 
 if __name__ == "__main__":

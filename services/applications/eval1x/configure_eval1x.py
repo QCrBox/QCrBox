@@ -3,6 +3,9 @@ import os
 import shutil
 from pathlib import Path
 
+from pyqcrbox import sql_models
+from pyqcrbox.registry.client import QCrBoxClient
+
 from qcrboxtools.cif.cif2cif import cif_file_merge_to_unified_by_yml
 from qcrboxtools.cif.merge import merge_cif_files
 from qcrboxtools.robots.eval import (
@@ -17,10 +20,8 @@ from qcrboxtools.robots.eval import (
     TextFile,
 )
 
-from pyqcrbox import sql_models
-from pyqcrbox.registry.client import QCrBoxClient
+YAML_PATH = Path(__file__).parent / "config_eval1x.yaml"
 
-YAML_PATH = "./config_eval1x.yaml"
 
 def integrate(
     input_folder,
@@ -294,7 +295,7 @@ def toparams__interactive(input_folder, par_json, par_folder):
 
 
 def redo__interactive(input_folder, par_json, par_folder):
-    with open(par_json, "r", encoding="UTF-8") as fobj:
+    with open(par_json, encoding="UTF-8") as fobj:
         par_dict = json.load(fobj)
     for key in par_dict:
         if isinstance(par_dict[key], str):
@@ -307,4 +308,3 @@ if __name__ == "__main__":
 
     client = QCrBoxClient(application_spec=application_spec)
     client.run()
-

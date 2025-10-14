@@ -2,13 +2,13 @@ import os
 from pathlib import Path
 from textwrap import dedent
 
-from qcrboxtools.cif.cif2cif import cif_file_merge_to_unified_by_yml
-from qcrboxtools.cif.file_converter.shelxt import ins2symop_loop
-
 from pyqcrbox import sql_models
 from pyqcrbox.registry.client import QCrBoxClient
 
-YAML_PATH = "./config_crysalis-pro.yaml"
+from qcrboxtools.cif.file_converter.shelxt import ins2symop_loop
+
+YAML_PATH = Path(__file__).parent / "config_crysalis-pro.yaml"
+
 
 def split_hkl_line(line: str):
     if len(line) < 30:
@@ -77,7 +77,7 @@ def finalise__interactive(par_path, output_cif_path):
         )
 
         symop_loop_str = ins2symop_loop(newest_ins_path)
-        cif2old = ['_space_group_symop.id', '_space_group_symop.operation_xyz']
+        cif2old = ["_space_group_symop.id", "_space_group_symop.operation_xyz"]
         for entry in cif2old:
             symop_loop_str = symop_loop_str.replace(entry, entry.replace(".", "_"))
 
@@ -85,9 +85,7 @@ def finalise__interactive(par_path, output_cif_path):
         rewrite = True
 
     if "_chemical_formula_sum" not in newest_cif_text and "_chemical_oxdiff_formula" in newest_cif_text:
-        oxdiff_formula_line = next(
-            line for line in newest_cif_text.split("\n") if "_chemical_oxdiff_formula" in line
-        )
+        oxdiff_formula_line = next(line for line in newest_cif_text.split("\n") if "_chemical_oxdiff_formula" in line)
         new_line = oxdiff_formula_line.replace("_chemical_oxdiff_formula", "_chemical_formula_sum")
         newest_cif_text += "\n\n" + new_line
         rewrite = True
@@ -95,18 +93,17 @@ def finalise__interactive(par_path, output_cif_path):
     if rewrite:
         merged_cif_path = work_folder / "qcrbox_merged.cif"
         merged_cif_path.write_text(newest_cif_text, encoding="UTF-8")
-        cif_file_merge_to_unified_by_yml(
-            merged_cif_path, output_cif_path, None, YAML_PATH, "interactive", "output_cif_path"
-        )
     else:
-        cif_file_merge_to_unified_by_yml(
-            newest_cif_path, output_cif_path, None, YAML_PATH, "interactive", "output_cif_path"
-        )
+        merged_cif_path = newest_cif_path
+
+    return str(newest_cif_path)
+
 
 def get_crysalis_path():
     xcalibur_dir = Path("/opt/wine_installations/wine_win64/drive_c/Xcalibur")
     crysalis_install_dir = next(d for d in xcalibur_dir.glob("CrysAlisPro*.*.*") if d.is_dir())
     return str(crysalis_install_dir / "pro.exe")
+
 
 if __name__ == "__main__":
     application_spec = sql_models.ApplicationSpec.from_yaml_file(YAML_PATH)

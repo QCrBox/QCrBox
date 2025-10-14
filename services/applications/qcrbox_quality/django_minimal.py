@@ -8,6 +8,9 @@ from django.core.management import execute_from_command_line
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.urls import path
+from pyqcrbox.data_management.data_manager import DataManager
+from pyqcrbox.services import QCRBOX_GLOBAL_SERVICES_REGISTRY
+
 from quality_html import (
     basic_model_quality_indicators,
     fobs_div_fcalc,
@@ -15,9 +18,6 @@ from quality_html import (
     precision_plot,
     precision_quality_indicators,
 )
-
-from pyqcrbox.data_management.data_manager import DataManager
-from pyqcrbox.services import QCRBOX_GLOBAL_SERVICES_REGISTRY
 
 BASE_DIR = Path(__file__).resolve().parent
 
