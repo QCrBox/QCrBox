@@ -68,3 +68,19 @@ def test_to_unified_cif(input_cif: str, to_merge_cif: str, output_cif: str) -> s
         print(file_in.read())
 
     return to_merge_cif
+
+
+def test_merged_cifs(input_cif: str, output_cif: str) -> Path:
+    """Returns the output cif."""
+    print("Input cif file:", input_cif)
+    with open(input_cif, "r") as file_in:
+        lines = file_in.readlines()
+
+    original = str(lines[1])
+    lines[1] = "_test_value.with_su 5.67\n"
+    print("Replaced", original, "with", lines[1])
+
+    with open(output_cif, "w") as file_out:
+        file_out.writelines(lines)
+
+    return Path(output_cif).absolute()

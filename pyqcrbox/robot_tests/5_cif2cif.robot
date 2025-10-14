@@ -42,6 +42,28 @@ Check that returned cif is unmodified
     ...    Delete Cif Dataset    ${output_dataset_id}    AND
     ...    Delete Cif Dataset    ${input_cif_dataset[0]["qcrbox_dataset_id"]}
 
+Check that modified file is returned when no entries for input and output parameter specified
+    [Documentation]    We should expect that updated cif to be returned when no required cif entries are specified.
+
+    ${input_cif_dataset}=    Upload Cif    ${CURDIR}/test_data/to_specific_test_cif.cif    to_specific_test_cif.cif
+
+    VAR    &{input_cif}=
+    ...    data_file_id=${input_cif_dataset[0]["data_files"]["to_specific_test_cif.cif"]["qcrbox_file_id"]}
+    VAR    &{command_arguments}=    input_cif=${input_cif}    output_cif=merged_cif.cif
+
+    ${output_dataset_id}=    Invoke Command And Get Output Dataset ID    test_merged_cifs    ${command_arguments}
+
+    ${original_cif}=    Get Dataset File Contents    ${input_cif_dataset[0]["qcrbox_dataset_id"]}
+    ${processed_cif}=    Get Dataset File Contents    ${output_dataset_id}
+    Log    Processed cif:\n ${processed_cif}
+    Should Not Be Equal    ${processed_cif}    ${original_cif}
+    Should Contain    ${processed_cif}    test_value.with_su
+    Should Not Contain    ${processed_cif}    _custom.test
+
+    [Teardown]    Run Keywords
+    ...    Delete Cif Dataset    ${input_cif_dataset[0]["qcrbox_dataset_id"]}    AND
+    ...    Delete Cif Dataset    ${output_dataset_id}
+
 Check that returned cif has modified entries after being transformed to specific format
     [Documentation]    We should expect some additional entries to be in the cif after command execution
 

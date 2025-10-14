@@ -126,6 +126,16 @@ commands:
         optional_entries: [_nonexistent_keyword]
         invalidated_entries: [_test_value_invalidated, _test_loop_value_invalidated]
 
+  - name: test_merged_cifs
+    description: A Python function which is used to test that cifs can be "simple" merged together
+    implemented_as: python_callable
+    import_path: sample_functions
+    parameters :
+      - name: "input_cif"
+        dtype: "QCrBox.cif_data_file"
+      - name: "output_cif"
+        dtype: "QCrBox.output_cif"
+
 cif_entry_sets:
   - name: "cell_elements"
     required: [
