@@ -25,6 +25,9 @@ Upload Cif
     ${payload}=    Check Response Structure And Get Payload    ${response}
     Check Response Content Has Attributes    ${payload}    datasets
 
+    ${n_datasets}=    Get Length    ${payload["datasets"]}
+    Should Be Equal As Integers    ${n_datasets}    1    "Upload Cif has returned multiple datasets"
+
     RETURN    ${payload["datasets"]}
 
 Delete Cif Dataset
