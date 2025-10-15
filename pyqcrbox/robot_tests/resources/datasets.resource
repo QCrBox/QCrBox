@@ -61,6 +61,7 @@ Get Dataset File Contents
     ...    .zip
     ...    msg=The downloaded file is a .zip, but a .cif was expected. Filename: ${filename}
 
+    Should Not Be Empty    ${response.content}
     ${output}=    Convert To String    ${response.content}
 
     RETURN    ${output}
