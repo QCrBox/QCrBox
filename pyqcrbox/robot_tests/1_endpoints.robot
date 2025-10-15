@@ -1,20 +1,12 @@
 *** Settings ***
 Documentation
-...                 Test suite for the API endpoints of the QCrBox registry
+...    Test suite for the management API endpoints unrelated to commands
 
-# Standard libraries
-Library             DateTime
-Library             Collections
-Library             JSONLibrary
-Library             OperatingSystem
-# Keywords implemented in Robot
-Resource            resources/api.resource
-Resource            resources/keywords.resource
+Resource    resources/keywords.resource
 
-Suite Setup         Setup suite
-Suite Teardown      Teardown suite
+Suite Setup         Setup Suite
+Suite Teardown      Teardown Suite
 Test Timeout        2 minutes
-
 
 *** Variables ***
 ${REGISTRY_ADDRESS}         %{QCRBOX_BIND_ADDRESS=127.0.0.1}
@@ -23,278 +15,180 @@ ${ENDPOINTS_API}            http://${REGISTRY_ADDRESS}:${REGISTRY_PORT}/api
 ${SESSION_ALIAS}            QCRBOX_REGISTRY_API_ENDPOINTS
 
 ${TEST_CIF_FILE_NAME}       robot_test_cif.cif
-${TEST_CIF_FILE}            ${CURDIR}/test_data/${TEST_CIF_FILE_NAME}
 ${TEST_JSON_FILE_NAME}      robot_test_json.json
+${TEST_CIF_FILE}            ${CURDIR}/test_data/${TEST_CIF_FILE_NAME}
 ${TEST_JSON_FILE}           ${CURDIR}/test_data/${TEST_JSON_FILE_NAME}
 
-${TEST_CALCULATION_ID}      ${EMPTY}
-${TEST_CIF_FILE_ID}     ${EMPTY}
-${TEST_JSON_FILE_ID}    ${EMPTY}
+${TEST_JSON_FILE_ID}        ${EMPTY}
 ${TEST_DATASET_ID}          ${EMPTY}
 
 
 *** Test Cases ***
-#
-#    Admin
-#
+Check that registered applications can be requested in the correct format
+    [Documentation]    The applications API should return the registered applications
 
-Check healthz returns health status
-    ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /healthz    200
-    ${content}=    Get Response Content    ${response}
-    Check Response Has Attributes    ${content}    status    timestamp
-    Should Be Equal    ${content["status"]}    ok
-
-#
-#    Applications
-#
-
-Check /applications returns list of registered applications
     ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /applications    200
-    ${payload}=    Check Response And Get Payload    ${response}
-
-    Check Response Has Attributes    ${payload}    applications
-    ${applications}=    Set Variable    ${payload["applications"]}
+    ${payload}=    Check Response Structure And Get Payload    ${response}
+    Check Response Content Has Attributes    ${payload}    applications
+    VAR    ${applications}=    ${payload["applications"]}
 
     ${n_applications}=    Get Length    ${applications}
     Should Be True    ${n_applications} > 0    "No registered applications, which is unexpected"
-
     FOR    ${application}    IN    @{applications}
         Check Application Response Structure    ${application}
     END
 
-#
-#    Datasets
-#
+It should be possible to create a dataset by uploading a cif
+    [Documentation]    Check that the datasets API will create a dataset
 
-Check /datasets can upload a data file to a dataset
-    ${file_contents}=    Get Binary File    ${TEST_CIF_FILE}
-    ${files}=    Create Dictionary    ${TEST_CIF_FILE_NAME}=${file_contents}
+    ${datasets}=    Upload Cif    ${TEST_CIF_FILE}    ${TEST_CIF_FILE_NAME}
+    VAR    ${test_dataset_id}=    ${datasets[0]["qcrbox_dataset_id"]}
+    VAR    ${TEST_DATASET_ID}=    ${test_dataset_id}    scope=SUITE
 
-    ${response}=    Send API Request    POST    ${SESSION_ALIAS}    /datasets    201    files=${files}
-    ${payload}=    Check Response And Get Payload    ${response}
-
-    Check Response Has Attributes    ${payload}    datasets    data_files
-    ${datasets}=    Set Variable    ${payload["datasets"]}
-    ${n_datasets}=    Get Length    ${datasets}
-    Should Be Equal As Integers
-    ...    ${n_datasets}
-    ...    1
-    ...    "/datasets response returned an incorrect number of datasets when it should return only the created dataset"
-
-    ${test_dataset_id}=    Set Variable    ${datasets[0]["qcrbox_dataset_id"]}
-    Set Suite Variable    ${TEST_DATASET_ID}    ${test_dataset_id}
-    Set Suite Variable
-    ...    ${TEST_CIF_FILE_ID}
-    ...    ${datasets[0]["data_files"]["${TEST_CIF_FILE_NAME}"]["qcrbox_file_id"]}
     Check Datasets Structure    @{datasets}
 
-Check /datasets/id/append can add a new data file to a dataset
+Append a generic data file to a dataset
+    [Documentation]    Append a JSON file to the dataset from the previous test case
+
     ${file_contents}=    Get Binary File    ${TEST_JSON_FILE}
-    ${files}=    Create Dictionary    ${TEST_JSON_FILE_NAME}=${file_contents}
+    VAR    &{files}=    ${TEST_JSON_FILE_NAME}=${file_contents}
 
-    ${response}=    Send API Request    POST    ${SESSION_ALIAS}    /data-files    201    files=${files}
-
+    Send API Request    POST    ${SESSION_ALIAS}    /data-files    201    files=${files}
     ${response}=    Send API Request
     ...    POST
     ...    ${SESSION_ALIAS}
     ...    /datasets/${TEST_DATASET_ID}/append
     ...    201
     ...    files=${files}
-    ${payload}=    Check Response And Get Payload    ${response}
+    ${payload}=    Check Response Structure And Get Payload    ${response}
+    Check Response Content Has Attributes    ${payload}    datasets    data_files    appended_file
 
-    Check Response Has Attributes    ${payload}    datasets    data_files    appended_file
-    ${datasets}=    Set Variable    ${payload["datasets"]}
-    ${n_datasets}=    Get Length    ${datasets}
-    Should Be Equal As Integers
-    ...    ${n_datasets}
-    ...    1
-    ...    "/datasets response returned an incorrect number of datasets when it should return only the created dataset"
+    ${n_data_files}=    Get Length    ${payload["datasets"][0]["data_files"]}
+    Should Be Equal As Integers    ${n_data_files}    2    "Incorrect number of files in appended dataset"
+    VAR    ${TEST_JSON_FILE_ID}=
+    ...    ${payload["datasets"][0]["data_files"]["${TEST_JSON_FILE_NAME}"]["qcrbox_file_id"]}
+    ...    scope=SUITE
 
-    ${test_dataset_id}=    Set Variable    ${datasets[0]["qcrbox_dataset_id"]}
-    Check Datasets Structure    @{datasets}
-    ${data_files}=    Set Variable    ${datasets[0]["data_files"]}
-    ${n_data_files}=    Get Length    ${data_files}
-    Should Be Equal As Integers    ${n_data_files}    2
-    Set Suite Variable    ${TEST_JSON_FILE_ID}    ${data_files["${TEST_JSON_FILE_NAME}"]["qcrbox_file_id"]}
+Get all datasets in the QCrBox data manager
+    [Documentation]    Query the datasets API to get a list of uploaded datasets
 
-    Log    Dataset ID ${test_dataset_id}
-    Log    JSON ID ${TEST_JSON_FILE_ID}
-
-Check /datasets returns a list of datasets
     ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /datasets    200
-    ${payload}=    Check Response And Get Payload    ${response}
+    ${payload}=    Check Response Structure And Get Payload    ${response}
 
-    Check Response Has Attributes    ${payload}    datasets
-    ${datasets}=    Set Variable    ${payload["datasets"]}
+    Check Response Content Has Attributes    ${payload}    datasets
+    VAR    ${datasets}=    ${payload["datasets"]}
     ${n_datasets}=    Get Length    ${datasets}
-    Should Be True    ${n_datasets} > 0    "No datasets retrieved, even though at least one has been uploaded"
-
+    Should Be True    ${n_datasets} > 0    No datasets retrieved, even though at least one has been uploaded
     Check Datasets Structure    @{datasets}
 
-Check /datasets/id returns the correct dataset
-    ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /datasets/${TEST_DATASET_ID}    200
-    ${payload}=    Check Response And Get Payload    ${response}
+Query the details about a single dataset
+    [Documentation]    Send a request for a single dataset
 
-    Check Response Has Attributes    ${payload}    datasets    data_files
-    ${datasets}=    Set Variable    ${payload["datasets"]}
-    ${n_datasets}=    Get Length    ${datasets}
+    ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /datasets/${TEST_DATASET_ID}    200
+    ${payload}=    Check Response Structure And Get Payload    ${response}
+    Check Response Content Has Attributes    ${payload}    datasets    data_files
+
+    ${n_datasets}=    Get Length    ${payload["datasets"]}
     Should Be Equal As Integers
     ...    ${n_datasets}
     ...    1
-    ...    "/datasets/id response returned an incorrect number of datasets when it should return only the requested dataset"
+    ...    Incorrect number of datasets returned from the API
+    Should Be Equal
+    ...    ${TEST_DATASET_ID}
+    ...    ${payload["datasets"][0]["qcrbox_dataset_id"]}
+    ...    Incorrect dataset returned from API
 
-    ${dataset_id}=    Set Variable    ${datasets[0]["qcrbox_dataset_id"]}
-    Should Be Equal    ${TEST_DATASET_ID}    ${dataset_id}    "/datasets/id returned the wrong dataset"
+Delete the appended data file from the dataset
+    [Documentation]    Check we can delete only the data file and not the dataset
 
-Check that /data-files/id can remove a data file
-    ${response}=    Send API Request    DELETE    ${SESSION_ALIAS}    /data-files/${TEST_JSON_FILE_ID}    204
-
+    Send API Request    DELETE    ${SESSION_ALIAS}    /data-files/${TEST_JSON_FILE_ID}    204
     ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /datasets/${TEST_DATASET_ID}    200
-    ${payload}=    Check Response And Get Payload    ${response}
-    Check Response Has Attributes    ${payload}    datasets
-    ${dataset}=    Set Variable    ${payload["datasets"][0]}
-    Log    ${dataset}
 
-    ${n_data_files}=    Get Length    ${dataset["data_files"]}
-    Should Be Equal As Integers    ${n_data_files}    1
+    ${payload}=    Check Response Structure And Get Payload    ${response}
+    Check Response Content Has Attributes    ${payload}    datasets
+    ${n_data_files}=    Get Length    ${payload["datasets"][0]["data_files"]}
+    Should Be Equal As Integers    ${n_data_files}    1    The requested data file was not removed from the dataset
 
-Check /datasets/id/download downloads the dataset
-    ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /datasets/${TEST_DATASET_ID}/download    200
-    Should Not Be Empty    ${response.content}
+Download the cif file from the dataset
+    [Documentation]    Download the dataset which contains only a cif. This test will fail if a .zip is downloaded
 
-    # Compare with original file content.
-    # Note that this will fail if the previous test fails because it will download
-    # a zip rather than a single file
+    ${dataset_contents}=    Get Dataset File Contents    ${TEST_DATASET_ID}
     ${original_file_content}=    Get Binary File    ${TEST_CIF_FILE}
-    Should Be Equal    ${original_file_content}    ${response.content}
+    ${original_file_content}=    Convert To String    ${original_file_content}
+    Should Be Equal    ${original_file_content}    ${dataset_contents}
 
-#
-#    Commands
-#
+Get a list of registered commands
+    [Documentation]    Check the commands endpoint returns a correctly structured list
 
-Check /commands returns a list of commands
     ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /commands    200
-    ${payload}=    Check Response And Get Payload    ${response}
+    ${payload}=    Check Response Structure And Get Payload    ${response}
+    Check Response Content Has Attributes    ${payload}    commands
 
-    Check Response Has Attributes    ${payload}    commands
-    ${commands}=    Set Variable    ${payload["commands"]}
+    VAR    ${commands}=    ${payload["commands"]}
     ${n_commands}=    Get Length    ${commands}
-    Should Be True    ${n_commands} > 0    "No commands registered, which is unexpected"
-
+    Should Be True    ${n_commands} > 0    No commands registered, which is unexpected
     FOR    ${command}    IN    @{commands}
         Check Command Response Structure    ${command}
     END
 
-Check /commands/id returns a command
+Check a specific command can be queried
+    [Documentation]    Check the commands endpoint returns a correctly structured response for a query about a command
+
     ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /commands/1    200
-    ${payload}=    Check Response And Get Payload    ${response}
+    ${payload}=    Check Response Structure And Get Payload    ${response}
+    Check Response Content Has Attributes    ${payload}    commands
 
-    Check Response Has Attributes    ${payload}    commands
-    ${commands}=    Set Variable    ${payload["commands"]}
+    VAR    ${commands}=    ${payload["commands"]}
     ${n_commands}=    Get Length    ${commands}
-    Should Be True    ${n_commands} == 1    "/commands/id returned multiple commands"
-
+    Should Be True    ${n_commands} == 1    Multiple commands have been returned when expecting only one
     Check Command Response Structure    ${commands[0]}
 
-Check /commands/id returns 404 for invalid id
-    ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /commands/0    404
+A 404 should be returned for an invalid command id
+    [Documentation]    Check that the commands endpoints returns a 404 when an incorrect id is used
 
-#
-# Datasets -- check we can delete the file
-#
+    Send API Request    GET    ${SESSION_ALIAS}    /commands/0    404
 
-Check /datasets/id can delete a dataset
-    ${response}=    Send API Request    DELETE    ${SESSION_ALIAS}    /datasets/${TEST_DATASET_ID}    204
+Delete a dataset
+    [Documentation]    We should be able to delete a dataset from the data manager
 
-Check /datasets/id returns 404 for deleted dataset
+    Delete Cif Dataset    ${TEST_DATASET_ID}
+
+Expect a 404 response when trying to delete a non-existing dataset
+    [Documentation]    If we try re-deleting the last dataset it should return a 404
+
     ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /datasets/${TEST_DATASET_ID}    404
-    ${content}=    Get Response Content    ${response}
+    ${content}=    Decode Response Content    ${response}
+    Check Response Content Has Attributes    ${content}    status    error
 
-    Check Response Has Attributes    ${content}    status    error
     Should Be Equal    ${content["status"]}    error
-
-    ${error_payload}=    Set Variable    ${content["error"]}
-    Check Response Has Attributes    ${error_payload}    code    message    details
+    VAR    ${error_payload}=    ${content["error"]}
+    Check Response Content Has Attributes    ${error_payload}    code    message    details
     Should Be Equal As Integers    ${error_payload["code"]}    404
 
-Check /datasets/id/download returns 404 for deleted dataset
+Expect a 404 response when trying to download a non-existing dataset
+    [Documentation]    If we try downloading the deleted dataset it should return a 404
+
     ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /datasets/${TEST_DATASET_ID}/download    404
-    ${content}=    Get Response Content    ${response}
+    ${content}=    Decode Response Content    ${response}
+    Check Response Content Has Attributes    ${content}    status    error
 
-    Check Response Has Attributes    ${content}    status    error
     Should Be Equal    ${content["status"]}    error
-
-    ${error_payload}=    Set Variable    ${content["error"]}
-    Check Response Has Attributes    ${error_payload}    code    message    details
+    VAR    ${error_payload}=    ${content["error"]}
+    Check Response Content Has Attributes    ${error_payload}    code    message    details
     Should Be Equal As Integers    ${error_payload["code"]}    404
 
 
 *** Keywords ***
-Setup suite
+Setup Suite
+    [Documentation]    Setup the test environment for this suite
+
     Create API Session    ${SESSION_ALIAS}    ${ENDPOINTS_API}
-    Log datetime information
+    Check Suite Can Run
+    Log Datetime Information
     Log    Starting test suite
 
-Teardown suite
-    Log datetime information
+Teardown Suite
+    [Documentation]    Teardown the test environment for this suite
+
+    Log Datetime Information
     Log    Test suite completed
-
-Check Application Response Structure
-    [Arguments]    ${application}
-
-    Log    ${application}
-
-    Check Response Has Attributes
-    ...    ${application}
-    ...    name
-    ...    slug
-    ...    version
-    ...    description
-    ...    email
-    ...    doi
-    ...    gui_port
-    ...    url
-    ...    registered_at
-    ...    commands
-    FOR    ${command}    IN    @{application['commands']}
-        Check Command Response Structure    ${command}
-    END
-
-Check Command Response Structure
-    [Arguments]    ${command}
-
-    Log    ${command}
-
-    Check Response Has Attributes
-    ...    ${command}
-    ...    name
-    ...    description
-    ...    implemented_as
-    ...    parameters
-    ...    id
-    ...    application_id
-    ...    application
-    ...    version
-    ...    cmd_name
-    ...    merge_cif_su
-    ...    doi
-
-Check Datasets Structure
-    [Arguments]    @{datasets}
-    FOR    ${dataset}    IN    @{datasets}
-        Check Response Has Attributes    ${dataset}    qcrbox_dataset_id    data_files
-    END
-
-Check Interactive Sessions Structure
-    [Arguments]    @{interactive_sessions}
-
-    FOR    ${interactive_session}    IN    @{interactive_sessions}
-        Check Response Has Attributes
-        ...    ${interactive_session}
-        ...    session_id
-        ...    client_private_inbox
-        ...    application_slug
-        ...    application_version
-        ...    command_name
-        ...    arguments
-    END

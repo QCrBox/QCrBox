@@ -2,12 +2,6 @@
 Documentation
 ...                 Test suite for the CIF2CIF translation and merging
 
-Library    Collections
-Library    DateTime
-Library    OperatingSystem
-Library    String
-Library    JSONLibrary
-Resource    resources/api.resource
 Resource    resources/keywords.resource
 
 Suite Setup         Setup Suite
@@ -18,20 +12,23 @@ Test Timeout        2 minutes
 ${REGISTRY_ADDRESS}         %{QCRBOX_BIND_ADDRESS=127.0.0.1}
 ${REGISTRY_PORT}            %{QCRBOX_REGISTRY_PORT=11000}
 ${ENDPOINTS_API}            http://${REGISTRY_ADDRESS}:${REGISTRY_PORT}/api
-${SESSION_ALIAS}            QCRBOX_REGISTRY_API_ENDPOINTS
+${SESSION_ALIAS}    QCRBOX_REGISTRY_API_ENDPOINTS
 
 
 *** Test Cases ***
-Check that returned cif is unmodified
+Returned cif should unmodified when untouched and no entries for input and output parameters
     [Documentation]    If no cif entries are set in the parameter yaml, an unmodified cif is expected to be returned
 
     ${input_cif_dataset}=    Upload Cif    ${CURDIR}/test_data/to_specific_test_cif.cif    to_specific_test_cif.cif
-    VAR    &{input_cif}=    data_file_id=${input_cif_dataset[0]["data_files"]["to_specific_test_cif.cif"]["qcrbox_file_id"]}
+    VAR    &{input_cif}=
+    ...    data_file_id=${input_cif_dataset[0]["data_files"]["to_specific_test_cif.cif"]["qcrbox_file_id"]}
     VAR    &{command_arguments}=    input_cif=${input_cif}    print_times=3
 
-    ${invoke_response}=    Invoke Command With Arguments    print_cif    ${command_arguments}
-    ${calculation_id}=    Get Calculation ID    ${invoke_response}
-    ${output_dataset_id}=    Get Output Dataset ID    ${calculation_id}
+    ${output_dataset_id}=    Invoke Command And Get Output Dataset ID
+    ...    dummy_cli
+    ...    0.1.0
+    ...    print_cif
+    ...    ${command_arguments}
 
     ${original_cif}=    Get Binary File    ${CURDIR}/test_data/to_specific_test_cif.cif
     ${original_cif}=    Convert To String    ${original_cif}
@@ -42,7 +39,7 @@ Check that returned cif is unmodified
     ...    Delete Cif Dataset    ${output_dataset_id}    AND
     ...    Delete Cif Dataset    ${input_cif_dataset[0]["qcrbox_dataset_id"]}
 
-Check that modified file is returned when no entries for input and output parameter specified
+Returned cif should be modified when no entries for input and output parameter specified
     [Documentation]    We should expect that updated cif to be returned when no required cif entries are specified.
 
     ${input_cif_dataset}=    Upload Cif    ${CURDIR}/test_data/to_specific_test_cif.cif    to_specific_test_cif.cif
@@ -51,7 +48,11 @@ Check that modified file is returned when no entries for input and output parame
     ...    data_file_id=${input_cif_dataset[0]["data_files"]["to_specific_test_cif.cif"]["qcrbox_file_id"]}
     VAR    &{command_arguments}=    input_cif=${input_cif}    output_cif=merged_cif.cif
 
-    ${output_dataset_id}=    Invoke Command And Get Output Dataset ID    test_merged_cifs    ${command_arguments}
+    ${output_dataset_id}=    Invoke Command And Get Output Dataset ID
+    ...    dummy_cli
+    ...    0.1.0
+    ...    test_merged_cifs
+    ...    ${command_arguments}
 
     ${original_cif}=    Get Dataset File Contents    ${input_cif_dataset[0]["qcrbox_dataset_id"]}
     ${processed_cif}=    Get Dataset File Contents    ${output_dataset_id}
@@ -64,7 +65,7 @@ Check that modified file is returned when no entries for input and output parame
     ...    Delete Cif Dataset    ${input_cif_dataset[0]["qcrbox_dataset_id"]}    AND
     ...    Delete Cif Dataset    ${output_dataset_id}
 
-Check that returned cif has modified entries after being transformed to specific format
+Returned cif should be modified after being transformed to specific format
     [Documentation]    We should expect some additional entries to be in the cif after command execution
 
     ${input_cif_dataset}=    Upload Cif    ${CURDIR}/test_data/to_specific_test_cif.cif    to_specific_test_cif.cif
@@ -73,7 +74,11 @@ Check that returned cif has modified entries after being transformed to specific
     ...    data_file_id=${input_cif_dataset[0]["data_files"]["to_specific_test_cif.cif"]["qcrbox_file_id"]}
     VAR    &{command_arguments}=    input_cif=${input_cif}    output_cif_dummy="foo"
 
-    ${output_dataset_id}=    Invoke Command And Get Output Dataset ID    test_cif_to_specific    ${command_arguments}
+    ${output_dataset_id}=    Invoke Command And Get Output Dataset ID
+    ...    dummy_cli
+    ...    0.1.0
+    ...    test_cif_to_specific
+    ...    ${command_arguments}
 
     ${original_cif}=    Get Dataset File Contents    ${input_cif_dataset[0]["qcrbox_dataset_id"]}
     ${processed_cif}=    Get Dataset File Contents    ${output_dataset_id}
@@ -90,7 +95,7 @@ Check that returned cif has modified entries after being transformed to specific
     ...    Delete Cif Dataset    ${input_cif_dataset[0]["qcrbox_dataset_id"]}    AND
     ...    Delete Cif Dataset    ${output_dataset_id}
 
-Check that returned cif is a unified cif
+Returned cif should be in the unified cif format
     [Documentation]    We should expect a cif to be returned as a unified cif with invalidated entries
 
     ${input_cif_dataset}=    Upload Cif    ${CURDIR}/test_data/to_specific_test_cif.cif    to_specific_test_cif.cif
@@ -102,7 +107,11 @@ Check that returned cif is a unified cif
     ...    data_file_id=${merge_cif_dataset[0]["data_files"]["to_unified_test_cif.cif"]["qcrbox_file_id"]}
     VAR    &{command_arguments}=    input_cif=${input_cif}    to_merge_cif=${merge_cif}    output_cif="merged_cif.cif"
 
-    ${output_dataset_id}=    Invoke Command And Get Output Dataset ID    test_to_unified_cif    ${command_arguments}
+    ${output_dataset_id}=    Invoke Command And Get Output Dataset ID
+    ...    dummy_cli
+    ...    0.1.0
+    ...    test_to_unified_cif
+    ...    ${command_arguments}
 
     ${original_cif}=    Get Dataset File Contents    ${input_cif_dataset[0]["qcrbox_dataset_id"]}
     ${processed_cif}=    Get Dataset File Contents    ${output_dataset_id}
@@ -129,6 +138,7 @@ Setup Suite
     [Documentation]    Setup the test environment for this suite
 
     Create API Session    ${SESSION_ALIAS}    ${ENDPOINTS_API}
+    Check Suite Can Run
     Log Datetime Information
     Log    Starting test suite
 
@@ -137,122 +147,3 @@ Teardown Suite
 
     Log Datetime Information
     Log    Test suite completed
-
-Upload Cif
-    [Documentation]    Upload a cif file
-    [Arguments]    ${path_to_file}    ${file_name}
-
-    ${file_contents}=    Get Binary File    ${path_to_file}
-    VAR    &{files}=    ${file_name}=${file_contents}
-
-    ${response}=    Send API Request    POST    ${SESSION_ALIAS}    /datasets    201    files=${files}
-    ${payload}=    Check Response And Get Payload    ${response}
-    Check Response Has Attributes    ${payload}    datasets
-
-    RETURN    ${payload["datasets"]}
-
-Delete Cif Dataset
-    [Documentation]    Remove a dataset containing a test cif file
-    [Arguments]    ${dataset_id}
-
-    Send API Request    DELETE    ${SESSION_ALIAS}    /datasets/${dataset_id}    204
-
-Invoke Command With Arguments
-    [Documentation]    Invoke a command with the provided arguments
-    [Arguments]    ${command_name}    ${command_arguments}
-
-    VAR    &{command_request}=
-    ...    application_slug=dummy_cli
-    ...    application_version=0.1.0
-    ...    command_name=${command_name}
-    ...    command_arguments=${command_arguments}
-    Log    Command invocation request: ${command_request}
-
-    ${response}=    Send API Request    POST    ${SESSION_ALIAS}    /commands    201    json_data=${command_request}
-    VAR    ${response_json}=    ${response.json()}
-    Log    Command invocation response: ${response_json}
-
-    RETURN    ${response_json}
-
-Invoke Command And Get Output Dataset ID
-    [Documentation]    Invoke a command and get the output dataset
-    [Arguments]    ${command_name}    ${command_arguments}
-
-    ${invoke_response}=    Invoke Command With Arguments    ${command_name}    ${command_arguments}
-    ${calculation_id}=    Get Calculation ID    ${invoke_response}
-    ${output_dataset_id}=    Get Output Dataset ID    ${calculation_id}
-
-    RETURN    ${output_dataset_id}
-
-Get Calculation ID
-    [Documentation]    Get the calculation ID from a command invocation response
-    [Arguments]    ${invocation_response}
-
-    RETURN    ${invocation_response["payload"]["calculation_id"]}
-
-Get Calculation Status
-    [Documentation]    Get the status of a calculation
-    [Arguments]    ${calculation_id}
-
-    ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /calculations/${calculation_id}    200
-    ${payload}=    Check Response And Get Payload    ${response}
-
-    Check Response Has Attributes    ${payload}    calculations
-    VAR    ${calculations}=    ${payload["calculations"]}
-    ${n_calculations}=    Get Length    ${calculations}
-    Should Be Equal As Integers    ${n_calculations}    1    "Multiple calculations retrieved, when only one requested"
-    VAR    ${calculation_status}=    ${calculations[0]}
-
-    RETURN    ${calculation_status}
-
-Check Calculation Successful
-    [Documentation]    Check if a calculation has executed successfully
-    [Arguments]    ${calculation_id}
-
-    ${calculation_response}=    Get Calculation Status    ${calculation_id}
-    Should Be Equal    ${calculation_response["status"]}    successful
-
-    RETURN    ${calculation_response}
-
-Wait Until Calculation Successful
-    [Documentation]    Wait until a calculation has been succesfully executed
-    [Arguments]    ${calculation_id}
-
-    ${calculation_response}=    Wait Until Keyword Succeeds
-    ...    10s
-    ...    2s
-    ...    Check Calculation Successful
-    ...    ${calculation_id}
-
-    Log    Calculation response: ${calculation_response}
-
-    RETURN    ${calculation_response}
-
-Get Output Dataset ID
-    [Documentation]    Get the output dataset for a finished calculation
-    [Arguments]    ${calculation_id}
-
-    ${calculation_response}=    Wait Until Calculation Successful    ${calculation_id}
-
-    RETURN    ${calculation_response["output_dataset_id"]}
-
-Get Dataset File Contents
-    [Documentation]    Get a cif file from a dataset, containing only that one cif file
-    [Arguments]    ${dataset_id}
-
-    ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /datasets/${dataset_id}/download    200
-    ${content_disposition}=    Get From Dictionary    ${response.headers}    Content-Disposition
-
-    ${parts}=    Split String    ${content_disposition}    filename=${EMPTY}
-    VAR    ${filename}=    ${parts}[1]
-    ${filename}=    Remove String    ${filename}
-    ${filename}=    Remove String    ${filename}    "
-    Should End With    ${filename}    .cif
-    Should Not Contain
-    ...    ${filename}
-    ...    .zip
-    ...    msg=The downloaded file is a .zip, but a .cif was expected. Filename: ${filename}
-
-    ${output}=    Convert To String    ${response.content}
-
-    RETURN    ${output}

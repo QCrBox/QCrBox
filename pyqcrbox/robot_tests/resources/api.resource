@@ -1,7 +1,10 @@
 *** Settings ***
+Documentation
+...    Keywords for sending HTTP requests to QCrBox's API.
+
+Library    Collections
 Library     RequestsLibrary
 Library     JSONLibrary
-Library    Collections
 
 *** Keywords ***
 Create API Session
@@ -51,6 +54,8 @@ Send API Request
     ELSE
         Fail    Unsupported method: ${method}
     END
-    Log    ${response.status_code}
-    Log    ${response.content}
+
+    Log    Response status code: ${response.status_code}
+    Log    Response content: ${response.content}
+
     RETURN    ${response}

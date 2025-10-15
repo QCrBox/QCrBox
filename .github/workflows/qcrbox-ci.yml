@@ -102,7 +102,7 @@ jobs:
         run: |
           set -a && source .env.dev && set +a
           cd pyqcrbox/robot_tests
-          robot *.robot
+          robot .
 
       - name: Run Pytest test suit
         run: |
