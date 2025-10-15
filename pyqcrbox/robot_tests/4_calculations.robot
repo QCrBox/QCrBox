@@ -63,6 +63,7 @@ Setup Suite
     [Documentation]    Setup the test environment for this suite
 
     Create API Session    ${SESSION_ALIAS}    ${ENDPOINTS_API}
+    Check Suite Can Run
     Log Datetime Information
     Log    Starting test suite
 

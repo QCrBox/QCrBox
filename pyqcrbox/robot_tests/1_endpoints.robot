@@ -1,6 +1,6 @@
 *** Settings ***
 Documentation
-...                 Test suite for the API endpoints of the QCrBox registry
+...    Test suite for the management API endpoints unrelated to commands
 
 # Standard libraries
 Library             Collections
@@ -34,16 +34,6 @@ ${TEST_DATASET_ID}          ${EMPTY}
 
 
 *** Test Cases ***
-#
-#    Admin
-#
-
-Check healthz returns health status
-    ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /healthz    200
-    ${content}=    Decode Response Content    ${response}
-    Check Response Content Has Attributes    ${content}    status    timestamp
-    Should Be Equal    ${content["status"]}    ok
-
 #
 #    Applications
 #
@@ -231,10 +221,15 @@ Check /datasets/id/download returns 404 for deleted dataset
 
 *** Keywords ***
 Setup Suite
+    [Documentation]    Setup the test environment for this suite
+
     Create API Session    ${SESSION_ALIAS}    ${ENDPOINTS_API}
+    Check Suite Can Run
     Log Datetime Information
     Log    Starting test suite
 
 Teardown Suite
+    [Documentation]    Teardown the test environment for this suite
+
     Log Datetime Information
     Log    Test suite completed

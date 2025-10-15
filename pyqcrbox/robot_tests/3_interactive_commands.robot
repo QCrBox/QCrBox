@@ -1,6 +1,6 @@
 *** Settings ***
 Documentation
-...                 Test suite for the API endpoints of the QCrBox registry
+...    Test suite for interactive commands
 
 Library    Collections
 Library    OperatingSystem
@@ -191,6 +191,7 @@ Setup Suite
     [Documentation]    Setup the test environment for this suite
 
     Create API Session    ${SESSION_ALIAS}    ${ENDPOINTS_API}
+    Check Suite Can Run
     Log Datetime Information
 
     ${dataset}=    Upload Cif    ${TEST_CIF_FILE}    ${TEST_CIF_FILE_NAME}

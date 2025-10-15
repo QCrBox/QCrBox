@@ -12,7 +12,7 @@ Test Timeout        2 minutes
 ${REGISTRY_ADDRESS}         %{QCRBOX_BIND_ADDRESS=127.0.0.1}
 ${REGISTRY_PORT}            %{QCRBOX_REGISTRY_PORT=11000}
 ${ENDPOINTS_API}            http://${REGISTRY_ADDRESS}:${REGISTRY_PORT}/api
-${SUITE_SESSION_ALIAS}      QCRBOX_REGISTRY_API_ENDPOINTS
+${SESSION_ALIAS}    QCRBOX_REGISTRY_API_ENDPOINTS
 
 
 *** Test Cases ***
@@ -137,8 +137,8 @@ Returned cif should be in the unified cif format
 Setup Suite
     [Documentation]    Setup the test environment for this suite
 
-    VAR    ${SESSION_ALIAS}=    ${SUITE_SESSION_ALIAS}    scope=GLOBAL
-    Create API Session    ${SUITE_SESSION_ALIAS}    ${ENDPOINTS_API}
+    Create API Session    ${SESSION_ALIAS}    ${ENDPOINTS_API}
+    Check Suite Can Run
     Log Datetime Information
     Log    Starting test suite
 

@@ -1,6 +1,6 @@
 *** Settings ***
 Documentation
-...                 Test suite for the API endpoints of the QCrBox registry
+...    Test suite for non-interactive commands
 
 Library    OperatingSystem
 Resource    resources/keywords.resource
@@ -104,6 +104,7 @@ Setup Suite
     [Documentation]    Setup the test environment for this suite
 
     Create API Session    ${SESSION_ALIAS}    ${ENDPOINTS_API}
+    Check Suite Can Run
     Log Datetime Information
     Upload Test Dataset
     Log    Starting test suite
