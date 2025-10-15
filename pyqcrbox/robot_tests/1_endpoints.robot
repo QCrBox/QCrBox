@@ -3,10 +3,6 @@ Documentation
 ...    Test suite for the management API endpoints unrelated to commands
 
 # Standard libraries
-Library             Collections
-Library             DateTime
-Library             OperatingSystem
-Library             JSONLibrary
 # Keywords implemented in Robot
 Resource            resources/api.resource
 Resource            resources/keywords.resource

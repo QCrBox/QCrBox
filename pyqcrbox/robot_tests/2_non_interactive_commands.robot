@@ -2,7 +2,6 @@
 Documentation
 ...    Test suite for non-interactive commands
 
-Library    OperatingSystem
 Resource    resources/keywords.resource
 
 Suite Setup         Setup Suite

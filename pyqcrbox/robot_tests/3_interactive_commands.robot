@@ -2,9 +2,6 @@
 Documentation
 ...    Test suite for interactive commands
 
-Library    Collections
-Library    OperatingSystem
-Library    JSONLibrary
 Resource    resources/keywords.resource
 
 Suite Setup         Setup Suite
