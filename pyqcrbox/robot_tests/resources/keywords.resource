@@ -49,5 +49,5 @@ Check QCrBox Healthy
 Check Suite Can Run
     [Documentation]    Check if QCrBox is ready for the test suite to run
 
-    Wait Until Keyword Succeeds    10s    1s    Check QcrBox Healthy
-    Wait Until Keyword Succeeds    10s    1s    Check Test Applications Available
+    Wait Until Keyword Succeeds    30s    1s    Check QcrBox Healthy
+    Wait Until Keyword Succeeds    30s    1s    Check Test Applications Available
