@@ -1,4 +1,4 @@
-FROM mambaorg/micromamba:1.5.3-bullseye
+FROM mambaorg/micromamba:2.3.2-debian12
 SHELL ["/bin/bash", "-c"]
 
 USER root
