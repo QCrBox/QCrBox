@@ -4,7 +4,7 @@ from pathlib import Path
 
 import nats.js.errors
 
-from pyqcrbox import logger
+from pyqcrbox import logger, settings
 from pyqcrbox.data_management.data_file import DataFile
 from pyqcrbox.data_management.dataset import Dataset
 from pyqcrbox.data_management.errors import DatasetNotFoundError
@@ -430,6 +430,9 @@ class DataManager(ABC):
             The ID of the data file
 
         """
+        if len(filename) > settings.db.max_text_length:
+            raise ValueError("QCrBox does not support file names which are greater than 255 characters long")
+
         qcrbox_file_id = _qcrbox_file_id or generate_data_file_id()
         file_extension = Path(filename).suffix[1:]
         data_file = DataFile(

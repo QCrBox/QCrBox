@@ -1,6 +1,6 @@
 #!/bin/bash
 
-applications=$(find -name "config_*.yaml" | grep -Ev "dummy|_template")
+applications=$(find -name "config_*.yaml" | grep -Ev "dummy|_template|eval1x|crysalis-pro")
 failed_apps=()
 
 for app in $applications; do

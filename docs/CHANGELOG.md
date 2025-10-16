@@ -77,6 +77,8 @@ However, there will be an initial period of stabilisation where this is not adhe
 - Fixed an issue where `qcb init` would not create a valid template for interactive applications
 - Fixed an issue where cif files would become lost during command execution, which resulted in incorrect unified cifs
   being returned to the registry.
+- Fixed an issue where long descriptions or text fields in the YAML specifications would cause the front end to crash.
+  Now descriptions and text fields are limited to 1023 and 255 characters, respectively.
 - And lots more!
 
 ### Documentation

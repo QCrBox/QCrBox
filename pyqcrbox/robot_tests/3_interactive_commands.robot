@@ -183,6 +183,26 @@ The commands API should also be able to launch an interactive session
     Should Be Equal    ${interactive_sessions[0]["session_id"]}    ${invoke_payload['calculation_id']}
 
 
+Interactive sessions should be closable if they don't return an output dataset
+    [Documentation]    This checks that an interactive sessions closes properly when there is no output to return
+
+    VAR    &{input_file}=    data_file_id=${TEST_DATA_FILE_ID}
+    VAR    &{arguments}=    input_file=${input_file}
+    ${response}=    Invoke Command With Arguments    dummy_gui    0.1.0    no_output    ${arguments}
+    ${invoke_payload}=    Check Response Structure And Get Payload    ${response}
+    Check Response Content Has Attributes    ${invoke_payload}    calculation_id
+    Sleep    5s    "Waiting for interactive session to be registered and start"
+
+    ${response}=    Send API Request
+    ...    POST
+    ...    ${SESSION_ALIAS}
+    ...    /interactive-sessions/${invoke_payload['calculation_id']}/close
+    ...    200
+    ${close_payload}=    Check Response Structure And Get Payload    ${response}
+    Check Response Content Has Attributes    ${close_payload}    interactive_sessions
+    VAR    ${interactive_sessions}=    ${close_payload["interactive_sessions"]}
+    Should Be Equal    ${interactive_sessions[0]["session_id"]}    ${invoke_payload['calculation_id']}
+
 *** Keywords ***
 Setup Suite
     [Documentation]    Setup the test environment for this suite
