@@ -73,6 +73,10 @@ commands:
         default_value: false
 ```
 
+> ### Description length
+>
+> The length of descriptions must be limited to 1024 characters. Descriptions which are larger will cause the application to be rejected by the QCrBox registry. This is true for all description fields.
+
 ### Specifying Required CIF Entries For Input
 
 Next, we must specify which CIF entries have to be in the input CIF file for our command to function, and what to add into the output CIF files. If we take a look at the `cif_to_search_pars` function in the `simple_cod_module.py` script, we can determine these entries. Next, we need to ensure that `required_entries:` under the `input_cif` parameter aligns with the `name:` and `type:` sections of that parameter for proper structure:
