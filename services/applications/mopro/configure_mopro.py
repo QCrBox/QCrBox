@@ -103,6 +103,8 @@ def clean_cif_text(cif_text):
         if match:
             value = match.group(1)
             cleaned_text = re.sub(pattern, value, cleaned_text)
+
+    cleaned_text = re.sub(r"(\d+\.\d+\(\d+)\n", r"\1\)\n", cleaned_text)
     return cleaned_text
 
 
