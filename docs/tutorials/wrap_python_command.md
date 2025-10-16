@@ -73,9 +73,9 @@ commands:
         default_value: false
 ```
 
-> ### Description length
+> ### Description and text input lengths
 >
-> The length of descriptions must be limited to 1024 characters. Descriptions which are larger will cause the application to be rejected by the QCrBox registry. This is true for all description fields.
+> The length of descriptions must be limited to 1023 characters, and other text fields are limited to 255 characters. Any text fields or descriptions which are larger than these will cause the application to be rejected during registration with the QCrBox registry.
 
 ### Specifying Required CIF Entries For Input
 

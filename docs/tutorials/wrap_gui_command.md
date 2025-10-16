@@ -52,9 +52,9 @@ At any time you can press Ctrl+C to abort.
 Created scaffolding for new application in '/home/user/QCrBox/services/applications/dummy_gui_tutorial'.
 ```
 
-> ### Description length
+> ### Description and text input lengths
 >
-> The length of descriptions must be limited to 1024 characters. Descriptions which are larger will cause the application to be rejected by the QCrBox registry. This is true for all description fields.
+> The length of descriptions must be limited to 1023 characters, and other text fields are limited to 255 characters. Any text fields or descriptions which are larger than these will cause the application to be rejected during registration with the QCrBox registry.
 
 Note that when a GUI application container is created, a `dummy_gui.py` file is also copied over as an exemplar application, but we'll be replacing that in the next step.
 
