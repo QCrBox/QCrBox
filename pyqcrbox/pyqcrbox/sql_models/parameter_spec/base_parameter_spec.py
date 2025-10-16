@@ -642,7 +642,7 @@ class BaseParameterSpec(QCrBoxPydanticBaseModel):
     name: str = Field(max_length=settings.db.max_text_length)
     dtype: DTypeAsStr = Field(max_length=settings.db.max_text_length)
     description: str | None = Field(default=None, max_length=settings.db.max_desc_length)
-    default_value: Union[constr(max_length=settings.db.max_desc_length), int, float, bool, None] = Field(None)  # pyright: ignore[reportInvalidTypeForm]
+    default_value: Union[constr(max_length=settings.db.max_desc_length), int, float, bool, None] = None  # pyright: ignore[reportInvalidTypeForm]
     valid_value: ParameterValidationSpec | None = None
 
     # We are marking all parameters as being REQUIRED and freezing the choice.
