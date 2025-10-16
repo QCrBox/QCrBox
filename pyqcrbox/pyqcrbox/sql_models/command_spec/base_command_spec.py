@@ -1,5 +1,9 @@
 from enum import Enum
 
+from pydantic import Field
+
+from pyqcrbox import settings
+
 from ..base import QCrBoxPydanticBaseModel
 from ..parameter_spec import ParameterSpecDiscriminatedUnion
 
@@ -49,8 +53,8 @@ class BaseCommandSpec(QCrBoxPydanticBaseModel):
 
     """
 
-    name: str
-    description: str
+    name: str = Field(max_length=settings.db.max_text_length)
+    description: str | None = Field(default=None, max_length=settings.db.max_desc_length)
     implemented_as: ImplementedAs
     parameters: list[ParameterSpecDiscriminatedUnion]
     merge_cif_su: bool = False

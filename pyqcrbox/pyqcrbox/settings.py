@@ -50,6 +50,8 @@ class DatabaseSettings(QCrBoxSettingsBaseModel):
     url: SQLiteDsn = "sqlite:///:memory:"
     connect_args: dict = {"check_same_thread": False}
     echo: bool = False
+    max_desc_length: int = 1023
+    max_text_length: int = 255
 
     def create_db_and_tables(
         self,

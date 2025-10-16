@@ -2,12 +2,13 @@ import re
 import uuid
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated, Any
+from typing import TYPE_CHECKING, Annotated, Any, Union
 
 import nats.js.errors as nats_errors
 import svcs
-from pydantic import BeforeValidator, Field, field_validator, model_validator
+from pydantic import BeforeValidator, Field, constr, field_validator, model_validator
 
+from pyqcrbox import settings
 from pyqcrbox.debug import log_eel
 from pyqcrbox.logging import logger
 
@@ -544,7 +545,7 @@ def parse_parameter_as_its_dtype(v: Any, dtype_str: str) -> Any:
     return _known_dtypes[dtype_str](**v)
 
 
-DTypeAsStr = Annotated[str, BeforeValidator(verify_dtype_is_a_known_type)]
+DTypeAsStr = Annotated[constr(max_length=settings.db.max_text_length), BeforeValidator(verify_dtype_is_a_known_type)]
 DefaultValueAsStr = Annotated[BuiltinParameter, BeforeValidator(parse_parameter_default_value_as_string)]
 
 
@@ -638,10 +639,10 @@ class BaseParameterSpec(QCrBoxPydanticBaseModel):
 
     """
 
-    name: str
-    dtype: DTypeAsStr
-    description: str = ""
-    default_value: str | int | float | bool | None = None
+    name: str = Field(max_length=settings.db.max_text_length)
+    dtype: DTypeAsStr = Field(max_length=settings.db.max_text_length)
+    description: str | None = Field(default=None, max_length=settings.db.max_desc_length)
+    default_value: Union[constr(max_length=settings.db.max_desc_length), int, float, bool, None] = Field(None)  # pyright: ignore[reportInvalidTypeForm]
     valid_value: ParameterValidationSpec | None = None
 
     # We are marking all parameters as being REQUIRED and freezing the choice.

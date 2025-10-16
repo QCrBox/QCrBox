@@ -7,6 +7,7 @@ from typing import Self
 import yaml
 from pydantic import Field, PrivateAttr, field_validator, model_validator
 
+from pyqcrbox import settings
 from pyqcrbox._version import __version__ as pyqcrbox_version
 
 from .. import helpers
@@ -60,16 +61,16 @@ class ApplicationSpecBase(QCrBoxPydanticBaseModel):
 
     """
 
-    name: str
-    slug: str
-    version: str
-    pyqcrbox_version: str = pyqcrbox_version
-    description: str | None = None
-    url: str | None = None
-    email: str | None = None
-    doi: str | None = None
+    name: str = Field(max_length=settings.db.max_text_length)
+    slug: str = Field(max_length=settings.db.max_text_length)
+    version: str = Field(max_length=settings.db.max_text_length)
+    pyqcrbox_version: str = Field(default=pyqcrbox_version, max_length=settings.db.max_desc_length)
+    description: str | None = Field(default=None, max_length=settings.db.max_desc_length)
+    url: str | None = Field(default=None, max_length=settings.db.max_text_length)
+    email: str | None = Field(default=None, max_length=settings.db.max_text_length)
+    doi: str | None = Field(default=None, max_length=settings.db.max_text_length)
     yaml_file_path: str | None = Field(exclude=True, default=None)
-    gui_port: str | None = None
+    gui_port: str | None = Field(default=None, max_length=settings.db.max_text_length)
 
     @field_validator("yaml_file_path", mode="before")
     @classmethod
