@@ -489,11 +489,15 @@ class QCrBoxClient(QCrBoxServerClientBase):
             return
         logger.debug(f"Calculation {calc.calculation_id} has finished")
 
-        if command.type != "interactive_session":
-            # Note that this method will also remove the calculation directory
-            await self._handle_non_interactive_output(command, calc, parameters)
-        else:
-            await self._handle_interactive_output(command, calc, parameters)
+        try:
+            if command.type != "interactive_session":
+                # Note that this method will also remove the calculation directory
+                await self._handle_non_interactive_output(command, calc, parameters)
+            else:
+                await self._handle_interactive_output(command, calc, parameters)
+        except Exception as exc:
+            await self._handle_calculation_failure(calc, exc)
+            return
 
         logger.debug("Updating calculation status after calculation has finished")
         await self.data_manager.update_calculation_status(await calc.get_status_details())
