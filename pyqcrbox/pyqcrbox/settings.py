@@ -131,7 +131,7 @@ class StructlogRendererEnum(Enum):
 
 
 class LoggingSettings(QCrBoxSettingsBaseModel):
-    log_func_entry_exit: bool = False
+    log_func_entry_exit: bool = True
     log_level: str = "DEBUG" if IS_RUNNING_DEBUG_MODE or IS_RUNNING_INSIDE_TESTS else "INFO"
     renderer: StructlogRendererEnum = StructlogRendererEnum.JSON
 
