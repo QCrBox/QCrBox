@@ -270,10 +270,10 @@ class QCrBoxClient(QCrBoxServerClientBase):
         """
         from pyqcrbox.registry.client.executable_command.error import FinaliseCommandFailure, error_dialog_box
 
-        logger.debug(f"Adding output from interactive command {command.name} into data manager")
-
         if not calc.finalise_calc:
             logger.info(f"Interactive session {calc.calculation_id} has no finalise method, so cannot get output")
+            calc.is_closed = True
+            calc.session_closed_event.set()
             return
 
         logger.debug("Waiting for finalise command to finish running to get output")
@@ -289,7 +289,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
             raise calc.exception from calc.finalise_calc.exception_raised
 
         logger.debug("Finalise command has finished")
-
+        logger.debug(f"Adding output from interactive command {command.name} into data manager")
         try:
             parameter_name, cif_parameter, output_path = await get_cif_merge_parameter(command, command_parameters)
 
@@ -630,6 +630,7 @@ class QCrBoxClient(QCrBoxServerClientBase):
         await calc.terminate()
 
         self._remove_calculation_work_dir()
+        await self.data_manager.update_calculation_status(await calc.get_status_details())
         self.status.set_idle()
         logger.debug("Interactive session has been closed and client set to idle")
 

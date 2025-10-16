@@ -11,9 +11,7 @@ from pyqcrbox.registry.client.executable_command.error import (
     FinaliseCommandFailure,
     PrepareCommandFailure,
     RunCommandFailure,
-    error_dialog_box,
 )
-from pyqcrbox.services import QCRBOX_GLOBAL_SERVICES_REGISTRY
 from pyqcrbox.sql_models import CalculationStatusEnum
 from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import Cif2CifOptions, CifDataFileParameter
 
@@ -95,7 +93,8 @@ class InteractiveSessionCalculation(BaseCalculation):
         output_file = self.finalise_calc.return_value
         if not output_file:
             logger.warning("The finalise calculation for the interactive session does not return an output file")
-            return None
+            self.output_dataset_id = None
+            return self.output_dataset_id
 
         output_file = Path(output_file)
         if not output_file.exists() or not output_file.is_file():
