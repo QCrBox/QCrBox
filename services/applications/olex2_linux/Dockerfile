@@ -6,7 +6,7 @@ SHELL ["/bin/bash", "-c"]
 USER root
 
 RUN apt-get update -y && \
-    apt-get install -y --fix-missing --no-install-recommends libgtk2.0-0 libglu1-mesa openmpi-bin libncurses5 && \
+    apt-get install -y --fix-missing --no-install-recommends libgtk2.0-0 libglu1-mesa openmpi-bin libncurses6 && \
     rm -rf /var/lib/apt/lists
 
 # Ensure the locale en_GB is available (otherwise Olex2

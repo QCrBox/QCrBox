@@ -7,14 +7,16 @@ SHELL ["/bin/bash", "-c"]
 
 #ARG WINE_BRANCH=staging
 ARG WINE_BRANCH=stable
-ARG MONO_VERSION=9.0.0
+#ARG MONO_VERSION=9.0.0
+ARG MONO_VERSION=10.3.0
+#ARG GECKO_VERSION=2.47.4
 ARG GECKO_VERSION=2.47.4
 
 # Install wine (https://www.winehq.org/)
 RUN dpkg --add-architecture i386 && \
     mkdir -pm755 /etc/apt/keyrings && \
     curl -o /etc/apt/keyrings/winehq-archive.key https://dl.winehq.org/wine-builds/winehq.key && \
-    curl -O --output-dir /etc/apt/sources.list.d/ https://dl.winehq.org/wine-builds/debian/dists/bookworm/winehq-bookworm.sources && \
+    curl -O --output-dir /etc/apt/sources.list.d/ https://dl.winehq.org/wine-builds/debian/dists/trixie/winehq-trixie.sources && \
     apt-get update -y && \
     apt-get install -y --install-recommends winehq-${WINE_BRANCH} wine-${WINE_BRANCH} && \
     rm -rf /var/lib/apt/lists && \
