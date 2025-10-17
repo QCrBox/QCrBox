@@ -34,6 +34,7 @@ However, there will be an initial period of stabilisation where this is not adhe
 
 ### Removed Features
 
+- Removed deprecated roadmap
 - We have removed the dev, docs, invoke and status options from the `qcb` CLI.
 - Removed `qcrbox-nextflow` container which was unused.
 - `cli_command` is no longer a valid `implemented_as` type for non-interactive commands.
