@@ -27,5 +27,17 @@ commands:
         import_path: "dummy_gui_commands"
         callable_name: "finalise_interactive"
         used_basecommand_parameters: ["input_file"]
-
+  - name: "no_output"
+    implemented_as: "interactive_session"
+    description: "Start a dummy GUI which returns no output"
+    parameters:
+      - name: "input_file"
+        dtype: "QCrBox.cif_data_file"
+        description: "The file to open in the dummy GUI"
+    interactive_lifecycle:
+      run:
+        implemented_as: "cli_command"
+        description: "Run command for rendering the dummy GUI"
+        call_pattern: "python /opt/qcrbox/dummy_gui.py {input_file}"
+        used_basecommand_parameters: ["input_file"]
 qcrbox_yaml_spec_version: "0.1"

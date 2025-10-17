@@ -11,7 +11,7 @@ This project aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0
 However, there will be an initial period of stabilisation where this is not adhered to
 (releases with version numbers `0.0.x`).
 
-## [Unreleased]
+## [v0.1.0]
 
 ### New Features
 
@@ -57,6 +57,7 @@ However, there will be an initial period of stabilisation where this is not adhe
 - Improved error message return from command invocation/ending API endpoints when NATS is the reason for failure.
 - `PythonCallable` commands can now also return a `pathlib.Path` object in addition to a `str` of a file path.
 - Additional automated developer tests have been added for the CIF2CIF translation for command execution.
+- The Robot Framework test suites have been cleaned up and refactored.
 - And lots more!
 
 ### Issues Fixed
@@ -76,6 +77,8 @@ However, there will be an initial period of stabilisation where this is not adhe
 - Fixed an issue where `qcb init` would not create a valid template for interactive applications
 - Fixed an issue where cif files would become lost during command execution, which resulted in incorrect unified cifs
   being returned to the registry.
+- Fixed an issue where long descriptions or text fields in the YAML specifications would cause the front end to crash.
+  Now descriptions and text fields are limited to 1023 and 255 characters, respectively.
 - And lots more!
 
 ### Documentation

@@ -2,6 +2,8 @@ from typing import TYPE_CHECKING, Any
 
 from sqlmodel import JSON, Field, Relationship, UniqueConstraint
 
+from pyqcrbox import settings
+
 from ..base import QCrBoxBaseSQLModel
 from .base_command_spec import ImplementedAs
 from .command_spec import CommandSpec
@@ -17,8 +19,8 @@ class CommandSpecDB(QCrBoxBaseSQLModel, table=True):
     __table_args__ = (UniqueConstraint("name", "application_id"),)
     __pydantic_model_cls__ = CommandSpec
 
-    name: str
-    description: str = ""
+    name: str = Field(max_length=settings.db.max_text_length)
+    description: str | None = Field(default=None, max_length=settings.db.max_desc_length)
     merge_cif_su: bool = False
     implemented_as: ImplementedAs
     doi: str | None = None

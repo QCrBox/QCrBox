@@ -42,15 +42,19 @@ At any time you can press Ctrl+C to abort.
     2 - Interactive GUI (Linux)
     3 - Interactive GUI (Windows)
     Choose from [1/2/3] (1): 2
-  [2/7] application_slug (dummy_gui_tutorial): 
+  [2/7] application_slug (dummy_gui_tutorial):
   [3/7] application_name (Dummy Gui Tutorial): Dummy GUI
   [4/7] application_version (x.y.z): 0.1.0
   [5/7] description (Brief description of the application.): Dummy GUI for testing of interactive applications
-  [6/7] url (): 
-  [7/7] email (): 
+  [6/7] url ():
+  [7/7] email ():
 
 Created scaffolding for new application in '/home/user/QCrBox/services/applications/dummy_gui_tutorial'.
 ```
+
+> ### Description and text input lengths
+>
+> The length of descriptions must be limited to 1023 characters, and other text fields are limited to 255 characters. Any text fields or descriptions which are larger than these will cause the application to be rejected during registration with the QCrBox registry.
 
 Note that when a GUI application container is created, a `dummy_gui.py` file is also copied over as an exemplar application, but we'll be replacing that in the next step.
 
