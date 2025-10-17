@@ -70,21 +70,25 @@ def write_output_cif(work_folder, output_cif_name):
     output_cif_path = work_folder / output_cif_name
     try:
         newest_cif_path = find_newest_file_with_extension(
-            work_folder, ".cif", files_to_exclude=["output.cif", "work.cif", "input.cif"], case_sensitive=False
+            work_folder, ".CIF", case_sensitive=True
         )
-        newest_cif_text = newest_cif_path.read_text(encoding="utf-8", errors="replace")
+    except FileNotFoundError:
+        newest_cif_path = find_newest_file_with_extension(
+            work_folder, ".cif", case_sensitive=False
+        )
+        if newest_cif_path.name.endswith("_hkl.cif"):
+            raise FileNotFoundError("No suitable .cif file found (excluding _hkl.cif, which can be misformatted)")
+    newest_cif_text = newest_cif_path.read_text(encoding="utf-8", errors="replace")
 
-        newest_fcf_path = find_newest_file_with_extension(work_folder, ".fcf", case_sensitive=False)
-        newest_fcf_text = newest_fcf_path.read_text(encoding="utf-8", errors="replace")
+    newest_fcf_path = find_newest_file_with_extension(work_folder, ".fcf", case_sensitive=False)
+    newest_fcf_text = newest_fcf_path.read_text(encoding="utf-8", errors="replace")
 
-        cif_text = newest_cif_text + "\n_iucr_refine_fcf_details\n;\n" + newest_fcf_text + "\n;\n"
+    cif_text = newest_cif_text + "\n_iucr_refine_fcf_details\n;\n" + newest_fcf_text + "\n;\n"
 
-        cleaned_text = clean_cif_text(cif_text)
-        output_cif_path.write_text(cleaned_text, encoding="utf-8")
+    cleaned_text = clean_cif_text(cif_text)
+    output_cif_path.write_text(cleaned_text, encoding="utf-8")
 
-        return output_cif_path
-    except StopIteration as e:
-        raise FileNotFoundError("CIF or FCF files missing in the working directory.") from e
+    return output_cif_path
 
 
 def clean_cif_text(cif_text):
@@ -103,6 +107,8 @@ def clean_cif_text(cif_text):
         if match:
             value = match.group(1)
             cleaned_text = re.sub(pattern, value, cleaned_text)
+
+    cleaned_text = re.sub(r"(\d+\.\d+\(\d+)\n", r"\1)\n", cleaned_text)
     return cleaned_text
 
 
