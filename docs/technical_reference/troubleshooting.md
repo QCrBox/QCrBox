@@ -2,6 +2,14 @@
 
 If you encounter any problems or questions when developing application containers, look below for potential solutions.
 
+## How can I speed up the building of core QCrBox containers?
+
+You can [use prebuilt images from a container repository](../how_to_guides/updating_container_registry.md) to reduce build times.
+
+## Why are the core QCrBox containers taking so long to build despite having been built before?
+
+There's a known Docker caching issue in the Developer Release with the `base-novnc` and `base-wine` containers (see [this issue](https://github.com/QCrBox/QCrBox/issues/556)), which means that cached versions of these built containers aren't used.
+
 ## When building QCrBox components, encounter the following error (with ... representing hashes and IDs):
 
 ```
