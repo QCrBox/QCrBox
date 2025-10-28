@@ -36,12 +36,12 @@ def refine(
 
     shutil.copy(work_cif_path, output_cif_path)
 
-    return str(output_cif_path)
+    return str(output_cif_path.absolute())
 
 
 def run_commands(input_cif: str, output_cif_name: str, cmd_file: str):
     input_cif_path = Path(input_cif)
-    output_cif_path = Path(output_cif_name)
+    output_cif_path = input_cif_path.parent / output_cif_name
     work_cif_path = input_cif_path.parent / "qcrbox_work.cif"
 
     shutil.copy(input_cif_path, work_cif_path)
@@ -55,4 +55,4 @@ def run_commands(input_cif: str, output_cif_name: str, cmd_file: str):
 
     shutil.copy(work_cif_path, output_cif_path)
 
-    return str(output_cif_path)
+    return str(output_cif_path.absolute())
