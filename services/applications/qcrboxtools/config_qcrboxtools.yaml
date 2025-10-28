@@ -61,7 +61,7 @@ commands:
         required_entries: [
           "_atom_site_aniso.label", "_atom_site_aniso.u_11", "_atom_site_aniso.u_22",
           "_atom_site_aniso.u_33", "_atom_site_aniso.u_12", "_atom_site_aniso.u_13",
-          "_atom_site_aniso.u_23"
+          "_atom_site_aniso.u_23", "_atom_site.label", "_atom_site.adp_type"
         ]
         invalidated_entries: [
           "_refln.*calc.*", "_shelx.*", "_iucr.refine_instructions_details",
