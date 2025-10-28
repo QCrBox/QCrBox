@@ -58,12 +58,12 @@ def atom_form_fact_gpaw(input_cif, output_cif_name, functional, gridspacing):
 
 
 def ha_refine(input_cif, output_cif_name, functional, gridspacing):
-    input_cif_path = Path(input_cif)
+    input_cif_path = Path(input_cif).absolute()
 
     cif2hkl4(input_cif, 0, input_cif_path.parent / "shelx.hkl")
 
     output_cif_path = input_cif_path.parent / output_cif_name
-    dummy_path = Path(__file__).parent / "dummy.lst"
+    dummy_path = Path(__file__).parent.absolute() / "dummy.lst"
 
     cif_text = input_cif_path.read_text(encoding="UTF-8")
     extinction_method = "none"
@@ -99,7 +99,8 @@ def ha_refine(input_cif, output_cif_name, functional, gridspacing):
             "auto",
             "--output_folder",
             str(input_cif_path.parent.absolute()),
-        ]
+        ], 
+        cwd=input_cif_path.parent
     )
 
     return str(output_cif_path)
