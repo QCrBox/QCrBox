@@ -1,5 +1,6 @@
 import subprocess
 from pathlib import Path
+import shutil
 
 from iotbx.cif.model import cif
 from pyqcrbox import sql_models
@@ -102,6 +103,10 @@ def ha_refine(input_cif, output_cif_name, functional, gridspacing):
         ], 
         cwd=input_cif_path.parent
     )
+
+    result_name = input_cif_path.parent / 'xharpy.cif'
+
+    shutil.copy(result_name, output_cif_path)
 
     return str(output_cif_path)
 
