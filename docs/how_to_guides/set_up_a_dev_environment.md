@@ -7,7 +7,7 @@ Make sure you have the necessary prerequisites installed (see [below](#prerequis
 - Docker / Docker Compose
 - WSL2 (Windows Subsystem for Linux 2) - _only required for Windows_
 
-Then run the following command to download the setup script and install QCrBox.
+Then run the following command to download the setup script to install QCrBox in the current folder.
 ```bash
 $ bash <(curl -fsSL https://raw.githubusercontent.com/QCrBox/QCrBox/dev/scripts/qcrbox_setup.sh)
 ```
@@ -25,7 +25,7 @@ $ bash qcrbox_setup.sh
 The setup script will give you the option to automatically install Devbox and Nix (if they are not already installed).
 Then it will clone the QCrBox repository and create an isolated development environment inside it. This development
 environment includes a virtual environment for the `pyqcrbox` Python package and all other dependencies needed to
-run and develop QCrBox. Once installation is complete, you can activate the development shell by running `devbox shell`.
+run and develop QCrBox. Once installation is complete, you can activate the development shell by running `devbox shell` within the QCrBox base folder.
 
 QCrBox relies on [Devbox](https://www.jetify.com/devbox/docs/) to provide a consistent development environment.
 Internally, Devbox uses the [Nix package manager](https://nixos.org/) to install packages into isolated environments.
@@ -54,12 +54,6 @@ $ qcb list components
 $ qcb list components --all
 ```
 
-You can also test that the components build and run correctly by running a Devbox script,
-
-```console
-$ devbox run test-api
-```
-
 ## Build a container to test the installation
 
 Try building a component by typing:
@@ -76,9 +70,26 @@ In the event of disaster, it is possible to destroy the containers and restart Q
 devbox run restart
 ```
 
+## Build the set of currently created QCrBox containers
+
+Some of the components rely on software that is not independedly distributable. How to get the necessary files is descibed [here](obtain_licenced_components.md) (you only need the ones not marked as "support in development")
+
+After these have been have been added, you can build all the components using:
+
+```console exec="1" source="console"
+$ qcb build --all
+```
+
 ## Install QCrBox front-end
 
-In order to drive the QCrBox platform, ensure you also have deployed the QCrBox web front-end. You can find instructions to deploy it [here](https://github.com/QCrBox/QCrBoxFrontend/blob/main/documentation/deployment_instructions.md).
+In order to drive the QCrBox platform, ensure you also have deployed the QCrBox web front-end. 
+Using the devbox shell navigate outside of the QCrBox folder. Then you can clone the necessary files using:
+
+```console
+git clone https://github.com/QCrBox/QCrBoxFrontend.git
+```
+
+You can find instructions to deploy it [here](https://github.com/QCrBox/QCrBoxFrontend/blob/main/documentation/deployment_instructions.md).
 
 ## Prerequisites
 
