@@ -61,12 +61,16 @@ commands:
         required_entries: [
           "_atom_site_aniso.label", "_atom_site_aniso.u_11", "_atom_site_aniso.u_22",
           "_atom_site_aniso.u_33", "_atom_site_aniso.u_12", "_atom_site_aniso.u_13",
-          "_atom_site_aniso.u_23"
+          "_atom_site_aniso.u_23", "_atom_site.label", "_atom_site.adp_type"
         ]
         invalidated_entries: [
           "_refln.*calc.*", "_shelx.*", "_iucr.refine_instructions_details",
           '_refine(?!_ls\.weighting|_ls\.extinction)'
         ]
+      - name: "select_elements"
+        dtype: "str"
+        default_value: ""
+        description: "Comma-separated list of element symbols to select which atoms to convert. If no atoms are converted."
 
 cif_entry_sets:
   - name: "molecular_structure"

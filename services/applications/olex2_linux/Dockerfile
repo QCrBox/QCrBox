@@ -6,7 +6,7 @@ SHELL ["/bin/bash", "-c"]
 USER root
 
 RUN apt-get update -y && \
-    apt-get install -y --fix-missing --no-install-recommends libgtk2.0-0 libglu1-mesa openmpi-bin libncurses5 && \
+    apt-get install -y --fix-missing --no-install-recommends libgtk2.0-0 libglu1-mesa openmpi-bin libncurses6 && \
     rm -rf /var/lib/apt/lists
 
 # Ensure the locale en_GB is available (otherwise Olex2
@@ -16,7 +16,8 @@ RUN sed -i 's/^# en_GB/en_GB/' /etc/locale.gen && \
 
 # Dirty hack to get Olex headless to run
 RUN cd /lib/x86_64-linux-gnu/ && \
-    ln -s libreadline.so.8 libreadline.so.6
+    ln -s libreadline.so.8 libreadline.so.6 && \
+    ln -s /lib/x86_64-linux-gnu/libtinfo.so.6 libtinfo.so.5
 
 # create folder and then work as user to avoid a RUN chown
 
