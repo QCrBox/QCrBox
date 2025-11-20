@@ -41,7 +41,7 @@ Before you ask a question, it is best to search for existing [Issues](https://gi
 If you then still feel the need to ask a question and need clarification, we recommend the following:
 
 - Open an [Issue](https://github.com/QCrBox/QCrBox/issues/new).
-- Provide as much context as you can about what you're running into.
+- If it's a bug, provide as much context as you can about what you're running into. If it's a feature or enhancement request, describe the current state of the software as relevant, and describe the type of feature requested and precisely how it will resolve the situation.
 - Provide project, os and platform versions, depending on what seems relevant.
 
 ## I Want To Contribute
