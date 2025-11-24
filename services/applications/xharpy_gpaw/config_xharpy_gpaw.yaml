@@ -49,12 +49,12 @@ commands:
       - name: "output_cif_name"
         dtype: "QCrBox.output_cif"
         description: "Name to use for exporting the CIF file back to QCrBox after refining the structure"
-        required_entry_sets: ["structure", "atomic_information"]
+        required_entry_sets: ["structure", "atomic_information", "refinement_results"]
         optional_entry_sets: ["geometry_lookup"]
         invalidated_entries: [
           "_geom.*", "_refln.*calc.*", "_shelx.*", "_iucr.refine_instructions_details",
           '_refine(?!_ls\.weighting|_ls\.extinction).+', "_atom_site_aniso.u_.._su",
-          "_atom_site.*"
+          "_atom_site.*", "_refine.diff_density_*", "_iucr.fcf*"
         ]
         custom_categories: ["shelx"]
       - name: "functional"
@@ -133,5 +133,32 @@ cif_entry_sets:
       "_aspheric_ff.index_h", "_aspheric_ff.index_k", "_aspheric_ff.index_l", 
       "_aspheric_ff.form_factor_real", "_aspheric_ff.form_factor_imag"
     ]
+  - name: "refinement_results"
+    required: [
+      "_computing_structure_refinement", 
+      "_refine_special_details",
+      "_refine_ls_structure_factor_coef",
+      "_refine_ls_matrix_type",
+      "_refine_ls_weighting_scheme",
+      "_refine_ls_weighting_details",
+      "_refine_ls_hydrogen_treatment",
+      "_refine_ls_extinction_coef",
+      "_refine_ls_extinction_method",
+      "_refine_ls_number_reflns",
+      "_refine_ls_number_parameters",
+      "_refine_ls_number_restraints",
+      "_refine_ls_R_factor_all",
+      "_refine_ls_R_factor_gt",
+      "_refine_ls_wR_factor_ref",
+      "_refine_ls_wR_factor_gt",
+      "_refine_ls_goodness_of_fit_ref",
+      "_refine_ls_shift/su_max",
+      "_refine_ls_shift/su_mean"
+    ]
+    optional: [
+      "_atom_type_scat_source",
+      "_geom_special_details"
+    ]
+
 
 qcrbox_yaml_spec_version: "0.1"

@@ -11,6 +11,17 @@ This project aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0
 However, there will be an initial period of stabilisation where this is not adhered to
 (releases with version numbers `0.0.x`).
 
+## [v0.1.1]
+
+### Enhancements
+
+- The base QCrBox image and all applications have been upgraded to Debian Trixie.
+
+### Documentation
+
+- Improved the documentation about setting up a dev environment and obtaining licensed components.
+- Added documentation on how to create a new release.
+
 ## [v0.1.0]
 
 ### New Features

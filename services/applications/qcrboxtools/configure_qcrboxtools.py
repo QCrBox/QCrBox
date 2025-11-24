@@ -36,14 +36,14 @@ def replace_structure_from_cif(input_cif, structure_cif, output_cif_name):
     return str(output_cif_path)
 
 
-def iso2aniso(input_cif, output_cif_name):
+def iso2aniso(input_cif, output_cif_name, select_elements):
     input_cif_path = Path(input_cif)
 
     output_cif_path = input_cif_path.parent / output_cif_name
 
     # There were the original default values set via command line parameters when they were optional arguments/options
     select_names = None
-    select_elements = None
+    select_elements = select_elements.split(",") if len(select_elements) > 0 else None
     select_regexes = None
     overwrite = False
 
