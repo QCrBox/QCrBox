@@ -50,4 +50,4 @@ bash scripts/update_container_repository.sh
 - Upload the wheels built from `qcb up -all` for `pyqcrbox` and `qcrboxtools`. They can be found in
   `QCrBox/services/base_images/base_ancestor/pyqcrbox_dist/` and
   `QCrBox/services/base_images/base_ancestor/qcrboxtools_dist/` respectively.
-- Upload both wheels to the GitHub release page and tttach the generated `.whl` files to the release before publishing.
+- Attach the generated `.whl` files to the release before publishing.
