@@ -124,7 +124,8 @@ use [GitHub flow][github-flow] with forks and pull requests to manage changes:
 
 ## Code Style & Conventions
 
-QCrBox follows the Python Style guide [PEP8](https://www.python.org/dev/peps/pep-0008/) that provides coding conventions for Python code.
+QCrBox follows the Python Style guide [PEP8](https://www.python.org/dev/peps/pep-0008/) that provides coding conventions for Python code,
+and uses [ruff](https://docs.astral.sh/ruff/) to automatically check and correct for adherence to code standards.
 This is a well established coding style for Python and is a great place to start since it’s already well-defined.
 
 In order to help enforce the PEP8 conventions along with error detection, Python lintes such as Pylint or Flake8 can be integrated into many different Python IDEs (e.g. PyCharm, Visual Studio Code).
