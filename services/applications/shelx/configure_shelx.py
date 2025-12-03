@@ -16,8 +16,8 @@ def replace_acta_with_acta_anis(contents):
 
 
 def get_ins_file_path(input_cif_path: Path):
-    input_file_contents = input_cif_path.open().read()
-    m = re.search(r"\b(?P<res_filename>.+?\.res)\b", input_file_contents)
+    input_cif_contents = input_cif_path.open().read()
+    m = re.search(r"\b(?P<res_filename>.+?\.res)\b", input_cif_contents)
     if m is None:
         raise RuntimeError(f"Could not determine filename of .res file from {input_cif_path.as_posix()}")
 
