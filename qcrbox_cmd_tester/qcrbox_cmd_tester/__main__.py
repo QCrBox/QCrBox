@@ -14,8 +14,11 @@ from pathlib import Path
 import yaml
 from pydantic import ValidationError
 from qcrboxapiclient.client import Client
+from rich.console import Console
+from rich.panel import Panel
 
 from .error_formatter import format_yaml_error
+from .init_cmd import generate_test_suite
 from .models import TestSuite
 from .run_suite import TestSuiteResult, run_test_suite
 
@@ -278,10 +281,6 @@ def cmd_run(args) -> int:
 
 def cmd_init(args) -> int:
     """Initialize a new test suite."""
-    from .init_cmd import generate_test_suite
-    from rich.console import Console
-    from rich.panel import Panel
-    
     try:
         generate_test_suite(args.config, args.valid_cif, args.output)
         return 0
