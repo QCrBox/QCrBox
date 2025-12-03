@@ -30,13 +30,13 @@ def test_parameter_from_yaml_dict_simple():
 
 def test_parameter_from_yaml_dict_internal_file():
     """Test creating an internal file parameter from YAML dict."""
-    cif_content = "data_test\n_atom.type C\n"
-    data = {"name": "input_cif", "value": cif_content, "type": "internal_file"}
+    file_content = "data_test\n_atom.type C\n"
+    data = {"name": "input_cif", "value": file_content, "type": "internal_file"}
     param = QCrBoxParameter.from_yaml_dict(data, base_folder=Path("."))
 
     assert isinstance(param, QCrBoxFileParameter)
     assert param.name == "input_cif"
-    assert param.cif_content == cif_content
+    assert param.file_content == file_content
 
 
 def test_parameter_from_yaml_dict_external_file():
@@ -52,7 +52,7 @@ def test_parameter_from_yaml_dict_external_file():
 
         assert isinstance(param, QCrBoxFileParameter)
         assert param.name == "input_cif"
-        assert "data_test" in param.cif_content
+        assert "data_test" in param.file_content
     finally:
         temp_file.unlink()
 
@@ -73,8 +73,8 @@ def test_parameter_from_yaml_dict_external_file_relative_path():
         param = QCrBoxParameter.from_yaml_dict(data, base_folder=tmpdir)
 
         assert isinstance(param, QCrBoxFileParameter)
-        assert "data_test" in param.cif_content
-        assert "_atom.type N" in param.cif_content
+        assert "data_test" in param.file_content
+        assert "_atom.type N" in param.file_content
 
 
 # Tests for QCrBoxFileParameter
@@ -86,7 +86,7 @@ def test_file_parameter_from_internal_file():
     param = QCrBoxFileParameter.from_internal_file(content, "test_param")
 
     assert param.name == "test_param"
-    assert param.cif_content == content
+    assert param.file_content == content
 
 
 def test_file_parameter_from_external_file():
@@ -99,7 +99,7 @@ def test_file_parameter_from_external_file():
         param = QCrBoxFileParameter.from_external_file(temp_file, "external_param", base_folder=Path("."))
 
         assert param.name == "external_param"
-        assert "data_external" in param.cif_content
+        assert "data_external" in param.file_content
     finally:
         temp_file.unlink()
 
@@ -133,7 +133,7 @@ def test_file_parameter_from_external_file_with_upload_filename():
 
         assert param.name == "input_file"
         assert param.upload_filename == "custom_name.inp"
-        assert "test input file" in param.cif_content
+        assert "test input file" in param.file_content
     finally:
         temp_file.unlink()
 
@@ -156,7 +156,7 @@ def test_parameter_from_yaml_dict_external_file_with_upload_filename():
         assert isinstance(param, QCrBoxFileParameter)
         assert param.name == "constraint_file"
         assert param.upload_filename == "CONSTRAIN.txt"
-        assert "constraint file content" in param.cif_content
+        assert "constraint file content" in param.file_content
     finally:
         temp_file.unlink()
 
@@ -175,7 +175,7 @@ def test_parameter_from_yaml_dict_internal_file_with_upload_filename():
     assert isinstance(param, QCrBoxFileParameter)
     assert param.name == "data_file"
     assert param.upload_filename == "data.dat"
-    assert param.cif_content == file_content
+    assert param.file_content == file_content
 
 
 def test_parameter_from_yaml_dict_external_file_without_upload_filename():

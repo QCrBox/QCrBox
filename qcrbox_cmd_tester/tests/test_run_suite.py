@@ -74,7 +74,7 @@ def test_case_with_file():
         qcrbox_application_version="1.0.0",
         qcrbox_command_name="analyze",
         qcrbox_command_parameters=[
-            QCrBoxFileParameter(name="input_cif", cif_content="data_input\n_test 1\n"),
+            QCrBoxFileParameter(name="input_cif", file_content="data_input\n_test 1\n"),
             QCrBoxParameter(name="mode", value="advanced"),
         ],
         expected_results=[
@@ -93,7 +93,7 @@ def test_case_with_file_custom_filename():
         qcrbox_application_version="1.0.0",
         qcrbox_command_name="process_file",
         qcrbox_command_parameters=[
-            QCrBoxFileParameter(name="input_file", cif_content="test data\n", upload_filename="custom_name.inp"),
+            QCrBoxFileParameter(name="input_file", file_content="test data\n", upload_filename="custom_name.inp"),
             QCrBoxParameter(name="mode", value="test"),
         ],
         expected_results=[

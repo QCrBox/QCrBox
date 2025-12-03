@@ -52,4 +52,4 @@ def test_create_test_suite_from_yaml(test_yaml_dict):
     param2 = test_case.qcrbox_command_parameters[1]
     assert isinstance(param2, QCrBoxFileParameter)
     assert param2.name == "param2"
-    assert param2.cif_content == "something_in_here"
+    assert param2.file_content == "something_in_here"

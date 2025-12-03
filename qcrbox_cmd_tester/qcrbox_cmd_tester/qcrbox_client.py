@@ -12,12 +12,14 @@ from dataclasses import dataclass
 from qcrboxapiclient.api.calculations import get_calculation_by_id, stop_running_calculation
 from qcrboxapiclient.api.commands import invoke_command
 from qcrboxapiclient.api.datasets import (
+    append_to_dataset,
     create_dataset,
     delete_dataset_by_id,
     download_dataset_by_id,
 )
 from qcrboxapiclient.client import Client
 from qcrboxapiclient.models import (
+    AppendToDatasetBody,
     CreateDatasetBody,
     InvokeCommandParameters,
     InvokeCommandParametersCommandArguments,
@@ -35,13 +37,13 @@ class CommandRunResult:
     status_events: list  # List of CalculationStatusDetails
 
 
-def upload_cif_as_dataset(client: Client, cif_text: str, file_name: str) -> tuple[str, str]:
+def upload_file_as_dataset(client: Client, file_text: str, file_name: str) -> tuple[str, str]:
     """
     Upload a CIF file to QCrBox and create a dataset.
 
     Args:
         client: The QCrBox API client
-        cif_text: The CIF file content as a string
+        file_text: The file content as a string
         file_name: The name for the uploaded file
 
     Returns
@@ -53,8 +55,8 @@ def upload_cif_as_dataset(client: Client, cif_text: str, file_name: str) -> tupl
         TypeError: If the upload fails
 
     """
-    cifb = cif_text.encode("utf-8")
-    file = File(io.BytesIO(cifb), file_name)
+    fileb = file_text.encode("utf-8")
+    file = File(io.BytesIO(fileb), file_name)
     upload_payload = CreateDatasetBody(file)
 
     response = create_dataset.sync(client=client, body=upload_payload)
@@ -65,6 +67,36 @@ def upload_cif_as_dataset(client: Client, cif_text: str, file_name: str) -> tupl
     data_file_id = response.payload.datasets[0].data_files[file_name].qcrbox_file_id
 
     return dataset_id, data_file_id
+
+
+def append_file_to_dataset(client: Client, dataset_id: str, file_text: str, file_name: str) -> str:
+    """
+    Append a CIF file to an existing QCrBox dataset.
+
+    Args:
+        client: The QCrBox API client
+        dataset_id: The ID of the dataset to append to
+        file_text: The file content as a string
+        file_name: The name for the uploaded file
+
+    Returns
+    -------
+        The data_file_id of the appended file
+
+    Raises
+    ------
+        TypeError: If the upload fails
+
+    """
+    fileb = file_text.encode("utf-8")
+    file = File(io.BytesIO(fileb), file_name)
+    upload_payload = AppendToDatasetBody(file)
+
+    response = append_to_dataset.sync(client=client, id=dataset_id, body=upload_payload)
+    if isinstance(response, QCrBoxErrorResponse) or response is None:
+        raise TypeError("Failed to append file", response)
+
+    return response.payload.appended_file.qcrbox_file_id
 
 
 def run_qcrbox_command(
@@ -185,13 +217,24 @@ def prepare_qcrbox_parameters(client: Client, parameters: list) -> dict[str, obj
     # Upload files and get their IDs
     data_file_ids = {}
     dataset_ids = []
-    for param in dataset_params:
-        cif_text = param.cif_content
-        # Use upload_filename if provided, otherwise default to "{param.name}.cif"
-        filename = param.upload_filename if param.upload_filename else f"{param.name}.cif"
-        dataset_id, data_file_id = upload_cif_as_dataset(client, cif_text, filename)
-        data_file_ids[param.name] = data_file_id
+
+    if dataset_params:
+        # Create dataset with the first file
+        first_param = dataset_params[0]
+        cif_text = first_param.file_content
+        filename = first_param.upload_filename if first_param.upload_filename else f"{first_param.name}.cif"
+
+        dataset_id, data_file_id = upload_file_as_dataset(client, cif_text, filename)
+        data_file_ids[first_param.name] = data_file_id
         dataset_ids.append(dataset_id)
+
+        # Append remaining files to the same dataset
+        for param in dataset_params[1:]:
+            cif_text = param.file_content
+            filename = param.upload_filename if param.upload_filename else f"{param.name}.cif"
+
+            data_file_id = append_file_to_dataset(client, dataset_id, cif_text, filename)
+            data_file_ids[param.name] = data_file_id
 
     # Build parameter dictionary
     parameter_dict = {
