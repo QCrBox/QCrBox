@@ -7,16 +7,25 @@ When developing a new container to provide to others, it is recommended to creat
 
 ## Format of test cases
 
-A test plan could be compiled within a table within a text document, or within a spreadsheet. The following columns for each test case should be included at a minimum:
+### Automated Tests (Non-Interactive Commands)
 
-- Test ID - a unique identifier for the test case
-- Brief description - a concise note on what the test case actually tests, e.g. in terms of commands
-- Preconditions - any particular configuration or set up within the test plan or QCrBox or elsewhere that may be required, any dependent QCrBox services that need to be running, online services that are needed, etc.
-- Input CIF file - provide at least one example CIF file that is used as input for this test
-- Parameters - the parameters (if any) that are specified to the command for this test case
-- Manual test steps - the steps required to invoke the command with the specified parameters using the QCrBox front-end
-- Expected output CIF file - for each test input CIF, provide a corresponding output CIF file that is expected
-- Expected results - a concise description for what the expected result should be, e.g. a set of fields that should appear within the output CIF file
+For commands that take inputs and produce outputs without user intervention, the recommended format is a **QCrBox Command Tester YAML file**. This executable format serves as both the documentation of the test plan and the script to run it.
+
+For a step-by-step guide on creating these tests, see [Creating Automated Tests](../how_to_guides/create_automated_tests.md). For the full specification of the file format, see the [Test Suite Format](../technical_reference/command_tester/test_suite_format.md) reference.
+
+### Manual Test Plans (Interactive Commands)
+
+For interactive commands (e.g., GUIs, visualizers) or scenarios that cannot be easily automated, you should create a manual test plan. This can be a table in a text document or a spreadsheet.
+
+The following columns should be included at a minimum:
+
+- **Test ID** - a unique identifier for the test case
+- **Brief description** - a concise note on what the test case actually tests
+- **Preconditions** - any particular configuration, dependent services, or online services required
+- **Input CIF file** - example CIF file used as input
+- **Parameters** - parameters specified to the command
+- **Manual test steps** - step-by-step instructions to invoke the command and interact with the interface
+- **Expected results** - description of the expected outcome (e.g., "Window opens with structure displayed", "Dialog box appears")
 
 ## Good practice for writing manual test cases
 
