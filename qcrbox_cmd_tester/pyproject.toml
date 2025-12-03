@@ -17,8 +17,8 @@ classifiers = [
 ]
 
 dependencies = [
-    "pyyaml>=6.0.3",
-    "pydantic>=2.12.2",
+    "pyyaml>=6.0.0",
+    "pydantic>=2.9.2",
     "pycifrw>=4.4.6",
     "qcrboxapiclient @ git+https://github.com/QCrBox/QCrBoxAPIClient@0.1.0",
     "rich>=13.0.0",
