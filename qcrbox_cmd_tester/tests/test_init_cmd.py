@@ -156,3 +156,38 @@ def test_generate_test_suite_no_slug_error(tmp_path, mock_console):
     
     with pytest.raises(ValueError, match="must contain a 'slug' field"):
         generate_test_suite(config_file, cif_file)
+
+def test_generate_test_suite_skips_interactive(tmp_path, mock_console):
+    # Setup
+    config_content = {
+        "slug": "test-app",
+        "commands": [
+            {
+                "name": "interactive_cmd",
+                "implemented_as": "interactive_session",
+                "parameters": [{"name": "cif", "dtype": "QCrBox.cif_data_file"}]
+            },
+            {
+                "name": "normal_cmd",
+                "implemented_as": "python_callable",
+                "parameters": [{"name": "cif", "dtype": "QCrBox.cif_data_file"}]
+            }
+        ]
+    }
+    config_file = tmp_path / "config.yaml"
+    with open(config_file, "w") as f:
+        yaml.dump(config_content, f)
+        
+    cif_file = tmp_path / "structure.cif"
+    cif_file.write_text("data_test")
+    
+    # Execute
+    generate_test_suite(config_file, cif_file)
+    
+    # Verify
+    expected_output = tmp_path / "test_config.yaml"
+    with open(expected_output) as f:
+        result = yaml.safe_load(f)
+        
+    assert len(result["test_cases"]) == 1
+    assert result["test_cases"][0]["command_name"] == "normal_cmd"

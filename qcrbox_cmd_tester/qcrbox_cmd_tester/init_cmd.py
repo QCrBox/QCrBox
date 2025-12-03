@@ -72,6 +72,9 @@ def generate_test_suite(config_path: Path, cif_path: Path, output_path: Path | N
     todos = []
     
     for command in commands:
+        if command.get("implemented_as") == "interactive_session":
+            continue
+
         command_name = command.get("name")
         parameters = command.get("parameters", [])
         
