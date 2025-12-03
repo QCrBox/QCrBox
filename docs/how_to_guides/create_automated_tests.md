@@ -111,10 +111,16 @@ If a test fails, use the `--debug` flag to get more information:
 qcrbox-test --test-location services/applications/my_app/test_my_app.yaml --debug
 ```
 
-This will create a `logs/` directory containing:
+This will create a directory (by default `qcrbox_cmd_tester/logs/`) containing:
 
 - `summary.log`: Detailed error messages and failure reasons.
 - `test_result.cif`: The actual output CIF file from the command.
+
+You can also specify a custom directory for logs:
+
+```bash
+qcrbox-test --test-location services/applications/my_app/test_my_app.yaml --debug --log-dir ./my_logs
+```
 
 You can inspect the `test_result.cif` to see why your assertions failed (e.g., if the value was different than expected).
 

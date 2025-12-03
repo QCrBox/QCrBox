@@ -117,3 +117,4 @@ qcrbox_cmd_tester/pixi.lock
 
 # macOS specific
 .DS_Store
+qcrbox_cmd_tester/logs/

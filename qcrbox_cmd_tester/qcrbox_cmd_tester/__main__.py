@@ -147,7 +147,9 @@ def search_for_test_yaml_files_in_path(test_location: Path) -> list[Path]:
     return yaml_files
 
 
-def run_test_suites(yaml_files: list[Path], qcrbox_url: str, debug: bool = False) -> bool:
+def run_test_suites(
+    yaml_files: list[Path], qcrbox_url: str, debug: bool = False, log_dir: Path | None = None
+) -> bool:
     """
     Run test suite(s) from the specified file or directory.
 
@@ -155,6 +157,7 @@ def run_test_suites(yaml_files: list[Path], qcrbox_url: str, debug: bool = False
         yaml_files: List of paths to YAML test suite files.
         qcrbox_url: URL of the QCrBox API
         debug: If True, save detailed debug logs for failing tests
+        log_dir: Directory to save debug logs (default: qcrbox_cmd_tester/logs)
 
     Returns
     -------
@@ -167,8 +170,12 @@ def run_test_suites(yaml_files: list[Path], qcrbox_url: str, debug: bool = False
     debug_base_dir = None
     timestamp = None
     if debug:
-        debug_base_dir = Path("logs")
-        debug_base_dir.mkdir(exist_ok=True)
+        if log_dir:
+            debug_base_dir = log_dir
+        else:
+            debug_base_dir = Path(__file__).parents[1] / "logs"
+
+        debug_base_dir.mkdir(parents=True, exist_ok=True)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
     if not yaml_files:
@@ -266,7 +273,7 @@ def cmd_run(args) -> int:
 
     # Run tests
     try:
-        all_passed = run_test_suites(yaml_files, args.qcrbox_url, args.debug)
+        all_passed = run_test_suites(yaml_files, args.qcrbox_url, args.debug, args.log_dir)
         return 0 if all_passed else 1
     except KeyboardInterrupt:
         print("\n\nTest run interrupted by user", file=sys.stderr)
@@ -345,6 +352,13 @@ Examples:
         "--debug",
         action="store_true",
         help="Enable debug mode: save detailed logs and CIF files for failing tests to ./logs directory",
+    )
+
+    parser.add_argument(
+        "--log-dir",
+        type=Path,
+        default=None,
+        help="Directory to save debug logs (default: qcrbox_cmd_tester/logs)",
     )
 
     args = parser.parse_args()

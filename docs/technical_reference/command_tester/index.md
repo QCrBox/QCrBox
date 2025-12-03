@@ -50,7 +50,7 @@ When tests fail, debug mode saves:
 - Actual CIF output files for comparison
 - Command execution status and error messages
 
-All debug information is organized in timestamped directories under `./logs/`.
+All debug information is organized in timestamped directories under `qcrbox_cmd_tester/logs/` (or a custom directory specified via `--log-dir`).
 
 ## Project Structure
 
@@ -64,11 +64,13 @@ services/applications/
 │   └── test_cif_files/    # Test data files
 │       ├── structure1.cif
 │       └── structure2.cif
-├── logs/                  # Debug output (auto-created in workspace root)
-│   └── 20251027_143022_olex2/
-│       ├── summary.log
-│       └── test_result.cif
 └── README.md
+
+qcrbox_cmd_tester/
+└── logs/                  # Debug output (default location)
+    └── 20251027_143022_olex2/
+        ├── summary.log
+        └── test_result.cif
 ```
 
 ## Detailed Documentation

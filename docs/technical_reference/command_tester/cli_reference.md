@@ -65,6 +65,7 @@ qcrbox-test [--test-location PATH] [--qcrbox-url URL] [--debug]
 | `--test-location` | Path to a YAML test file or directory | `qcrbox_tests` |
 | `--qcrbox-url` | URL of the QCrBox API server | `$QCRBOX_API_URL` or `http://localhost:11000` |
 | `--debug` | Enable debug mode with detailed logging | Disabled |
+| `--log-dir` | Directory to save debug logs | `qcrbox_cmd_tester/logs` |
 | `--help` | Show help message and exit | - |
 
 ## Configuring the QCrBox API URL
@@ -105,7 +106,7 @@ qcrbox-test --debug
 
 ### What Debug Mode Does
 
-When enabled, debug mode saves detailed information for **failed tests** to the `logs/` directory:
+When enabled, debug mode saves detailed information for **failed tests** to the `qcrbox_cmd_tester/logs/` directory (or the directory specified by `--log-dir`):
 
 1. **Summary Log**: A text file with detailed failure information
 2. **CIF Outputs**: The actual CIF files returned by QCrBox commands
@@ -114,7 +115,7 @@ When enabled, debug mode saves detailed information for **failed tests** to the 
 ### Debug Output Structure
 
 ```
-logs/
+qcrbox_cmd_tester/logs/
 └── 20251027_143022_olex2/       # Timestamp + application slug
     ├── summary.log              # Detailed test results
     └── test_result.cif          # Output CIF file
