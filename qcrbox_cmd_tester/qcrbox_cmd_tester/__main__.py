@@ -2,7 +2,7 @@
 Command-line interface for running QCrBox test suites.
 
 Usage:
-    python -m qcrbox_cmd_tester [--test-location DIR] [--qcrbox-url URL] [--debug]
+    qcrbox-test [--test-location DIR] [--qcrbox-url URL] [--debug]
 """
 
 import argparse
@@ -309,19 +309,19 @@ def main() -> int:
         epilog="""
 Examples:
   # Run tests from default directory (qcrbox_tests)
-  python -m qcrbox_cmd_tester
+  qcrbox-test
 
   # Run tests from custom directory
-  python -m qcrbox_cmd_tester --test-location /path/to/tests
+  qcrbox-test --test-location /path/to/tests
 
   # Run a single test file
-  python -m qcrbox_cmd_tester --test-location qcrbox_tests/olex2.yaml
+  qcrbox-test --test-location qcrbox_tests/olex2.yaml
 
   # Specify custom QCrBox API URL
-  python -m qcrbox_cmd_tester --qcrbox-url http://localhost:8000
+  qcrbox-test --qcrbox-url http://localhost:8000
   
   # Initialize a new test suite
-  python -m qcrbox_cmd_tester init --config config.yaml --valid_cif structure.cif
+  qcrbox-test init --config config.yaml --valid_cif structure.cif
         """,
     )
 
