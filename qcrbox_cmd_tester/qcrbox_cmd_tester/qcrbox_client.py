@@ -115,7 +115,7 @@ def run_qcrbox_command(
         command_name: Name of the command to run
         application_slug: Slug of the QCrBox application
         application_version: Version of the application
-        parameter_dict: Dictionary of command parameters
+        command_parameters: List of command parameters
 
     Returns
     -------

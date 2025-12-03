@@ -78,17 +78,6 @@ class PyCIFRWAdapter(CIFIOAdapter):
         # Get the loop
         loop = self.block.GetLoop(entry_name)
 
-        # Validate entry exists
-        if entry_name not in self.block:
-            raise ValueMissingError(f"CIF entry '{entry_name}' not found in CIF block.")
-
-        # Validate all lookup columns exist
-        for lookup_name, _ in row_lookups:
-            if lookup_name not in self.block:
-                raise ValueMissingError(f"CIF entry '{lookup_name}' not found in CIF block.")
-
-        # Get the loop
-        loop = self.block.GetLoop(entry_name)
 
         # Find the indexes matching the lookup conditions
         indexes = [set(idx for idx, val in enumerate(loop[key]) if val == test_val) for key, test_val in row_lookups]

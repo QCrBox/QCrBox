@@ -98,7 +98,7 @@ def test_cif_entry_match(adapter: CIFIOAdapter, expected: CifEntryMatchExpectedR
         return IndividualTestResult(
             test_case_name=generate_test_case_name("match", expected.cif_entry_name),
             passed=False,
-            log=f"✗ {str(e)}",
+            log=f"✗ Entry '{expected.cif_entry_name}' not found in CIF block",
         )
 
 

@@ -59,7 +59,7 @@ test_cases:
 
 
   - name: "ha_refine_lda"
-    description: "Test Hirshfeld atom refinement with SCAN functional"
+    description: "Test Hirshfeld atom refinement with LDA functional"
     command_name: ha_refine
     timeout_seconds: 1200
     
