@@ -425,10 +425,7 @@ def test_cif_loop_entry_contain(
         )
 
         if passed:
-            log = (
-                f"✓ Loop entry '{expected.cif_entry_name}' (where {lookup_desc}) "
-                f"contains '{expected.expected_value}'"
-            )
+            log = f"✓ Loop entry '{expected.cif_entry_name}' (where {lookup_desc}) contains '{expected.expected_value}'"
         else:
             log = (
                 f"✗ Loop entry '{expected.cif_entry_name}' (where {lookup_desc}) "
@@ -512,8 +509,7 @@ def test_cif_loop_entry_present(
             test_case_name=generate_test_case_name("loop_present", expected.cif_entry_name),
             passed=True,
             log=(
-                f"✓ Loop entry '{expected.cif_entry_name}' (where {lookup_desc}) "
-                f"is present with value '{actual_value}'"
+                f"✓ Loop entry '{expected.cif_entry_name}' (where {lookup_desc}) is present with value '{actual_value}'"
             ),
         )
     except (ValueMissingError, ValueError, IndexError) as e:
