@@ -124,12 +124,32 @@ def save_debug_logs(
     return suite_debug_dir
 
 
-def run_test_suites_from_path(tests_path: Path, qcrbox_url: str, debug: bool = False) -> bool:
+def search_for_test_yaml_files_default() -> list[Path]:
+    """Search for YAML test files in the application directories."""
+    application_dir = Path(__file__).parents[2] / "services" / "applications"
+    yaml_files = application_dir.glob("**/test_*.yaml")
+    yml_files = application_dir.glob("**/test_*.yml")
+    return list(yaml_files) + list(yml_files)
+
+
+def search_for_test_yaml_files_in_path(test_location: Path) -> list[Path]:
+    """Search for YAML test files in the specified path."""
+    yaml_files = []
+    if test_location.is_file():
+        if test_location.suffix in {".yaml", ".yml"}:
+            yaml_files.append(test_location)
+    elif test_location.is_dir():
+        yaml_files.extend(test_location.glob("**/*.yaml"))
+        yaml_files.extend(test_location.glob("**/*.yml"))
+    return yaml_files
+
+
+def run_test_suites(yaml_files: list[Path], qcrbox_url: str, debug: bool = False) -> bool:
     """
     Run test suite(s) from the specified file or directory.
 
     Args:
-        tests_path: Path to a YAML test suite file or directory containing YAML test suite files
+        yaml_files: List of paths to YAML test suite files.
         qcrbox_url: URL of the QCrBox API
         debug: If True, save detailed debug logs for failing tests
 
@@ -148,28 +168,9 @@ def run_test_suites_from_path(tests_path: Path, qcrbox_url: str, debug: bool = F
         debug_base_dir.mkdir(exist_ok=True)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-    # Determine if path is a file or directory
-    if tests_path.is_file():
-        # Single YAML file
-        if tests_path.suffix.lower() not in [".yaml", ".yml"]:
-            print(f"Error: '{tests_path}' is not a YAML file (.yaml or .yml)", file=sys.stderr)
-            return False
-        yaml_files = [tests_path]
-    elif tests_path.is_dir():
-        # Directory containing YAML files
-        yaml_files = list(tests_path.glob("*.yaml")) + list(tests_path.glob("*.yml"))
-    else:
-        print(f"Error: '{tests_path}' is neither a file nor a directory", file=sys.stderr)
-        return False
-
     if not yaml_files:
-        print(f"No YAML test files found in {tests_path}", file=sys.stderr)
+        print("No YAML test files found", file=sys.stderr)
         return False
-
-    if tests_path.is_file():
-        print(f"Running test suite from: {tests_path.name}")
-    else:
-        print(f"Found {len(yaml_files)} test suite(s) in {tests_path}")
 
     all_passed = True
     results = []
@@ -226,7 +227,7 @@ def run_test_suites_from_path(tests_path: Path, qcrbox_url: str, debug: bool = F
     print(f"{'=' * 80}")
 
     # Calculate totals
-    total_suites = len(results)
+    total_suites = len(yaml_files)
     passed_suites = sum(1 for r in results if r.all_passed)
 
     total_test_cases = sum(len(r.test_results) for r in results)
@@ -270,8 +271,11 @@ Examples:
     parser.add_argument(
         "--test-location",
         type=Path,
-        default=Path("qcrbox_tests"),
-        help="Path to a YAML test suite file or directory containing YAML files (default: qcrbox_tests)",
+        default=None,
+        help=(
+            "Path to a YAML test suite file or directory containing YAML files "
+            "(default: use the tests in the subdirectories of services/applications)"
+        ),
     )
 
     parser.add_argument(
@@ -289,18 +293,21 @@ Examples:
 
     args = parser.parse_args()
 
-    # Validate tests path
-    if not args.test_location.exists():
-        print(f"Error: Path '{args.test_location}' does not exist", file=sys.stderr)
-        return 1
-
-    if not args.test_location.is_file() and not args.test_location.is_dir():
-        print(f"Error: '{args.test_location}' is not a file or directory", file=sys.stderr)
-        return 1
+    if args.test_location is None:
+        yaml_files = search_for_test_yaml_files_default()
+    else:
+        # Validate tests path
+        if not args.test_location.exists():
+            print(f"Error: Path '{args.test_location}' does not exist", file=sys.stderr)
+            return 1
+        if not args.test_location.is_file() and not args.test_location.is_dir():
+            print(f"Error: '{args.test_location}' is not a file or directory", file=sys.stderr)
+            return 1
+        yaml_files = search_for_test_yaml_files_in_path(args.test_location)
 
     # Run tests
     try:
-        all_passed = run_test_suites_from_path(args.test_location, args.qcrbox_url, args.debug)
+        all_passed = run_test_suites(yaml_files, args.qcrbox_url, args.debug)
         return 0 if all_passed else 1
     except KeyboardInterrupt:
         print("\n\nTest run interrupted by user", file=sys.stderr)

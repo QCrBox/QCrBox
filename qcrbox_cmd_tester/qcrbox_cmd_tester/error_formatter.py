@@ -31,7 +31,7 @@ def format_yaml_error(error: Exception, yaml_file: Path, yaml_data: dict | None 
     elif isinstance(error, ValidationError):
         _format_validation_error(error, yaml_file, yaml_data)
     elif isinstance(error, FileNotFoundError):
-        _format_file_not_found_error(yaml_file)
+        _format_file_not_found_error(error, yaml_file)
     elif isinstance(error, PermissionError):
         _format_permission_error(yaml_file)
     else:
@@ -53,13 +53,27 @@ def _format_yaml_syntax_error(error: yaml.YAMLError, yaml_file: Path) -> None:
     )
 
 
-def _format_file_not_found_error(yaml_file: Path) -> None:
+def _format_file_not_found_error(error: FileNotFoundError, yaml_file: Path) -> None:
     """Format file not found errors."""
-    console.print(
-        Panel(
+    missing_file = Path(error.filename) if error.filename else None
+
+    if missing_file and missing_file.resolve() != yaml_file.resolve():
+        message = (
+            f"[red bold]File Not Found[/red bold]\n\n"
+            f"The test suite [cyan]{yaml_file}[/cyan] references a file that could not be found:\n"
+            f"[yellow]{missing_file}[/yellow]\n\n"
+            f"Please check that the referenced file exists and the path is correct relative to the test suite."
+        )
+    else:
+        message = (
             f"[red bold]File Not Found[/red bold]\n\n"
             f"Could not find file: [cyan]{yaml_file}[/cyan]\n\n"
-            f"Please check that the file path is correct.",
+            f"Please check that the file path is correct."
+        )
+
+    console.print(
+        Panel(
+            message,
             title="❌ File Not Found",
             border_style="red",
         )
