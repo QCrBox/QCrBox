@@ -247,8 +247,62 @@ def run_test_suites(yaml_files: list[Path], qcrbox_url: str, debug: bool = False
     return all_passed
 
 
+def cmd_run(args) -> int:
+    """Run the test suites based on arguments."""
+    if args.test_location is None:
+        yaml_files = search_for_test_yaml_files_default()
+    else:
+        # Validate tests path
+        if not args.test_location.exists():
+            print(f"Error: Path '{args.test_location}' does not exist", file=sys.stderr)
+            return 1
+        if not args.test_location.is_file() and not args.test_location.is_dir():
+            print(f"Error: '{args.test_location}' is not a file or directory", file=sys.stderr)
+            return 1
+        yaml_files = search_for_test_yaml_files_in_path(args.test_location)
+
+    # Run tests
+    try:
+        all_passed = run_test_suites(yaml_files, args.qcrbox_url, args.debug)
+        return 0 if all_passed else 1
+    except KeyboardInterrupt:
+        print("\n\nTest run interrupted by user", file=sys.stderr)
+        return 130
+    except Exception as e:
+        print(f"\n\nFatal error: {e}", file=sys.stderr)
+        import traceback
+
+        traceback.print_exc()
+        return 1
+
+
+def cmd_init(args) -> int:
+    """Initialize a new test suite."""
+    from .init_cmd import generate_test_suite
+    from rich.console import Console
+    from rich.panel import Panel
+    
+    try:
+        generate_test_suite(args.config, args.valid_cif, args.output)
+        return 0
+    except Exception as e:
+        console = Console()
+        console.print(Panel(f"[bold]Error generating test suite[/bold]\n\n{str(e)}", title="Failed", style="red"))
+        return 1
+
+
 def main() -> int:
     """Run the test runner."""
+    # Check if 'init' is the first argument to dispatch to init command
+    if len(sys.argv) > 1 and sys.argv[1] == "init":
+        parser = argparse.ArgumentParser(description="Initialize a new test suite")
+        parser.add_argument("command", choices=["init"], help="Command to run")
+        parser.add_argument("--config", required=True, type=Path, help="Path to application config")
+        parser.add_argument("--valid_cif", required=True, type=Path, help="Path to a valid CIF file")
+        parser.add_argument("--output", type=Path, help="Output path for the test suite")
+        args = parser.parse_args()
+        return cmd_init(args)
+
     parser = argparse.ArgumentParser(
         description="Run QCrBox test suites from YAML files",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -265,6 +319,9 @@ Examples:
 
   # Specify custom QCrBox API URL
   python -m qcrbox_cmd_tester --qcrbox-url http://localhost:8000
+  
+  # Initialize a new test suite
+  python -m qcrbox_cmd_tester init --config config.yaml --valid_cif structure.cif
         """,
     )
 
@@ -292,32 +349,7 @@ Examples:
     )
 
     args = parser.parse_args()
-
-    if args.test_location is None:
-        yaml_files = search_for_test_yaml_files_default()
-    else:
-        # Validate tests path
-        if not args.test_location.exists():
-            print(f"Error: Path '{args.test_location}' does not exist", file=sys.stderr)
-            return 1
-        if not args.test_location.is_file() and not args.test_location.is_dir():
-            print(f"Error: '{args.test_location}' is not a file or directory", file=sys.stderr)
-            return 1
-        yaml_files = search_for_test_yaml_files_in_path(args.test_location)
-
-    # Run tests
-    try:
-        all_passed = run_test_suites(yaml_files, args.qcrbox_url, args.debug)
-        return 0 if all_passed else 1
-    except KeyboardInterrupt:
-        print("\n\nTest run interrupted by user", file=sys.stderr)
-        return 130
-    except Exception as e:
-        print(f"\n\nFatal error: {e}", file=sys.stderr)
-        import traceback
-
-        traceback.print_exc()
-        return 1
+    return cmd_run(args)
 
 
 if __name__ == "__main__":
