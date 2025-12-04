@@ -19,12 +19,32 @@ QCrBox Command Tester allows you to:
 
 ## Architecture
 
-```mermaid
-graph TD
-    A[YAML Test Definitions] --> B[Test Runner qcrbox-test]
-    B --> C[QCrBox API Client]
-    C --> D[QCrBox API Server]
-    D --> E[Containerized Applications]
+```text
++-----------------------+
+| YAML Test Definitions |
++-----------------------+
+          |
+          v
++-----------------------+
+|     Test Runner       |
+|    (qcrbox-test)      |
++-----------------------+
+          |
+          v
++-----------------------+
+|   QCrBox API Client   |
++-----------------------+
+          |
+          v
++-----------------------+
+|   QCrBox API Server   |
++-----------------------+
+          |
+          v
++-----------------------+
+|     Containerized     |
+|     Applications      |
++-----------------------+
 ```
 
 ## Key Features
