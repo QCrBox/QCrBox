@@ -13,6 +13,7 @@ qcrbox-test
 ```
 
 This will:
+
 - Recursively find all `test_*.yaml` and `test_*.yml` files in `services/applications/`
 - Execute each test suite sequentially
 - Display results for each test case

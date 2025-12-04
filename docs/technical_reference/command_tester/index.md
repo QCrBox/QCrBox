@@ -4,9 +4,7 @@
 
 QCrBox Command Tester is a command-line tool that enables automated testing of crystallographic software applications integrated with the QCrBox platform. It provides a YAML-based test specification format that allows you to define test suites, execute commands, and validate results against expected outcomes.
 
-**Quick Links:**
-- [Test Suite Format Specification](test_suite_format.md)
-- [CLI Reference](cli_reference.md)
+**Quick Links:** [Test Suite Format Specification](test_suite_format.md) - [CLI Reference](cli_reference.md)
 
 ## Overview
 
