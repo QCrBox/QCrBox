@@ -11,6 +11,12 @@ This project aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0
 However, there will be an initial period of stabilisation where this is not adhered to
 (releases with version numbers `0.0.x`).
 
+## [Unreleased]
+
+### New Features
+
+- Added QCrBox Command Tester, a comprehensive framework for automated testing of QCrBox applications and commands.
+
 ## [v0.1.1]
 
 ### Enhancements

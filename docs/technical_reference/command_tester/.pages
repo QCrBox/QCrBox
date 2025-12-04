@@ -1,0 +1,4 @@
+nav:
+  - Overview: index.md
+  - CLI Reference: cli_reference.md
+  - Test Suite Format: test_suite_format.md

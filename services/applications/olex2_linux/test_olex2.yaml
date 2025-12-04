@@ -1,0 +1,60 @@
+# Test suite for Olex2 application
+
+application_slug: olex2
+application_version: "1.5-alpha"
+description: "Test suite for Olex2 - solve, refine and finish small-molecule crystal structures"
+
+test_cases:
+  - name: "refine_basic"
+    description: "Test basic refinement with Olex2"
+    command_name: Refine
+    timeout_seconds: 60
+    
+    manual_precondition:
+      - Olex2 container needs to be built and available
+    
+    input_parameters:
+      - name: input_cif
+        type: external_file
+        value: "./test_cif_files/epoxide_anisotropic.cif"
+      - name: output_cif_name
+        type: str
+        value: "olex2_refined.cif"
+      - name: ls_cycles
+        type: int
+        value: 5
+      - name: weight_cycles
+        type: int
+        value: 5
+    
+    expected_results:
+      - result_type: status
+        expected: successful
+
+  - name: "run_commands_basic"
+    description: "Test running Olex2 commands from file"
+    command_name: run_commands
+    timeout_seconds: 60
+    
+    manual_precondition:
+      - Olex2 container needs to be built and available
+    
+    input_parameters:
+      - name: input_cif
+        type: external_file
+        value: "./test_cif_files/epoxide_anisotropic.cif"
+      - name: output_cif_name
+        type: str
+        value: "olex2_commands_output.cif"
+      - name: cmd_file
+        type: internal_file
+        value: |
+          DelIns ACTA
+          AddIns ACTA
+          refine 5
+          refine 5
+        upload_filename: "olex2_commands.txt"
+    
+    expected_results:
+      - result_type: status
+        expected: successful

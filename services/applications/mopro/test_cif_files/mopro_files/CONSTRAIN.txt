@@ -1,0 +1,44 @@
+
+! PREP CONS EQUI
+AVEPVM O1       1  O2       1
+AVEPVM C1       1  C2       1
+AVEPVM C4       1  C11      1
+AVEPVM C5       1  C10      1
+AVEPVM C6       1  C9       1
+AVEPVM C7       1  C8       1
+
+AVEPLM C6       1  C7       1
+
+
+AVEPVM H1A      1  H1B      1  H1C      1  H2A      1  H2B      1  H2C      1
+AVEPVM H6       1  H7       1  H8       1  H9       1
+
+
+
+! PREP CONS KAPP
+CONKAP O1       1  O2       1
+CONKAP C1       1  C2       1
+CONKAP C4       1  C11      1
+CONKAP C5       1  C10      1
+CONKAP C6       1  C9       1
+CONKAP C7       1  C8       1
+
+CONKAP H1A      1  H1B      1  H1C      1  H2A      1  H2B      1  H2C      1
+CONKAP H6       1  H7       1  H8       1  H9       1
+
+
+! PREP CONS SYMP
+SYMPLM mx       S1       1
+SYMPLM mymz     O1       1
+SYMPLM mymz     O2       1
+SYMPLM 3m       C1       1
+SYMPLM 3m       C2       1
+SYMPLM mymz     C3       1
+SYMPLM mz       C4       1
+SYMPLM mz       C5       1
+SYMPLM mymz     C6       1
+SYMPLM mymz     C7       1
+SYMPLM mymz     C8       1
+SYMPLM mymz     C9       1
+SYMPLM mz       C10      1
+SYMPLM mz       C11      1

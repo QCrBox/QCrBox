@@ -1,0 +1,155 @@
+
+application_slug: example_app
+application_version: "1.2.3"
+test_cases:
+  - name: "example test case 1"
+    description: "An example test case to demonstrate all result types"
+    command_name: example_command
+    timeout_seconds: 300
+
+    manual_precondition:
+      - example_app container needs to be built and available
+    input_parameters:
+      - name: external_input_file
+        type: external_file
+        value: "./test_files/example_input.cif"
+      - name: internal_input_file
+        type: internal_file
+        value: |
+          data_example
+          _cif.entry1 C
+          _cif.entry2 1.234
+          _another.entry 5.678
+          _cif.string_entry 'Check only for this part: check_me'
+          _cif.value_is_undefined ?
+
+          loop_
+          _loop_entry.index
+          _loop_entry.index_additional
+          _loop_entry.value
+          _loop_entry.ignore_this
+          _loop_entry.present_entry
+          _loop_entry.potentially_undefined
+          1 6 12 10 'multi-word string' ?
+          2 7 13 20 'another string' .
+          2 6 18 22 'do not use this one' .
+          3 7 19 23 'do not find this one either' ?
+        
+        upload_filename: "example_internal.cif"
+      - name: string_parameter
+        type: str
+        value: "Example string 'parameter'"
+      - name: additional_parameter
+        type: int
+        value: 42
+      - name: another_parameter
+        type: float
+        value: 3.14
+
+    expected_results:
+      - result_type: status
+        expected: successful
+      - result_type: cif_value
+        test_type: match
+        cif_entry_name: "_cif_entry1"
+        expected_value: 'C'
+      - result_type: cif_value
+        test_type: non-match
+        cif_entry_name: "_cif_entry1"
+        forbidden_value: 'D'
+      - result_type: cif_value
+        test_type: within
+        cif_entry_name: "_cif_entry2"
+        expected_value: 1.234
+        allowed_deviation: 0.001
+      - result_type: cif_value
+        test_type: within
+        cif_entry_name: "_another_entry"
+        max_value: 6.0
+        min_value: 5.0
+      - result_type: cif_value
+        test_type: contain
+        cif_entry_name: "_cif.string_entry"
+        expected_value: "check_me"
+      - result_type: cif_value
+        test_type: missing
+        cif_entry_name: "_non_existent_entry"
+      - result_type: cif_value
+        test_type: present
+        cif_entry_name: "_another_entry"
+      - result_type: cif_value
+        test_type: present
+        cif_entry_name: "_cif.value_is_undefined"
+        allow_unknown: true
+      - result_type: cif_value
+        test_type: present
+        cif_entry_name: "_cif.value_is_undefined"
+        allow_unknown: false
+      - result_type: cif_loop_value
+        test_type: match
+        row_lookup:
+          - row_entry_name: "_loop_entry.index"
+            row_entry_value: 1
+        cif_entry_name: "_loop_entry.value"
+        expected_value: 12
+      - result_type: cif_loop_value
+        test_type: non-match
+        cif_entry_name: "_loop_entry.value"
+        row_lookup:
+          - row_entry_name: "_loop_entry.index"
+            row_entry_value: 1
+        forbidden_value: 13
+      - result_type: cif_loop_value
+        test_type: within
+        cif_entry_name: "_loop_entry.index"
+        row_lookup:
+          - row_entry_name: "_loop_entry.value"
+            row_entry_value: 1
+        allowed_deviation: 0.001
+        expected_value: 12
+      - result_type: cif_loop_value
+        test_type: within
+        cif_entry_name: "_loop_entry.index"
+        row_lookup:
+          - row_entry_name: "_loop_entry.value"
+            row_entry_value: 1
+        max_value: 15
+        min_value: 10
+      - result_type: cif_loop_value
+        test_type: contain
+        cif_entry_name: "_loop_entry.present_entry"
+        row_lookup:
+          - row_entry_name: "_loop_entry.index"
+            row_entry_value: 1
+        expected_value: "another"
+      - result_type: cif_loop_value
+        test_type: missing
+        cif_entry_name: "_loop_entry.non_existent"
+        row_lookup:
+          - row_entry_name: "_loop_entry.index"
+            row_entry_value: 1
+      - result_type: cif_loop_value
+        test_type: present
+        cif_entry_name: "_loop_entry.potentially_undefined"
+        row_lookup:
+          - row_entry_name: "_loop_entry.index"
+            row_entry_value: 1
+        allow_unknown: true
+      - result_type: cif_loop_value
+        test_type: present
+        cif_entry_name: "_loop_entry.potentially_undefined"
+        row_lookup:
+          - row_entry_name: "_loop_entry.index"
+            row_entry_value: 1
+        allow_unknown: false
+      - result_type: cif_loop_value
+        test_type: match
+        row_lookup:
+          - row_entry_name: "_loop_entry.index"
+            row_entry_value: 2
+          - row_entry_name: "_loop_entry.index_additional"
+            row_entry_value: 6
+        cif_entry_name: "_loop_entry.value"
+        expected_value: 13
+
+

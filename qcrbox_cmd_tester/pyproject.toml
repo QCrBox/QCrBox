@@ -1,0 +1,167 @@
+[project]
+name = "qcrbox_cmd_tester"
+version = "0.1.0"
+description = "Command-line test suite runner for QCrBox API"
+readme = "README.md"
+requires-python = ">= 3.11"
+license = {text = "MPL-2.0"}
+authors = [{name = "Paul Niklas Ruth", email = "panikruth@gmail.com"}]
+keywords = ["crystallography", "testing", "qcrbox", "cif"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Chemistry",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+dependencies = [
+    "pyyaml>=6.0.0",
+    "pydantic>=2.9.2",
+    "pycifrw>=4.4.6",
+    "qcrboxapiclient @ git+https://github.com/QCrBox/QCrBoxAPIClient@0.1.0",
+    "rich>=13.0.0",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+]
+dev = [
+    "qcrbox_cmd_tester[test]",
+    "ruff>=0.14.1"
+]
+
+[project.scripts]
+qcrbox-test = "qcrbox_cmd_tester.__main__:main"
+
+[build-system]
+build-backend = "hatchling.build"
+requires = ["hatchling"]
+
+[tool.hatch]
+metadata.allow-direct-references = true
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["linux-64"]
+
+[tool.pixi.pypi-dependencies]
+qcrbox_cmd_tester = { path = ".", editable = true }
+
+[tool.pixi.tasks]
+
+[tool.pixi.feature.devtools.tasks]
+lint = "ruff check qcrbox_cmd_tester/ tests/"
+format = "ruff format qcrbox_cmd_tester/ tests/"
+
+[tool.pixi.feature.test.tasks]
+test = "pytest tests/"
+test-cov = "pytest tests/ --cov=qcrbox_cmd_tester --cov-report=term-missing"
+
+[tool.pixi.dependencies]
+# Main dependencies are now defined in [project.dependencies]
+# Pixi will use those, but we can add version constraints here if needed
+pyyaml = ">=6.0.3,<7"
+pydantic = ">=2.12.2,<3"
+pycifrw = ">=4.4.6,<5"
+
+[tool.pixi.feature.test.dependencies]
+pytest = "*"
+pytest-cov = ">=7.0.0,<8"
+
+[tool.pixi.feature.devtools.dependencies]
+ruff = ">=0.14.1,<0.15"
+
+[tool.pixi.environments]
+dev = { features = ["test", "devtools"], solve-group = "default" }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Ignore collection warnings for Pydantic models that start with "Test"
+filterwarnings = [
+    "ignore::pytest.PytestCollectionWarning",
+]
+
+[tool.coverage.run]
+source = ["qcrbox_cmd_tester"]
+omit = [
+    "*/tests/*",
+    "*/.pixi/*",
+    "*/dev_notebooks/*",
+    "*/qcrbox_client.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "@abstractmethod",
+]
+
+[tool.mypy]
+strict = true
+python_version = "3.11"
+ignore_missing_imports = true
+install_types = true
+non_interactive = true
+
+# from https://blog.wolt.com/engineering/2021/09/30/professional-grade-mypy-configuration/
+disallow_untyped_defs = true
+no_implicit_optional = true
+check_untyped_defs = true
+warn_return_any = true
+show_error_codes = true
+warn_unused_ignores = true
+
+disallow_incomplete_defs = true
+disallow_untyped_decorators = true
+disallow_any_unimported = false
+
+[tool.ruff]
+line-length = 120
+exclude = ["_version.py"]
+target-version = "py311"
+
+[tool.ruff.lint]
+select = [
+    # pycodestyle
+    "E",
+    # Pyflakes
+    "F",
+   # pyupgrade
+   "UP",
+   # flake8-bugbear
+   "B",
+   # flake8-simplify
+   "SIM",
+    # isort
+    "I",
+    # Pydocstyle
+    "D",
+    "D413",
+]
+ignore = [
+    "D100",
+    "D101",
+    "D102",
+    "D103",
+    "D104",
+    "D105",
+]
+
+# Ignore `F401`, `F403` (unused imports and * imports) in all `__init__.py` files
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401", "F403"]
+
+[tool.ruff.format]
+# exclude = ["services/applications/*/configure_*.py"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"

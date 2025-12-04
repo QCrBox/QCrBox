@@ -1,0 +1,101 @@
+# Test suite for XHARPy-GPAW application
+
+application_slug: xharpy-gpaw
+application_version: "0.2.0"
+description: "Test suite for XHARPy-GPAW - Calculation of custom atomic form factors from periodic calculations with GPAW"
+
+test_cases:
+  - name: "atom_form_factors_pbe"
+    description: "Test atomic form factor calculation with PBE functional"
+    command_name: atom_form_fact_gpaw
+    timeout_seconds: 600
+    
+    manual_precondition:
+      - XHARPy-GPAW container needs to be built and available
+    
+    input_parameters:
+      - name: input_cif
+        type: external_file
+        value: "./test_cif_files/epoxide_anisotropic.cif"
+      - name: output_cif_name
+        type: str
+        value: "xharpy_form_factors.cif"
+      - name: functional
+        type: str
+        value: "PBE"
+      - name: gridspacing
+        type: float
+        value: 0.16
+    
+    expected_results:
+      - result_type: status
+        expected: successful
+      - result_type: cif_value
+        test_type: match
+        cif_entry_name: "_aspheric_ffs.source"
+        expected_value: "partitioned finite grid density"
+      - result_type: cif_loop_value
+        test_type: present
+        row_lookup:
+          - row_entry_name: "_aspheric_ff.index_h"
+            row_entry_value: 1
+          - row_entry_name: "_aspheric_ff.index_k"
+            row_entry_value: 4
+          - row_entry_name: "_aspheric_ff.index_l"
+            row_entry_value: 5
+        cif_entry_name: "_aspheric_ff.form_factor_real"
+      - result_type: cif_loop_value
+        test_type: present
+        row_lookup:
+          - row_entry_name: "_aspheric_ff.index_h"
+            row_entry_value: 1
+          - row_entry_name: "_aspheric_ff.index_k"
+            row_entry_value: 4
+          - row_entry_name: "_aspheric_ff.index_l"
+            row_entry_value: 5
+        cif_entry_name: "_aspheric_ff.form_factor_imag"
+
+
+
+
+  - name: "ha_refine_lda"
+    description: "Test Hirshfeld atom refinement with LDA functional"
+    command_name: ha_refine
+    timeout_seconds: 1200
+    
+    manual_precondition:
+      - XHARPy-GPAW container needs to be built and available
+    
+    input_parameters:
+      - name: input_cif
+        type: external_file
+        value: "./test_cif_files/epoxide_anisotropic.cif"
+      - name: output_cif_name
+        type: str
+        value: "xharpy_refined.cif"
+      - name: functional
+        type: str
+        value: "LDA"
+      - name: gridspacing
+        type: float
+        value: 0.24
+    
+    expected_results:
+      - result_type: status
+        expected: successful
+      - result_type: cif_value
+        test_type: within
+        cif_entry_name: "_refine_ls.wr_factor_ref"
+        min_value: 0.0
+        max_value: 0.06
+      - result_type: cif_loop_value
+        test_type: within
+        row_lookup:
+          - row_entry_name: "_geom_bond.atom_site_label_1"
+            row_entry_value: "C2"
+          - row_entry_name: "_geom_bond.atom_site_label_2"
+            row_entry_value: "H2a"
+        cif_entry_name: "_geom_bond.distance"
+        min_value: 1.0
+        max_value: 1.2
+      

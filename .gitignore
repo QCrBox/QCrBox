@@ -99,6 +99,15 @@ pyqcrbox/robot_tests/output.xml
 pyqcrbox/robot_tests/log.html
 pyqcrbox/robot_tests/report.html
 
+# qcrbox_cmd_tester Python package
+qcrbox_cmd_tester/.pixi/
+qcrbox_cmd_tester/dev_notebooks/
+qcrbox_cmd_tester/htmlcov/
+qcrbox_cmd_tester/logs/
+qcrbox_cmd_tester/site/
+qcrbox_cmd_tester/pixi.lock
+.pytest_cache/
+
 # Log files and rotated log files
 *.log
 *.log.*.gz
@@ -108,3 +117,4 @@ pyqcrbox/robot_tests/report.html
 
 # macOS specific
 .DS_Store
+qcrbox_cmd_tester/logs/
