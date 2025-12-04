@@ -1,5 +1,5 @@
 nav:
   - Contents: contents.md
   - Architecture & key components: architecture.md
-  - Command Tester: command_tester/
+  - Command Tester: technical_reference/command_tester/
   - Docker container applications: docker-container-model.md
