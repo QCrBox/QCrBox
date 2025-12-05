@@ -17,6 +17,11 @@ However, there will be an initial period of stabilisation where this is not adhe
 
 - Added QCrBox Command Tester, a comprehensive framework for automated testing of QCrBox applications and commands.
 
+### Enhancements
+
+- Reactivated Traefik for request routing and subdomain management, therefore enabling access to
+  VNC GUI displays as subdomains.
+
 ## [v0.1.1]
 
 ### Enhancements
