@@ -14,7 +14,6 @@ services:
       QCRBOX_APPLICATION_DISPLAY_NAME: "Quality Display"
       QCRBOX__NATS__HOST: "qcrbox-nats"
       QCRBOX__REGISTRY__SERVER__PORT: "8000"
-      QCRBOX__GUI__PORT: ${QCRBOX_QUALITY_PORT}
       ALLOWED_HOSTS: "*"
     labels:
       traefik.enable: true
