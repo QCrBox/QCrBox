@@ -17,10 +17,20 @@ However, there will be an initial period of stabilisation where this is not adhe
 
 - Added CONTRIBUTING.md.
 
-
 ### Removed Features
 
 ### Enhancements
+
+## [v0.1.1]
+
+### Enhancements
+
+- The base QCrBox image and all applications have been upgraded to Debian Trixie.
+
+### Documentation
+
+- Improved the documentation about setting up a dev environment and obtaining licensed components.
+- Added documentation on how to create a new release.
 
 ## [v0.1.0]
 
