@@ -14,7 +14,7 @@ services:
       QCRBOX_APPLICATION_DISPLAY_NAME: "Quality Display"
       QCRBOX__NATS__HOST: "qcrbox-nats"
       QCRBOX__REGISTRY__SERVER__PORT: "8000"
-      ALLOWED_HOSTS: "*"
+      ALLOWED_HOSTS: "localhost,127.0.0.1,${QCRBOX_BIND_ADDRESS},${QCRBOX_ALLOWED_HOSTS:-}"
     labels:
       traefik.enable: true
       traefik.http.routers.to-qcrbox-quality-path-prefix.rule: PathPrefix(`/gui/qcrbox_quality`)
