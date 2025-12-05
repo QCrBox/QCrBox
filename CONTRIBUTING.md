@@ -118,7 +118,7 @@ use [GitHub flow][github-flow] with forks and pull requests to manage changes:
    significant change.
 1. Commit the changes in that branch, following established [best practices](https://gist.github.com/Aditi3/a7a1ddd1ecef73dab548f7955210cfff). In particular, use meaningful commit messages that reference any issues in the repository, and make clean, single purpose commits.
 1. Push that branch to your fork of this repository on GitHub.
-1. Submit a pull request from that branch to the [upstream repository][repo], filling in the details supplied in the pull request template.
+1. Submit a pull request from that branch to the [upstream repository][repo] targetting the `dev` branch, filling in the details supplied in the pull request template.
 1. If you receive feedback, make changes locally on your machine and push to your
    branch on GitHub: the pull request will update automatically.
 
