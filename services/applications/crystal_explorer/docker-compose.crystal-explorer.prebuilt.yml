@@ -5,8 +5,6 @@ services:
       - ${QCRBOX_SHARED_FILES_DIR_HOST_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_HOST_PATH}:${QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH}
     networks:
       - qcrbox-net
-    ports:
-      - "${QCRBOX_BIND_ADDRESS}:${QCRBOX_CRYSTAL_EXPLORER_PORT:?Must set env var QCRBOX_CRYSTAL_EXPLORER_PORT}:8080"
     depends_on:
       qcrbox-registry:
         condition: service_healthy

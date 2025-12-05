@@ -5,8 +5,6 @@ services:
       context: services/applications/dummy_gui/
       args:
         QCRBOX_DOCKER_TAG: ${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}
-    ports:
-      - "${QCRBOX_BIND_ADDRESS}:${QCRBOX_DUMMY_GUI_PORT:?Must set env var QCRBOX_DUMMY_GUI_PORT}:8080"
     depends_on:
       qcrbox-registry:
         condition: service_healthy

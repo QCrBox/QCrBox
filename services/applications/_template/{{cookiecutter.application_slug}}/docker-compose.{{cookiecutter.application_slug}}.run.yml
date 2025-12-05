@@ -8,8 +8,6 @@ services:
       QCRBOX__REGISTRY__SERVER__PORT: "8000"
 {%- if cookiecutter.application_type in ["Interactive GUI (Linux)", "Interactive GUI (Windows)"] %}
       QCRBOX__GUI__PORT: ${QCRBOX_{{ cookiecutter.application_slug.upper().replace("-", "_") }}_PORT}
-    ports:
-      - "${QCRBOX_BIND_ADDRESS}:${QCRBOX_{{ cookiecutter.application_slug.upper().replace("-", "_") }}_PORT:?Must set env var QCRBOX_{{ cookiecutter.application_slug.upper().replace("-", "_") }}_PORT}:8080"
 {%- endif %}
     depends_on:
       qcrbox-registry:
