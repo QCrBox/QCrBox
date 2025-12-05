@@ -153,17 +153,6 @@ COPY --chown=qcrbox:qcrbox --chmod=755 dummy_gui.py ${QCRBOX_HOME}
 
 So here, we specify the `SHELL` to use will be Bash, and our `*.py` files to `COPY` over to the container's `QCRBOX_HOME` directory where they'll be executed, setting their file permissions appropriately. We also copy over the `.yaml` file for completeness, although in this case it won't be used.
 
-## Adding a VNC port
-
-When an interactive command is invoked, a VNC window is displayed within a browser so the user can interact with the graphical application. Since communication with the VNC server is accomplished over an application-specific port, we need to define a VNC port for our application.
-
-The `.env.dev` file in the repository root directory contains a number of system-wide environment variables for QCrBox. You'll note a number of applications-specific ports in this file, such as `QCRBOX_MOPRO_PORT`, `QCRBOX_OLEX2_LINUX_PORT`, etc. Let's add one for our application by adding the following at the end of the file:
-
-```bash
-QCRBOX_DUMMY_GUI_TUTORIAL_PORT=12010
-```
-
-Note that the `DUMMY_GUI_TUTORIAL` part of the variable name needs to exactly match the uppercase form our our application we created. You can check the `environment` section in the container's generated `docker-compose.*.run.yml` file to see what the variable is named.
 
 ## Building the container
 
@@ -171,13 +160,6 @@ To create a QCrBox image for our application, we'll execute a specific build com
 
 ```bash
 qcb build dummy_gui_tutorial
-```
-
-If you see the following error, ensure you have specified the `QCRBOX_DUMMY_GUI_TUTORIAL_PORT` environment variable correctly in the `.env.dev` file as illustrated in the last step:
-
-```output
-time="2025-10-13T13:11:59+01:00" level=warning msg="The \"QCRBOX_DUMMY_GUI_TUTORIAL_PORT\" variable is not set. Defaulting to a blank string."
-error while interpolating services.dummy_gui_tutorial.ports.[]: required variable QCRBOX_DUMMY_GUI_TUTORIAL_PORT is missing a value: Must set env var QCRBOX_DUMMY_GUI_TUTORIAL_PORT
 ```
 
 > **Important Note:** By default, `qcb build` without additional arguments performs a full rebuild of all dependencies to ensure everything is up-to-date. If you have recently completed a build and wish to save time, you can opt for the `--no-build-deps` argument. This option focuses solely on building the QCrBox image without updating the dependencies.

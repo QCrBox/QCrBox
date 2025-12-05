@@ -112,6 +112,6 @@ $ qcb down
 
 - Navigate to the following URL to get a fully functioning Olex2 GUI running inside your browser:
 
-    [http://localhost:12004/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true](http://localhost:12004/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true){:target="_blank"}
+    [http://localhost:12345/gui/olex2/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true](http://localhost:12345/gui/olex2/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true){:target="_blank"}
 
 - Read the [Tutorials](../tutorials/contents.md) to see several examples showing how to interact programmatically with crystallographic software within QCrBox.
