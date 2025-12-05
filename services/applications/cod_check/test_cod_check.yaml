@@ -1,0 +1,69 @@
+application_slug: "cod_check"
+application_version: "0.0.1"
+test_cases:
+  - name: "successful merge"
+    description: "test the successful lookup and merge of a structure from COD"
+    command_name: "merge_closest_cod_entry"
+    timeout_seconds: 20
+    
+    manual_precondition:
+      - cod_check container needs to be built and available
+      - internet connection is required for COD access
+
+    input_parameters:
+      - name: input_cif
+        type: internal_file
+        value: |
+          data_Ylid_IndiumEiger
+          _chemical_formula.moiety          'C11 H10 O2 S'
+          _chemical_formula.sum             'C11 H10 O2 S'
+          _chemical_formula.weight          206.25
+          _space_group.crystal_system       orthorhombic
+          _space_group.it_number            19
+          _space_group.name_h-m_alt         'P 21 21 21'
+          _space_group.name_hall            'P 2ac 2ab'
+          loop_
+          _space_group_symop.operation_xyz
+          'x, y, z'
+          '-x+1/2, -y, z+1/2'
+          '-x, y+1/2, -z+1/2'
+          'x+1/2, -y+1/2, -z'
+
+          _cell.length_a                    5.86
+          _cell.length_a_su                 0.002
+          _cell.length_b                    8.933
+          _cell.length_b_su                 0.002
+          _cell.length_c                    18.341
+          _cell.length_c_su                 0.003
+          _cell.angle_alpha                 90
+          _cell.angle_beta                  90
+          _cell.angle_gamma                 90
+          _cell.volume                      960.1
+          _cell.volume_su                   0.4
+          _diffrn.ambient_temperature       110.0
+      - name: output_cif_name
+        type: str
+        value: "merged_cod_entry.cif"
+      - name: cellpar_deviation_perc
+        type: float
+        value: 3.0
+      - name: listed_elements_only
+        type: bool
+        value: true
+
+    expected_results:
+      - result_type: status
+        expected: successful
+      - result_type: cif_value
+        test_type: match
+        cif_entry_name: _diffrn.ambient_temperature
+        expected_value: 110.0
+      - result_type: cif_loop_value
+        test_type: present
+        cif_entry_name: _atom_site.fract_x
+        row_lookup:
+          - row_entry_name: _atom_site.label
+            row_entry_value: 'S(1)'
+          
+
+        

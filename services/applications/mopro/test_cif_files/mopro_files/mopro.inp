@@ -1,0 +1,16 @@
+!<files>
+FILE PARA Z:\opt\qcrbox\qcrbox_calc_0x225e1216dbbb4d929e8af8db31f4f527\Ylid_InEiger_Refine-converted_00.par
+FILE DATA Z:\opt\qcrbox\qcrbox_calc_0x225e1216dbbb4d929e8af8db31f4f527\Ylid_InEiger_Refine-converted.hkl
+FILE TABL C:\MoProSuite\LibMoPro\mopro_v24.tab
+FILE WAVE C:\MoProSuite\LibMoPro\WAVEF_Su_Coppens_relativistic
+FILE ANOM C:\MoProSuite\LibMoPro\asf_Kissel.dat
+!</files>
+
+!<autorefine>
+AUTO REFI
+!</autorefine>
+
+!<output>
+WRIT CIFM 
+WRIT FCFW 
+!</output>

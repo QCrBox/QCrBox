@@ -1,0 +1,59 @@
+
+! PREP REST URAT
+URATIO      1   C1      H1C     1.5   0.01
+URATIO      1   C1      H1A     1.5   0.01
+URATIO      1   C1      H1B     1.5   0.01
+URATIO      1   C2      H2B     1.5   0.01
+URATIO      1   C2      H2C     1.5   0.01
+URATIO      1   C2      H2A     1.5   0.01
+URATIO      1   C6      H6      1.2   0.01
+URATIO      1   C7      H7      1.2   0.01
+URATIO      1   C8      H8      1.2   0.01
+URATIO      1   C9      H9      1.2   0.01
+
+! PRES REST SIMD DISO  !(DISORDER
+
+! PREP REST SIMD
+SIMDIS 1 C1 H1C C1 H1A C1 H1B 0.005
+SIMDIS 1 S1 H1C S1 H1A S1 H1B 0.005
+SIMDIS 1 H1C H1A H1C H1B H1A H1B 0.005
+SIMDIS 1 C2 H2B C2 H2C C2 H2A 0.005
+SIMDIS 1 S1 H2B S1 H2C S1 H2A 0.005
+SIMDIS 1 H2B H2C H2B H2A H2C H2A 0.005
+SIMDIS 1 C5 H6 C7 H6 0.005
+SIMDIS 1 C8 H7 C6 H7 0.005
+SIMDIS 1 C7 H8 C9 H8 0.005
+SIMDIS 1 C10 H9 C8 H9 0.005
+
+! PREP REST DIST
+DISTAN   C1       1     H1C      1       1.095  0.005
+DISTAN   C1       1     H1A      1       1.095  0.005
+DISTAN   C1       1     H1B      1       1.095  0.005
+DISTAN   C2       1     H2B      1       1.095  0.005
+DISTAN   C2       1     H2C      1       1.095  0.005
+DISTAN   C2       1     H2A      1       1.095  0.005
+DISTAN   C6       1     H6       1       1.083  0.005
+DISTAN   C7       1     H7       1       1.083  0.005
+DISTAN   C8       1     H8       1       1.083  0.005
+DISTAN   C9       1     H9       1       1.083  0.005
+
+! X-H bond length targets (Ansgtrom)
+! CH3     1.095 (Herzberg & Stoicheff, 1955, Nature)
+! CH3     1.077    Allen & Bruno
+! C2>CH2  1.092    Z2>CH2   1.091
+! ->CH    1.099    >CHarom  1.083
+! C=C<H   1.082
+! C-O-H   0.980    X-O-H    0.983
+! O=C-O-H 1.018    Csp3-O-H 0.97
+! C_arom-O-H 0.992
+! NH4+ -NH3+ >NH2+ ->NH+   1.033
+! Distance target = 1.015  -NH2 >NH
+! reference:   Allen FH & Bruno IJ,
+! Acta Crystallographic (2010). B66, 380?386
+
+
+RIGIDB  ALL  BON  0.001
+RIGUIJ  ALL  BON  0.002
+SIMK12  CHEM  H   0.01
+RESKP1  CHEM  H   1.16  0.03
+KAPVAL   C N O F S P   0.01

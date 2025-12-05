@@ -1,0 +1,58 @@
+# Test suite for MoProSuite application
+
+application_slug: mopro
+application_version: "2024.10"
+
+test_cases:
+  - name: "run_inp_file_basic"
+    description: "Test running MoPro with input files"
+    command_name: run_inp_file
+    timeout_seconds: 300
+    
+    manual_precondition:
+      - MoProSuite container needs to be built and available
+    
+    input_parameters:
+      - name: input_cif
+        type: external_file
+        value: "./test_cif_files/ylid_iam_refined.cif"
+      - name: output_cif_name
+        type: str
+        value: "mopro_output.cif"
+      - name: inp_file
+        type: external_file
+        value: "./test_cif_files/mopro_files/mopro.inp"
+        upload_filename: "mopro.inp"
+      - name: constraint_file
+        type: external_file
+        value: "./test_cif_files/mopro_files/CONSTRAIN.txt"
+        upload_filename: "CONSTRAIN.txt"
+      - name: restraint_file
+        type: external_file
+        value: "./test_cif_files/mopro_files/RESTRAIN.txt"
+        upload_filename: "RESTRAIN.txt"
+      - name: table_type
+        type: str
+        value: "MoPro v24"
+      - name: wavefunction_type
+        type: str
+        value: "Su Coppens"
+    
+    expected_results:
+      - result_type: status
+        expected: successful
+      - result_type: cif_value
+        test_type: within
+        cif_entry_name: "_refine_ls.r_factor_all"
+        max_value: 0.014
+        min_value: 0.000
+      - result_type: cif_loop_value
+        test_type: within
+        row_lookup:
+          - row_entry_name: "_geom_bond.atom_site_label_1"
+            row_entry_value: "C9"
+          - row_entry_name: "_geom_bond.atom_site_label_2"
+            row_entry_value: "H9c"
+        cif_entry_name: "_geom_bond.distance"
+        expected_value: 1.01
+        allowed_deviation: 0.02

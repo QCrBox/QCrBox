@@ -21,6 +21,12 @@ However, there will be an initial period of stabilisation where this is not adhe
 
 ### Enhancements
 
+## [Unreleased]
+
+### New Features
+
+- Added QCrBox Command Tester, a comprehensive framework for automated testing of QCrBox applications and commands.
+
 ## [v0.1.1]
 
 ### Enhancements

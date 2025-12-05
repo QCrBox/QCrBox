@@ -1,0 +1,115 @@
+# Common test suite document for an application
+
+application_slug: qcrboxtools
+application_version: "0.0.5"
+test_cases:
+  - name: "iso2aniso epoxide"
+    description: "Test the iso2aniso command"
+    command_name: iso2aniso
+    timeout_seconds: 20
+
+    manual_precondition:
+      - qcrboxtools container needs to be built and available
+    input_parameters:
+      - name: input_cif
+        type: external_file
+        value: "./test_cif_files/epoxide_isotropic.cif"
+      - name: output_cif_name
+        type: str
+        value: "epoxide_anisotropic.cif"
+      - name: select_elements
+        type: str
+        value: "C,H,O"
+
+
+    expected_results:
+      - result_type: status
+        expected: successful
+      - result_type: cif_loop_value
+        test_type: match
+        cif_entry_name: "_atom_site.adp_type"
+        row_lookup:
+          - row_entry_name: "_atom_site.label"
+            row_entry_value: "O1"
+        expected_value: "Uani"
+      - result_type: cif_loop_value
+        test_type: match
+        cif_entry_name: "_atom_site.adp_type"
+        row_lookup:
+          - row_entry_name: "_atom_site.label"
+            row_entry_value: "H2a"
+        expected_value: "Uani"
+      - result_type: cif_loop_value
+        test_type: within
+        cif_entry_name: "_atom_site_aniso.u_11"
+        row_lookup:
+          - row_entry_name: "_atom_site_aniso.label"
+            row_entry_value: "O1"
+        expected_value: 0.029
+        allowed_deviation: 0.0001
+      - result_type: cif_loop_value
+        test_type: within
+        cif_entry_name: "_atom_site_aniso.u_22"
+        row_lookup:
+          - row_entry_name: "_atom_site_aniso.label"
+            row_entry_value: "H2a"
+        expected_value: 0.0336
+        allowed_deviation: 0.0001
+
+
+  - name: "replace_structure_from_cif"
+    description: "Test the replace_structure_from_cif command"
+    command_name: replace_structure_from_cif
+    timeout_seconds: 20
+
+    manual_precondition:
+      - qcrboxtools container needs to be built and available
+    input_parameters:
+      - name: input_cif
+        type: external_file
+        value: "./test_cif_files/epoxide_isotropic.cif"
+      - name: structure_cif
+        type: internal_file
+        value: |
+          data_new_structure
+          _cell.length_a    10.0
+          _cell.length_b    10.0
+          _cell.length_c    10.0
+          _cell.angle_alpha 90.0
+          _cell.angle_beta  90.0
+          _cell.angle_gamma 90.0
+          loop_
+          _atom_site.label
+          _atom_site.type_symbol
+          _atom_site.fract_x
+          _atom_site.fract_y
+          _atom_site.fract_z
+          _atom_site.u_iso_or_equiv
+          _atom_site.u_iso_or_equiv_su
+          _atom_site.adp_type
+          O123   O   0.250  0.250  0.250 0.05  0.005  Uani
+
+          loop_
+          _atom_site_aniso.label
+          _atom_site_aniso.u_11
+          _atom_site_aniso.u_22
+          _atom_site_aniso.u_33
+          _atom_site_aniso.u_12
+          _atom_site_aniso.u_13
+          _atom_site_aniso.u_23
+          O123  0.02  0.02  0.02  0.0  0.0  0.0
+      - name: output_cif_name
+        type: str
+        value: "epoxide_replaced.cif"
+
+    expected_results:
+      - result_type: status
+        expected: successful
+      - result_type: cif_loop_value
+        test_type: match
+        cif_entry_name: "_atom_site.fract_x"
+        row_lookup:
+          - row_entry_name: "_atom_site.label"
+            row_entry_value: "O123"
+        expected_value: 0.250
+      
