@@ -15,6 +15,7 @@ However, there will be an initial period of stabilisation where this is not adhe
 
 ### New Features
 
+- Added documentation for deploying a demo instance to Azure.
 - Added CONTRIBUTING.md.
 
 ### Removed Features
