@@ -11,6 +11,7 @@ These instructions are a quick reference for deploying a non-production demo ins
     These instructions will need to be reviewed and updated following the planned reintroduction of Traefik
 
 Prerequisites
+
 - Prior experience in setting up a Microsoft Azure resource group
 - Prior experience in installing and configuring QCrBox backend and frontend
 - A Microsoft Azure account (this guide has been tested with a subscription under an Enterprise account)
