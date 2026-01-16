@@ -8,10 +8,10 @@ if [ -z "${DEVBOX_SHELL_ENABLED:-}" ]; then
     exit 1
 fi
 
-# cd /home/qcrbox/QCrBox || {
-# 	echo "Failed to navigate into QCrBox repository"
-# 	exit 1
-# }
+cd "${HOME}/QCrBox" || {
+    echo "Failed to navigate into QCrBox repository"
+    exit 1
+}
 
 echo "Restarting QCrBox registry and application containers"
 
@@ -27,8 +27,8 @@ sleep 10
 
 # Check that the API is functional
 if ! curl -s http://127.0.0.1:11000/api/healthz | jq -e '.status == "ok"' > /dev/null; then
-	echo "QCrBox registry is not healthy."
-	exit 1
+    echo "QCrBox registry is not healthy."
+    exit 1
 fi
 
 echo "QCrBox registry and application containers restarted successfully"
