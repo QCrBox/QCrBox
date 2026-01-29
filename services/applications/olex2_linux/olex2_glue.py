@@ -22,7 +22,7 @@ def rename_databock_to_original(input_cif_path: Path, output_cif_path: Path):
 
     output_text = output_cif_path.read_text(encoding="UTF-8")
     # we want to capture data blocks in an fcf entry
-    output_text = re.sub(r"^([data_[^\s]+)", f"data_{dataset_name}", output_text, flags=re.MULTILINE)
+    output_text = re.sub(r"^data_[^\s]+", f"data_{dataset_name}", output_text, flags=re.MULTILINE)
     output_cif_path.write_text(output_text, encoding="UTF-8")
     
 
