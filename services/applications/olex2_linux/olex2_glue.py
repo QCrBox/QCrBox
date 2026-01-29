@@ -7,14 +7,14 @@ from qcrboxtools.robots.olex2 import Olex2Socket
 
 YAML_PATH = Path(__file__).parent / "config_olex2.yaml"
 
-def rename_databock_to_original(input_cif_path: Path, output_cif_path: Path):
+def rename_datablock_to_original(input_cif_path: Path, output_cif_path: Path):
     # find input dataset name
-    dataset_pattern = re.compile(r"data_([^\s])+")
+    dataset_pattern = re.compile(r"data_([^\s]+)")
     with open(input_cif_path, "r", encoding="UTF-8") as cif:
         for line in cif:
             match = dataset_pattern.match(line)
             if match:
-                dataset_name = match.group(0)[5:]
+                dataset_name = match.group(1)
                 break
         else:
             raise ValueError("No dataset name found in CIF file.")
@@ -56,7 +56,7 @@ def refine(
 
     shutil.copy(work_cif_path, output_cif_path)
 
-    rename_databock_to_original(input_cif_path, output_cif_path)
+    rename_datablock_to_original(input_cif_path, output_cif_path)
 
     return str(output_cif_path.absolute())
 
@@ -77,6 +77,6 @@ def run_commands(input_cif: str, output_cif_name: str, cmd_file: str):
 
     shutil.copy(work_cif_path, output_cif_path)
 
-    rename_databock_to_original(input_cif_path, output_cif_path)
+    rename_datablock_to_original(input_cif_path, output_cif_path)
 
     return str(output_cif_path.absolute())
