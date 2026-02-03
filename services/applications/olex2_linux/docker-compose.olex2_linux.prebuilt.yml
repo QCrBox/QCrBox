@@ -14,7 +14,6 @@ services:
       QCRBOX__NATS__HOST: "qcrbox-nats"
       QCRBOX__REGISTRY__SERVER__HOST: "qcrbox-registry"
       QCRBOX__REGISTRY__SERVER__PORT: "8000"
-      QCRBOX__GUI__PORT: ${QCRBOX_OLEX2_LINUX_PORT}
     labels:
       traefik.enable: true
       traefik.http.routers.to-olex2-path-prefix.rule: Path(`/gui/olex2`)
