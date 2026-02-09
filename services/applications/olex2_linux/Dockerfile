@@ -14,10 +14,11 @@ RUN apt-get update -y && \
 RUN sed -i 's/^# en_GB/en_GB/' /etc/locale.gen && \
     locale-gen --purge en_GB
 
-# Dirty hack to get Olex headless to run
+# Link missing Olex2 libraries
 RUN cd /lib/x86_64-linux-gnu/ && \
     ln -s libreadline.so.8 libreadline.so.6 && \
-    ln -s /lib/x86_64-linux-gnu/libtinfo.so.6 libtinfo.so.5
+    ln -s /lib/x86_64-linux-gnu/libtinfo.so.6 libtinfo.so.5 && \
+    ln -s /lib/x86_64-linux-gnu/libjpeg.so.62 /lib/x86_64-linux-gnu/libjpeg.so.8
 
 # create folder and then work as user to avoid a RUN chown
 

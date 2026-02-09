@@ -18,7 +18,7 @@ commands:
         dtype: "QCrBox.cif_data_file"
         description: "The CIF file to open in Olex2"
         required_entry_sets: [ "cell_data", "diffraction_data" ]
-        optional_entry_sets: [ "atom_data", "aspheric_form_factors" ]
+        optional_entry_sets: [ "atom_data", "aspheric_form_factors", "previous_quality_indicators" ]
         merge_su: Yes
         custom_categories: [ "iucr", "shelx" ]
       - name: "output_cif_name"
@@ -144,6 +144,7 @@ cif_entry_sets:
       "_atom_type_scat_dispersion_source",
       "_space_group_crystal_system",
       "_atom_site_refinement_flags_posn",
+      "_atom_site_disorder_group",
       "_atom_site_aniso_label",
       "_atom_site_aniso_U_11",
       "_atom_site_aniso_U_22",
@@ -167,6 +168,33 @@ cif_entry_sets:
       "_aspheric_ff.form_factor_real",
       "_aspheric_ff.form_factor_imag",
     ]
+
+  - name: "previous_quality_indicators"
+    required: [
+      "_refine_diff_density_max",
+      "_refine_diff_density_min",
+      "_refine_diff_density_rms",
+      "_refine_ls_d_res_high",
+      "_refine_ls_d_res_low",
+      "_refine_ls_goodness_of_fit_ref",
+      "_refine_ls_hydrogen_treatment",
+      "_refine_ls_matrix_type",
+      "_refine_ls_number_constraints",
+      "_refine_ls_number_parameters",
+      "_refine_ls_number_reflns",
+      "_refine_ls_number_restraints",
+      "_refine_ls_R_factor_all",
+      "_refine_ls_R_factor_gt",
+      "_refine_ls_restrained_S_all",
+      "_refine_ls_shift/su_max",
+      "_refine_ls_shift/su_mean",
+      "_refine_ls_structure_factor_coef",
+      "_refine_ls_weighting_details",
+      "_refine_ls_weighting_scheme",
+      "_refine_ls_wR_factor_gt",
+      "_refine_ls_wR_factor_ref",
+    ]
+
   - name: all_olex_optional
     optional : [
       "_audit_creation_date",
