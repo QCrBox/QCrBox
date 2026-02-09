@@ -22,6 +22,22 @@ RUN dpkg --add-architecture i386 && \
     rm -rf /var/lib/apt/lists && \
     true
 
+# Install cabextract (needed to extract font files) and fontconfig
+RUN apt-get update -y && \
+    apt-get install -y --no-install-recommends cabextract fontconfig && \
+    rm -rf /var/lib/apt/lists
+
+# Manually install Microsoft Core Fonts (ARM-compatible approach)
+# Download and extract the core fonts that Windows applications expect
+RUN mkdir -p /usr/share/fonts/truetype/msttcorefonts && \
+    cd /tmp && \
+    for font in andale32.exe arial32.exe arialb32.exe comic32.exe courie32.exe georgi32.exe impact32.exe times32.exe trebuc32.exe verdan32.exe webdin32.exe; do \
+        wget -q https://downloads.sourceforge.net/project/corefonts/the%20fonts/final/$font && \
+        cabextract -q -d /usr/share/fonts/truetype/msttcorefonts $font && \
+        rm $font; \
+    done && \
+    chmod 644 /usr/share/fonts/truetype/msttcorefonts/*
+
 # Install Mono (https://wiki.winehq.org/Mono)
 RUN mkdir -p /opt/wine-${WINE_BRANCH}/share/wine/mono && \
     wget -O - https://dl.winehq.org/wine/wine-mono/${MONO_VERSION}/wine-mono-${MONO_VERSION}-x86.tar.xz | tar -Jxv -C /opt/wine-${WINE_BRANCH}/share/wine/mono
@@ -58,21 +74,41 @@ RUN mkdir -p \
         ${WINEPREFIX_WIN64} #&& \
     #chmod 777 ${APP_HOME}
 
-
-# Install fonts and enable font smoothing
+# Initialize Wine prefixes without downloading fonts (using native Liberation fonts instead)
+# Using wineboot --init to create Wine prefix structure without executing Windows installers
+# This allows the image to build on ARM via QEMU without hanging
 RUN export WINEARCH="win32" && \
     export WINEPREFIX="${QCRBOX_WINE_INSTALLATIONS_DIR}/wine_win32" && \
-    gosu ${QCRBOX_USER} bash -c 'winetricks corefonts && winetricks fontsmooth=rgb'
+    gosu ${QCRBOX_USER} bash -c 'DISPLAY= WINEDLLOVERRIDES="mscoree,mshtml=" wineboot --init'
 RUN export WINEARCH="win64" && \
     export WINEPREFIX="${QCRBOX_WINE_INSTALLATIONS_DIR}/wine_win64" && \
-    gosu ${QCRBOX_USER} bash -c 'winetricks corefonts && winetricks fontsmooth=rgb'
+    gosu ${QCRBOX_USER} bash -c 'DISPLAY= WINEDLLOVERRIDES="mscoree,mshtml=" wineboot --init'
 
-# Create device Y: pointing to the shared files directory
-ARG QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH
-RUN mkdir -p "${WINEPREFIX_WIN32}/dosdevices/" && \
-    ln -f -s "${QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH}" "${WINEPREFIX_WIN32}/dosdevices/y:"
-RUN mkdir -p "${WINEPREFIX_WIN64}/dosdevices/" && \
-    ln -f -s "${QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH}" "${WINEPREFIX_WIN64}/dosdevices/y:"
+# Configure fontconfig to use RGB subpixel rendering (fixes missing vertical strokes)
+RUN mkdir -p /etc/fonts/conf.d && \
+    echo '<?xml version="1.0"?>\n\
+<!DOCTYPE fontconfig SYSTEM "fonts.dtd">\n\
+<fontconfig>\n\
+  <match target="font">\n\
+    <edit name="rgba" mode="assign">\n\
+      <const>rgb</const>\n\
+    </edit>\n\
+  </match>\n\
+</fontconfig>' > /etc/fonts/local.conf
+
+# Update font cache so Wine can find the system fonts
+RUN fc-cache -f -v
+
+# Copy fonts into Wine prefixes so Qt and other Windows apps can find them
+# Wine applications (especially Qt-based GUIs) need fonts in C:\windows\Fonts
+# Copy instead of symlink to ensure proper ownership and access
+RUN mkdir -p ${QCRBOX_WINE_INSTALLATIONS_DIR}/wine_win32/drive_c/windows/Fonts \
+             ${QCRBOX_WINE_INSTALLATIONS_DIR}/wine_win64/drive_c/windows/Fonts && \
+    cp /usr/share/fonts/truetype/msttcorefonts/* ${QCRBOX_WINE_INSTALLATIONS_DIR}/wine_win32/drive_c/windows/Fonts/ && \
+    cp /usr/share/fonts/truetype/msttcorefonts/* ${QCRBOX_WINE_INSTALLATIONS_DIR}/wine_win64/drive_c/windows/Fonts/ && \
+    chown -R ${QCRBOX_USER}:${QCRBOX_USER} \
+        ${QCRBOX_WINE_INSTALLATIONS_DIR}/wine_win32/drive_c/windows/Fonts \
+        ${QCRBOX_WINE_INSTALLATIONS_DIR}/wine_win64/drive_c/windows/Fonts
 
 USER ${QCRBOX_USER}
 

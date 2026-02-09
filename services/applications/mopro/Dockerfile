@@ -31,6 +31,9 @@ ARG WINEARCH="win64"
 ENV WINEARCH=${WINEARCH}
 ENV QCRBOX_ROOT_DIR=${QCRBOX_ROOT_DIR}
 
+# Qt environment variable for Wine compatibility
+ENV QT_X11_NO_MITSHM=1
+
 COPY configure_mopro.py ./
 COPY config_mopro.yaml ./
 COPY templates ./templates
