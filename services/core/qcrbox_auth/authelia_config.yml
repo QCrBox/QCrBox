@@ -1,0 +1,70 @@
+---
+server:
+  address: 'tcp://0.0.0.0:9091'
+  endpoints:
+    enable_pprof: false
+    enable_expvars: false
+
+# Disable NTP check for development  
+ntp:
+  disable_startup_check: true
+
+log:
+  level: info
+
+identity_validation:
+  reset_password:
+    jwt_secret: ${AUTHELIA_JWT_SECRET}
+
+totp:
+  disable: false
+  issuer: qcrbox
+
+authentication_backend:
+  refresh_interval: 5m
+  file:
+    path: /config/users_database.yml
+    password:
+      algorithm: argon2id
+
+access_control:
+  default_policy: deny
+  rules:
+    - domain:
+        - "api.registry.localhost.local"
+        - "api.registry.*.local"
+        - "api.registry.*.com"
+      policy: one_factor
+    - domain:
+        - "api.registry.localhost.local"
+        - "api.registry.*.local"
+        - "api.registry.*.com"
+      resources:
+        - "^/api/healthz$"
+      policy: bypass
+
+session:
+  secret: ${AUTHELIA_SESSION_SECRET}
+  cookies:
+    - name: qcrbox_session
+      domain: localhost.local
+      authelia_url: https://auth.localhost.local:443
+      same_site: lax
+      expiration: 1h
+      inactivity: 15m
+  remember_me: 1M
+
+regulation:
+  max_retries: 5
+  find_time: 2m
+  ban_time: 5m
+
+storage:
+  encryption_key: ${AUTHELIA_STORAGE_ENCRYPTION_KEY}
+  local:
+    path: /config/db.sqlite3
+
+notifier:
+  disable_startup_check: false
+  filesystem:
+    filename: /config/notification.txt

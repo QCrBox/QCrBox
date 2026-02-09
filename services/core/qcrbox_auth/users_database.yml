@@ -1,0 +1,17 @@
+---
+###############################################################
+#                      Users Database                         #
+###############################################################
+
+users:
+  # Default admin user
+  # Password: changeme
+  # Generate new password hash with:
+  # docker run --rm authelia/authelia:4.38 authelia crypto hash generate argon2 --password 'your-password'
+  admin:
+    displayname: "Admin User"
+    password: "$argon2id$v=19$m=65536,t=3,p=4$LoIOqbZsnEC9BpU0PuR6dw$8zpHxWPtxG6ZSahwwTd5zc55s2NTko7M3ZMhVqMvrkE"
+    email: admin@qcrbox.local
+    groups:
+      - admins
+      - developers

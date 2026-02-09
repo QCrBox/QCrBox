@@ -50,6 +50,7 @@ services:
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--entryPoints.web.address=:80"
+      - "--entryPoints.websecure.address=:443"
     healthcheck:
       test: "traefik healthcheck --ping"
       interval: 60s
@@ -60,6 +61,8 @@ services:
     ports:
       # The HTTP port
       - "${QCRBOX_BIND_ADDRESS:?Must set env var QCRBOX_BIND_ADDRESS}:${QCRBOX__REVERSE_PROXY__PORT:?Must set env var QCRBOX__REVERSE_PROXY__PORT}:80"
+      # The HTTPS port (optional for production)
+      - "${QCRBOX_BIND_ADDRESS:?Must set env var QCRBOX_BIND_ADDRESS}:443:443"
       # The Web UI (enabled by --api.insecure=true above)
       - "${QCRBOX_BIND_ADDRESS:?Must set env var QCRBOX_BIND_ADDRESS}:${QCRBOX__REVERSE_PROXY__WEBUI_PORT:?Must set env var QCRBOX__REVERSE_PROXY__WEBUI_PORT}:8080"
     volumes:
@@ -71,13 +74,56 @@ services:
         syslog-address: udp://127.0.0.1:514
         tag: "qcrbox-reverse-proxy"
 
+  qcrbox-authelia:
+    image: authelia/authelia:4.38
+    volumes:
+      - ./services/core/qcrbox_auth/authelia_config.yml:/config/configuration.yml:ro
+      - ./services/core/qcrbox_auth/users_database.yml:/config/users_database.yml:ro
+      - qcrbox-authelia-data:/config
+    environment:
+      AUTHELIA_JWT_SECRET: ${AUTHELIA_JWT_SECRET:?Must set env var AUTHELIA_JWT_SECRET}
+      AUTHELIA_SESSION_SECRET: ${AUTHELIA_SESSION_SECRET:?Must set env var AUTHELIA_SESSION_SECRET}
+      AUTHELIA_STORAGE_ENCRYPTION_KEY: ${AUTHELIA_STORAGE_ENCRYPTION_KEY:?Must set env var AUTHELIA_STORAGE_ENCRYPTION_KEY}
+      QCRBOX_DOMAIN: ${QCRBOX_DOMAIN:-localhost}
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9091/api/health"]
+      interval: 60s
+      start_period: 30s
+      start_interval: 1s
+    depends_on:
+      qcrbox-syslog:
+        condition: service_healthy
+      qcrbox-reverse-proxy:
+        condition: service_healthy
+    networks:
+      - qcrbox-net
+    restart: unless-stopped
+    labels:
+      traefik.enable: true
+      # Auth UI subdomain on HTTPS
+      traefik.http.routers.authelia.rule: Host(`auth.${QCRBOX_DOMAIN:-localhost.local}`)
+      traefik.http.routers.authelia.entrypoints: websecure
+      traefik.http.routers.authelia.tls: true
+      traefik.http.routers.authelia.service: authelia-service
+      traefik.http.services.authelia-service.loadbalancer.server.port: 9091
+      
+      # ForwardAuth middleware definition (used by other services)
+      traefik.http.middlewares.authelia-auth.forwardauth.address: http://qcrbox-authelia:9091/api/verify?rd=https://auth.${QCRBOX_DOMAIN:-localhost.local}/
+      traefik.http.middlewares.authelia-auth.forwardauth.trustForwardHeader: true
+      traefik.http.middlewares.authelia-auth.forwardauth.authResponseHeaders: Remote-User,Remote-Groups,Remote-Email,Remote-Name
+    logging:
+      driver: "syslog"
+      options:
+        syslog-address: udp://127.0.0.1:514
+        tag: "qcrbox-authelia"
+
   qcrbox-registry:
     image: ${QCRBOX_DOCKER_REPO:?Must set env var QCRBOX_DOCKER_REPO}/registry:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}
     volumes:
       - ${QCRBOX_SHARED_FILES_DIR_HOST_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_HOST_PATH}:${QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH}
       - qcrbox-registry-db:${QCRBOX_REGISTRY_DB_DIR:?Must set env var QCRBOX_REGISTRY_DB_DIR}
-    ports:
-      - "${QCRBOX_BIND_ADDRESS}:${QCRBOX_REGISTRY_PORT:?Must set env var QCRBOX_REGISTRY_PORT}:8000"
+    # Direct port exposure removed - access via Traefik at api.registry.${QCRBOX_DOMAIN}
+    # Internal services can still access via http://qcrbox-registry:8000 on Docker network
     depends_on:
       qcrbox-nats:
         condition: service_healthy
@@ -85,11 +131,33 @@ services:
         condition: service_healthy
       qcrbox-syslog:
         condition: service_healthy
+      qcrbox-authelia:
+        condition: service_healthy
     environment:
       QCRBOX__NATS__HOST: "qcrbox-nats"
     networks:
       - qcrbox-net
     restart: "unless-stopped"
+    labels:
+      traefik.enable: true
+      # Health check endpoint (no auth required) - higher priority
+      traefik.http.routers.registry-healthz.rule: Host(`api.registry.${QCRBOX_DOMAIN:-localhost.local}`) && Path(`/api/healthz`)
+      traefik.http.routers.registry-healthz.entrypoints: websecure
+      traefik.http.routers.registry-healthz.tls: true
+      traefik.http.routers.registry-healthz.priority: 100
+      traefik.http.routers.registry-healthz.service: registry-service
+      
+      # Main API subdomain with authentication
+      traefik.http.routers.registry-api.rule: Host(`api.registry.${QCRBOX_DOMAIN:-localhost.local}`)
+      traefik.http.routers.registry-api.entrypoints: websecure
+      traefik.http.routers.registry-api.tls: true
+      traefik.http.routers.registry-api.middlewares: authelia-auth
+      traefik.http.routers.registry-api.priority: 50
+      traefik.http.routers.registry-api.service: registry-service
+      
+      # Service definition
+      traefik.http.services.registry-service.loadbalancer.server.scheme: http
+      traefik.http.services.registry-service.loadbalancer.server.port: 8000
     logging:
       driver: "syslog"
       options:
@@ -102,3 +170,4 @@ networks:
 volumes:
   qcrbox-registry-db:
   qcrbox-nats-storage:
+  qcrbox-authelia-data:
