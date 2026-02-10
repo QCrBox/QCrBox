@@ -22,21 +22,10 @@ RUN dpkg --add-architecture i386 && \
     rm -rf /var/lib/apt/lists && \
     true
 
-# Install cabextract (needed to extract font files) and fontconfig
+# Install fontconfig for Wine font rendering configuration
 RUN apt-get update -y && \
-    apt-get install -y --no-install-recommends cabextract fontconfig && \
+    apt-get install -y --no-install-recommends fontconfig && \
     rm -rf /var/lib/apt/lists
-
-# Manually install Microsoft Core Fonts (ARM-compatible approach)
-# Download and extract the core fonts that Windows applications expect
-RUN mkdir -p /usr/share/fonts/truetype/msttcorefonts && \
-    cd /tmp && \
-    for font in andale32.exe arial32.exe arialb32.exe comic32.exe courie32.exe georgi32.exe impact32.exe times32.exe trebuc32.exe verdan32.exe webdin32.exe; do \
-        wget -q https://downloads.sourceforge.net/project/corefonts/the%20fonts/final/$font && \
-        cabextract -q -d /usr/share/fonts/truetype/msttcorefonts $font && \
-        rm $font; \
-    done && \
-    chmod 644 /usr/share/fonts/truetype/msttcorefonts/*
 
 # Install Mono (https://wiki.winehq.org/Mono)
 RUN mkdir -p /opt/wine-${WINE_BRANCH}/share/wine/mono && \
@@ -86,31 +75,35 @@ RUN export WINEARCH="win64" && \
 
 # Configure fontconfig to use RGB subpixel rendering (fixes missing vertical strokes)
 RUN mkdir -p /etc/fonts/conf.d && \
-    echo '<?xml version="1.0"?>\n\
-<!DOCTYPE fontconfig SYSTEM "fonts.dtd">\n\
-<fontconfig>\n\
-  <match target="font">\n\
-    <edit name="rgba" mode="assign">\n\
-      <const>rgb</const>\n\
-    </edit>\n\
-  </match>\n\
-</fontconfig>' > /etc/fonts/local.conf
+    cat > /etc/fonts/local.conf << 'EOF'
+<?xml version="1.0"?>
+<!DOCTYPE fontconfig SYSTEM "fonts.dtd">
+<fontconfig>
+  <match target="font">
+    <edit name="rgba" mode="assign">
+      <const>rgb</const>
+    </edit>
+  </match>
+</fontconfig>
+EOF
 
-# Update font cache so Wine can find the system fonts
+# Update font cache
 RUN fc-cache -f -v
 
-# Copy fonts into Wine prefixes so Qt and other Windows apps can find them
-# Wine applications (especially Qt-based GUIs) need fonts in C:\windows\Fonts
-# Copy instead of symlink to ensure proper ownership and access
-RUN mkdir -p ${QCRBOX_WINE_INSTALLATIONS_DIR}/wine_win32/drive_c/windows/Fonts \
-             ${QCRBOX_WINE_INSTALLATIONS_DIR}/wine_win64/drive_c/windows/Fonts && \
-    cp /usr/share/fonts/truetype/msttcorefonts/* ${QCRBOX_WINE_INSTALLATIONS_DIR}/wine_win32/drive_c/windows/Fonts/ && \
-    cp /usr/share/fonts/truetype/msttcorefonts/* ${QCRBOX_WINE_INSTALLATIONS_DIR}/wine_win64/drive_c/windows/Fonts/ && \
-    chown -R ${QCRBOX_USER}:${QCRBOX_USER} \
-        ${QCRBOX_WINE_INSTALLATIONS_DIR}/wine_win32/drive_c/windows/Fonts \
-        ${QCRBOX_WINE_INSTALLATIONS_DIR}/wine_win64/drive_c/windows/Fonts
+# Install fonts using winetricks
+# winetricks properly installs Microsoft Core Fonts and registers them in Wine registry
+RUN export WINEARCH="win32" && \
+    export WINEPREFIX="${QCRBOX_WINE_INSTALLATIONS_DIR}/wine_win32" && \
+    gosu ${QCRBOX_USER} bash -c 'winetricks corefonts'
+
+RUN export WINEARCH="win64" && \
+    export WINEPREFIX="${QCRBOX_WINE_INSTALLATIONS_DIR}/wine_win64" && \
+    gosu ${QCRBOX_USER} bash -c 'winetricks corefonts'
 
 USER ${QCRBOX_USER}
+
+# Set shell environment for Wine's system() calls
+ENV SHELL=/bin/bash
 
 ARG QCRBOX_ROOT_DIR=${QCRBOX_ROOT_DIR}
 ARG QCRBOX_HOME=${QCRBOX_ROOT_DIR}
