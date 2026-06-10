@@ -4,6 +4,7 @@
 
 - [Setting up a development environment](set_up_a_dev_environment.md) (Start Here)
 - [Spinning up the full QCrBox stack locally](spin_up_full_stack_locally.md) - Backend, authentication and web frontend with single sign-on
+- [Deploying QCrBox to a VM](deploy_qcrbox_to_a_vm.md) - Scripted install with fresh secrets, local (Multipass) or on a server
 - [Setting up Authelia Authentication](setup_authelia_authentication.md) - Secure external access to QCrBox Registry API
 - [Getting Licenced components](./obtain_licenced_components.md)
 - [Building and running components using the `qcb` command line tool](use_qcb_to_interact_with_and_manage_qcrbox.md)

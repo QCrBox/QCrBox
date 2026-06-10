@@ -8,11 +8,13 @@ single sign-on.
 
 For details on the authentication setup itself, see
 [Setting up Authelia Authentication](setup_authelia_authentication.md).
+If you prefer an isolated VM (no `/etc/hosts` editing, freshly generated
+secrets), see [Deploying QCrBox to a VM](deploy_qcrbox_to_a_vm.md) instead.
 
 ## What you end up with
 
 | URL | Service | Authentication |
-|-----|---------|----------------|
+| --- | ------- | -------------- |
 | `https://localhost.local` | Web frontend (Django) | Authelia (SSO) |
 | `https://auth.localhost.local` | Authelia login portal | — |
 | `https://api.registry.localhost.local` | Registry REST API | Authelia |

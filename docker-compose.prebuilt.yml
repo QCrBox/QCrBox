@@ -54,6 +54,10 @@ services:
       - "--api.dashboard=true"  # web UI, served via the authenticated traefik.${QCRBOX_DOMAIN} router below
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
+      # File provider for dynamic TLS configuration (e.g. a supplied
+      # certificate dropped into services/core/qcrbox_traefik/dynamic/)
+      - "--providers.file.directory=/etc/traefik/dynamic"
+      - "--providers.file.watch=true"
       - "--entryPoints.web.address=:80"
       # Redirect all plain-HTTP traffic to HTTPS (ACME HTTP-01 challenges are still served)
       - "--entryPoints.web.http.redirections.entryPoint.to=websecure"
@@ -83,6 +87,7 @@ services:
       # So that Traefik can listen to the Docker events
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - qcrbox-letsencrypt:/letsencrypt
+      - ./services/core/qcrbox_traefik/dynamic:/etc/traefik/dynamic:ro
     labels:
       traefik.enable: true
       # Dashboard at https://traefik.${QCRBOX_DOMAIN}, behind Authelia
