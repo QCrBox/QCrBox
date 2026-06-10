@@ -21,16 +21,20 @@ services:
     labels:
       traefik.enable: true
       traefik.http.routers.to-dummy-gui-path-prefix.rule: Path(`/gui/dummy-gui`)
-      traefik.http.routers.to-dummy-gui-path-prefix.middlewares: redirect-gui-dummy-gui-path
+      traefik.http.routers.to-dummy-gui-path-prefix.middlewares: authelia-auth,redirect-gui-dummy-gui-path
       traefik.http.routers.to-dummy-gui-path-prefix.service: dummy-gui-service
-      traefik.http.middlewares.redirect-gui-dummy-gui-path.redirectregex.regex: ^http://(.+)/gui/dummy-gui(/?)$$
-      traefik.http.middlewares.redirect-gui-dummy-gui-path.redirectregex.replacement: http://dummy-gui.gui.$$1/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true
+      traefik.http.routers.to-dummy-gui-path-prefix.entrypoints: websecure
+      traefik.http.routers.to-dummy-gui-path-prefix.tls: true
+      traefik.http.middlewares.redirect-gui-dummy-gui-path.redirectregex.regex: ^https://(.+)/gui/dummy-gui(/?)$$
+      traefik.http.middlewares.redirect-gui-dummy-gui-path.redirectregex.replacement: https://dummy-gui.gui.$$1/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true
 
       traefik.http.routers.to-dummy-gui-subdomain.rule: HostRegexp(`^dummy-gui\.gui\..+$$`)
-      traefik.http.routers.to-dummy-gui-subdomain.middlewares: redirect-gui-dummy-gui-subdomain
+      traefik.http.routers.to-dummy-gui-subdomain.middlewares: authelia-auth,redirect-gui-dummy-gui-subdomain
       traefik.http.routers.to-dummy-gui-subdomain.service: dummy-gui-service
-      traefik.http.middlewares.redirect-gui-dummy-gui-subdomain.redirectregex.regex: ^http://dummy-gui\.gui\.([^/]+)(/?)$$
-      traefik.http.middlewares.redirect-gui-dummy-gui-subdomain.redirectregex.replacement: http://dummy-gui.gui.$$1/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true
+      traefik.http.routers.to-dummy-gui-subdomain.entrypoints: websecure
+      traefik.http.routers.to-dummy-gui-subdomain.tls: true
+      traefik.http.middlewares.redirect-gui-dummy-gui-subdomain.redirectregex.regex: ^https://dummy-gui\.gui\.([^/]+)(/?)$$
+      traefik.http.middlewares.redirect-gui-dummy-gui-subdomain.redirectregex.replacement: https://dummy-gui.gui.$$1/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true
 
       traefik.http.services.dummy-gui-service.loadbalancer.server.scheme: http
       traefik.http.services.dummy-gui-service.loadbalancer.server.port: 8080

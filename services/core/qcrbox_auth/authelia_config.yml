@@ -1,11 +1,15 @@
 ---
+# All {{ env "..." }} references are expanded from container environment
+# variables via X_AUTHELIA_CONFIG_FILTERS=template (set in docker-compose).
+# The variables deliberately do not use the AUTHELIA_ prefix, which Authelia
+# reserves for its native env-var-to-config mapping.
 server:
   address: 'tcp://0.0.0.0:9091'
   endpoints:
     enable_pprof: false
     enable_expvars: false
 
-# Disable NTP check for development  
+# Disable NTP check for development
 ntp:
   disable_startup_check: true
 
@@ -14,7 +18,7 @@ log:
 
 identity_validation:
   reset_password:
-    jwt_secret: ${AUTHELIA_JWT_SECRET}
+    jwt_secret: {{ env "QCRBOX_AUTH_JWT_SECRET" }}
 
 totp:
   disable: false
@@ -30,25 +34,30 @@ authentication_backend:
 access_control:
   default_policy: deny
   rules:
-    - domain:
-        - "api.registry.localhost.local"
-        - "api.registry.*.local"
-        - "api.registry.*.com"
-      policy: one_factor
-    - domain:
-        - "api.registry.localhost.local"
-        - "api.registry.*.local"
-        - "api.registry.*.com"
+    # Rules are evaluated first-match-wins, so the bypass rule must come first.
+    - domain: 'api.registry.{{ env "QCRBOX_DOMAIN" }}'
       resources:
-        - "^/api/healthz$"
+        - '^/api/healthz$'
       policy: bypass
+    - domain: 'api.registry.{{ env "QCRBOX_DOMAIN" }}'
+      policy: one_factor
+    # GUI applications expose full desktop sessions (shell-equivalent access);
+    # consider switching to two_factor once users have enrolled TOTP.
+    - domain: '*.gui.{{ env "QCRBOX_DOMAIN" }}'
+      policy: one_factor
+    - domain: 'traefik.{{ env "QCRBOX_DOMAIN" }}'
+      policy: one_factor
+    # The web frontend (QCrBoxFrontend) is served on the root domain. Django
+    # consumes the Remote-User header for single sign-on.
+    - domain: '{{ env "QCRBOX_DOMAIN" }}'
+      policy: one_factor
 
 session:
-  secret: ${AUTHELIA_SESSION_SECRET}
+  secret: {{ env "QCRBOX_AUTH_SESSION_SECRET" }}
   cookies:
     - name: qcrbox_session
-      domain: localhost.local
-      authelia_url: https://auth.localhost.local:443
+      domain: {{ env "QCRBOX_DOMAIN" }}
+      authelia_url: 'https://auth.{{ env "QCRBOX_DOMAIN" }}'
       same_site: lax
       expiration: 1h
       inactivity: 15m
@@ -60,7 +69,7 @@ regulation:
   ban_time: 5m
 
 storage:
-  encryption_key: ${AUTHELIA_STORAGE_ENCRYPTION_KEY}
+  encryption_key: {{ env "QCRBOX_AUTH_STORAGE_ENCRYPTION_KEY" }}
   local:
     path: /config/db.sqlite3
 

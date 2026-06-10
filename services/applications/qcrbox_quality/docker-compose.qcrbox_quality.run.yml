@@ -19,12 +19,17 @@ services:
     labels:
       traefik.enable: true
       traefik.http.routers.to-qcrbox-quality-path-prefix.rule: PathPrefix(`/gui/qcrbox_quality`)
-      traefik.http.routers.to-qcrbox-quality-path-prefix.middlewares: strip-qcrbox-quality-prefix
+      traefik.http.routers.to-qcrbox-quality-path-prefix.middlewares: authelia-auth,strip-qcrbox-quality-prefix
       traefik.http.routers.to-qcrbox-quality-path-prefix.service: qcrbox_quality-service
+      traefik.http.routers.to-qcrbox-quality-path-prefix.entrypoints: websecure
+      traefik.http.routers.to-qcrbox-quality-path-prefix.tls: true
       traefik.http.middlewares.strip-qcrbox-quality-prefix.stripprefix.prefixes: /gui/qcrbox_quality
 
       traefik.http.routers.to-qcrbox-quality-subdomain.rule: HostRegexp(`^qcrbox-quality\.gui\..+$$`)
+      traefik.http.routers.to-qcrbox-quality-subdomain.middlewares: authelia-auth
       traefik.http.routers.to-qcrbox-quality-subdomain.service: qcrbox_quality-service
+      traefik.http.routers.to-qcrbox-quality-subdomain.entrypoints: websecure
+      traefik.http.routers.to-qcrbox-quality-subdomain.tls: true
 
       traefik.http.services.qcrbox_quality-service.loadbalancer.server.scheme: http
       traefik.http.services.qcrbox_quality-service.loadbalancer.server.port: 8080

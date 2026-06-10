@@ -41,9 +41,9 @@ Add entries to `/etc/hosts` for the localhost domains:
 sudo nano /etc/hosts
 ```
 
-Add this line:
+Add this line (extend the `gui` list with the applications you use):
 ```
-127.0.0.1   localhost.local auth.localhost.local api.registry.localhost.local
+127.0.0.1   localhost.local auth.localhost.local api.registry.localhost.local traefik.localhost.local olex2.gui.localhost.local
 ```
 
 Save and exit (Ctrl+X, Y, Enter).
@@ -180,16 +180,18 @@ This confirms that applications running inside QCrBox can communicate with the r
 
 ## Viewing Traefik Dashboard
 
-To see the routing configuration and verify Authelia integration:
+The dashboard is served through the reverse proxy itself and requires an
+Authelia login (add `traefik.localhost.local` to `/etc/hosts` for local use):
 
 ```
-http://localhost:8080
+https://traefik.localhost.local
 ```
 
 Check these sections:
-- **HTTP Routers**: Should see `authelia`, `registry-api`, `registry-healthz`
+
+- **HTTP Routers**: Should see `authelia`, `registry-api`, `registry-healthz`, `traefik-dashboard` and the `to-<app>-*` GUI routers
 - **HTTP Services**: Should see `authelia-service`, `registry-service`
-- **HTTP Middlewares**: Should see `authelia-auth` (ForwardAuth middleware)
+- **HTTP Middlewares**: Should see `authelia-auth` (ForwardAuth middleware) and `security-headers`
 
 ## User Management
 
@@ -463,17 +465,72 @@ qcb create application my-app
 
 The `qcb` tool connects to `http://qcrbox-registry:8000` internally, bypassing Traefik and Authelia.
 
-## Production Deployment Considerations
+## Deploying on an Internet-Facing VM
 
-For production or LAN deployment beyond localhost:
+The settings in this repository default to a safe local-development setup. The
+checklist below covers everything that must change for a deployment on a VM
+that is reachable from the internet.
 
-1. **Change domain**: Update `QCRBOX_DOMAIN` in `.env.prod` to your actual domain
-2. **Use proper certificates**: Replace self-signed certs with Let's Encrypt or commercial CA
-3. **Change all secrets**: Generate new secrets for production
-4. **Update user passwords**: Change from default `changeme` password
-5. **Review access control**: Update rules in `authelia_config.yml` as needed
-6. **Enable HTTPS enforcement**: Configure Traefik to redirect HTTP to HTTPS
-7. **Consider external storage**: Use Redis for sessions, PostgreSQL for user data
+**Trust model:** all Authelia accounts are mutually trusted. Every logged-in
+user can see all data, all calculations, and shares the same GUI desktop
+sessions. Only create accounts for people who may see everything; QCrBox does
+not yet provide per-user data isolation.
+
+### DNS
+
+Create A/AAAA records pointing at the VM for:
+
+- `auth.<domain>` (Authelia portal)
+- `api.registry.<domain>` (registry API)
+- `traefik.<domain>` (dashboard)
+- `*.gui.<domain>` (one per GUI application, or a wildcard)
+
+### Environment (`.env.prod`)
+
+1. **Domain**: set `QCRBOX_DOMAIN` to your actual domain (e.g. `qcrbox.example.com`).
+2. **Secrets**: replace every `CHANGEME` value. Generate with `openssl rand -hex 32`
+   (JWT, storage encryption) and `openssl rand -hex 64` (session). Never reuse
+   the committed `.env.dev` values — they are public.
+3. **TLS**: keep `QCRBOX_TLS_CERT_RESOLVER=letsencrypt` and set `QCRBOX_ACME_EMAIL`
+   to a monitored address. Certificates are issued automatically via HTTP-01;
+   ports 80 and 443 must be reachable from the internet for this to work.
+4. **NATS**: keep `QCRBOX_NATS_BIND_ADDRESS=127.0.0.1`. NATS has no
+   authentication; if it is ever exposed, anyone can control the pipeline.
+
+### Users
+
+1. Replace the default `admin`/`changeme` user in
+   `services/core/qcrbox_auth/users_database.yml` (hash generation:
+   `docker run --rm authelia/authelia:4.38 authelia crypto hash generate argon2 --password '...'`).
+2. Encourage (or enforce, by switching the GUI rules in `authelia_config.yml`
+   from `one_factor` to `two_factor`) TOTP enrolment — GUI sessions grant
+   shell-equivalent access to the shared data.
+
+### VM hardening
+
+1. **Firewall**: allow only 22, 80 and 443. Note that Docker publishes ports by
+   manipulating iptables directly and **bypasses ufw** — do not rely on ufw to
+   protect a port that docker-compose publishes on `0.0.0.0`. The compose files
+   in this repository bind everything except 80/443 to `127.0.0.1` for exactly
+   this reason; keep it that way.
+2. **SSH**: key-based authentication only (`PasswordAuthentication no`),
+   consider fail2ban.
+3. **Updates**: enable unattended upgrades for the OS and renew the QCrBox
+   images regularly.
+4. **Verify from outside** after starting the stack: from a machine that is not
+   the VM, check that only 22/80/443 answer (e.g. `nmap <host>`), that
+   `http://…` redirects to HTTPS, and that every subdomain redirects to the
+   Authelia login when unauthenticated.
+
+### Operational considerations
+
+1. **Backups**: back up the docker volumes (`qcrbox-registry-db`,
+   `qcrbox-nats-storage`, `qcrbox-authelia-data`) and `shared_files/`.
+2. **Password resets**: the notifier writes reset links to a file inside the
+   Authelia container (`/config/notification.txt`). For real users configure an
+   SMTP notifier in `authelia_config.yml` instead.
+3. **External session/user storage** (Redis/PostgreSQL) is only needed once you
+   scale beyond a single VM.
 
 ## Quick Commands Reference
 

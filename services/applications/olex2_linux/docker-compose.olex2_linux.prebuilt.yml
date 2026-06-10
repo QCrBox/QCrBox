@@ -17,16 +17,20 @@ services:
     labels:
       traefik.enable: true
       traefik.http.routers.to-olex2-path-prefix.rule: Path(`/gui/olex2`)
-      traefik.http.routers.to-olex2-path-prefix.middlewares: redirect-gui-olex2-path
+      traefik.http.routers.to-olex2-path-prefix.middlewares: authelia-auth,redirect-gui-olex2-path
       traefik.http.routers.to-olex2-path-prefix.service: olex2-service
-      traefik.http.middlewares.redirect-gui-olex2-path.redirectregex.regex: ^http://(.+)/gui/olex2(/?)$$
-      traefik.http.middlewares.redirect-gui-olex2-path.redirectregex.replacement: http://olex2.gui.$$1/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true
+      traefik.http.routers.to-olex2-path-prefix.entrypoints: websecure
+      traefik.http.routers.to-olex2-path-prefix.tls: true
+      traefik.http.middlewares.redirect-gui-olex2-path.redirectregex.regex: ^https://(.+)/gui/olex2(/?)$$
+      traefik.http.middlewares.redirect-gui-olex2-path.redirectregex.replacement: https://olex2.gui.$$1/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true
 
       traefik.http.routers.to-olex2-subdomain.rule: HostRegexp(`^olex2\.gui\..+$$`)
-      traefik.http.routers.to-olex2-subdomain.middlewares: redirect-gui-olex2-subdomain
+      traefik.http.routers.to-olex2-subdomain.middlewares: authelia-auth,redirect-gui-olex2-subdomain
       traefik.http.routers.to-olex2-subdomain.service: olex2-service
-      traefik.http.middlewares.redirect-gui-olex2-subdomain.redirectregex.regex: ^http://olex2\.gui\.([^/]+)(/?)$$
-      traefik.http.middlewares.redirect-gui-olex2-subdomain.redirectregex.replacement: http://olex2.gui.$$1/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true
+      traefik.http.routers.to-olex2-subdomain.entrypoints: websecure
+      traefik.http.routers.to-olex2-subdomain.tls: true
+      traefik.http.middlewares.redirect-gui-olex2-subdomain.redirectregex.regex: ^https://olex2\.gui\.([^/]+)(/?)$$
+      traefik.http.middlewares.redirect-gui-olex2-subdomain.redirectregex.replacement: https://olex2.gui.$$1/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true
 
       traefik.http.services.olex2-service.loadbalancer.server.scheme: http
       traefik.http.services.olex2-service.loadbalancer.server.port: 8080

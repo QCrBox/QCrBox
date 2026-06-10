@@ -120,13 +120,38 @@ fi
 echo "✓ Authelia ForwardAuth middleware is configured"
 echo ""
 
+# Check that every application router is protected by the ForwardAuth middleware
+echo "🖥️  Checking that GUI application routers require authentication:"
+echo ""
+
+unprotected=0
+for compose_file in services/applications/*/docker-compose.*.run.yml services/applications/*/docker-compose.*.prebuilt.yml; do
+    [ -f "$compose_file" ] || continue
+    grep -q "traefik.enable" "$compose_file" || continue
+    for router in $(grep -oP 'traefik\.http\.routers\.\K[^.]+(?=\.rule:)' "$compose_file" | sort -u); do
+        if ! grep -q "traefik.http.routers.${router}.middlewares: authelia-auth" "$compose_file"; then
+            echo "❌ Router '${router}' in ${compose_file} lacks the authelia-auth middleware"
+            unprotected=1
+        fi
+        if ! grep -q "traefik.http.routers.${router}.entrypoints: websecure" "$compose_file"; then
+            echo "❌ Router '${router}' in ${compose_file} is not restricted to the websecure entrypoint"
+            unprotected=1
+        fi
+    done
+done
+if [ "$unprotected" -ne 0 ]; then
+    exit 1
+fi
+echo "✓ All application routers use authelia-auth and the websecure entrypoint"
+echo ""
+
 echo "✅ All checks passed!"
 echo ""
 echo "📚 Next steps:"
 echo "  1. Start services: qcb up --all"
-echo "  2. Access registry API at: http://api.registry.localhost:12345"
-echo "  3. Login at: http://auth.localhost:12345"
+echo "  2. Access registry API at: https://api.registry.localhost.local"
+echo "  3. Login at: https://auth.localhost.local"
 echo "     Username: admin"
 echo "     Password: changeme"
 echo ""
-echo "📖 See AUTHELIA_SETUP.md for more information"
+echo "📖 See docs/how_to_guides/setup_authelia_authentication.md for more information"

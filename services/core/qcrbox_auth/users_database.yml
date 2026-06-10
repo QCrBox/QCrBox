@@ -4,9 +4,10 @@
 ###############################################################
 
 users:
-  # Default admin user
+  # Default admin user — DEVELOPMENT ONLY.
   # Password: changeme
-  # Generate new password hash with:
+  # Before any deployment that is reachable from a network, replace this user
+  # (or at least its password hash). Generate a new password hash with:
   # docker run --rm authelia/authelia:4.38 authelia crypto hash generate argon2 --password 'your-password'
   admin:
     displayname: "Admin User"

@@ -18,16 +18,20 @@ services:
     labels:
       traefik.enable: true
       traefik.http.routers.to-{{cookiecutter.application_slug}}-path-prefix.rule: Path(`/gui/{{ cookiecutter.application_slug }}`)
-      traefik.http.routers.to-{{cookiecutter.application_slug}}-path-prefix.middlewares: redirect-gui-{{ cookiecutter.application_slug }}-path
+      traefik.http.routers.to-{{cookiecutter.application_slug}}-path-prefix.middlewares: authelia-auth,redirect-gui-{{ cookiecutter.application_slug }}-path
       traefik.http.routers.to-{{cookiecutter.application_slug}}-path-prefix.service: {{ cookiecutter.application_slug }}-service
-      traefik.http.middlewares.redirect-gui-{{cookiecutter.application_slug}}-path.redirectregex.regex: ^http://(.+)/gui/{{ cookiecutter.application_slug }}(/?)$$
-      traefik.http.middlewares.redirect-gui-{{cookiecutter.application_slug}}-path.redirectregex.replacement: http://{{ cookiecutter.application_slug }}.gui.$$1/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true
+      traefik.http.routers.to-{{cookiecutter.application_slug}}-path-prefix.entrypoints: websecure
+      traefik.http.routers.to-{{cookiecutter.application_slug}}-path-prefix.tls: true
+      traefik.http.middlewares.redirect-gui-{{cookiecutter.application_slug}}-path.redirectregex.regex: ^https://(.+)/gui/{{ cookiecutter.application_slug }}(/?)$$
+      traefik.http.middlewares.redirect-gui-{{cookiecutter.application_slug}}-path.redirectregex.replacement: https://{{ cookiecutter.application_slug }}.gui.$$1/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true
 
       traefik.http.routers.to-{{cookiecutter.application_slug}}-subdomain.rule: HostRegexp(`^{{ cookiecutter.application_slug }}\.gui\..+$$`)
-      traefik.http.routers.to-{{cookiecutter.application_slug}}-subdomain.middlewares: redirect-gui-{{ cookiecutter.application_slug }}-subdomain
+      traefik.http.routers.to-{{cookiecutter.application_slug}}-subdomain.middlewares: authelia-auth,redirect-gui-{{ cookiecutter.application_slug }}-subdomain
       traefik.http.routers.to-{{cookiecutter.application_slug}}-subdomain.service: {{ cookiecutter.application_slug }}-service
-      traefik.http.middlewares.redirect-gui-{{cookiecutter.application_slug}}-subdomain.redirectregex.regex: ^http://{{ cookiecutter.application_slug }}\.gui\.([^/]+)(/?)$$
-      traefik.http.middlewares.redirect-gui-{{cookiecutter.application_slug}}-subdomain.redirectregex.replacement: http://{{ cookiecutter.application_slug }}.gui.$$1/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true
+      traefik.http.routers.to-{{cookiecutter.application_slug}}-subdomain.entrypoints: websecure
+      traefik.http.routers.to-{{cookiecutter.application_slug}}-subdomain.tls: true
+      traefik.http.middlewares.redirect-gui-{{cookiecutter.application_slug}}-subdomain.redirectregex.regex: ^https://{{ cookiecutter.application_slug }}\.gui\.([^/]+)(/?)$$
+      traefik.http.middlewares.redirect-gui-{{cookiecutter.application_slug}}-subdomain.redirectregex.replacement: https://{{ cookiecutter.application_slug }}.gui.$$1/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true
 
       traefik.http.services.{{ cookiecutter.application_slug }}-service.loadbalancer.server.scheme: http
       traefik.http.services.{{ cookiecutter.application_slug }}-service.loadbalancer.server.port: 8080
