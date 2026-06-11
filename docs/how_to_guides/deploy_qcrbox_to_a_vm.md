@@ -60,6 +60,30 @@ the root domain, `auth.`, `api.registry.`, `traefik.` and `*.gui.` names.
 `*.gui.<domain>` names** — request a SAN certificate listing both wildcards
 (`*.<domain>` and `*.gui.<domain>`) plus the root domain.
 
+## Remote VMs (EOSC / cloud)
+
+**`deploy_qcrbox_ssh.sh`** does the same as the Multipass launcher for any
+SSH-reachable Ubuntu VM — e.g. an EOSC / EGI Cloud Compute (OpenStack)
+instance:
+
+```bash
+bash scripts/deployment/deploy_qcrbox_ssh.sh --host ubuntu@<public-ip> \
+    --identity ~/.ssh/eosc_key --apps "olex2_linux" \
+    --domain qcrbox.example.org --acme-email you@example.org
+```
+
+Requirements on the cloud side: an Ubuntu 24.04 instance (≥4 vCPU, 8 GB RAM,
+≥60 GB disk recommended), a public/floating IP, and a security group allowing
+ports 22, 80 and 443. Everything else (docker install, secret reroll, start)
+is handled by the provisioner. Use `--no-images` on re-deploys to skip the
+image stream.
+
+For a quick trial without DNS, omit `--domain` (nip.io is used) and stay on
+the self-signed certificate — Let's Encrypt rate-limits nip.io names heavily.
+For the real deployment use your own domain (DNS A records for the root,
+`auth.`, `api.registry.`, `traefik.` and `*.gui.` names) with `--acme-email`,
+or a certificate from your institution via `--tls-cert`/`--tls-key`.
+
 ## Prerequisites for the launcher
 
 - Multipass: `winget install Canonical.Multipass` on Windows (the script
@@ -75,9 +99,11 @@ the root domain, `auth.`, `api.registry.`, `traefik.` and `*.gui.` names.
 
 - Open `https://<domain>` and log in with the credentials printed at the end
   (user `admin`; also valid for the Django admin at `/admin`).
+- Create accounts for other people at `https://users.<domain>` (LLDAP web UI,
+  restricted to the `lldap_admin` group).
 - Credentials are kept at `/root/qcrbox-credentials.txt` in the VM
   (`multipass exec qcrbox-vm -- sudo cat /root/qcrbox-credentials.txt`).
 - Manage the VM with `multipass stop|start|delete qcrbox-vm`.
 - Re-running the provisioner rerolls all secrets again; note that this wipes
-  the Authelia data volume (its database is encrypted with the old key) and
-  thereby existing TOTP enrolments.
+  the Authelia and LLDAP data volumes — **all user accounts, passwords and
+  TOTP enrolments are recreated from scratch**.

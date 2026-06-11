@@ -108,11 +108,49 @@ services:
         syslog-address: udp://127.0.0.1:514
         tag: "qcrbox-reverse-proxy"
 
+  qcrbox-lldap:
+    # Lightweight LDAP server with a web UI; Authelia's user backend.
+    # Manage accounts and groups at https://users.${QCRBOX_DOMAIN}.
+    image: lldap/lldap:v0.6.1-alpine
+    volumes:
+      - qcrbox-lldap-data:/data
+    environment:
+      LLDAP_LDAP_BASE_DN: dc=qcrbox,dc=internal
+      LLDAP_JWT_SECRET: ${LLDAP_JWT_SECRET:?Must set env var LLDAP_JWT_SECRET}
+      LLDAP_KEY_SEED: ${LLDAP_KEY_SEED:?Must set env var LLDAP_KEY_SEED}
+      LLDAP_LDAP_USER_PASS: ${LLDAP_ADMIN_PASSWORD:?Must set env var LLDAP_ADMIN_PASSWORD}
+      LLDAP_LDAP_USER_EMAIL: admin@${QCRBOX_DOMAIN:-localhost.local}
+    healthcheck:
+      test: ["CMD", "/app/lldap", "healthcheck"]
+      interval: 60s
+      start_period: 30s
+      start_interval: 1s
+    depends_on:
+      qcrbox-syslog:
+        condition: service_healthy
+      qcrbox-reverse-proxy:
+        condition: service_healthy
+    networks:
+      - qcrbox-net
+    restart: unless-stopped
+    labels:
+      traefik.enable: true
+      # User management web UI, behind Authelia (admins only, see ACL rules)
+      traefik.http.routers.lldap.rule: Host(`users.${QCRBOX_DOMAIN:-localhost.local}`)
+      traefik.http.routers.lldap.entrypoints: websecure
+      traefik.http.routers.lldap.tls: true
+      traefik.http.routers.lldap.middlewares: authelia-auth
+      traefik.http.services.lldap-service.loadbalancer.server.port: 17170
+    logging:
+      driver: "syslog"
+      options:
+        syslog-address: udp://127.0.0.1:514
+        tag: "qcrbox-lldap"
+
   qcrbox-authelia:
     image: authelia/authelia:4.38
     volumes:
       - ./services/core/qcrbox_auth/authelia_config.yml:/config/configuration.yml:ro
-      - ./services/core/qcrbox_auth/users_database.yml:/config/users_database.yml:ro
       - qcrbox-authelia-data:/config
     environment:
       # Expand {{ env "..." }} references in authelia_config.yml. The variables
@@ -122,6 +160,7 @@ services:
       QCRBOX_AUTH_JWT_SECRET: ${AUTHELIA_JWT_SECRET:?Must set env var AUTHELIA_JWT_SECRET}
       QCRBOX_AUTH_SESSION_SECRET: ${AUTHELIA_SESSION_SECRET:?Must set env var AUTHELIA_SESSION_SECRET}
       QCRBOX_AUTH_STORAGE_ENCRYPTION_KEY: ${AUTHELIA_STORAGE_ENCRYPTION_KEY:?Must set env var AUTHELIA_STORAGE_ENCRYPTION_KEY}
+      QCRBOX_AUTH_LDAP_PASSWORD: ${LLDAP_ADMIN_PASSWORD:?Must set env var LLDAP_ADMIN_PASSWORD}
       QCRBOX_DOMAIN: ${QCRBOX_DOMAIN:?Must set env var QCRBOX_DOMAIN}
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9091/api/health"]
@@ -132,6 +171,8 @@ services:
       qcrbox-syslog:
         condition: service_healthy
       qcrbox-reverse-proxy:
+        condition: service_healthy
+      qcrbox-lldap:
         condition: service_healthy
     networks:
       - qcrbox-net
@@ -209,4 +250,5 @@ volumes:
   qcrbox-registry-db:
   qcrbox-nats-storage:
   qcrbox-authelia-data:
+  qcrbox-lldap-data:
   qcrbox-letsencrypt:

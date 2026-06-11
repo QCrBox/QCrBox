@@ -57,6 +57,14 @@ if ! grep -q "^AUTHELIA_STORAGE_ENCRYPTION_KEY=" .env.dev; then
     exit 1
 fi
 echo "✓ AUTHELIA_STORAGE_ENCRYPTION_KEY is set"
+
+for var in LLDAP_JWT_SECRET LLDAP_KEY_SEED LLDAP_ADMIN_PASSWORD; do
+    if ! grep -q "^${var}=" .env.dev; then
+        echo "❌ ${var} not found in .env.dev"
+        exit 1
+    fi
+    echo "✓ ${var} is set"
+done
 echo ""
 
 # Check if Authelia config files exist
@@ -69,11 +77,11 @@ if [ ! -f "services/core/qcrbox_auth/authelia_config.yml" ]; then
 fi
 echo "✓ authelia_config.yml exists"
 
-if [ ! -f "services/core/qcrbox_auth/users_database.yml" ]; then
-    echo "❌ services/core/qcrbox_auth/users_database.yml not found"
+if ! grep -q "implementation: lldap" services/core/qcrbox_auth/authelia_config.yml; then
+    echo "❌ authelia_config.yml does not use the LLDAP authentication backend"
     exit 1
 fi
-echo "✓ users_database.yml exists"
+echo "✓ authelia_config.yml uses the LLDAP backend"
 echo ""
 
 # Test docker compose config generation
@@ -104,6 +112,12 @@ if ! docker compose -f docker-compose.run.yml --env-file .env.dev config 2>/dev/
     exit 1
 fi
 echo "✓ qcrbox-authelia service is defined"
+
+if ! docker compose -f docker-compose.run.yml --env-file .env.dev config 2>/dev/null | grep -q "qcrbox-lldap:"; then
+    echo "❌ qcrbox-lldap service not found in docker-compose.run.yml"
+    exit 1
+fi
+echo "✓ qcrbox-lldap service is defined"
 
 # Check if registry has Traefik labels
 if ! docker compose -f docker-compose.run.yml --env-file .env.dev config 2>/dev/null | grep -q "traefik.http.routers.registry-api"; then

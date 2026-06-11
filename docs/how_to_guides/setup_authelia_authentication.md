@@ -195,63 +195,37 @@ Check these sections:
 
 ## User Management
 
-### Changing the Admin Password
+Users and groups live in **LLDAP**, a lightweight LDAP server with a web UI
+that Authelia uses as its authentication backend
+(`services/core/qcrbox_auth/authelia_config.yml`, `implementation: lldap`).
 
-The default password (`changeme`) should be changed for any deployment.
+Open `https://users.<domain>` (e.g. `https://users.qcrbox.localhost`) and log
+in. Only members of the `lldap_admin` group can reach this page (enforced by
+an Authelia access-control rule). The built-in `admin` account is a member;
+its password comes from `LLDAP_ADMIN_PASSWORD` in the env file
+(`changeme` in development).
 
-1. **Generate a new password hash:**
-   ```bash
-   docker run --rm authelia/authelia:4.38 authelia crypto hash generate argon2 --password 'your-new-password'
-   ```
+From the LLDAP UI you can:
 
-2. **Copy the generated hash** (starts with `$argon2id$...`)
+- **Create and delete users** (username, email, display name, password).
+  New users can log in at the Authelia portal immediately — no restart needed.
+- **Manage groups**. Two group names have meaning today: `lldap_admin`
+  (access to this UI and the Traefik dashboard) and group membership in
+  general is forwarded to applications in the `Remote-Groups` header.
+- **Reset passwords** for any user.
 
-3. **Update the users database file:**
-   ```bash
-   nano services/core/qcrbox_auth/users_database.yml
-   ```
+Note that QCrBox dataset/research-group permissions are still managed in the
+web frontend (Django) — an LLDAP account controls *who can log in*, while the
+frontend controls *what data they see*. New users start without any frontend
+group and must be added to one by a frontend admin.
 
-4. **Replace the password hash:**
-   ```yaml
-   users:
-     admin:
-       displayname: "Admin User"
-       password: "$argon2id$v=19$m=65536,t=3,p=4$..."  # Paste new hash here
-       email: admin@example.com
-       groups:
-         - admins
-   ```
+### Future: ORCID / federated login
 
-5. **Restart Authelia:**
-   ```bash
-   docker compose -f docker-compose.run.yml --env-file .env.dev restart qcrbox-authelia
-   ```
-
-### Adding Additional Users
-
-Edit `services/core/qcrbox_auth/users_database.yml`:
-
-```yaml
-users:
-  admin:
-    displayname: "Admin User"
-    password: "$argon2id$v=19$m=65536,t=3,p=4$..."
-    email: admin@example.com
-    groups:
-      - admins
-  
-  scientist1:
-    displayname: "Scientist One"
-    password: "$argon2id$v=19$m=65536,t=3,p=4$..."  # Generate with command above
-    email: scientist1@example.com
-    groups:
-      - users
-```
-
-After adding users, restart Authelia:
-```bash
-docker compose -f docker-compose.run.yml --env-file .env.dev restart qcrbox-authelia
-```
+Authelia cannot delegate authentication to upstream identity providers such
+as ORCID. If federated login becomes a requirement, the planned path is to
+replace Authelia with **Authentik** or **Keycloak** — both can use this LLDAP
+directory as a user source, so accounts created now carry over, and both
+support forward-auth so the Traefik/Django integration survives the swap.
 
 ## Troubleshooting
 

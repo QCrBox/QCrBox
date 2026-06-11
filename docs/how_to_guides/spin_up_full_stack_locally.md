@@ -15,11 +15,12 @@ secrets), see [Deploying QCrBox to a VM](deploy_qcrbox_to_a_vm.md) instead.
 
 | URL | Service | Authentication |
 | --- | ------- | -------------- |
-| `https://localhost.local` | Web frontend (Django) | Authelia (SSO) |
-| `https://auth.localhost.local` | Authelia login portal | — |
-| `https://api.registry.localhost.local` | Registry REST API | Authelia |
-| `https://<app>.gui.localhost.local` | noVNC GUI of an application (e.g. `olex2`) | Authelia |
-| `https://traefik.localhost.local` | Traefik dashboard | Authelia |
+| `https://qcrbox.localhost` | Web frontend (Django) | Authelia (SSO) |
+| `https://auth.qcrbox.localhost` | Authelia login portal | — |
+| `https://api.registry.qcrbox.localhost` | Registry REST API | Authelia |
+| `https://<app>.gui.qcrbox.localhost` | noVNC GUI of an application (e.g. `olex2`) | Authelia |
+| `https://users.qcrbox.localhost` | User management (LLDAP) | Authelia (admins only) |
+| `https://traefik.qcrbox.localhost` | Traefik dashboard | Authelia (admins only) |
 
 One Authelia login (dev default: `admin` / `changeme`) covers all of them. The
 frontend recognises the Authelia user automatically via the `Remote-User`
@@ -33,20 +34,16 @@ header — its own login page is not used.
    (both repos in the same parent directory is assumed below)
 3. Docker running
 
-## Step 1: DNS configuration
+## Step 1: DNS configuration — none needed
 
-`/etc/hosts` does not support wildcards, so every subdomain you want to use
-needs an entry. Add one line (extend the `gui` list with the applications you
-use):
+The development domain is `qcrbox.localhost`. Browsers (and systemd-resolved)
+resolve every `*.localhost` name to `127.0.0.1` natively, at any subdomain
+depth — so `auth.qcrbox.localhost` and `olex2.gui.qcrbox.localhost` work with
+**no `/etc/hosts` entries**, including from a Windows browser when QCrBox runs
+inside WSL2 (localhost forwarding carries port 443 through).
 
-```text
-127.0.0.1   localhost.local auth.localhost.local api.registry.localhost.local traefik.localhost.local olex2.gui.localhost.local dummy-gui.gui.localhost.local qcrbox-quality.gui.localhost.local
-```
-
-**Note for WSL users:** add the same line to the Windows hosts file
-(`C:\Windows\System32\drivers\etc\hosts`) if you browse from Windows; see the
-WSL section in [the Authelia guide](setup_authelia_authentication.md) for
-port-forwarding details.
+Command-line tools do not all share this behaviour; for `curl`, pass
+`--resolve <name>:443:127.0.0.1` as shown in Step 5.
 
 ## Step 2: Start the QCrBox backend
 
@@ -85,12 +82,12 @@ docker compose up -d --build
 ```
 
 The frontend is not published on any host port — it is only reachable through
-Traefik at `https://localhost.local`. This is required for the single sign-on
+Traefik at `https://qcrbox.localhost`. This is required for the single sign-on
 header to be trustworthy.
 
 ## Step 4: Log in and set up users
 
-1. Open `https://localhost.local` in a browser. You will be redirected to the
+1. Open `https://qcrbox.localhost` in a browser. You will be redirected to the
    Authelia portal. Accept the self-signed-certificate warning (local
    development uses Traefik's default certificate; real deployments use
    Let's Encrypt).
@@ -99,28 +96,32 @@ header to be trustworthy.
    automatically on first visit.
 4. In the frontend, create at least one group (Groups → Create Group) and
    assign your user to it; data uploads require a group.
+5. To create accounts for other people, open `https://users.qcrbox.localhost`
+   (LLDAP web UI, admins only) and add users there. They can log in at the
+   Authelia portal immediately; afterwards add them to a frontend group.
 
-**How accounts work:** Authelia owns credentials and (optional) two-factor
-authentication — users are defined in
-`services/core/qcrbox_auth/users_database.yml`. The frontend keeps its own user
-records (auto-created on first visit, matched by username) for group membership
-and dataset permissions. The Django superuser from `environment.env` is only
-needed for the Django admin interface at `https://localhost.local/admin`.
+**How accounts work:** Authelia owns login credentials and (optional)
+two-factor authentication; the accounts themselves live in LLDAP and are
+managed at `https://users.<domain>`. The frontend keeps its own user records
+(auto-created on first visit, matched by username) for research-group
+membership and dataset permissions. The Django superuser from
+`environment.env` is only needed for the Django admin interface at
+`https://qcrbox.localhost/admin`.
 
 ## Step 5: Verify
 
 ```bash
 # Health check, no login required
-curl -k https://api.registry.localhost.local/api/healthz
+curl -k https://api.registry.qcrbox.localhost/api/healthz
 
 # Everything else redirects to the login portal when unauthenticated
-curl -k -o /dev/null -w '%{http_code} %{redirect_url}\n' https://localhost.local/
-# -> 302 https://auth.localhost.local/?rd=...
+curl -k -o /dev/null -w '%{http_code} %{redirect_url}\n' https://qcrbox.localhost/
+# -> 302 https://auth.qcrbox.localhost/?rd=...
 ```
 
 In the browser (logged in): open a dataset in the frontend and start an
 interactive session — the GUI opens in a new tab on
-`https://<app>.gui.localhost.local` without a second login.
+`https://<app>.gui.qcrbox.localhost` without a second login.
 
 ## Shutting down
 
@@ -137,18 +138,36 @@ qcb down
 **`network qcrbox_qcrbox-net not found` when starting the frontend** — the
 backend is not running. Run `qcb up` in the QCrBox repository first.
 
-**Browser shows the Authelia portal again when opening a GUI tab** — the GUI
-subdomain is missing from `/etc/hosts`, so the session cookie (scoped to
-`localhost.local`) is fine but the name does not resolve; or the cookie was
-issued for a different domain — clear cookies for `localhost.local`.
+**Browser shows the Authelia portal again when opening a GUI tab** — the
+session cookie was issued for a different domain (e.g. after changing
+`QCRBOX_DOMAIN`) — clear cookies for `qcrbox.localhost` and log in again.
+
+**403 "Access denied" on `users.` or `traefik.` subdomains** — these are
+restricted to members of the LLDAP group `lldap_admin`; the built-in `admin`
+user is a member, other users are not (by design).
 
 **Logged in, but the frontend shows no data / cannot upload** — your user is
 not in any group yet. Create a group and add the user (Step 4.4).
+
+**Logged in via SSO, but cannot create groups or users** — frontend users
+auto-created from the Authelia login start without any Django permissions,
+and the frontend only creates its superuser on an empty database. If your
+database already had users, promote your SSO user once:
+
+```bash
+docker exec qcrboxfrontend-server-1 python /app/qcrbox_frontend/manage.py shell -c "
+from django.contrib.auth.models import User
+u = User.objects.get(username='admin'); u.is_superuser = True; u.is_staff = True; u.save()"
+```
+
+(Additional Authelia users are unprivileged by design — grant them group
+membership or permissions through the frontend as the admin user.)
 
 **Frontend cannot reach the registry (errors on pages listing applications)** —
 check from inside the container:
 `docker exec qcrboxfrontend-server-1 python -c "import urllib.request; print(urllib.request.urlopen('http://qcrbox-registry:8000/api/healthz').read())"`.
 The registry container must be healthy and both containers on `qcrbox_qcrbox-net`.
 
-**Changed `users_database.yml` or `authelia_config.yml`** — restart Authelia:
-`docker restart qcrbox-qcrbox-authelia-1`.
+**Changed `authelia_config.yml`** — restart Authelia:
+`docker restart qcrbox-qcrbox-authelia-1`. (User/group changes in the LLDAP UI
+need no restart.)
