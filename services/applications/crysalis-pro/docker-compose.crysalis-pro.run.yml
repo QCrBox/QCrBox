@@ -20,15 +20,13 @@ services:
       traefik.http.routers.to-crysalis-pro-path-prefix.middlewares: authelia-auth,redirect-gui-crysalis-pro-path
       traefik.http.routers.to-crysalis-pro-path-prefix.service: crysalis-pro-service
       traefik.http.routers.to-crysalis-pro-path-prefix.entrypoints: websecure
-      traefik.http.routers.to-crysalis-pro-path-prefix.tls: true
       traefik.http.middlewares.redirect-gui-crysalis-pro-path.redirectregex.regex: ^https://(.+)/gui/crysalis-pro(/?)$$
       traefik.http.middlewares.redirect-gui-crysalis-pro-path.redirectregex.replacement: https://crysalis-pro.gui.$$1/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true
 
-      traefik.http.routers.to-crysalis-pro-subdomain.rule: HostRegexp(`^crysalis-pro\.gui\..+$$`)
+      traefik.http.routers.to-crysalis-pro-subdomain.rule: Host(`crysalis-pro.gui.${QCRBOX_DOMAIN:-qcrbox.localhost}`)
       traefik.http.routers.to-crysalis-pro-subdomain.middlewares: authelia-auth,redirect-gui-crysalis-pro-subdomain
       traefik.http.routers.to-crysalis-pro-subdomain.service: crysalis-pro-service
       traefik.http.routers.to-crysalis-pro-subdomain.entrypoints: websecure
-      traefik.http.routers.to-crysalis-pro-subdomain.tls: true
       traefik.http.middlewares.redirect-gui-crysalis-pro-subdomain.redirectregex.regex: ^https://crysalis-pro\.gui\.([^/]+)(/?)$$
       traefik.http.middlewares.redirect-gui-crysalis-pro-subdomain.redirectregex.replacement: https://crysalis-pro.gui.$$1/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true
 

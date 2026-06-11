@@ -6,7 +6,7 @@
 #
 # This script runs INSIDE the target machine as root (or via sudo). It expects
 # the source trees at <source>/QCrBox and <source>/QCrBoxFrontend and the
-# docker images either preloaded (see launch_qcrbox_vm.sh) or buildable.
+# docker images either preloaded (see deploy_qcrbox_ssh.sh) or buildable.
 #
 # TLS modes (pick one):
 #   default                          self-signed certificate (local/LAN VMs)
@@ -164,8 +164,13 @@ EOF
 chmod 600 "$FRONTEND_DIR/environment.env"
 
 # ------------------------------------------------------------ start backend
-# Old Authelia/LLDAP state is unreadable after rerolling their secrets.
-docker volume rm -f qcrbox_qcrbox-authelia-data qcrbox_qcrbox-lldap-data >/dev/null 2>&1 || true
+# Stop any previous deployment first: rerolled secrets invalidate the
+# Authelia, LLDAP and Postgres state (postgres only applies its password on
+# first initialisation), and volumes can only be removed when unused.
+docker compose --project-name qcrboxfrontend down --remove-orphans >/dev/null 2>&1 || true
+docker compose --project-name qcrbox down --remove-orphans >/dev/null 2>&1 || true
+docker volume rm -f qcrbox_qcrbox-authelia-data qcrbox_qcrbox-lldap-data \
+    qcrboxfrontend_postgres_data >/dev/null 2>&1 || true
 
 COMPOSE=(docker compose --project-name qcrbox
          --env-file "$QCRBOX_DIR/.env.vm"

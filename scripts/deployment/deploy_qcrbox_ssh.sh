@@ -75,7 +75,7 @@ echo "==> Installing docker on the VM (if missing)"
 # ----------------------------------------------------------------- images ---
 if [ "$TRANSFER_IMAGES" -eq 1 ]; then
     core_images=(
-        "traefik:v3.1.1"
+        "traefik:v3.6"
         "authelia/authelia:4.38"
         "lldap/lldap:v0.6.1-alpine"
         "nats:2.10.16-alpine"
@@ -116,6 +116,7 @@ tar -czf - -C "$PARENT_DIR" \
     --exclude='.git' --exclude='.devbox' --exclude='.venv' \
     --exclude='__pycache__' --exclude='.local_data' --exclude='node_modules' \
     --exclude='QCrBoxFrontend/qcrbox_frontend/db.sqlite3' \
+    --exclude='QCrBox/services/core/qcrbox_syslog/logs' \
     "$(basename "$QCRBOX_DIR")" "$(basename "$FRONTEND_DIR")" \
     | "${SSH[@]}" 'sudo rm -rf /opt/qcrbox-src && sudo mkdir -p /opt/qcrbox-src && sudo tar -xzf - -C /opt/qcrbox-src'
 

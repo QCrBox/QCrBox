@@ -20,15 +20,13 @@ services:
       traefik.http.routers.to-eval1x-path-prefix.middlewares: authelia-auth,redirect-gui-eval1x-path
       traefik.http.routers.to-eval1x-path-prefix.service: eval1x-service
       traefik.http.routers.to-eval1x-path-prefix.entrypoints: websecure
-      traefik.http.routers.to-eval1x-path-prefix.tls: true
       traefik.http.middlewares.redirect-gui-eval1x-path.redirectregex.regex: ^https://(.+)/gui/eval1x(/?)$$
       traefik.http.middlewares.redirect-gui-eval1x-path.redirectregex.replacement: https://eval1x.gui.$$1/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true
 
-      traefik.http.routers.to-eval1x-subdomain.rule: HostRegexp(`^eval1x\.gui\..+$$`)
+      traefik.http.routers.to-eval1x-subdomain.rule: Host(`eval1x.gui.${QCRBOX_DOMAIN:-qcrbox.localhost}`)
       traefik.http.routers.to-eval1x-subdomain.middlewares: authelia-auth,redirect-gui-eval1x-subdomain
       traefik.http.routers.to-eval1x-subdomain.service: eval1x-service
       traefik.http.routers.to-eval1x-subdomain.entrypoints: websecure
-      traefik.http.routers.to-eval1x-subdomain.tls: true
       traefik.http.middlewares.redirect-gui-eval1x-subdomain.redirectregex.regex: ^https://eval1x\.gui\.([^/]+)(/?)$$
       traefik.http.middlewares.redirect-gui-eval1x-subdomain.redirectregex.replacement: https://eval1x.gui.$$1/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true
 

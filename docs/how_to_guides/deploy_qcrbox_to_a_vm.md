@@ -1,70 +1,23 @@
-# Deploying QCrBox to a VM
+# Deploying QCrBox to a VM or Server
 
 `scripts/deployment/` contains two scripts that install the complete stack —
-backend (Traefik, Authelia, registry, applications) and the web frontend —
-onto a virtual machine, **rerolling every secret** in the process: the three
-Authelia secrets, the admin password (argon2id-hashed into
-`users_database.yml`), the Django secret key, the frontend's Postgres password
-and the Django superuser. The generated credentials are written to
-`/root/qcrbox-credentials.txt` inside the VM.
+backend (Traefik, Authelia, LLDAP, registry, applications) and the web
+frontend — onto an Ubuntu VM, **rerolling every secret** in the process
+(Authelia secrets, LLDAP secrets, admin password, Django secret key, Postgres
+password). The generated credentials are written to
+`/root/qcrbox-credentials.txt` on the target machine.
 
-The same provisioner is intended as the installer for a real (internet-facing)
-server later — the local VM run is a deployment rehearsal.
+**Trust model:** all accounts are mutually trusted. Every logged-in user can
+see all data and shares the same GUI desktop sessions. Only create accounts
+for people who may see everything; QCrBox does not yet provide per-user data
+isolation.
 
 ## The scripts
 
-**`provision_qcrbox.sh`** runs *inside* a fresh Ubuntu 24.04 VM or server.
-It installs docker, generates all secrets, writes the environment files for
-both stacks, and starts everything:
-
-```bash
-sudo bash provision_qcrbox.sh --domain qcrbox.example.org \
-    [--source /opt/qcrbox-src] [--apps "olex2_linux dummy_gui"] \
-    [--acme-email you@example.org | --tls-cert cert.pem --tls-key key.pem]
-```
-
-**`launch_qcrbox_vm.sh`** runs on your development machine and automates the
-local-VM case end to end with [Multipass](https://multipass.run): it creates
-the VM, streams your locally built docker images into it (nothing is rebuilt
-inside the VM), copies both source trees, derives a hostname and runs the
-provisioner:
-
-```bash
-bash scripts/deployment/launch_qcrbox_vm.sh --apps "olex2_linux"
-```
-
-## Hostnames without /etc/hosts
-
-If you do not pass `--domain`, the launcher uses
-`qcrbox.<vm-ip>.nip.io`. nip.io is a public wildcard DNS service that
-resolves any `*.<ip>.nip.io` name to that IP, so `auth.qcrbox.….nip.io` and
-`olex2.gui.qcrbox.….nip.io` work in any browser with **no hosts-file
-entries** — including from Windows when the VM runs under Multipass/Hyper-V.
-
-Caveats: lookups need internet access, and some routers' DNS-rebind
-protection refuses answers that point at private IPs (use your router's
-allowlist, or fall back to hosts-file entries pointing at the VM IP).
-
-## TLS options
-
-| Mode | Flag | When |
-| ---- | ---- | ---- |
-| Self-signed (default) | — | Local/LAN VMs; browsers warn once |
-| Let's Encrypt | `--acme-email you@example.org` | Host publicly reachable on ports 80/443 with real DNS |
-| Supplied certificate | `--tls-cert cert.pem --tls-key key.pem` | Institutional/commercial CA certificates |
-
-A supplied certificate is served by Traefik as the default certificate via
-the file provider (`services/core/qcrbox_traefik/dynamic/`). It must cover
-the root domain, `auth.`, `api.registry.`, `traefik.` and `*.gui.` names.
-**A single wildcard `*.<domain>` does not cover the two-level
-`*.gui.<domain>` names** — request a SAN certificate listing both wildcards
-(`*.<domain>` and `*.gui.<domain>`) plus the root domain.
-
-## Remote VMs (EOSC / cloud)
-
-**`deploy_qcrbox_ssh.sh`** does the same as the Multipass launcher for any
-SSH-reachable Ubuntu VM — e.g. an EOSC / EGI Cloud Compute (OpenStack)
-instance:
+**`deploy_qcrbox_ssh.sh`** runs on your development machine and deploys to
+any SSH-reachable Ubuntu VM — e.g. an EOSC / EGI Cloud Compute (OpenStack)
+instance. It streams your locally built docker images to the VM (nothing is
+built there), copies both source trees, and runs the provisioner:
 
 ```bash
 bash scripts/deployment/deploy_qcrbox_ssh.sh --host ubuntu@<public-ip> \
@@ -72,38 +25,91 @@ bash scripts/deployment/deploy_qcrbox_ssh.sh --host ubuntu@<public-ip> \
     --domain qcrbox.example.org --acme-email you@example.org
 ```
 
-Requirements on the cloud side: an Ubuntu 24.04 instance (≥4 vCPU, 8 GB RAM,
-≥60 GB disk recommended), a public/floating IP, and a security group allowing
-ports 22, 80 and 443. Everything else (docker install, secret reroll, start)
-is handled by the provisioner. Use `--no-images` on re-deploys to skip the
-image stream.
+Use `--no-images` on re-deploys to skip the (tens of GB) image stream.
 
-For a quick trial without DNS, omit `--domain` (nip.io is used) and stay on
-the self-signed certificate — Let's Encrypt rate-limits nip.io names heavily.
-For the real deployment use your own domain (DNS A records for the root,
-`auth.`, `api.registry.`, `traefik.` and `*.gui.` names) with `--acme-email`,
-or a certificate from your institution via `--tls-cert`/`--tls-key`.
+**`provision_qcrbox.sh`** is what the deploy script executes *on* the VM; it
+can also be run by hand on any fresh Ubuntu 24.04 server with the two source
+trees present. It installs docker, generates all secrets, writes the
+environment files and starts both stacks:
 
-## Prerequisites for the launcher
+```bash
+sudo bash provision_qcrbox.sh --domain qcrbox.example.org \
+    [--source /opt/qcrbox-src] [--apps "olex2_linux dummy_gui"] \
+    [--acme-email you@example.org | --tls-cert cert.pem --tls-key key.pem]
+```
 
-- Multipass: `winget install Canonical.Multipass` on Windows (the script
-  finds `multipass.exe` from WSL automatically), `snap install multipass` on
-  Linux.
-- The QCrBox images built locally (`qcb build` in the devbox shell) for core
-  plus every app you pass via `--apps`; the frontend image is built
-  automatically if missing.
-- The `QCrBoxFrontend` repository checked out next to `QCrBox`.
-- Disk/patience: the image stream into the VM is tens of GB.
+## Prerequisites
+
+- Local: the QCrBox images built (`qcb build` in the devbox shell) for core
+  plus every app you pass via `--apps`; the `QCrBoxFrontend` repository
+  checked out next to `QCrBox` (its image is built automatically if missing).
+  **Important:** all images must be built from the same commit — the registry
+  rejects applications whose pyqcrbox version differs from its own.
+- VM: Ubuntu 24.04, ≥4 vCPU, 8 GB RAM, ≥60 GB disk; a public/floating IP;
+  SSH key access as a sudo-capable user (cloud images: `ubuntu`); firewall /
+  OpenStack security group allowing only ports 22, 80 and 443.
+
+## DNS and TLS
+
+For a real deployment, create DNS A/AAAA records pointing at the VM for the
+root domain plus `auth.`, `users.`, `api.registry.`, `traefik.` and
+`*.gui.<domain>`.
+
+For a quick trial without DNS, omit `--domain`: the script uses
+`qcrbox.<vm-ip>.nip.io`, a public wildcard DNS service that resolves in any
+browser without configuration. Caveats: needs internet DNS, some routers'
+rebind protection blocks answers pointing at private IPs, and Let's Encrypt
+rate-limits nip.io names heavily — stay on the self-signed certificate for
+trials.
+
+| TLS mode | Flag | When |
+| -------- | ---- | ---- |
+| Self-signed (default) | — | Trials; browsers warn once |
+| Let's Encrypt | `--acme-email you@example.org` | Host publicly reachable on 80/443 with real DNS |
+| Supplied certificate | `--tls-cert cert.pem --tls-key key.pem` | Institutional/commercial CA certificates |
+
+A supplied certificate is served by Traefik as the default certificate via
+the file provider (`services/core/qcrbox_traefik/dynamic/`). It must cover
+the root domain and all subdomains above. **A single wildcard `*.<domain>`
+does not cover the two-level `*.gui.<domain>` names** — request a SAN
+certificate listing both wildcards plus the root domain.
+
+## Server hardening checklist
+
+The compose files bind everything except 80/443 to `127.0.0.1` (NATS has no
+authentication and must never be exposed). Beyond that:
+
+1. **Firewall**: allow only 22, 80, 443. Docker publishes ports via iptables
+   and **bypasses ufw** — rely on the loopback bindings and your cloud
+   security group, not on ufw, for docker-published ports.
+2. **SSH**: key-based authentication only (`PasswordAuthentication no`);
+   consider fail2ban.
+3. **Updates**: enable unattended OS upgrades; rebuild and re-deploy images
+   periodically.
+4. **2FA**: consider switching the GUI rules in `authelia_config.yml` from
+   `one_factor` to `two_factor` once users enrolled TOTP — GUI sessions grant
+   shell-equivalent access.
+5. **Verify from outside**: from another machine, check only 22/80/443 answer
+   (`nmap <host>`), `http://…` redirects to HTTPS, and every subdomain
+   redirects to the Authelia login when unauthenticated.
 
 ## After provisioning
 
 - Open `https://<domain>` and log in with the credentials printed at the end
   (user `admin`; also valid for the Django admin at `/admin`).
-- Create accounts for other people at `https://users.<domain>` (LLDAP web UI,
-  restricted to the `lldap_admin` group).
-- Credentials are kept at `/root/qcrbox-credentials.txt` in the VM
-  (`multipass exec qcrbox-vm -- sudo cat /root/qcrbox-credentials.txt`).
-- Manage the VM with `multipass stop|start|delete qcrbox-vm`.
-- Re-running the provisioner rerolls all secrets again; note that this wipes
-  the Authelia and LLDAP data volumes — **all user accounts, passwords and
-  TOTP enrolments are recreated from scratch**.
+- Create accounts at `https://users.<domain>` (LLDAP web UI, restricted to
+  the `lldap_admin` group), then assign them to research groups in the
+  frontend.
+- Credentials are kept at `/root/qcrbox-credentials.txt` on the VM.
+- Re-running the provisioner rerolls all secrets and wipes the Authelia and
+  LLDAP data volumes — **all user accounts, passwords and TOTP enrolments are
+  recreated from scratch**.
+
+## Operations
+
+- **Backups**: the docker volumes (`qcrbox-registry-db`, `qcrbox-nats-storage`,
+  `qcrbox-authelia-data`, `qcrbox-lldap-data`, the frontend's
+  `postgres_data`) and `shared_files/`.
+- **Password resets**: the notifier writes reset links to a file inside the
+  Authelia container (`/config/notification.txt`). For real users configure
+  an SMTP notifier in `authelia_config.yml`.

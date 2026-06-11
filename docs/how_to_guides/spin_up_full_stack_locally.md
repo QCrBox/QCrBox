@@ -6,10 +6,10 @@ Traefik reverse proxy with Authelia authentication, plus the
 [QCrBoxFrontend](https://github.com/QCrBox/QCrBoxFrontend) web application with
 single sign-on.
 
-For details on the authentication setup itself, see
-[Setting up Authelia Authentication](setup_authelia_authentication.md).
-If you prefer an isolated VM (no `/etc/hosts` editing, freshly generated
-secrets), see [Deploying QCrBox to a VM](deploy_qcrbox_to_a_vm.md) instead.
+For how the authentication works, see
+[Authentication in QCrBox](setup_authelia_authentication.md).
+For deploying to a server or VM with freshly generated secrets, see
+[Deploying QCrBox to a VM](deploy_qcrbox_to_a_vm.md) instead.
 
 ## What you end up with
 

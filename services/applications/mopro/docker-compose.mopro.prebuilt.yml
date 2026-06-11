@@ -20,15 +20,13 @@ services:
       traefik.http.routers.to-mopro-path-prefix.middlewares: authelia-auth,redirect-gui-mopro-path
       traefik.http.routers.to-mopro-path-prefix.service: mopro-service
       traefik.http.routers.to-mopro-path-prefix.entrypoints: websecure
-      traefik.http.routers.to-mopro-path-prefix.tls: true
       traefik.http.middlewares.redirect-gui-mopro-path.redirectregex.regex: ^https://(.+)/gui/mopro(/?)$$
       traefik.http.middlewares.redirect-gui-mopro-path.redirectregex.replacement: https://mopro.gui.$$1/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true
 
-      traefik.http.routers.to-mopro-subdomain.rule: HostRegexp(`^mopro\.gui\..+$$`)
+      traefik.http.routers.to-mopro-subdomain.rule: Host(`mopro.gui.${QCRBOX_DOMAIN:-qcrbox.localhost}`)
       traefik.http.routers.to-mopro-subdomain.middlewares: authelia-auth,redirect-gui-mopro-subdomain
       traefik.http.routers.to-mopro-subdomain.service: mopro-service
       traefik.http.routers.to-mopro-subdomain.entrypoints: websecure
-      traefik.http.routers.to-mopro-subdomain.tls: true
       traefik.http.middlewares.redirect-gui-mopro-subdomain.redirectregex.regex: ^https://mopro\.gui\.([^/]+)(/?)$$
       traefik.http.middlewares.redirect-gui-mopro-subdomain.redirectregex.replacement: https://mopro.gui.$$1/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true
 

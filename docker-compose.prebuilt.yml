@@ -46,7 +46,7 @@ services:
         tag: "qcrbox-nats"
 
   qcrbox-reverse-proxy:
-    image: traefik:v3.1.1
+    image: traefik:v3.6
     command:
       - "--log.level=DEBUG"
       - "--ping=true"
@@ -64,9 +64,12 @@ services:
       - "--entryPoints.web.http.redirections.entryPoint.scheme=https"
       - "--entryPoints.websecure.address=:443"
       - "--entryPoints.websecure.http.middlewares=security-headers@docker"
-      # Default certificate resolver for all TLS routers. Leave QCRBOX_TLS_CERT_RESOLVER
+      # TLS for every websecure router is enabled here at the entrypoint (routers
+      # must NOT set tls themselves, or they would discard the certificate
+      # resolver configured below). Leave QCRBOX_TLS_CERT_RESOLVER
       # empty for the self-signed default certificate (local development); set it to
       # "letsencrypt" for a public deployment with a real domain.
+      - "--entryPoints.websecure.http.tls=true"
       - "--entryPoints.websecure.http.tls.certResolver=${QCRBOX_TLS_CERT_RESOLVER:-}"
       - "--certificatesresolvers.letsencrypt.acme.email=${QCRBOX_ACME_EMAIL:-}"
       - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
@@ -93,7 +96,6 @@ services:
       # Dashboard at https://traefik.${QCRBOX_DOMAIN}, behind Authelia
       traefik.http.routers.traefik-dashboard.rule: Host(`traefik.${QCRBOX_DOMAIN:-localhost.local}`)
       traefik.http.routers.traefik-dashboard.entrypoints: websecure
-      traefik.http.routers.traefik-dashboard.tls: true
       traefik.http.routers.traefik-dashboard.middlewares: authelia-auth
       traefik.http.routers.traefik-dashboard.service: api@internal
 
@@ -138,7 +140,6 @@ services:
       # User management web UI, behind Authelia (admins only, see ACL rules)
       traefik.http.routers.lldap.rule: Host(`users.${QCRBOX_DOMAIN:-localhost.local}`)
       traefik.http.routers.lldap.entrypoints: websecure
-      traefik.http.routers.lldap.tls: true
       traefik.http.routers.lldap.middlewares: authelia-auth
       traefik.http.services.lldap-service.loadbalancer.server.port: 17170
     logging:
@@ -182,7 +183,6 @@ services:
       # Auth UI subdomain on HTTPS
       traefik.http.routers.authelia.rule: Host(`auth.${QCRBOX_DOMAIN:-localhost.local}`)
       traefik.http.routers.authelia.entrypoints: websecure
-      traefik.http.routers.authelia.tls: true
       traefik.http.routers.authelia.service: authelia-service
       traefik.http.services.authelia-service.loadbalancer.server.port: 9091
       
@@ -222,14 +222,12 @@ services:
       # Health check endpoint (no auth required) - higher priority
       traefik.http.routers.registry-healthz.rule: Host(`api.registry.${QCRBOX_DOMAIN:-localhost.local}`) && Path(`/api/healthz`)
       traefik.http.routers.registry-healthz.entrypoints: websecure
-      traefik.http.routers.registry-healthz.tls: true
       traefik.http.routers.registry-healthz.priority: 100
       traefik.http.routers.registry-healthz.service: registry-service
       
       # Main API subdomain with authentication
       traefik.http.routers.registry-api.rule: Host(`api.registry.${QCRBOX_DOMAIN:-localhost.local}`)
       traefik.http.routers.registry-api.entrypoints: websecure
-      traefik.http.routers.registry-api.tls: true
       traefik.http.routers.registry-api.middlewares: authelia-auth
       traefik.http.routers.registry-api.priority: 50
       traefik.http.routers.registry-api.service: registry-service
