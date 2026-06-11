@@ -54,9 +54,9 @@ done
 [ -d "$FRONTEND_DIR" ] || { echo "ERROR: $FRONTEND_DIR not found" >&2; exit 1; }
 command -v docker >/dev/null 2>&1 || { echo "ERROR: docker not found" >&2; exit 1; }
 
-SSH=(ssh -o StrictHostKeyChecking=accept-new)
-[ -n "$IDENTITY" ] && SSH+=(-i "$IDENTITY")
-SSH+=("$HOST")
+SSH_OPTS=(-o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30 -o ServerAliveCountMax=6)
+[ -n "$IDENTITY" ] && SSH_OPTS+=(-i "$IDENTITY")
+SSH=(ssh "${SSH_OPTS[@]}" "$HOST")
 
 echo "==> Checking SSH connectivity and sudo"
 "${SSH[@]}" 'sudo -n true && echo "ssh + sudo: OK"' || {
@@ -105,9 +105,27 @@ if [ "$TRANSFER_IMAGES" -eq 1 ]; then
         }
     done
 
-    echo "==> Streaming docker images to the VM (tens of GB — be patient)"
-    docker save "${all_images[@]}" | gzip --fast \
-        | "${SSH[@]}" 'gunzip | sudo docker load'
+    # Pack all images into one local tarball (named after the image IDs, so a
+    # stale tarball from a previous run is never reused), then rsync it: if
+    # the connection drops, rerunning the script resumes the upload instead
+    # of starting over.
+    ids_hash=$(docker image inspect -f '{{.Id}}' "${all_images[@]}" | sha256sum | cut -c1-12)
+    TARBALL="/tmp/qcrbox-images-$ids_hash.tar.gz"
+    if [ ! -f "$TARBALL" ]; then
+        echo "==> Packing images into $TARBALL"
+        docker save "${all_images[@]}" | gzip --fast > "$TARBALL.partial"
+        mv "$TARBALL.partial" "$TARBALL"
+    else
+        echo "==> Reusing packed images at $TARBALL"
+    fi
+
+    echo "==> Syncing $(du -h "$TARBALL" | cut -f1) to the VM (resumable — rerun on interruption)"
+    rsync --partial --inplace --info=progress2 -e "ssh ${SSH_OPTS[*]}" \
+        "$TARBALL" "$HOST:/tmp/qcrbox-images.tar.gz"
+
+    echo "==> Loading images on the VM"
+    "${SSH[@]}" 'gunzip -c /tmp/qcrbox-images.tar.gz | sudo docker load && rm /tmp/qcrbox-images.tar.gz'
+    rm -f "$TARBALL"
 fi
 
 # ---------------------------------------------------------------- sources ---

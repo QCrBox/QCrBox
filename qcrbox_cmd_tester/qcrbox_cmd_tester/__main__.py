@@ -324,7 +324,7 @@ Examples:
   qcrbox-test --test-location qcrbox_tests/olex2.yaml
 
   # Specify custom QCrBox API URL
-  qcrbox-test --qcrbox-url http://localhost:8000
+  qcrbox-test --qcrbox-url http://localhost:11000
   
   # Initialize a new test suite
   qcrbox-test init --config config.yaml --valid_cif structure.cif

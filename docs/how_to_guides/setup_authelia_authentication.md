@@ -33,7 +33,9 @@ the services; the web frontend uses `Remote-User` for single sign-on.
 `qcrbox-net` docker network reach the registry directly at
 `http://qcrbox-registry:8000`, bypassing Traefik. This is also how `qcb`
 commands and the frontend's API client work — they never need an Authelia
-login.
+login. For host-side dev/test tooling (robot tests, `qcrbox-test`), the
+registry is additionally published on the **loopback interface only** at
+`http://127.0.0.1:11000` — never reachable from the network.
 
 ## Access control rules
 

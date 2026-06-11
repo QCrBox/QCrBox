@@ -201,8 +201,13 @@ services:
     volumes:
       - ${QCRBOX_SHARED_FILES_DIR_HOST_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_HOST_PATH}:${QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH}
       - qcrbox-registry-db:${QCRBOX_REGISTRY_DB_DIR:?Must set env var QCRBOX_REGISTRY_DB_DIR}
-    # Direct port exposure removed - access via Traefik at api.registry.${QCRBOX_DOMAIN}
-    # Internal services can still access via http://qcrbox-registry:8000 on Docker network
+    ports:
+      # The registry API has no authentication of its own; loopback only,
+      # for host-side dev/test tooling (robot tests, qcrbox-test, qcb
+      # scripts). External access goes through Traefik + Authelia at
+      # api.registry.${QCRBOX_DOMAIN}; other containers use
+      # http://qcrbox-registry:8000 on the docker network.
+      - "127.0.0.1:${QCRBOX_REGISTRY_PORT:-11000}:8000"
     depends_on:
       qcrbox-nats:
         condition: service_healthy
