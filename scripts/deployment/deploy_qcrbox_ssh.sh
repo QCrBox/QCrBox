@@ -4,14 +4,15 @@
 # to a remote Ubuntu VM over SSH — e.g. an EOSC / EGI Cloud Compute
 # (OpenStack) instance, or any cloud VM with a public IP.
 #
-# All images (backend + frontend) are pulled from GHCR on the VM at the
-# specified version. Publish a release first:
-#   scripts/update_container_repository.sh <version>   (QCrBox images)
-#   <QCrBoxFrontend>/scripts/push-frontend.sh <version> (frontend image)
+# Source repositories are cloned directly on the VM from GitHub.
+# All images (backend + frontend) are pulled from GHCR at the specified version.
+# Publish a release first:
+#   scripts/update_container_repository.sh <version>    (QCrBox images)
+#   QCrBoxFrontend/scripts/push-frontend.sh <version>   (frontend image)
 #
 # Runs on the developer machine. Requirements:
 #   - SSH access to the VM as a sudo-capable user (cloud images: 'ubuntu')
-#   - the QCrBoxFrontend repository checked out next to QCrBox
+#   - VM internet access (to reach GitHub and GHCR)
 #   - VM firewall / OpenStack security group allowing 22, 80 and 443
 #
 # Usage:
@@ -21,41 +22,59 @@
 #       [--apps "olex2_linux dummy_gui"] \
 #       [--acme-email you@example.org | --tls-cert cert.pem --tls-key key.pem]
 #
+# For development, override the cloned branch explicitly:
+#   --branch <name>           clone this branch for both repos
+#   --frontend-branch <name>  clone a different branch for QCrBoxFrontend only
+#
+# Omit --version to deploy :latest images from the main branch.
 # Without --domain, qcrbox.<host-ip>.nip.io is used. For anything beyond a
 # quick trial use a real domain: Let's Encrypt rate-limits nip.io heavily.
 
 set -euo pipefail
-
-SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-QCRBOX_DIR=$(cd "$SCRIPT_DIR/../.." && pwd)
-PARENT_DIR=$(dirname "$QCRBOX_DIR")
-FRONTEND_DIR="$PARENT_DIR/QCrBoxFrontend"
 
 HOST=""
 IDENTITY=""
 DOMAIN=""
 APPS=""
 VERSION="latest"
+BRANCH=""
+FRONTEND_BRANCH=""
 ACME_EMAIL=""
 TLS_CERT=""
 TLS_KEY=""
 
 while [ $# -gt 0 ]; do
     case "$1" in
-        --host)       HOST="$2"; shift 2 ;;
-        --identity)   IDENTITY="$2"; shift 2 ;;
-        --domain)     DOMAIN="$2"; shift 2 ;;
-        --apps)       APPS="$2"; shift 2 ;;
-        --version)    VERSION="$2"; shift 2 ;;
-        --acme-email) ACME_EMAIL="$2"; shift 2 ;;
-        --tls-cert)   TLS_CERT="$2"; shift 2 ;;
-        --tls-key)    TLS_KEY="$2"; shift 2 ;;
+        --host)             HOST="$2"; shift 2 ;;
+        --identity)         IDENTITY="$2"; shift 2 ;;
+        --domain)           DOMAIN="$2"; shift 2 ;;
+        --apps)             APPS="$2"; shift 2 ;;
+        --version)          VERSION="$2"; shift 2 ;;
+        --branch)           BRANCH="$2"; shift 2 ;;
+        --frontend-branch)  FRONTEND_BRANCH="$2"; shift 2 ;;
+        --acme-email)       ACME_EMAIL="$2"; shift 2 ;;
+        --tls-cert)         TLS_CERT="$2"; shift 2 ;;
+        --tls-key)          TLS_KEY="$2"; shift 2 ;;
         *) echo "Unknown argument: $1" >&2; exit 1 ;;
     esac
 done
 
 [ -n "$HOST" ] || { echo "ERROR: --host user@address is required" >&2; exit 1; }
-[ -d "$FRONTEND_DIR" ] || { echo "ERROR: $FRONTEND_DIR not found" >&2; exit 1; }
+
+# Determine git refs.
+# --branch overrides --version for both repos; --frontend-branch overrides only
+# the frontend. Without --branch, releases use the annotated tag and 'latest'
+# tracks the main branch.
+if [ -n "$BRANCH" ]; then
+    QCRBOX_REF="$BRANCH"
+    FRONTEND_REF="${FRONTEND_BRANCH:-$BRANCH}"
+elif [ "$VERSION" = "latest" ]; then
+    QCRBOX_REF="main"
+    FRONTEND_REF="${FRONTEND_BRANCH:-main}"
+else
+    QCRBOX_REF="v$VERSION"
+    FRONTEND_REF="${FRONTEND_BRANCH:-v$VERSION}"
+fi
 
 KNOWN_HOSTS=$(mktemp)
 trap 'rm -f "$KNOWN_HOSTS"' EXIT
@@ -77,6 +96,9 @@ if [ -z "$DOMAIN" ]; then
     DOMAIN="qcrbox.$HOST_IP.nip.io"
 fi
 echo "==> Deploying to $HOST as https://$DOMAIN"
+echo "    QCrBox:        $QCRBOX_REF"
+echo "    QCrBoxFrontend: $FRONTEND_REF"
+echo "    Image version:  $VERSION"
 
 # ----------------------------------------------------------------- docker ---
 echo "==> Installing docker on the VM (if missing)"
@@ -95,14 +117,16 @@ apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
 INSTALL_DOCKER
 
 # ---------------------------------------------------------------- sources ---
-echo "==> Transferring source trees"
-tar -czf - -C "$PARENT_DIR" \
-    --exclude='.git' --exclude='.devbox' --exclude='.venv' \
-    --exclude='__pycache__' --exclude='.local_data' --exclude='node_modules' \
-    --exclude='QCrBoxFrontend/qcrbox_frontend/db.sqlite3' \
-    --exclude='QCrBox/services/core/qcrbox_syslog/logs' \
-    "$(basename "$QCRBOX_DIR")" "$(basename "$FRONTEND_DIR")" \
-    | "${SSH[@]}" 'sudo rm -rf /opt/qcrbox-src && sudo mkdir -p /opt/qcrbox-src && sudo tar -xzf - -C /opt/qcrbox-src'
+echo "==> Cloning source repositories on the VM"
+"${SSH[@]}" sudo bash << CLONE
+set -euo pipefail
+rm -rf /opt/qcrbox-src
+mkdir -p /opt/qcrbox-src
+git clone --depth 1 --branch "$QCRBOX_REF" \
+    https://github.com/QCrBox/QCrBox.git /opt/qcrbox-src/QCrBox
+git clone --depth 1 --branch "$FRONTEND_REF" \
+    https://github.com/QCrBox/QCrBoxFrontend.git /opt/qcrbox-src/QCrBoxFrontend
+CLONE
 
 # -------------------------------------------------------------------- TLS ---
 PROVISION_TLS_ARGS=()

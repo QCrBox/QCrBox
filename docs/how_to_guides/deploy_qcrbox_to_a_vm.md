@@ -16,38 +16,42 @@ isolation.
 
 **`deploy_qcrbox_ssh.sh`** runs on your development machine and deploys to
 any SSH-reachable Ubuntu VM — e.g. an EOSC / EGI Cloud Compute (OpenStack)
-instance. It streams your locally built docker images to the VM (nothing is
-built there), copies both source trees, and runs the provisioner:
+instance. It clones both source repositories directly on the VM from GitHub,
+then runs the provisioner which pulls all images from GHCR:
 
 ```bash
 bash scripts/deployment/deploy_qcrbox_ssh.sh --host ubuntu@<public-ip> \
+    --version 0.2.0 \
     --identity ~/.ssh/eosc_key --apps "olex2_linux" \
     --domain qcrbox.example.org --acme-email you@example.org
 ```
 
-Use `--no-images` on re-deploys to skip the (tens of GB) image stream.
+Omit `--version` to deploy `:latest` images from the `main` branch. For
+development deployments on a specific branch, use `--branch <name>` (applies
+to both repos) and optionally `--frontend-branch <name>` to override only the
+frontend repo's branch.
 
 **`provision_qcrbox.sh`** is what the deploy script executes *on* the VM; it
 can also be run by hand on any fresh Ubuntu 24.04 server with the two source
 trees present. It installs docker, generates all secrets, writes the
-environment files and starts both stacks:
+environment files, pulls images and starts both stacks:
 
 ```bash
 sudo bash provision_qcrbox.sh --domain qcrbox.example.org \
-    [--source /opt/qcrbox-src] [--apps "olex2_linux dummy_gui"] \
+    [--version 0.2.0] [--source /opt/qcrbox-src] [--apps "olex2_linux dummy_gui"] \
     [--acme-email you@example.org | --tls-cert cert.pem --tls-key key.pem]
 ```
 
 ## Prerequisites
 
-- Local: the QCrBox images built (`qcb build` in the devbox shell) for core
-  plus every app you pass via `--apps`; the `QCrBoxFrontend` repository
-  checked out next to `QCrBox` (its image is built automatically if missing).
-  **Important:** all images must be built from the same commit — the registry
-  rejects applications whose pyqcrbox version differs from its own.
-- VM: Ubuntu 24.04, ≥4 vCPU, 8 GB RAM, ≥60 GB disk; a public/floating IP;
-  SSH key access as a sudo-capable user (cloud images: `ubuntu`); firewall /
-  OpenStack security group allowing only ports 22, 80 and 443.
+- **Published images**: QCrBox images and the frontend image must be pushed to
+  GHCR at the target version before deploying — see [Creating a release](github_release.md).
+  All images must come from the same release: the registry silently ignores
+  applications whose `pyqcrbox` version differs from its own.
+- **VM**: Ubuntu 24.04, ≥4 vCPU, 8 GB RAM, ≥60 GB disk; a public/floating IP;
+  SSH key access as a sudo-capable user (cloud images: `ubuntu`); internet
+  access (to clone from GitHub and pull from GHCR); firewall / OpenStack
+  security group allowing only ports 22, 80 and 443.
 
 ## DNS and TLS
 

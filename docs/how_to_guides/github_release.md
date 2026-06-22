@@ -1,53 +1,49 @@
 # How to create a release for QCrBox
 
-## Step 1: Create a git tag
+## Step 1: Prepare the branch
 
-- Ensure your working tree is clean and all changes intended for the release are committed and merged to the main
-  branch.
-- Checkout the main branch and create an annotated tag for the release.
+Ensure your working tree is clean and all changes are committed and merged to the target branch.
 
 ```bash
-git checkout main && git pull
-git tag -a v0.1.1 -m "Release v0.1.1"
+git checkout dev && git pull
 ```
 
-## Step 2: Check out the tag
+## Step 2: Push all QCrBox images to GHCR
 
-- Switch to the newly release tag to guarantee that the release is built from the exact tagged commit.
+Log in to GHCR and run the release script. It creates the git tag, builds every image in dependency order, and pushes to `ghcr.io/qcrbox`:
 
 ```bash
-git checkout v0.1.1
+docker login ghcr.io -u <github-username> -p <PAT with write:packages>
+bash scripts/update_container_repository.sh 0.2.0
+# Add --tag-latest if this is the new default release
+bash scripts/update_container_repository.sh 0.2.0 --tag-latest
 ```
 
-## Step 3: Rebuild QCrBox
+Private app images (MoPro, CrysAlis Pro, Eval15) are skipped with a warning if the installer files are not present — see [Getting Licensed Components](obtain_licenced_components.md).
 
-- Regenerate all QCrBox components to ensure the container images and `pyqcrbox` package contain the right version
-  number.
+## Step 3: Push the frontend image
+
+From the QCrBoxFrontend repository:
 
 ```bash
-qcb up --all
+bash scripts/push-frontend.sh 0.2.0
+# Add --tag-latest to also update the :latest tag
+bash scripts/push-frontend.sh 0.2.0 --tag-latest
 ```
 
-## Step 4: Push container images to Azure Container Registry
-
-- Use the provided script to update and push the rebuilt images. You **must** update the version number variable (`VERSION`)
-  with the version number of the release.
+## Step 4: Push the git tag
 
 ```bash
-bash scripts/update_container_repository.sh
+git push origin v0.2.0
 ```
-
-- Ensure you are authenticated to Azure and have the necessary permissions.
 
 ## Step 5: Create a GitHub release
 
-- Navigate to the QCrBox repository on GitHub.
-- Use **Draft a new release**, select the tag created earlier, and provide a short description of the update and include
-  the release notes.
+Navigate to the QCrBox repository on GitHub. Use **Draft a new release**, select the tag `v0.2.0`, and add a short description and release notes.
 
 ## Step 6: Upload wheel files
 
-- Upload the wheels built from `qcb up -all` for `pyqcrbox` and `qcrboxtools`. They can be found in
-  `QCrBox/services/base_images/base_ancestor/pyqcrbox_dist/` and
-  `QCrBox/services/base_images/base_ancestor/qcrboxtools_dist/` respectively.
-- Attach the generated `.whl` files to the release before publishing.
+Attach the `pyqcrbox` and `qcrboxtools` wheel files to the release. They are built as part of `update_container_repository.sh` and can be found at:
+
+- `services/base_images/base_ancestor/pyqcrbox_dist/*.whl`
+- `services/base_images/base_ancestor/qcrboxtools_dist/*.whl`
