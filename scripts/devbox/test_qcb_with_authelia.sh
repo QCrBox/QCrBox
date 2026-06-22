@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Test script to verify qcb commands work with Authelia authentication setup
 
-set -e
+set -euo pipefail
 
 echo "🔍 Testing QCrBox with Authelia Authentication Setup"
 echo "=================================================="

@@ -185,11 +185,7 @@ echo "==> Starting QCrBox backend (apps: ${APPS:-none})"
 "${COMPOSE[@]}" up -d --no-build
 
 echo "==> Waiting for backend health"
-for _ in $(seq 1 60); do
-    starting=$(docker ps --filter health=starting -q | wc -l)
-    [ "$starting" -eq 0 ] && break
-    sleep 5
-done
+timeout 300 bash -c 'until [ "$(docker ps --filter health=starting -q | wc -l)" -eq 0 ]; do sleep 5; done'
 docker ps --format 'table {{.Names}}\t{{.Status}}'
 [ "$(docker ps --filter health=unhealthy -q | wc -l)" -eq 0 ] || {
     echo "ERROR: some containers are unhealthy" >&2; exit 1; }
