@@ -5,8 +5,8 @@
 # with every secret freshly generated ("rerolled") for this installation.
 #
 # This script runs INSIDE the target machine as root (or via sudo). It expects
-# the source trees at <source>/QCrBox and <source>/QCrBoxFrontend and the
-# docker images either preloaded (see deploy_qcrbox_ssh.sh) or buildable.
+# the source trees at <source>/QCrBox and <source>/QCrBoxFrontend.
+# All images (backend + frontend) are pulled from GHCR at the specified version.
 #
 # TLS modes (pick one):
 #   default                          self-signed certificate (local/LAN VMs)
@@ -19,6 +19,7 @@
 # Usage:
 #   sudo bash provision_qcrbox.sh --domain qcrbox.10.2.3.4.nip.io \
 #       [--source /opt/qcrbox-src] [--apps "olex2_linux dummy_gui"] \
+#       [--frontend-image ghcr.io/qcrbox/qcrboxfrontend:0.2.0] \
 #       [--acme-email you@example.org | --tls-cert cert.pem --tls-key key.pem]
 #
 # Secrets are written to /root/qcrbox-credentials.txt (mode 600).
@@ -28,6 +29,7 @@ set -euo pipefail
 DOMAIN=""
 SOURCE_DIR="/opt/qcrbox-src"
 APPS=""
+VERSION="latest"
 ACME_EMAIL=""
 TLS_CERT=""
 TLS_KEY=""
@@ -37,6 +39,7 @@ while [ $# -gt 0 ]; do
         --domain)     DOMAIN="$2"; shift 2 ;;
         --source)     SOURCE_DIR="$2"; shift 2 ;;
         --apps)       APPS="$2"; shift 2 ;;
+        --version)    VERSION="$2"; shift 2 ;;
         --acme-email) ACME_EMAIL="$2"; shift 2 ;;
         --tls-cert)   TLS_CERT="$2"; shift 2 ;;
         --tls-key)    TLS_KEY="$2"; shift 2 ;;
@@ -114,8 +117,9 @@ fi
 
 # ------------------------------------------------------- QCrBox environment
 echo "==> Writing $QCRBOX_DIR/.env.vm"
-cp "$QCRBOX_DIR/.env.dev" "$QCRBOX_DIR/.env.vm"
+cp "$QCRBOX_DIR/.env.prod" "$QCRBOX_DIR/.env.vm"
 sed -i \
+    -e "s|^QCRBOX_DOCKER_TAG=.*|QCRBOX_DOCKER_TAG=$VERSION|" \
     -e "s|^QCRBOX_DOMAIN=.*|QCRBOX_DOMAIN=$DOMAIN|" \
     -e "s|^QCRBOX__REVERSE_PROXY__PORT=.*|QCRBOX__REVERSE_PROXY__PORT=80|" \
     -e "s|^QCRBOX_TLS_CERT_RESOLVER=.*|QCRBOX_TLS_CERT_RESOLVER=$TLS_CERT_RESOLVER|" \
@@ -184,12 +188,15 @@ docker volume rm -f qcrbox_qcrbox-authelia-data qcrbox_qcrbox-lldap-data \
 
 COMPOSE=(docker compose --project-name qcrbox
          --env-file "$QCRBOX_DIR/.env.vm"
-         -f "$QCRBOX_DIR/docker-compose.run.yml")
+         -f "$QCRBOX_DIR/docker-compose.prebuilt.yml")
 for app in $APPS; do
-    app_compose=$(ls "$QCRBOX_DIR/services/applications/$app"/docker-compose.*.run.yml 2>/dev/null | head -1)
-    [ -n "$app_compose" ] || { echo "ERROR: no run compose file for app '$app'" >&2; exit 1; }
+    app_compose=$(ls "$QCRBOX_DIR/services/applications/$app"/docker-compose.*.prebuilt.yml 2>/dev/null | head -1)
+    [ -n "$app_compose" ] || { echo "ERROR: no prebuilt compose file for app '$app'" >&2; exit 1; }
     COMPOSE+=(-f "$app_compose")
 done
+
+echo "==> Pulling backend images from GHCR"
+"${COMPOSE[@]}" pull
 
 echo "==> Starting QCrBox backend (apps: ${APPS:-none})"
 "${COMPOSE[@]}" up -d --no-build
@@ -201,16 +208,16 @@ docker ps --format 'table {{.Names}}\t{{.Status}}'
     echo "ERROR: some containers are unhealthy" >&2; exit 1; }
 
 # ----------------------------------------------------------- start frontend
+FRONTEND_REPO=$(grep -m1 '^QCRBOX_DOCKER_REPO=' "$QCRBOX_DIR/.env.vm" | cut -d= -f2)
+FRONTEND_IMG="$FRONTEND_REPO/qcrboxfrontend-server:$VERSION"
+echo "==> Pulling frontend image $FRONTEND_IMG"
+docker pull "$FRONTEND_IMG"
+docker tag "$FRONTEND_IMG" qcrboxfrontend-server:latest
+
 echo "==> Starting frontend"
-if docker image inspect qcrboxfrontend-server >/dev/null 2>&1; then
-    docker compose --project-name qcrboxfrontend \
-        -f "$FRONTEND_DIR/docker-compose.yml" --project-directory "$FRONTEND_DIR" \
-        up -d --no-build
-else
-    docker compose --project-name qcrboxfrontend \
-        -f "$FRONTEND_DIR/docker-compose.yml" --project-directory "$FRONTEND_DIR" \
-        up -d --build
-fi
+docker compose --project-name qcrboxfrontend \
+    -f "$FRONTEND_DIR/docker-compose.yml" --project-directory "$FRONTEND_DIR" \
+    up -d --no-build
 
 # ------------------------------------------------------------- credentials
 CRED_FILE=/root/qcrbox-credentials.txt
