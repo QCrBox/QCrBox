@@ -7,7 +7,7 @@ Some container dependencies are not freely available. Follow the per-app instruc
 export QCRBOX_DOCKER_REPO=ghcr.io/qcrbox
 export QCRBOX_DOCKER_TAG=latest
 docker login ghcr.io -u <github-username> -p <PAT with write:packages>
-bash scripts/build/push-apps.sh <app-name>   # e.g. mopro
+bash scripts/build/push-images.sh <app-name>   # e.g. mopro
 ```
 
 The script reads `private_build.yml` in the application directory and reports exactly which file is missing if the installer has not been placed yet.
