@@ -19,20 +19,45 @@ To begin, initialize a new QCrBox container for our module:
 Please provide some basic information about your application.
 The following dialog will guide you through the relevant settings.
 
-  [1/7] Select application_type
+  [1/8] Select application_type
     1 - Non-interactive Command
     2 - Interactive GUI (Linux)
     3 - Interactive GUI (Windows)
     Choose from [1/2/3] (1):
-  [2/7] application_slug (cod_check_tutorial):
-  [3/7] application_name (Cod Check): COD Check Tutorial
-  [4/7] application_version (x.y.z): 0.0.1
-  [5/7] description (Brief description of the application.): Can be used to check whether there is a similar structure in the crystallographic open database and output similar structures.
-  [6/7] url (): https://my.official.module.url
-  [7/7] email (): module_contact@university.somewhere
+  [2/8] application_slug (cod_check_tutorial):
+  [3/8] application_name (Cod Check): COD Check Tutorial
+  [4/8] application_version (x.y.z): 0.0.1
+  [5/8] description (Brief description of the application.): Can be used to check whether there is a similar structure in the crystallographic open database and output similar structures.
+  [6/8] url (): https://my.official.module.url
+  [7/8] email (): module_contact@university.somewhere
+  [8/8] Select requires_private_installer
+    1 - no
+    2 - yes
+    Choose from [1/2] (1):
 
 Created scaffolding for new application in 'T:\QCrBox_location\services\applications\cod_check_tutorial'.
 ```
+
+### Private installers
+
+If the application requires a proprietary installer that cannot be downloaded automatically or committed to the repository, answer `yes` to `requires_private_installer`. This generates a `private_build.yml` file in the application directory:
+
+```yaml
+# Marks this app as requiring a private installer that cannot be distributed.
+# Place the file(s) listed below in this directory before building.
+# See docs/how_to_guides/obtain_licenced_components.md for the general pattern.
+requires:
+  - filename: REPLACE_WITH_INSTALLER_FILENAME
+    description: "REPLACE_WITH_DESCRIPTION — obtain from REPLACE_WITH_SOURCE (licence required)"
+```
+
+Fill in the `filename` and `description` fields, then:
+
+1. **Add the installer filename to `.gitignore`** — the root `.gitignore` already has entries for the existing private apps; add yours following the same pattern. This is not done automatically and is important: forgetting it risks accidentally committing a proprietary file.
+
+2. Place the installer in the application directory before building.
+
+See [Getting Licensed Components](../how_to_guides/obtain_licenced_components.md) for how to build and push the image once you have the installer.
 
 ## Understanding the Generated Scaffolding
 

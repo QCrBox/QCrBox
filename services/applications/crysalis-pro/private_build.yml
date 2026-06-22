@@ -1,0 +1,6 @@
+# Marks this app as requiring a private installer that cannot be distributed.
+# Place the file(s) listed below in this directory before building.
+# See docs/how_to_guides/obtain_licenced_components.md for download instructions.
+requires:
+  - filename: CrysAlisPro171.44.48a.exe
+    description: "CrysAlis Pro installer — obtain from Rigaku (licence required)"
