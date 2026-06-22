@@ -87,7 +87,8 @@ class QCrBoxClient(QCrBoxServerClientBase):
     @on_qcrbox_startup
     async def _send_registration_request_via_nats(self) -> None:
         """Send a registration request to the registry to register the app."""
-        self.application_spec.gui_port = os.getenv("QCRBOX__GUI__PORT", None)
+        # TODO: Remove this once the API has been updated to remove the requirement for a GUI port
+        self.application_spec.gui_port = "-9999"
         logger.debug(f"Sending registration request to QCrBox server: {self.application_spec!r}")
 
         msg = msg_specs.RegisterApplication(

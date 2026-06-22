@@ -6,11 +6,6 @@ services:
       QCRBOX__NATS__HOST: "qcrbox-nats"
       QCRBOX__REGISTRY__SERVER__HOST: "qcrbox-registry"
       QCRBOX__REGISTRY__SERVER__PORT: "8000"
-{%- if cookiecutter.application_type in ["Interactive GUI (Linux)", "Interactive GUI (Windows)"] %}
-      QCRBOX__GUI__PORT: ${QCRBOX_{{ cookiecutter.application_slug.upper().replace("-", "_") }}_PORT}
-    ports:
-      - "${QCRBOX_BIND_ADDRESS}:${QCRBOX_{{ cookiecutter.application_slug.upper().replace("-", "_") }}_PORT:?Must set env var QCRBOX_{{ cookiecutter.application_slug.upper().replace("-", "_") }}_PORT}:8080"
-{%- endif %}
     depends_on:
       qcrbox-registry:
         condition: service_healthy
@@ -19,6 +14,7 @@ services:
     networks:
       - qcrbox-net
     restart: unless-stopped
+    {%- if cookiecutter.application_type in ["Interactive GUI (Linux)", "Interactive GUI (Windows)"] %}
     labels:
       traefik.enable: true
       traefik.http.routers.to-{{cookiecutter.application_slug}}-path-prefix.rule: Path(`/gui/{{ cookiecutter.application_slug }}`)
@@ -35,6 +31,7 @@ services:
 
       traefik.http.services.{{ cookiecutter.application_slug }}-service.loadbalancer.server.scheme: http
       traefik.http.services.{{ cookiecutter.application_slug }}-service.loadbalancer.server.port: 8080
+    {%- endif %}
     logging:
       driver: "syslog"
       options:

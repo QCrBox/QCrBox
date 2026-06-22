@@ -46,7 +46,6 @@ services:
       - "--log.level=DEBUG"
       - "--ping=true"
       - "--accesslog=true"
-      - "--ping=true"
       - "--api.insecure=true"  # enable the web UI
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
