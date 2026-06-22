@@ -63,6 +63,6 @@ fi
 
 echo ""
 echo "==> Done. Next steps:"
-echo "    1. Push the QCrBoxFrontend image from the QCrBoxFrontend repository"
-echo "       at the same version ($VERSION) before deploying."
-echo "    2. Push the git tag:  git push origin $TAG"
+echo "    1. bash ../QCrBoxFrontend/scripts/push-frontend.sh $VERSION"
+echo "       (push frontend image before deploying)"
+echo "    2. git push origin $TAG"
