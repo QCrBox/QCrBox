@@ -54,7 +54,14 @@ done
 [ -d "$FRONTEND_DIR" ] || { echo "ERROR: $FRONTEND_DIR not found" >&2; exit 1; }
 command -v docker >/dev/null 2>&1 || { echo "ERROR: docker not found" >&2; exit 1; }
 
-SSH_OPTS=(-o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30 -o ServerAliveCountMax=6)
+KNOWN_HOSTS=$(mktemp)
+trap 'rm -f "$KNOWN_HOSTS"' EXIT
+echo "==> Fetching host key for ${HOST#*@}"
+ssh-keyscan -H "${HOST#*@}" >> "$KNOWN_HOSTS" 2>/dev/null \
+    || { echo "ERROR: cannot reach ${HOST#*@}" >&2; exit 1; }
+
+SSH_OPTS=(-o StrictHostKeyChecking=yes -o UserKnownHostsFile="$KNOWN_HOSTS"
+          -o ServerAliveInterval=30 -o ServerAliveCountMax=6)
 [ -n "$IDENTITY" ] && SSH_OPTS+=(-i "$IDENTITY")
 SSH=(ssh "${SSH_OPTS[@]}" "$HOST")
 
