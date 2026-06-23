@@ -38,6 +38,14 @@ fi
 
 TAG="v$VERSION"
 
+# Releases must start from a clean tree so hatch-vcs produces an exact version
+# number rather than a dev pre-release like 0.1.3.dev0+g7d10ee4bb.d19800101.
+if ! git diff --quiet || ! git diff --cached --quiet; then
+    echo "ERROR: working tree has uncommitted changes — commit or stash before releasing" >&2
+    git status --short >&2
+    exit 1
+fi
+
 if git rev-parse "$TAG" >/dev/null 2>&1; then
     echo "ERROR: tag $TAG already exists" >&2
     exit 1

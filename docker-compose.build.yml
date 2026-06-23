@@ -49,6 +49,7 @@ services:
       context: services/core/qcrbox_nats/
 
   qcrbox-registry:
+    image: "qcrbox/registry:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
     build:
       context: services/core/qcrbox_registry
       args:

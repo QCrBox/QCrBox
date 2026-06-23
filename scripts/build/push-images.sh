@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 #
 # Build and push QCrBox Docker images to a container registry.
+# Must be run from a devbox shell (qcb must be available on PATH).
 #
 # All images should be pushed as a matching set to avoid version mismatches
 # between the registry and application containers.
 #
 # Prerequisites:
 #   export QCRBOX_DOCKER_REPO=ghcr.io/qcrbox
-#   export QCRBOX_DOCKER_TAG=latest
+#   export QCRBOX_DOCKER_TAG=<version>
 #   docker login ghcr.io -u <github-username> -p <PAT with write:packages>
 #
 # Usage:
@@ -20,20 +21,16 @@
 
 set -euo pipefail
 
+command -v qcb >/dev/null 2>&1 || { echo "ERROR: qcb not found — run from a devbox shell (devbox shell)" >&2; exit 1; }
+
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 QCRBOX_DIR=$(cd "$SCRIPT_DIR/../.." && pwd)
 
 REPO=${QCRBOX_DOCKER_REPO:?Set QCRBOX_DOCKER_REPO, e.g. export QCRBOX_DOCKER_REPO=ghcr.io/qcrbox}
-TAG=${QCRBOX_DOCKER_TAG:?Set QCRBOX_DOCKER_TAG, e.g. export QCRBOX_DOCKER_TAG=latest}
+TAG=${QCRBOX_DOCKER_TAG:?Set QCRBOX_DOCKER_TAG, e.g. export QCRBOX_DOCKER_TAG=0.1.2}
 
 # Base images must be built in this exact order (each depends on the previous)
 BASE_IMAGES=(base-ancestor base-application base-novnc base-wine)
-BASE_DIRS=(
-    services/base_images/base_ancestor
-    services/base_images/base_application
-    services/base_images/base_novnc
-    services/base_images/base_wine
-)
 
 # ---------------------------------------------------------------------------
 
@@ -51,17 +48,28 @@ _build_and_push() {
 }
 
 _build_base_images() {
-    for i in "${!BASE_IMAGES[@]}"; do
-        local name="${BASE_IMAGES[$i]}" dir="${BASE_DIRS[$i]}"
-        local args=()
-        [[ "$name" != "base-ancestor" ]] && args+=(--build-arg "QCRBOX_DOCKER_TAG=$TAG")
-        _build_and_push "$name" "$dir" "${args[@]}"
+    # Build Python packages using the established qcb workflow (handles wheel build
+    # and qcrboxtools clone/update)
+    echo "==> Building Python packages (pyqcrbox, qcrboxtools)"
+    qcb build pyqcrbox pyqcrboxtools
+
+    # Build and push base images via qcb, which uses docker compose + .env.dev and
+    # therefore has all required build args (QCRBOX_ROOT_DIR, QCRBOX_SUPERVISORD_CONF_DIR,
+    # PYQCRBOX_PYTHON_PACKAGE_VERSION, etc.). The compose image: field tags each image
+    # as qcrbox/<name>:$QCRBOX_DOCKER_TAG; we then retag for GHCR and push.
+    for name in "${BASE_IMAGES[@]}"; do
+        echo "==> Building $name → $REPO/$name:$TAG"
+        qcb build --no-deps "$name"
+        docker tag "qcrbox/$name:$TAG" "$REPO/$name:$TAG"
+        docker push "$REPO/$name:$TAG"
     done
 }
 
 _build_registry() {
-    _build_and_push "registry" "services/core/qcrbox_registry" \
-        --build-arg "QCRBOX_DOCKER_TAG=$TAG"
+    echo "==> Building registry → $REPO/registry:$TAG"
+    qcb build --no-deps qcrbox-registry
+    docker tag "qcrbox/registry:$TAG" "$REPO/registry:$TAG"
+    docker push "$REPO/registry:$TAG"
 }
 
 _build_app() {
@@ -69,11 +77,12 @@ _build_app() {
     local app_dir="$QCRBOX_DIR/services/applications/$app"
     [[ -d "$app_dir" ]] || { echo "ERROR: no application directory for '$app'" >&2; exit 1; }
 
-    # Run any prebuild download scripts (e.g. for crystal_explorer, olex2_linux)
+    # Run any prebuild download scripts (e.g. for crystal_explorer, olex2_linux).
+    # Run from the app directory so relative paths in those scripts resolve correctly.
     for script in "$app_dir"/prebuild__*.py; do
         [[ -f "$script" ]] || continue
         echo "==> Running $(basename "$script")"
-        python3 "$script"
+        (cd "$app_dir" && python3 "$(basename "$script")")
     done
 
     # Check private installer deps if sentinel is present
@@ -88,6 +97,7 @@ _build_app() {
 
 _discover_public_apps() {
     find "$QCRBOX_DIR/services/applications" -name "docker-compose.*.prebuilt.yml" \
+        | grep -v '/_template/' \
         | xargs -n1 dirname | sort -u \
         | while IFS= read -r dir; do
             [[ -f "$dir/private_build.yml" ]] && continue
@@ -97,6 +107,7 @@ _discover_public_apps() {
 
 _discover_private_apps() {
     find "$QCRBOX_DIR/services/applications" -name "private_build.yml" \
+        | grep -v '/_template/' \
         | xargs -n1 dirname | sort -u | xargs -n1 basename
 }
 
