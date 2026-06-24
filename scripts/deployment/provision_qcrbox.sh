@@ -19,6 +19,7 @@
 # Usage:
 #   sudo bash provision_qcrbox.sh --domain qcrbox.10.2.3.4.nip.io \
 #       [--source /opt/qcrbox-src] [--apps "olex2_linux dummy_gui"] \
+#       [--ghcr-user niolon --ghcr-token ghp_xxxx] \
 #       [--frontend-image ghcr.io/qcrbox/qcrboxfrontend:0.2.0] \
 #       [--acme-email you@example.org | --tls-cert cert.pem --tls-key key.pem]
 #
@@ -33,6 +34,8 @@ VERSION="latest"
 ACME_EMAIL=""
 TLS_CERT=""
 TLS_KEY=""
+GHCR_USER="${GHCR_USER:-}"
+GHCR_TOKEN="${GHCR_TOKEN:-}"
 
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -43,6 +46,8 @@ while [ $# -gt 0 ]; do
         --acme-email) ACME_EMAIL="$2"; shift 2 ;;
         --tls-cert)   TLS_CERT="$2"; shift 2 ;;
         --tls-key)    TLS_KEY="$2"; shift 2 ;;
+        --ghcr-user)  GHCR_USER="$2"; shift 2 ;;
+        --ghcr-token) GHCR_TOKEN="$2"; shift 2 ;;
         *) echo "Unknown argument: $1" >&2; exit 1 ;;
     esac
 done
@@ -194,6 +199,11 @@ for app in $APPS; do
     [ -n "$app_compose" ] || { echo "ERROR: no prebuilt compose file for app '$app'" >&2; exit 1; }
     COMPOSE+=(-f "$app_compose")
 done
+
+if [[ -n "$GHCR_TOKEN" ]]; then
+    echo "==> Authenticating with GHCR"
+    echo "$GHCR_TOKEN" | docker login ghcr.io -u "${GHCR_USER:-token}" --password-stdin
+fi
 
 echo "==> Pulling backend images from GHCR"
 "${COMPOSE[@]}" pull

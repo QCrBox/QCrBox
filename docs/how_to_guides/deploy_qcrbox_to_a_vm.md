@@ -20,6 +20,10 @@ instance. It clones both source repositories directly on the VM from GitHub,
 then runs the provisioner which pulls all images from GHCR:
 
 ```bash
+# Set credentials without putting them in shell history (see GHCR authentication below)
+export GHCR_USER=niolon
+read -rsp "GHCR token: " GHCR_TOKEN && echo && export GHCR_TOKEN
+
 bash scripts/deployment/deploy_qcrbox_ssh.sh --host ubuntu@<public-ip> \
     --version 0.2.0 \
     --identity ~/.ssh/eosc_key --apps "olex2_linux" \
@@ -48,10 +52,55 @@ sudo bash provision_qcrbox.sh --domain qcrbox.example.org \
   GHCR at the target version before deploying — see [Creating a release](github_release.md).
   All images must come from the same release: the registry silently ignores
   applications whose `pyqcrbox` version differs from its own.
+- **GHCR access**: images are published as *internal* (organisation-only).
+  Create a GitHub Personal Access Token (PAT) with `read:packages` scope and
+  pass it via `--ghcr-user <github-username> --ghcr-token <PAT>` — see
+  [GHCR authentication](#ghcr-authentication) below.
 - **VM**: Ubuntu 24.04, ≥4 vCPU, 8 GB RAM, ≥60 GB disk; a public/floating IP;
   SSH key access as a sudo-capable user (cloud images: `ubuntu`); internet
   access (to clone from GitHub and pull from GHCR); firewall / OpenStack
   security group allowing only ports 22, 80 and 443.
+
+## GHCR authentication
+
+QCrBox images are published as *internal* packages on GHCR, meaning only
+members of the GitHub organisation can pull them. The VM must authenticate
+before `docker compose pull` will succeed.
+
+**Create a PAT** (one-time, per deployer):
+
+1. Go to GitHub → **Settings → Developer settings → Personal access tokens →
+   Tokens (classic)**.
+2. Click **Generate new token (classic)**.
+3. Give it a descriptive name (e.g. `qcrbox-deploy-read`), set an expiry, and
+   tick only the **`read:packages`** scope.
+4. Copy the token (`ghp_…`) — it is shown only once.
+
+**Pass the token to the deploy script** without putting it in your shell
+history — set it as an environment variable using `read -rs`, which echoes
+nothing and is not recorded by bash/zsh:
+
+```bash
+export GHCR_USER=<your-github-username>
+read -rsp "GHCR token: " GHCR_TOKEN && echo && export GHCR_TOKEN
+
+bash scripts/deployment/deploy_qcrbox_ssh.sh \
+    --host ubuntu@<public-ip> \
+    --version 0.2.0 \
+    ...
+```
+
+Both scripts pick up `GHCR_USER` and `GHCR_TOKEN` from the environment
+automatically; `--ghcr-user` / `--ghcr-token` flags are also accepted if you
+prefer to pass them explicitly (e.g. from a secrets manager or CI).
+
+The token is forwarded over the encrypted SSH channel to `provision_qcrbox.sh`,
+which runs `docker login ghcr.io` on the VM before pulling images. It is never
+written to disk on either machine.
+
+If you are running `provision_qcrbox.sh` directly on the VM (without the SSH
+wrapper), set the environment variables there in the same way before calling the
+script.
 
 ## DNS and TLS
 

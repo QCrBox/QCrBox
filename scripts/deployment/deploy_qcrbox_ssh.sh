@@ -18,6 +18,7 @@
 # Usage:
 #   bash scripts/deployment/deploy_qcrbox_ssh.sh --host ubuntu@185.x.y.z \
 #       --version 0.2.0 \
+#       --ghcr-user niolon --ghcr-token ghp_xxxx \
 #       [--identity ~/.ssh/eosc_key] [--domain qcrbox.example.org] \
 #       [--apps "olex2_linux dummy_gui"] \
 #       [--acme-email you@example.org | --tls-cert cert.pem --tls-key key.pem]
@@ -42,6 +43,8 @@ FRONTEND_BRANCH=""
 ACME_EMAIL=""
 TLS_CERT=""
 TLS_KEY=""
+GHCR_USER="${GHCR_USER:-}"
+GHCR_TOKEN="${GHCR_TOKEN:-}"
 
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -55,6 +58,8 @@ while [ $# -gt 0 ]; do
         --acme-email)       ACME_EMAIL="$2"; shift 2 ;;
         --tls-cert)         TLS_CERT="$2"; shift 2 ;;
         --tls-key)          TLS_KEY="$2"; shift 2 ;;
+        --ghcr-user)        GHCR_USER="$2"; shift 2 ;;
+        --ghcr-token)       GHCR_TOKEN="$2"; shift 2 ;;
         *) echo "Unknown argument: $1" >&2; exit 1 ;;
     esac
 done
@@ -140,11 +145,16 @@ elif [ -n "$ACME_EMAIL" ]; then
 fi
 
 # ------------------------------------------------------------- provision ----
+PROVISION_AUTH_ARGS=()
+[ -n "$GHCR_USER" ]  && PROVISION_AUTH_ARGS+=(--ghcr-user  "$GHCR_USER")
+[ -n "$GHCR_TOKEN" ] && PROVISION_AUTH_ARGS+=(--ghcr-token "$GHCR_TOKEN")
+
 echo "==> Running provisioner on the VM"
 "${SSH[@]}" sudo bash /opt/qcrbox-src/QCrBox/scripts/deployment/provision_qcrbox.sh \
     --domain "$DOMAIN" --source /opt/qcrbox-src --apps "\"$APPS\"" \
     --version "$VERSION" \
-    ${PROVISION_TLS_ARGS[@]+"${PROVISION_TLS_ARGS[@]}"}
+    ${PROVISION_TLS_ARGS[@]+"${PROVISION_TLS_ARGS[@]}"} \
+    ${PROVISION_AUTH_ARGS[@]+"${PROVISION_AUTH_ARGS[@]}"}
 
 echo ""
 echo "=================================================================="
