@@ -91,7 +91,15 @@ _build_app() {
         python3 "$SCRIPT_DIR/_check_private_deps.py" "$sentinel" "$app_dir"
     fi
 
-    _build_and_push "$app" "services/applications/$app" \
+    # Derive the image name from the prebuilt compose file (matches the config YAML slug
+    # and the run compose) rather than the directory name, which may differ in separators.
+    local prebuilt_yml
+    prebuilt_yml=$(ls "$app_dir"/docker-compose.*.prebuilt.yml 2>/dev/null | head -1)
+    [[ -n "$prebuilt_yml" ]] || { echo "ERROR: no prebuilt compose file for '$app'" >&2; exit 1; }
+    local image_name
+    image_name=$(grep 'image:' "$prebuilt_yml" | grep -o 'QCRBOX_DOCKER_REPO[^/]*/[^:]*' | cut -d/ -f2)
+
+    _build_and_push "$image_name" "services/applications/$app" \
         --build-arg "QCRBOX_DOCKER_TAG=$TAG"
 }
 
