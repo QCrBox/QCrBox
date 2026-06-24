@@ -49,6 +49,23 @@ def create_application_template(overwrite_if_exists, dry_run, application_slug):
     repo_root = get_repo_root()
     template_dir = str(repo_root.joinpath("services", "applications", "_template"))
     target_dir = repo_root.joinpath("services", "applications", application_slug)
+    if "_" in application_slug:
+        suggested = application_slug.replace("_", "-")
+        click.echo(
+            f"Warning: '{application_slug}' contains underscores. The slug is used as a DNS "
+            f"subdomain for GUI apps ({application_slug}.gui.<domain>), and underscores are "
+            f"technically invalid in DNS hostnames.",
+            err=True,
+        )
+        choice = click.prompt(
+            f"Use hyphenated slug?",
+            type=click.Choice([suggested, application_slug]),
+            default=suggested,
+        )
+        application_slug = choice
+        target_dir = target_dir.parent / application_slug
+        click.echo()
+
     if target_dir.exists() and any(target_dir.iterdir()) and not overwrite_if_exists:
         click.echo(f"The directory {target_dir} exists and is not empty.")
         click.echo("Please use the flag -f/--overwrite-if-exists to discard any existing contents. ")
