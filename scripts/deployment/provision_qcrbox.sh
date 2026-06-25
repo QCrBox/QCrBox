@@ -54,6 +54,14 @@ done
 
 [ -n "$DOMAIN" ] || { echo "ERROR: --domain is required" >&2; exit 1; }
 [ "$(id -u)" -eq 0 ] || { echo "ERROR: run as root (sudo)" >&2; exit 1; }
+
+# Load GHCR credentials from the temp file written by the deploy script.
+# Using a file rather than command-line args keeps the token out of ps aux.
+if [ -f /run/qcrbox-ghcr.env ]; then
+    # shellcheck disable=SC1091
+    . /run/qcrbox-ghcr.env
+    rm -f /run/qcrbox-ghcr.env
+fi
 if { [ -n "$TLS_CERT" ] && [ -z "$TLS_KEY" ]; } || { [ -z "$TLS_CERT" ] && [ -n "$TLS_KEY" ]; }; then
     echo "ERROR: --tls-cert and --tls-key must be given together" >&2; exit 1
 fi
@@ -195,7 +203,12 @@ COMPOSE=(docker compose --project-name qcrbox
          --env-file "$QCRBOX_DIR/.env.vm"
          -f "$QCRBOX_DIR/docker-compose.prebuilt.yml")
 for app in $APPS; do
-    app_compose=$(ls "$QCRBOX_DIR/services/applications/$app"/docker-compose.*.prebuilt.yml 2>/dev/null | head -1)
+    # Accept any separator variant: exact name, then hyphens→underscores,
+    # then underscores→hyphens, so callers can use either form.
+    app_dir="$QCRBOX_DIR/services/applications/$app"
+    [ -d "$app_dir" ] || app_dir="$QCRBOX_DIR/services/applications/${app//-/_}"
+    [ -d "$app_dir" ] || app_dir="$QCRBOX_DIR/services/applications/${app//_/-}"
+    app_compose=$(ls "$app_dir"/docker-compose.*.prebuilt.yml 2>/dev/null | head -1)
     [ -n "$app_compose" ] || { echo "ERROR: no prebuilt compose file for app '$app'" >&2; exit 1; }
     COMPOSE+=(-f "$app_compose")
 done

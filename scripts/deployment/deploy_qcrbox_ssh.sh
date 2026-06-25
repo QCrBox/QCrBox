@@ -145,16 +145,18 @@ elif [ -n "$ACME_EMAIL" ]; then
 fi
 
 # ------------------------------------------------------------- provision ----
-PROVISION_AUTH_ARGS=()
-[ -n "$GHCR_USER" ]  && PROVISION_AUTH_ARGS+=(--ghcr-user  "$GHCR_USER")
-[ -n "$GHCR_TOKEN" ] && PROVISION_AUTH_ARGS+=(--ghcr-token "$GHCR_TOKEN")
+# Deliver GHCR credentials via a root-only temp file rather than command-line
+# args so the token never appears in the remote process list (ps aux).
+if [ -n "$GHCR_TOKEN" ]; then
+    printf 'GHCR_USER=%s\nGHCR_TOKEN=%s\n' "$GHCR_USER" "$GHCR_TOKEN" \
+        | "${SSH[@]}" 'sudo bash -c "umask 077 && cat > /run/qcrbox-ghcr.env"'
+fi
 
 echo "==> Running provisioner on the VM"
 "${SSH[@]}" sudo bash /opt/qcrbox-src/QCrBox/scripts/deployment/provision_qcrbox.sh \
     --domain "$DOMAIN" --source /opt/qcrbox-src --apps "\"$APPS\"" \
     --version "$VERSION" \
-    ${PROVISION_TLS_ARGS[@]+"${PROVISION_TLS_ARGS[@]}"} \
-    ${PROVISION_AUTH_ARGS[@]+"${PROVISION_AUTH_ARGS[@]}"}
+    ${PROVISION_TLS_ARGS[@]+"${PROVISION_TLS_ARGS[@]}"}
 
 echo ""
 echo "=================================================================="
