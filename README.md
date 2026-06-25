@@ -52,7 +52,7 @@ them interactively, you can find them in the directory `docs/tutorials/examples/
 ## Contributions
 
 Contributions are always welcome, be it code or testing our software and raising issues. If you want to contribute
-code, please fork the repository, create your own branch and submit a pull request. If you have any questions feel
+code, please read and follow the instructions in [CONTRIBUTING.md](CONTRIBUTING.md). If you have any questions feel
 very welcome to [contact us](#get-in-touch).
 
 
