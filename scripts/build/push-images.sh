@@ -157,9 +157,16 @@ if [[ "$BUILD_ALL" -eq 1 ]]; then
     done
     # For private apps: warn and skip if installer is missing rather than aborting
     # the whole release — not every maintainer has every installer.
+    # Also skip apps with no prebuilt compose file — those are local-only builds
+    # not published to GHCR (e.g. eval1x).
     for app in $(_discover_private_apps); do
-        sentinel="$QCRBOX_DIR/services/applications/$app/private_build.yml"
-        if python3 "$SCRIPT_DIR/_check_private_deps.py" "$sentinel" "$QCRBOX_DIR/services/applications/$app" 2>/dev/null; then
+        app_dir="$QCRBOX_DIR/services/applications/$app"
+        if ! ls "$app_dir"/docker-compose.*.prebuilt.yml >/dev/null 2>&1; then
+            echo "SKIP: $app — no prebuilt compose file (local-only, not pushed to GHCR)"
+            continue
+        fi
+        sentinel="$app_dir/private_build.yml"
+        if python3 "$SCRIPT_DIR/_check_private_deps.py" "$sentinel" "$app_dir" 2>/dev/null; then
             _build_app "$app"
         else
             echo "SKIP: $app — installer not present (see $sentinel)"

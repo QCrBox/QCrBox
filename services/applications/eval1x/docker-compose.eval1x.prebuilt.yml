@@ -1,0 +1,34 @@
+services:
+  eval1x:
+    image: "${QCRBOX_DOCKER_REPO:?Must set env var QCRBOX_DOCKER_REPO}/eval1x:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
+    volumes:
+      - ${QCRBOX_SHARED_FILES_DIR_HOST_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_HOST_PATH}:${QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH}
+    networks:
+      - qcrbox-net
+    depends_on:
+      qcrbox-registry:
+        condition: service_healthy
+    restart: unless-stopped
+    environment:
+      QCRBOX_APPLICATION_DISPLAY_NAME: "Eval14/15"
+      QCRBOX__NATS__HOST: "qcrbox-nats"
+      QCRBOX__REGISTRY__SERVER__HOST: "qcrbox-registry"
+      QCRBOX__REGISTRY__SERVER__PORT: "8000"
+    labels:
+      traefik.enable: true
+      traefik.http.routers.to-eval1x-path-prefix.rule: Path(`/gui/eval1x`)
+      traefik.http.routers.to-eval1x-path-prefix.middlewares: authelia-auth,redirect-gui-eval1x-path
+      traefik.http.routers.to-eval1x-path-prefix.service: eval1x-service
+      traefik.http.routers.to-eval1x-path-prefix.entrypoints: websecure
+      traefik.http.middlewares.redirect-gui-eval1x-path.redirectregex.regex: ^https://(.+)/gui/eval1x(/?)$$
+      traefik.http.middlewares.redirect-gui-eval1x-path.redirectregex.replacement: https://eval1x.gui.$$1/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true
+
+      traefik.http.routers.to-eval1x-subdomain.rule: Host(`eval1x.gui.${QCRBOX_DOMAIN:-qcrbox.localhost}`)
+      traefik.http.routers.to-eval1x-subdomain.middlewares: authelia-auth,redirect-gui-eval1x-subdomain
+      traefik.http.routers.to-eval1x-subdomain.service: eval1x-service
+      traefik.http.routers.to-eval1x-subdomain.entrypoints: websecure
+      traefik.http.middlewares.redirect-gui-eval1x-subdomain.redirectregex.regex: ^https://eval1x\.gui\.([^/]+)(/?)$$
+      traefik.http.middlewares.redirect-gui-eval1x-subdomain.redirectregex.replacement: https://eval1x.gui.$$1/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true
+
+      traefik.http.services.eval1x-service.loadbalancer.server.scheme: http
+      traefik.http.services.eval1x-service.loadbalancer.server.port: 8080
