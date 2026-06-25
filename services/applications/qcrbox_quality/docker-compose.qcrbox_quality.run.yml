@@ -15,16 +15,19 @@ services:
       QCRBOX__NATS__HOST: "qcrbox-nats"
       QCRBOX__REGISTRY__SERVER__HOST: "qcrbox-registry"
       QCRBOX__REGISTRY__SERVER__PORT: "8000"
-      ALLOWED_HOSTS: ".localhost,127.0.0.1,${QCRBOX_BIND_ADDRESS},${QCRBOX_ALLOWED_HOSTS:-}"
+      ALLOWED_HOSTS: ".localhost,127.0.0.1,${QCRBOX_BIND_ADDRESS},.${QCRBOX_DOMAIN:-qcrbox.localhost},${QCRBOX_ALLOWED_HOSTS:-}"
     labels:
       traefik.enable: true
       traefik.http.routers.to-qcrbox-quality-path-prefix.rule: PathPrefix(`/gui/qcrbox_quality`)
-      traefik.http.routers.to-qcrbox-quality-path-prefix.middlewares: strip-qcrbox-quality-prefix
+      traefik.http.routers.to-qcrbox-quality-path-prefix.middlewares: authelia-auth,strip-qcrbox-quality-prefix
       traefik.http.routers.to-qcrbox-quality-path-prefix.service: qcrbox_quality-service
+      traefik.http.routers.to-qcrbox-quality-path-prefix.entrypoints: websecure
       traefik.http.middlewares.strip-qcrbox-quality-prefix.stripprefix.prefixes: /gui/qcrbox_quality
 
-      traefik.http.routers.to-qcrbox-quality-subdomain.rule: HostRegexp(`^qcrbox-quality\.gui\..+$$`)
+      traefik.http.routers.to-qcrbox-quality-subdomain.rule: Host(`qcrbox-quality.gui.${QCRBOX_DOMAIN:-qcrbox.localhost}`)
+      traefik.http.routers.to-qcrbox-quality-subdomain.middlewares: authelia-auth
       traefik.http.routers.to-qcrbox-quality-subdomain.service: qcrbox_quality-service
+      traefik.http.routers.to-qcrbox-quality-subdomain.entrypoints: websecure
 
       traefik.http.services.qcrbox_quality-service.loadbalancer.server.scheme: http
       traefik.http.services.qcrbox_quality-service.loadbalancer.server.port: 8080

@@ -1,6 +1,16 @@
 Getting licensed components needed to build some containers
 ===========================================================
-Some container dependencies are not freely available. As such, you need to add the necessary components yourself after an initial registering steps. Here are the instruction for the currently supported components.
+
+Some container dependencies are not freely available. Follow the per-app instructions below to obtain the required file, place it in the application directory, then build and push the image:
+
+```bash
+export QCRBOX_DOCKER_REPO=ghcr.io/qcrbox
+export QCRBOX_DOCKER_TAG=latest
+docker login ghcr.io -u <github-username> -p <PAT with write:packages>
+bash scripts/build/push-images.sh <app-name>   # e.g. mopro
+```
+
+The script reads `private_build.yml` in the application directory and reports exactly which file is missing if the installer has not been placed yet.
 
 ## MoPro
 Obtain the Windows executable zip file named `MoProSuite_win_2024_10.zip` by registering [here](https://crm2.univ-lorraine.fr/de/die-software/mopro/download-mopro/). Then copy it into the QCrBox/services/applications/mopro directory as is.

@@ -1,115 +1,84 @@
 # Updating the QCrBox Container Registry
 
-This guide explains how to tag and push Docker images to QCrBox's [Azure Container Registry
-(ACR)](https://learn.microsoft.com/en-us/azure/container-registry/), using the Azure CLI.
+This guide explains how to publish Docker images to [GitHub Container Registry (GHCR)](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry) and how to deploy using those published images.
 
-## Prerequisites
+Images are hosted under `ghcr.io/qcrbox`. All images must be published as a **matching set** — base images, registry service, and application images must all come from the same build, because `pyqcrbox` and `qcrboxtools` versions are baked in at build time. Mixing versions causes the registry to silently ignore incompatible containers.
 
-To push images to QCrBox's Azure Container Registry (ACR), you need to have the Azure CLI installed and configured and
-to have access to QCrBox's Azure subscription/portal. If you do not have the Azure CLI installed, follow the [official
-installation guide](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli) for your operating system.
+For local development (building from source), see [Using qcb to manage QCrBox](use_qcb_to_interact_with_and_manage_qcrbox.md).
 
-Once it is installed, you need to log into Azure and pick the subscription you want to link. Open your terminal and run:
+---
 
-```sh
-az login
+## Using prebuilt images
+
+To deploy QCrBox from published GHCR images without building locally, set the desired version in `.env.prod`:
+
+```bash
+# .env.prod
+QCRBOX_DOCKER_REPO=ghcr.io/qcrbox
+QCRBOX_DOCKER_TAG=0.2.0
 ```
 
-This will open a browser window for authentication. After logging in, you can verify your account with:
+Then start with:
 
-```sh
-az account show
+```bash
+qcb up --prebuilt-images olex2_linux
 ```
 
-Once you are logged in, you need to also log into the ACR using:
+`qcb up --prebuilt-images` uses `docker-compose.*.prebuilt.yml` for each application, which pulls `${QCRBOX_DOCKER_REPO}/<app>:${QCRBOX_DOCKER_TAG}` from GHCR instead of using locally built images.
 
-```sh
-az acr login --name qcrbox
+### Private container access
+
+GHCR supports private packages. To grant a collaborator pull access:
+
+1. Set package visibility to private in the GHCR web UI (Organisation → Packages → Package Settings → Change visibility)
+2. Add them as a package collaborator, or have them create a fine-grained PAT with `read:packages` scope
+
+They then `docker login ghcr.io -u <user> -p <PAT>` and `qcb up --prebuilt-images` works without further changes.
+
+---
+
+## Publishing a release
+
+### Prerequisites
+
+Generate a GitHub Personal Access Token (PAT) with `write:packages` scope at [github.com/settings/tokens](https://github.com/settings/tokens), then log in:
+
+```bash
+docker login ghcr.io -u <github-username> -p <PAT>
 ```
 
-## Uploading/updating an image
+### Full release
 
-Assuming your image is built locally (e.g., `qcrbox/registry:latest`), you need to tag the local image with the address
-of the Azure Container Registry (ACR) before pushing it:
-
-```sh
-docker tag qcrbox/registry:latest qcrbox.azurecr.io/qcrbox-registry:latest
+```bash
+bash scripts/update_container_repository.sh 0.2.0
 ```
 
-The `qcrbox.azurecr.io` part is the hostname of the QCrBox ACR. Docker uses this address to know where to push (or
-pull) the image. If you do not tag your image with the full registry address, Docker will not know to associate it with
-the ACR, and the push will fail or go to the wrong place. Always use the full registry address when preparing images for
-upload to Azure.
+This script:
 
-Once tagged, we can push the image to the ACR:
+1. Creates git tag `v0.2.0`
+2. Builds and pushes all images in dependency order (`base-ancestor` → `base-application` → `base-novnc` / `base-wine` → `registry` → public apps) with `QCRBOX_DOCKER_TAG=0.2.0`
+3. Warns and skips any private app whose installer file is not present — see [Getting Licensed Components](obtain_licenced_components.md) to build those separately
+4. Prints `git push origin v0.2.0` for you to run once satisfied
 
-```sh
-docker push qcrbox.azurecr.io/qcrbox-olex2-linux:latest
+### Single image
+
+For a hotfix to one image after a release:
+
+```bash
+export QCRBOX_DOCKER_REPO=ghcr.io/qcrbox
+export QCRBOX_DOCKER_TAG=0.2.0
+bash scripts/build/push-images.sh olex2_linux
 ```
 
-You should see the upload progress and a confirmation when the push is complete.
+Run `bash scripts/build/push-images.sh` (no arguments) for the full list of options and available applications.
 
-### List images in the QCrBox ACR
+---
 
-To see images in the ACR:
+## Listing published images
 
-```sh
-az acr repository list --name qcrbox --output table
-```
+Images are visible in the [QCrBox GitHub organisation packages](https://github.com/orgs/QCrBox/packages). To query tags via the GitHub CLI:
 
-To list tags for a specific image:
-
-```sh
-az acr repository show-tags --name qcrbox --repository qcrbox-registry --output table
-```
-
-## Using pre-built images
-
-You can use the `qcb` tool to start services with pre-built images. For example, to start the `olex2` service with the
-production image:
-
-```sh
-qcb up --prebuilt-images olex2
-```
-
-This command will use the production Docker Compose file for `olex2` and pull the image from the ACR if it is not
-already present locally. To enable an application to pull form the ACR, you must include a `docker-compose.*.prebuilt.yml`
-file in its directory in `QCrBox/services/applications/`. Instead of using the Dockerfile to build the image, you
-instead use the image from the ACR. Below is an example of what the relevant section of this file might look like:
-
-```yaml
-services:
-  olex2:
-    image: ${QCRBOX_DOCKER_REPO:?Must set env var QCRBOX_DOCKER_REPO}/olex2-linux:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}  # Pulls from the QCrBox ACR
-    volumes:
-      - ${QCRBOX_SHARED_FILES_DIR_HOST_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_HOST_PATH}:${QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH}
-    networks:
-      - qcrbox-net
-    labels:
-      traefik.enable: true
-      traefik.http.routers.to-olex2-path-prefix.rule: Path(`/gui/olex2`)
-      traefik.http.routers.to-olex2-path-prefix.middlewares: redirect-gui-olex2-path
-      traefik.http.routers.to-olex2-path-prefix.service: olex2-service
-      traefik.http.middlewares.redirect-gui-olex2-path.redirectregex.regex: ^http://(.+)/gui/olex2(/?)$$
-      traefik.http.middlewares.redirect-gui-olex2-path.redirectregex.replacement: http://olex2.gui.$$1/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true
-
-      traefik.http.routers.to-olex2-subdomain.rule: HostRegexp(`^olex2\.gui\..+$$`)
-      traefik.http.routers.to-olex2-subdomain.middlewares: redirect-gui-olex2-subdomain
-      traefik.http.routers.to-olex2-subdomain.service: olex2-service
-      traefik.http.middlewares.redirect-gui-olex2-subdomain.redirectregex.regex: ^http://olex2\.gui\.([^/]+)(/?)$$
-      traefik.http.middlewares.redirect-gui-olex2-subdomain.redirectregex.replacement: http://olex2.gui.$$1/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true
-
-      traefik.http.services.olex2-service.loadbalancer.server.scheme: http
-      traefik.http.services.olex2-service.loadbalancer.server.port: 8080
-    depends_on:
-      qcrbox-registry:
-        condition: service_healthy
-    # then you can configure environment variables and whatever else is required
-```
-
-This requires the following environment variables:
-
-```sh
-QCRBOX_DOCKER_REPO=qcrbox.azurecr.io
-QCRBOX_DOCKER_TAG=latest
+```bash
+gh api /orgs/QCrBox/packages/container/<image-name>/versions \
+    --jq '.[].metadata.container.tags[]'
 ```

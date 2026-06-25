@@ -17,16 +17,18 @@ services:
     labels:
       traefik.enable: true
       traefik.http.routers.to-crystal-explorer-path-prefix.rule: Path(`/gui/crystal-explorer`)
-      traefik.http.routers.to-crystal-explorer-path-prefix.middlewares: redirect-gui-crystal-explorer-path
+      traefik.http.routers.to-crystal-explorer-path-prefix.middlewares: authelia-auth,redirect-gui-crystal-explorer-path
       traefik.http.routers.to-crystal-explorer-path-prefix.service: crystal-explorer-service
-      traefik.http.middlewares.redirect-gui-crystal-explorer-path.redirectregex.regex: ^http://(.+)/gui/crystal-explorer(/?)$$
-      traefik.http.middlewares.redirect-gui-crystal-explorer-path.redirectregex.replacement: http://crystal-explorer.gui.$$1/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true
+      traefik.http.routers.to-crystal-explorer-path-prefix.entrypoints: websecure
+      traefik.http.middlewares.redirect-gui-crystal-explorer-path.redirectregex.regex: ^https://(.+)/gui/crystal-explorer(/?)$$
+      traefik.http.middlewares.redirect-gui-crystal-explorer-path.redirectregex.replacement: https://crystal-explorer.gui.$$1/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true
 
-      traefik.http.routers.to-crystal-explorer-subdomain.rule: HostRegexp(`^crystal-explorer\.gui\..+$$`)
-      traefik.http.routers.to-crystal-explorer-subdomain.middlewares: redirect-gui-crystal-explorer-subdomain
+      traefik.http.routers.to-crystal-explorer-subdomain.rule: Host(`crystal-explorer.gui.${QCRBOX_DOMAIN:-qcrbox.localhost}`)
+      traefik.http.routers.to-crystal-explorer-subdomain.middlewares: authelia-auth,redirect-gui-crystal-explorer-subdomain
       traefik.http.routers.to-crystal-explorer-subdomain.service: crystal-explorer-service
-      traefik.http.middlewares.redirect-gui-crystal-explorer-subdomain.redirectregex.regex: ^http://crystal-explorer\.gui\.([^/]+)(/?)$$
-      traefik.http.middlewares.redirect-gui-crystal-explorer-subdomain.redirectregex.replacement: http://crystal-explorer.gui.$$1/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true
+      traefik.http.routers.to-crystal-explorer-subdomain.entrypoints: websecure
+      traefik.http.middlewares.redirect-gui-crystal-explorer-subdomain.redirectregex.regex: ^https://crystal-explorer\.gui\.([^/]+)(/?)$$
+      traefik.http.middlewares.redirect-gui-crystal-explorer-subdomain.redirectregex.replacement: https://crystal-explorer.gui.$$1/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true
 
       traefik.http.services.crystal-explorer-service.loadbalancer.server.scheme: http
       traefik.http.services.crystal-explorer-service.loadbalancer.server.port: 8080

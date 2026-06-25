@@ -40,8 +40,6 @@ services:
         QCRBOX_ROOT_DIR: ${QCRBOX_ROOT_DIR:?Must set env var QCRBOX_ROOT_DIR}
         QCRBOX_WINE_INSTALLATIONS_DIR: ${QCRBOX_WINE_INSTALLATIONS_DIR:?Must set env var QCRBOX_WINE_INSTALLATIONS_DIR}
         QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH: ${QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH}
-        # We set a default value for QCRBOX_WINEARCH just so that we can run the base-wine container for debugging,
-        # but this must be set by each application as required.
         QCRBOX_WINEARCH: ${QCRBOX_WINEARCH:-win32}
 
   qcrbox-nats:
@@ -49,6 +47,7 @@ services:
       context: services/core/qcrbox_nats/
 
   qcrbox-registry:
+    image: "qcrbox/registry:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
     build:
       context: services/core/qcrbox_registry
       args:

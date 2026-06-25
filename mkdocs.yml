@@ -44,7 +44,7 @@ plugins:
   - awesome-pages:
       collapse_single_pages: false
   - mkdocs-jupyter:
-      ignore: ["tutorials/*"]
+      ignore: ["tutorials/*", "how_to_guides/*.ipynb"]
       ignore_h1_titles: True
   - markdown-exec:
       ansi: required

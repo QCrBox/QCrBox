@@ -1,0 +1,89 @@
+---
+# All {{ env "..." }} references are expanded from container environment
+# variables via X_AUTHELIA_CONFIG_FILTERS=template (set in docker-compose).
+# The variables deliberately do not use the AUTHELIA_ prefix, which Authelia
+# reserves for its native env-var-to-config mapping.
+server:
+  address: 'tcp://0.0.0.0:9091'
+  endpoints:
+    enable_pprof: false
+    enable_expvars: false
+
+# Disable NTP check for development
+ntp:
+  disable_startup_check: true
+
+log:
+  level: info
+
+identity_validation:
+  reset_password:
+    jwt_secret: {{ env "QCRBOX_AUTH_JWT_SECRET" }}
+
+totp:
+  disable: false
+  issuer: qcrbox
+
+# Users and groups live in LLDAP; manage them at https://users.<domain>.
+# Authelia binds as the LLDAP admin for simplicity. The least-privilege
+# refinement is a dedicated bind user in the lldap_password_manager group.
+authentication_backend:
+  refresh_interval: 5m
+  ldap:
+    implementation: lldap
+    address: 'ldap://qcrbox-lldap:3890'
+    base_dn: 'dc=qcrbox,dc=internal'
+    user: 'uid=admin,ou=people,dc=qcrbox,dc=internal'
+    password: {{ env "QCRBOX_AUTH_LDAP_PASSWORD" }}
+
+access_control:
+  default_policy: deny
+  rules:
+    # Rules are evaluated first-match-wins, so the bypass rule must come first.
+    - domain: 'api.registry.{{ env "QCRBOX_DOMAIN" }}'
+      resources:
+        - '^/api/healthz$'
+      policy: bypass
+    - domain: 'api.registry.{{ env "QCRBOX_DOMAIN" }}'
+      policy: one_factor
+    # GUI applications expose full desktop sessions (shell-equivalent access);
+    # consider switching to two_factor once users have enrolled TOTP.
+    - domain: '*.gui.{{ env "QCRBOX_DOMAIN" }}'
+      policy: one_factor
+    # Administrative UIs: only members of the LLDAP admin group
+    - domain: 'traefik.{{ env "QCRBOX_DOMAIN" }}'
+      policy: one_factor
+      subject: 'group:lldap_admin'
+    - domain: 'users.{{ env "QCRBOX_DOMAIN" }}'
+      policy: one_factor
+      subject: 'group:lldap_admin'
+    # The web frontend (QCrBoxFrontend) is served on the root domain. Django
+    # consumes the Remote-User header for single sign-on.
+    - domain: '{{ env "QCRBOX_DOMAIN" }}'
+      policy: one_factor
+
+session:
+  secret: {{ env "QCRBOX_AUTH_SESSION_SECRET" }}
+  cookies:
+    - name: qcrbox_session
+      domain: {{ env "QCRBOX_DOMAIN" }}
+      authelia_url: 'https://auth.{{ env "QCRBOX_DOMAIN" }}'
+      same_site: lax
+      expiration: 1h
+      inactivity: 15m
+  remember_me: 1M
+
+regulation:
+  max_retries: 5
+  find_time: 2m
+  ban_time: 5m
+
+storage:
+  encryption_key: {{ env "QCRBOX_AUTH_STORAGE_ENCRYPTION_KEY" }}
+  local:
+    path: /config/db.sqlite3
+
+notifier:
+  disable_startup_check: false
+  filesystem:
+    filename: /config/notification.txt

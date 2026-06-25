@@ -7,6 +7,7 @@ SHELL ["/bin/bash", "-c"]
 
 #ARG WINE_BRANCH=staging
 ARG WINE_BRANCH=stable
+ARG WINE_VERSION=11.0.0.0~trixie-1
 #ARG MONO_VERSION=9.0.0
 ARG MONO_VERSION=10.3.0
 #ARG GECKO_VERSION=2.47.4
@@ -18,7 +19,7 @@ RUN dpkg --add-architecture i386 && \
     curl -o /etc/apt/keyrings/winehq-archive.key https://dl.winehq.org/wine-builds/winehq.key && \
     curl -O --output-dir /etc/apt/sources.list.d/ https://dl.winehq.org/wine-builds/debian/dists/trixie/winehq-trixie.sources && \
     apt-get update -y && \
-    apt-get install -y --install-recommends winehq-${WINE_BRANCH} wine-${WINE_BRANCH} && \
+    apt-get install -y --install-recommends "winehq-${WINE_BRANCH}=${WINE_VERSION}" "wine-${WINE_BRANCH}=${WINE_VERSION}" && \
     rm -rf /var/lib/apt/lists && \
     true
 
@@ -55,17 +56,40 @@ RUN mkdir -p \
     chown ${QCRBOX_USER}:${QCRBOX_USER} \
         ${QCRBOX_WINE_INSTALLATIONS_DIR} \
         ${WINEPREFIX_WIN32} \
-        ${WINEPREFIX_WIN64} #&& \
-    #chmod 777 ${APP_HOME}
+        ${WINEPREFIX_WIN64}
 
-
-# Install fonts and enable font smoothing
+# Win32 prefix: straightforward with dual-arch wine (works because i386 is present)
 RUN export WINEARCH="win32" && \
     export WINEPREFIX="${QCRBOX_WINE_INSTALLATIONS_DIR}/wine_win32" && \
     gosu ${QCRBOX_USER} bash -c 'winetricks corefonts && winetricks fontsmooth=rgb'
-RUN export WINEARCH="win64" && \
+
+# Win64 prefix: with i386 installed wine defaults to win32 even when WINEARCH=win64.
+# Fix: temporarily remove i386 so wine enters "new WoW64 mode" and creates a real win64
+# prefix. winetricks corefonts fails in that mode because it calls syswow64/regedit.exe
+# which doesn't exist without i386. Work around by:
+#   1. Running wineboot --init to create the win64 prefix structure
+#   2. Copying fonts from the already-initialised win32 prefix (avoids re-downloading)
+#   3. Using 64-bit `wine reg` (system32, not syswow64) to register them + set fontsmooth
+#   4. Reinstalling i386 so the win32 prefix works at runtime
+RUN dpkg --remove --force-depends "wine-stable-i386:i386" && \
+    export WINEARCH="win64" && \
     export WINEPREFIX="${QCRBOX_WINE_INSTALLATIONS_DIR}/wine_win64" && \
-    gosu ${QCRBOX_USER} bash -c 'winetricks corefonts && winetricks fontsmooth=rgb'
+    gosu ${QCRBOX_USER} bash -c 'wineboot --init' && \
+    cp "${QCRBOX_WINE_INSTALLATIONS_DIR}/wine_win32/drive_c/windows/Fonts/"*.ttf \
+       "${QCRBOX_WINE_INSTALLATIONS_DIR}/wine_win64/drive_c/windows/Fonts/" && \
+    gosu ${QCRBOX_USER} bash -c '\
+        for f in "${WINEPREFIX}/drive_c/windows/Fonts/"*.ttf; do \
+            name="$(basename "${f%.ttf}")"; \
+            wine reg add "HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Fonts" \
+                /v "${name} (TrueType)" /d "$(basename "$f")" /f 2>/dev/null || true; \
+        done && \
+        wine reg add "HKCU\\Control Panel\\Desktop" /v FontSmoothing /t REG_SZ /d 2 /f && \
+        wine reg add "HKCU\\Control Panel\\Desktop" /v FontSmoothingType /t REG_DWORD /d 2 /f && \
+        wine reg add "HKCU\\Control Panel\\Desktop" /v FontSmoothingGamma /t REG_DWORD /d 0x578 /f \
+    ' && \
+    apt-get update -y && \
+    apt-get install -y --install-recommends "wine-stable-i386=${WINE_VERSION}" && \
+    rm -rf /var/lib/apt/lists
 
 # Create device Y: pointing to the shared files directory
 ARG QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH

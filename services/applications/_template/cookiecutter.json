@@ -9,5 +9,6 @@
   "application_version": "x.y.z",
   "description": "Brief description of the application.",
   "url": "",
-  "email": ""
+  "email": "",
+  "requires_private_installer": ["no", "yes"]
 }
