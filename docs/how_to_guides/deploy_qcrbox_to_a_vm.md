@@ -53,8 +53,7 @@ sudo bash provision_qcrbox.sh --domain qcrbox.example.org \
   All images must come from the same release: the registry silently ignores
   applications whose `pyqcrbox` version differs from its own.
 - **GHCR access**: images are published as *internal* (organisation-only).
-  Create a GitHub Personal Access Token (PAT) with `read:packages` scope and
-  pass it via `--ghcr-user <github-username> --ghcr-token <PAT>` — see
+  Create a GitHub Personal Access Token (PAT) with `read:packages` scope — see
   [GHCR authentication](#ghcr-authentication) below.
 - **VM**: Ubuntu 24.04, ≥4 vCPU, 8 GB RAM, ≥60 GB disk; a public/floating IP;
   SSH key access as a sudo-capable user (cloud images: `ubuntu`); internet
@@ -91,12 +90,13 @@ bash scripts/deployment/deploy_qcrbox_ssh.sh \
 ```
 
 Both scripts pick up `GHCR_USER` and `GHCR_TOKEN` from the environment
-automatically; `--ghcr-user` / `--ghcr-token` flags are also accepted if you
-prefer to pass them explicitly (e.g. from a secrets manager or CI).
+automatically; `--ghcr-user` / `--ghcr-token` flags are also accepted for CI or
+secrets-manager use.
 
-The token is forwarded over the encrypted SSH channel to `provision_qcrbox.sh`,
-which runs `docker login ghcr.io` on the VM before pulling images. It is never
-written to disk on either machine.
+The deploy script forwards the credentials to the VM by writing them to a
+root-only file in `/run` (tmpfs — RAM only, never touches persistent disk),
+sourcing it inside `provision_qcrbox.sh`, then deleting it immediately. The
+token never appears in a process argument list on either machine.
 
 If you are running `provision_qcrbox.sh` directly on the VM (without the SSH
 wrapper), set the environment variables there in the same way before calling the
