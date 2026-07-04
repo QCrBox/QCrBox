@@ -10,6 +10,7 @@ from pyqcrbox.msg_specs.msg_types.client_side.stop_calculation import StoppedCal
 from pyqcrbox.sql_models.application_spec import ApplicationSpecWithCommandsResponse
 from pyqcrbox.sql_models.calculation import CalculationResponse
 from pyqcrbox.sql_models.command_spec import CommandSpecWithParametersResponse
+from pyqcrbox.sql_models.container_instance import ContainerInstanceResponse
 from pyqcrbox.sql_models.interactive_session_info import InteractiveSessionInfoResponse
 
 T = TypeVar("T")
@@ -113,6 +114,19 @@ class ApplicationsResponse(BaseModel):
     """
 
     applications: list[ApplicationSpecWithCommandsResponse]
+
+
+class ContainerInstancesResponse(BaseModel):
+    """Response model for a list of container instances.
+
+    Attributes
+    ----------
+    container_instances : list[ContainerInstanceResponse]
+        A list of container instances (live application containers).
+
+    """
+
+    container_instances: list[ContainerInstanceResponse]
 
 
 class CalculationsResponse(BaseModel):
@@ -306,3 +320,7 @@ class QCrBoxErrorResponse(BaseModel):
 INTERNAL_SERVER_ERROR = ResponseSpec(QCrBoxErrorResponse, generate_examples=False, description="Internal server error")
 BAD_REQUEST_ERROR = ResponseSpec(QCrBoxErrorResponse, generate_examples=False, description="Bad request syntax")
 NOT_FOUND_ERROR = ResponseSpec(QCrBoxErrorResponse, generate_examples=False, description="Object not found")
+CONFLICT_ERROR = ResponseSpec(QCrBoxErrorResponse, generate_examples=False, description="Conflicting request")
+SERVICE_UNAVAILABLE_ERROR = ResponseSpec(
+    QCrBoxErrorResponse, generate_examples=False, description="No running container available"
+)

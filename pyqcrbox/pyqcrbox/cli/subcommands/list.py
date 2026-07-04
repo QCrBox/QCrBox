@@ -6,12 +6,10 @@ from collections.abc import Iterable
 import click
 import requests
 from dateutil.parser import parse as parse_date
-from loguru import logger
 from tabulate import tabulate
 
 from pyqcrbox import settings
 
-from ...helpers import get_qcrbox_registry_api_connection_url
 from ..helpers import DockerProject, NaturalOrderGroup
 
 
@@ -29,17 +27,6 @@ def pretty_print_timestamp(colname):
         return row_dict
 
     return pretty_print_timestamp_impl
-
-
-def update_status_of_containers():
-    logger.debug("Requesting status update of containers in the registry database.")
-    qcrbox_api_base_url = get_qcrbox_registry_api_connection_url()
-    try:
-        r = requests.post(qcrbox_api_base_url + "/containers/status_update")
-        return r
-    except requests.exceptions.ConnectionError:
-        click.echo(f"Error: could not connect to QCrBox registry at {qcrbox_api_base_url}")
-        sys.exit(1)
 
 
 @click.group(name="list", cls=NaturalOrderGroup)
@@ -163,6 +150,36 @@ def list_commands(
     ]
     for row in data:
         row["parameters"] = list(row["parameters"].keys())
+    click.echo(tabulate(data, headers="keys", tablefmt="simple"))
+
+
+@list_qcrbox_resources.command(name="containers")
+@click.option(
+    "--slug",
+    default=None,
+    help="Filter container instances by application slug (must match exactly)",
+)
+@click.option(
+    "--version",
+    default=None,
+    help="Filter container instances by application version (must match exactly)",
+)
+def list_containers(slug: str | None, version: str | None):
+    """List tracked container instances (live application containers)."""
+    r = run_request_against_registry_api("/container-instances", params={"slug": slug, "version": version})
+    assert r.status_code == 200, "Error retrieving container instances from server"
+    cols_to_print = (
+        "id",
+        "client_id",
+        "application_slug",
+        "application_version",
+        "status",
+        "last_seen",
+    )
+    data = [
+        pretty_print_timestamp("last_seen")(extract_columns(cols_to_print)(row))
+        for row in r.json()["payload"]["container_instances"]
+    ]
     click.echo(tabulate(data, headers="keys", tablefmt="simple"))
 
 

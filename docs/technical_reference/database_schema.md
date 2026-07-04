@@ -70,9 +70,9 @@ However, there are a few other places where the NATS data manager is used:
   updates the calculation status in the NATS key-value store. It uses the same NATS broker (from faststream) to
   interface with the key-value store.
 
-## In-memory SQLite database
+## SQLite database
 
-In addition to NATS, there is an in-memory SQLite database which is used to store the same data as the NATS data
+In addition to NATS, there is a SQLite database which is used to store the same data as the NATS data
 manager, other than a table of calculations.
 
 | Table                    | Description                                                                                                                            |
@@ -81,10 +81,23 @@ manager, other than a table of calculations.
 | calculation              | Contains metadata to link a calculation to a command and an application. Includes a relationship to the calculation_staus_event table. |
 | command                  | Command specifications, can be linked back to an application.                                                                          |
 | calculation_status_event | Used to track changes in status for a calculation, including the status and timestamp.                                                 |
+| container_instance       | One row per live application container, kept up to date via client heartbeats (see below).                                             |
+
+The `container_instance` table stores, per live application container: the client id, the container's NATS private
+inbox (unique), a foreign key to the application, the status (`idle`/`busy`/`gone`), `registered_at`/`last_seen`
+timestamps, and a reserved `owner_user_id` column for future per-user container binding. Rows are created when a
+container self-registers, refreshed by client heartbeats, deleted on graceful client shutdown, and marked `gone` by
+the registry's stale-instance sweeper when heartbeats stop arriving.
 
 ### Code implementation
 
 The SQL database is implemented using SQLAlchemy and SQLModel. The models are defined in `pyqcrbox.sql_models` and are
-used to create the tables in the SQLite database using SQLModel, which uses Pydanatic for data validation. This database
-is in-memory and is constructed and populated each time the registry is started. However, it does appear that there is
-code in place to persist the database to disk.
+used to create the tables in the SQLite database using SQLModel, which uses Pydanatic for data validation. By default
+(and in tests) the database is in-memory; in the Docker deployments it is file-backed on the `qcrbox-registry-db`
+volume (via the `QCRBOX__DB__URL` environment variable), so that application specs registered via `qcb register` /
+`POST /api/applications` survive registry restarts.
+
+!!! warning "No schema migrations"
+    Tables are created via `metadata.create_all` only — there is no migration tooling (e.g. Alembic). Adding a new
+    table is safe, but changing columns of an existing table requires wiping the `qcrbox-registry-db` Docker volume
+    (`docker volume rm qcrbox_qcrbox-registry-db`) or introducing migrations.

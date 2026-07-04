@@ -8,12 +8,24 @@ from uuid import uuid4
 
 from pyqcrbox.logging import logger
 
-__all__ = ["generate_correlation_id", "generate_data_file_id", "generate_dataset_id", "generate_private_routing_key"]
+__all__ = [
+    "generate_client_id",
+    "generate_correlation_id",
+    "generate_data_file_id",
+    "generate_dataset_id",
+    "generate_private_routing_key",
+]
 
 
 def generate_private_routing_key() -> str:
     result = create_unique_id(prefix="qcrbox_rk_")
     logger.debug(f"Generated private routing key: {result}")
+    return result
+
+
+def generate_client_id() -> str:
+    result = create_unique_id(prefix="qcrbox_client_")
+    logger.debug(f"Generated client id: {result}")
     return result
 
 

@@ -100,6 +100,30 @@ $ qcb up --all
     without manual intervention.
 
 
+## Registering application specs
+
+Application specs are registered with the QCrBox registry automatically: `qcb up` pushes the
+`config_*.yaml` spec of each started application component once the registry is healthy, and
+application containers also (re-)register themselves on startup. You can also register specs
+manually — for example to make an application known to the registry before (or without) starting
+its container:
+```
+$ qcb register olex2
+$ qcb register services/applications/olex2_linux/config_olex2.yaml
+```
+Registration is idempotent; re-registering an existing application (same slug and version) updates
+its commands if they changed.
+
+## Listing running application containers
+
+Every running application container is tracked by the registry as a *container instance*
+(kept up to date via heartbeats). To list them:
+```
+$ qcb list containers
+```
+Instances whose heartbeats stop arriving (e.g. after `docker kill`) are marked as `gone` after a
+short timeout.
+
 ## Shutting down containers
 
 Run the following command to shut down all running QCrBox containers:

@@ -219,7 +219,7 @@ services:
         condition: service_healthy
     environment:
       QCRBOX__NATS__HOST: "qcrbox-nats"
-      #QCRBOX__DB__URL: "sqlite:///${QCRBOX_REGISTRY_DB_DIR}/db.sqlite"
+      QCRBOX__DB__URL: "sqlite:///${QCRBOX_REGISTRY_DB_DIR}/db.sqlite"
     networks:
       - qcrbox-net
     restart: "unless-stopped"

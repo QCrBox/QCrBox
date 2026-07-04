@@ -1,6 +1,4 @@
 import multiprocessing
-import tkinter
-import tkinter.messagebox
 
 
 class CommandFailure(Exception):
@@ -39,6 +37,11 @@ def error_dialog_box(message: str) -> multiprocessing.Process:
     """
 
     def _error_box():
+        # Imported lazily so that merely importing this module does not
+        # require tkinter (which is only available inside the app containers).
+        import tkinter
+        import tkinter.messagebox
+
         window = tkinter.Tk()
         window.withdraw()
         tkinter.messagebox.showinfo("Error!", message)

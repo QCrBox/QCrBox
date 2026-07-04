@@ -20,7 +20,7 @@ from pyqcrbox import settings
 from pyqcrbox.data_management import DataManager, DatasetNotFoundError
 from pyqcrbox.registry.server.api import api_schema as schema
 from pyqcrbox.registry.shared.qcrbox_response import QCrBoxResponse
-from pyqcrbox.sql_models import CalculationStatusEnum, CommandInvocationCreate
+from pyqcrbox.sql_models import ApplicationSpec, CalculationStatusEnum, CommandInvocationCreate
 
 from . import api_helpers
 
@@ -29,6 +29,16 @@ __all__ = ["api_router"]
 
 class QCrBoxAPIException(HTTPException):
     pass
+
+
+def _ensure_live_container_exists(application_slug: str, application_version: str) -> None:
+    """Fail fast (404/503) if a command cannot be dispatched for lack of a live container."""
+    try:
+        api_helpers.ensure_live_container_exists(application_slug, application_version)
+    except api_helpers.ApplicationNotFoundError as exc:
+        raise QCrBoxAPIException(detail=str(exc), status_code=404) from exc
+    except api_helpers.NoLiveContainerError as exc:
+        raise QCrBoxAPIException(detail=str(exc), status_code=503) from exc
 
 
 # Admin ----------------------------------------------------------------------------------------------------------------
@@ -81,6 +91,70 @@ async def list_applications() -> schema.QCrBoxResponse[schema.ApplicationsRespon
             "message": f"Retrieved {len(applications)} applications.",
             "payload": {
                 "applications": applications,
+            },
+        },
+        status_code=200,
+    )
+
+
+@post(
+    path="/applications",
+    media_type=MediaType.JSON,
+    summary="Register an application",
+    tags=["applications"],
+    operation_id="register_application",
+    responses={400: schema.BAD_REQUEST_ERROR, 409: schema.CONFLICT_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
+)
+async def register_application(
+    data: Annotated[ApplicationSpec, Body()],
+) -> schema.QCrBoxResponse[schema.ApplicationsResponse]:
+    """Register an application spec without requiring a running container.
+
+    Registration is idempotent: re-registering an existing application
+    (same slug and version) updates its commands if they changed.
+    """
+    try:
+        application = api_helpers.register_application_spec(data)
+    except api_helpers.PyQCrBoxVersionMismatchError as exc:
+        raise QCrBoxAPIException(detail=str(exc), status_code=409) from exc
+
+    return QCrBoxResponse(
+        content={
+            "status": "success",
+            "message": f"Registered application {data.slug!r} (version {data.version!r})",
+            "payload": {
+                "applications": [application],
+            },
+        },
+        status_code=201,
+    )
+
+
+# Container instances --------------------------------------------------------------------------------------------------
+
+
+@get(
+    path="/container-instances",
+    media_type=MediaType.JSON,
+    summary="List container instances",
+    tags=["container-instances"],
+    operation_id="list_container_instances",
+    responses={400: schema.BAD_REQUEST_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
+)
+async def list_container_instances(
+    slug: str | None = Parameter(default=None, query="slug", required=False),
+    version: str | None = Parameter(default=None, query="version", required=False),
+) -> schema.QCrBoxResponse[schema.ContainerInstancesResponse]:
+    """Retrieve the tracked container instances (live application containers)."""
+    container_instances = api_helpers.retrieve_container_instances(
+        application_slug=slug, application_version=version
+    )
+    return QCrBoxResponse(
+        content={
+            "status": "success",
+            "message": f"Retrieved {len(container_instances)} container instances.",
+            "payload": {
+                "container_instances": container_instances,
             },
         },
         status_code=200,
@@ -242,13 +316,19 @@ async def get_command_by_id(id: int) -> schema.QCrBoxResponse[schema.CommandsRes
     summary="Invoke a command with arguments",
     tags=["commands"],
     operation_id="invoke_command",
-    responses={400: schema.BAD_REQUEST_ERROR, 404: schema.NOT_FOUND_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
+    responses={
+        400: schema.BAD_REQUEST_ERROR,
+        404: schema.NOT_FOUND_ERROR,
+        500: schema.INTERNAL_SERVER_ERROR,
+        503: schema.SERVICE_UNAVAILABLE_ERROR,
+    },
 )
 async def invoke_command(
     data: Annotated[schema.InvokeCommandParameters, Body()],
     nats_broker: NatsBroker,
 ) -> schema.QCrBoxResponse[schema.InvokeCommandResponse]:
     """Create an interactive session with the provided arguments."""
+    _ensure_live_container_exists(data.application_slug, data.application_version)
     command_spec = CommandInvocationCreate(
         application_slug=data.application_slug,
         application_version=data.application_version,
@@ -621,12 +701,18 @@ async def get_interactive_session_by_id(
     summary="Create interactive session",
     tags=["interactive-sessions"],
     operation_id="create_interactive_session",
-    responses={400: schema.BAD_REQUEST_ERROR, 404: schema.NOT_FOUND_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
+    responses={
+        400: schema.BAD_REQUEST_ERROR,
+        404: schema.NOT_FOUND_ERROR,
+        500: schema.INTERNAL_SERVER_ERROR,
+        503: schema.SERVICE_UNAVAILABLE_ERROR,
+    },
 )
 async def create_interactive_session_with_arguments(
     data: Annotated[schema.CreateInteractiveSessionParameters, Body()], nats_broker: NatsBroker
 ) -> schema.QCrBoxResponse[schema.InteractiveSessionIDResponse]:
     """Create an interactive session with the provided arguments arguments."""
+    _ensure_live_container_exists(data.application_slug, data.application_version)
     command_spec = CommandInvocationCreate(
         application_slug=data.application_slug,
         application_version=data.application_version,
@@ -752,6 +838,9 @@ api_router = Router(
         openapi_schema,
         # Applications
         list_applications,
+        register_application,
+        # Container instances
+        list_container_instances,
         # Calculations
         list_calculations,
         get_calculation_by_id,

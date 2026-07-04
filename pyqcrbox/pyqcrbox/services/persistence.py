@@ -1,7 +1,12 @@
 from abc import ABCMeta, abstractmethod
+from datetime import datetime
 from typing import TYPE_CHECKING
 
-from pyqcrbox.sql_models import ApplicationSpecDB
+from sqlmodel import select
+
+from pyqcrbox.logging import logger
+from pyqcrbox.settings import settings
+from pyqcrbox.sql_models import ApplicationSpecDB, ContainerInstanceDB, ContainerInstanceStatusEnum
 
 if TYPE_CHECKING:
     from pyqcrbox.sql_models import ApplicationSpec
@@ -9,12 +14,16 @@ if TYPE_CHECKING:
 
 class BasePersistenceAdapter(metaclass=ABCMeta):
     @abstractmethod
-    async def save_application_spec(self, application_spec: "ApplicationSpec") -> None:
+    async def save_application_spec(
+        self, application_spec: "ApplicationSpec", private_routing_key: str | None = None
+    ) -> ApplicationSpecDB | None:
         pass
 
 
 class NatsPersistenceAdapter(BasePersistenceAdapter):
-    async def save_application_spec(self, application_spec: "ApplicationSpec") -> None:
+    async def save_application_spec(
+        self, application_spec: "ApplicationSpec", private_routing_key: str | None = None
+    ) -> ApplicationSpecDB | None:
         # kv_applications = await get_nats_key_value(bucket="applications")
         # nats_key = application_spec.nats_key
         # try:
@@ -34,6 +43,133 @@ class NatsPersistenceAdapter(BasePersistenceAdapter):
 
 
 class SQLitePersistenceAdapter(BasePersistenceAdapter):
-    async def save_application_spec(self, application_spec: "ApplicationSpec") -> None:
-        application_spec_db = ApplicationSpecDB.from_pydantic_model(application_spec)
-        application_spec_db.save_to_db()
+    async def save_application_spec(
+        self, application_spec: "ApplicationSpec", private_routing_key: str | None = None
+    ) -> ApplicationSpecDB:
+        application_spec_db = ApplicationSpecDB.from_pydantic_model(
+            application_spec, private_routing_key=private_routing_key
+        )
+        return application_spec_db.save_to_db()
+
+    async def save_container_instance(
+        self,
+        application_id: int,
+        client_id: str,
+        private_inbox: str,
+        pyqcrbox_version: str,
+    ) -> ContainerInstanceDB:
+        """Insert (or refresh) the container instance identified by `private_inbox`."""
+        with settings.db.get_session() as session:
+            instance = session.exec(
+                select(ContainerInstanceDB).where(ContainerInstanceDB.private_inbox == private_inbox)
+            ).first()
+            if instance is None:
+                instance = ContainerInstanceDB(
+                    client_id=client_id,
+                    private_inbox=private_inbox,
+                    application_id=application_id,
+                    pyqcrbox_version=pyqcrbox_version,
+                )
+            else:
+                instance.client_id = client_id
+                instance.application_id = application_id
+                instance.pyqcrbox_version = pyqcrbox_version
+                instance.status = ContainerInstanceStatusEnum.IDLE
+            instance.last_seen = datetime.now()
+            session.add(instance)
+            session.commit()
+            session.refresh(instance)
+            return instance
+
+    async def upsert_instance_from_heartbeat(
+        self,
+        client_id: str,
+        private_inbox: str,
+        application_slug: str,
+        application_version: str,
+        status: str,
+        pyqcrbox_version: str,
+    ) -> ContainerInstanceDB | None:
+        """Refresh `last_seen`/`status` for a heartbeating client.
+
+        Recreates the instance row if it is missing (e.g. after a registry
+        restart) and the application can be resolved by slug/version.
+        Returns None if the row is missing and the application is unknown.
+        """
+        with settings.db.get_session() as session:
+            instance = session.exec(
+                select(ContainerInstanceDB).where(ContainerInstanceDB.private_inbox == private_inbox)
+            ).first()
+            if instance is None:
+                application = session.exec(
+                    select(ApplicationSpecDB).where(
+                        ApplicationSpecDB.slug == application_slug,
+                        ApplicationSpecDB.version == application_version,
+                    )
+                ).first()
+                if application is None:
+                    return None
+                instance = ContainerInstanceDB(
+                    client_id=client_id,
+                    private_inbox=private_inbox,
+                    application_id=application.id,
+                    pyqcrbox_version=pyqcrbox_version,
+                )
+            instance.status = ContainerInstanceStatusEnum(status)
+            instance.last_seen = datetime.now()
+            session.add(instance)
+            session.commit()
+            session.refresh(instance)
+            return instance
+
+    async def update_instance_status(self, private_inbox: str, status: ContainerInstanceStatusEnum) -> None:
+        with settings.db.get_session() as session:
+            instance = session.exec(
+                select(ContainerInstanceDB).where(ContainerInstanceDB.private_inbox == private_inbox)
+            ).first()
+            if instance is None:
+                logger.warning(f"Cannot update status of unknown container instance: {private_inbox!r}")
+                return
+            instance.status = status
+            session.add(instance)
+            session.commit()
+
+    async def delete_instance(self, private_inbox: str) -> bool:
+        with settings.db.get_session() as session:
+            instance = session.exec(
+                select(ContainerInstanceDB).where(ContainerInstanceDB.private_inbox == private_inbox)
+            ).first()
+            if instance is None:
+                return False
+            session.delete(instance)
+            session.commit()
+            return True
+
+    async def mark_stale_instances_gone(self, cutoff: datetime) -> int:
+        """Mark instances whose last heartbeat is older than `cutoff` as GONE."""
+        with settings.db.get_session() as session:
+            stale_instances = session.exec(
+                select(ContainerInstanceDB).where(
+                    ContainerInstanceDB.last_seen < cutoff,
+                    ContainerInstanceDB.status != ContainerInstanceStatusEnum.GONE,
+                )
+            ).all()
+            for instance in stale_instances:
+                logger.info(
+                    f"Marking container instance as gone (no heartbeat since {instance.last_seen}): "
+                    f"client_id={instance.client_id!r}, private_inbox={instance.private_inbox!r}"
+                )
+                instance.status = ContainerInstanceStatusEnum.GONE
+                session.add(instance)
+            session.commit()
+            return len(stale_instances)
+
+    async def count_live_instances(self, application_id: int) -> int:
+        with settings.db.get_session() as session:
+            instances = session.exec(
+                select(ContainerInstanceDB).where(
+                    ContainerInstanceDB.application_id == application_id,
+                    ContainerInstanceDB.status != ContainerInstanceStatusEnum.GONE,
+                )
+            ).all()
+            return len(instances)

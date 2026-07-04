@@ -1,14 +1,18 @@
 import argparse
+import asyncio
+import contextlib
 import os
 import shutil
 from pathlib import Path
 
 import anyio
+import nats.errors
+import stamina
 from litestar import Litestar
 
 from pyqcrbox import helpers, logger, msg_specs, settings, sql_models
 from pyqcrbox.debug import log_eel
-from pyqcrbox.helpers import generate_private_routing_key
+from pyqcrbox.helpers import generate_client_id, generate_private_routing_key
 from pyqcrbox.registry.client.executable_command.base_calculation import BaseCalculation
 from pyqcrbox.registry.client.executable_command.base_command import BaseCommand
 from pyqcrbox.registry.client.executable_command.cli_command import CLICommand
@@ -35,16 +39,17 @@ class QCrBoxClient(QCrBoxServerClientBase):
         self,
         application_spec: sql_models.ApplicationSpec,
         *,
-        client_id: str = "anonymous_client",
+        client_id: str | None = None,
         private_routing_key: str | None = None,
         asgi_server: Litestar | None = None,
     ):
         super().__init__(asgi_server=asgi_server)
         self.application_spec = application_spec
-        self.client_id = client_id
+        self.client_id = client_id or os.environ.get("QCRBOX_CLIENT_ID") or generate_client_id()
         self.private_routing_key = private_routing_key or generate_private_routing_key()
         self._calculations: list[BaseCalculation] = []
-        self.status = ClientStatus(client_id, ClientStatusEnum.IDLE)
+        self.status = ClientStatus(self.client_id, ClientStatusEnum.IDLE)
+        self._heartbeat_task: asyncio.Task | None = None
 
         self._anyio_lock = anyio.Lock()
         self._cmd_work_dir = self.working_dir
@@ -96,17 +101,75 @@ class QCrBoxClient(QCrBoxServerClientBase):
             payload=msg_specs.PayloadForRegisterApplication(
                 application_spec=self.application_spec,
                 private_routing_key=self.private_routing_key,
+                client_id=self.client_id,
+                private_inbox=self.private_inbox,
             ),
         )
 
         try:
-            resp = await self.nats_broker.publish(
-                msg, "register-application", rpc=True, rpc_timeout=settings.nats.rpc_timeout, raise_timeout=True
-            )
+            # Retry for a while: the registry may be starting up or restarting,
+            # in which case its NATS subscriber is temporarily unavailable.
+            async for attempt in stamina.retry_context(
+                on=(TimeoutError, nats.errors.NoRespondersError), timeout=60.0, attempts=None
+            ):
+                with attempt:
+                    resp = await self.nats_broker.publish(
+                        msg, "register-application", rpc=True, rpc_timeout=settings.nats.rpc_timeout, raise_timeout=True
+                    )
             logger.debug(f"Received response to registration request: {resp=}")
-        except TimeoutError:
+        except (TimeoutError, nats.errors.NoRespondersError):
             logger.error("Application registration failed (no response from server)")
             self.shutdown()
+
+    @on_qcrbox_startup
+    async def _start_heartbeat_task(self) -> None:
+        """Start the periodic heartbeat announcing this client's liveness and status."""
+        self._heartbeat_task = asyncio.create_task(self._heartbeat_loop())
+
+    async def _heartbeat_loop(self) -> None:
+        heartbeat_interval = settings.registry.client.heartbeat_interval
+        while True:
+            try:
+                await self._publish_heartbeat()
+            except Exception as exc:
+                logger.warning(f"Failed to publish client heartbeat: {exc}")
+            await asyncio.sleep(heartbeat_interval)
+
+    async def _publish_heartbeat(self) -> None:
+        is_occupied = self.status.status in (ClientStatusEnum.PENDING, ClientStatusEnum.BUSY)
+        reported_status = "busy" if is_occupied else "idle"
+        msg = msg_specs.ClientHeartbeat(
+            action="client_heartbeat",
+            payload=msg_specs.PayloadForClientHeartbeat(
+                client_id=self.client_id,
+                private_inbox=self.private_inbox,
+                application_slug=self.application_spec.slug,
+                application_version=self.application_spec.version,
+                status=reported_status,
+                pyqcrbox_version=self.application_spec.pyqcrbox_version,
+            ),
+        )
+        await self.nats_broker.publish(msg, "client-heartbeat")
+
+    async def _run_pre_broker_close_tasks(self) -> None:
+        """Stop the heartbeat and send a best-effort deregistration message."""
+        if self._heartbeat_task is not None:
+            self._heartbeat_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await self._heartbeat_task
+            self._heartbeat_task = None
+
+        msg = msg_specs.DeregisterClient(
+            action="deregister_client",
+            payload=msg_specs.PayloadForDeregisterClient(
+                client_id=self.client_id,
+                private_inbox=self.private_inbox,
+            ),
+        )
+        with contextlib.suppress(Exception):
+            async with asyncio.timeout(1.0):
+                await self.nats_broker.publish(msg, "deregister-client")
+                logger.debug("Sent client deregistration message to server.")
 
     async def _create_calculation_work_dir(self, calculation_id: str) -> None:
         """Create a working directory for the calculation.

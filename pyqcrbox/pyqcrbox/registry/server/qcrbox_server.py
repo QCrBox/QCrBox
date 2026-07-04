@@ -1,3 +1,5 @@
+import asyncio
+from datetime import datetime, timedelta
 from typing import Any
 
 import svcs
@@ -24,7 +26,12 @@ from pyqcrbox.data_management import CalculationAlreadyExistsError, DataManager
 from pyqcrbox.debug import log_eel
 from pyqcrbox.msg_specs.base import QCrBoxGenericResponse
 from pyqcrbox.registry.server.api.api_endpoints import handle_exception
-from pyqcrbox.sql_models import CalculationDB, CalculationStatusDetails, CalculationStatusEnum
+from pyqcrbox.sql_models import (
+    CalculationDB,
+    CalculationStatusDetails,
+    CalculationStatusEnum,
+    ContainerInstanceStatusEnum,
+)
 
 from ..shared import (
     QCrBoxServerClientBase,
@@ -67,6 +74,8 @@ class QCrBoxServer(QCrBoxServerClientBase):
         if not self.nats_broker:
             raise RuntimeError(f"A NATS Broker has not been configured for {self!r}")
         self.nats_broker.subscriber("register-application")(self.handle_application_registration)
+        self.nats_broker.subscriber("client-heartbeat")(self.handle_client_heartbeat)
+        self.nats_broker.subscriber("deregister-client")(self.handle_client_deregistration)
         self.nats_broker.subscriber("server.cmd.handle_command_invocation_by_user")(
             self.handle_command_invocation_by_user
         )
@@ -106,7 +115,26 @@ class QCrBoxServer(QCrBoxServerClientBase):
             )
 
         # await self.nats_persistence_adapter.save_application_spec(msg.payload.application_spec)
-        await self.sqlite_persistence_adapter.save_application_spec(msg.payload.application_spec)
+        application_db = await self.sqlite_persistence_adapter.save_application_spec(
+            msg.payload.application_spec, private_routing_key=msg.payload.private_routing_key
+        )
+
+        if msg.payload.private_inbox is None:
+            logger.warning(
+                f"Client {msg.payload.client_id!r} registered without a private inbox; "
+                "no container instance will be tracked for it."
+            )
+        else:
+            await self.sqlite_persistence_adapter.save_container_instance(
+                application_id=application_db.id,
+                client_id=msg.payload.client_id,
+                private_inbox=msg.payload.private_inbox,
+                pyqcrbox_version=msg.payload.application_spec.pyqcrbox_version,
+            )
+            logger.info(
+                f"Tracking container instance for {msg.payload.application_spec.slug!r}: "
+                f"client_id={msg.payload.client_id!r}, private_inbox={msg.payload.private_inbox!r}"
+            )
 
         return QCrBoxGenericResponse(
             response_to=f"{msg.payload.private_routing_key}",
@@ -114,6 +142,53 @@ class QCrBoxServer(QCrBoxServerClientBase):
             msg=f"Successfully registered {msg.payload.application_spec.slug} {msg.payload.application_spec.version} "
             + f"({msg.payload.private_routing_key})",
         )
+
+    async def handle_client_heartbeat(self, msg: msg_specs.ClientHeartbeat) -> None:
+        """Handle a periodic heartbeat from an application container.
+
+        Refreshes the container instance's `last_seen` timestamp and status.
+        If the instance row is missing (e.g. after a registry restart), it is
+        recreated as long as the application is known.
+        """
+        instance = await self.sqlite_persistence_adapter.upsert_instance_from_heartbeat(
+            client_id=msg.payload.client_id,
+            private_inbox=msg.payload.private_inbox,
+            application_slug=msg.payload.application_slug,
+            application_version=msg.payload.application_version,
+            status=msg.payload.status,
+            pyqcrbox_version=msg.payload.pyqcrbox_version,
+        )
+        if instance is None:
+            logger.warning(
+                f"Received heartbeat from client {msg.payload.client_id!r} for unknown application "
+                f"{msg.payload.application_slug!r} (version {msg.payload.application_version!r}); ignoring."
+            )
+
+    async def handle_client_deregistration(self, msg: msg_specs.DeregisterClient) -> None:
+        """Handle a graceful shutdown notification from an application container."""
+        deleted = await self.sqlite_persistence_adapter.delete_instance(msg.payload.private_inbox)
+        if deleted:
+            logger.info(
+                f"Deregistered container instance: client_id={msg.payload.client_id!r}, "
+                f"reason={msg.payload.reason!r}"
+            )
+        else:
+            logger.warning(f"Received deregistration for unknown container instance: {msg.payload.client_id!r}")
+
+    @on_qcrbox_startup
+    async def _start_instance_sweeper(self) -> None:
+        """Start the periodic sweep marking silent container instances as 'gone'."""
+        self._instance_sweeper_task = asyncio.create_task(self._instance_sweeper_loop())
+
+    async def _instance_sweeper_loop(self) -> None:
+        sweep_interval = settings.registry.server.instance_sweep_interval
+        stale_after = timedelta(seconds=settings.registry.server.instance_stale_after)
+        while True:
+            await asyncio.sleep(sweep_interval)
+            try:
+                await self.sqlite_persistence_adapter.mark_stale_instances_gone(datetime.now() - stale_after)
+            except Exception as exc:
+                logger.warning(f"Instance sweep failed: {exc}")
 
     @log_eel
     async def handle_command_invocation_by_user(self, msg: msg_specs.InvokeCommandNATS) -> QCrBoxGenericResponse:
@@ -188,6 +263,11 @@ class QCrBoxServer(QCrBoxServerClientBase):
         self.calculations[calculation_id].executing_client = ExecutingClientDetails(
             client_id=invocation_response_from_client.client_id,
             private_inbox_prefix=invocation_response_from_client.private_inbox_prefix,
+        )
+        # Reflect the dispatch in the container instance table; the transition
+        # back to 'idle' is picked up from the client's next heartbeat.
+        await self.sqlite_persistence_adapter.update_instance_status(
+            invocation_response_from_client.private_inbox_prefix, ContainerInstanceStatusEnum.BUSY
         )
 
         return command_request_final_status
@@ -396,6 +476,13 @@ class QCrBoxServer(QCrBoxServerClientBase):
         logger.info(f"Initialising database...: {settings.db.url}")
         settings.db.create_db_and_tables(purge_existing_tables=purge_existing_db_tables)
         logger.info("Finished initialising database...")
+
+
+    async def _run_pre_broker_close_tasks(self) -> None:
+        sweeper_task = getattr(self, "_instance_sweeper_task", None)
+        if sweeper_task is not None:
+            sweeper_task.cancel()
+            self._instance_sweeper_task = None
 
 
 class TestQCrBoxServer(TestQCrBoxServerClientBase, QCrBoxServer):  # type: ignore

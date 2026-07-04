@@ -23,7 +23,7 @@ class ApplicationSpecDB(ApplicationSpecBase, SQLModel, table=True):
 
     id: int | None = Field(default=None, primary_key=True)
     registered_at: datetime = Field(default_factory=datetime.now)
-    private_routing_key: str
+    private_routing_key: str | None = None
 
     commands: list[CommandSpecDB] = Relationship(back_populates="application")
 

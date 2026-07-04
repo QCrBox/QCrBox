@@ -97,6 +97,8 @@ class SeverSettings(QCrBoxSettingsBaseModel):
     host: str = "127.0.0.1"
     port: int = 11000
     enable_autoreload: bool = False
+    instance_sweep_interval: float = 10.0  # seconds
+    instance_stale_after: float = 15.0  # seconds without heartbeat before an instance is marked 'gone'
 
     @computed_field  # type: ignore
     @property
@@ -108,6 +110,7 @@ class ClientSettings(QCrBoxSettingsBaseModel):
     host: str = "127.0.0.1"
     port: int = 8002
     keep_calc_work_dir: bool = True
+    heartbeat_interval: float = 5.0  # seconds
 
 
 class RegistrySettings(QCrBoxSettingsBaseModel):

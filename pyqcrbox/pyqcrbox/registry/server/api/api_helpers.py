@@ -12,6 +12,7 @@ from sqlalchemy.orm import joinedload
 from sqlmodel import select
 
 from pyqcrbox import logger, msg_specs, settings, sql_models
+from pyqcrbox._version import __version__ as pyqcrbox_version
 from pyqcrbox.data_management import DataManager, DatasetResponse
 from pyqcrbox.data_management.data_file import DataFileResponse
 from pyqcrbox.sql_models.calculation import CalculationResponse
@@ -23,6 +24,18 @@ class CalculationNotFoundError(Exception):
 
 class CommandNotFoundError(Exception):
     """Exception raised when a command is not found."""
+
+
+class ApplicationNotFoundError(Exception):
+    """Exception raised when an application is not registered."""
+
+
+class NoLiveContainerError(Exception):
+    """Exception raised when an application is registered but has no live container instance."""
+
+
+class PyQCrBoxVersionMismatchError(Exception):
+    """Exception raised when an application spec was built with an incompatible pyqcrbox version."""
 
 
 def _validate_arguments_against_command_parameters(cmd_spec_db: sql_models.CommandSpecDB, arguments: dict) -> None:
@@ -536,14 +549,114 @@ def retrieve_applications() -> list[sql_models.ApplicationSpecWithCommandsRespon
     Returns
     -------
     list[sql_models.ApplicationSpecWithCommandsResponse]
-        A list of application response models with commands.
+        A list of application response models with commands, each annotated
+        with the number of live (non-'gone') container instances.
 
     """
     model_cls = sql_models.ApplicationSpecDB
     with settings.db.get_session() as session:
         applications = session.scalars(select(model_cls)).all()
-        applications_response_models = [app.to_response_model() for app in applications]
+        applications_response_models = []
+        for app in applications:
+            response_model = app.to_response_model()
+            response_model.num_live_instances = _count_live_instances(session, app.id)
+            applications_response_models.append(response_model)
     return applications_response_models
+
+
+def _count_live_instances(session, application_id: int) -> int:
+    instances = session.exec(
+        select(sql_models.ContainerInstanceDB).where(
+            sql_models.ContainerInstanceDB.application_id == application_id,
+            sql_models.ContainerInstanceDB.status != sql_models.ContainerInstanceStatusEnum.GONE,
+        )
+    ).all()
+    return len(instances)
+
+
+def register_application_spec(
+    application_spec: sql_models.ApplicationSpec,
+) -> sql_models.ApplicationSpecWithCommandsResponse:
+    """Register (or idempotently re-register) an application spec via the API.
+
+    This is the REST counterpart to the NATS `register-application` handler,
+    allowing application specs to be registered without a running container.
+
+    Raises
+    ------
+    PyQCrBoxVersionMismatchError
+        If the spec was built with a different pyqcrbox version than the server.
+
+    """
+    if application_spec.pyqcrbox_version != pyqcrbox_version:
+        error_msg = (
+            f"Registration of {application_spec.slug} {application_spec.version} rejected: "
+            f"the spec's pyqcrbox version {application_spec.pyqcrbox_version} != {pyqcrbox_version}"
+        )
+        logger.error(error_msg)
+        raise PyQCrBoxVersionMismatchError(error_msg)
+
+    application_spec_db = sql_models.ApplicationSpecDB.from_pydantic_model(application_spec)
+    saved_application = application_spec_db.save_to_db()
+
+    # Re-fetch within a session: the row returned by `save_to_db` is detached,
+    # so its `commands` relationship cannot be lazy-loaded for the response.
+    with settings.db.get_session() as session:
+        application = session.exec(
+            select(sql_models.ApplicationSpecDB).where(sql_models.ApplicationSpecDB.id == saved_application.id)
+        ).one()
+        return application.to_response_model()
+
+
+def retrieve_container_instances(
+    application_slug: str | None = None, application_version: str | None = None
+) -> list[sql_models.ContainerInstanceResponse]:
+    """Retrieve container instances, optionally filtered by application slug/version."""
+    stmt = (
+        select(sql_models.ContainerInstanceDB, sql_models.ApplicationSpecDB)
+        .join(
+            sql_models.ApplicationSpecDB,
+            sql_models.ContainerInstanceDB.application_id == sql_models.ApplicationSpecDB.id,
+        )
+        .where(
+            application_slug is None or (sql_models.ApplicationSpecDB.slug == application_slug),
+            application_version is None or (sql_models.ApplicationSpecDB.version == application_version),
+        )
+    )
+    with settings.db.get_session() as session:
+        rows = session.exec(stmt).all()
+        return [
+            instance.to_response_model(application_slug=app.slug, application_version=app.version)
+            for (instance, app) in rows
+        ]
+
+
+def ensure_live_container_exists(application_slug: str, application_version: str) -> None:
+    """Fail fast if a command cannot be dispatched for lack of a live container.
+
+    Raises
+    ------
+    ApplicationNotFoundError
+        If no application with the given slug/version is registered.
+    NoLiveContainerError
+        If the application is registered but has no live (non-'gone') container instance.
+
+    """
+    with settings.db.get_session() as session:
+        application = session.exec(
+            select(sql_models.ApplicationSpecDB).where(
+                sql_models.ApplicationSpecDB.slug == application_slug,
+                sql_models.ApplicationSpecDB.version == application_version,
+            )
+        ).first()
+        if application is None:
+            raise ApplicationNotFoundError(
+                f"Application not registered: {application_slug!r} (version {application_version!r})"
+            )
+        if _count_live_instances(session, application.id) == 0:
+            raise NoLiveContainerError(
+                f"No running container for {application_slug!r} (version {application_version!r})"
+            )
 
 
 def retrieve_command_by_id(

@@ -123,6 +123,17 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
         """
         pass
 
+    async def _run_pre_broker_close_tasks(self):  # noqa: B027
+        """Run tasks just before the NATS broker is closed on shutdown.
+
+        Unlike `_run_custom_shutdown_tasks` (which only runs on the internal
+        shutdown-event path), this runs whenever the ASGI lifespan exits, so
+        it is also reached on signal-driven shutdown. The broker is still
+        connected at this point, so derived classes can send final messages
+        (e.g. a client deregistration).
+        """
+        pass
+
     @property
     def private_inbox(self):
         if self._private_inbox is not None:
@@ -164,6 +175,8 @@ class QCrBoxServerClientBase(metaclass=ABCMeta):
                 yield
                 logger.debug("Received control back from ASGI server...")
             finally:
+                with contextlib.suppress(Exception):
+                    await self._run_pre_broker_close_tasks()
                 with contextlib.suppress(KeyError):
                     logger.debug("Closing broker.")
                     await self.nats_broker.close()

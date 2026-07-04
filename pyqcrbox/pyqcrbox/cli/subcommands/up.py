@@ -12,6 +12,7 @@ from ..helpers import (
     run_tasks,
 )
 from .build import populate_build_tasks
+from .register import register_specs_for_components
 
 
 @click.command(name="up", cls=ClickCommandCls)
@@ -98,4 +99,19 @@ def start_up_components(
         }
     )
 
-    run_tasks(build_tasks + [startup_task])
+    tasks = build_tasks + [startup_task]
+
+    if not dry_run:
+        # Best-effort: once the registry is healthy, push the application specs
+        # of the started components so they are listed even before (or without)
+        # their containers self-registering.
+        register_specs_task = doit.task.dict_to_task(
+            {
+                "name": "task_register_application_specs",
+                "actions": [(register_specs_for_components, (docker_project, list(components)))],
+                "task_dep": ["task_start_up_docker_containers"],
+            }
+        )
+        tasks.append(register_specs_task)
+
+    run_tasks(tasks)

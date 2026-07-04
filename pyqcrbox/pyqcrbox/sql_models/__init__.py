@@ -14,4 +14,5 @@ from .command_spec import (
     InteractiveSessionSpec,
     PythonCallableSpec,
 )
+from .container_instance import ContainerInstanceDB, ContainerInstanceResponse, ContainerInstanceStatusEnum
 from .parameter_spec import ParameterSpecDiscriminatedUnion

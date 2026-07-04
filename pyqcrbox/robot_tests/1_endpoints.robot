@@ -38,6 +38,25 @@ Check that registered applications can be requested in the correct format
         Check Application Response Structure    ${application}
     END
 
+Check that container instances can be requested in the correct format
+    [Documentation]    The container-instances API should return the tracked live application containers
+
+    ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /container-instances    200
+    ${payload}=    Check Response Structure And Get Payload    ${response}
+    Check Response Content Has Attributes    ${payload}    container_instances
+    VAR    ${instances}=    ${payload["container_instances"]}
+
+    ${n_instances}=    Get Length    ${instances}
+    Should Be True    ${n_instances} > 0    "No tracked container instances, which is unexpected"
+    FOR    ${instance}    IN    @{instances}
+        Dictionary Should Contain Key    ${instance}    client_id
+        Dictionary Should Contain Key    ${instance}    application_slug
+        Dictionary Should Contain Key    ${instance}    application_version
+        Dictionary Should Contain Key    ${instance}    status
+        Dictionary Should Contain Key    ${instance}    last_seen
+        Should Be True    "${instance['status']}" in ("idle", "busy")    "Unexpected instance status"
+    END
+
 It should be possible to create a dataset by uploading a cif
     [Documentation]    Check that the datasets API will create a dataset
 

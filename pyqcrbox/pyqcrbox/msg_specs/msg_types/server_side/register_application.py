@@ -9,6 +9,8 @@ __all__ = ["PayloadForRegisterApplication", "RegisterApplication"]
 class PayloadForRegisterApplication(QCrBoxBasePayload):
     application_spec: sql_models.ApplicationSpec
     private_routing_key: str
+    client_id: str = "anonymous_client"
+    private_inbox: str | None = None
 
 
 # class PayloadForRegisterApplicationResponse(QCrBoxBasePayload):
