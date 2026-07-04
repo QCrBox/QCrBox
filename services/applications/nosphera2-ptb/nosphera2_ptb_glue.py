@@ -7,8 +7,9 @@ from typing import Tuple
 
 import numpy as np
 from iotbx.cif.model import block, cif
-from qcrboxtools.cif.read import cifdata_str_or_index, read_cif_safe
+from qcrboxtools.cif.read import cifdata_str_or_index, read_cif_safe, read_cif_as_unified
 from qcrboxtools.cif.cif2cif import cif_file_to_specific_by_yml
+from qcrboxtools.cif.file_converter.tsc import read_tsc_file
 
 from itertools import product
 
@@ -188,6 +189,11 @@ def write_xyz(cif_block: block, output_xyz: Path, disorder_groups: tuple[int] | 
     output_xyz.write_text(xyz_content, encoding="UTF-8")
 
 
+def _has_known_value(cif_block: block, key: str) -> bool:
+    """Check whether a scalar CIF entry is present and not the CIF 'unknown' placeholder ('?')."""
+    return key in cif_block and str(cif_block[key]).strip() != "?"
+
+
 def block_to_resolution_info(cif_block: block) -> Tuple[str, ...]:
     """Extract resolution information from a CIF block.
 
@@ -196,7 +202,7 @@ def block_to_resolution_info(cif_block: block) -> Tuple[str, ...]:
     Returns:
         Tuple[str, ...]: Tuple of resolution information strings.
     """
-    if all(key in cif_block for key in (
+    if all(_has_known_value(cif_block, key) for key in (
         "_diffrn_reflns_limit_h_min", "_diffrn_reflns_limit_h_max",
         "_diffrn_reflns_limit_k_min", "_diffrn_reflns_limit_k_max",
         "_diffrn_reflns_limit_l_min", "_diffrn_reflns_limit_l_max"
@@ -210,9 +216,9 @@ def block_to_resolution_info(cif_block: block) -> Tuple[str, ...]:
             str(cif_block["_diffrn_reflns_limit_l_min"]),
             str(cif_block["_diffrn_reflns_limit_l_max"]),
         )
-    elif "_reflns_d_resolution_high" in cif_block:
+    elif _has_known_value(cif_block, "_reflns_d_resolution_high"):
         return ("-dmin", str(cif_block["_reflns_d_resolution_high"]))
-    elif all(key in cif_block for key in ("_diffrn_reflns_theta_max", "_diffrn_radiation_wavelength")):
+    elif all(_has_known_value(cif_block, key) for key in ("_diffrn_reflns_theta_max", "_diffrn_radiation_wavelength")):
         theta_max = float(cif_block["_diffrn_reflns_theta_max"])
         wavelength = float(cif_block["_diffrn_radiation_wavelength"])
         dmin = wavelength / (2 * np.sin(np.radians(theta_max)))
@@ -341,16 +347,18 @@ def generate_group_of_disorder_groups(disorder_groups_str: str) -> tuple[tuple[i
             groups.append(tuple(new_group))
     return tuple(product(*groups))
 
-def generate_tscb(input_cif: str, disorder_groups: str) -> str: #, output_tscb: str) -> str:
-    """Generate a TSCB file from an input CIF file.
+def generate_tscb(input_cif: str, disorder_groups: str, output_cif_name: str) -> str:
+    """Generate a TSCB file from an input CIF file and export the resulting
+    aspherical atomic form factors as a CIF file.
 
     Args:
         input_cif (Path): Path to the input CIF file.
-        output_tscb (Path): Path to the output TSCB file.
+        disorder_groups (str): Disorder group specification, see generate_group_of_disorder_groups.
+        output_cif_name (str): Name of the CIF file to export the atomic form factors to.
     """
     input_cif_path = Path(input_cif)
-    output_tscb = input_cif_path.with_suffix(".tscb")
-    
+    output_cif_path = input_cif_path.parent / output_cif_name
+
     work_folder = Path("./nosphera2_ptb_work").absolute()
     work_folder.mkdir(parents=True, exist_ok=True)
 
@@ -400,7 +408,26 @@ def generate_tscb(input_cif: str, disorder_groups: str) -> str: #, output_tscb: 
 
     if not generated_tscb.exists():
         raise FileNotFoundError("NoSpherA2 did not produce the expected TSCB file.")
-    shutil.move(generated_tscb, output_tscb)
+
+    # Export the aspherical atomic form factors as a CIF file, following the same
+    # _aspheric_ff/_wfn_moiety schema produced by xharpy_gpaw's atom_form_fact_gpaw.
+    tsc_obj = read_tsc_file(generated_tscb)
+    structure_cif_block = read_cif_as_unified(input_cif_path, 0)
+    new_block = tsc_obj.to_cif(
+        structure_cif_block,
+        "PTB density partitioned by NoSpherA2",
+        "hirshfeld",
+        "NoSpherA2",
+    )
+    new_block.add_data_item("_wfns.software", "PTB")
+    new_block.add_data_item("_wfns.type", "semiempirical")
+    new_block.add_data_item("_wfns.method", "PTB")
+
+    new_cif = cif()
+    new_cif["tscblock"] = new_block
+    with open(output_cif_path, "w", encoding="UTF-8") as output_tsc_cif:
+        output_tsc_cif.write(str(new_cif))
+
     # Clean up
     shutil.rmtree(work_folder)
-    return str(output_tscb)
+    return str(output_cif_path)

@@ -1,62 +1,31 @@
 ARG QCRBOX_DOCKER_TAG
 
 
-FROM alpine:3.22 AS build-nosphera2
+FROM debian:trixie AS build-nosphera2
 
 USER root
 
-# Install build dependencies in Alpine (musl-based)
-RUN apk add --no-cache \
-        build-base \
-        cmake \
-        git \
-        gfortran \
-        pkgconfig \
-        curl \
-        ca-certificates \
-        file \
-        patchelf \
-        python3 \
-        ninja \
-        linux-headers \
-        bash \
-        musl-utils \
-        cargo \
-        && rm -rf /var/cache/apk/*
+RUN apt-get update -y && \
+    apt-get install -y --no-install-recommends \
+        git ca-certificates build-essential cmake ninja-build curl && \
+    rm -rf /var/lib/apt/lists/*
 
 SHELL ["/bin/bash", "-c"]
 
-# Required RUSTFLAGS for Rust 1.80 compatibility
-ENV RUSTFLAGS="-A dangerous_implicit_autorefs"
+RUN git clone --recursive https://github.com/AK-Kleemiss/NoSpherA2.git /tmp/NoSpherA2
 
-# Build NoSpherA2 with musl (naturally static)
-RUN git clone --recursive https://github.com/AK-Kleemiss/NoSpherA2.git /tmp/NoSpherA2 && \
-    cd /tmp/NoSpherA2 && \
-    echo "=== Checking build environment ===" && \
-    gcc --version && \
-    echo "=== Checking submodules ===" && \
-    git submodule status && \
-    echo "=== Applying fixes for musl compatibility ===" && \
-    find . -name "makefile*" -exec sed -i 's/-std=c++2b/-std=c++20/g' {} \; && \
-    sed -i 's#\./../BasisSetConverter ../Windows/#./../BasisSetConverter ../Linux/#g' Linux/makefile_basis_set_converter && \
-    echo "=== Modifying makefiles for musl static linking ===" && \
-    sed -i 's/LIBS := -Wl,-Bstatic -lstdc++ -lpthread -Wl,-Bdynamic -lm -lc/LIBS := -static -lstdc++ -lpthread -lm/g' Linux/makefile && \
-    sed -i 's/GCC_OPTS := -std=c++20 -O3 -c -fmessage-length=0 -fopenmp -static -MMD -MP -msse2 -msse3 -msse4.1 -msse4.2 -mavx -ffast-math/GCC_OPTS := -std=c++20 -O3 -c -fmessage-length=0 -fopenmp -static -MMD -MP -msse2 -msse3 -msse4.1 -msse4.2 -mavx -ffast-math -D_GNU_SOURCE/g' Linux/makefile && \
-    sed -i 's/GCC_OPTS_DEBUG := -std=c++20 -Og -g -c -fmessage-length=0 -static -MMD -MP -msse2 -msse3 -msse4.1 -msse4.2 -mavx -ffast-math/GCC_OPTS_DEBUG := -std=c++20 -Og -g -c -fmessage-length=0 -static -MMD -MP -msse2 -msse3 -msse4.1 -msse4.2 -mavx -ffast-math -D_GNU_SOURCE/g' Linux/makefile && \
-    sed -i 's/@${COMP} -o "BasisSetConverter" ${BASIS_OBJS}/@${COMP} -static -o "BasisSetConverter" ${BASIS_OBJS}/g' Linux/makefile_basis_set_converter && \
-    sed -i 's/cmake .. -DCMAKE_C_COMPILER=${C_COMP} -DCMAKE_CXX_COMPILER=${COMP} -DCMAKE_BUILD_TYPE=Release -DLIBOMP_ENABLE_SHARED=OFF/cmake .. -DCMAKE_C_COMPILER=${C_COMP} -DCMAKE_CXX_COMPILER=${COMP} -DCMAKE_BUILD_TYPE=Release -DLIBOMP_ENABLE_SHARED=OFF -DLIBOMP_OMPT_SUPPORT=OFF -DLIBOMP_ARCHER_SUPPORT=OFF -DLIBOMP_STATS=OFF -DCMAKE_C_FLAGS="-D_GNU_SOURCE" -DCMAKE_CXX_FLAGS="-D_GNU_SOURCE"/g' makefile && \
-    echo "=== Building with musl (static by default) ===" && \
-    make omp -j$(nproc) && \
-    make featomic -j$(nproc) && \
-    make all -j$(nproc)
+WORKDIR /tmp/NoSpherA2
+
+RUN cmake -P scripts/BootstrapMicromamba.cmake && \
+    cmake --preset "release-linux" \
+        -DNOSPHERA2_BUILD_TESTS=OFF -DNOSPHERA2_DEPENDENCIES_ONLY=OFF && \
+    cmake --build --preset "release-linux" --parallel $(nproc)
+
+# binary produced at: /tmp/NoSpherA2/build/release-linux/bin/NoSpherA2
 
 FROM qcrbox/base-application:${QCRBOX_DOCKER_TAG}
 
 SHELL ["/bin/bash", "-c"]
-
-ENV QCRBOX__NATS__HOST="qcrbox-nats"
-ENV QCRBOX__REGISTRY__SERVER__HOST="qcrbox-registry"
-ENV QCRBOX__REGISTRY__SERVER__PORT="8000"
 
 ENV QCRBOX_APPLICATION_DISPLAY_NAME="NoSpherA2-PTB"
 
@@ -73,7 +42,15 @@ RUN mkdir -p ${QCRBOX_HOME}/bin
 
 # Copy the built NoSpherA2 binary with proper ownership and permissions
 COPY --from=build-nosphera2 --chown=qcrbox:qcrbox --chmod=755 \
-     /tmp/NoSpherA2/NoSpherA2 ${QCRBOX_HOME}/bin/NoSpherA2
+     /tmp/NoSpherA2/build/release-linux/bin/NoSpherA2 ${QCRBOX_HOME}/bin/NoSpherA2
+
+# NoSpherA2 dynamically links against Intel OpenMP and TBB, which aren't part of the
+# base image; install them system-wide so the loader can find them at their SONAME.
+COPY --from=build-nosphera2 --chmod=755 \
+     /tmp/NoSpherA2/build/release-linux/bin/libiomp5.so \
+     /tmp/NoSpherA2/build/release-linux/bin/libtbb.so.12.16 \
+     /usr/local/lib/
+RUN ln -sf /usr/local/lib/libtbb.so.12.16 /usr/local/lib/libtbb.so.12 && ldconfig
 
 # Download and install PTB
 RUN wget https://github.com/AK-Kleemiss/ptb/releases/download/v3.8-NoSpherA2/ptb_all.zip -O /tmp/ptb_all.zip && \

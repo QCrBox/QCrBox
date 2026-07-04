@@ -59,9 +59,25 @@ commands:
         dtype: "str"
         description: "Comma separated lists of disorder groups that are in turn separated by semicolons. E.g. '1,2;3,4' says that groups 1 and 2 are mutually exclusive and 3 and 4 are mutually exclusive, but either can be combined with the other groups"
         default_value: "none"
-      #- name: "output_tscb"
-      #  dtype: "QCrBox.output_path"
-      #  description: "Path to the output TSCB file"
-      
+      - name: "output_cif_name"
+        dtype: "QCrBox.output_cif"
+        description: "Name of the CIF file exported back to QCrBox containing the calculated aspherical atomic form factors"
+        required_entry_sets: ["aspheric_form_factors"]
+
+cif_entry_sets:
+  - name: "aspheric_form_factors"
+    required: [
+      "_wfns.software", "_wfns.type", "_wfns.method",
+      "_wfn_moiety.id", "_wfn_moiety.atom_id",
+      "_wfn_moiety.asu_atom_site_label", "_wfn_moiety.atom_type_symbol",
+      "_wfn_moiety.symm_code", "_wfn_moiety.cartn_x",
+      "_wfn_moiety.cartn_y", "_wfn_moiety.cartn_z",
+      "_wfn_moiety.aff_index",
+      "_aspheric_ffs.source",
+      "_aspheric_ffs_partitioning.name",
+      "_aspheric_ffs_partitioning.software",
+      "_aspheric_ff.index_h", "_aspheric_ff.index_k", "_aspheric_ff.index_l",
+      "_aspheric_ff.form_factor_real", "_aspheric_ff.form_factor_imag"
+    ]
 
 qcrbox_yaml_spec_version: "0.1"
