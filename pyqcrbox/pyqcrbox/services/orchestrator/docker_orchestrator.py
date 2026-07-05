@@ -1,5 +1,6 @@
 import asyncio
 import platform
+import re
 import time
 from collections.abc import Callable
 
@@ -153,7 +154,9 @@ class DockerOrchestrator(ContainerOrchestrator):
             await self.startup()
 
         client_id = generate_client_id()
-        container_config = self._build_container_config(application, client_id)
+        is_gui_application = await self._persistence.application_has_interactive_commands(application.id)
+        gui_host = self._build_gui_host(application.slug, client_id) if is_gui_application else None
+        container_config = self._build_container_config(application, client_id, gui_host=gui_host)
         container_name = (
             f"qcrbox-spawned-{sanitize_for_nats_subject(application_slug)}-{client_id[-8:]}"
         )
@@ -161,6 +164,7 @@ class DockerOrchestrator(ContainerOrchestrator):
         logger.info(
             f"Spawning container for {application_slug!r} (version {application_version!r}) "
             f"from image {application.docker_image!r} as {container_name!r}"
+            + (f" with GUI route {gui_host!r}" if gui_host else "")
         )
         docker = await self._get_docker()
         container = await docker.containers.create(config=container_config, name=container_name)
@@ -172,12 +176,21 @@ class DockerOrchestrator(ContainerOrchestrator):
             await container.delete(force=True)
             raise
 
-        await self._persistence.set_instance_docker_container_id(client_id, container.id)
+        await self._persistence.set_instance_spawn_details(client_id, container.id, gui_host=gui_host)
         instance.docker_container_id = container.id
+        instance.gui_host = gui_host
         logger.info(f"Spawned container {container.id[:12]} is registered and ready (client_id={client_id!r})")
         return instance
 
-    def _build_container_config(self, application: ApplicationSpecDB, client_id: str) -> dict:
+    def _build_gui_host(self, application_slug: str, client_id: str) -> str:
+        # A single DNS label (covered by the Authelia wildcard rule for *.gui.<domain>);
+        # slugs may contain characters that are invalid in hostnames (e.g. underscores).
+        slug_label = re.sub(r"[^a-z0-9-]", "-", application_slug.lower()).strip("-")
+        return f"{slug_label}-{client_id[-8:]}.gui.{self._settings.gui_domain}"
+
+    def _build_container_config(
+        self, application: ApplicationSpecDB, client_id: str, gui_host: str | None = None
+    ) -> dict:
         s = self._settings
         host_config = {
             "NetworkMode": self._network_name,
@@ -188,6 +201,14 @@ class DockerOrchestrator(ContainerOrchestrator):
                 "Type": "syslog",
                 "Config": {"syslog-address": s.syslog_address, "tag": application.slug},
             }
+        labels = {
+            f"{s.label_prefix}.spawned": "true",
+            f"{s.label_prefix}.application_slug": application.slug,
+            f"{s.label_prefix}.application_version": application.version,
+            f"{s.label_prefix}.client_id": client_id,
+        }
+        if gui_host is not None:
+            labels.update(self._build_traefik_labels(client_id, gui_host))
         return {
             "Image": application.docker_image,
             "Env": [
@@ -197,13 +218,32 @@ class DockerOrchestrator(ContainerOrchestrator):
                 f"QCRBOX__REGISTRY__SERVER__HOST={s.registry_host}",
                 f"QCRBOX__REGISTRY__SERVER__PORT={s.registry_port}",
             ],
-            "Labels": {
-                f"{s.label_prefix}.spawned": "true",
-                f"{s.label_prefix}.application_slug": application.slug,
-                f"{s.label_prefix}.application_version": application.version,
-                f"{s.label_prefix}.client_id": client_id,
-            },
+            "Labels": labels,
             "HostConfig": host_config,
+        }
+
+    def _build_traefik_labels(self, client_id: str, gui_host: str) -> dict[str, str]:
+        """Per-instance Traefik route for the container's noVNC GUI.
+
+        Mirrors the static subdomain route pattern of the compose-started GUI
+        apps (router behind the `authelia-auth` forwardAuth middleware, plus a
+        redirect from the bare host to the noVNC page). Traefik's docker
+        provider picks the labels up automatically when the container starts.
+        """
+        name = f"qcrbox-gui-{client_id[-8:]}"
+        vnc_url = (
+            f"https://{gui_host}/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true"
+        )
+        return {
+            "traefik.enable": "true",
+            f"traefik.http.routers.{name}.rule": f"Host(`{gui_host}`)",
+            f"traefik.http.routers.{name}.entrypoints": "websecure",
+            f"traefik.http.routers.{name}.middlewares": f"authelia-auth,{name}-redirect",
+            f"traefik.http.routers.{name}.service": name,
+            f"traefik.http.middlewares.{name}-redirect.redirectregex.regex": f"^https://{re.escape(gui_host)}/?$",
+            f"traefik.http.middlewares.{name}-redirect.redirectregex.replacement": vnc_url,
+            f"traefik.http.services.{name}.loadbalancer.server.scheme": "http",
+            f"traefik.http.services.{name}.loadbalancer.server.port": str(self._settings.gui_container_port),
         }
 
     async def _wait_for_registration(self, client_id: str) -> ContainerInstanceDB:

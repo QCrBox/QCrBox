@@ -17,7 +17,9 @@ from pyqcrbox.settings import OrchestratorSettings
 
 from .test_application_registration_api import DUMMY_CLI_SPEC_FILE
 
+DUMMY_GUI_SPEC_FILE = DUMMY_CLI_SPEC_FILE.parent.parent / "dummy_gui" / "config_dummy_gui.yaml"
 DUMMY_IMAGE = "qcrbox/dummy_cli:latest"
+DUMMY_GUI_IMAGE = "qcrbox/dummy_gui:latest"
 
 
 class FakeContainer:
@@ -117,6 +119,8 @@ async def test_spawn_creates_container_with_expected_config(adapter, registered_
     assert config["HostConfig"]["RestartPolicy"] == {"Name": "unless-stopped"}
     assert "Binds" not in config["HostConfig"]
     assert name.startswith("qcrbox-spawned-dummy_cli-")
+    # Non-GUI applications get no Traefik route
+    assert not any(key.startswith("traefik.") for key in config["Labels"])
 
     # The docker container id is persisted on the instance row
     stored = await adapter.get_instance_by_client_id(client_id)
@@ -195,6 +199,36 @@ async def test_concurrent_ensure_instance_spawns_only_once(adapter, registered_a
 
     assert len(fake_docker.create_calls) == 1
     assert results[0].client_id == results[1].client_id
+
+
+@pytest.mark.anyio
+async def test_gui_application_spawn_gets_traefik_route(adapter, clean_registry_db):
+    spec = sql_models.ApplicationSpec.from_yaml_file(DUMMY_GUI_SPEC_FILE)
+    spec.docker_image = DUMMY_GUI_IMAGE
+    application = await adapter.save_application_spec(spec)
+
+    fake_docker = FakeDocker()
+    orchestrator = make_orchestrator(fake_docker)
+    registration_task = asyncio.create_task(simulate_client_registration(adapter, fake_docker, application.id))
+    instance = await orchestrator.ensure_instance("dummy_gui", "0.1.0")
+    client_id = await registration_task
+
+    config, _name = fake_docker.create_calls[0]
+    suffix = client_id[-8:]
+    expected_host = f"dummy-gui-{suffix}.gui.qcrbox.localhost"
+    labels = config["Labels"]
+    assert labels["traefik.enable"] == "true"
+    assert labels[f"traefik.http.routers.qcrbox-gui-{suffix}.rule"] == f"Host(`{expected_host}`)"
+    assert labels[f"traefik.http.routers.qcrbox-gui-{suffix}.entrypoints"] == "websecure"
+    assert labels[f"traefik.http.routers.qcrbox-gui-{suffix}.middlewares"] == (
+        f"authelia-auth,qcrbox-gui-{suffix}-redirect"
+    )
+    assert labels[f"traefik.http.services.qcrbox-gui-{suffix}.loadbalancer.server.port"] == "8080"
+    assert expected_host in labels[f"traefik.http.middlewares.qcrbox-gui-{suffix}-redirect.redirectregex.replacement"]
+
+    assert instance.gui_host == expected_host
+    stored = await adapter.get_instance_by_client_id(client_id)
+    assert stored.gui_host == expected_host
 
 
 @pytest.mark.anyio

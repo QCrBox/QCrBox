@@ -41,22 +41,13 @@ class QCrBoxAPIException(HTTPException):
     pass
 
 
-def _ensure_live_container_exists(application_slug: str, application_version: str) -> None:
-    """Fail fast (404/503) if a command cannot be dispatched for lack of a live container."""
-    try:
-        api_helpers.ensure_live_container_exists(application_slug, application_version)
-    except api_helpers.ApplicationNotFoundError as exc:
-        raise QCrBoxAPIException(detail=str(exc), status_code=404) from exc
-    except api_helpers.NoLiveContainerError as exc:
-        raise QCrBoxAPIException(detail=str(exc), status_code=503) from exc
-
-
 async def _ensure_live_container_exists_or_spawn(
     application_slug: str, application_version: str, orchestrator: ContainerOrchestrator
 ) -> None:
-    """Like `_ensure_live_container_exists`, but spawns a container on demand when possible.
+    """Ensure a live container exists for the application, spawning one on demand when possible.
 
-    With orchestration disabled this behaves exactly like the fail-fast check.
+    Fails fast with 404 (application unknown) or 503 (no live container and
+    orchestration disabled); maps spawn failures to 503/504.
     """
     try:
         api_helpers.ensure_live_container_exists(application_slug, application_version)
@@ -761,6 +752,7 @@ async def list_interactive_sessions(
 ) -> schema.QCrBoxResponse[schema.InteractiveSessionsResponse]:
     """Retrieve a list of interactive sessions, past and present."""
     interactive_sessions = await api_helpers.get_interactive_sessions(data_manager=data_manager)
+    interactive_sessions = api_helpers.with_gui_urls(interactive_sessions)
     return QCrBoxResponse(
         {
             "status": "success",
@@ -787,6 +779,7 @@ async def get_interactive_session_by_id(
     """Retrieve and interactive session of the given ID."""
     try:
         interactive_session = await api_helpers.get_interactive_session_info(id, data_manager=data_manager)
+        (interactive_session,) = api_helpers.with_gui_urls([interactive_session])
         return QCrBoxResponse(
             {
                 "status": "success",
@@ -812,13 +805,16 @@ async def get_interactive_session_by_id(
         404: schema.NOT_FOUND_ERROR,
         500: schema.INTERNAL_SERVER_ERROR,
         503: schema.SERVICE_UNAVAILABLE_ERROR,
+        504: schema.GATEWAY_TIMEOUT_ERROR,
     },
 )
 async def create_interactive_session_with_arguments(
-    data: Annotated[schema.CreateInteractiveSessionParameters, Body()], nats_broker: NatsBroker
+    data: Annotated[schema.CreateInteractiveSessionParameters, Body()],
+    nats_broker: NatsBroker,
+    orchestrator: ContainerOrchestrator,
 ) -> schema.QCrBoxResponse[schema.InteractiveSessionIDResponse]:
     """Create an interactive session with the provided arguments arguments."""
-    _ensure_live_container_exists(data.application_slug, data.application_version)
+    await _ensure_live_container_exists_or_spawn(data.application_slug, data.application_version, orchestrator)
     command_spec = CommandInvocationCreate(
         application_slug=data.application_slug,
         application_version=data.application_version,

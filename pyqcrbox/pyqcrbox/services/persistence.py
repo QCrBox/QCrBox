@@ -155,17 +155,40 @@ class SQLitePersistenceAdapter(BasePersistenceAdapter):
                 )
             ).first()
 
-    async def set_instance_docker_container_id(self, client_id: str, docker_container_id: str) -> None:
+    async def set_instance_spawn_details(
+        self, client_id: str, docker_container_id: str, gui_host: str | None = None
+    ) -> None:
+        """Record orchestrator-spawn metadata on the instance row after registration."""
         with settings.db.get_session() as session:
             instance = session.exec(
                 select(ContainerInstanceDB).where(ContainerInstanceDB.client_id == client_id)
             ).first()
             if instance is None:
-                logger.warning(f"Cannot set docker container id for unknown client: {client_id!r}")
+                logger.warning(f"Cannot set spawn details for unknown client: {client_id!r}")
                 return
             instance.docker_container_id = docker_container_id
+            instance.gui_host = gui_host
             session.add(instance)
             session.commit()
+
+    async def application_has_interactive_commands(self, application_id: int) -> bool:
+        from pyqcrbox.sql_models import CommandSpecDB
+        from pyqcrbox.sql_models.command_spec.base_command_spec import ImplementedAs
+
+        with settings.db.get_session() as session:
+            interactive_command = session.exec(
+                select(CommandSpecDB).where(
+                    CommandSpecDB.application_id == application_id,
+                    CommandSpecDB.implemented_as == ImplementedAs.interactive_session,
+                )
+            ).first()
+            return interactive_command is not None
+
+    async def get_instance_by_private_inbox(self, private_inbox: str) -> ContainerInstanceDB | None:
+        with settings.db.get_session() as session:
+            return session.exec(
+                select(ContainerInstanceDB).where(ContainerInstanceDB.private_inbox == private_inbox)
+            ).first()
 
     async def update_instance_status(self, private_inbox: str, status: ContainerInstanceStatusEnum) -> None:
         with settings.db.get_session() as session:

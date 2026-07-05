@@ -38,6 +38,9 @@ class ContainerInstanceDB(SQLModel, table=True):
     # Docker container id, set by the orchestrator for containers it spawned;
     # None for containers started externally (e.g. via docker compose).
     docker_container_id: str | None = None
+    # Hostname of the per-instance GUI route (interactive applications spawned
+    # by the orchestrator); None for non-GUI apps and external containers.
+    gui_host: str | None = None
     # Reserved for per-user container binding (not populated yet)
     owner_user_id: str | None = None
 
@@ -53,6 +56,7 @@ class ContainerInstanceDB(SQLModel, table=True):
             last_seen=self.last_seen,
             pyqcrbox_version=self.pyqcrbox_version,
             docker_container_id=self.docker_container_id,
+            gui_host=self.gui_host,
             owner_user_id=self.owner_user_id,
         )
 
@@ -68,4 +72,5 @@ class ContainerInstanceResponse(QCrBoxPydanticBaseModel):
     last_seen: datetime
     pyqcrbox_version: str
     docker_container_id: str | None = None
+    gui_host: str | None = None
     owner_user_id: str | None = None

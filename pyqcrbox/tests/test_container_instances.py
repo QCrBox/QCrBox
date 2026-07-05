@@ -171,6 +171,23 @@ async def test_retrieve_container_instances_with_filters(adapter, registered_app
 
 
 @pytest.mark.anyio
+async def test_gui_url_lookup_by_private_inbox(adapter, registered_application):
+    await adapter.save_container_instance(
+        application_id=registered_application.id,
+        client_id="qcrbox_client_0x01",
+        private_inbox="_INBOX.gui.1",
+        pyqcrbox_version="test-version",
+    )
+    assert api_helpers.gui_url_for_private_inbox("_INBOX.gui.1") is None  # no gui_host set
+
+    await adapter.set_instance_spawn_details(
+        "qcrbox_client_0x01", "cafebabe" * 8, gui_host="dummy-cli-0x01.gui.qcrbox.localhost"
+    )
+    assert api_helpers.gui_url_for_private_inbox("_INBOX.gui.1") == "https://dummy-cli-0x01.gui.qcrbox.localhost/"
+    assert api_helpers.gui_url_for_private_inbox("_INBOX.unknown") is None
+
+
+@pytest.mark.anyio
 async def test_live_instance_gating_for_command_dispatch(adapter, registered_application):
     with pytest.raises(api_helpers.ApplicationNotFoundError):
         api_helpers.ensure_live_container_exists("no_such_app", "1.0")

@@ -46,6 +46,7 @@ def _create_db_tables(engine, purge_existing: bool):
 _LIGHTWEIGHT_MIGRATIONS = [
     ("application", "docker_image", "VARCHAR"),
     ("container_instance", "docker_container_id", "VARCHAR"),
+    ("container_instance", "gui_host", "VARCHAR"),
 ]
 
 
@@ -153,6 +154,11 @@ class OrchestratorSettings(QCrBoxSettingsBaseModel):
     use_syslog_logging: bool = True
     syslog_address: str = "udp://127.0.0.1:514"
     label_prefix: str = "org.qcrbox"
+    # Per-instance GUI routing (interactive applications): spawned GUI containers
+    # get a Traefik route at https://<slug>-<id>.gui.<gui_domain>/ (covered by the
+    # Authelia wildcard rule for *.gui.<domain>).
+    gui_domain: str = "qcrbox.localhost"
+    gui_container_port: int = 8080  # noVNC port exposed by base_novnc images
 
 
 class TestingSettings(QCrBoxSettingsBaseModel):

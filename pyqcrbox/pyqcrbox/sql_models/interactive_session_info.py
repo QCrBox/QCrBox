@@ -13,6 +13,10 @@ class InteractiveSessionInfoResponse(QCrBoxPydanticBaseModel):
     application_version: str | None
     command_name: str
     arguments: dict[str, Any]
+    # URL of the executing container's GUI (only for orchestrator-spawned
+    # containers with a per-instance route; None for compose-started containers,
+    # whose GUI is reachable via the static per-application route).
+    gui_url: str | None = None
 
 
 class InteractiveSessionInfo(QCrBoxPydanticBaseModel):

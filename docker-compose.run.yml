@@ -244,6 +244,7 @@ services:
       QCRBOX__DB__URL: "sqlite:///${QCRBOX_REGISTRY_DB_DIR}/db.sqlite"
       QCRBOX__ORCHESTRATOR__ENABLED: ${QCRBOX__ORCHESTRATOR__ENABLED:-false}
       QCRBOX__ORCHESTRATOR__DOCKER_HOST: "http://qcrbox-docker-socket-proxy:2375"
+      QCRBOX__ORCHESTRATOR__GUI_DOMAIN: ${QCRBOX_DOMAIN:-qcrbox.localhost}
     networks:
       - qcrbox-net
       - qcrbox-docker-proxy-net

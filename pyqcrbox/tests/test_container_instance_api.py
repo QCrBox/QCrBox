@@ -149,12 +149,23 @@ def test_invoke_command_maps_spawn_timeout_to_504(registered_dummy_cli):
         assert response.status_code == 504
 
 
-def test_interactive_sessions_never_auto_spawn(registered_dummy_cli):
+def test_interactive_sessions_auto_spawn_when_enabled(registered_dummy_cli):
     orchestrator = InMemoryOrchestrator()
     with make_test_client(orchestrator) as client:
         response = client.post(
             "/api/interactive-sessions",
             json={"application_slug": "dummy_cli", "application_version": "0.1.0", "command_arguments": {}},
         )
+        # The spawn succeeded (would be 503 otherwise); the request then fails
+        # further down (no 'interactive_session' command / unconnected broker).
+        assert response.status_code != 503
+        assert orchestrator.ensure_calls == [("dummy_cli", "0.1.0")]
+
+
+def test_interactive_sessions_fail_fast_with_disabled_orchestrator(registered_dummy_cli):
+    with make_test_client(DisabledOrchestrator()) as client:
+        response = client.post(
+            "/api/interactive-sessions",
+            json={"application_slug": "dummy_cli", "application_version": "0.1.0", "command_arguments": {}},
+        )
         assert response.status_code == 503
-        assert orchestrator.ensure_calls == []

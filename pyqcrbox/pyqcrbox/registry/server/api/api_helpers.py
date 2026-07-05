@@ -631,6 +631,26 @@ def retrieve_container_instances(
         ]
 
 
+def gui_url_for_private_inbox(private_inbox: str) -> str | None:
+    """Return the per-instance GUI URL of the container behind a NATS private inbox, if any."""
+    with settings.db.get_session() as session:
+        instance = session.exec(
+            select(sql_models.ContainerInstanceDB).where(
+                sql_models.ContainerInstanceDB.private_inbox == private_inbox
+            )
+        ).first()
+        if instance is None or instance.gui_host is None:
+            return None
+        return f"https://{instance.gui_host}/"
+
+
+def with_gui_urls(interactive_sessions: list) -> list:
+    """Enrich interactive session responses with the executing container's GUI URL."""
+    for session_info in interactive_sessions:
+        session_info.gui_url = gui_url_for_private_inbox(session_info.client_private_inbox)
+    return interactive_sessions
+
+
 def ensure_live_container_exists(application_slug: str, application_version: str) -> None:
     """Fail fast if a command cannot be dispatched for lack of a live container.
 
