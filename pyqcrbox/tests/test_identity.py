@@ -27,11 +27,14 @@ def identity_client():
 def auth_settings():
     original_token = settings.auth.service_token
     original_trust = settings.auth.trust_remote_user_headers
+    original_gateway = settings.auth.gateway_token
     settings.auth.service_token = TOKEN
     settings.auth.trust_remote_user_headers = True
+    settings.auth.gateway_token = None
     yield settings.auth
     settings.auth.service_token = original_token
     settings.auth.trust_remote_user_headers = original_trust
+    settings.auth.gateway_token = original_gateway
 
 
 def whoami_response(client, headers):
@@ -79,3 +82,24 @@ def test_valid_service_claim_takes_precedence_over_remote_user(identity_client, 
 def test_invalid_service_claim_falls_back_to_remote_user(identity_client, auth_settings):
     headers = {"X-QCrBox-User": "alice", "X-QCrBox-Service-Token": "wrong", "Remote-User": "bob"}
     assert whoami_response(identity_client, headers) == "bob"
+
+
+GATEWAY_TOKEN = "test-gateway-token"
+
+
+def test_remote_user_requires_gateway_token_when_configured(identity_client, auth_settings):
+    auth_settings.gateway_token = GATEWAY_TOKEN
+    # Bare Remote-User is no longer trusted (forgeable by containers on the docker network)
+    assert whoami_response(identity_client, {"Remote-User": "bob"}) is None
+    # With the Traefik-injected gateway token it is trusted
+    headers = {"Remote-User": "bob", "X-QCrBox-Gateway-Token": GATEWAY_TOKEN}
+    assert whoami_response(identity_client, headers) == "bob"
+    # A wrong gateway token does not help
+    headers = {"Remote-User": "bob", "X-QCrBox-Gateway-Token": "wrong"}
+    assert whoami_response(identity_client, headers) is None
+
+
+def test_gateway_token_does_not_affect_service_claims(identity_client, auth_settings):
+    auth_settings.gateway_token = GATEWAY_TOKEN
+    headers = {"X-QCrBox-User": "alice", "X-QCrBox-Service-Token": TOKEN}
+    assert whoami_response(identity_client, headers) == "alice"

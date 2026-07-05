@@ -14,6 +14,7 @@ from pyqcrbox.services.orchestrator import (
 )
 from pyqcrbox.services.persistence import SQLitePersistenceAdapter
 from pyqcrbox.settings import OrchestratorSettings
+from pyqcrbox.sql_models import ContainerInstanceStatusEnum
 
 from .test_application_registration_api import DUMMY_CLI_SPEC_FILE
 
@@ -122,6 +123,9 @@ async def test_spawn_creates_container_with_expected_config(adapter, registered_
     # Non-GUI applications get no Traefik route
     assert not any(key.startswith("traefik.") for key in config["Labels"])
 
+    # Anonymous (pool) spawns keep competing for broadcast invocations
+    assert "QCRBOX_DISABLE_BROADCAST_INVOCATIONS=true" not in config["Env"]
+
     # The docker container id is persisted on the instance row
     stored = await adapter.get_instance_by_client_id(client_id)
     assert stored.docker_container_id is not None
@@ -221,7 +225,7 @@ async def test_gui_application_spawn_gets_traefik_route(adapter, clean_registry_
     assert labels[f"traefik.http.routers.qcrbox-gui-{suffix}.rule"] == f"Host(`{expected_host}`)"
     assert labels[f"traefik.http.routers.qcrbox-gui-{suffix}.entrypoints"] == "websecure"
     assert labels[f"traefik.http.routers.qcrbox-gui-{suffix}.middlewares"] == (
-        f"authelia-auth,qcrbox-gui-{suffix}-redirect"
+        f"authelia-auth,qcrbox-gateway-token,qcrbox-instance-auth,qcrbox-gui-{suffix}-redirect"
     )
     assert labels[f"traefik.http.services.qcrbox-gui-{suffix}.loadbalancer.server.port"] == "8080"
     assert expected_host in labels[f"traefik.http.middlewares.qcrbox-gui-{suffix}-redirect.redirectregex.replacement"]
@@ -273,6 +277,91 @@ async def test_spawn_attributes_owner_on_instance_row(adapter, registered_applic
     assert instance.owner_user_id == "alice"
     stored = await adapter.get_instance_by_client_id(client_id)
     assert stored.owner_user_id == "alice"
+
+    # Owned containers opt out of the anonymous broadcast pool
+    config, _name = fake_docker.create_calls[0]
+    assert "QCRBOX_DISABLE_BROADCAST_INVOCATIONS=true" in config["Env"]
+
+
+@pytest.mark.anyio
+async def test_ensure_instance_reuses_only_the_owners_instance(adapter, registered_application):
+    """A foreign user's instance must not be reused; the owner's idle instance must be."""
+    await adapter.save_container_instance(
+        application_id=registered_application.id,
+        client_id="qcrbox_client_0xalice",
+        private_inbox="_INBOX.alice.1",
+        pyqcrbox_version="test-version",
+    )
+    await adapter.set_instance_spawn_details("qcrbox_client_0xalice", "a" * 64, owner_user_id="alice")
+
+    fake_docker = FakeDocker()
+    orchestrator = make_orchestrator(fake_docker)
+
+    # alice gets her own instance back, nothing is spawned
+    instance = await orchestrator.ensure_instance("dummy_cli", "0.1.0", owner="alice")
+    assert instance.client_id == "qcrbox_client_0xalice"
+    assert fake_docker.create_calls == []
+
+    # bob does NOT reuse alice's instance: a spawn is attempted for him
+    registration_task = asyncio.create_task(
+        simulate_client_registration(adapter, fake_docker, registered_application.id)
+    )
+    instance = await orchestrator.ensure_instance("dummy_cli", "0.1.0", owner="bob")
+    client_id = await registration_task
+    assert instance.client_id == client_id
+    assert len(fake_docker.create_calls) == 1
+
+    # anonymous requests still reuse any live instance (regression)
+    fake_docker_2 = FakeDocker()
+    orchestrator_2 = make_orchestrator(fake_docker_2)
+    instance = await orchestrator_2.ensure_instance("dummy_cli", "0.1.0")
+    assert fake_docker_2.create_calls == []
+    assert instance is not None
+
+
+@pytest.mark.anyio
+async def test_ensure_instance_spawns_extra_when_owned_instances_are_busy(adapter, registered_application):
+    await adapter.save_container_instance(
+        application_id=registered_application.id,
+        client_id="qcrbox_client_0xalice",
+        private_inbox="_INBOX.alice.busy",
+        pyqcrbox_version="test-version",
+    )
+    await adapter.set_instance_spawn_details("qcrbox_client_0xalice", "a" * 64, owner_user_id="alice")
+    await adapter.update_instance_status("_INBOX.alice.busy", ContainerInstanceStatusEnum.BUSY)
+
+    fake_docker = FakeDocker()
+    orchestrator = make_orchestrator(fake_docker)
+    registration_task = asyncio.create_task(
+        simulate_client_registration(adapter, fake_docker, registered_application.id)
+    )
+    instance = await orchestrator.ensure_instance("dummy_cli", "0.1.0", owner="alice")
+    await registration_task
+    assert len(fake_docker.create_calls) == 1
+    assert ContainerInstanceStatusEnum(instance.status) == ContainerInstanceStatusEnum.IDLE
+
+    # With the per-user quota exhausted, the busy instance is returned instead
+    fake_docker_2 = FakeDocker()
+    orchestrator_2 = make_orchestrator(fake_docker_2, max_instances_per_user=2)
+    await adapter.update_instance_status(instance.private_inbox, ContainerInstanceStatusEnum.BUSY)
+    fallback = await orchestrator_2.ensure_instance("dummy_cli", "0.1.0", owner="alice")
+    assert fake_docker_2.create_calls == []
+    assert ContainerInstanceStatusEnum(fallback.status) == ContainerInstanceStatusEnum.BUSY
+
+
+@pytest.mark.anyio
+async def test_per_user_quota_enforced_on_explicit_spawn(adapter, registered_application):
+    await adapter.save_container_instance(
+        application_id=registered_application.id,
+        client_id="qcrbox_client_0xalice",
+        private_inbox="_INBOX.alice.1",
+        pyqcrbox_version="test-version",
+    )
+    await adapter.set_instance_spawn_details("qcrbox_client_0xalice", "a" * 64, owner_user_id="alice")
+
+    orchestrator = make_orchestrator(FakeDocker(), max_instances_per_user=1)
+    with pytest.raises(SpawnQuotaExceededError, match="per user"):
+        await orchestrator.spawn_instance("dummy_cli", "0.1.0", owner="alice")
 
 
 @pytest.mark.anyio

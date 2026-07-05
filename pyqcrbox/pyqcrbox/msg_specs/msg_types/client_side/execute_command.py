@@ -1,4 +1,4 @@
-from typing import Literal, Optional
+from typing import Literal
 
 from pydantic import BaseModel
 
@@ -23,5 +23,5 @@ class PayloadForExecuteCommandResponse(BaseModel):
 class ExecuteCommandResponse(QCrBoxGenericResponse):
     response_to: Literal[ExecuteCommand.action_name]
     status: str
-    msg: Optional[str] = None
-    payload: Optional[PayloadForExecuteCommandResponse] = None
+    msg: str | None = None
+    payload: PayloadForExecuteCommandResponse | None = None

@@ -16,7 +16,6 @@ async def process_message_sync_or_async(msg: dict):
     """
     Wrapper function which allows to define both sync and async implementations of `process_message`.
     """
-
     if isinstance(msg, (str, bytes)):
         try:
             msg = json.loads(msg)

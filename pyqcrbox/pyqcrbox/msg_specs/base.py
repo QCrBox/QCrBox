@@ -1,6 +1,6 @@
 import functools
 import inspect
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, field_validator
 

@@ -29,6 +29,16 @@ async def get_current_user(request: Request) -> str | None:
             return claimed_user
 
     if settings.auth.trust_remote_user_headers:
-        return request.headers.get("remote-user") or None
+        remote_user = request.headers.get("remote-user")
+        if not remote_user:
+            return None
+        gateway_token = settings.auth.gateway_token
+        if gateway_token:
+            # Remote-User is only trustworthy when the request came through
+            # Traefik, which proves it by injecting the gateway token.
+            provided_gateway_token = request.headers.get("x-qcrbox-gateway-token")
+            if not (provided_gateway_token and secrets.compare_digest(provided_gateway_token, gateway_token)):
+                return None
+        return remote_user
 
     return None

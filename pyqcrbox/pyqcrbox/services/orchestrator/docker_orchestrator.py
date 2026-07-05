@@ -90,10 +90,33 @@ class DockerOrchestrator(ContainerOrchestrator):
         self, application_slug: str, application_version: str, owner: str | None = None
     ) -> ContainerInstanceDB:
         async with self._get_spawn_lock(application_slug, application_version):
-            # A concurrent request may have spawned an instance while we waited for the lock
-            existing_instance = await self._persistence.get_live_instance(application_slug, application_version)
+            # A concurrent request may have spawned an instance while we waited for the lock.
+            # With an owner set, only that user's instances qualify (idle preferred).
+            existing_instance = await self._persistence.get_live_instance(
+                application_slug, application_version, owner=owner
+            )
             if existing_instance is not None:
-                return existing_instance
+                if owner is None or ContainerInstanceStatusEnum(existing_instance.status) == (
+                    ContainerInstanceStatusEnum.IDLE
+                ):
+                    return existing_instance
+                # All of the owner's instances are busy: spawn an additional one
+                # if the quotas allow, otherwise fall back to the busy instance
+                # (the dispatch then fails the same way it does today).
+                try:
+                    application = await self._get_application_or_raise(application_slug, application_version)
+                    await self._check_spawn_quotas(application, owner)
+                except SpawnQuotaExceededError:
+                    return existing_instance
+                return await self._spawn(
+                    application_slug, application_version, application=application, owner=owner
+                )
+            if owner is not None:
+                application = await self._get_application_or_raise(application_slug, application_version)
+                await self._check_user_quota(owner)
+                return await self._spawn(
+                    application_slug, application_version, application=application, owner=owner
+                )
             return await self._spawn(application_slug, application_version, owner=owner)
 
     async def spawn_instance(
@@ -101,13 +124,27 @@ class DockerOrchestrator(ContainerOrchestrator):
     ) -> ContainerInstanceDB:
         async with self._get_spawn_lock(application_slug, application_version):
             application = await self._get_application_or_raise(application_slug, application_version)
-            num_live = await self._persistence.count_live_instances(application.id)
-            if num_live >= self._settings.max_instances_per_app:
-                raise SpawnQuotaExceededError(
-                    f"Cannot spawn another container for {application_slug!r} (version {application_version!r}): "
-                    f"the quota of {self._settings.max_instances_per_app} live instances is reached"
-                )
+            await self._check_spawn_quotas(application, owner)
             return await self._spawn(application_slug, application_version, application=application, owner=owner)
+
+    async def _check_spawn_quotas(self, application: ApplicationSpecDB, owner: str | None) -> None:
+        num_live = await self._persistence.count_live_instances(application.id)
+        if num_live >= self._settings.max_instances_per_app:
+            raise SpawnQuotaExceededError(
+                f"Cannot spawn another container for {application.slug!r} (version {application.version!r}): "
+                f"the quota of {self._settings.max_instances_per_app} live instances is reached"
+            )
+        await self._check_user_quota(owner)
+
+    async def _check_user_quota(self, owner: str | None) -> None:
+        if owner is None:
+            return
+        num_owned = await self._persistence.count_live_instances_for_owner(owner)
+        if num_owned >= self._settings.max_instances_per_user:
+            raise SpawnQuotaExceededError(
+                f"Cannot spawn another container for user {owner!r}: "
+                f"the quota of {self._settings.max_instances_per_user} live instances per user is reached"
+            )
 
     async def remove_instance(self, instance_id: int) -> bool:
         instance = await self._persistence.get_instance_by_id(instance_id)
@@ -169,7 +206,7 @@ class DockerOrchestrator(ContainerOrchestrator):
         client_id = generate_client_id()
         is_gui_application = await self._persistence.application_has_interactive_commands(application.id)
         gui_host = self._build_gui_host(application.slug, client_id) if is_gui_application else None
-        container_config = self._build_container_config(application, client_id, gui_host=gui_host)
+        container_config = self._build_container_config(application, client_id, gui_host=gui_host, owner=owner)
         container_name = (
             f"qcrbox-spawned-{sanitize_for_nats_subject(application_slug)}-{client_id[-8:]}"
         )
@@ -208,7 +245,11 @@ class DockerOrchestrator(ContainerOrchestrator):
         return f"{slug_label}-{client_id[-8:]}.gui.{self._settings.gui_domain}"
 
     def _build_container_config(
-        self, application: ApplicationSpecDB, client_id: str, gui_host: str | None = None
+        self,
+        application: ApplicationSpecDB,
+        client_id: str,
+        gui_host: str | None = None,
+        owner: str | None = None,
     ) -> dict:
         s = self._settings
         host_config = {
@@ -228,15 +269,21 @@ class DockerOrchestrator(ContainerOrchestrator):
         }
         if gui_host is not None:
             labels.update(self._build_traefik_labels(client_id, gui_host))
+        env = [
+            f"QCRBOX_CLIENT_ID={client_id}",
+            f"QCRBOX_APPLICATION_DISPLAY_NAME={application.name}",
+            f"QCRBOX__NATS__HOST={s.nats_host}",
+            f"QCRBOX__REGISTRY__SERVER__HOST={s.registry_host}",
+            f"QCRBOX__REGISTRY__SERVER__PORT={s.registry_port}",
+        ]
+        if owner is not None:
+            # A user-owned container must only serve invocations targeted at it
+            # via its private inbox; it must not compete for anonymous requests
+            # on the shared broadcast subject.
+            env.append("QCRBOX_DISABLE_BROADCAST_INVOCATIONS=true")
         return {
             "Image": application.docker_image,
-            "Env": [
-                f"QCRBOX_CLIENT_ID={client_id}",
-                f"QCRBOX_APPLICATION_DISPLAY_NAME={application.name}",
-                f"QCRBOX__NATS__HOST={s.nats_host}",
-                f"QCRBOX__REGISTRY__SERVER__HOST={s.registry_host}",
-                f"QCRBOX__REGISTRY__SERVER__PORT={s.registry_port}",
-            ],
+            "Env": env,
             "Labels": labels,
             "HostConfig": host_config,
         }
@@ -257,7 +304,13 @@ class DockerOrchestrator(ContainerOrchestrator):
             "traefik.enable": "true",
             f"traefik.http.routers.{name}.rule": f"Host(`{gui_host}`)",
             f"traefik.http.routers.{name}.entrypoints": "websecure",
-            f"traefik.http.routers.{name}.middlewares": f"authelia-auth,{name}-redirect",
+            # authelia-auth authenticates (injects Remote-User); qcrbox-gateway-token
+            # proves the request came through Traefik; qcrbox-instance-auth authorizes
+            # the user against the instance's owner (both defined on the registry
+            # service's labels in docker-compose.*.yml).
+            f"traefik.http.routers.{name}.middlewares": (
+                f"authelia-auth,qcrbox-gateway-token,qcrbox-instance-auth,{name}-redirect"
+            ),
             f"traefik.http.routers.{name}.service": name,
             f"traefik.http.middlewares.{name}-redirect.redirectregex.regex": f"^https://{re.escape(gui_host)}/?$",
             f"traefik.http.middlewares.{name}-redirect.redirectregex.replacement": vnc_url,

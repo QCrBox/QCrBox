@@ -46,13 +46,28 @@ async def _ensure_live_container_exists_or_spawn(
     application_version: str,
     orchestrator: ContainerOrchestrator,
     owner: str | None = None,
-) -> None:
+) -> str | None:
     """Ensure a live container exists for the application, spawning one on demand when possible.
 
     Fails fast with 404 (application unknown) or 503 (no live container and
-    orchestration disabled); maps spawn failures to 503/504. A newly spawned
-    container is attributed to `owner` (the acting user), if known.
+    orchestration disabled); maps spawn failures to 503/504.
+
+    With a known `owner` and orchestration enabled, the request is strictly
+    bound to a container owned by that user (ensured/spawned as needed) and
+    the bound instance's private inbox is returned for targeted dispatch.
+    Anonymous requests use the shared pool (broadcast dispatch, return None).
     """
+    if owner is not None and orchestrator.enabled:
+        try:
+            instance = await orchestrator.ensure_instance(application_slug, application_version, owner=owner)
+        except SpawnTimeoutError as spawn_exc:
+            raise QCrBoxAPIException(detail=str(spawn_exc), status_code=504) from spawn_exc
+        except ApplicationNotRegisteredError as spawn_exc:
+            raise QCrBoxAPIException(detail=str(spawn_exc), status_code=404) from spawn_exc
+        except OrchestratorError as spawn_exc:
+            raise QCrBoxAPIException(detail=str(spawn_exc), status_code=503) from spawn_exc
+        return instance.private_inbox
+
     try:
         api_helpers.ensure_live_container_exists(application_slug, application_version)
     except api_helpers.ApplicationNotFoundError as exc:
@@ -66,6 +81,7 @@ async def _ensure_live_container_exists_or_spawn(
             raise QCrBoxAPIException(detail=str(spawn_exc), status_code=504) from spawn_exc
         except OrchestratorError as spawn_exc:
             raise QCrBoxAPIException(detail=str(spawn_exc), status_code=503) from spawn_exc
+    return None
 
 
 # Admin ----------------------------------------------------------------------------------------------------------------
@@ -80,6 +96,31 @@ async def healthz() -> schema.QCrBoxHealthResponse:
         },
         status_code=200,
     )
+
+
+@get(path="/auth/gui", media_type=MediaType.JSON, include_in_schema=False)
+async def authorize_gui_access(request: Request, current_user: str | None) -> Response:
+    """Traefik forwardAuth endpoint authorizing access to per-instance GUI routes.
+
+    Chained after the Authelia forwardAuth middleware on spawned GUI routers:
+    Authelia authenticates the user (Remote-User), this endpoint authorizes the
+    user against the instance's owner. The target instance is identified by the
+    X-Forwarded-Host of the original request. Ownerless instances are open to
+    any authenticated user; owned instances only to their owner.
+    """
+    from pyqcrbox.services.persistence import SQLitePersistenceAdapter
+
+    forwarded_host = request.headers.get("x-forwarded-host")
+    if not forwarded_host or current_user is None:
+        return Response(content={"status": "denied"}, status_code=403)
+
+    instance = await SQLitePersistenceAdapter().get_instance_by_gui_host(forwarded_host)
+    if instance is None:
+        return Response(content={"status": "denied", "reason": "unknown host"}, status_code=403)
+    if instance.owner_user_id is not None and instance.owner_user_id != current_user:
+        return Response(content={"status": "denied", "reason": "not the owner"}, status_code=403)
+
+    return Response(content={"status": "ok"}, status_code=200)
 
 
 @get(path="/", media_type=MediaType.JSON, include_in_schema=False)
@@ -434,7 +475,7 @@ async def invoke_command(
     current_user: str | None,
 ) -> schema.QCrBoxResponse[schema.InvokeCommandResponse]:
     """Create an interactive session with the provided arguments."""
-    await _ensure_live_container_exists_or_spawn(
+    target_private_inbox = await _ensure_live_container_exists_or_spawn(
         data.application_slug, data.application_version, orchestrator, owner=current_user
     )
     command_spec = CommandInvocationCreate(
@@ -444,7 +485,9 @@ async def invoke_command(
         arguments=data.command_arguments,
     )
     try:
-        response = await api_helpers.invoke_command(command_spec, nats_broker=nats_broker)
+        response = await api_helpers.invoke_command(
+            command_spec, nats_broker=nats_broker, target_private_inbox=target_private_inbox
+        )
     except (nats.errors.NoRespondersError, nats.errors.NoServersError) as exc:
         raise QCrBoxAPIException(
             detail=f"Failed to invoke command, unable to find {data.application_slug}-{data.application_version} container inbox",
@@ -826,7 +869,7 @@ async def create_interactive_session_with_arguments(
     current_user: str | None,
 ) -> schema.QCrBoxResponse[schema.InteractiveSessionIDResponse]:
     """Create an interactive session with the provided arguments arguments."""
-    await _ensure_live_container_exists_or_spawn(
+    target_private_inbox = await _ensure_live_container_exists_or_spawn(
         data.application_slug, data.application_version, orchestrator, owner=current_user
     )
     command_spec = CommandInvocationCreate(
@@ -836,7 +879,9 @@ async def create_interactive_session_with_arguments(
         arguments=data.command_arguments,
     )
     try:
-        response = await api_helpers.invoke_command(command_spec, nats_broker=nats_broker)
+        response = await api_helpers.invoke_command(
+            command_spec, nats_broker=nats_broker, target_private_inbox=target_private_inbox
+        )
     except (nats.errors.NoRespondersError, nats.errors.NoServersError) as exc:
         raise QCrBoxAPIException(
             detail=f"Failed to invoke command, unable to find {data.application_slug}-{data.application_version} container inbox",
@@ -952,6 +997,7 @@ api_router = Router(
         healthz,
         index,
         openapi_schema,
+        authorize_gui_access,
         # Applications
         list_applications,
         register_application,

@@ -34,6 +34,9 @@ class ContainerInstanceDB(SQLModel, table=True):
     status: ContainerInstanceStatusEnum = ContainerInstanceStatusEnum.IDLE
     registered_at: datetime = Field(default_factory=datetime.now)
     last_seen: datetime = Field(default_factory=datetime.now)
+    # Stamped only on actual status transitions (last_seen moves on every
+    # heartbeat); the idle reaper measures idle time from this.
+    status_changed_at: datetime = Field(default_factory=datetime.now)
     pyqcrbox_version: str
     # Docker container id, set by the orchestrator for containers it spawned;
     # None for containers started externally (e.g. via docker compose).
@@ -54,6 +57,7 @@ class ContainerInstanceDB(SQLModel, table=True):
             status=ContainerInstanceStatusEnum(self.status),
             registered_at=self.registered_at,
             last_seen=self.last_seen,
+            status_changed_at=self.status_changed_at,
             pyqcrbox_version=self.pyqcrbox_version,
             docker_container_id=self.docker_container_id,
             gui_host=self.gui_host,
@@ -70,6 +74,7 @@ class ContainerInstanceResponse(QCrBoxPydanticBaseModel):
     status: ContainerInstanceStatusEnum
     registered_at: datetime
     last_seen: datetime
+    status_changed_at: datetime
     pyqcrbox_version: str
     docker_container_id: str | None = None
     gui_host: str | None = None

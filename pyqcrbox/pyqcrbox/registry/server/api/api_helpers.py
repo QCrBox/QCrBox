@@ -476,7 +476,9 @@ async def append_to_dataset(
     return qcrbox_dataset_id
 
 
-async def invoke_command(data: sql_models.CommandInvocationCreate, *, nats_broker: NatsBroker) -> dict:
+async def invoke_command(
+    data: sql_models.CommandInvocationCreate, *, nats_broker: NatsBroker, target_private_inbox: str | None = None
+) -> dict:
     """Invoke a command by sending a request via NATS.
 
     Parameters
@@ -500,6 +502,7 @@ async def invoke_command(data: sql_models.CommandInvocationCreate, *, nats_broke
         application_version=cmd_spec_db.application.version,
         command_name=cmd_spec_db.name,
         command_arguments=data.arguments,
+        target_private_inbox=target_private_inbox,
     )
     response_json = await nats_broker.publish(msg, "server.cmd.handle_command_invocation_by_user", rpc=True)
 

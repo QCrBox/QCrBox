@@ -74,7 +74,9 @@ class SQLitePersistenceAdapter(BasePersistenceAdapter):
                 instance.client_id = client_id
                 instance.application_id = application_id
                 instance.pyqcrbox_version = pyqcrbox_version
-                instance.status = ContainerInstanceStatusEnum.IDLE
+                if instance.status != ContainerInstanceStatusEnum.IDLE:
+                    instance.status = ContainerInstanceStatusEnum.IDLE
+                    instance.status_changed_at = datetime.now()
             instance.last_seen = datetime.now()
             session.add(instance)
             session.commit()
@@ -115,7 +117,10 @@ class SQLitePersistenceAdapter(BasePersistenceAdapter):
                     application_id=application.id,
                     pyqcrbox_version=pyqcrbox_version,
                 )
-            instance.status = ContainerInstanceStatusEnum(status)
+            new_status = ContainerInstanceStatusEnum(status)
+            if ContainerInstanceStatusEnum(instance.status) != new_status:
+                instance.status_changed_at = datetime.now()
+            instance.status = new_status
             instance.last_seen = datetime.now()
             session.add(instance)
             session.commit()
@@ -143,9 +148,16 @@ class SQLitePersistenceAdapter(BasePersistenceAdapter):
                 select(ContainerInstanceDB).where(ContainerInstanceDB.client_id == client_id)
             ).first()
 
-    async def get_live_instance(self, application_slug: str, application_version: str) -> ContainerInstanceDB | None:
+    async def get_live_instance(
+        self, application_slug: str, application_version: str, owner: str | None = None
+    ) -> ContainerInstanceDB | None:
+        """Return a live instance of the application.
+
+        With `owner` set, only instances owned by that user are considered
+        (idle ones preferred); otherwise any non-gone instance qualifies.
+        """
         with settings.db.get_session() as session:
-            return session.exec(
+            stmt = (
                 select(ContainerInstanceDB)
                 .join(ApplicationSpecDB, ContainerInstanceDB.application_id == ApplicationSpecDB.id)
                 .where(
@@ -153,7 +165,19 @@ class SQLitePersistenceAdapter(BasePersistenceAdapter):
                     ApplicationSpecDB.version == application_version,
                     ContainerInstanceDB.status != ContainerInstanceStatusEnum.GONE,
                 )
-            ).first()
+            )
+            if owner is None:
+                return session.exec(stmt).first()
+
+            owned_instances = session.exec(stmt.where(ContainerInstanceDB.owner_user_id == owner)).all()
+            idle_instances = [
+                inst
+                for inst in owned_instances
+                if ContainerInstanceStatusEnum(inst.status) == ContainerInstanceStatusEnum.IDLE
+            ]
+            if idle_instances:
+                return idle_instances[0]
+            return owned_instances[0] if owned_instances else None
 
     async def set_instance_spawn_details(
         self,
@@ -203,6 +227,8 @@ class SQLitePersistenceAdapter(BasePersistenceAdapter):
             if instance is None:
                 logger.warning(f"Cannot update status of unknown container instance: {private_inbox!r}")
                 return
+            if ContainerInstanceStatusEnum(instance.status) != status:
+                instance.status_changed_at = datetime.now()
             instance.status = status
             session.add(instance)
             session.commit()
@@ -246,3 +272,45 @@ class SQLitePersistenceAdapter(BasePersistenceAdapter):
                 )
             ).all()
             return len(instances)
+
+    async def count_live_instances_for_owner(self, owner_user_id: str) -> int:
+        """Count a user's live instances across all applications."""
+        with settings.db.get_session() as session:
+            instances = session.exec(
+                select(ContainerInstanceDB).where(
+                    ContainerInstanceDB.owner_user_id == owner_user_id,
+                    ContainerInstanceDB.status != ContainerInstanceStatusEnum.GONE,
+                )
+            ).all()
+            return len(instances)
+
+    async def get_instance_by_gui_host(self, gui_host: str) -> ContainerInstanceDB | None:
+        with settings.db.get_session() as session:
+            return session.exec(
+                select(ContainerInstanceDB).where(ContainerInstanceDB.gui_host == gui_host)
+            ).first()
+
+    async def get_reapable_idle_instances(self, cutoff: datetime) -> list[ContainerInstanceDB]:
+        """Orchestrator-managed instances that have been idle since before `cutoff`."""
+        with settings.db.get_session() as session:
+            return list(
+                session.exec(
+                    select(ContainerInstanceDB).where(
+                        ContainerInstanceDB.docker_container_id.isnot(None),  # type: ignore[union-attr]
+                        ContainerInstanceDB.status == ContainerInstanceStatusEnum.IDLE,
+                        ContainerInstanceDB.status_changed_at < cutoff,
+                    )
+                ).all()
+            )
+
+    async def get_purgeable_gone_instances(self, cutoff: datetime) -> list[ContainerInstanceDB]:
+        """'gone' instance rows whose last heartbeat is older than `cutoff`."""
+        with settings.db.get_session() as session:
+            return list(
+                session.exec(
+                    select(ContainerInstanceDB).where(
+                        ContainerInstanceDB.status == ContainerInstanceStatusEnum.GONE,
+                        ContainerInstanceDB.last_seen < cutoff,
+                    )
+                ).all()
+            )

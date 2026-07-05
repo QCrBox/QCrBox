@@ -21,7 +21,6 @@ from litestar.response import Redirect
 from pydantic import BaseModel
 
 from pyqcrbox import helpers, logger, msg_specs, settings
-from pyqcrbox.settings import apply_lightweight_migrations
 from pyqcrbox._version import __version__ as pyqcrbox_version
 from pyqcrbox.data_management import CalculationAlreadyExistsError, DataManager
 from pyqcrbox.debug import log_eel
@@ -29,6 +28,7 @@ from pyqcrbox.msg_specs.base import QCrBoxGenericResponse
 from pyqcrbox.registry.server.api.api_endpoints import handle_exception
 from pyqcrbox.registry.server.api.identity import get_current_user
 from pyqcrbox.services.orchestrator import ContainerOrchestrator
+from pyqcrbox.settings import apply_lightweight_migrations
 from pyqcrbox.sql_models import (
     CalculationDB,
     CalculationStatusDetails,
@@ -198,8 +198,38 @@ class QCrBoxServer(QCrBoxServerClientBase):
             await asyncio.sleep(sweep_interval)
             try:
                 await self.sqlite_persistence_adapter.mark_stale_instances_gone(datetime.now() - stale_after)
+                await self._reap_and_purge_instances()
             except Exception as exc:
                 logger.warning(f"Instance sweep failed: {exc}")
+
+    async def _reap_and_purge_instances(self) -> None:
+        """Remove long-idle orchestrator-spawned containers and purge old 'gone' rows."""
+        orchestrator = await self.svcs_container.aget(ContainerOrchestrator)
+        persistence = self.sqlite_persistence_adapter
+        now = datetime.now()
+
+        if orchestrator.enabled:
+            idle_cutoff = now - timedelta(seconds=settings.orchestrator.idle_timeout)
+            for instance in await persistence.get_reapable_idle_instances(idle_cutoff):
+                logger.info(
+                    f"Reaping container instance {instance.id} (idle since {instance.status_changed_at}, "
+                    f"owner={instance.owner_user_id!r})"
+                )
+                try:
+                    await orchestrator.remove_instance(instance.id)
+                except Exception as exc:
+                    logger.warning(f"Failed to reap instance {instance.id}: {exc}")
+
+        gone_cutoff = now - timedelta(seconds=settings.orchestrator.gone_retention)
+        for instance in await persistence.get_purgeable_gone_instances(gone_cutoff):
+            logger.info(f"Purging gone container instance row {instance.id} (last seen {instance.last_seen})")
+            if orchestrator.enabled and instance.docker_container_id is not None:
+                try:
+                    await orchestrator.remove_instance(instance.id)
+                    continue
+                except Exception as exc:
+                    logger.warning(f"Could not remove container for gone instance {instance.id}: {exc}")
+            await persistence.delete_instance(instance.private_inbox)
 
     @log_eel
     async def handle_command_invocation_by_user(self, msg: msg_specs.InvokeCommandNATS) -> QCrBoxGenericResponse:
@@ -238,12 +268,13 @@ class QCrBoxServer(QCrBoxServerClientBase):
             calculation_id=calculation_id,
         )
 
-        # Send invocation request to client(s) and get back their response which
-        # indicates if the client can execute the requested command or not
-        logger.info("Sending message to client(s) to request command to execute")
+        # Send invocation request to the bound instance (per-user binding) or
+        # broadcast to all containers of the application, and get back the
+        # response indicating whether the client can execute the command
+        logger.info(f"Sending invocation request to subject {msg.invocation_request_subject!r}")
         invocation_response_from_client = await self.nats_broker.publish(
             message=invocation_request_to_client,
-            subject=f"client.cmd.handle_invocation_request.{invocation_request_to_client.nats_subject_parts}",
+            subject=msg.invocation_request_subject,
             rpc=True,
         )
         # Now send the command request response to another inbox in the server (this class)

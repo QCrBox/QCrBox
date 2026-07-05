@@ -1,4 +1,4 @@
-from typing import Literal, Optional
+from typing import Literal
 
 from pydantic import BaseModel
 
@@ -23,7 +23,7 @@ class PollCalculationStatus(QCrBoxBaseAction):
 
 
 class CalculationStatusDetails(BaseModel):
-    returncode: Optional[int]
+    returncode: int | None
     stdout: str
     stderr: str
 

@@ -43,10 +43,17 @@ def _create_db_tables(engine, purge_existing: bool):
 # Columns added to pre-existing tables after the registry database became
 # file-backed. `metadata.create_all` only creates missing tables, so these
 # are applied via ALTER TABLE (there is no migration tooling like Alembic).
+# Format: (table, column, ddl_type, backfill_sql_or_None).
 _LIGHTWEIGHT_MIGRATIONS = [
-    ("application", "docker_image", "VARCHAR"),
-    ("container_instance", "docker_container_id", "VARCHAR"),
-    ("container_instance", "gui_host", "VARCHAR"),
+    ("application", "docker_image", "VARCHAR", None),
+    ("container_instance", "docker_container_id", "VARCHAR", None),
+    ("container_instance", "gui_host", "VARCHAR", None),
+    (
+        "container_instance",
+        "status_changed_at",
+        "DATETIME",
+        "UPDATE container_instance SET status_changed_at = last_seen WHERE status_changed_at IS NULL",
+    ),
 ]
 
 
@@ -54,11 +61,13 @@ def apply_lightweight_migrations(engine) -> None:
     from pyqcrbox.logging import logger
 
     with engine.connect() as conn:
-        for table, column, ddl_type in _LIGHTWEIGHT_MIGRATIONS:
+        for table, column, ddl_type, backfill_sql in _LIGHTWEIGHT_MIGRATIONS:
             existing_columns = {row[1] for row in conn.exec_driver_sql(f"PRAGMA table_info({table})")}
             if existing_columns and column not in existing_columns:
                 logger.info(f"Adding missing column {column!r} to table {table!r}")
                 conn.exec_driver_sql(f"ALTER TABLE {table} ADD COLUMN {column} {ddl_type}")
+                if backfill_sql:
+                    conn.exec_driver_sql(backfill_sql)
         conn.commit()
 
 
@@ -146,6 +155,9 @@ class OrchestratorSettings(QCrBoxSettingsBaseModel):
     spawn_timeout: float = 90.0  # seconds to wait for a spawned client to register
     poll_interval: float = 0.5  # seconds between registration polls while spawning
     max_instances_per_app: int = 3  # quota guard for explicit instance creation
+    max_instances_per_user: int = 5  # live instances per owner, across applications
+    idle_timeout: float = 1800.0  # seconds an orchestrator-spawned instance may sit idle before reaping
+    gone_retention: float = 3600.0  # seconds before 'gone' instance rows are purged
     network_name: str | None = None  # discovered from the registry's own container if unset
     fallback_network_name: str = "qcrbox_qcrbox-net"
     nats_host: str = "qcrbox-nats"
@@ -170,6 +182,11 @@ class AuthSettings(QCrBoxSettingsBaseModel):
     # Trust the Remote-User header injected by Authelia for requests arriving
     # via Traefik.
     trust_remote_user_headers: bool = True
+    # When set, Remote-User is only trusted if the request also carries a
+    # matching X-QCrBox-Gateway-Token (injected by a Traefik headers
+    # middleware), preventing containers on the docker network from forging
+    # identities by calling the registry directly.
+    gateway_token: str | None = None
 
 
 class TestingSettings(QCrBoxSettingsBaseModel):

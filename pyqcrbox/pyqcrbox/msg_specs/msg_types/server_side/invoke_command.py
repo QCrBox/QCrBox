@@ -1,4 +1,4 @@
-from typing import Literal, Optional
+from typing import Literal
 
 from pydantic import BaseModel
 
@@ -23,5 +23,5 @@ class PayloadForInvokeCommandResponse(BaseModel):
 class InvokeCommandResponse(QCrBoxGenericResponse):
     response_to: Literal[InvokeCommand.action_name]
     status: str
-    msg: Optional[str] = None
-    payload: Optional[PayloadForInvokeCommandResponse] = None
+    msg: str | None = None
+    payload: PayloadForInvokeCommandResponse | None = None

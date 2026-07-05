@@ -79,9 +79,19 @@ class QCrBoxClient(QCrBoxServerClientBase):
 
     def _set_up_nats_broker(self) -> None:
         """Initialise NATS inbox handlers."""
-        slug_sanitized = helpers.sanitize_for_nats_subject(self.application_spec.slug)
-        version_sanitized = helpers.sanitize_for_nats_subject(self.application_spec.version)
-        self.nats_broker.subscriber(f"client.cmd.handle_invocation_request.{slug_sanitized}.{version_sanitized}")(
+        # User-owned containers (spawned with QCRBOX_DISABLE_BROADCAST_INVOCATIONS)
+        # only serve invocations targeted at their private inbox; shared/pool
+        # containers additionally compete for broadcast invocation requests.
+        if not helpers.as_bool(os.environ.get("QCRBOX_DISABLE_BROADCAST_INVOCATIONS", "false")):
+            slug_sanitized = helpers.sanitize_for_nats_subject(self.application_spec.slug)
+            version_sanitized = helpers.sanitize_for_nats_subject(self.application_spec.version)
+            self.nats_broker.subscriber(f"client.cmd.handle_invocation_request.{slug_sanitized}.{version_sanitized}")(
+                self.handle_command_invocation_request_from_server
+            )
+        # Targeted invocation requests (per-user container binding): the server
+        # addresses this specific instance instead of broadcasting to all
+        # containers of the application.
+        self.nats_broker.subscriber(f"{self.private_inbox}.cmd.handle_invocation_request")(
             self.handle_command_invocation_request_from_server
         )
         self.nats_broker.subscriber(f"{self.private_inbox}.cmd.discard")(self.handle_discard_command_invocation)

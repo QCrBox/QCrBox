@@ -246,6 +246,7 @@ services:
       QCRBOX__ORCHESTRATOR__DOCKER_HOST: "http://qcrbox-docker-socket-proxy:2375"
       QCRBOX__ORCHESTRATOR__GUI_DOMAIN: ${QCRBOX_DOMAIN:-qcrbox.localhost}
       QCRBOX__AUTH__SERVICE_TOKEN: ${QCRBOX_SERVICE_TOKEN:-}
+      QCRBOX__AUTH__GATEWAY_TOKEN: ${QCRBOX_GATEWAY_TOKEN:-}
     networks:
       - qcrbox-net
       - qcrbox-docker-proxy-net
@@ -261,13 +262,24 @@ services:
       # Main API subdomain with authentication
       traefik.http.routers.registry-api.rule: Host(`api.registry.${QCRBOX_DOMAIN:-localhost.local}`)
       traefik.http.routers.registry-api.entrypoints: websecure
-      traefik.http.routers.registry-api.middlewares: authelia-auth
+      traefik.http.routers.registry-api.middlewares: authelia-auth,qcrbox-gateway-token
       traefik.http.routers.registry-api.priority: 50
       traefik.http.routers.registry-api.service: registry-service
       
       # Service definition
       traefik.http.services.registry-service.loadbalancer.server.scheme: http
       traefik.http.services.registry-service.loadbalancer.server.port: 8000
+
+      # Proof that a request came through Traefik: the gateway token is
+      # injected here and required by the registry before it trusts the
+      # Remote-User header (QCRBOX__AUTH__GATEWAY_TOKEN).
+      traefik.http.middlewares.qcrbox-gateway-token.headers.customrequestheaders.X-QCrBox-Gateway-Token: ${QCRBOX_GATEWAY_TOKEN:-}
+
+      # Ownership check for per-instance GUI routes of spawned containers:
+      # chained after authelia-auth, authorizes Remote-User against the
+      # instance's owner (403 when the GUI belongs to another user).
+      traefik.http.middlewares.qcrbox-instance-auth.forwardauth.address: http://qcrbox-registry:8000/api/auth/gui
+      traefik.http.middlewares.qcrbox-instance-auth.forwardauth.trustForwardHeader: true
     logging:
       driver: "syslog"
       options:
