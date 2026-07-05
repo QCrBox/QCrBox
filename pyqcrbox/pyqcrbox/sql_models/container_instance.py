@@ -35,6 +35,9 @@ class ContainerInstanceDB(SQLModel, table=True):
     registered_at: datetime = Field(default_factory=datetime.now)
     last_seen: datetime = Field(default_factory=datetime.now)
     pyqcrbox_version: str
+    # Docker container id, set by the orchestrator for containers it spawned;
+    # None for containers started externally (e.g. via docker compose).
+    docker_container_id: str | None = None
     # Reserved for per-user container binding (not populated yet)
     owner_user_id: str | None = None
 
@@ -49,6 +52,7 @@ class ContainerInstanceDB(SQLModel, table=True):
             registered_at=self.registered_at,
             last_seen=self.last_seen,
             pyqcrbox_version=self.pyqcrbox_version,
+            docker_container_id=self.docker_container_id,
             owner_user_id=self.owner_user_id,
         )
 
@@ -63,4 +67,5 @@ class ContainerInstanceResponse(QCrBoxPydanticBaseModel):
     registered_at: datetime
     last_seen: datetime
     pyqcrbox_version: str
+    docker_container_id: str | None = None
     owner_user_id: str | None = None

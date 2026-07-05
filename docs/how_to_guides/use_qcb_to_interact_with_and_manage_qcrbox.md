@@ -124,6 +124,20 @@ $ qcb list containers
 Instances whose heartbeats stop arriving (e.g. after `docker kill`) are marked as `gone` after a
 short timeout.
 
+## On-demand container spawning (experimental)
+
+With `QCRBOX__ORCHESTRATOR__ENABLED=true` in the env file, the registry spawns application
+containers on demand via the Docker API (through a locked-down socket proxy): invoking a
+non-interactive command for an application that is registered but has no running container
+starts one automatically (the request blocks until the container has registered, up to
+`QCRBOX__ORCHESTRATOR__SPAWN_TIMEOUT`, default 90s). Containers can also be started and
+stopped explicitly via `POST /api/container-instances` and `DELETE /api/container-instances/{id}`.
+Spawning requires the application's docker image to be known to the registry, which happens
+automatically when specs are registered via `qcb register` / `qcb up`. Spawned containers keep
+running for reuse; a full `qcb down` removes them (they are labelled `org.qcrbox.spawned=true`).
+Interactive (GUI) applications are not auto-spawned yet, since their per-instance routing does
+not exist yet.
+
 ## Shutting down containers
 
 Run the following command to shut down all running QCrBox containers:

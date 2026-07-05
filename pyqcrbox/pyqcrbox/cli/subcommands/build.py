@@ -92,6 +92,15 @@ def task_build_pyqcrbox_python_package(dry_run: bool):
         actions += [action_build_pyqcrbox_wheel]
         actions += actions_copy_requirements_files
 
+        # The orchestrator requirements are installed only in the registry image
+        # (not via base-ancestor), so they are copied into its build context.
+        actions.append(
+            make_action_to_copy_file(
+                repo_root.joinpath("pyqcrbox/requirements-orchestrator.txt"),
+                repo_root.joinpath("services/core/qcrbox_registry/"),
+            )
+        )
+
     return {
         "name": "task_build_python_package:pyqcrbox",
         "actions": actions,

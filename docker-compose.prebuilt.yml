@@ -196,10 +196,30 @@ services:
         syslog-address: udp://127.0.0.1:514
         tag: "qcrbox-authelia"
 
+  qcrbox-docker-socket-proxy:
+    # Restricts the registry's Docker API access to the container endpoints
+    # needed for on-demand spawning; reachable only via the internal
+    # qcrbox-docker-proxy-net network.
+    image: tecnativa/docker-socket-proxy:0.3.0
+    environment:
+      CONTAINERS: 1     # GET /containers/... (list, inspect)
+      POST: 1           # non-GET methods on enabled sections (create, delete)
+      ALLOW_START: 1    # POST /containers/{id}/start
+      ALLOW_STOP: 1     # POST /containers/{id}/stop
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - qcrbox-docker-proxy-net
+    restart: unless-stopped
+    logging:
+      driver: "syslog"
+      options:
+        syslog-address: udp://127.0.0.1:514
+        tag: "qcrbox-docker-socket-proxy"
+
   qcrbox-registry:
     image: ${QCRBOX_DOCKER_REPO:?Must set env var QCRBOX_DOCKER_REPO}/registry:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}
     volumes:
-      - ${QCRBOX_SHARED_FILES_DIR_HOST_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_HOST_PATH}:${QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH}
       - qcrbox-registry-db:${QCRBOX_REGISTRY_DB_DIR:?Must set env var QCRBOX_REGISTRY_DB_DIR}
     ports:
       # The registry API has no authentication of its own; loopback only,
@@ -217,11 +237,16 @@ services:
         condition: service_healthy
       qcrbox-authelia:
         condition: service_healthy
+      qcrbox-docker-socket-proxy:
+        condition: service_started
     environment:
       QCRBOX__NATS__HOST: "qcrbox-nats"
       QCRBOX__DB__URL: "sqlite:///${QCRBOX_REGISTRY_DB_DIR}/db.sqlite"
+      QCRBOX__ORCHESTRATOR__ENABLED: ${QCRBOX__ORCHESTRATOR__ENABLED:-false}
+      QCRBOX__ORCHESTRATOR__DOCKER_HOST: "http://qcrbox-docker-socket-proxy:2375"
     networks:
       - qcrbox-net
+      - qcrbox-docker-proxy-net
     restart: "unless-stopped"
     labels:
       traefik.enable: true
@@ -249,6 +274,8 @@ services:
 
 networks:
   qcrbox-net:
+  qcrbox-docker-proxy-net:
+    internal: true
 
 volumes:
   qcrbox-registry-db:

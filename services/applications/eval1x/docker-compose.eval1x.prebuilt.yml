@@ -1,8 +1,6 @@
 services:
   eval1x:
     image: "${QCRBOX_DOCKER_REPO:?Must set env var QCRBOX_DOCKER_REPO}/eval1x:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
-    volumes:
-      - ${QCRBOX_SHARED_FILES_DIR_HOST_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_HOST_PATH}:${QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH:?Must set env var QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH}
     networks:
       - qcrbox-net
     depends_on:

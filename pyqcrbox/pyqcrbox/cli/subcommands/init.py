@@ -58,7 +58,7 @@ def create_application_template(overwrite_if_exists, dry_run, application_slug):
             err=True,
         )
         choice = click.prompt(
-            f"Use hyphenated slug?",
+            "Use hyphenated slug?",
             type=click.Choice([suggested, application_slug]),
             default=suggested,
         )

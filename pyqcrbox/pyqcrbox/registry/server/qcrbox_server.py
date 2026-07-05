@@ -21,11 +21,13 @@ from litestar.response import Redirect
 from pydantic import BaseModel
 
 from pyqcrbox import helpers, logger, msg_specs, settings
+from pyqcrbox.settings import apply_lightweight_migrations
 from pyqcrbox._version import __version__ as pyqcrbox_version
 from pyqcrbox.data_management import CalculationAlreadyExistsError, DataManager
 from pyqcrbox.debug import log_eel
 from pyqcrbox.msg_specs.base import QCrBoxGenericResponse
 from pyqcrbox.registry.server.api.api_endpoints import handle_exception
+from pyqcrbox.services.orchestrator import ContainerOrchestrator
 from pyqcrbox.sql_models import (
     CalculationDB,
     CalculationStatusDetails,
@@ -174,6 +176,14 @@ class QCrBoxServer(QCrBoxServerClientBase):
             )
         else:
             logger.warning(f"Received deregistration for unknown container instance: {msg.payload.client_id!r}")
+
+    @on_qcrbox_startup
+    async def _start_orchestrator(self) -> None:
+        """Initialise the container orchestrator (no-op when orchestration is disabled)."""
+        orchestrator = await self.svcs_container.aget(ContainerOrchestrator)
+        if orchestrator.enabled:
+            await orchestrator.startup()
+            logger.info("Container orchestrator is enabled")
 
     @on_qcrbox_startup
     async def _start_instance_sweeper(self) -> None:
@@ -435,6 +445,9 @@ class QCrBoxServer(QCrBoxServerClientBase):
         async def get_data_manager():
             return await self.svcs_container.aget(DataManager)
 
+        async def get_orchestrator():
+            return await self.svcs_container.aget(ContainerOrchestrator)
+
         self.asgi_server = Litestar(
             route_handlers=[api_router, web_root_handler],
             lifespan=[self.lifespan_context],
@@ -443,6 +456,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
             dependencies={
                 "nats_broker": Provide(get_nats_broker),
                 "data_manager": Provide(get_data_manager),
+                "orchestrator": Provide(get_orchestrator),
             },
             openapi_config=OpenAPIConfig(
                 title="QCrBox",
@@ -475,6 +489,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
         """
         logger.info(f"Initialising database...: {settings.db.url}")
         settings.db.create_db_and_tables(purge_existing_tables=purge_existing_db_tables)
+        apply_lightweight_migrations(settings.db.get_engine())
         logger.info("Finished initialising database...")
 
 
@@ -483,6 +498,8 @@ class QCrBoxServer(QCrBoxServerClientBase):
         if sweeper_task is not None:
             sweeper_task.cancel()
             self._instance_sweeper_task = None
+        orchestrator = await self.svcs_container.aget(ContainerOrchestrator)
+        await orchestrator.shutdown()
 
 
 class TestQCrBoxServer(TestQCrBoxServerClientBase, QCrBoxServer):  # type: ignore

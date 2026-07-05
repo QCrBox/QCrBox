@@ -10,6 +10,7 @@ from pyqcrbox import settings
 from pyqcrbox.sql_models import ApplicationSpec
 
 from ..helpers import ClickCommandCls, DockerProject
+from ..helpers.image_resolution import resolve_docker_image_for_spec_file
 
 
 def find_spec_file_for_component(docker_project: DockerProject, component: str) -> Path | None:
@@ -38,9 +39,10 @@ def collect_spec_files(docker_project: DockerProject, targets: tuple[str, ...]) 
     return spec_files
 
 
-def register_spec_file(spec_file: Path) -> tuple[bool, str]:
+def register_spec_file(spec_file: Path, docker_image: str | None = None) -> tuple[bool, str]:
     """Parse a spec YAML file and register it with the registry API."""
     application_spec = ApplicationSpec.from_yaml_file(spec_file)
+    application_spec.docker_image = docker_image
     try:
         r = requests.post(
             settings.registry.server.api_url + "/applications",
@@ -93,7 +95,8 @@ def register_specs_for_components(docker_project: DockerProject, components: lis
 
     for spec_file in spec_files:
         try:
-            success, message = register_spec_file(spec_file)
+            docker_image = resolve_docker_image_for_spec_file(docker_project, spec_file)
+            success, message = register_spec_file(spec_file, docker_image=docker_image)
         except Exception as exc:
             success, message = False, f"failed to register spec {str(spec_file)!r}: {exc}"
         click.echo(message if success else f"Warning: {message}")
@@ -113,7 +116,8 @@ def register_application_specs(targets: tuple[str, ...]):
 
     any_failed = False
     for spec_file in spec_files:
-        success, message = register_spec_file(spec_file)
+        docker_image = resolve_docker_image_for_spec_file(docker_project, spec_file)
+        success, message = register_spec_file(spec_file, docker_image=docker_image)
         click.echo(("✔ " if success else "× ") + message)
         any_failed = any_failed or not success
 

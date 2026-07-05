@@ -2,7 +2,7 @@ import functools
 import logging
 import sys
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 import sqlalchemy
 import sqlmodel
@@ -24,7 +24,7 @@ def get_log_level_as_int(level: str):
 
 
 @functools.lru_cache
-def create_sqlmodel_engine(url: Optional[SQLiteDsn], echo: bool, connect_args: tuple[(str, Any)]):
+def create_sqlmodel_engine(url: SQLiteDsn | None, echo: bool, connect_args: tuple[(str, Any)]):
     return create_engine(str(url), echo=echo, connect_args=connect_args)
 
 
@@ -38,6 +38,27 @@ def _create_db_tables(engine, purge_existing: bool):
         logger.debug("Purging existing tables.")
         QCrBoxBaseSQLModel.metadata.drop_all(engine)
     QCrBoxBaseSQLModel.metadata.create_all(engine)
+
+
+# Columns added to pre-existing tables after the registry database became
+# file-backed. `metadata.create_all` only creates missing tables, so these
+# are applied via ALTER TABLE (there is no migration tooling like Alembic).
+_LIGHTWEIGHT_MIGRATIONS = [
+    ("application", "docker_image", "VARCHAR"),
+    ("container_instance", "docker_container_id", "VARCHAR"),
+]
+
+
+def apply_lightweight_migrations(engine) -> None:
+    from pyqcrbox.logging import logger
+
+    with engine.connect() as conn:
+        for table, column, ddl_type in _LIGHTWEIGHT_MIGRATIONS:
+            existing_columns = {row[1] for row in conn.exec_driver_sql(f"PRAGMA table_info({table})")}
+            if existing_columns and column not in existing_columns:
+                logger.info(f"Adding missing column {column!r} to table {table!r}")
+                conn.exec_driver_sql(f"ALTER TABLE {table} ADD COLUMN {column} {ddl_type}")
+        conn.commit()
 
 
 class QCrBoxSettingsBaseModel(BaseSettings):
@@ -55,22 +76,22 @@ class DatabaseSettings(QCrBoxSettingsBaseModel):
 
     def create_db_and_tables(
         self,
-        url: Optional[SQLiteDsn] = None,
-        echo: Optional[bool] = None,
+        url: SQLiteDsn | None = None,
+        echo: bool | None = None,
         purge_existing_tables: bool = False,
     ) -> None:
         engine = self.get_engine(url=url, echo=echo)
         _create_db_tables(engine, purge_existing_tables)
 
-    def get_engine(self, url: Optional[SQLiteDsn] = None, echo: Optional[bool] = None) -> sqlalchemy.Engine:
+    def get_engine(self, url: SQLiteDsn | None = None, echo: bool | None = None) -> sqlalchemy.Engine:
         url = url if url is not None else self.url
         echo = echo if echo is not None else self.echo
         return create_sqlmodel_engine(url=url, echo=echo, connect_args=tuple(self.connect_args.items()))
 
     def get_session(
         self,
-        url: Optional[SQLiteDsn] = None,
-        echo: Optional[bool] = None,
+        url: SQLiteDsn | None = None,
+        echo: bool | None = None,
         init_db: bool = False,
         purge_existing_tables: bool = False,
     ) -> sqlmodel.Session:
@@ -118,6 +139,22 @@ class RegistrySettings(QCrBoxSettingsBaseModel):
     client: ClientSettings = ClientSettings()
 
 
+class OrchestratorSettings(QCrBoxSettingsBaseModel):
+    enabled: bool = False
+    docker_host: str = "http://qcrbox-docker-socket-proxy:2375"
+    spawn_timeout: float = 90.0  # seconds to wait for a spawned client to register
+    poll_interval: float = 0.5  # seconds between registration polls while spawning
+    max_instances_per_app: int = 3  # quota guard for explicit instance creation
+    network_name: str | None = None  # discovered from the registry's own container if unset
+    fallback_network_name: str = "qcrbox_qcrbox-net"
+    nats_host: str = "qcrbox-nats"
+    registry_host: str = "qcrbox-registry"
+    registry_port: int = 8000
+    use_syslog_logging: bool = True
+    syslog_address: str = "udp://127.0.0.1:514"
+    label_prefix: str = "org.qcrbox"
+
+
 class TestingSettings(QCrBoxSettingsBaseModel):
     # report_coverage: bool = False
     use_in_memory_db: bool = False
@@ -154,6 +191,7 @@ class QCrBoxSettings(QCrBoxSettingsBaseModel):
     debug_mode: bool = IS_RUNNING_DEBUG_MODE
     nats: NATSSettings = NATSSettings()
     registry: RegistrySettings = RegistrySettings()
+    orchestrator: OrchestratorSettings = OrchestratorSettings()
     db: DatabaseSettings = DatabaseSettings()
     testing: TestingSettings = TestingSettings()
     cli: CLISettings = CLISettings()

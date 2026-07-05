@@ -162,7 +162,9 @@ authentication and must never be exposed). Beyond that:
 
 - **Backups**: the docker volumes (`qcrbox-registry-db`, `qcrbox-nats-storage`,
   `qcrbox-authelia-data`, `qcrbox-lldap-data`, the frontend's
-  `postgres_data`) and `shared_files/`.
+  `postgres_data`). The legacy `shared_files/` directory is only mounted by
+  the Wine-based applications (CrysAlisPro, MoPro); all other file exchange
+  goes through the NATS data store.
 - **Password resets**: the notifier writes reset links to a file inside the
   Authelia container (`/config/notification.txt`). For real users configure
   an SMTP notifier in `authelia_config.yml`.

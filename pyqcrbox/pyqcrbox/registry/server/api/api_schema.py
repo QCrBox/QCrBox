@@ -40,6 +40,22 @@ class CreateInteractiveSessionParameters(BaseModel):
     command_arguments: dict[str, Any]
 
 
+class CreateContainerInstanceParameters(BaseModel):
+    """Request body for spawning a container instance on demand.
+
+    Attributes
+    ----------
+    application_slug : str
+        The slug of the application to spawn a container for.
+    application_version : str
+        The version of the application to spawn a container for.
+
+    """
+
+    application_slug: str
+    application_version: str
+
+
 class InvokeCommandParameters(BaseModel):
     """Request body for invoke a command.
 
@@ -323,4 +339,7 @@ NOT_FOUND_ERROR = ResponseSpec(QCrBoxErrorResponse, generate_examples=False, des
 CONFLICT_ERROR = ResponseSpec(QCrBoxErrorResponse, generate_examples=False, description="Conflicting request")
 SERVICE_UNAVAILABLE_ERROR = ResponseSpec(
     QCrBoxErrorResponse, generate_examples=False, description="No running container available"
+)
+GATEWAY_TIMEOUT_ERROR = ResponseSpec(
+    QCrBoxErrorResponse, generate_examples=False, description="Spawned container did not become ready in time"
 )

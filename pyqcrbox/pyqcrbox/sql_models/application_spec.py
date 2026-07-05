@@ -71,6 +71,10 @@ class ApplicationSpecBase(QCrBoxPydanticBaseModel):
     doi: str | None = Field(default=None, max_length=settings.db.max_text_length)
     yaml_file_path: str | None = Field(exclude=True, default=None)
     gui_port: str | None = Field(default=None, max_length=settings.db.max_text_length)
+    # Docker image (incl. tag) used to spawn containers for this application on demand.
+    # Resolved from the application's compose file by `qcb register`; None when the
+    # spec was self-registered by a running container.
+    docker_image: str | None = Field(default=None, max_length=settings.db.max_text_length)
 
     @field_validator("yaml_file_path", mode="before")
     @classmethod

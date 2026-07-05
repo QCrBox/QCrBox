@@ -157,6 +157,15 @@ class ApplicationSpecDB(ApplicationSpecBase, SQLModel, table=True):
                     f"Currently registered application: {result!r}",
                 )
 
+                # A non-null docker_image updates the stored value; a null one (e.g. from
+                # a container self-registering) must never clear a previously stored image.
+                if self.docker_image is not None and result.docker_image != self.docker_image:
+                    logger.info(f"Updating docker image for {self.slug!r} to {self.docker_image!r}")
+                    result.docker_image = self.docker_image
+                    session.add(result)
+                    session.commit()
+                    session.refresh(result)
+
                 excluded_fields = ["call_pattern", "callable_name", "import_path", "id", "application_id"]
                 result_commands = [cmd.model_dump(exclude=excluded_fields) for cmd in result.commands]
                 self_commands = [cmd.model_dump(exclude=excluded_fields) for cmd in self.commands]

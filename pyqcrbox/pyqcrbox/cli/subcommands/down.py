@@ -22,14 +22,25 @@ from ..helpers import ClickCommandCls, DockerProject, run_tasks
 )
 @click.argument("components", nargs=-1)
 def shut_down_components(dry_run: bool, project_name: str, components: list[str]):
-    """Shut down QCrBox components."""
+    """Shut down QCrBox components.
+
+    A full shutdown (no components given) also removes any containers that
+    were spawned on demand by the registry's orchestrator. A component-scoped
+    shutdown leaves spawned containers untouched.
+    """
     docker_project = DockerProject(name=project_name)
+    shut_down_everything = not components
     components = components or docker_project.services_excluding_base_images
     click.echo(f"Shutting down the following components: {', '.join(components)}\n")
+
+    actions = [(docker_project.spin_down_docker_containers, (components, dry_run))]
+    if shut_down_everything:
+        actions.append((docker_project.remove_orchestrator_spawned_containers, (dry_run,)))
+
     task = doit.task.dict_to_task(
         {
-            "name": "task_start_up_docker_containers",
-            "actions": [(docker_project.spin_down_docker_containers, (components, dry_run))],
+            "name": "task_shut_down_docker_containers",
+            "actions": actions,
         }
     )
 

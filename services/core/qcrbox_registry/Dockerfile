@@ -19,5 +19,12 @@ RUN mkdir -p ${QCRBOX_REGISTRY_DB_DIR}
 RUN chown ${QCRBOX_USER}:${QCRBOX_GROUP} ${QCRBOX_REGISTRY_DB_DIR}
 VOLUME ${QCRBOX_REGISTRY_DB_DIR}
 
+# Registry-only Python dependencies (on-demand container orchestration).
+# Deliberately not installed via base-ancestor so that application containers
+# do not ship the Docker API client. The requirements file is copied into this
+# build context by `qcb build` (see cli/subcommands/build.py).
+COPY --chown=${QCRBOX_USER}:${QCRBOX_GROUP} requirements-orchestrator.txt ${QCRBOX_HOME}/
+RUN ${QCRBOX_PYTHON_VENV_DIR}/bin/python -m pip install -r ${QCRBOX_HOME}/requirements-orchestrator.txt
+
 ARG QCRBOX_SUPERVISORD_CONF_DIR=${QCRBOX_SUPERVISORD_CONF_DIR}
 COPY supervisord.qcrbox_registry_server.conf ${QCRBOX_SUPERVISORD_CONF_DIR}/

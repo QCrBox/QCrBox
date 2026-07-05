@@ -97,8 +97,14 @@ server = [
     "uvicorn[standard]",
 ]
 
+# Installed only in the registry image (not in application containers);
+# enables on-demand container spawning via the Docker API.
+orchestrator = [
+    "aiodocker>=0.24",
+]
+
 all = [
-    "pyqcrbox[dev,docs,client,server]",
+    "pyqcrbox[dev,docs,client,server,orchestrator]",
 ]
 
 [project.urls]

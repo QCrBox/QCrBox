@@ -122,6 +122,51 @@ class SQLitePersistenceAdapter(BasePersistenceAdapter):
             session.refresh(instance)
             return instance
 
+    async def get_application(self, application_slug: str, application_version: str) -> ApplicationSpecDB | None:
+        with settings.db.get_session() as session:
+            return session.exec(
+                select(ApplicationSpecDB).where(
+                    ApplicationSpecDB.slug == application_slug,
+                    ApplicationSpecDB.version == application_version,
+                )
+            ).first()
+
+    async def get_instance_by_id(self, instance_id: int) -> ContainerInstanceDB | None:
+        with settings.db.get_session() as session:
+            return session.exec(
+                select(ContainerInstanceDB).where(ContainerInstanceDB.id == instance_id)
+            ).first()
+
+    async def get_instance_by_client_id(self, client_id: str) -> ContainerInstanceDB | None:
+        with settings.db.get_session() as session:
+            return session.exec(
+                select(ContainerInstanceDB).where(ContainerInstanceDB.client_id == client_id)
+            ).first()
+
+    async def get_live_instance(self, application_slug: str, application_version: str) -> ContainerInstanceDB | None:
+        with settings.db.get_session() as session:
+            return session.exec(
+                select(ContainerInstanceDB)
+                .join(ApplicationSpecDB, ContainerInstanceDB.application_id == ApplicationSpecDB.id)
+                .where(
+                    ApplicationSpecDB.slug == application_slug,
+                    ApplicationSpecDB.version == application_version,
+                    ContainerInstanceDB.status != ContainerInstanceStatusEnum.GONE,
+                )
+            ).first()
+
+    async def set_instance_docker_container_id(self, client_id: str, docker_container_id: str) -> None:
+        with settings.db.get_session() as session:
+            instance = session.exec(
+                select(ContainerInstanceDB).where(ContainerInstanceDB.client_id == client_id)
+            ).first()
+            if instance is None:
+                logger.warning(f"Cannot set docker container id for unknown client: {client_id!r}")
+                return
+            instance.docker_container_id = docker_container_id
+            session.add(instance)
+            session.commit()
+
     async def update_instance_status(self, private_inbox: str, status: ContainerInstanceStatusEnum) -> None:
         with settings.db.get_session() as session:
             instance = session.exec(

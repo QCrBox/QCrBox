@@ -2,7 +2,7 @@ import re
 import uuid
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated, Any, Union
+from typing import TYPE_CHECKING, Annotated, Any
 
 import nats.js.errors as nats_errors
 import svcs
@@ -642,7 +642,7 @@ class BaseParameterSpec(QCrBoxPydanticBaseModel):
     name: str = Field(max_length=settings.db.max_text_length)
     dtype: DTypeAsStr = Field(max_length=settings.db.max_text_length)
     description: str | None = Field(default=None, max_length=settings.db.max_desc_length)
-    default_value: Union[constr(max_length=settings.db.max_desc_length), int, float, bool, None] = None  # pyright: ignore[reportInvalidTypeForm]
+    default_value: constr(max_length=settings.db.max_desc_length) | int | float | bool | None = None  # pyright: ignore[reportInvalidTypeForm]
     valid_value: ParameterValidationSpec | None = None
 
     # We are marking all parameters as being REQUIRED and freezing the choice.

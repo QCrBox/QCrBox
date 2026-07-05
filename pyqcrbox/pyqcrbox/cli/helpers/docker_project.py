@@ -90,6 +90,25 @@ class DockerProject:
         if not dry_run:
             self.run_docker_compose_command("up", "-d", *target_containers, dry_run=dry_run)
 
+    def remove_orchestrator_spawned_containers(self, dry_run: bool = False):
+        """Remove containers spawned on demand by the registry's orchestrator.
+
+        These are created via the Docker API (not docker compose), so they are
+        not part of the compose project and must be cleaned up by their
+        `org.qcrbox.spawned` label.
+        """
+        docker_executable = shutil.which("docker")
+        list_cmd = [docker_executable, "ps", "-aq", "--filter", "label=org.qcrbox.spawned=true"]
+        container_ids = subprocess.run(list_cmd, capture_output=True, text=True, check=True).stdout.split()
+        if not container_ids:
+            return
+        action_descr = "Removing" if not dry_run else "Would remove"
+        logger.info(
+            f"{action_descr} {len(container_ids)} container(s) spawned by the QCrBox orchestrator", dry_run=dry_run
+        )
+        if not dry_run:
+            subprocess.run([docker_executable, "rm", "-f", *container_ids], capture_output=True, check=True)
+
     def spin_down_docker_containers(self, target_containers, dry_run: bool = False):
         if target_containers == ():
             msg = f"Stopping and removing all QCrBox docker containers ({', '.join(target_containers)}"

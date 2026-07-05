@@ -20,6 +20,16 @@ from pyqcrbox import settings
 from pyqcrbox.data_management import DataManager, DatasetNotFoundError
 from pyqcrbox.registry.server.api import api_schema as schema
 from pyqcrbox.registry.shared.qcrbox_response import QCrBoxResponse
+from pyqcrbox.services.orchestrator import (
+    ApplicationNotRegisteredError,
+    ContainerOrchestrator,
+    InstanceNotManagedError,
+    OrchestratorDisabledError,
+    OrchestratorError,
+    SpawnNotPossibleError,
+    SpawnQuotaExceededError,
+    SpawnTimeoutError,
+)
 from pyqcrbox.sql_models import ApplicationSpec, CalculationStatusEnum, CommandInvocationCreate
 
 from . import api_helpers
@@ -39,6 +49,28 @@ def _ensure_live_container_exists(application_slug: str, application_version: st
         raise QCrBoxAPIException(detail=str(exc), status_code=404) from exc
     except api_helpers.NoLiveContainerError as exc:
         raise QCrBoxAPIException(detail=str(exc), status_code=503) from exc
+
+
+async def _ensure_live_container_exists_or_spawn(
+    application_slug: str, application_version: str, orchestrator: ContainerOrchestrator
+) -> None:
+    """Like `_ensure_live_container_exists`, but spawns a container on demand when possible.
+
+    With orchestration disabled this behaves exactly like the fail-fast check.
+    """
+    try:
+        api_helpers.ensure_live_container_exists(application_slug, application_version)
+    except api_helpers.ApplicationNotFoundError as exc:
+        raise QCrBoxAPIException(detail=str(exc), status_code=404) from exc
+    except api_helpers.NoLiveContainerError as exc:
+        if not orchestrator.enabled:
+            raise QCrBoxAPIException(detail=str(exc), status_code=503) from exc
+        try:
+            await orchestrator.ensure_instance(application_slug, application_version)
+        except SpawnTimeoutError as spawn_exc:
+            raise QCrBoxAPIException(detail=str(spawn_exc), status_code=504) from spawn_exc
+        except OrchestratorError as spawn_exc:
+            raise QCrBoxAPIException(detail=str(spawn_exc), status_code=503) from spawn_exc
 
 
 # Admin ----------------------------------------------------------------------------------------------------------------
@@ -159,6 +191,79 @@ async def list_container_instances(
         },
         status_code=200,
     )
+
+
+@post(
+    path="/container-instances",
+    media_type=MediaType.JSON,
+    summary="Spawn a container instance",
+    tags=["container-instances"],
+    operation_id="create_container_instance",
+    responses={
+        404: schema.NOT_FOUND_ERROR,
+        409: schema.CONFLICT_ERROR,
+        503: schema.SERVICE_UNAVAILABLE_ERROR,
+        504: schema.GATEWAY_TIMEOUT_ERROR,
+    },
+)
+async def create_container_instance(
+    data: Annotated[schema.CreateContainerInstanceParameters, Body()],
+    orchestrator: ContainerOrchestrator,
+) -> schema.QCrBoxResponse[schema.ContainerInstancesResponse]:
+    """Spawn a new container for the given application (requires the orchestrator to be enabled)."""
+    try:
+        instance = await orchestrator.spawn_instance(data.application_slug, data.application_version)
+    except OrchestratorDisabledError as exc:
+        raise QCrBoxAPIException(detail=str(exc), status_code=503) from exc
+    except SpawnQuotaExceededError as exc:
+        raise QCrBoxAPIException(detail=str(exc), status_code=409) from exc
+    except ApplicationNotRegisteredError as exc:
+        raise QCrBoxAPIException(detail=str(exc), status_code=404) from exc
+    except SpawnNotPossibleError as exc:
+        raise QCrBoxAPIException(detail=str(exc), status_code=409) from exc
+    except SpawnTimeoutError as exc:
+        raise QCrBoxAPIException(detail=str(exc), status_code=504) from exc
+
+    return QCrBoxResponse(
+        content={
+            "status": "success",
+            "message": f"Spawned container instance for {data.application_slug!r} "
+            f"(version {data.application_version!r})",
+            "payload": {
+                "container_instances": [
+                    instance.to_response_model(
+                        application_slug=data.application_slug, application_version=data.application_version
+                    )
+                ],
+            },
+        },
+        status_code=201,
+    )
+
+
+@delete(
+    path="/container-instances/{id:int}",
+    media_type=MediaType.JSON,
+    summary="Remove a container instance",
+    tags=["container-instances"],
+    operation_id="delete_container_instance",
+    status_code=204,
+    responses={
+        404: schema.NOT_FOUND_ERROR,
+        409: schema.CONFLICT_ERROR,
+        503: schema.SERVICE_UNAVAILABLE_ERROR,
+    },
+)
+async def delete_container_instance(id: int, orchestrator: ContainerOrchestrator) -> None:
+    """Stop and remove an orchestrator-managed container instance."""
+    try:
+        removed = await orchestrator.remove_instance(id)
+    except OrchestratorDisabledError as exc:
+        raise QCrBoxAPIException(detail=str(exc), status_code=503) from exc
+    except InstanceNotManagedError as exc:
+        raise QCrBoxAPIException(detail=str(exc), status_code=409) from exc
+    if not removed:
+        raise QCrBoxAPIException(detail=f"Container instance not found: {id}", status_code=404)
 
 
 # Calculations ---------------------------------------------------------------------------------------------------------
@@ -326,9 +431,10 @@ async def get_command_by_id(id: int) -> schema.QCrBoxResponse[schema.CommandsRes
 async def invoke_command(
     data: Annotated[schema.InvokeCommandParameters, Body()],
     nats_broker: NatsBroker,
+    orchestrator: ContainerOrchestrator,
 ) -> schema.QCrBoxResponse[schema.InvokeCommandResponse]:
     """Create an interactive session with the provided arguments."""
-    _ensure_live_container_exists(data.application_slug, data.application_version)
+    await _ensure_live_container_exists_or_spawn(data.application_slug, data.application_version, orchestrator)
     command_spec = CommandInvocationCreate(
         application_slug=data.application_slug,
         application_version=data.application_version,
@@ -841,6 +947,8 @@ api_router = Router(
         register_application,
         # Container instances
         list_container_instances,
+        create_container_instance,
+        delete_container_instance,
         # Calculations
         list_calculations,
         get_calculation_by_id,
