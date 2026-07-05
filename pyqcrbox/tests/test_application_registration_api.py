@@ -10,6 +10,7 @@ from litestar.testing import TestClient
 
 from pyqcrbox import sql_models
 from pyqcrbox.registry.server.api.api_endpoints import api_router
+from pyqcrbox.registry.server.api.identity import get_current_user
 from pyqcrbox.services.orchestrator import DisabledOrchestrator
 from pyqcrbox.services.persistence import SQLitePersistenceAdapter
 from pyqcrbox.settings import settings
@@ -34,6 +35,7 @@ def api_client(clean_registry_db) -> TestClient:
             "nats_broker": Provide(lambda: NatsBroker(), sync_to_thread=False),
             # Orchestration disabled: preserves the fail-fast 404/503 behaviour under test
             "orchestrator": Provide(lambda: DisabledOrchestrator(), sync_to_thread=False),
+            "current_user": Provide(get_current_user),
         },
     )
     with TestClient(app=app) as client:

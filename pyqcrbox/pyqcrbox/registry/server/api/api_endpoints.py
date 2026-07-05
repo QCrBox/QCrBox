@@ -42,12 +42,16 @@ class QCrBoxAPIException(HTTPException):
 
 
 async def _ensure_live_container_exists_or_spawn(
-    application_slug: str, application_version: str, orchestrator: ContainerOrchestrator
+    application_slug: str,
+    application_version: str,
+    orchestrator: ContainerOrchestrator,
+    owner: str | None = None,
 ) -> None:
     """Ensure a live container exists for the application, spawning one on demand when possible.
 
     Fails fast with 404 (application unknown) or 503 (no live container and
-    orchestration disabled); maps spawn failures to 503/504.
+    orchestration disabled); maps spawn failures to 503/504. A newly spawned
+    container is attributed to `owner` (the acting user), if known.
     """
     try:
         api_helpers.ensure_live_container_exists(application_slug, application_version)
@@ -57,7 +61,7 @@ async def _ensure_live_container_exists_or_spawn(
         if not orchestrator.enabled:
             raise QCrBoxAPIException(detail=str(exc), status_code=503) from exc
         try:
-            await orchestrator.ensure_instance(application_slug, application_version)
+            await orchestrator.ensure_instance(application_slug, application_version, owner=owner)
         except SpawnTimeoutError as spawn_exc:
             raise QCrBoxAPIException(detail=str(spawn_exc), status_code=504) from spawn_exc
         except OrchestratorError as spawn_exc:
@@ -167,10 +171,11 @@ async def register_application(
 async def list_container_instances(
     slug: str | None = Parameter(default=None, query="slug", required=False),
     version: str | None = Parameter(default=None, query="version", required=False),
+    owner: str | None = Parameter(default=None, query="owner", required=False),
 ) -> schema.QCrBoxResponse[schema.ContainerInstancesResponse]:
     """Retrieve the tracked container instances (live application containers)."""
     container_instances = api_helpers.retrieve_container_instances(
-        application_slug=slug, application_version=version
+        application_slug=slug, application_version=version, owner=owner
     )
     return QCrBoxResponse(
         content={
@@ -200,10 +205,13 @@ async def list_container_instances(
 async def create_container_instance(
     data: Annotated[schema.CreateContainerInstanceParameters, Body()],
     orchestrator: ContainerOrchestrator,
+    current_user: str | None,
 ) -> schema.QCrBoxResponse[schema.ContainerInstancesResponse]:
     """Spawn a new container for the given application (requires the orchestrator to be enabled)."""
     try:
-        instance = await orchestrator.spawn_instance(data.application_slug, data.application_version)
+        instance = await orchestrator.spawn_instance(
+            data.application_slug, data.application_version, owner=current_user
+        )
     except OrchestratorDisabledError as exc:
         raise QCrBoxAPIException(detail=str(exc), status_code=503) from exc
     except SpawnQuotaExceededError as exc:
@@ -423,9 +431,12 @@ async def invoke_command(
     data: Annotated[schema.InvokeCommandParameters, Body()],
     nats_broker: NatsBroker,
     orchestrator: ContainerOrchestrator,
+    current_user: str | None,
 ) -> schema.QCrBoxResponse[schema.InvokeCommandResponse]:
     """Create an interactive session with the provided arguments."""
-    await _ensure_live_container_exists_or_spawn(data.application_slug, data.application_version, orchestrator)
+    await _ensure_live_container_exists_or_spawn(
+        data.application_slug, data.application_version, orchestrator, owner=current_user
+    )
     command_spec = CommandInvocationCreate(
         application_slug=data.application_slug,
         application_version=data.application_version,
@@ -812,9 +823,12 @@ async def create_interactive_session_with_arguments(
     data: Annotated[schema.CreateInteractiveSessionParameters, Body()],
     nats_broker: NatsBroker,
     orchestrator: ContainerOrchestrator,
+    current_user: str | None,
 ) -> schema.QCrBoxResponse[schema.InteractiveSessionIDResponse]:
     """Create an interactive session with the provided arguments arguments."""
-    await _ensure_live_container_exists_or_spawn(data.application_slug, data.application_version, orchestrator)
+    await _ensure_live_container_exists_or_spawn(
+        data.application_slug, data.application_version, orchestrator, owner=current_user
+    )
     command_spec = CommandInvocationCreate(
         application_slug=data.application_slug,
         application_version=data.application_version,

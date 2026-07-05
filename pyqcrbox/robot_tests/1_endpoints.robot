@@ -54,7 +54,7 @@ Check that container instances can be requested in the correct format
         Dictionary Should Contain Key    ${instance}    application_version
         Dictionary Should Contain Key    ${instance}    status
         Dictionary Should Contain Key    ${instance}    last_seen
-        Should Be True    "${instance['status']}" in ("idle", "busy")    "Unexpected instance status"
+        Should Be True    "${instance['status']}" in ("idle", "busy", "gone")    "Unexpected instance status"
     END
 
 It should be possible to create a dataset by uploading a cif

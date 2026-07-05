@@ -245,6 +245,7 @@ services:
       QCRBOX__ORCHESTRATOR__ENABLED: ${QCRBOX__ORCHESTRATOR__ENABLED:-false}
       QCRBOX__ORCHESTRATOR__DOCKER_HOST: "http://qcrbox-docker-socket-proxy:2375"
       QCRBOX__ORCHESTRATOR__GUI_DOMAIN: ${QCRBOX_DOMAIN:-qcrbox.localhost}
+      QCRBOX__AUTH__SERVICE_TOKEN: ${QCRBOX_SERVICE_TOKEN:-}
     networks:
       - qcrbox-net
       - qcrbox-docker-proxy-net

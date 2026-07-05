@@ -60,11 +60,18 @@ class ContainerOrchestrator(metaclass=ABCMeta):
         """Release any resources held by the orchestrator."""
 
     @abstractmethod
-    async def ensure_instance(self, application_slug: str, application_version: str) -> ContainerInstanceDB:
-        """Return a live container instance for the application, spawning one only if none exists."""
+    async def ensure_instance(
+        self, application_slug: str, application_version: str, owner: str | None = None
+    ) -> ContainerInstanceDB:
+        """Return a live container instance for the application, spawning one only if none exists.
+
+        A newly spawned instance is attributed to `owner` (the acting user), if known.
+        """
 
     @abstractmethod
-    async def spawn_instance(self, application_slug: str, application_version: str) -> ContainerInstanceDB:
+    async def spawn_instance(
+        self, application_slug: str, application_version: str, owner: str | None = None
+    ) -> ContainerInstanceDB:
         """Spawn an additional container instance (subject to the per-application quota)."""
 
     @abstractmethod
@@ -82,10 +89,14 @@ class DisabledOrchestrator(ContainerOrchestrator):
 
     enabled = False
 
-    async def ensure_instance(self, application_slug: str, application_version: str) -> ContainerInstanceDB:
+    async def ensure_instance(
+        self, application_slug: str, application_version: str, owner: str | None = None
+    ) -> ContainerInstanceDB:
         raise OrchestratorDisabledError("Container orchestration is disabled")
 
-    async def spawn_instance(self, application_slug: str, application_version: str) -> ContainerInstanceDB:
+    async def spawn_instance(
+        self, application_slug: str, application_version: str, owner: str | None = None
+    ) -> ContainerInstanceDB:
         raise OrchestratorDisabledError("Container orchestration is disabled")
 
     async def remove_instance(self, instance_id: int) -> bool:

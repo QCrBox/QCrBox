@@ -161,6 +161,17 @@ class OrchestratorSettings(QCrBoxSettingsBaseModel):
     gui_container_port: int = 8080  # noVNC port exposed by base_novnc images
 
 
+class AuthSettings(QCrBoxSettingsBaseModel):
+    # Shared secret authorising trusted services (e.g. the web frontend) to act
+    # on behalf of a user via the X-QCrBox-User header. The header is ignored
+    # unless a token is configured and the request's X-QCrBox-Service-Token
+    # matches.
+    service_token: str | None = None
+    # Trust the Remote-User header injected by Authelia for requests arriving
+    # via Traefik.
+    trust_remote_user_headers: bool = True
+
+
 class TestingSettings(QCrBoxSettingsBaseModel):
     # report_coverage: bool = False
     use_in_memory_db: bool = False
@@ -198,6 +209,7 @@ class QCrBoxSettings(QCrBoxSettingsBaseModel):
     nats: NATSSettings = NATSSettings()
     registry: RegistrySettings = RegistrySettings()
     orchestrator: OrchestratorSettings = OrchestratorSettings()
+    auth: AuthSettings = AuthSettings()
     db: DatabaseSettings = DatabaseSettings()
     testing: TestingSettings = TestingSettings()
     cli: CLISettings = CLISettings()

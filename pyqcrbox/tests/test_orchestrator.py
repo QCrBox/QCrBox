@@ -232,6 +232,50 @@ async def test_gui_application_spawn_gets_traefik_route(adapter, clean_registry_
 
 
 @pytest.mark.anyio
+async def test_remove_instance_tolerates_already_removed_container(adapter, registered_application):
+    """A stale row whose docker container no longer exists must still be deletable."""
+
+    class Missing404(Exception):
+        status = 404
+
+    class FakeDockerMissingContainer(FakeDocker):
+        def container(self, container_id: str):
+            class _Gone:
+                async def delete(self, force=False):
+                    raise Missing404("no such container")
+
+            return _Gone()
+
+    await adapter.save_container_instance(
+        application_id=registered_application.id,
+        client_id="qcrbox_client_0xstale",
+        private_inbox="_INBOX.stale.1",
+        pyqcrbox_version="test-version",
+    )
+    await adapter.set_instance_spawn_details("qcrbox_client_0xstale", "deadbeef" * 8)
+    instance = await adapter.get_instance_by_client_id("qcrbox_client_0xstale")
+
+    orchestrator = make_orchestrator(FakeDockerMissingContainer())
+    assert await orchestrator.remove_instance(instance.id) is True
+    assert await adapter.get_instance_by_client_id("qcrbox_client_0xstale") is None
+
+
+@pytest.mark.anyio
+async def test_spawn_attributes_owner_on_instance_row(adapter, registered_application):
+    fake_docker = FakeDocker()
+    orchestrator = make_orchestrator(fake_docker)
+    registration_task = asyncio.create_task(
+        simulate_client_registration(adapter, fake_docker, registered_application.id)
+    )
+    instance = await orchestrator.ensure_instance("dummy_cli", "0.1.0", owner="alice")
+    client_id = await registration_task
+
+    assert instance.owner_user_id == "alice"
+    stored = await adapter.get_instance_by_client_id(client_id)
+    assert stored.owner_user_id == "alice"
+
+
+@pytest.mark.anyio
 async def test_docker_image_upsert_never_cleared_by_null(adapter, registered_application):
     """Re-registration without an image (container self-registration) must keep the stored image."""
     spec_without_image = sql_models.ApplicationSpec.from_yaml_file(DUMMY_CLI_SPEC_FILE)

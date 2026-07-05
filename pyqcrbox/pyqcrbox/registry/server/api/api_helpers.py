@@ -609,9 +609,11 @@ def register_application_spec(
 
 
 def retrieve_container_instances(
-    application_slug: str | None = None, application_version: str | None = None
+    application_slug: str | None = None,
+    application_version: str | None = None,
+    owner: str | None = None,
 ) -> list[sql_models.ContainerInstanceResponse]:
-    """Retrieve container instances, optionally filtered by application slug/version."""
+    """Retrieve container instances, optionally filtered by application slug/version and owner."""
     stmt = (
         select(sql_models.ContainerInstanceDB, sql_models.ApplicationSpecDB)
         .join(
@@ -621,6 +623,7 @@ def retrieve_container_instances(
         .where(
             application_slug is None or (sql_models.ApplicationSpecDB.slug == application_slug),
             application_version is None or (sql_models.ApplicationSpecDB.version == application_version),
+            owner is None or (sql_models.ContainerInstanceDB.owner_user_id == owner),
         )
     )
     with settings.db.get_session() as session:

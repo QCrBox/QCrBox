@@ -156,7 +156,11 @@ class SQLitePersistenceAdapter(BasePersistenceAdapter):
             ).first()
 
     async def set_instance_spawn_details(
-        self, client_id: str, docker_container_id: str, gui_host: str | None = None
+        self,
+        client_id: str,
+        docker_container_id: str,
+        gui_host: str | None = None,
+        owner_user_id: str | None = None,
     ) -> None:
         """Record orchestrator-spawn metadata on the instance row after registration."""
         with settings.db.get_session() as session:
@@ -168,6 +172,7 @@ class SQLitePersistenceAdapter(BasePersistenceAdapter):
                 return
             instance.docker_container_id = docker_container_id
             instance.gui_host = gui_host
+            instance.owner_user_id = owner_user_id
             session.add(instance)
             session.commit()
 

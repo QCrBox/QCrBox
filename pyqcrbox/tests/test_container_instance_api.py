@@ -8,6 +8,7 @@ from litestar.testing import TestClient
 
 from pyqcrbox import sql_models
 from pyqcrbox.registry.server.api.api_endpoints import api_router
+from pyqcrbox.registry.server.api.identity import get_current_user
 from pyqcrbox.services.orchestrator import (
     ApplicationNotRegisteredError,
     ContainerOrchestrator,
@@ -42,12 +43,12 @@ class InMemoryOrchestrator(ContainerOrchestrator):
             pyqcrbox_version="test-version",
         )
 
-    async def ensure_instance(self, application_slug: str, application_version: str):
-        self.ensure_calls.append((application_slug, application_version))
+    async def ensure_instance(self, application_slug: str, application_version: str, owner: str | None = None):
+        self.ensure_calls.append((application_slug, application_version, owner))
         return await self._fake_spawn(application_slug, application_version)
 
-    async def spawn_instance(self, application_slug: str, application_version: str):
-        self.spawn_calls.append((application_slug, application_version))
+    async def spawn_instance(self, application_slug: str, application_version: str, owner: str | None = None):
+        self.spawn_calls.append((application_slug, application_version, owner))
         return await self._fake_spawn(application_slug, application_version)
 
     async def remove_instance(self, instance_id: int) -> bool:
@@ -63,6 +64,7 @@ def make_test_client(orchestrator: ContainerOrchestrator) -> TestClient:
         dependencies={
             "nats_broker": Provide(lambda: NatsBroker(), sync_to_thread=False),
             "orchestrator": Provide(lambda: orchestrator, sync_to_thread=False),
+            "current_user": Provide(get_current_user),
         },
     )
     return TestClient(app=app)
@@ -92,7 +94,7 @@ def test_create_and_delete_container_instance(registered_dummy_cli):
         assert response.status_code == 201
         payload = response.json()["payload"]["container_instances"][0]
         assert payload["client_id"] == "qcrbox_client_0xfake"
-        assert orchestrator.spawn_calls == [("dummy_cli", "0.1.0")]
+        assert orchestrator.spawn_calls == [("dummy_cli", "0.1.0", None)]
 
         instance_id = payload["id"]
         assert client.delete(f"/api/container-instances/{instance_id}").status_code == 204
@@ -132,7 +134,7 @@ def test_invoke_command_auto_spawns_when_no_instance_is_live(registered_dummy_cl
         # The spawn succeeded (503 would mean the fast-fail path was taken); the request
         # then fails further down because the test NATS broker is not connected.
         assert response.status_code != 503
-        assert orchestrator.ensure_calls == [("dummy_cli", "0.1.0")]
+        assert orchestrator.ensure_calls == [("dummy_cli", "0.1.0", None)]
 
 
 def test_invoke_command_still_fails_fast_with_disabled_orchestrator(registered_dummy_cli):
@@ -159,7 +161,43 @@ def test_interactive_sessions_auto_spawn_when_enabled(registered_dummy_cli):
         # The spawn succeeded (would be 503 otherwise); the request then fails
         # further down (no 'interactive_session' command / unconnected broker).
         assert response.status_code != 503
-        assert orchestrator.ensure_calls == [("dummy_cli", "0.1.0")]
+        assert orchestrator.ensure_calls == [("dummy_cli", "0.1.0", None)]
+
+
+def test_spawn_is_attributed_to_the_acting_user(registered_dummy_cli):
+    from pyqcrbox.settings import settings
+
+    original_token = settings.auth.service_token
+    settings.auth.service_token = "test-service-token"
+    try:
+        identity_headers = {"X-QCrBox-User": "alice", "X-QCrBox-Service-Token": "test-service-token"}
+
+        orchestrator = InMemoryOrchestrator()
+        with make_test_client(orchestrator) as client:
+            client.post(
+                "/api/container-instances",
+                json={"application_slug": "dummy_cli", "application_version": "0.1.0"},
+                headers=identity_headers,
+            )
+            assert orchestrator.spawn_calls == [("dummy_cli", "0.1.0", "alice")]
+
+        orchestrator = InMemoryOrchestrator()
+        # Remove the fake instance again so the next invoke has to go through ensure_instance
+        with make_test_client(orchestrator) as client:
+            import asyncio
+
+            asyncio.run(orchestrator.adapter.delete_instance("_INBOX.fake.1"))
+            client.post("/api/commands", json=INVOKE_BODY, headers=identity_headers)
+            assert orchestrator.ensure_calls == [("dummy_cli", "0.1.0", "alice")]
+
+        # The Traefik/Authelia path attributes via Remote-User
+        orchestrator = InMemoryOrchestrator()
+        with make_test_client(orchestrator) as client:
+            asyncio.run(orchestrator.adapter.delete_instance("_INBOX.fake.1"))
+            client.post("/api/commands", json=INVOKE_BODY, headers={"Remote-User": "bob"})
+            assert orchestrator.ensure_calls == [("dummy_cli", "0.1.0", "bob")]
+    finally:
+        settings.auth.service_token = original_token
 
 
 def test_interactive_sessions_fail_fast_with_disabled_orchestrator(registered_dummy_cli):

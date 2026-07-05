@@ -27,6 +27,7 @@ from pyqcrbox.data_management import CalculationAlreadyExistsError, DataManager
 from pyqcrbox.debug import log_eel
 from pyqcrbox.msg_specs.base import QCrBoxGenericResponse
 from pyqcrbox.registry.server.api.api_endpoints import handle_exception
+from pyqcrbox.registry.server.api.identity import get_current_user
 from pyqcrbox.services.orchestrator import ContainerOrchestrator
 from pyqcrbox.sql_models import (
     CalculationDB,
@@ -457,6 +458,7 @@ class QCrBoxServer(QCrBoxServerClientBase):
                 "nats_broker": Provide(get_nats_broker),
                 "data_manager": Provide(get_data_manager),
                 "orchestrator": Provide(get_orchestrator),
+                "current_user": Provide(get_current_user),
             },
             openapi_config=OpenAPIConfig(
                 title="QCrBox",

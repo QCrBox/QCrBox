@@ -86,15 +86,19 @@ class DockerOrchestrator(ContainerOrchestrator):
     def _get_spawn_lock(self, application_slug: str, application_version: str) -> asyncio.Lock:
         return self._spawn_locks.setdefault((application_slug, application_version), asyncio.Lock())
 
-    async def ensure_instance(self, application_slug: str, application_version: str) -> ContainerInstanceDB:
+    async def ensure_instance(
+        self, application_slug: str, application_version: str, owner: str | None = None
+    ) -> ContainerInstanceDB:
         async with self._get_spawn_lock(application_slug, application_version):
             # A concurrent request may have spawned an instance while we waited for the lock
             existing_instance = await self._persistence.get_live_instance(application_slug, application_version)
             if existing_instance is not None:
                 return existing_instance
-            return await self._spawn(application_slug, application_version)
+            return await self._spawn(application_slug, application_version, owner=owner)
 
-    async def spawn_instance(self, application_slug: str, application_version: str) -> ContainerInstanceDB:
+    async def spawn_instance(
+        self, application_slug: str, application_version: str, owner: str | None = None
+    ) -> ContainerInstanceDB:
         async with self._get_spawn_lock(application_slug, application_version):
             application = await self._get_application_or_raise(application_slug, application_version)
             num_live = await self._persistence.count_live_instances(application.id)
@@ -103,7 +107,7 @@ class DockerOrchestrator(ContainerOrchestrator):
                     f"Cannot spawn another container for {application_slug!r} (version {application_version!r}): "
                     f"the quota of {self._settings.max_instances_per_app} live instances is reached"
                 )
-            return await self._spawn(application_slug, application_version, application=application)
+            return await self._spawn(application_slug, application_version, application=application, owner=owner)
 
     async def remove_instance(self, instance_id: int) -> bool:
         instance = await self._persistence.get_instance_by_id(instance_id)
@@ -125,7 +129,15 @@ class DockerOrchestrator(ContainerOrchestrator):
             container_id = candidates[0].id
 
         logger.info(f"Removing container {container_id[:12]} for instance {instance_id}")
-        await docker.containers.container(container_id).delete(force=True)
+        try:
+            await docker.containers.container(container_id).delete(force=True)
+        except Exception as exc:
+            # The container may already be gone (e.g. removed externally, or a
+            # stale 'gone' row); a missing container must not block deleting
+            # the instance record.
+            if getattr(exc, "status", None) != 404:
+                raise
+            logger.info(f"Container {container_id[:12]} was already removed")
         await self._persistence.delete_instance(instance.private_inbox)
         return True
 
@@ -142,6 +154,7 @@ class DockerOrchestrator(ContainerOrchestrator):
         application_slug: str,
         application_version: str,
         application: ApplicationSpecDB | None = None,
+        owner: str | None = None,
     ) -> ContainerInstanceDB:
         if application is None:
             application = await self._get_application_or_raise(application_slug, application_version)
@@ -176,10 +189,16 @@ class DockerOrchestrator(ContainerOrchestrator):
             await container.delete(force=True)
             raise
 
-        await self._persistence.set_instance_spawn_details(client_id, container.id, gui_host=gui_host)
+        await self._persistence.set_instance_spawn_details(
+            client_id, container.id, gui_host=gui_host, owner_user_id=owner
+        )
         instance.docker_container_id = container.id
         instance.gui_host = gui_host
-        logger.info(f"Spawned container {container.id[:12]} is registered and ready (client_id={client_id!r})")
+        instance.owner_user_id = owner
+        logger.info(
+            f"Spawned container {container.id[:12]} is registered and ready "
+            f"(client_id={client_id!r}, owner={owner!r})"
+        )
         return instance
 
     def _build_gui_host(self, application_slug: str, client_id: str) -> str:
