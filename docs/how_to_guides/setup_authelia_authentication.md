@@ -60,10 +60,27 @@ the env file, `changeme` in development). There you can create and delete
 users, manage groups, and reset passwords. New users can log in at the
 Authelia portal immediately, no restart needed.
 
-QCrBox dataset/research-group permissions are still managed in the web
-frontend (Django): an LLDAP account controls *who can log in*, the frontend
-controls *what data they see*. New users start without any frontend group and
-must be added to one by a frontend admin.
+LLDAP is the **single source of truth for users and groups**: the web
+frontend (Django) mirrors group membership from the `Remote-Groups` header on
+each login and offers no user/group management of its own (only read-only
+lists, plus a "Manage Users" link to this UI for group managers). Which
+*dataset* belongs to which group is still stored in the frontend; who is *in*
+a group is decided here. Membership changes in LLDAP take effect on the
+user's next login.
+
+### Role groups
+
+Frontend roles are granted by membership of reserved LLDAP groups — create
+them once in the LLDAP UI and add users as needed:
+
+| LLDAP group | Frontend role |
+| --- | --- |
+| `qcrbox_global_managers` | Global manager (see/manage all data, users and groups) |
+| `qcrbox_group_managers` | Group manager (manage data and memberships within own groups) |
+| `qcrbox_data_managers` | Data manager (manage data within own groups) |
+
+All other LLDAP groups become data-sharing groups in the frontend, except
+LLDAP's internal groups (`lldap_*`), which are never mirrored.
 
 ### Future: ORCID / federated login
 

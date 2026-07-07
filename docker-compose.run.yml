@@ -253,6 +253,10 @@ services:
     restart: "unless-stopped"
     labels:
       traefik.enable: true
+      # The registry sits on two networks (qcrbox-net + the socket-proxy
+      # net); without this hint Traefik load-balances across both IPs and
+      # half the requests time out.
+      traefik.docker.network: qcrbox_qcrbox-net
       # Health check endpoint (no auth required) - higher priority
       traefik.http.routers.registry-healthz.rule: Host(`api.registry.${QCRBOX_DOMAIN:-localhost.local}`) && Path(`/api/healthz`)
       traefik.http.routers.registry-healthz.entrypoints: websecure
