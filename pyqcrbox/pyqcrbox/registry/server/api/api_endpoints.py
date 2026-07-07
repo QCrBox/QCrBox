@@ -237,6 +237,7 @@ async def list_container_instances(
     tags=["container-instances"],
     operation_id="create_container_instance",
     responses={
+        400: schema.BAD_REQUEST_ERROR,
         404: schema.NOT_FOUND_ERROR,
         409: schema.CONFLICT_ERROR,
         503: schema.SERVICE_UNAVAILABLE_ERROR,
@@ -289,6 +290,7 @@ async def create_container_instance(
     operation_id="delete_container_instance",
     status_code=204,
     responses={
+        400: schema.BAD_REQUEST_ERROR,
         404: schema.NOT_FOUND_ERROR,
         409: schema.CONFLICT_ERROR,
         503: schema.SERVICE_UNAVAILABLE_ERROR,
