@@ -68,6 +68,19 @@ $ qcb build --all
     [get in touch](https://discord.com/invite/eU2ya5psxH) if you would like to build these and need support.
 
 
+!!! note "Building `base-wine` on WSL2"
+    The wine base image creates a dual-architecture wine prefix during its
+    build, which is prone to deadlocking on WSL2 kernels under load (the build
+    then aborts after 20 minutes with an explanatory error). If that happens,
+    pull the CI-built image instead of building it locally:
+
+    ```
+    docker pull ghcr.io/qcrbox/base-wine:latest
+    docker tag ghcr.io/qcrbox/base-wine:latest qcrbox/base-wine:latest
+    ```
+
+    Application images on top of it (mopro, crysalis-pro) build fine anywhere.
+
 ## Starting up containers
 
 You can start the Docker container for Olex2 by running:

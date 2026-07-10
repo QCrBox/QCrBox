@@ -1,0 +1,58 @@
+name: "Build base images"
+
+# Builds the base image chain (base-ancestor -> base-application -> base-novnc
+# -> base-wine) and pushes it to GHCR.
+#
+# base-wine MUST be built here (or on another native Linux host): its
+# dual-architecture wine prefix creation deadlocks on WSL2 kernels, so
+# developer machines running WSL2 pull the prebuilt image instead:
+#
+#   docker pull ghcr.io/qcrbox/base-wine:latest
+#   docker tag ghcr.io/qcrbox/base-wine:latest qcrbox/base-wine:latest
+#
+# Application images (mopro, crysalis-pro, ...) build fine on any machine on
+# top of the pulled base image - only the prefix *creation* is affected.
+
+on:
+  push:
+    branches:
+      - dev
+      - main
+    paths:
+      - "services/base_images/**"
+      - ".github/workflows/build-base-images.yml"
+
+  # Allows running this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # hatch-vcs derives the pyqcrbox version from git history
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install the qcb CLI
+        run: |
+          pip install uv
+          pip install ./pyqcrbox
+
+      - name: Build the base image chain
+        run: qcb build base-wine
+
+      - name: Push base images to GHCR
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          for img in base-ancestor base-application base-novnc base-wine; do
+            docker tag "qcrbox/${img}:latest" "ghcr.io/qcrbox/${img}:latest"
+            docker push "ghcr.io/qcrbox/${img}:latest"
+          done

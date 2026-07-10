@@ -42,59 +42,54 @@ RUN wget -O /usr/local/bin/winetricks https://raw.githubusercontent.com/Winetric
 #       It passed here by `docker-compose.yml` using a build arg.
 ARG QCRBOX_WINE_INSTALLATIONS_DIR
 
-# During the build process we create WINEPREFIX directories for
-# both win32 and win64. This allows us to select the version
-# used by the running container using the environment variable
-# QCRBOX_WINEARCH (which is only defined during runtime).
-ARG WINEPREFIX_WIN32=${QCRBOX_WINE_INSTALLATIONS_DIR}/wine_win32
+# A single dual-architecture win64 prefix: 64-bit and (via WoW64) 32-bit
+# Windows applications both work — required by MoPro/CrysAlisPro, whose
+# suites mix 64-bit GUIs with 32-bit computational tools. This needs the
+# i386 wine package installed at runtime (the WineHQ amd64 package ships no
+# 32-bit PE files).
+#
+# Two pitfalls, discovered the hard way:
+#   1. With both architectures installed, the plain `wine` launcher picks the
+#      i386 loader even when WINEARCH=win64, which can create a win32 prefix
+#      (or deadlock). Prefix creation must use the 64-bit loader explicitly.
+#   2. Removing i386 for prefix creation and reinstalling it afterwards (the
+#      previous approach) produces a "new WoW64 mode" prefix that dual-arch
+#      wine cannot use at all ("could not load kernel32.dll, c0000135") and
+#      that lacks syswow64 entirely, so 32-bit tools were always broken.
+#
+# KNOWN LIMITATION: dual-architecture prefix creation (wineboot processing
+# wine.inf) deadlocks on WSL2 kernels — observed with wine 10.0 and 11.0,
+# with and without seccomp/init/privileged. Build this image on a native
+# Linux host or in CI (see .github/workflows/build-base-images.yml); the
+# timeout below turns the deadlock into a loud, explained failure.
 ARG WINEPREFIX_WIN64=${QCRBOX_WINE_INSTALLATIONS_DIR}/wine_win64
+ARG WINE64_LOADER=/opt/wine-${WINE_BRANCH}/lib/wine/x86_64-unix/wine
 
 RUN mkdir -p \
         ${QCRBOX_WINE_INSTALLATIONS_DIR}\
-        ${WINEPREFIX_WIN32} \
         ${WINEPREFIX_WIN64} && \
     chown ${QCRBOX_USER}:${QCRBOX_USER} \
         ${QCRBOX_WINE_INSTALLATIONS_DIR} \
-        ${WINEPREFIX_WIN32} \
         ${WINEPREFIX_WIN64}
 
-# Win32 prefix: straightforward with dual-arch wine (works because i386 is present)
-RUN export WINEARCH="win32" && \
-    export WINEPREFIX="${QCRBOX_WINE_INSTALLATIONS_DIR}/wine_win32" && \
+RUN export WINEARCH="win64" && \
+    export WINEPREFIX="${WINEPREFIX_WIN64}" && \
+    export WINE="${WINE64_LOADER}" && \
+    { timeout 1200 gosu ${QCRBOX_USER} bash -c "${WINE64_LOADER} wineboot --init && wineserver --wait" || { \
+        echo "ERROR: wine prefix creation did not finish within 20 minutes."; \
+        echo "Dual-architecture wine prefix creation is known to deadlock on WSL2 kernels."; \
+        echo "Build this image on a native Linux host or via the build-base-images CI workflow,"; \
+        echo "and pull it from GHCR on WSL2 machines."; \
+        exit 1; \
+    }; } && \
+    test -f "${WINEPREFIX_WIN64}/drive_c/windows/syswow64/ntdll.dll" || { \
+        echo "ERROR: the win64 prefix has no syswow64 - 32-bit applications would not work."; \
+        exit 1; \
+    } && \
     gosu ${QCRBOX_USER} bash -c 'winetricks corefonts && winetricks fontsmooth=rgb'
-
-# Win64 prefix: with i386 installed wine defaults to win32 even when WINEARCH=win64.
-# Fix: temporarily remove i386 so wine enters "new WoW64 mode" and creates a real win64
-# prefix. winetricks corefonts fails in that mode because it calls syswow64/regedit.exe
-# which doesn't exist without i386. Work around by:
-#   1. Running wineboot --init to create the win64 prefix structure
-#   2. Copying fonts from the already-initialised win32 prefix (avoids re-downloading)
-#   3. Using 64-bit `wine reg` (system32, not syswow64) to register them + set fontsmooth
-#   4. Reinstalling i386 so the win32 prefix works at runtime
-RUN dpkg --remove --force-depends "wine-stable-i386:i386" && \
-    export WINEARCH="win64" && \
-    export WINEPREFIX="${QCRBOX_WINE_INSTALLATIONS_DIR}/wine_win64" && \
-    gosu ${QCRBOX_USER} bash -c 'wineboot --init' && \
-    cp "${QCRBOX_WINE_INSTALLATIONS_DIR}/wine_win32/drive_c/windows/Fonts/"*.ttf \
-       "${QCRBOX_WINE_INSTALLATIONS_DIR}/wine_win64/drive_c/windows/Fonts/" && \
-    gosu ${QCRBOX_USER} bash -c '\
-        for f in "${WINEPREFIX}/drive_c/windows/Fonts/"*.ttf; do \
-            name="$(basename "${f%.ttf}")"; \
-            wine reg add "HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Fonts" \
-                /v "${name} (TrueType)" /d "$(basename "$f")" /f 2>/dev/null || true; \
-        done && \
-        wine reg add "HKCU\\Control Panel\\Desktop" /v FontSmoothing /t REG_SZ /d 2 /f && \
-        wine reg add "HKCU\\Control Panel\\Desktop" /v FontSmoothingType /t REG_DWORD /d 2 /f && \
-        wine reg add "HKCU\\Control Panel\\Desktop" /v FontSmoothingGamma /t REG_DWORD /d 0x578 /f \
-    ' && \
-    apt-get update -y && \
-    apt-get install -y --install-recommends "wine-stable-i386=${WINE_VERSION}" && \
-    rm -rf /var/lib/apt/lists
 
 # Create device Y: pointing to the shared files directory
 ARG QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH
-RUN mkdir -p "${WINEPREFIX_WIN32}/dosdevices/" && \
-    ln -f -s "${QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH}" "${WINEPREFIX_WIN32}/dosdevices/y:"
 RUN mkdir -p "${WINEPREFIX_WIN64}/dosdevices/" && \
     ln -f -s "${QCRBOX_SHARED_FILES_DIR_CONTAINER_PATH}" "${WINEPREFIX_WIN64}/dosdevices/y:"
 
@@ -107,6 +102,6 @@ ONBUILD ENV QCRBOX_ROOT_DIR=${QCRBOX_ROOT_DIR}
 ONBUILD ARG QCRBOX_HOME=${QCRBOX_HOME}
 ONBUILD ENV QCRBOX_HOME=${QCRBOX_HOME}
 
-ARG QCRBOX_WINEARCH=${QCRBOX_WINEARCH}
-ENV WINEARCH=${QCRBOX_WINEARCH}
-ENV WINEPREFIX=${QCRBOX_WINE_INSTALLATIONS_DIR}/wine_${QCRBOX_WINEARCH}
+# Only the dual-arch win64 prefix exists (it runs 32-bit apps via WoW64).
+ENV WINEARCH=win64
+ENV WINEPREFIX=${QCRBOX_WINE_INSTALLATIONS_DIR}/wine_win64
