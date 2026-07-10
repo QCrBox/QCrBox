@@ -40,6 +40,7 @@ COPY initialize_mopro_first_run.sh ./
 # containers must be usable immediately, so nothing may run "once" at container
 # start. Runs as root (Xvfb needs /tmp/.X11-unix) with the app under gosu, like
 # the crysalis-pro build-time setup.
+USER root
 RUN mkdir -p /tmp/.X11-unix && chmod 1777 /tmp/.X11-unix && \
     gosu ${QCRBOX_USER} bash -x ./initialize_mopro_first_run.sh
 
