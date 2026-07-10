@@ -27,6 +27,10 @@ class DockerProject:
     def services_excluding_base_images(self):
         return self.compose_file_config.services_excluding_base_images
 
+    @property
+    def core_services(self):
+        return self.compose_file_config.core_services
+
     def get_build_context(self, service_name):
         return (self.repo_root / self.compose_file_config.get_build_context(service_name)).absolute()
 
@@ -89,6 +93,16 @@ class DockerProject:
         logger.info(f"{action_descr} up docker container(s): {', '.join(target_containers)}", dry_run=dry_run)
         if not dry_run:
             self.run_docker_compose_command("up", "-d", *target_containers, dry_run=dry_run)
+
+    def start_up_core_services(self, dry_run):
+        """Start only the core services (registry, nats, reverse proxy, auth, ...),
+        leaving application containers to be spawned on demand by the registry's
+        orchestrator."""
+        core_services = self.core_services
+        action_descr = "Starting" if not dry_run else "Would start"
+        logger.info(f"{action_descr} up core services (on-demand mode): {', '.join(core_services)}", dry_run=dry_run)
+        if not dry_run:
+            self.run_docker_compose_command("up", "-d", *core_services, dry_run=dry_run)
 
     def remove_orchestrator_spawned_containers(self, dry_run: bool = False):
         """Remove containers spawned on demand by the registry's orchestrator.

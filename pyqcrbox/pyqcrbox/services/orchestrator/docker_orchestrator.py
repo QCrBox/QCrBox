@@ -113,10 +113,12 @@ class DockerOrchestrator(ContainerOrchestrator):
                 )
             if owner is not None:
                 application = await self._get_application_or_raise(application_slug, application_version)
+                await self._check_global_quota()
                 await self._check_user_quota(owner)
                 return await self._spawn(
                     application_slug, application_version, application=application, owner=owner
                 )
+            await self._check_global_quota()
             return await self._spawn(application_slug, application_version, owner=owner)
 
     async def spawn_instance(
@@ -128,6 +130,7 @@ class DockerOrchestrator(ContainerOrchestrator):
             return await self._spawn(application_slug, application_version, application=application, owner=owner)
 
     async def _check_spawn_quotas(self, application: ApplicationSpecDB, owner: str | None) -> None:
+        await self._check_global_quota()
         num_live = await self._persistence.count_live_instances(application.id)
         if num_live >= self._settings.max_instances_per_app:
             raise SpawnQuotaExceededError(
@@ -135,6 +138,16 @@ class DockerOrchestrator(ContainerOrchestrator):
                 f"the quota of {self._settings.max_instances_per_app} live instances is reached"
             )
         await self._check_user_quota(owner)
+
+    async def _check_global_quota(self) -> None:
+        if self._settings.max_total_instances is None:
+            return
+        num_managed = await self._persistence.count_live_managed_instances()
+        if num_managed >= self._settings.max_total_instances:
+            raise SpawnQuotaExceededError(
+                f"Cannot spawn another container: the global quota of "
+                f"{self._settings.max_total_instances} live spawned instances is reached"
+            )
 
     async def _check_user_quota(self, owner: str | None) -> None:
         if owner is None:
@@ -256,6 +269,12 @@ class DockerOrchestrator(ContainerOrchestrator):
             "NetworkMode": self._network_name,
             "RestartPolicy": {"Name": "unless-stopped"},
         }
+        if s.container_memory_limit_mb is not None:
+            host_config["Memory"] = s.container_memory_limit_mb * 1024 * 1024
+        if s.container_cpu_limit is not None:
+            host_config["NanoCpus"] = int(s.container_cpu_limit * 1e9)
+        if s.container_pids_limit is not None:
+            host_config["PidsLimit"] = s.container_pids_limit
         if s.use_syslog_logging:
             host_config["LogConfig"] = {
                 "Type": "syslog",

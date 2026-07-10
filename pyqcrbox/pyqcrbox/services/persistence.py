@@ -284,6 +284,19 @@ class SQLitePersistenceAdapter(BasePersistenceAdapter):
             ).all()
             return len(instances)
 
+    async def count_live_managed_instances(self) -> int:
+        """Count live orchestrator-managed instances (spawned containers) across
+        all applications and owners. Compose-started pool containers (no docker
+        container id) are not counted."""
+        with settings.db.get_session() as session:
+            instances = session.exec(
+                select(ContainerInstanceDB).where(
+                    ContainerInstanceDB.docker_container_id != None,  # noqa: E711
+                    ContainerInstanceDB.status != ContainerInstanceStatusEnum.GONE,
+                )
+            ).all()
+            return len(instances)
+
     async def get_instance_by_gui_host(self, gui_host: str) -> ContainerInstanceDB | None:
         with settings.db.get_session() as session:
             return session.exec(

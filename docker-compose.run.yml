@@ -48,7 +48,7 @@ services:
   qcrbox-reverse-proxy:
     image: traefik:v3.6
     command:
-      - "--log.level=DEBUG"
+      - "--log.level=${QCRBOX_TRAEFIK_LOG_LEVEL:-INFO}"
       - "--ping=true"
       - "--accesslog=true"
       - "--api.dashboard=true"  # web UI, served via the authenticated traefik.${QCRBOX_DOMAIN} router below
@@ -245,6 +245,11 @@ services:
       QCRBOX__ORCHESTRATOR__ENABLED: ${QCRBOX__ORCHESTRATOR__ENABLED:-false}
       QCRBOX__ORCHESTRATOR__DOCKER_HOST: "http://qcrbox-docker-socket-proxy:2375"
       QCRBOX__ORCHESTRATOR__GUI_DOMAIN: ${QCRBOX_DOMAIN:-qcrbox.localhost}
+      # Resource limits for spawned app containers (empty = unlimited)
+      QCRBOX__ORCHESTRATOR__MAX_TOTAL_INSTANCES: ${QCRBOX__ORCHESTRATOR__MAX_TOTAL_INSTANCES:-}
+      QCRBOX__ORCHESTRATOR__CONTAINER_MEMORY_LIMIT_MB: ${QCRBOX__ORCHESTRATOR__CONTAINER_MEMORY_LIMIT_MB:-}
+      QCRBOX__ORCHESTRATOR__CONTAINER_CPU_LIMIT: ${QCRBOX__ORCHESTRATOR__CONTAINER_CPU_LIMIT:-}
+      QCRBOX__ORCHESTRATOR__CONTAINER_PIDS_LIMIT: ${QCRBOX__ORCHESTRATOR__CONTAINER_PIDS_LIMIT:-}
       QCRBOX__AUTH__SERVICE_TOKEN: ${QCRBOX_SERVICE_TOKEN:-}
       QCRBOX__AUTH__GATEWAY_TOKEN: ${QCRBOX_GATEWAY_TOKEN:-}
     networks:

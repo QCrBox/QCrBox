@@ -79,25 +79,25 @@ As above, if you want to start all (enabled) components, use the `--all` flag:
 $ qcb up --all
 ```
 
-!!! warning
-    If you want start up containers after previously shutting them down (using `qcb down` as described below),
-    you must currently manually delete the Docker volume where the QCrBox server stores information about available
-    components:
+`qcb up` starts a **long-running container** for each selected application ("pool"
+containers). This is the right mode for container development: the container is there,
+you can watch its logs, exec into it, and iterate.
 
-    ```
-    # Step 1: Shut down all running containers
-    $ qcb down
+## Serving QCrBox (on-demand containers)
 
-    # Step 2: Delete the Docker volume containing the QCrBox server database
-    $ docker volume rm qcrbox_qcrbox-registry-db
+To run QCrBox *for users* — e.g. behind the web frontend — application containers do not
+need to be running in advance. `qcb serve` builds and registers the selected applications
+but starts **only the core services**; the registry's orchestrator then spawns a container
+on demand (per user) when an application is actually used, and reaps it again after
+`QCRBOX__ORCHESTRATOR__IDLE_TIMEOUT` (default 30 min) of inactivity:
 
-    # Step 3: Now you can start up the components again and things should work as expected.
-    $ qcb up --all
-    ```
+```
+$ qcb serve --all
+```
 
-    This is of course less than ideal. The underlying issue is being addressed in a [refactoring branch](https://github.com/QCrBox/QCrBox/pull/128)
-    that will be merged very soon, at which point you will be able to shut down and spin up components ad libitum
-    without manual intervention.
+This requires `QCRBOX__ORCHESTRATOR__ENABLED=true` in the env file (`qcb serve` warns
+otherwise). The two modes compose: you can `qcb up dummy_gui` a pool container for
+development while the same stack serves other applications on demand.
 
 
 ## Registering application specs
@@ -124,19 +124,24 @@ $ qcb list containers
 Instances whose heartbeats stop arriving (e.g. after `docker kill`) are marked as `gone` after a
 short timeout.
 
-## On-demand container spawning (experimental)
+## On-demand container spawning
 
 With `QCRBOX__ORCHESTRATOR__ENABLED=true` in the env file, the registry spawns application
 containers on demand via the Docker API (through a locked-down socket proxy): invoking a
-non-interactive command for an application that is registered but has no running container
-starts one automatically (the request blocks until the container has registered, up to
-`QCRBOX__ORCHESTRATOR__SPAWN_TIMEOUT`, default 90s). Containers can also be started and
-stopped explicitly via `POST /api/container-instances` and `DELETE /api/container-instances/{id}`.
-Spawning requires the application's docker image to be known to the registry, which happens
-automatically when specs are registered via `qcb register` / `qcb up`. Spawned containers keep
-running for reuse; a full `qcb down` removes them (they are labelled `org.qcrbox.spawned=true`).
-Interactive (GUI) applications are not auto-spawned yet, since their per-instance routing does
-not exist yet.
+command — interactive or not — for an application that is registered but has no suitable
+running container starts one automatically (the request blocks until the container has
+registered, up to `QCRBOX__ORCHESTRATOR__SPAWN_TIMEOUT`, default 90s). Requests carrying a
+user identity get a container *owned by that user*: it serves only their invocations, its
+GUI route (`https://<slug>-<id>.gui.<domain>/`) is only accessible to them, and it is
+reaped after `QCRBOX__ORCHESTRATOR__IDLE_TIMEOUT` (default 30 min) of sitting idle.
+Containers can also be started and stopped explicitly via `POST /api/container-instances`
+and `DELETE /api/container-instances/{id}`; quotas (`MAX_INSTANCES_PER_APP`,
+`MAX_INSTANCES_PER_USER`, `MAX_TOTAL_INSTANCES`) and per-container resource limits
+(`CONTAINER_MEMORY_LIMIT_MB`, `CONTAINER_CPU_LIMIT`, `CONTAINER_PIDS_LIMIT`) are
+configurable via `QCRBOX__ORCHESTRATOR__*` env vars. Spawning requires the application's
+docker image to be known to the registry, which happens automatically when specs are
+registered via `qcb register` / `qcb up` / `qcb serve`. Spawned containers are labelled
+`org.qcrbox.spawned=true`; a full `qcb down` removes them.
 
 ## Shutting down containers
 

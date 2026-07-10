@@ -365,6 +365,82 @@ async def test_per_user_quota_enforced_on_explicit_spawn(adapter, registered_app
 
 
 @pytest.mark.anyio
+async def test_resource_limits_applied_to_container_config(adapter, registered_application):
+    fake_docker = FakeDocker()
+    orchestrator = make_orchestrator(
+        fake_docker,
+        container_memory_limit_mb=8192,
+        container_cpu_limit=4,
+        container_pids_limit=512,
+    )
+
+    registration_task = asyncio.create_task(
+        simulate_client_registration(adapter, fake_docker, registered_application.id)
+    )
+    await orchestrator.ensure_instance("dummy_cli", "0.1.0")
+    await registration_task
+
+    config, _name = fake_docker.create_calls[0]
+    assert config["HostConfig"]["Memory"] == 8192 * 1024 * 1024
+    assert config["HostConfig"]["NanoCpus"] == 4_000_000_000
+    assert config["HostConfig"]["PidsLimit"] == 512
+
+
+@pytest.mark.anyio
+async def test_resource_limits_omitted_when_unset(adapter, registered_application):
+    fake_docker = FakeDocker()
+    orchestrator = make_orchestrator(fake_docker)
+
+    registration_task = asyncio.create_task(
+        simulate_client_registration(adapter, fake_docker, registered_application.id)
+    )
+    await orchestrator.ensure_instance("dummy_cli", "0.1.0")
+    await registration_task
+
+    config, _name = fake_docker.create_calls[0]
+    assert "Memory" not in config["HostConfig"]
+    assert "NanoCpus" not in config["HostConfig"]
+    assert "PidsLimit" not in config["HostConfig"]
+
+
+@pytest.mark.anyio
+async def test_global_quota_enforced_on_explicit_spawn(adapter, registered_application):
+    # One live orchestrator-managed instance (owned by someone else entirely)
+    await adapter.save_container_instance(
+        application_id=registered_application.id,
+        client_id="qcrbox_client_0xother",
+        private_inbox="_INBOX.other.1",
+        pyqcrbox_version="test-version",
+    )
+    await adapter.set_instance_spawn_details("qcrbox_client_0xother", "b" * 64, owner_user_id="bob")
+
+    orchestrator = make_orchestrator(FakeDocker(), max_total_instances=1)
+    with pytest.raises(SpawnQuotaExceededError, match="global quota"):
+        await orchestrator.spawn_instance("dummy_cli", "0.1.0", owner="alice")
+
+
+@pytest.mark.anyio
+async def test_global_quota_ignores_unmanaged_pool_instances(adapter, registered_application):
+    # A compose-started pool container (no docker container id) must not count
+    # towards the global spawned-instance quota.
+    await adapter.save_container_instance(
+        application_id=registered_application.id,
+        client_id="qcrbox_client_0xpool",
+        private_inbox="_INBOX.pool.1",
+        pyqcrbox_version="test-version",
+    )
+
+    fake_docker = FakeDocker()
+    orchestrator = make_orchestrator(fake_docker, max_total_instances=1)
+    registration_task = asyncio.create_task(
+        simulate_client_registration(adapter, fake_docker, registered_application.id)
+    )
+    instance = await orchestrator.spawn_instance("dummy_cli", "0.1.0")
+    await registration_task
+    assert instance.docker_container_id is not None
+
+
+@pytest.mark.anyio
 async def test_docker_image_upsert_never_cleared_by_null(adapter, registered_application):
     """Re-registration without an image (container self-registration) must keep the stored image."""
     spec_without_image = sql_models.ApplicationSpec.from_yaml_file(DUMMY_CLI_SPEC_FILE)

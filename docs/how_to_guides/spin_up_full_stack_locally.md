@@ -59,6 +59,14 @@ bash scripts/devbox/test_qcb_with_authelia.sh
 qcb up --all
 ```
 
+`qcb up` starts a long-running container per application. Alternatively,
+`qcb serve --all` registers the applications but lets the registry spawn
+containers on demand, per user, when they are actually used — the mode a
+multi-user deployment runs in (requires `QCRBOX__ORCHESTRATOR__ENABLED=true`
+in `.env.dev`). See
+[the qcb guide](use_qcb_to_interact_with_and_manage_qcrbox.md) for the
+difference.
+
 Wait until all containers report healthy:
 
 ```bash

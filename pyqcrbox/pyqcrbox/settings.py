@@ -6,7 +6,7 @@ from typing import Any
 
 import sqlalchemy
 import sqlmodel
-from pydantic import computed_field
+from pydantic import computed_field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlmodel import Session, create_engine
 
@@ -156,6 +156,26 @@ class OrchestratorSettings(QCrBoxSettingsBaseModel):
     poll_interval: float = 0.5  # seconds between registration polls while spawning
     max_instances_per_app: int = 3  # quota guard for explicit instance creation
     max_instances_per_user: int = 5  # live instances per owner, across applications
+    max_total_instances: int | None = None  # global cap on live spawned instances (None = unlimited)
+    # Per-container resource limits for spawned instances (None = unlimited).
+    container_memory_limit_mb: int | None = None
+    container_cpu_limit: float | None = None  # in CPUs, e.g. 4 or 1.5
+    container_pids_limit: int | None = None
+
+    @field_validator(
+        "max_total_instances",
+        "container_memory_limit_mb",
+        "container_cpu_limit",
+        "container_pids_limit",
+        mode="before",
+    )
+    @classmethod
+    def _empty_env_var_means_unlimited(cls, value):
+        # These are passed through docker compose as `${VAR:-}`, which yields
+        # an empty string when unset.
+        if value == "":
+            return None
+        return value
     idle_timeout: float = 1800.0  # seconds an orchestrator-spawned instance may sit idle before reaping
     gone_retention: float = 3600.0  # seconds before 'gone' instance rows are purged
     network_name: str | None = None  # discovered from the registry's own container if unset

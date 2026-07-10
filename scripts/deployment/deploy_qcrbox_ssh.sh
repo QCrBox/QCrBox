@@ -21,7 +21,13 @@
 #       --ghcr-user niolon --ghcr-token ghp_xxxx \
 #       [--identity ~/.ssh/eosc_key] [--domain qcrbox.example.org] \
 #       [--apps "olex2_linux dummy_gui"] \
-#       [--acme-email you@example.org | --tls-cert cert.pem --tls-key key.pem]
+#       [--acme-email you@example.org | --tls-cert cert.pem --tls-key key.pem] \
+#       [--update] [--no-on-demand]
+#
+# --update upgrades an existing installation in place (accounts, data and
+# secrets survive); without it, provisioning WIPES accounts and data and
+# rerolls all secrets. --no-on-demand disables the registry's on-demand
+# container orchestrator (classic long-running app containers only).
 #
 # For development, override the cloned branch explicitly:
 #   --branch <name>           clone this branch for both repos
@@ -45,6 +51,7 @@ TLS_CERT=""
 TLS_KEY=""
 GHCR_USER="${GHCR_USER:-}"
 GHCR_TOKEN="${GHCR_TOKEN:-}"
+PROVISION_MODE_ARGS=()
 
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -60,6 +67,8 @@ while [ $# -gt 0 ]; do
         --tls-key)          TLS_KEY="$2"; shift 2 ;;
         --ghcr-user)        GHCR_USER="$2"; shift 2 ;;
         --ghcr-token)       GHCR_TOKEN="$2"; shift 2 ;;
+        --update)           PROVISION_MODE_ARGS+=(--update); shift ;;
+        --no-on-demand)     PROVISION_MODE_ARGS+=(--no-on-demand); shift ;;
         *) echo "Unknown argument: $1" >&2; exit 1 ;;
     esac
 done
@@ -125,12 +134,23 @@ INSTALL_DOCKER
 echo "==> Cloning source repositories on the VM"
 "${SSH[@]}" sudo bash << CLONE
 set -euo pipefail
+# Preserve the generated environment files across the re-clone; an --update
+# run relies on them (secrets are not rerolled).
+rm -rf /tmp/qcrbox-env-backup
+mkdir -p /tmp/qcrbox-env-backup
+cp /opt/qcrbox-src/QCrBox/.env.vm /tmp/qcrbox-env-backup/env.vm 2>/dev/null || true
+cp /opt/qcrbox-src/QCrBoxFrontend/.env /tmp/qcrbox-env-backup/frontend.env 2>/dev/null || true
+cp /opt/qcrbox-src/QCrBoxFrontend/environment.env /tmp/qcrbox-env-backup/frontend.environment.env 2>/dev/null || true
 rm -rf /opt/qcrbox-src
 mkdir -p /opt/qcrbox-src
 git clone --depth 1 --branch "$QCRBOX_REF" \
     https://github.com/QCrBox/QCrBox.git /opt/qcrbox-src/QCrBox
 git clone --depth 1 --branch "$FRONTEND_REF" \
     https://github.com/QCrBox/QCrBoxFrontend.git /opt/qcrbox-src/QCrBoxFrontend
+cp /tmp/qcrbox-env-backup/env.vm /opt/qcrbox-src/QCrBox/.env.vm 2>/dev/null || true
+cp /tmp/qcrbox-env-backup/frontend.env /opt/qcrbox-src/QCrBoxFrontend/.env 2>/dev/null || true
+cp /tmp/qcrbox-env-backup/frontend.environment.env /opt/qcrbox-src/QCrBoxFrontend/environment.env 2>/dev/null || true
+rm -rf /tmp/qcrbox-env-backup
 CLONE
 
 # -------------------------------------------------------------------- TLS ---
@@ -156,7 +176,8 @@ echo "==> Running provisioner on the VM"
 "${SSH[@]}" sudo bash /opt/qcrbox-src/QCrBox/scripts/deployment/provision_qcrbox.sh \
     --domain "$DOMAIN" --source /opt/qcrbox-src --apps "\"$APPS\"" \
     --version "$VERSION" \
-    ${PROVISION_TLS_ARGS[@]+"${PROVISION_TLS_ARGS[@]}"}
+    ${PROVISION_TLS_ARGS[@]+"${PROVISION_TLS_ARGS[@]}"} \
+    ${PROVISION_MODE_ARGS[@]+"${PROVISION_MODE_ARGS[@]}"}
 
 echo ""
 echo "=================================================================="

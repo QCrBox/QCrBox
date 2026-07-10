@@ -119,6 +119,19 @@ class ComposeFileConfig:
             if not service_name.startswith("base-")
         ]
 
+    @property
+    def core_services(self):
+        """Services declared in the repo-root runtime compose file (registry, nats,
+        reverse proxy, auth, ...) as opposed to applications, which live in their
+        own per-app compose files under services/applications/."""
+        core_services = []
+        for compose_file in self.compose_files_runtime:
+            if compose_file.parent != self.repo_root:
+                continue
+            data = self._service_metadata_by_compose_file[compose_file.relative_to(self.repo_root)]
+            core_services += [name for name in data.get("services", {}) if name not in core_services]
+        return core_services
+
     def get_build_context(self, service_name):
         try:
             service_metadata = self._full_service_metadata["services"][service_name]
