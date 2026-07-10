@@ -34,9 +34,14 @@ ENV QCRBOX_ROOT_DIR=${QCRBOX_ROOT_DIR}
 COPY configure_mopro.py ./
 COPY config_mopro.yaml ./
 COPY templates ./templates
-COPY run_once.sh ./
+COPY initialize_mopro_first_run.sh ./
 
-COPY supervisord.mopro_sh.conf ${QCRBOX_SUPERVISORD_CONF_DIR}
+# First-run initialization (roaming profile) at build time, under Xvfb: spawned
+# containers must be usable immediately, so nothing may run "once" at container
+# start. Runs as root (Xvfb needs /tmp/.X11-unix) with the app under gosu, like
+# the crysalis-pro build-time setup.
+RUN mkdir -p /tmp/.X11-unix && chmod 1777 /tmp/.X11-unix && \
+    gosu ${QCRBOX_USER} bash -x ./initialize_mopro_first_run.sh
 
 USER ${QCRBOX_USER}
 
