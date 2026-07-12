@@ -46,6 +46,12 @@ def _create_db_tables(engine, purge_existing: bool):
 # Format: (table, column, ddl_type, backfill_sql_or_None).
 _LIGHTWEIGHT_MIGRATIONS = [
     ("application", "docker_image", "VARCHAR", None),
+    (
+        "application",
+        "cif_entry_sets",
+        "JSON",
+        "UPDATE application SET cif_entry_sets = '[]' WHERE cif_entry_sets IS NULL",
+    ),
     ("container_instance", "docker_container_id", "VARCHAR", None),
     ("container_instance", "gui_host", "VARCHAR", None),
     (

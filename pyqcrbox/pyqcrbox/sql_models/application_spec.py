@@ -193,4 +193,4 @@ class ApplicationSpecWithCommandsResponse(ApplicationSpecBase):
     registered_at: datetime
     commands: list[CommandSpecWithParametersResponse]
     num_live_instances: int | None = None
-    # cif_entry_sets: list[CifEntrySetRead] = []
+    cif_entry_sets: list[CifEntrySet] = []

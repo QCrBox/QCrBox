@@ -115,11 +115,12 @@ Requests for incorrect applications and/or commands should fail
     VAR    &{request_body}=    application_slug=olex-999
     ...    application_version=1.5-alpha
     ...    command_arguments=${arguments}
+    # An application that is not registered yields a 404
     ${response}=    Send API Request
     ...    POST
     ...    ${SESSION_ALIAS}
     ...    /interactive-sessions
-    ...    400
+    ...    404
     ...    json_data=${request_body}
 
     # We do this a little differently because we are expecting an error. If we

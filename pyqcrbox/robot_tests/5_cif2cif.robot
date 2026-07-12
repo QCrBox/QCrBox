@@ -17,7 +17,9 @@ ${SESSION_ALIAS}    QCRBOX_REGISTRY_API_ENDPOINTS
 
 *** Test Cases ***
 Returned cif should unmodified when untouched and no entries for input and output parameters
-    [Documentation]    If no cif entries are set in the parameter yaml, an unmodified cif is expected to be returned
+    [Documentation]    If no cif entries are set in the parameter yaml, the stored cif is expected to be
+    ...    returned unmodified. Uploads are converted to the unified convention on storage, so the expected
+    ...    content is the pre-computed unified counterpart of the uploaded file.
 
     ${input_cif_dataset}=    Upload Cif    ${CURDIR}/test_data/to_specific_test_cif.cif    to_specific_test_cif.cif
     VAR    &{input_cif}=
@@ -30,10 +32,10 @@ Returned cif should unmodified when untouched and no entries for input and outpu
     ...    print_cif
     ...    ${command_arguments}
 
-    ${original_cif}=    Get Binary File    ${CURDIR}/test_data/to_specific_test_cif.cif
-    ${original_cif}=    Convert To String    ${original_cif}
+    ${stored_cif}=    Get Binary File    ${CURDIR}/test_data/to_specific_test_cif_unified.cif
+    ${stored_cif}=    Convert To String    ${stored_cif}
     ${processed_cif}=    Get Dataset File Contents    ${output_dataset_id}
-    Should Be Equal    ${processed_cif}    ${original_cif}
+    Should Be Equal    ${processed_cif}    ${stored_cif}
 
     [Teardown]    Run Keywords
     ...    Delete Cif Dataset    ${output_dataset_id}    AND

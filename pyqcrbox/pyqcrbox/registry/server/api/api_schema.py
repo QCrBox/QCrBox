@@ -197,6 +197,53 @@ class DatasetsResponse(BaseModel):
     datasets: list[DatasetResponse]
 
 
+class CommandCanRun(BaseModel):
+    """Whether a single registered command can run on a given data file.
+
+    Attributes
+    ----------
+    command_id : int
+        Database id of the command.
+    command_name : str
+        Name of the command.
+    application_slug : str
+        Slug of the application the command belongs to.
+    application_version : str
+        Version of the application the command belongs to.
+    can_run : bool
+        True if the data file satisfies the command's CIF entry requirements.
+    missing_entries : list[str]
+        Required CIF entries (unified convention) absent from the data file.
+    reason : str | None
+        Explanation when the check could not be evaluated strictly.
+
+    """
+
+    command_id: int
+    command_name: str
+    application_slug: str
+    application_version: str
+    can_run: bool
+    missing_entries: list[str] = []
+    reason: str | None = None
+
+
+class RunnableCommandsResponse(BaseModel):
+    """Response model for the can-run status of all commands for a data file.
+
+    Attributes
+    ----------
+    data_file_id : str
+        The QCrBox id of the checked data file.
+    commands : list[CommandCanRun]
+        Can-run status per registered command.
+
+    """
+
+    data_file_id: str
+    commands: list[CommandCanRun]
+
+
 class DatasetsWithDataFilesResponse(BaseModel):
     """Response model for a dataset with its data files.
 

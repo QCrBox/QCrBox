@@ -15,6 +15,7 @@ from pyqcrbox import logger, msg_specs, settings, sql_models
 from pyqcrbox._version import __version__ as pyqcrbox_version
 from pyqcrbox.data_management import DataManager, DatasetResponse
 from pyqcrbox.data_management.data_file import DataFileResponse
+from pyqcrbox.registry.server.api import cif_utils
 from pyqcrbox.sql_models.calculation import CalculationResponse
 
 
@@ -422,7 +423,10 @@ async def import_data_file(
         The ID of the imported data file.
 
     """
-    qcrbox_data_file_id = await data_manager.import_file_from_bytes(await data.read(), filename=data.filename)
+    # Uploaded CIF content is stored in the unified convention; raises
+    # CifConversionError (-> 400) for CIF-looking content that does not parse.
+    file_contents = cif_utils.to_unified_cif_bytes(await data.read(), data.filename)
+    qcrbox_data_file_id = await data_manager.import_file_from_bytes(file_contents, filename=data.filename)
     return qcrbox_data_file_id
 
 
@@ -444,7 +448,8 @@ async def import_dataset(
         The ID of the imported dataset.
 
     """
-    qcrbox_data_file_id = await data_manager.import_file_from_bytes(await data.read(), filename=data.filename)
+    file_contents = cif_utils.to_unified_cif_bytes(await data.read(), data.filename)
+    qcrbox_data_file_id = await data_manager.import_file_from_bytes(file_contents, filename=data.filename)
     qcrbox_dataset_id = await data_manager.create_dataset_from_data_files(qcrbox_data_file_id)
     return qcrbox_dataset_id
 
@@ -719,6 +724,54 @@ def retrieve_command_by_id(
                 return None
         cmd_response_model = cmd.to_response_model()
     return cmd_response_model
+
+
+async def get_runnable_commands(data_file_id: str, *, data_manager: DataManager) -> dict:
+    """Evaluate which registered commands can run on a stored data file.
+
+    Parses the data file once and checks it against the CIF entry requirements
+    of every registered command's first `QCrBox.cif_data_file` parameter.
+
+    Parameters
+    ----------
+    data_file_id : str
+        The ID of the data file to check.
+    data_manager : DataManager
+        The data manager instance.
+
+    Returns
+    -------
+    dict
+        Payload matching `schema.RunnableCommandsResponse`.
+
+    """
+    file_contents = await data_manager.get_data_file_contents(data_file_id)
+    block = cif_utils.parse_cif_first_block(file_contents)
+
+    commands = []
+    with settings.db.get_session() as session:
+        applications = session.exec(
+            select(sql_models.ApplicationSpecDB).options(joinedload(sql_models.ApplicationSpecDB.commands))
+        ).unique()
+        for application in applications:
+            entry_sets = cif_utils.entry_sets_by_name(application.cif_entry_sets or [])
+            for cmd in application.commands:
+                can_run, missing_entries, reason = cif_utils.check_command_can_run(
+                    cmd.parameters or {}, entry_sets, block
+                )
+                commands.append(
+                    {
+                        "command_id": cmd.id,
+                        "command_name": cmd.name,
+                        "application_slug": application.slug,
+                        "application_version": application.version,
+                        "can_run": can_run,
+                        "missing_entries": missing_entries,
+                        "reason": reason,
+                    }
+                )
+
+    return {"data_file_id": data_file_id, "commands": commands}
 
 
 def retrieve_commands() -> list[sql_models.CommandSpecWithParametersResponse]:

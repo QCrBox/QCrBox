@@ -51,3 +51,15 @@ Check Suite Can Run
 
     Wait Until Keyword Succeeds    30s    1s    Check QcrBox Healthy
     Wait Until Keyword Succeeds    30s    1s    Check Test Applications Available
+
+Get Command Can Run
+    [Documentation]    Find the can-run entry for a specific application command in a
+    ...    runnable-commands response payload
+    [Arguments]    ${commands}    ${application_slug}    ${command_name}
+
+    FOR    ${command}    IN    @{commands}
+        ${slug_matches}=    Evaluate    $command["application_slug"] == $application_slug
+        ${name_matches}=    Evaluate    $command["command_name"] == $command_name
+        IF    ${slug_matches} and ${name_matches}    RETURN    ${command}
+    END
+    Fail    Command ${application_slug}:${command_name} not found in runnable-commands response

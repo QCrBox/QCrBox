@@ -17,6 +17,8 @@ ${SESSION_ALIAS}            QCRBOX_REGISTRY_API_ENDPOINTS
 ${TEST_CIF_FILE_NAME}       robot_test_cif.cif
 ${TEST_JSON_FILE_NAME}      robot_test_json.json
 ${TEST_CIF_FILE}            ${CURDIR}/test_data/${TEST_CIF_FILE_NAME}
+${TEST_CIF_UNIFIED_FILE}    ${CURDIR}/test_data/robot_test_cif_unified.cif
+${TEST_MALFORMED_CIF_FILE}    ${CURDIR}/test_data/malformed_test_cif.cif
 ${TEST_JSON_FILE}           ${CURDIR}/test_data/${TEST_JSON_FILE_NAME}
 
 ${TEST_JSON_FILE_ID}        ${EMPTY}
@@ -129,12 +131,67 @@ Delete the appended data file from the dataset
     Should Be Equal As Integers    ${n_data_files}    1    The requested data file was not removed from the dataset
 
 Download the cif file from the dataset
-    [Documentation]    Download the dataset which contains only a cif. This test will fail if a .zip is downloaded
+    [Documentation]    Download the dataset which contains only a cif. This test will fail if a .zip is downloaded.
+    ...    Uploaded CIF files are stored in the unified convention, so the download is compared against the
+    ...    pre-computed unified counterpart of the uploaded file (not the original).
 
     ${dataset_contents}=    Get Dataset File Contents    ${TEST_DATASET_ID}
-    ${original_file_content}=    Get Binary File    ${TEST_CIF_FILE}
-    ${original_file_content}=    Convert To String    ${original_file_content}
-    Should Be Equal    ${original_file_content}    ${dataset_contents}
+    ${unified_file_content}=    Get Binary File    ${TEST_CIF_UNIFIED_FILE}
+    ${unified_file_content}=    Convert To String    ${unified_file_content}
+    Should Be Equal    ${unified_file_content}    ${dataset_contents}
+
+Malformed cif uploads are rejected
+    [Documentation]    Content that looks like CIF but cannot be parsed must be rejected with a 400
+
+    ${file_contents}=    Get Binary File    ${TEST_MALFORMED_CIF_FILE}
+    VAR    &{files}=    malformed_test_cif.cif=${file_contents}
+    Send API Request    POST    ${SESSION_ALIAS}    /data-files    400    files=${files}
+    Send API Request    POST    ${SESSION_ALIAS}    /datasets    400    files=${files}
+
+Runnable commands can be queried for a data file
+    [Documentation]    The runnable-commands endpoint reports per command whether a data file
+    ...    satisfies its CIF entry requirements. The full test cif contains the cell entries
+    ...    required by dummy_cli's change_cif_name command; the merge test cif does not.
+
+    # A cif with cell entries: change_cif_name can run
+    ${file_contents}=    Get Binary File    ${TEST_CIF_FILE}
+    VAR    &{files}=    ${TEST_CIF_FILE_NAME}=${file_contents}
+    ${response}=    Send API Request    POST    ${SESSION_ALIAS}    /data-files    201    files=${files}
+    ${payload}=    Check Response Structure And Get Payload    ${response}
+    VAR    ${full_cif_id}=    ${payload["data_files"][0]["qcrbox_file_id"]}
+
+    ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /data-files/${full_cif_id}/runnable-commands    200
+    ${payload}=    Check Response Structure And Get Payload    ${response}
+    Check Response Content Has Attributes    ${payload}    data_file_id    commands
+    ${can_run}=    Get Command Can Run    ${payload["commands"]}    dummy_cli    change_cif_name
+    Should Be True    ${can_run["can_run"]}    change_cif_name should be runnable on a cif with cell entries
+
+    # A cif without cell entries: change_cif_name cannot run and reports missing entries
+    ${file_contents}=    Get Binary File    ${CURDIR}/test_data/to_unified_test_cif.cif
+    VAR    &{files}=    to_unified_test_cif.cif=${file_contents}
+    ${response}=    Send API Request    POST    ${SESSION_ALIAS}    /data-files    201    files=${files}
+    ${payload}=    Check Response Structure And Get Payload    ${response}
+    VAR    ${sparse_cif_id}=    ${payload["data_files"][0]["qcrbox_file_id"]}
+
+    ${response}=    Send API Request
+    ...    GET
+    ...    ${SESSION_ALIAS}
+    ...    /data-files/${sparse_cif_id}/runnable-commands
+    ...    200
+    ${payload}=    Check Response Structure And Get Payload    ${response}
+    ${can_run}=    Get Command Can Run    ${payload["commands"]}    dummy_cli    change_cif_name
+    Should Not Be True    ${can_run["can_run"]}    change_cif_name should not be runnable without cell entries
+    ${n_missing}=    Get Length    ${can_run["missing_entries"]}
+    Should Be True    ${n_missing} > 0    Missing entries should be reported
+
+    [Teardown]    Run Keywords
+    ...    Send API Request    DELETE    ${SESSION_ALIAS}    /data-files/${full_cif_id}    204
+    ...    AND    Send API Request    DELETE    ${SESSION_ALIAS}    /data-files/${sparse_cif_id}    204
+
+A 404 is returned for runnable commands of a nonexistent data file
+    [Documentation]    Unknown data file ids must yield a 404
+
+    Send API Request    GET    ${SESSION_ALIAS}    /data-files/qcrbox_df_0xdoesnotexist/runnable-commands    404
 
 Get a list of registered commands
     [Documentation]    Check the commands endpoint returns a correctly structured list

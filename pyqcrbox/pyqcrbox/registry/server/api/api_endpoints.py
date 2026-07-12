@@ -32,7 +32,7 @@ from pyqcrbox.services.orchestrator import (
 )
 from pyqcrbox.sql_models import ApplicationSpec, CalculationStatusEnum, CommandInvocationCreate
 
-from . import api_helpers
+from . import api_helpers, cif_utils
 
 __all__ = ["api_router"]
 
@@ -626,7 +626,10 @@ async def create_data_file(
     data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)], data_manager: DataManager
 ) -> schema.QCrBoxResponse[schema.DataFilesResponse]:
     """Create a new dataset by uploading data files."""
-    qcrbox_data_file_id = await api_helpers.import_data_file(data, data_manager=data_manager)
+    try:
+        qcrbox_data_file_id = await api_helpers.import_data_file(data, data_manager=data_manager)
+    except cif_utils.CifConversionError as exc:
+        raise QCrBoxAPIException(detail=str(exc), status_code=400) from exc
     data_file = await api_helpers.get_data_file_info(qcrbox_data_file_id, data_manager=data_manager)
 
     return QCrBoxResponse(
@@ -638,6 +641,34 @@ async def create_data_file(
             },
         },
         status_code=201,
+    )
+
+
+@get(
+    path="/data-files/{id:str}/runnable-commands",
+    media_type=MediaType.JSON,
+    summary="List which commands can run on a data file",
+    tags=["data-files"],
+    operation_id="list_runnable_commands_for_data_file",
+    responses={400: schema.BAD_REQUEST_ERROR, 404: schema.NOT_FOUND_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
+)
+async def list_runnable_commands_for_data_file(
+    id: str = Parameter(title="Data file ID"), *, data_manager: DataManager
+) -> schema.QCrBoxResponse[schema.RunnableCommandsResponse]:
+    """Check the data file against the CIF entry requirements of every registered command."""
+    try:
+        payload = await api_helpers.get_runnable_commands(id, data_manager=data_manager)
+    except (nats.js.errors.NotFoundError, KeyError) as exc:
+        raise QCrBoxAPIException(detail=f"Data file not found: {id!r}", status_code=404) from exc
+
+    num_runnable = sum(1 for cmd in payload["commands"] if cmd["can_run"])
+    return QCrBoxResponse(
+        content={
+            "status": "success",
+            "message": f"{num_runnable} of {len(payload['commands'])} commands can run on data file {id!r}",
+            "payload": payload,
+        },
+        status_code=200,
     )
 
 
@@ -720,7 +751,10 @@ async def create_dataset(
     data: Annotated[UploadFile, Body(media_type=RequestEncodingType.MULTI_PART)], data_manager: DataManager
 ) -> schema.QCrBoxResponse[schema.DatasetsWithDataFilesResponse]:
     """Create a new dataset by uploading data files."""
-    qcrbox_dataset_id = await api_helpers.import_dataset(data, data_manager=data_manager)
+    try:
+        qcrbox_dataset_id = await api_helpers.import_dataset(data, data_manager=data_manager)
+    except cif_utils.CifConversionError as exc:
+        raise QCrBoxAPIException(detail=str(exc), status_code=400) from exc
     dataset = await api_helpers.get_dataset_info(qcrbox_dataset_id, data_manager=data_manager)
     return QCrBoxResponse(
         content={
@@ -750,7 +784,10 @@ async def append_to_dataset(
     data_manager: DataManager,
 ) -> schema.QCrBoxResponse[schema.DatasetAppendResponse]:
     """Append a new data file to a dataset."""
-    dataset_id = await api_helpers.append_to_dataset(id, data, data_manager=data_manager)
+    try:
+        dataset_id = await api_helpers.append_to_dataset(id, data, data_manager=data_manager)
+    except cif_utils.CifConversionError as exc:
+        raise QCrBoxAPIException(detail=str(exc), status_code=400) from exc
     dataset = await api_helpers.get_dataset_info(dataset_id, data_manager=data_manager)
     appended_file = dataset.data_files[data.filename]
     return QCrBoxResponse(
@@ -1028,6 +1065,7 @@ api_router = Router(
         download_data_file_by_id,
         delete_data_file_by_id,
         create_data_file,
+        list_runnable_commands_for_data_file,
         # Interactive sessions
         list_interactive_sessions,
         get_interactive_session_by_id,

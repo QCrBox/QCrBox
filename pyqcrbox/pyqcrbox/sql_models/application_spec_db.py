@@ -1,7 +1,7 @@
 import typing
 from datetime import datetime
 
-from sqlalchemy import UniqueConstraint
+from sqlalchemy import JSON, UniqueConstraint
 from sqlmodel import Field, Relationship, Session, SQLModel, select
 
 from pyqcrbox.logging import logger
@@ -24,6 +24,10 @@ class ApplicationSpecDB(ApplicationSpecBase, SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     registered_at: datetime = Field(default_factory=datetime.now)
     private_routing_key: str | None = None
+    # Named CIF entry-set definitions referenced by command parameters via
+    # `required_entry_sets`/`optional_entry_sets` (needed server-side for the
+    # can-run check). Stored as a list of CifEntrySet dumps.
+    cif_entry_sets: list[dict] = Field(default_factory=list, sa_type=JSON)
 
     commands: list[CommandSpecDB] = Relationship(back_populates="application")
 
@@ -162,6 +166,13 @@ class ApplicationSpecDB(ApplicationSpecBase, SQLModel, table=True):
                 if self.docker_image is not None and result.docker_image != self.docker_image:
                     logger.info(f"Updating docker image for {self.slug!r} to {self.docker_image!r}")
                     result.docker_image = self.docker_image
+                    session.add(result)
+                    session.commit()
+                    session.refresh(result)
+
+                if result.cif_entry_sets != self.cif_entry_sets:
+                    logger.info(f"Updating cif entry sets for {self.slug!r}")
+                    result.cif_entry_sets = self.cif_entry_sets
                     session.add(result)
                     session.commit()
                     session.refresh(result)

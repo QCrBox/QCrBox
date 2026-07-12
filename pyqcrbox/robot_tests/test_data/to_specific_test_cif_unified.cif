@@ -1,0 +1,17 @@
+data_test
+_custom.test                      something
+_cell.length_a                    10.0
+_cell.length_a_su                 0.03
+_cell.length_b                    20.0
+_cell.length_b_su                 0.02
+loop_
+  _atom_site.label
+  _atom_site.fract_x
+  _atom_site.fract_x_su
+  _atom_site.fract_y
+  _atom_site.fract_y_su
+  _atom_site.fract_z
+  _atom_site.fract_z_su
+  C1   0.234  0.012  0.567  0.045   0.890  0.078
+  O1  -0.345  0.023  0.678    0.0  -0.901  0.089
+
