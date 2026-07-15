@@ -301,3 +301,27 @@ def test_merge_commands_adds_new_command_to_existing_application(clean_registry_
         assert {cmd.name for cmd in saved.commands} == {cmd.name for cmd in spec.commands}
         added = next(cmd for cmd in saved.commands if cmd.name == "generate_report_artifacts")
         assert added.outputs["report_text"]["filename"] == "report.txt"
+
+
+def test_unchanged_reregistration_does_not_trigger_merge(clean_registry_db, monkeypatch):
+    """Re-registering an identical spec must not run the command merge.
+
+    Guards against spurious inequality from JSON round trips (e.g. the stored
+    valid_value numeric_range comes back as a list where fresh model dumps
+    contain a tuple). dummy_cli has numeric_range parameters, exercising this.
+    """
+    from pathlib import Path
+
+    from pyqcrbox import sql_models
+
+    yaml_path = (
+        Path(__file__).parent.parent.parent / "services" / "applications" / "dummy_cli" / "config_dummy_cli.yaml"
+    )
+    sql_models.ApplicationSpecDB.from_pydantic_model(sql_models.ApplicationSpec.from_yaml_file(yaml_path)).save_to_db()
+
+    merge_calls = []
+    monkeypatch.setattr(
+        sql_models.ApplicationSpecDB, "merge_commands", lambda self, *args, **kwargs: merge_calls.append(1)
+    )
+    sql_models.ApplicationSpecDB.from_pydantic_model(sql_models.ApplicationSpec.from_yaml_file(yaml_path)).save_to_db()
+    assert merge_calls == []

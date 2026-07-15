@@ -182,8 +182,13 @@ class ApplicationSpecDB(ApplicationSpecBase, SQLModel, table=True):
                     session.refresh(result)
 
                 excluded_fields = ["call_pattern", "callable_name", "import_path", "id", "application_id"]
-                result_commands = [cmd.model_dump(exclude=excluded_fields) for cmd in result.commands]
-                self_commands = [cmd.model_dump(exclude=excluded_fields) for cmd in self.commands]
+                # Dump in JSON mode so both sides compare in JSON-compatible
+                # types: the stored commands come back from the JSON column
+                # with lists where plain model dumps contain tuples (e.g.
+                # valid_value's numeric_range), which would otherwise make
+                # this comparison unequal on every re-registration.
+                result_commands = [cmd.model_dump(exclude=excluded_fields, mode="json") for cmd in result.commands]
+                self_commands = [cmd.model_dump(exclude=excluded_fields, mode="json") for cmd in self.commands]
 
                 if self_commands != result_commands:
                     logger.warning(
