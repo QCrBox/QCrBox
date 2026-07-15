@@ -1,13 +1,25 @@
 from enum import Enum
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from pyqcrbox import settings
 
 from ..base import QCrBoxPydanticBaseModel
 from ..parameter_spec import ParameterSpecDiscriminatedUnion
+from .output_spec import OutputCifSpec, OutputSpecDiscriminatedUnion
 
 __all__ = []
+
+# Output dtypes must not appear in the `parameters:` section
+_OUTPUT_DTYPES = (
+    "QCrBox.output_cif",
+    "QCrBox.output_path",
+    "QCrBox.output_text",
+    "QCrBox.output_image",
+    "QCrBox.output_html",
+    "QCrBox.output_interactive_structure",
+    "QCrBox.output_interactive_graph",
+)
 
 
 class ImplementedAs(str, Enum):
@@ -57,8 +69,45 @@ class BaseCommandSpec(QCrBoxPydanticBaseModel):
     description: str | None = Field(default=None, max_length=settings.db.max_desc_length)
     implemented_as: ImplementedAs
     parameters: list[ParameterSpecDiscriminatedUnion]
+    outputs: list[OutputSpecDiscriminatedUnion] = []
     merge_cif_su: bool = False
     doi: str | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def reject_output_dtypes_in_parameters(cls, data):
+        if isinstance(data, dict):
+            for param in data.get("parameters") or []:
+                dtype = param.get("dtype") if isinstance(param, dict) else getattr(param, "dtype", None)
+                if dtype in _OUTPUT_DTYPES:
+                    name = param.get("name") if isinstance(param, dict) else getattr(param, "name", "?")
+                    raise ValueError(
+                        f"Parameter {name!r} has output dtype {dtype!r}: command outputs are declared "
+                        "in the command's 'outputs:' section, not in 'parameters:'"
+                    )
+        return data
+
+    @model_validator(mode="after")
+    def verify_outputs_are_consistent(self):
+        if isinstance(self.outputs, dict) or isinstance(self.parameters, dict):
+            # Response models carry parameters/outputs as {name: dump} dicts
+            return self
+        output_names = [output.name for output in self.outputs]
+        parameter_names = [param.name for param in self.parameters]
+        clashes = set(output_names) & set(parameter_names)
+        if clashes:
+            raise ValueError(f"Output names clash with parameter names: {sorted(clashes)!r}")
+        if len(output_names) != len(set(output_names)):
+            raise ValueError(f"Output names must be unique, got: {output_names!r}")
+        cif_outputs = [output for output in self.outputs if isinstance(output, OutputCifSpec)]
+        if len(cif_outputs) > 1:
+            raise ValueError("A command can declare at most one 'QCrBox.output_cif' output")
+        return self
+
+    @property
+    def output_cif_spec(self) -> OutputCifSpec | None:
+        """The command's pipeline-continuing output CIF spec, if declared."""
+        return next((output for output in self.outputs if isinstance(output, OutputCifSpec)), None)
 
     @property
     def is_python_callable(self) -> bool:

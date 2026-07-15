@@ -88,3 +88,12 @@ Wait Until Calculation Successful
     Log    Calculation response: ${calculation_response}
 
     RETURN    ${calculation_response}
+
+Check Calculation Failed
+    [Documentation]    Check if a calculation has failed
+    [Arguments]    ${calculation_id}
+
+    ${calculation_response}=    Get Calculation Status    ${calculation_id}
+    Should Be Equal    ${calculation_response["status"]}    failed
+
+    RETURN    ${calculation_response}

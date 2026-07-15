@@ -9,8 +9,6 @@ from .builtin_parameter_types import BoolParameterSpec, FloatParameterSpec, IntP
 from .filesystem_path_parameters import (
     CifDataFileParameterSpec,
     DataFileParameterSpec,
-    GenericOutputPathParameterSpec,
-    OutputCifParameterSpec,
     # FolderPathParameterSpec,
     # GenericInputPathParameterSpec,
     # InputCifParameterSpec,
@@ -31,11 +29,12 @@ ParameterSpecTaggedUnion = Union[  # noqa: UP007
     Annotated[BoolParameterSpec, Tag("bool")],
     #
     # File/directory types with QCrBox-specific logic
+    # Note: output dtypes (QCrBox.output_cif and the QCrBox.output_* artifact
+    # types) are NOT parameters — they are declared in a command's `outputs:`
+    # section (see sql_models/command_spec/output_spec.py).
     #
-    Annotated[OutputCifParameterSpec, Tag("QCrBox.output_cif")],
     Annotated[DataFileParameterSpec, Tag("QCrBox.data_file")],
     Annotated[CifDataFileParameterSpec, Tag("QCrBox.cif_data_file")],
-    Annotated[GenericOutputPathParameterSpec, Tag("QCrBox.output_path")],
     #
     # Deprecated parameters
     #

@@ -48,7 +48,7 @@ Returned cif should be modified when no entries for input and output parameter s
 
     VAR    &{input_cif}=
     ...    data_file_id=${input_cif_dataset[0]["data_files"]["to_specific_test_cif.cif"]["qcrbox_file_id"]}
-    VAR    &{command_arguments}=    input_cif=${input_cif}    output_cif=merged_cif.cif
+    VAR    &{command_arguments}=    input_cif=${input_cif}
 
     ${output_dataset_id}=    Invoke Command And Get Output Dataset ID
     ...    dummy_cli
@@ -74,7 +74,7 @@ Returned cif should be modified after being transformed to specific format
 
     VAR    &{input_cif}=
     ...    data_file_id=${input_cif_dataset[0]["data_files"]["to_specific_test_cif.cif"]["qcrbox_file_id"]}
-    VAR    &{command_arguments}=    input_cif=${input_cif}    output_cif_dummy="foo"
+    VAR    &{command_arguments}=    input_cif=${input_cif}
 
     ${output_dataset_id}=    Invoke Command And Get Output Dataset ID
     ...    dummy_cli
@@ -107,7 +107,7 @@ Returned cif should be in the unified cif format
     ...    data_file_id=${input_cif_dataset[0]["data_files"]["to_specific_test_cif.cif"]["qcrbox_file_id"]}
     VAR    &{merge_cif}=
     ...    data_file_id=${merge_cif_dataset[0]["data_files"]["to_unified_test_cif.cif"]["qcrbox_file_id"]}
-    VAR    &{command_arguments}=    input_cif=${input_cif}    to_merge_cif=${merge_cif}    output_cif="merged_cif.cif"
+    VAR    &{command_arguments}=    input_cif=${input_cif}    to_merge_cif=${merge_cif}
 
     ${output_dataset_id}=    Invoke Command And Get Output Dataset ID
     ...    dummy_cli

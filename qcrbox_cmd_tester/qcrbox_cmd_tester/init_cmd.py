@@ -90,10 +90,11 @@ def generate_test_suite(config_path: Path, cif_path: Path, output_path: Path | N
             dtype = param.get("dtype")
             default_value = param.get("default_value")
 
+            # Note: command outputs (QCrBox.output_cif and the QCrBox.output_*
+            # artifact types) are declared in the command's `outputs:` section
+            # and are not invocation parameters, so they never appear here.
             if dtype == "QCrBox.cif_data_file":
                 cif_param_name = param_name
-            elif dtype == "QCrBox.output_cif":
-                required_params.append({"name": param_name, "type": "str", "value": f"output_{command_name}.cif"})
             elif default_value is not None:
                 # Use default value
                 param_type = "str"

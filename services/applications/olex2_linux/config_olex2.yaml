@@ -21,9 +21,10 @@ commands:
         optional_entry_sets: [ "atom_data", "aspheric_form_factors", "previous_quality_indicators" ]
         merge_su: Yes
         custom_categories: [ "iucr", "shelx" ]
+    outputs:
       - name: "output_cif_name"
         dtype: "QCrBox.output_cif"
-        description: "Name of the output CIF to be used to export the structure from Olex2 back to QCrBox"
+        description: "The output CIF used to export the structure from Olex2 back to QCrBox"
         required_entries: []
         optional_entries: []
         required_entry_sets: ["olex2_only_interactive_output", "olex_structure_output"]
@@ -58,12 +59,6 @@ commands:
         required_entry_sets: ["cell_data", "diffraction_data", "atom_data"]
         merge_su: Yes
         custom_categories: ["iucr", "shelx"]
-      - name: "output_cif_name"
-        dtype: "QCrBox.output_cif"
-        description: "Name to use for exporting the refined CIF file back to QCrBox."
-        required_entry_sets: ["olex_structure_output"]
-        custom_categories: ["iucr", "shelx"]
-        invalidated_entries: ["_shelx_.*"]
       - name: "ls_cycles"
         dtype: int
         default_value: 5
@@ -72,6 +67,13 @@ commands:
         dtype: int
         default_value: 5
         description: "Number of weight cycles to run. Each weight cycle consists of the full number of least squares cycles."
+    outputs:
+      - name: "output_cif_name"
+        dtype: "QCrBox.output_cif"
+        description: "The refined CIF file exported back to QCrBox."
+        required_entry_sets: ["olex_structure_output"]
+        custom_categories: ["iucr", "shelx"]
+        invalidated_entries: ["_shelx_.*"]
   - name: "run_commands"
     implemented_as: "python_callable"
     description: "Run a series of Olex2 commands from a text file. Will always return the CIF file, independent of whether the commands actually produce a new CIF file"
@@ -85,15 +87,16 @@ commands:
         optional_entry_sets: ["all_olex_optional"]
         merge_su: Yes
         custom_categories: ["iucr", "shelx"]
-      - name: "output_cif_name"
-        dtype: "QCrBox.output_cif"
-        description: "Name to use for exporting the CIF file back to QCrBox after running the commands."
-        optional_entry_sets: ["olex_structure_output"]
-        custom_categories: ["iucr", "shelx"]
-        invalidated_entries: ["_shelx_.*"]
       - name: "cmd_file"
         dtype: "QCrBox.data_file"
         description: "Path to the text file containing the Olex2 commands to run."
+    outputs:
+      - name: "output_cif_name"
+        dtype: "QCrBox.output_cif"
+        description: "The CIF file exported back to QCrBox after running the commands."
+        optional_entry_sets: ["olex_structure_output"]
+        custom_categories: ["iucr", "shelx"]
+        invalidated_entries: ["_shelx_.*"]
 
 cif_entry_sets:
   - name: "cell_data"

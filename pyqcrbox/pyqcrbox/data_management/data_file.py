@@ -20,6 +20,10 @@ class DataFile(QCrBoxPydanticBaseModel):
         Name of the file.
     filetype : str
         File extension/type (e.g., 'csv', 'txt').
+    kind : str | None
+        Artifact kind for typed command output artifacts (see
+        `pyqcrbox.data_management.ArtifactKind`). None for pipeline CIFs and
+        plain uploads.
 
     """
 
@@ -27,6 +31,7 @@ class DataFile(QCrBoxPydanticBaseModel):
     qcrbox_dataset_id: str | None
     filename: str
     filetype: str
+    kind: str | None = None
 
     def to_response_model(self) -> "DataFileResponse":
         """Convert to a DataFileResponse for API responses.
@@ -42,6 +47,7 @@ class DataFile(QCrBoxPydanticBaseModel):
             qcrbox_dataset_id=self.qcrbox_dataset_id,
             filename=self.filename,
             filetype=self.filetype,
+            kind=self.kind,
         )
 
 
@@ -59,6 +65,9 @@ class DataFileResponse(QCrBoxPydanticBaseModel):
         Name of the file.
     filetype : str
         File extension/type (e.g., 'csv', 'txt').
+    kind : str | None
+        Artifact kind for typed command output artifacts; None for pipeline
+        CIFs and plain uploads.
 
     """
 
@@ -66,3 +75,4 @@ class DataFileResponse(QCrBoxPydanticBaseModel):
     qcrbox_dataset_id: str | None
     filename: str
     filetype: str
+    kind: str | None = None

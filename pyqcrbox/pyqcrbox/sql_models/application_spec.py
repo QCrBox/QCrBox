@@ -13,7 +13,6 @@ from pyqcrbox._version import __version__ as pyqcrbox_version
 from .. import helpers
 from .base import QCrBoxPydanticBaseModel
 from .cif_entry_set import CifEntrySet
-from .command_spec.base_command_spec import ImplementedAs
 from .command_spec.command_spec import CommandSpecDiscriminatedUnion, CommandSpecWithParametersResponse
 
 __all__ = ["ApplicationSpec"]
@@ -141,19 +140,10 @@ class ApplicationSpec(ApplicationSpecBase):
             raise ValueError(f"Command names must be unique, got: {command_names!r}")
         return value
 
-    @field_validator("commands")
-    @classmethod
-    def verify_implemented_as_valid(
-        cls, commands: list[CommandSpecDiscriminatedUnion]
-    ) -> list[CommandSpecDiscriminatedUnion]:
-        for command in commands:
-            if (
-                command.is_non_interactive
-                and command.implemented_as == ImplementedAs.cli_command
-                and not command.name.startswith("__")  # this is to ignore commands in the interactive lifecycle
-            ):
-                raise ValueError(f"Non-interactive command cannot be a {ImplementedAs.cli_command!r}")
-        return commands
+    # Note: non-interactive `cli_command`s used to be rejected here because
+    # their outputs could not be captured. Outputs declared via `QCrBox.output_*`
+    # parameters are now collected from the work directory for CLI commands
+    # too, so the restriction has been lifted.
 
     @property
     def cmds_by_name(self):

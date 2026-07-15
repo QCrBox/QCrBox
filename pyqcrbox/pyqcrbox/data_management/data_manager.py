@@ -408,6 +408,7 @@ class DataManager(ABC):
         file_contents: bytes,
         filename: str,
         *,
+        kind: str | None = None,
         _qcrbox_file_id: str | None = None,
     ) -> str:
         """Import a byte stream as a data file into the data manager.
@@ -421,6 +422,10 @@ class DataManager(ABC):
             The contents of the file, in binary.
         filename : str | None
             The name of the file to store as metadata.
+        kind : str | None
+            Artifact kind for typed command output artifacts (see
+            `pyqcrbox.data_management.ArtifactKind`); None for pipeline CIFs
+            and plain uploads.
         _qcrbox_file_id : str
             An ID to use. If an ID is not passed, an ID will be generated.
 
@@ -440,13 +445,16 @@ class DataManager(ABC):
             qcrbox_dataset_id=None,
             filename=filename,
             filetype=file_extension,
+            kind=kind,
         )
         await self._store_data_file_metadata(data_file)
         await self._store_data_file_contents(qcrbox_file_id, file_contents)
 
         return qcrbox_file_id
 
-    async def import_file(self, file_path: str | Path, *, _qcrbox_file_id: str | None = None) -> str:
+    async def import_file(
+        self, file_path: str | Path, *, kind: str | None = None, _qcrbox_file_id: str | None = None
+    ) -> str:
         """Import a data file into the data manager, from a local file system.
 
         This function will add both the contents of the file, in bytes, and metadata
@@ -457,6 +465,9 @@ class DataManager(ABC):
         ----------
         file_path : str | pathlib.Path
             The file path to the file to add to the data manager.
+        kind : str | None
+            Artifact kind for typed command output artifacts; None for
+            pipeline CIFs and plain uploads.
         _qcrbox_file_id : str
             An ID to use. If an ID is not passed, an ID will be generated.
 
@@ -471,7 +482,7 @@ class DataManager(ABC):
 
         with file_path.open("rb") as f:
             qcrbox_file_id = await self.import_file_from_bytes(
-                f.read(), filename=file_path.name, _qcrbox_file_id=qcrbox_file_id
+                f.read(), filename=file_path.name, kind=kind, _qcrbox_file_id=qcrbox_file_id
             )
 
         return qcrbox_file_id

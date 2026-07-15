@@ -52,6 +52,12 @@ _LIGHTWEIGHT_MIGRATIONS = [
         "JSON",
         "UPDATE application SET cif_entry_sets = '[]' WHERE cif_entry_sets IS NULL",
     ),
+    (
+        "command",
+        "outputs",
+        "JSON",
+        "UPDATE command SET outputs = '{}' WHERE outputs IS NULL",
+    ),
     ("container_instance", "docker_container_id", "VARCHAR", None),
     ("container_instance", "gui_host", "VARCHAR", None),
     (

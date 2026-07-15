@@ -26,9 +26,10 @@ commands:
         dtype: "QCrBox.data_file"
         default_value: None
         description: "CIF file containing the structure to be used for replacing the structure in the input CIF file"
+    outputs:
       - name: "output_cif_name"
         dtype: "QCrBox.output_cif"
-        description: "Name of the output CIF file that is exported back into QCrBox."
+        description: "The output CIF file that is exported back into QCrBox."
         required_entry_sets: ["molecular_structure"]
         invalidated_entries: [
           "_geom.*", "_refln.*calc.*", "_shelx.*", "_iucr.refine_instructions_details",
@@ -55,9 +56,14 @@ commands:
           "_atom_site_aniso.u_23"
         ]
         merge_su: False
+      - name: "select_elements"
+        dtype: "str"
+        default_value: ""
+        description: "Comma-separated list of element symbols to select which atoms to convert. If no atoms are converted."
+    outputs:
       - name: "output_cif_name"
         dtype: "QCrBox.output_cif"
-        description: "Name to use for exporting the CIF file back to QCrBox after converting"
+        description: "The CIF file exported back to QCrBox after converting"
         required_entries: [
           "_atom_site_aniso.label", "_atom_site_aniso.u_11", "_atom_site_aniso.u_22",
           "_atom_site_aniso.u_33", "_atom_site_aniso.u_12", "_atom_site_aniso.u_13",
@@ -67,10 +73,6 @@ commands:
           "_refln.*calc.*", "_shelx.*", "_iucr.refine_instructions_details",
           '_refine(?!_ls\.weighting|_ls\.extinction)'
         ]
-      - name: "select_elements"
-        dtype: "str"
-        default_value: ""
-        description: "Comma-separated list of element symbols to select which atoms to convert. If no atoms are converted."
 
 cif_entry_sets:
   - name: "molecular_structure"

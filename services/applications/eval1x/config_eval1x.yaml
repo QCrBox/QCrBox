@@ -16,9 +16,10 @@ commands:
       - name: "input_folder"
         dtype: "QCrBox.input_folder"
         description: "The folder containing the images / data"
+    outputs:
       - name: "output_cif_path"
         dtype: "QCrBox.output_cif"
-        description: "Path to save the CIF file to after finishing the interactive session"
+        description: "The CIF file saved after finishing the interactive session"
         required_entry_sets: ["integration_output"]
         merge_su: Yes
         custom_categories: ["iucr", "shelx"]
@@ -43,13 +44,6 @@ commands:
         dtype: "QCrBox.input_folder"
         default_value: None
         description: "The folder containing the images / data"
-      - name: "output_cif_path"
-        dtype: "QCrBox.output_cif"
-        default_value: None
-        description: "Path to save the CIF file to after finishing the automatic integration"
-        required_entry_sets: ["integration_output"]
-        custom_categories: ["iucr", "shelx"]
-        invalidated_entries: []
       - name: "rmat_file_path"
         dtype: "QCrBox.input_path"
         default_value: None
@@ -90,6 +84,13 @@ commands:
         dtype: "QCrBox.folder_path"
         default_value: None
         description: "The folder containing the pic files with the integration settings"
+    outputs:
+      - name: "output_cif_path"
+        dtype: "QCrBox.output_cif"
+        description: "The CIF file saved after finishing the automatic integration"
+        required_entry_sets: ["integration_output"]
+        custom_categories: ["iucr", "shelx"]
+        invalidated_entries: []
 
 cif_entry_sets:
   - name: "integration_output"

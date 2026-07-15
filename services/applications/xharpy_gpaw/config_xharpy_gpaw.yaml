@@ -20,11 +20,6 @@ commands:
         required_entry_sets: ["cell", "structure", "resolution"]
         required_entries: ["_space_group_symop_operation_xyz"]
         merge_su: True
-      - name: "output_cif_name"
-        dtype: "QCrBox.output_cif"
-        description: "Name of the CIF file exported back to QCrBox containing the calculated atomic form factors"
-        required_entry_sets: ["aspheric_form_factors"]
-        invalidated_entries: [".*refine.*", "_iucr.*"]
       - name: "functional"
         dtype: "str"
         description: "The DFT functional to use for the GPAW calculation. Sensible options are 'SCAN' or 'PBE'."
@@ -32,6 +27,12 @@ commands:
         dtype: "float"
         default_value: 0.16
         description: "The grid spacing in Angstrom to use for the GPAW calculation. Smaller values indicate a larger basis. So improved atomic form factors at a longer computation time."
+    outputs:
+      - name: "output_cif_name"
+        dtype: "QCrBox.output_cif"
+        description: "The CIF file exported back to QCrBox containing the calculated atomic form factors"
+        required_entry_sets: ["aspheric_form_factors"]
+        invalidated_entries: [".*refine.*", "_iucr.*"]
 
   - name: "ha_refine"
     description: "Do a Hirshfeld atom refinement using XHARPy and GPAW"
@@ -46,9 +47,17 @@ commands:
         optional_entries: ["_refine_ls.extinction_coef"]
         merge_su: True
         custom_categories: ["shelx"]
+      - name: "functional"
+        dtype: "str"
+        description: "The DFT functional to use for the GPAW calculation. Sensible options are 'SCAN' or 'PBE'."
+      - name: "gridspacing"
+        dtype: "float"
+        default_value: 0.16
+        description: "The grid spacing in Angstrom to use for the GPAW calculation. Smaller values indicate a larger basis. So improved atomic form factors at a longer computation time."
+    outputs:
       - name: "output_cif_name"
         dtype: "QCrBox.output_cif"
-        description: "Name to use for exporting the CIF file back to QCrBox after refining the structure"
+        description: "The CIF file exported back to QCrBox after refining the structure"
         required_entry_sets: ["structure", "atomic_information", "refinement_results"]
         optional_entry_sets: ["geometry_lookup"]
         invalidated_entries: [
@@ -57,13 +66,6 @@ commands:
           "_atom_site.*", "_refine.diff_density_*", "_iucr.fcf*"
         ]
         custom_categories: ["shelx"]
-      - name: "functional"
-        dtype: "str"
-        description: "The DFT functional to use for the GPAW calculation. Sensible options are 'SCAN' or 'PBE'."
-      - name: "gridspacing"
-        dtype: "float"
-        default_value: 0.16
-        description: "The grid spacing in Angstrom to use for the GPAW calculation. Smaller values indicate a larger basis. So improved atomic form factors at a longer computation time."
 
 
 cif_entry_sets:

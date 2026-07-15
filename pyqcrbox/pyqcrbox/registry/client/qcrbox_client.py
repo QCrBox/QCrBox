@@ -22,8 +22,8 @@ from pyqcrbox.registry.client.executable_command.python_callable import PythonCa
 from pyqcrbox.sql_models import CalculationStatusDetails, CalculationStatusEnum
 from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import (
     BaseParameter,
-    Cif2CifOptions,
-    get_cif_merge_parameter,
+    get_cif_merge_options,
+    get_declared_outputs,
 )
 
 from ..shared import QCrBoxServerClientBase, TestQCrBoxServerClientBase, on_qcrbox_startup
@@ -297,22 +297,29 @@ class QCrBoxClient(QCrBoxServerClientBase):
         logger.debug(f"Adding output from non-interactive command {command.name} into data manager")
 
         try:
-            parameter_name, cif_parameter, output_path = await get_cif_merge_parameter(command, command_parameters)
+            cif_parameter, merge_options = get_cif_merge_options(command, command_parameters, self.application_spec)
+            declared_outputs = get_declared_outputs(command.cmd_spec)
 
-            # If we found a QCrBox.cif_data_file or QCrBox.output_cif in the above
-            # function call, then we will attempt to created a merged CIF
-            if cif_parameter and parameter_name:
-                merge_options = Cif2CifOptions(
-                    application_yaml=self.application_spec.yaml_file_path,  # type: ignore
-                    command_name=command.name,
-                    parameter_name=parameter_name,
-                    output_path=output_path,
-                )
+            # If the command has a CIF input, its output CIF is merged back
+            # into the (unified) input CIF
+            if cif_parameter and merge_options:
                 dataset_id = await calc.save_output_to_data_manager(
-                    self.data_manager, merge_options=merge_options, input_cif=cif_parameter
+                    self.data_manager,
+                    merge_options=merge_options,
+                    input_cif=cif_parameter,
+                    declared_outputs=declared_outputs,
+                    work_dir=self._cmd_work_dir,
                 )
             else:
-                dataset_id = await calc.save_output_to_data_manager(self.data_manager)
+                dataset_id = await calc.save_output_to_data_manager(
+                    self.data_manager, declared_outputs=declared_outputs, work_dir=self._cmd_work_dir
+                )
+        except ValueError:
+            # The command violated its output contract (e.g. a declared
+            # required output was not produced): fail the calculation. The
+            # caller routes this to `_handle_calculation_failure`, which also
+            # cleans up the work dir and sets the client back to idle.
+            raise
         except Exception as exc:
             logger.error(f"Failed to store output calculation {calc.calculation_id} in data manager: {exc}")
         else:
@@ -365,22 +372,27 @@ class QCrBoxClient(QCrBoxServerClientBase):
         logger.debug("Finalise command has finished")
         logger.debug(f"Adding output from interactive command {command.name} into data manager")
         try:
-            parameter_name, cif_parameter, output_path = await get_cif_merge_parameter(command, command_parameters)
+            cif_parameter, merge_options = get_cif_merge_options(command, command_parameters, self.application_spec)
+            declared_outputs = get_declared_outputs(command.cmd_spec)
 
-            # If we found a QCrBox.cif_data_file or QCrBox.output_cif in the above
-            # function call, then we will attempt to created a merged CIF
-            if cif_parameter and parameter_name:
-                merge_options = Cif2CifOptions(
-                    application_yaml=self.application_spec.yaml_file_path,  # type: ignore
-                    command_name=command.name,
-                    parameter_name=parameter_name,
-                    output_path=output_path,
-                )
+            # If the command has a CIF input, its output CIF is merged back
+            # into the (unified) input CIF
+            if cif_parameter and merge_options:
                 dataset_id = await calc.save_output_to_data_manager(
-                    self.data_manager, merge_options=merge_options, input_cif=cif_parameter
+                    self.data_manager,
+                    merge_options=merge_options,
+                    input_cif=cif_parameter,
+                    declared_outputs=declared_outputs,
+                    work_dir=self._cmd_work_dir,
                 )
             else:
-                dataset_id = await calc.save_output_to_data_manager(self.data_manager)
+                dataset_id = await calc.save_output_to_data_manager(
+                    self.data_manager, declared_outputs=declared_outputs, work_dir=self._cmd_work_dir
+                )
+        except ValueError:
+            # Output contract violation (e.g. missing declared required
+            # output): fail the calculation via `_handle_calculation_failure`.
+            raise
         except Exception as exc:
             logger.error(f"Failed to store output calculation {calc.calculation_id} in data manager: {exc}")
         else:

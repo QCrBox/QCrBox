@@ -14,9 +14,6 @@ test_cases:
       - name: input_cif
         type: external_file
         value: "./test_cif_files/epoxide_isotropic.cif"
-      - name: output_cif_name
-        type: str
-        value: "epoxide_anisotropic.cif"
       - name: select_elements
         type: str
         value: "C,H,O"
@@ -98,9 +95,6 @@ test_cases:
           _atom_site_aniso.u_13
           _atom_site_aniso.u_23
           O123  0.02  0.02  0.02  0.0  0.0  0.0
-      - name: output_cif_name
-        type: str
-        value: "epoxide_replaced.cif"
 
     expected_results:
       - result_type: status

@@ -22,8 +22,17 @@ commands:
           "_chemical_formula_sum"
         ]
         default_value: None
+      - name: "cellpar_deviation_perc"
+        description: "The percentage deviation allowed for the unit cell parameters for the structure to still be considered a match."
+        dtype: "float"
+        default_value: 2.0
+      - name: "listed_elements_only"
+        description: "If True, only the elements listed in the chemical formula within the CIF file can be present, otherwise given elements must be present but additional elements are possible."
+        dtype: "bool"
+        default_value: false
+    outputs:
       - name: "output_cif_name"
-        description: "Name of the the output CIF file."
+        description: "The output CIF file."
         dtype: "QCrBox.output_cif"
         required_entries: [
           "_atom_site_label", "_atom_site_fract_x", "_atom_site_fract_y", "_atom_site_fract_z",
@@ -39,14 +48,6 @@ commands:
         invalidated_entries: [
           "_atom_site.*", "_geom.*", ".*refine.*", "_iucr.*", "_shelx.*"
         ]
-      - name: "cellpar_deviation_perc"
-        description: "The percentage deviation allowed for the unit cell parameters for the structure to still be considered a match."
-        dtype: "float"
-        default_value: 2.0
-      - name: "listed_elements_only"
-        description: "If True, only the elements listed in the chemical formula within the CIF file can be present, otherwise given elements must be present but additional elements are possible."
-        dtype: "bool"
-        default_value: false
 
 cif_entry_sets:
   - name: "cell_elements"

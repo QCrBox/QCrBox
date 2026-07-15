@@ -28,6 +28,9 @@ class CommandSpecDB(QCrBoxBaseSQLModel, table=True):
     # for CLI commands
     call_pattern: str | None = None
     parameters: dict[Any, Any] = Field(sa_type=JSON)
+    # Declared output files ({name: output spec dump}), see
+    # sql_models/command_spec/output_spec.py
+    outputs: dict[Any, Any] = Field(default_factory=dict, sa_type=JSON)
 
     # for Python callables
     import_path: str | None = None
@@ -100,8 +103,9 @@ class CommandSpecDB(QCrBoxBaseSQLModel, table=True):
             A new CommandSpecDB instance
 
         """
-        data = command.model_dump(exclude={"parameters"})
+        data = command.model_dump(exclude={"parameters", "outputs"})
         data["parameters"] = {param.name: param.model_dump() for param in command.parameters}
+        data["outputs"] = {output.name: output.model_dump() for output in command.outputs}
 
         return cls(**data)
 

@@ -88,6 +88,18 @@ class PythonCallableSpec(BaseCommandSpec):
             except MissingTypeAnnotation:
                 logger.warning(f"No type annotation present for parameter {p.name!r} - skipping validation.")
 
+        # Output filenames are injected into the callable as string keyword
+        # arguments under the output's name, so the signature must accept them.
+        for output in model_data.outputs:
+            if output.name not in fn_validator.fn_params:
+                raise ValueError(f"Output {output.name!r} not present in function signature")
+            fn_output_param = fn_validator.fn_params[output.name]
+            if fn_output_param is not None and fn_output_param.dtype != "str":
+                raise ValueError(
+                    f"Output {output.name!r} must be annotated as 'str' in the function signature "
+                    f"(the injected value is the output filename), got {fn_output_param.dtype!r}"
+                )
+
         return model_data
 
     @model_validator(mode="before")

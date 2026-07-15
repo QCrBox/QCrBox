@@ -6,9 +6,7 @@ import signal
 import anyio
 
 from pyqcrbox import logger
-from pyqcrbox.data_management import DataManager
 from pyqcrbox.sql_models import CalculationStatusEnum
-from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import Cif2CifOptions, CifDataFileParameter
 
 from .base_calculation import BaseCalculation
 
@@ -37,34 +35,10 @@ class CLICmdCalculation(BaseCalculation):
         self.retrieved_stdout_stderr = False
         self.calc_finished_event = calc_finished_event
 
-    async def save_output_to_data_manager(
-        self,
-        data_manager: DataManager,
-        *,
-        merge_options: Cif2CifOptions | None = None,
-        input_cif: CifDataFileParameter | None = None,
-    ) -> str | None:
-        """Save the output of the CLI Command to the Data File Manager.
-
-        This is a dummy method, as getting data from a CLI command is not
-        supported.
-
-        Parameters
-        ----------
-        data_manager : DataManager
-            An instance of the DataFile Manager.
-        merge_options : Cif2CifOptions | None
-            Options which will be used to create a unified CIF.
-        input_cif: CifDataFileParameter | None
-            The original CIF prior to being transformed to a new CIF format.
-
-        Returns
-        -------
-        str | None
-            The dataset ID created to store the output.
-
-        """
-        logger.warning("Saving the output from a CLI Command is not supported!")
+    # CLI commands produce no returned output file (the base class hook
+    # `_get_returned_output_file` returns None); their outputs are collected
+    # from the work directory via declared output parameters by the base
+    # class implementation of `save_output_to_data_manager`.
 
     async def wait_until_finished(self):
         """Wait until the calculation is finished."""

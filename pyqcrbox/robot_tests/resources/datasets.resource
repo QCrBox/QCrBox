@@ -65,3 +65,12 @@ Get Dataset File Contents
     ${output}=    Convert To String    ${response.content}
 
     RETURN    ${output}
+
+Check Data File Content Media Type
+    [Documentation]    Fetch a data file via the inline content endpoint and check its media type
+    [Arguments]    ${data_file_id}    ${expected_media_type}
+
+    ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /data-files/${data_file_id}/content    200
+    Should Be Equal    ${response.headers["Content-Type"]}    ${expected_media_type}
+    Should Contain    ${response.headers["Content-Disposition"]}    inline
+    Should Be Equal    ${response.headers["X-Content-Type-Options"]}    nosniff

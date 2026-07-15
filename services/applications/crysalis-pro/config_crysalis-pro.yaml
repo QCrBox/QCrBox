@@ -20,10 +20,10 @@ commands:
         dtype: "QCrBox.input_path"
         default_value: None
         description: "Path to the CrysAlisPro .par file. Must be located in the folder containing the remaining frames and other data"
+    outputs:
       - name: "output_cif_path"
         dtype: "QCrBox.output_cif"
-        default_value: None
-        description: "Path to save the CIF file to, after finishing the interactive session"
+        description: "The CIF file saved after finishing the interactive session"
         required_entry_sets: ["integration_output"]
         custom_categories: ["iucr", "shelx", "oxdiff"]
         invalidated_entries: []

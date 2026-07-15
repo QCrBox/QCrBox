@@ -6,10 +6,8 @@ from ..cif_entry_set import CifEntryLiteral, OneOfCifEntrySpec
 from .base_parameter_spec import BaseParameterSpec
 
 __all__ = [
-    "OutputCifParameterSpec",
     "DataFileParameterSpec",
     "CifDataFileParameterSpec",
-    "GenericOutputPathParameterSpec",
 ]
 
 
@@ -19,10 +17,6 @@ class BaseFilesystemPathParameterSpec(BaseParameterSpec):
             return True
 
         return other_dtype in ["str"]
-
-
-class GenericOutputPathParameterSpec(BaseFilesystemPathParameterSpec):
-    dtype: Literal["QCrBox.output_path"]
 
 
 class DataFileParameterSpec(BaseFilesystemPathParameterSpec):
@@ -50,9 +44,3 @@ class BaseCifFileParameterSpec(BaseFilesystemPathParameterSpec):
 
 class CifDataFileParameterSpec(BaseCifFileParameterSpec):
     dtype: Literal["QCrBox.cif_data_file"]
-
-
-class OutputCifParameterSpec(BaseCifFileParameterSpec):
-    dtype: Literal["QCrBox.output_cif"]
-    invalidated_entries: list[str] = []
-    output_block: int = 0  # default: select first block from output cif file

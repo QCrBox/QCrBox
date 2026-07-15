@@ -4,7 +4,6 @@ from pathlib import Path
 import anyio
 
 from pyqcrbox import logger
-from pyqcrbox.data_management import DataManager
 from pyqcrbox.debug import log_eel
 from pyqcrbox.registry.client.executable_command.error import (
     FinaliseCommandFailure,
@@ -12,7 +11,6 @@ from pyqcrbox.registry.client.executable_command.error import (
     RunCommandFailure,
 )
 from pyqcrbox.sql_models import CalculationStatusEnum
-from pyqcrbox.sql_models.parameter_spec.base_parameter_spec import Cif2CifOptions, CifDataFileParameter
 
 from .base_calculation import BaseCalculation
 from .python_callable_calculation import PythonCallableCalculation
@@ -57,64 +55,19 @@ class InteractiveSessionCalculation(BaseCalculation):
     async def stderr(self) -> None:
         return None
 
-    @log_eel
-    async def save_output_to_data_manager(
-        self,
-        data_manager: DataManager,
-        *,
-        merge_options: Cif2CifOptions | None = None,
-        input_cif: CifDataFileParameter | None = None,
-    ) -> str | None:
-        """Save the output of the Interactive Session to the Data File Manager.
-
-        It is assumed that the return value of the finalise command, which has to be
-        a PythonCallable is the data to be stored in the Data File Manager, and
-        that only a single file is returned.
-
-        Parameters
-        ----------
-        data_manager : DataManager
-            An instance of the DataFile Manager.
-        merge_options : Cif2CifOptions | None
-            Options which will be used to create a unified CIF.
-        input_cif: CifDataFileParameter | None
-            The original CIF prior to being transformed to a new CIF format.
-
-        Returns
-        -------
-        str | None
-            The dataset ID created to store the output.
-
-        """
+    def _get_returned_output_file(self) -> str | Path | None:
+        """Return the finalise command's return value as the session's (primary) output file."""
+        if self.finalise_calc is None:
+            logger.warning("The interactive session has no finalise calculation, no returned output file")
+            return None
         if not isinstance(self.finalise_calc, PythonCallableCalculation):
             raise RuntimeError("Finalise calculation in InteractiveSession not a PythonCallable")
 
         output_file = self.finalise_calc.return_value
         if not output_file:
             logger.warning("The finalise calculation for the interactive session does not return an output file")
-            self.output_dataset_id = None
-            return self.output_dataset_id
-
-        output_file = Path(output_file)
-        if not output_file.exists() or not output_file.is_file():
-            exc_msg = f"The return value '{output_file}' from the calculation is not a file"
-            logger.error(f"Unable to save output of calculation {self.calculation_id}: '{exc_msg}'")
-            raise ValueError(exc_msg)
-
-        if input_cif and merge_options:
-            logger.debug("Merging to unified format in PythonCallableCalculation")
-            output_file = await input_cif.to_unified_format(output_file, merge_options)
-
-        try:
-            output_data_file_id = await data_manager.import_file(output_file)
-            self.output_dataset_id = await data_manager.create_dataset_from_data_files(output_data_file_id)
-        except FileNotFoundError:
-            logger.error(f"Failed to create dataset for output from 'finalise' command, {output_file=!r}")
-            raise
-
-        logger.info(f"The output from the interactive session has been placed into dataset {self.output_dataset_id}")
-
-        return self.output_dataset_id
+            return None
+        return output_file
 
     @log_eel
     async def wait_until_finished(self) -> None:

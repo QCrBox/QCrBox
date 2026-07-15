@@ -39,7 +39,9 @@ class CLICommand(BaseCommand):
         super().__init__(cmd_spec)
         self.call_pattern = cmd_spec.call_pattern
         self.call_pattern_parameter_names = list(set(re.findall("{(.*?)}", self.call_pattern)))
-        self.parameter_names = [p.name for p in cmd_spec.parameters]
+        # Call-pattern placeholders may reference parameters AND declared
+        # outputs (whose filenames are injected into the prepared params)
+        self.parameter_names = [p.name for p in cmd_spec.parameters] + [o.name for o in cmd_spec.outputs]
         logger.warning(
             "TODO: validate that the call_pattern_parameter_names are a subset(?) of the yaml spec parameters"
         )

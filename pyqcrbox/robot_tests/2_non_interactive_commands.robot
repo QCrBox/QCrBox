@@ -98,6 +98,104 @@ An error should be returned if a dataset ID is used instead of a data file ID
     Should Contain     ${calculation_status["status_events"][-1]["extra_info"]["error_msg"]}    is a dataset
 
 
+Typed artifacts are captured alongside the output cif
+    [Documentation]    generate_report_artifacts returns an output cif plus one artifact of every
+    ...    kind; all six files must land in one dataset with the correct kinds and be served
+    ...    inline with the correct media types.
+
+    VAR    &{input_file}=    data_file_id=${TEST_DATA_FILE_ID}
+    VAR    &{arguments}=    input_cif=${input_file}
+    ${output_dataset_id}=    Invoke Command And Get Output Dataset ID
+    ...    dummy_cli
+    ...    0.1.0
+    ...    generate_report_artifacts
+    ...    ${arguments}
+
+    ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /datasets/${output_dataset_id}    200
+    ${payload}=    Check Response Structure And Get Payload    ${response}
+    VAR    ${data_files}=    ${payload["datasets"][0]["data_files"]}
+    ${n_files}=    Get Length    ${data_files}
+    Should Be Equal As Integers    ${n_files}    6    Expected cif + 5 artifacts in the output dataset
+
+    Should Be Equal    ${data_files["result.cif"]["kind"]}    ${None}
+    Should Be Equal    ${data_files["report.txt"]["kind"]}    text
+    Should Be Equal    ${data_files["report.svg"]["kind"]}    image
+    Should Be Equal    ${data_files["report.html"]["kind"]}    html
+    Should Be Equal    ${data_files["structure.cif"]["kind"]}    interactive_structure
+    Should Be Equal    ${data_files["graph.json"]["kind"]}    interactive_graph
+
+    Check Data File Content Media Type    ${data_files["result.cif"]["qcrbox_file_id"]}    chemical/x-cif
+    Check Data File Content Media Type    ${data_files["report.txt"]["qcrbox_file_id"]}    text/plain; charset=utf-8
+    Check Data File Content Media Type    ${data_files["report.svg"]["qcrbox_file_id"]}    image/svg+xml
+    Check Data File Content Media Type    ${data_files["report.html"]["qcrbox_file_id"]}    text/html; charset=utf-8
+    Check Data File Content Media Type
+    ...    ${data_files["structure.cif"]["qcrbox_file_id"]}
+    ...    chemical/x-cif
+    Check Data File Content Media Type    ${data_files["graph.json"]["qcrbox_file_id"]}    application/json
+
+    [Teardown]    Delete Cif Dataset    ${output_dataset_id}
+
+Artifact-only commands succeed without an output cif
+    [Documentation]    generate_report_only returns typed artifacts but no cif; the optional,
+    ...    never-written output must be skipped without failing the calculation.
+
+    VAR    &{input_file}=    data_file_id=${TEST_DATA_FILE_ID}
+    VAR    &{arguments}=    input_cif=${input_file}
+    ${output_dataset_id}=    Invoke Command And Get Output Dataset ID
+    ...    dummy_cli
+    ...    0.1.0
+    ...    generate_report_only
+    ...    ${arguments}
+
+    ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /datasets/${output_dataset_id}    200
+    ${payload}=    Check Response Structure And Get Payload    ${response}
+    VAR    ${data_files}=    ${payload["datasets"][0]["data_files"]}
+    ${n_files}=    Get Length    ${data_files}
+    Should Be Equal As Integers    ${n_files}    2    Expected exactly the two written artifacts
+    Should Be Equal    ${data_files["report.txt"]["kind"]}    text
+    Should Be Equal    ${data_files["graph.json"]["kind"]}    interactive_graph
+    Dictionary Should Not Contain Key    ${data_files}    never_written.txt
+
+    [Teardown]    Delete Cif Dataset    ${output_dataset_id}
+
+CLI commands capture their declared outputs
+    [Documentation]    report_via_cli writes a text report via a shell pipeline; the declared
+    ...    output must be captured into a dataset (this was unsupported before typed outputs).
+
+    VAR    &{input_file}=    data_file_id=${TEST_DATA_FILE_ID}
+    VAR    &{arguments}=    input_cif=${input_file}
+    ${output_dataset_id}=    Invoke Command And Get Output Dataset ID
+    ...    dummy_cli
+    ...    0.1.0
+    ...    report_via_cli
+    ...    ${arguments}
+
+    ${response}=    Send API Request    GET    ${SESSION_ALIAS}    /datasets/${output_dataset_id}    200
+    ${payload}=    Check Response Structure And Get Payload    ${response}
+    VAR    ${data_files}=    ${payload["datasets"][0]["data_files"]}
+    Should Be Equal    ${data_files["cif_head.txt"]["kind"]}    text
+    ${response}=    Send API Request
+    ...    GET
+    ...    ${SESSION_ALIAS}
+    ...    /data-files/${data_files["cif_head.txt"]["qcrbox_file_id"]}/download
+    ...    200
+    Should Not Be Empty    ${response.text}
+
+    [Teardown]    Delete Cif Dataset    ${output_dataset_id}
+
+A missing required output fails the calculation
+    [Documentation]    generate_report_broken declares a required text output which is never
+    ...    written; the calculation must report failed instead of silently succeeding.
+
+    VAR    &{input_file}=    data_file_id=${TEST_DATA_FILE_ID}
+    VAR    &{arguments}=    input_cif=${input_file}
+    ${invoke_response}=    Invoke Command With Arguments    dummy_cli    0.1.0    generate_report_broken    ${arguments}
+    ${invoke_payload}=    Check Response Structure And Get Payload    ${invoke_response}
+    VAR    ${calculation_id}=    ${invoke_payload["calculation_id"]}
+
+    Wait Until Keyword Succeeds    10s    2s    Check Calculation Failed    ${calculation_id}
+
+
 *** Keywords ***
 Setup Suite
     [Documentation]    Setup the test environment for this suite

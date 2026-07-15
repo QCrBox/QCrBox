@@ -28,6 +28,7 @@ class CommandSpecWithParametersResponse(BaseCommandSpec):
     id: int
     application_id: int
     parameters: dict
+    outputs: dict = {}
     application: str
     version: str
     cmd_name: str

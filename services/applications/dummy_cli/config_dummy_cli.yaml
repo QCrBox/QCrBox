@@ -56,9 +56,11 @@ commands:
         dtype: QCrBox.cif_data_file
         description: The main CIF
         required_entry_sets: [ "cell_elements" ]
+    outputs:
       - name: output_cif_name
         dtype: QCrBox.output_cif
-        description: The name of the output CIF file
+        description: The output CIF file
+        filename: renamed.cif
         required_entries: [
           "_atom_site_label", "_atom_site_fract_x", "_atom_site_fract_y", "_atom_site_fract_z",
           "_atom_site_occupancy", "_atom_site_U_iso_or_equiv", "_atom_site_type_symbol",
@@ -100,6 +102,7 @@ commands:
         optional_entry_sets: [input_test2]
         required_entries: [one_of: [_cell_length_b, _invalid_cif_value]]
         optional_entries: [_atom_site_label]
+    outputs:
       - name: "output_cif_dummy"
         dtype: "QCrBox.output_cif"
 
@@ -118,6 +121,7 @@ commands:
         optional_entries: [_atom_site_label]
       - name: "to_merge_cif"
         dtype: QCrBox.data_file
+    outputs:
       - name: "output_cif"
         dtype: "QCrBox.output_cif"
         custom_categories: [test_value, test_loop]
@@ -133,8 +137,94 @@ commands:
     parameters :
       - name: "input_cif"
         dtype: "QCrBox.cif_data_file"
+    outputs:
       - name: "output_cif"
         dtype: "QCrBox.output_cif"
+
+  - name: generate_report_artifacts
+    description: Produce an output CIF plus one artifact of every kind (for testing typed return values)
+    implemented_as: python_callable
+    import_path: sample_functions
+    parameters:
+      - name: "input_cif"
+        dtype: "QCrBox.cif_data_file"
+        description: The input CIF file
+    outputs:
+      - name: "output_cif"
+        dtype: "QCrBox.output_cif"
+        description: The output CIF continuing the pipeline
+        filename: "result.cif"
+      - name: "report_text"
+        dtype: "QCrBox.output_text"
+        description: A plain text report
+        filename: "report.txt"
+      - name: "report_image"
+        dtype: "QCrBox.output_image"
+        description: An image report
+        filename: "report.svg"
+      - name: "report_html"
+        dtype: "QCrBox.output_html"
+        description: A self-contained HTML report
+        filename: "report.html"
+      - name: "report_structure"
+        dtype: "QCrBox.output_interactive_structure"
+        description: A structure for the interactive 3D viewer
+        filename: "structure.cif"
+      - name: "report_graph"
+        dtype: "QCrBox.output_interactive_graph"
+        description: A Plotly figure (JSON) for the interactive graph viewer
+        filename: "graph.json"
+
+  - name: generate_report_only
+    description: Produce only typed artifacts, no output CIF (the pipeline does not advance)
+    implemented_as: python_callable
+    import_path: sample_functions
+    parameters:
+      - name: "input_cif"
+        dtype: "QCrBox.cif_data_file"
+        description: The input CIF file
+    outputs:
+      - name: "report_text"
+        dtype: "QCrBox.output_text"
+        description: A plain text report
+        filename: "report.txt"
+      - name: "report_graph"
+        dtype: "QCrBox.output_interactive_graph"
+        description: A Plotly figure (JSON) for the interactive graph viewer
+        filename: "graph.json"
+      - name: "optional_extra"
+        dtype: "QCrBox.output_text"
+        description: An optional report which this command deliberately does not produce
+        filename: "never_written.txt"
+        required_output: false
+
+  - name: generate_report_broken
+    description: Declares a required text output but never writes it (the calculation must fail)
+    implemented_as: python_callable
+    import_path: sample_functions
+    parameters:
+      - name: "input_cif"
+        dtype: "QCrBox.cif_data_file"
+        description: The input CIF file
+    outputs:
+      - name: "report_text"
+        dtype: "QCrBox.output_text"
+        description: A report which is deliberately never written
+        filename: "report.txt"
+
+  - name: report_via_cli
+    description: A CLI command with a declared text output (tests output capture for cli_command)
+    implemented_as: cli_command
+    call_pattern: "bash -c 'head -20 {input_cif} > {report_text}'"
+    parameters:
+      - name: "input_cif"
+        dtype: "QCrBox.cif_data_file"
+        description: The input CIF file
+    outputs:
+      - name: "report_text"
+        dtype: "QCrBox.output_text"
+        description: The first lines of the input CIF as a text report
+        filename: "cif_head.txt"
 
 cif_entry_sets:
   - name: "cell_elements"

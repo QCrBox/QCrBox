@@ -274,6 +274,15 @@ services:
       traefik.http.routers.registry-api.middlewares: authelia-auth,qcrbox-gateway-token
       traefik.http.routers.registry-api.priority: 50
       traefik.http.routers.registry-api.service: registry-service
+
+      # Same-origin API path on the main domain: lets the frontend's workflow
+      # page fetch artifact content (images, reports, viewer data) from the
+      # browser with the Authelia session cookie, without CORS.
+      traefik.http.routers.registry-api-path.rule: Host(`${QCRBOX_DOMAIN:-localhost.local}`) && PathPrefix(`/api`)
+      traefik.http.routers.registry-api-path.entrypoints: websecure
+      traefik.http.routers.registry-api-path.middlewares: authelia-auth,qcrbox-gateway-token
+      traefik.http.routers.registry-api-path.priority: 60
+      traefik.http.routers.registry-api-path.service: registry-service
       
       # Service definition
       traefik.http.services.registry-service.loadbalancer.server.scheme: http

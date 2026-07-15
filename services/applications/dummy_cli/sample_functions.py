@@ -84,3 +84,94 @@ def test_merged_cifs(input_cif: str, output_cif: str) -> Path:
         file_out.writelines(lines)
 
     return Path(output_cif).absolute()
+
+
+def _demo_plotly_figure_json() -> str:
+    """A small Plotly figure as JSON (a Plotly figure is just a dict)."""
+    import json
+
+    return json.dumps(
+        {
+            "data": [
+                {"x": [1, 2, 3, 4, 5], "y": [1.2, 2.3, 1.8, 3.1, 2.4], "type": "scatter", "name": "demo series"},
+            ],
+            "layout": {"title": {"text": "Demo interactive graph"}, "xaxis": {"title": {"text": "step"}}},
+        }
+    )
+
+
+_DEMO_SVG = """<svg xmlns="http://www.w3.org/2000/svg" width="240" height="120">
+  <rect width="240" height="120" fill="#eef"/>
+  <circle cx="60" cy="60" r="40" fill="#46a"/>
+  <text x="120" y="66" font-size="16">demo image</text>
+</svg>
+"""
+
+_DEMO_HTML = """<!DOCTYPE html>
+<html><head><title>Demo report</title></head>
+<body>
+<h1>Demo HTML report</h1>
+<p>This page is self-contained and runs in a sandboxed iframe.</p>
+<p id="counter">JavaScript did not run.</p>
+<script>document.getElementById("counter").textContent = "JavaScript ran: 1 + 1 = " + (1 + 1);</script>
+</body></html>
+"""
+
+
+def _write_demo_artifacts(work_dir: Path, input_cif: str, filenames: dict[str, str]) -> None:
+    """Write one demo artifact per requested kind into the work directory."""
+    if "text" in filenames:
+        n_lines = len(Path(input_cif).read_text(encoding="utf-8").splitlines())
+        (work_dir / filenames["text"]).write_text(
+            f"Demo text report for {Path(input_cif).name}\nThe input CIF has {n_lines} lines.\n", encoding="utf-8"
+        )
+    if "image" in filenames:
+        (work_dir / filenames["image"]).write_text(_DEMO_SVG, encoding="utf-8")
+    if "html" in filenames:
+        (work_dir / filenames["html"]).write_text(_DEMO_HTML, encoding="utf-8")
+    if "structure" in filenames:
+        shutil.copy(input_cif, work_dir / filenames["structure"])
+    if "graph" in filenames:
+        (work_dir / filenames["graph"]).write_text(_demo_plotly_figure_json(), encoding="utf-8")
+
+
+def generate_report_artifacts(
+    input_cif: str,
+    output_cif: str,
+    report_text: str,
+    report_image: str,
+    report_html: str,
+    report_structure: str,
+    report_graph: str,
+):
+    """Produce an output CIF plus one artifact of every kind."""
+    work_dir = Path(input_cif).parent
+    _write_demo_artifacts(
+        work_dir,
+        input_cif,
+        {
+            "text": report_text,
+            "image": report_image,
+            "html": report_html,
+            "structure": report_structure,
+            "graph": report_graph,
+        },
+    )
+    output_cif_path = work_dir / output_cif
+    shutil.copy(input_cif, output_cif_path)
+    return output_cif_path
+
+
+def generate_report_only(input_cif: str, report_text: str, report_graph: str, optional_extra: str):
+    """Produce only typed artifacts and deliberately skip the optional one."""
+    work_dir = Path(input_cif).parent
+    _write_demo_artifacts(work_dir, input_cif, {"text": report_text, "graph": report_graph})
+    # `optional_extra` is declared with required_output: false and deliberately
+    # not written, to exercise the optional-output semantics.
+    return None
+
+
+def generate_report_broken(input_cif: str, report_text: str):
+    """Deliberately violate the output contract: the declared required
+    `report_text` output is never written, so the calculation must fail."""
+    return None

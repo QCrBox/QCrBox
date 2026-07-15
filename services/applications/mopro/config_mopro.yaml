@@ -18,9 +18,10 @@ commands:
         description: "The CIF file to open in MoPro"
         required_entry_sets: ["input"]
         merge_su: True
+    outputs:
       - name: "output_cif_name"
         dtype: "QCrBox.output_cif"
-        description: "Name of the output CIF file to be exported back into QCrBox after the interactive session"
+        description: "The output CIF file to be exported back into QCrBox after the interactive session"
         required_entries: []
         optional_entries: []
         required_entry_sets: ["output"]
@@ -49,13 +50,6 @@ commands:
         required_entry_sets: ["input"]
         merge_su: True
         description: "Input CIF file"
-      - name: "output_cif_name"
-        dtype: "QCrBox.output_cif"
-        description: "Name of the output CIF file to be exported back into QCrBox after the interactive session"
-        required_entries: []
-        optional_entries: []
-        required_entry_sets: ["output"]
-        invalidated_entries: ["_refine_.*", "_computing_.*", "_geom_.*", "_atom_rho_.*", "_atom_local_axes_.*"]
       - name: "inp_file"
         dtype: "QCrBox.data_file"
         description: "The MoPro input file. HKL and PAR file entries will be overwritten from the provided CIF file"
@@ -73,6 +67,14 @@ commands:
         dtype: "str"
         default_value: "Su Coppens"
         description: "The wavefunction to be used for the atomic densities. 'Su Coppens' is recommended, 'Clementi Roetti' is the alternative."
+    outputs:
+      - name: "output_cif_name"
+        dtype: "QCrBox.output_cif"
+        description: "The output CIF file to be exported back into QCrBox"
+        required_entries: []
+        optional_entries: []
+        required_entry_sets: ["output"]
+        invalidated_entries: ["_refine_.*", "_computing_.*", "_geom_.*", "_atom_rho_.*", "_atom_local_axes_.*"]
 
 
 cif_entry_sets:

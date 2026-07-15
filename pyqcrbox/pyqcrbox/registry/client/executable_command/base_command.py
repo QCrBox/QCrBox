@@ -115,23 +115,34 @@ class BaseCommand(metaclass=ABCMeta):
             the command.
 
         """
+        from pyqcrbox.cif_entries import entry_sets_by_name
+
         logger.debug(f"Preparing command arguments/parameters for execution for command '{self.cmd_spec.name}'")
+
+        entry_sets = entry_sets_by_name(getattr(application_spec, "cif_entry_sets", []) or [])
 
         prepared_params = {}
         for param_name, parsed_param in parsed_params.items():
             # CifDataFileParameters can be converted between different CIF formats
             # TODO: this should be moved into CifDataFileParameter
             if isinstance(parsed_param, CifDataFileParameter):
+                param_spec = self.cmd_spec.get_parameter_by_name(param_name)
                 cif2cif_options = Cif2CifOptions(
-                    application_yaml=str(application_spec.yaml_file_path),
-                    command_name=self.cmd_spec.name,
-                    parameter_name=param_name,
+                    label=param_name,
+                    spec=param_spec.model_dump(),
+                    entry_sets=entry_sets,
                 )
                 prepared_params[param_name] = await parsed_param.prepare_for_execution(
                     target_dir=working_dir, cif2cif_options=cif2cif_options
                 )
             else:
                 prepared_params[param_name] = await parsed_param.prepare_for_execution(target_dir=working_dir)
+
+        # Output filenames are fixed by the command's output specs and injected
+        # into the execution namespace (python callable keyword arguments / CLI
+        # call-pattern placeholders) under the output's name.
+        for output_spec in self.cmd_spec.outputs:
+            prepared_params[output_spec.name] = output_spec.resolved_filename
 
         logger.debug(f"Prepared arguments for '{self.cmd_spec.name}': {prepared_params}")
 

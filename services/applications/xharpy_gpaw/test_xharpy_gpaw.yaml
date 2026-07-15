@@ -17,9 +17,6 @@ test_cases:
       - name: input_cif
         type: external_file
         value: "./test_cif_files/epoxide_anisotropic.cif"
-      - name: output_cif_name
-        type: str
-        value: "xharpy_form_factors.cif"
       - name: functional
         type: str
         value: "PBE"
@@ -70,9 +67,6 @@ test_cases:
       - name: input_cif
         type: external_file
         value: "./test_cif_files/epoxide_anisotropic.cif"
-      - name: output_cif_name
-        type: str
-        value: "xharpy_refined.cif"
       - name: functional
         type: str
         value: "LDA"

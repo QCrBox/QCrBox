@@ -114,7 +114,11 @@ class ApplicationSpecDB(ApplicationSpecBase, SQLModel, table=True):
                     setattr(existing_cmd, key, value)
             else:
                 logger.debug(f"Adding {new_cmd.name} {new_cmd!r}")
-                cmd_copy = CommandSpecDB.from_pydantic_model(new_cmd)
+                # new_cmd is already a CommandSpecDB (its parameters/outputs are
+                # {name: dump} dicts), so build the copy from its fields rather
+                # than via from_pydantic_model (which expects a CommandSpec).
+                cmd_data = new_cmd.model_dump(exclude={"id", "application", "application_id", "cmd_name"})
+                cmd_copy = CommandSpecDB(**cmd_data)
                 cmd_copy.application_id = current_app.id
                 current_app.commands.append(cmd_copy)
 

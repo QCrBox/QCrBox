@@ -18,6 +18,7 @@ from litestar.status_codes import HTTP_500_INTERNAL_SERVER_ERROR
 
 from pyqcrbox import settings
 from pyqcrbox.data_management import DataManager, DatasetNotFoundError
+from pyqcrbox.data_management.artifact_kind import ArtifactKind, media_type_for_data_file
 from pyqcrbox.registry.server.api import api_schema as schema
 from pyqcrbox.registry.shared.qcrbox_response import QCrBoxResponse
 from pyqcrbox.services.orchestrator import (
@@ -602,6 +603,43 @@ async def download_data_file_by_id(
     )
 
 
+@get(
+    path="/data-files/{id:str}/content",
+    media_type="application/octet-stream",
+    summary="Serve a data file inline with a media type derived from its artifact kind",
+    tags=["data-files"],
+    operation_id="get_data_file_content",
+    responses={400: schema.BAD_REQUEST_ERROR, 404: schema.NOT_FOUND_ERROR, 500: schema.INTERNAL_SERVER_ERROR},
+)
+async def get_data_file_content(
+    id: str = Parameter(title="Data file ID"), *, data_manager: DataManager
+) -> Response[bytes]:
+    """Serve a data file for inline display (images, reports, viewer data).
+
+    The media type is derived from the file's artifact kind (falling back to a
+    conservative extension mapping which never yields text/html, so executable
+    HTML cannot be smuggled in through the plain upload path). HTML artifacts
+    additionally get a CSP sandbox: together with the frontend's sandboxed
+    iframe embedding this keeps app-provided pages in an opaque origin without
+    cookie or API access.
+    """
+    try:
+        data_file = await data_manager.get_data_file(id)
+        file_contents = await data_manager.get_data_file_contents(id)
+    except (nats.js.errors.NotFoundError, KeyError) as exc:
+        raise QCrBoxAPIException(detail=f"Data file not found: {id!r}", status_code=404) from exc
+
+    media_type = media_type_for_data_file(data_file.kind, data_file.filename)
+    headers = {
+        "Content-Disposition": f'inline; filename="{data_file.filename}"',
+        "X-Content-Type-Options": "nosniff",
+    }
+    if data_file.kind == ArtifactKind.HTML:
+        headers["Content-Security-Policy"] = "sandbox allow-scripts"
+
+    return Response(content=file_contents, media_type=media_type, headers=headers)
+
+
 @delete(
     path="/data-files/{id:str}",
     summary="Delete a data file",
@@ -1063,6 +1101,7 @@ api_router = Router(
         list_data_files,
         get_data_file_by_id,
         download_data_file_by_id,
+        get_data_file_content,
         delete_data_file_by_id,
         create_data_file,
         list_runnable_commands_for_data_file,

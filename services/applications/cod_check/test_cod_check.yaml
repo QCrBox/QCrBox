@@ -41,9 +41,6 @@ test_cases:
           _cell.volume                      960.1
           _cell.volume_su                   0.4
           _diffrn.ambient_temperature       110.0
-      - name: output_cif_name
-        type: str
-        value: "merged_cod_entry.cif"
       - name: cellpar_deviation_perc
         type: float
         value: 3.0

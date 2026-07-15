@@ -16,9 +16,6 @@ test_cases:
       - name: input_cif
         type: external_file
         value: "./test_cif_files/ylid_iam_refined.cif"
-      - name: output_cif_name
-        type: str
-        value: "mopro_output.cif"
       - name: inp_file
         type: external_file
         value: "./test_cif_files/mopro_files/mopro.inp"

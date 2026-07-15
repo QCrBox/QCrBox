@@ -35,10 +35,30 @@ class InteractiveSessionSpec(BaseCommandSpec):
         if "interactive_lifecycle" not in model_data:
             raise ValueError("Field required: 'interactive_lifecycle'")
 
+        # `used_basecommand_parameters` may reference both parameters and
+        # outputs of the parent command; each is propagated to its own section
+        # of the lifecycle sub-command.
         params_lookup_by_name = {param["name"]: param for param in model_data["parameters"]}
+        outputs_lookup_by_name = {output["name"]: output for output in model_data.get("outputs") or []}
         for cmd_data in model_data["interactive_lifecycle"].values():
             if cmd_data is not None:
                 used_basecommand_parameters = cmd_data.pop("used_basecommand_parameters", [])
-                cmd_data["parameters"] = [params_lookup_by_name[name] for name in used_basecommand_parameters]
+                unknown = [
+                    name
+                    for name in used_basecommand_parameters
+                    if name not in params_lookup_by_name and name not in outputs_lookup_by_name
+                ]
+                if unknown:
+                    raise ValueError(
+                        f"used_basecommand_parameters references unknown parameters/outputs: {unknown!r}"
+                    )
+                cmd_data["parameters"] = [
+                    params_lookup_by_name[name] for name in used_basecommand_parameters if name in params_lookup_by_name
+                ]
+                cmd_data["outputs"] = [
+                    outputs_lookup_by_name[name]
+                    for name in used_basecommand_parameters
+                    if name in outputs_lookup_by_name
+                ]
 
         return model_data
