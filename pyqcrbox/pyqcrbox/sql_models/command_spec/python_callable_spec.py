@@ -71,7 +71,10 @@ class PythonCallableSpec(BaseCommandSpec):
         try:
             module = importlib.import_module(model_data.import_path)
         except ImportError as exc:
-            logger.warning(
+            # Expected outside application containers (e.g. the host qcb CLI,
+            # which deliberately doesn't install app dependencies like
+            # qcrboxtools/cctbx) - not an error, so keep this at debug level.
+            logger.debug(
                 f"Failed to import module: {model_data.import_path!r}. "
                 f"Skipping validation of parameters against function signature. "
                 f"The original error was: {exc}"
