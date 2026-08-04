@@ -16,8 +16,8 @@ is not yet suitable for mutually untrusted tenants.
 
 **`deploy_qcrbox_ssh.sh`** runs on your development machine and deploys to
 any SSH-reachable Ubuntu VM — e.g. an EOSC / EGI Cloud Compute (OpenStack)
-instance. It clones both source repositories directly on the VM from GitHub,
-then runs the provisioner which pulls all images from GHCR:
+instance. By default it clones both source repositories directly on the VM
+from GitHub, then runs the provisioner which pulls all images from GHCR:
 
 ```bash
 # Set credentials without putting them in shell history (see GHCR authentication below)
@@ -35,6 +35,13 @@ development deployments on a specific branch, use `--branch <name>` (applies
 to both repos) and optionally `--frontend-branch <name>` to override only the
 frontend repo's branch.
 
+For an unpublished test deployment, pass both `--transfer-images` and
+`--transfer-sources`. The script packages the exact local image set, uploads
+it with resumable `rsync`, loads it on the VM, and transfers the local source
+trees instead of cloning them. Generated environment files and secrets are
+never copied from the development machine; an `--update` preserves the ones
+already installed on the VM.
+
 **`provision_qcrbox.sh`** is what the deploy script executes *on* the VM; it
 can also be run by hand on any fresh Ubuntu 24.04 server with the two source
 trees present. It installs docker, generates all secrets, writes the
@@ -48,35 +55,92 @@ sudo bash provision_qcrbox.sh --domain qcrbox.example.org \
 
 ## Prerequisites
 
-- **Published images**: QCrBox images and the frontend image must be pushed to
-  GHCR at the target version before deploying — see [Creating a release](github_release.md).
-  All images must come from the same release: the registry silently ignores
-  applications whose `pyqcrbox` version differs from its own.
-- **GHCR access**: images are published as *internal* (organisation-only).
-  Create a GitHub Personal Access Token (PAT) with `read:packages` scope — see
+- **Images**: for the default deployment path, QCrBox and frontend images must
+  be published at the target version — see [Creating a release](github_release.md).
+  For an unpublished deployment, every required image must instead exist
+  locally under its exact deployment tag and `--transfer-images` must be used.
+  In either case all QCrBox images must be built from a compatible source
+  version: the registry ignores applications whose `pyqcrbox` version differs
+  from its own.
+- **GHCR access (published-image path only)**: images are published as
+  *internal* (organisation-only). Create a GitHub Personal Access Token (PAT)
+  with `read:packages` scope — see
   [GHCR authentication](#ghcr-authentication) below.
 - **VM**: Ubuntu 24.04, ≥4 vCPU, 8 GB RAM, ≥60 GB disk; a public/floating IP;
   SSH key access as a sudo-capable user (cloud images: `ubuntu`); internet
-  access (to clone from GitHub and pull from GHCR); firewall / OpenStack
-  security group allowing only ports 22, 80 and 443.
+  access to install Docker. GitHub and GHCR access are only required when the
+  corresponding local transfer flags are omitted. The firewall / OpenStack
+  security group should allow only ports 22, 80 and 443.
 
-### Privately transferred application images
+### Unpublished local-image deployment
 
-Licensed application images do not have to be published. Build them on a
-trusted machine, tag them with the exact production reference, and transfer
-them to the VM before provisioning:
+The SSH deployer can transfer the complete image set, including licensed
+applications, without pushing anything to GHCR. Choose a deployment tag and,
+inside the QCrBox Devbox shell, build the backend images with `qcb`:
 
 ```bash
-docker tag qcrbox/mopro:latest ghcr.io/qcrbox/mopro:stakeholder-test
-docker save ghcr.io/qcrbox/mopro:stakeholder-test | gzip > mopro-stakeholder-test.tar.gz
-scp -i ~/.ssh/eosc_key mopro-stakeholder-test.tar.gz ubuntu@<public-ip>:
-ssh -i ~/.ssh/eosc_key ubuntu@<public-ip> \
-    'gunzip -c mopro-stakeholder-test.tar.gz | sudo docker load'
+cd QCrBox
+devbox shell
+
+export TEST_TAG=stakeholder-test
+export QCRBOX_DOCKER_TAG=$TEST_TAG
+export PYTHONPATH="$PWD/pyqcrbox${PYTHONPATH:+:$PYTHONPATH}"
+
+# Build a mutually compatible registry, always-on quality service and MoPro.
+qcb build pyqcrbox
+qcb build base-ancestor
+qcb build registry qcrbox_quality mopro
+
+# The provisioner deliberately registers production-style exact references.
+docker tag qcrbox/registry:$TEST_TAG ghcr.io/qcrbox/registry:$TEST_TAG
+docker tag qcrbox/qcrbox_quality:$TEST_TAG ghcr.io/qcrbox/qcrbox_quality:$TEST_TAG
+docker tag qcrbox/mopro:$TEST_TAG ghcr.io/qcrbox/mopro:$TEST_TAG
 ```
 
-Deploy with `--version stakeholder-test`. A failed pull is tolerated only when
-the exact expected repository and tag is already loaded; provisioning aborts
-before startup if any required image is unavailable.
+Build the frontend from the adjacent `QCrBoxFrontend` checkout. Before doing
+so, make sure its `QCrBoxAPIClient/` directory contains the multi-user client
+checkout:
+
+```bash
+rsync -a --delete --exclude=.git ../QCrBoxAPIClient/ ../QCrBoxFrontend/QCrBoxAPIClient/
+docker compose -f ../QCrBoxFrontend/docker-compose.yml \
+    --project-directory ../QCrBoxFrontend --project-name qcrboxfrontend build server
+docker tag qcrboxfrontend-server:latest \
+    ghcr.io/qcrbox/qcrboxfrontend-server:$TEST_TAG
+```
+
+The transfer includes public runtime dependencies too. Pull any that are not
+already present locally:
+
+```bash
+QCRBOX_DOCKER_REPO=ghcr.io/qcrbox QCRBOX_DOCKER_TAG=$TEST_TAG \
+    docker compose --env-file .env.prod -f docker-compose.prebuilt.yml \
+    -f services/applications/qcrbox_quality/docker-compose.qcrbox_quality.prebuilt.yml \
+    -f services/applications/mopro/docker-compose.mopro.prebuilt.yml pull --ignore-pull-failures
+docker compose -f ../QCrBoxFrontend/docker-compose.yml \
+    --project-directory ../QCrBoxFrontend pull nginx db
+```
+
+Then deploy the local checkouts and local images directly:
+
+```bash
+bash scripts/deployment/deploy_qcrbox_ssh.sh \
+    --host ubuntu@<public-ip> \
+    --identity ~/.ssh/eosc_key \
+    --version "$TEST_TAG" \
+    --apps "qcrbox_quality mopro" \
+    --transfer-images --transfer-sources \
+    --domain qcrbox.example.org --acme-email you@example.org
+```
+
+No GHCR credentials are needed. The script validates every image before
+uploading and reports the first missing exact reference. Its archive name is
+derived from the image IDs, so rerunning after an interrupted upload resumes
+the same `rsync` transfer. It also passes `--no-pull` to the remote provisioner,
+preventing a transferred tag from being replaced by a remotely published one.
+The temporary image archive is created with mode `0600` and removed locally
+and remotely after it is loaded successfully.
+Add `--update` on later deployments to preserve accounts, data and secrets.
 
 ## GHCR authentication
 

@@ -26,7 +26,7 @@
 #       [--ghcr-user niolon --ghcr-token ghp_xxxx] \
 #       [--frontend-image ghcr.io/qcrbox/qcrboxfrontend:0.2.0] \
 #       [--acme-email you@example.org | --tls-cert cert.pem --tls-key key.pem] \
-#       [--update] [--no-on-demand]
+#       [--update] [--no-on-demand] [--no-pull]
 #
 # Secrets are written to /root/qcrbox-credentials.txt (mode 600).
 #
@@ -48,6 +48,7 @@ GHCR_USER="${GHCR_USER:-}"
 GHCR_TOKEN="${GHCR_TOKEN:-}"
 UPDATE=false
 ON_DEMAND=true
+PULL_IMAGES=true
 
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -62,6 +63,7 @@ while [ $# -gt 0 ]; do
         --ghcr-token)   GHCR_TOKEN="$2"; shift 2 ;;
         --update)       UPDATE=true; shift ;;
         --no-on-demand) ON_DEMAND=false; shift ;;
+        --no-pull)      PULL_IMAGES=false; shift ;;
         *) echo "Unknown argument: $1" >&2; exit 1 ;;
     esac
 done
@@ -375,16 +377,20 @@ for app in $APPS; do
     fi
 done
 
-if [[ -n "$GHCR_TOKEN" ]]; then
-    echo "==> Authenticating with GHCR"
-    echo "$GHCR_TOKEN" | docker login ghcr.io -u "${GHCR_USER:-token}" --password-stdin
-fi
+if [ "$PULL_IMAGES" = true ]; then
+    if [[ -n "$GHCR_TOKEN" ]]; then
+        echo "==> Authenticating with GHCR"
+        echo "$GHCR_TOKEN" | docker login ghcr.io -u "${GHCR_USER:-token}" --password-stdin
+    fi
 
-echo "==> Pulling backend images from GHCR"
-# Non-fatal: on machines without registry access, pre-loaded images
-# (docker load) of the right version are used instead.
-"${COMPOSE[@]}" pull \
-    || echo "WARNING: image pull failed; continuing with locally available images"
+    echo "==> Pulling backend images from GHCR"
+    # Non-fatal: on machines without registry access, pre-loaded images
+    # (docker load) of the right version are used instead.
+    "${COMPOSE[@]}" pull \
+        || echo "WARNING: image pull failed; continuing with locally available images"
+else
+    echo "==> Using preloaded backend images (--no-pull)"
+fi
 
 echo "==> Verifying required backend images"
 mapfile -t REQUIRED_IMAGES < <("${COMPOSE[@]}" config --images | sort -u)
@@ -430,9 +436,13 @@ fi
 # ----------------------------------------------------------- start frontend
 FRONTEND_REPO=$(grep -m1 '^QCRBOX_DOCKER_REPO=' "$QCRBOX_DIR/.env.vm" | cut -d= -f2)
 FRONTEND_IMG="$FRONTEND_REPO/qcrboxfrontend-server:$VERSION"
-echo "==> Pulling frontend image $FRONTEND_IMG"
-docker pull "$FRONTEND_IMG" \
-    || echo "WARNING: frontend image pull failed; continuing with a locally available image"
+if [ "$PULL_IMAGES" = true ]; then
+    echo "==> Pulling frontend image $FRONTEND_IMG"
+    docker pull "$FRONTEND_IMG" \
+        || echo "WARNING: frontend image pull failed; continuing with a locally available image"
+else
+    echo "==> Using preloaded frontend image $FRONTEND_IMG (--no-pull)"
+fi
 docker image inspect "$FRONTEND_IMG" >/dev/null 2>&1 \
     || { echo "ERROR: frontend image $FRONTEND_IMG is not available (pull failed and not pre-loaded)" >&2; exit 1; }
 docker tag "$FRONTEND_IMG" qcrboxfrontend-server:latest

@@ -9,6 +9,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).parents[2]
 PROVISIONER = REPO_ROOT / "scripts" / "deployment" / "provision_qcrbox.sh"
+SSH_DEPLOYER = REPO_ROOT / "scripts" / "deployment" / "deploy_qcrbox_ssh.sh"
 
 
 def _write_executable(path: Path, contents: str) -> None:
@@ -173,3 +174,30 @@ def test_no_on_demand_starts_classic_pool_services(tmp_path):
     backend_up = [line for line in calls if "--env-file" in line and " up -d --no-build" in line]
     assert any(line.endswith("up -d --no-build") for line in backend_up)
     assert not any("register --prebuilt-images" in line for line in calls)
+
+
+def test_no_pull_uses_only_preloaded_images(tmp_path):
+    source, _, _ = _make_source_tree(tmp_path)
+    fake_bin, docker_log = _make_fake_commands(tmp_path)
+
+    result = _run_provisioner(source, fake_bin, docker_log, tmp_path / "credentials.txt", "--no-pull")
+    assert result.returncode == 0, result.stderr
+
+    calls = docker_log.read_text().splitlines()
+    assert not any(re.search(r"(?:^| )pull(?: |$)", line) for line in calls)
+    assert any("image inspect ghcr.io/qcrbox/mopro:test" in line for line in calls)
+
+
+def test_ssh_deployer_supports_unpublished_local_transfer():
+    script = SSH_DEPLOYER.read_text()
+
+    assert "--transfer-images)  TRANSFER_IMAGES=true" in script
+    assert "--transfer-sources) TRANSFER_SOURCES=true" in script
+    assert 'umask 077; docker save "${ALL_IMAGES[@]}"' in script
+    assert "rsync --partial --inplace --chmod=F600" in script
+    assert "sudo docker load" in script
+    assert "QCRBOX_DOCKER_TAG=\"$VERSION\"" in script
+    assert '"$DEPLOY_REPO/qcrboxfrontend-server:$VERSION"' in script
+    assert "--exclude='QCrBox/.env.vm'" in script
+    assert "--exclude='QCrBoxFrontend/environment.env'" in script
+    assert "PROVISION_IMAGE_ARGS+=(--no-pull)" in script

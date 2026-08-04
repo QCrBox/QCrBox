@@ -22,8 +22,9 @@ What a LAN deployment needs that the internet-facing path gives you for free:
 2. **TLS without Let's Encrypt** — ACME challenges cannot reach a LAN-only
    host. Use a certificate from your institution's CA, or a self-signed one
    whose CA you distribute to the workstations.
-3. **Image access** — the server still needs to reach GHCR (and GitHub) once
-   per install/update; see the offline notes at the end if it cannot.
+3. **Image access** — either let the server reach GHCR and GitHub, or use the
+   SSH deployer's `--transfer-images --transfer-sources` mode described in the
+   VM deployment guide.
 
 ## 1. DNS
 
@@ -179,20 +180,19 @@ the right behaviour for a first install or a deliberate reset).
 Back up the named volumes listed in the
 [VM guide](deploy_qcrbox_to_a_vm.md#operations) before updating.
 
-## If the server has no internet access
+## If the server has no registry or GitHub access
 
-The scripts assume the server can reach GitHub (sources) and GHCR (images).
-For a restricted network, transfer both manually:
+Transfer both directly from the development machine:
 
 ```bash
-# On a machine with access: save every image of the target version ...
-docker save -o qcrbox-images.tar $(docker images --format '{{.Repository}}:{{.Tag}}' \
-    | grep -E 'ghcr.io/qcrbox|qcrboxfrontend')
-# ... copy qcrbox-images.tar + both source trees to the server, then there:
-docker load -i qcrbox-images.tar
-sudo bash QCrBox/scripts/deployment/provision_qcrbox.sh --domain ... --source ...
+bash scripts/deployment/deploy_qcrbox_ssh.sh --host admin@192.168.10.20 \
+    --version stakeholder-test --domain qcrbox.lab.internal \
+    --apps "qcrbox_quality mopro" \
+    --transfer-images --transfer-sources
 ```
 
-(`provision_qcrbox.sh` skips `docker login` when no GHCR token is set, and a
-failing `pull` is only a warning — the pre-loaded images are used as long as
-their tags match the requested `--version`.)
+The VM still needs package access if Docker is not installed yet. Once Docker
+is present, the selected source trees and complete runtime image set are
+transferred without using GitHub or GHCR from the server. See
+[Unpublished local-image deployment](deploy_qcrbox_to_a_vm.md#unpublished-local-image-deployment)
+for build and exact-tag instructions.
