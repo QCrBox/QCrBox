@@ -5,9 +5,11 @@ USER root
 
 SHELL ["/bin/bash", "-c"]
 
-#ARG WINE_BRANCH=staging
-ARG WINE_BRANCH=stable
-ARG WINE_VERSION=11.0.0.0~trixie-1
+# Wine 11.0 has a GDI text-rendering regression which makes MoProGUI's
+# small UI font illegible. 11.1 includes the upstream corrupted-text fix.
+# Keep this exact development build pinned until that fix reaches stable.
+ARG WINE_BRANCH=devel
+ARG WINE_VERSION=11.1~trixie-1
 #ARG MONO_VERSION=9.0.0
 ARG MONO_VERSION=10.3.0
 #ARG GECKO_VERSION=2.47.4
@@ -19,7 +21,11 @@ RUN dpkg --add-architecture i386 && \
     curl -o /etc/apt/keyrings/winehq-archive.key https://dl.winehq.org/wine-builds/winehq.key && \
     curl -O --output-dir /etc/apt/sources.list.d/ https://dl.winehq.org/wine-builds/debian/dists/trixie/winehq-trixie.sources && \
     apt-get update -y && \
-    apt-get install -y --install-recommends "winehq-${WINE_BRANCH}=${WINE_VERSION}" "wine-${WINE_BRANCH}=${WINE_VERSION}" && \
+    apt-get install -y --install-recommends \
+        "winehq-${WINE_BRANCH}=${WINE_VERSION}" \
+        "wine-${WINE_BRANCH}=${WINE_VERSION}" \
+        "wine-${WINE_BRANCH}-amd64=${WINE_VERSION}" \
+        "wine-${WINE_BRANCH}-i386:i386=${WINE_VERSION}" && \
     rm -rf /var/lib/apt/lists && \
     true
 

@@ -31,6 +31,17 @@ ARG WINEARCH="win64"
 ENV WINEARCH=${WINEARCH}
 ENV QCRBOX_ROOT_DIR=${QCRBOX_ROOT_DIR}
 
+# MoProGUI's bundled Qt 5.15 uses legacy TrueType hinting instructions that
+# FreeType 2.13 renders incorrectly with its default v40 interpreter. The v35
+# compatibility interpreter preserves the one-pixel strokes in its small UI
+# font. This affects font rasterisation only; Wine/WoW64 remains unchanged.
+ENV FREETYPE_PROPERTIES="truetype:interpreter-version=35"
+
+# MoPro's Guide and rich-text widgets explicitly request Tahoma at 11/13 px.
+# Wine's built-in replacement disables antialiasing at those sizes through its
+# GASP table and loses parts of glyphs. DejaVu Sans is an open Bitstream Vera
+# derivative with similar humanist proportions, and is already shipped by
+# Debian. Keep this image free of Microsoft's proprietary Tahoma files.
 COPY configure_mopro.py ./
 COPY config_mopro.yaml ./
 COPY templates ./templates
@@ -45,5 +56,16 @@ RUN mkdir -p /tmp/.X11-unix && chmod 1777 /tmp/.X11-unix && \
     gosu ${QCRBOX_USER} bash -x ./initialize_mopro_first_run.sh
 
 USER ${QCRBOX_USER}
+
+# Wine registry changes must be made by the runtime user. Applying these after
+# first-run initialization also prevents wineboot from replacing them.
+RUN winetricks fontsmooth=gray && \
+    wine reg add "HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion\\FontSubstitutes" \
+        /v Tahoma /d "DejaVu Sans" /f && \
+    wine reg add "HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion\\FontSubstitutes" \
+        /v "MS Shell Dlg" /d "DejaVu Sans" /f && \
+    wine reg add "HKLM\\Software\\Microsoft\\Windows NT\\CurrentVersion\\FontSubstitutes" \
+        /v "MS Shell Dlg 2" /d "DejaVu Sans" /f && \
+    wineserver --wait
 
 COPY --chown=${QCRBOX_USER}:${QCRBOX_GROUP} ./.idesktop ${QCRBOX_HOME}/.idesktop
