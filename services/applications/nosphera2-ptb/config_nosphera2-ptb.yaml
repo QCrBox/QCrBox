@@ -1,0 +1,83 @@
+#
+# Configuration for the application 'nosphera2-ptb'
+#
+name: "NoSpherA2-PTB"
+slug: "nosphera2-ptb"
+version: "1.1.0"
+description: "Calculation of atomic form factors using PTB derived densities, which are partitioned via NoSpherA2"
+url: "https://github.com/AK-Kleemiss/NoSpherA2/"
+doi: 10.1039/D0SC05526C
+
+commands:
+  - name: "generate_tscb"
+    description: "Create a .tsc file from a given .cif file using NoSpherA2 and PTB"
+    implemented_as: "python_callable"
+    import_path: "nosphera2_ptb_glue"
+    parameters:
+      - name: "input_cif"
+        dtype: "QCrBox.cif_data_file"
+        description: "Path to the input CIF file"
+        required_entries: [
+          "_cell_length_a", "_cell_length_b", "_cell_length_c",
+          "_cell_angle_alpha", "_cell_angle_beta", "_cell_angle_gamma",
+          "_cell_volume",
+          one_of: [
+            [
+              _diffrn_reflns_limit_h_max, _diffrn_reflns_limit_h_min, 
+              _diffrn_reflns_limit_k_max, _diffrn_reflns_limit_k_min,
+              _diffrn_reflns_limit_l_max, _diffrn_reflns_limit_l_min
+            ],
+            "_reflns_d_resolution_high",
+            ["_diffrn_reflns_theta_max", "_diffrn_radiation_wavelength"],
+            ["_diffrn_refln_index_h", "_diffrn_refln_index_k", "_diffrn_refln_index_l"],
+            ["_refln_index_h", "_refln_index_k", "_refln_index_l"]
+          ],
+          "_space_group_symop_operation_xyz",
+          "_atom_site_label",
+          "_atom_site_type_symbol",
+          "_atom_site_fract_x",
+          "_atom_site_fract_y",
+          "_atom_site_fract_z",
+          "_atom_site_U_iso_or_equiv",
+          "_atom_site_adp_type",
+          "_atom_site_occupancy",
+          "_atom_site_refinement_flags_posn"
+        ]
+        optional_entries: [
+          "_atom_site_site_symmetry_order",
+          "_atom_site_disorder_group",
+          "_atom_site_aniso_label",
+          "_atom_site_aniso_U_11",
+          "_atom_site_aniso_U_22",
+          "_atom_site_aniso_U_33",
+          "_atom_site_aniso_U_12",
+          "_atom_site_aniso_U_13",
+          "_atom_site_aniso_U_23"
+        ]
+        merge_su: False
+      - name: "disorder_groups"
+        dtype: "str"
+        description: "Comma separated lists of disorder groups that are in turn separated by semicolons. E.g. '1,2;3,4' says that groups 1 and 2 are mutually exclusive and 3 and 4 are mutually exclusive, but either can be combined with the other groups"
+        default_value: "none"
+      - name: "output_cif_name"
+        dtype: "QCrBox.output_cif"
+        description: "Name of the CIF file exported back to QCrBox containing the calculated aspherical atomic form factors"
+        required_entry_sets: ["aspheric_form_factors"]
+
+cif_entry_sets:
+  - name: "aspheric_form_factors"
+    required: [
+      "_wfns.software", "_wfns.type", "_wfns.method",
+      "_wfn_moiety.id", "_wfn_moiety.atom_id",
+      "_wfn_moiety.asu_atom_site_label", "_wfn_moiety.atom_type_symbol",
+      "_wfn_moiety.symm_code", "_wfn_moiety.cartn_x",
+      "_wfn_moiety.cartn_y", "_wfn_moiety.cartn_z",
+      "_wfn_moiety.aff_index",
+      "_aspheric_ffs.source",
+      "_aspheric_ffs_partitioning.name",
+      "_aspheric_ffs_partitioning.software",
+      "_aspheric_ff.index_h", "_aspheric_ff.index_k", "_aspheric_ff.index_l",
+      "_aspheric_ff.form_factor_real", "_aspheric_ff.form_factor_imag"
+    ]
+
+qcrbox_yaml_spec_version: "0.1"

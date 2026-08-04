@@ -15,6 +15,8 @@ However, there will be an initial period of stabilisation where this is not adhe
 
 ### New Features
 
+- Added the `nosphera2-ptb` application, which calculates aspherical atomic form factors from PTB-derived
+  densities partitioned via NoSpherA2.
 - Added documentation for deploying a demo instance to Azure.
 - Added CONTRIBUTING.md.
 
