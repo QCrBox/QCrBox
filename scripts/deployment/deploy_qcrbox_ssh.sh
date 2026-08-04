@@ -174,7 +174,7 @@ fi
 
 echo "==> Running provisioner on the VM"
 "${SSH[@]}" sudo bash /opt/qcrbox-src/QCrBox/scripts/deployment/provision_qcrbox.sh \
-    --domain "$DOMAIN" --source /opt/qcrbox-src --apps "\"$APPS\"" \
+    --domain "$DOMAIN" --source /opt/qcrbox-src --apps "$APPS" \
     --version "$VERSION" \
     ${PROVISION_TLS_ARGS[@]+"${PROVISION_TLS_ARGS[@]}"} \
     ${PROVISION_MODE_ARGS[@]+"${PROVISION_MODE_ARGS[@]}"}

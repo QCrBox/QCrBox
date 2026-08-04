@@ -129,6 +129,8 @@ if [ "$UPDATE" = false ]; then
     AUTHELIA_STORAGE_ENCRYPTION_KEY=$(openssl rand -hex 32)
     LLDAP_JWT_SECRET=$(openssl rand -hex 32)
     LLDAP_KEY_SEED=$(openssl rand -hex 32)
+    QCRBOX_SERVICE_TOKEN=$(openssl rand -hex 32)
+    QCRBOX_GATEWAY_TOKEN=$(openssl rand -hex 32)
     DJANGO_SECRET_KEY=$(openssl rand -hex 50)
     POSTGRES_PASSWORD=$(openssl rand -hex 16)
     # Admin password for the LLDAP 'admin' user — used to log in at the Authelia
@@ -159,6 +161,37 @@ else
     echo "==> TLS: self-signed default certificate (browsers will warn)"
 fi
 
+read_env_value() {
+    local file=$1 key=$2 line value
+    line=$(grep -m1 "^${key}=" "$file" 2>/dev/null || true)
+    value=${line#*=}
+    if [[ "$value" == \'*\' ]] || [[ "$value" == \"*\" ]]; then
+        value=${value:1:${#value}-2}
+    fi
+    printf '%s' "$value"
+}
+
+set_env_value() {
+    local file=$1 key=$2 value=$3 quote=${4:-false}
+    local rendered=$value
+    [ "$quote" = true ] && rendered="'$value'"
+    if grep -q "^${key}=" "$file"; then
+        sed -i "s|^${key}=.*|${key}=${rendered}|" "$file"
+    else
+        printf '\n%s=%s\n' "$key" "$rendered" >> "$file"
+    fi
+}
+
+set_default_env_value() {
+    local file=$1 key=$2 value=$3
+    [ -n "$(read_env_value "$file" "$key")" ] || set_env_value "$file" "$key" "$value"
+}
+
+is_missing_secret() {
+    local value=$1
+    [[ -z "$value" || "$value" == *CHANGEME* ]]
+}
+
 # ------------------------------------------------------- QCrBox environment
 if [ "$UPDATE" = true ]; then
     echo "==> Updating $QCRBOX_DIR/.env.vm (version only; secrets untouched)"
@@ -170,6 +203,19 @@ if [ "$UPDATE" = true ]; then
             -e "s|^QCRBOX_TLS_CERT_RESOLVER=.*|QCRBOX_TLS_CERT_RESOLVER=$TLS_CERT_RESOLVER|" \
             -e "s|^QCRBOX_ACME_EMAIL=.*|QCRBOX_ACME_EMAIL=$ACME_EMAIL|" \
             "$QCRBOX_DIR/.env.vm"
+    fi
+
+    # Older installations predate identity tokens. Generate only absent or
+    # placeholder values; valid update-time secrets remain untouched.
+    QCRBOX_SERVICE_TOKEN=$(read_env_value "$QCRBOX_DIR/.env.vm" QCRBOX_SERVICE_TOKEN)
+    if is_missing_secret "$QCRBOX_SERVICE_TOKEN"; then
+        QCRBOX_SERVICE_TOKEN=$(openssl rand -hex 32)
+        set_env_value "$QCRBOX_DIR/.env.vm" QCRBOX_SERVICE_TOKEN "$QCRBOX_SERVICE_TOKEN"
+    fi
+    QCRBOX_GATEWAY_TOKEN=$(read_env_value "$QCRBOX_DIR/.env.vm" QCRBOX_GATEWAY_TOKEN)
+    if is_missing_secret "$QCRBOX_GATEWAY_TOKEN"; then
+        QCRBOX_GATEWAY_TOKEN=$(openssl rand -hex 32)
+        set_env_value "$QCRBOX_DIR/.env.vm" QCRBOX_GATEWAY_TOKEN "$QCRBOX_GATEWAY_TOKEN"
     fi
 else
     echo "==> Writing $QCRBOX_DIR/.env.vm"
@@ -186,25 +232,34 @@ else
         -e "s|^LLDAP_JWT_SECRET=.*|LLDAP_JWT_SECRET=$LLDAP_JWT_SECRET|" \
         -e "s|^LLDAP_KEY_SEED=.*|LLDAP_KEY_SEED=$LLDAP_KEY_SEED|" \
         -e "s|^LLDAP_ADMIN_PASSWORD=.*|LLDAP_ADMIN_PASSWORD=$ADMIN_PASSWORD|" \
+        -e "s|^QCRBOX_SERVICE_TOKEN=.*|QCRBOX_SERVICE_TOKEN=$QCRBOX_SERVICE_TOKEN|" \
+        -e "s|^QCRBOX_GATEWAY_TOKEN=.*|QCRBOX_GATEWAY_TOKEN=$QCRBOX_GATEWAY_TOKEN|" \
         "$QCRBOX_DIR/.env.vm"
-    if [ "$ON_DEMAND" = true ]; then
-        sed -i -e "s|^QCRBOX__ORCHESTRATOR__ENABLED=.*|QCRBOX__ORCHESTRATOR__ENABLED=true|" \
-            "$QCRBOX_DIR/.env.vm"
-        cat >> "$QCRBOX_DIR/.env.vm" <<'EOF'
+fi
 
-# Resource limits for on-demand app containers (added by provision_qcrbox.sh;
-# adjust to the server's hardware, empty = unlimited).
-QCRBOX__ORCHESTRATOR__CONTAINER_MEMORY_LIMIT_MB=8192
-QCRBOX__ORCHESTRATOR__CONTAINER_CPU_LIMIT=4
-QCRBOX__ORCHESTRATOR__MAX_TOTAL_INSTANCES=10
-EOF
-    fi
+# Bounded defaults for the stakeholder deployment. Existing update-time
+# overrides are retained by set_default_env_value.
+if [ "$ON_DEMAND" = true ]; then
+    set_env_value "$QCRBOX_DIR/.env.vm" QCRBOX__ORCHESTRATOR__ENABLED true
+    set_default_env_value "$QCRBOX_DIR/.env.vm" QCRBOX__ORCHESTRATOR__CONTAINER_MEMORY_LIMIT_MB 8192
+    set_default_env_value "$QCRBOX_DIR/.env.vm" QCRBOX__ORCHESTRATOR__CONTAINER_CPU_LIMIT 4
+    set_default_env_value "$QCRBOX_DIR/.env.vm" QCRBOX__ORCHESTRATOR__CONTAINER_PIDS_LIMIT 2048
+    set_default_env_value "$QCRBOX_DIR/.env.vm" QCRBOX__ORCHESTRATOR__SPAWN_TIMEOUT 180
+    set_default_env_value "$QCRBOX_DIR/.env.vm" QCRBOX__ORCHESTRATOR__IDLE_TIMEOUT 1800
+    set_default_env_value "$QCRBOX_DIR/.env.vm" QCRBOX__ORCHESTRATOR__MAX_INSTANCES_PER_APP 10
+    set_default_env_value "$QCRBOX_DIR/.env.vm" QCRBOX__ORCHESTRATOR__MAX_INSTANCES_PER_USER 3
+    set_default_env_value "$QCRBOX_DIR/.env.vm" QCRBOX__ORCHESTRATOR__MAX_TOTAL_INSTANCES 10
+else
+    set_env_value "$QCRBOX_DIR/.env.vm" QCRBOX__ORCHESTRATOR__ENABLED false
 fi
 chmod 600 "$QCRBOX_DIR/.env.vm"
 
 # ----------------------------------------------------- frontend environment
 if [ "$UPDATE" = true ]; then
     echo "==> Keeping existing frontend environment"
+    # Keep the frontend in lock-step with the registry when upgrading an
+    # installation created before per-user identity propagation existed.
+    set_env_value "$FRONTEND_DIR/environment.env" QCRBOX_SERVICE_TOKEN "$QCRBOX_SERVICE_TOKEN" true
 else
 echo "==> Writing frontend environment"
 cat > "$FRONTEND_DIR/.env" <<EOF
@@ -232,6 +287,7 @@ API_BASE_URL='http://qcrbox-registry:8000'
 QCRBOX_DOMAIN='$DOMAIN'
 ALLOWED_HOSTS='$DOMAIN'
 CSRF_TRUSTED_ORIGINS='https://$DOMAIN'
+QCRBOX_SERVICE_TOKEN='$QCRBOX_SERVICE_TOKEN'
 
 AUTHELIA_SSO=True
 AUTHELIA_LOGOUT_URL='https://auth.$DOMAIN/logout'
@@ -250,6 +306,33 @@ EOF
 chmod 600 "$FRONTEND_DIR/environment.env"
 fi
 
+# Refuse to start with template placeholders or incomplete identity wiring.
+require_generated_secret() {
+    local file=$1 key=$2 value
+    value=$(read_env_value "$file" "$key")
+    if [[ -z "$value" || "$value" == *CHANGEME* ]]; then
+        echo "ERROR: $key is missing or still contains a template placeholder in $file" >&2
+        exit 1
+    fi
+}
+
+for key in AUTHELIA_JWT_SECRET AUTHELIA_SESSION_SECRET AUTHELIA_STORAGE_ENCRYPTION_KEY \
+           LLDAP_JWT_SECRET LLDAP_KEY_SEED LLDAP_ADMIN_PASSWORD \
+           QCRBOX_SERVICE_TOKEN QCRBOX_GATEWAY_TOKEN; do
+    require_generated_secret "$QCRBOX_DIR/.env.vm" "$key"
+done
+for key in DJANGO_SECRET_KEY POSTGRES_PASSWORD QCRBOX_SERVICE_TOKEN; do
+    require_generated_secret "$FRONTEND_DIR/environment.env" "$key"
+done
+require_generated_secret "$FRONTEND_DIR/.env" POSTGRES_PASSWORD
+
+BACKEND_SERVICE_TOKEN=$(read_env_value "$QCRBOX_DIR/.env.vm" QCRBOX_SERVICE_TOKEN)
+FRONTEND_SERVICE_TOKEN=$(read_env_value "$FRONTEND_DIR/environment.env" QCRBOX_SERVICE_TOKEN)
+if [[ "$BACKEND_SERVICE_TOKEN" != "$FRONTEND_SERVICE_TOKEN" ]]; then
+    echo "ERROR: frontend and backend QCRBOX_SERVICE_TOKEN values do not match" >&2
+    exit 1
+fi
+
 # ------------------------------------------------------------ start backend
 if [ "$UPDATE" = false ]; then
     # Stop any previous deployment first: rerolled secrets invalidate the
@@ -265,6 +348,9 @@ fi
 COMPOSE=(docker compose --project-name qcrbox
          --env-file "$QCRBOX_DIR/.env.vm"
          -f "$QCRBOX_DIR/docker-compose.prebuilt.yml")
+CORE_COMPOSE=("${COMPOSE[@]}")
+ALWAYS_ON_SERVICES=()
+SPAWNABLE_SPECS=()
 for app in $APPS; do
     # Accept any separator variant: exact name, then hyphens→underscores,
     # then underscores→hyphens, so callers can use either form.
@@ -274,6 +360,19 @@ for app in $APPS; do
     app_compose=$(ls "$app_dir"/docker-compose.*.prebuilt.yml 2>/dev/null | head -1)
     [ -n "$app_compose" ] || { echo "ERROR: no prebuilt compose file for app '$app'" >&2; exit 1; }
     COMPOSE+=(-f "$app_compose")
+
+    if grep -q 'x-qcrbox-lifecycle:[[:space:]]*always-on' "$app_compose"; then
+        app_service=$(sed -n '/^services:/,/^[^ ]/{s/^  \([A-Za-z0-9_.-]*\):$/\1/p;}' "$app_compose" | head -1)
+        [ -n "$app_service" ] || { echo "ERROR: cannot determine service name for '$app'" >&2; exit 1; }
+        ALWAYS_ON_SERVICES+=("$app_service")
+    else
+        app_spec=$(find "$app_dir" -maxdepth 1 -type f -name 'config_*.yaml' -print -quit)
+        [ -n "$app_spec" ] || {
+            echo "ERROR: app '$app' is neither marked always-on nor provides config_*.yaml" >&2
+            exit 1
+        }
+        SPAWNABLE_SPECS+=("/workspace/${app_spec#"$QCRBOX_DIR"/}")
+    fi
 done
 
 if [[ -n "$GHCR_TOKEN" ]]; then
@@ -287,14 +386,46 @@ echo "==> Pulling backend images from GHCR"
 "${COMPOSE[@]}" pull \
     || echo "WARNING: image pull failed; continuing with locally available images"
 
+echo "==> Verifying required backend images"
+mapfile -t REQUIRED_IMAGES < <("${COMPOSE[@]}" config --images | sort -u)
+for image in "${REQUIRED_IMAGES[@]}"; do
+    docker image inspect "$image" >/dev/null 2>&1 || {
+        echo "ERROR: required image $image is unavailable (pull or docker load it with this exact tag)" >&2
+        exit 1
+    }
+done
+
 echo "==> Starting QCrBox backend (apps: ${APPS:-none})"
-"${COMPOSE[@]}" up -d --no-build
+if [ "$ON_DEMAND" = true ]; then
+    "${CORE_COMPOSE[@]}" up -d --no-build
+    if [ "${#ALWAYS_ON_SERVICES[@]}" -gt 0 ]; then
+        "${COMPOSE[@]}" up -d --no-build "${ALWAYS_ON_SERVICES[@]}"
+    fi
+else
+    "${COMPOSE[@]}" up -d --no-build
+fi
 
 echo "==> Waiting for backend health"
 timeout 300 bash -c 'until [ "$(docker ps --filter health=starting -q | wc -l)" -eq 0 ]; do sleep 5; done'
 docker ps --format 'table {{.Names}}\t{{.Status}}'
 [ "$(docker ps --filter health=unhealthy -q | wc -l)" -eq 0 ] || {
     echo "ERROR: some containers are unhealthy" >&2; exit 1; }
+
+if [ "$ON_DEMAND" = true ] && [ "${#SPAWNABLE_SPECS[@]}" -gt 0 ]; then
+    DOCKER_REPO=$(grep -m1 '^QCRBOX_DOCKER_REPO=' "$QCRBOX_DIR/.env.vm" | cut -d= -f2-)
+    REGISTRY_IMAGE="$DOCKER_REPO/registry:$VERSION"
+    echo "==> Registering spawnable applications without starting pool containers"
+    docker run --rm \
+        --network qcrbox_qcrbox-net \
+        --env QCRBOX__REGISTRY__SERVER__HOST=qcrbox-registry \
+        --env QCRBOX__REGISTRY__SERVER__PORT=8000 \
+        --env "QCRBOX_DOCKER_REPO=$DOCKER_REPO" \
+        --env "QCRBOX_DOCKER_TAG=$VERSION" \
+        --mount "type=bind,src=$QCRBOX_DIR,dst=/workspace,readonly" \
+        --workdir /workspace \
+        --entrypoint /opt/conda/envs/qcrbox/bin/qcb \
+        "$REGISTRY_IMAGE" register --prebuilt-images "${SPAWNABLE_SPECS[@]}"
+fi
 
 # ----------------------------------------------------------- start frontend
 FRONTEND_REPO=$(grep -m1 '^QCRBOX_DOCKER_REPO=' "$QCRBOX_DIR/.env.vm" | cut -d= -f2)
@@ -312,7 +443,7 @@ docker compose --project-name qcrboxfrontend \
     up -d --no-build
 
 # ------------------------------------------------------------- credentials
-CRED_FILE=/root/qcrbox-credentials.txt
+CRED_FILE=${QCRBOX_CREDENTIALS_FILE:-/root/qcrbox-credentials.txt}
 if [ "$UPDATE" = false ]; then
 cat > "$CRED_FILE" <<EOF
 QCrBox installation credentials ($(date -u +%Y-%m-%dT%H:%M:%SZ))
@@ -331,15 +462,29 @@ Internal secrets (recorded for disaster recovery; not needed day-to-day):
   AUTHELIA_STORAGE_ENCRYPTION_KEY=$AUTHELIA_STORAGE_ENCRYPTION_KEY
   LLDAP_JWT_SECRET=$LLDAP_JWT_SECRET
   LLDAP_KEY_SEED=$LLDAP_KEY_SEED
+  QCRBOX_SERVICE_TOKEN=$QCRBOX_SERVICE_TOKEN
+  QCRBOX_GATEWAY_TOKEN=$QCRBOX_GATEWAY_TOKEN
   DJANGO_SECRET_KEY=$DJANGO_SECRET_KEY
   POSTGRES_PASSWORD=$POSTGRES_PASSWORD
 EOF
 chmod 600 "$CRED_FILE"
+else
+    # Backfill the two identity tokens in credentials files created by an
+    # older provisioner without rewriting any existing recovery material.
+    if ! grep -q '^  QCRBOX_SERVICE_TOKEN=' "$CRED_FILE" 2>/dev/null; then
+        cat >> "$CRED_FILE" <<EOF
+
+Identity tokens (added during update):
+  QCRBOX_SERVICE_TOKEN=$QCRBOX_SERVICE_TOKEN
+  QCRBOX_GATEWAY_TOKEN=$QCRBOX_GATEWAY_TOKEN
+EOF
+        chmod 600 "$CRED_FILE"
+    fi
 fi
 
 echo ""
 if [ "$UPDATE" = true ]; then
-    echo "==> Update complete (version: $VERSION). Accounts, data and secrets unchanged."
+    echo "==> Update complete (version: $VERSION). Accounts and data preserved; existing secrets retained."
 else
     echo "==> Done. Credentials saved to $CRED_FILE"
 fi

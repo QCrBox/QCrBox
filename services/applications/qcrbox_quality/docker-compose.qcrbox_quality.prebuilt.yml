@@ -1,5 +1,6 @@
 services:
   qcrbox_quality:
+    x-qcrbox-lifecycle: always-on
     image: "${QCRBOX_DOCKER_REPO:?Must set env var QCRBOX_DOCKER_REPO}/qcrbox_quality:${QCRBOX_DOCKER_TAG:?Must set env var QCRBOX_DOCKER_TAG}"
     depends_on:
       qcrbox-registry:

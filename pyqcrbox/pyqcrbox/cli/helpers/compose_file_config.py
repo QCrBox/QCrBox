@@ -121,9 +121,11 @@ class ComposeFileConfig:
 
     @property
     def core_services(self):
-        """Services declared in the repo-root runtime compose file (registry, nats,
-        reverse proxy, auth, ...) as opposed to applications, which live in their
-        own per-app compose files under services/applications/."""
+        """Return services declared in the repository-root runtime Compose file.
+
+        These are registry, NATS, reverse proxy, authentication, and other core
+        services rather than applications declared under services/applications/.
+        """
         core_services = []
         for compose_file in self.compose_files_runtime:
             if compose_file.parent != self.repo_root:
@@ -131,6 +133,20 @@ class ComposeFileConfig:
             data = self._service_metadata_by_compose_file[compose_file.relative_to(self.repo_root)]
             core_services += [name for name in data.get("services", {}) if name not in core_services]
         return core_services
+
+    @property
+    def always_on_services(self):
+        """Application services which must run alongside the core stack.
+
+        Compose extension fields are ignored by Docker Compose, making the
+        lifecycle marker available to QCrBox without leaking implementation
+        metadata into the created container.
+        """
+        return [
+            service_name
+            for service_name, service_metadata in self._full_service_metadata["services"].items()
+            if service_metadata.get("x-qcrbox-lifecycle") == "always-on"
+        ]
 
     def get_build_context(self, service_name):
         try:
@@ -149,6 +165,15 @@ class ComposeFileConfig:
             return service_metadata["build"]["context"]
         except KeyError as exc:
             raise QCrBoxNoBuildContextError() from exc
+
+    def get_runtime_compose_file(self, service_name: str) -> Path | None:
+        """Return the runtime Compose file which declares a service."""
+        for compose_file in self.compose_files_runtime:
+            relative_path = compose_file.relative_to(self.repo_root)
+            services = self._service_metadata_by_compose_file[relative_path].get("services", {})
+            if service_name in services:
+                return compose_file
+        return None
 
     def get_dockerfile_for_service(self, service_name):
         build_context = self.get_build_context(service_name)

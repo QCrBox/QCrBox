@@ -4,13 +4,13 @@
 backend (Traefik, Authelia, LLDAP, registry, applications) and the web
 frontend — onto an Ubuntu VM, **rerolling every secret** in the process
 (Authelia secrets, LLDAP secrets, admin password, Django secret key, Postgres
-password). The generated credentials are written to
+password, and frontend/Traefik identity tokens). The generated credentials are written to
 `/root/qcrbox-credentials.txt` on the target machine.
 
-**Trust model:** all accounts are mutually trusted. Every logged-in user can
-see all data and shares the same GUI desktop sessions. Only create accounts
-for people who may see everything; QCrBox does not yet provide per-user data
-isolation.
+**Trust model:** application containers and their GUI routes are owned by the
+user who invoked them, but stored datasets are not yet isolated. Only create
+accounts for selected stakeholders who may see all structures. This deployment
+is not yet suitable for mutually untrusted tenants.
 
 ## The scripts
 
@@ -26,7 +26,7 @@ read -rsp "GHCR token: " GHCR_TOKEN && echo && export GHCR_TOKEN
 
 bash scripts/deployment/deploy_qcrbox_ssh.sh --host ubuntu@<public-ip> \
     --version 0.2.0 \
-    --identity ~/.ssh/eosc_key --apps "olex2_linux" \
+    --identity ~/.ssh/eosc_key --apps "qcrbox_quality olex2_linux mopro" \
     --domain qcrbox.example.org --acme-email you@example.org
 ```
 
@@ -59,6 +59,24 @@ sudo bash provision_qcrbox.sh --domain qcrbox.example.org \
   SSH key access as a sudo-capable user (cloud images: `ubuntu`); internet
   access (to clone from GitHub and pull from GHCR); firewall / OpenStack
   security group allowing only ports 22, 80 and 443.
+
+### Privately transferred application images
+
+Licensed application images do not have to be published. Build them on a
+trusted machine, tag them with the exact production reference, and transfer
+them to the VM before provisioning:
+
+```bash
+docker tag qcrbox/mopro:latest ghcr.io/qcrbox/mopro:stakeholder-test
+docker save ghcr.io/qcrbox/mopro:stakeholder-test | gzip > mopro-stakeholder-test.tar.gz
+scp -i ~/.ssh/eosc_key mopro-stakeholder-test.tar.gz ubuntu@<public-ip>:
+ssh -i ~/.ssh/eosc_key ubuntu@<public-ip> \
+    'gunzip -c mopro-stakeholder-test.tar.gz | sudo docker load'
+```
+
+Deploy with `--version stakeholder-test`. A failed pull is tolerated only when
+the exact expected repository and tag is already loaded; provisioning aborts
+before startup if any required image is unavailable.
 
 ## GHCR authentication
 
@@ -153,10 +171,25 @@ authentication and must never be exposed). Beyond that:
 - Create accounts at `https://users.<domain>` (LLDAP web UI, restricted to
   the `lldap_admin` group), then assign them to research groups in the
   frontend.
+- In the default on-demand mode, `qcrbox_quality` remains running while
+  registered application containers start only when a stakeholder invokes
+  them. Each authenticated user receives an owner-bound container and GUI
+  route; another user receives `403` when attempting to open that route.
 - Credentials are kept at `/root/qcrbox-credentials.txt` on the VM.
-- Re-running the provisioner rerolls all secrets and wipes the Authelia and
-  LLDAP data volumes — **all user accounts, passwords and TOTP enrolments are
-  recreated from scratch**.
+- A fresh provision rerolls all secrets and wipes identity volumes; `--update`
+  preserves accounts, data and valid secrets. When upgrading an older install,
+  it only backfills missing or placeholder identity tokens.
+
+After two stakeholders invoke an application, confirm per-user instances with:
+
+```bash
+sudo docker ps --filter label=org.qcrbox.spawned=true \
+  --format 'table {{.Names}}\t{{.Label "org.qcrbox.application_slug"}}\t{{.Status}}'
+```
+
+Spawnable applications must have no long-running pool container. Idle
+instances are removed automatically according to the
+`QCRBOX__ORCHESTRATOR__*` settings in `.env.vm`.
 
 ## Operations
 

@@ -15,6 +15,13 @@ from ..helpers.image_resolution import resolve_docker_image_for_spec_file
 
 def find_spec_file_for_component(docker_project: DockerProject, component: str) -> Path | None:
     """Locate the `config_*.yaml` application spec in a component's build context."""
+    if docker_project.config_name == "prebuilt":
+        compose_file = docker_project.compose_file_config.get_runtime_compose_file(component)
+        if compose_file is None:
+            return None
+        spec_files = sorted(compose_file.parent.glob("config_*.yaml"))
+        return spec_files[0] if spec_files else None
+
     try:
         build_context = docker_project.get_build_context(component)
     except Exception:
@@ -103,20 +110,30 @@ def register_specs_for_components(docker_project: DockerProject, components: lis
 
 
 @click.command(name="register", cls=ClickCommandCls)
+@click.option(
+    "--prebuilt-images",
+    is_flag=True,
+    default=False,
+    help="Resolve application image names from production prebuilt Compose files.",
+)
 @click.argument("targets", nargs=-1, required=True)
-def register_application_specs(targets: tuple[str, ...]):
+def register_application_specs(targets: tuple[str, ...], prebuilt_images: bool):
     """Register application specs with the QCrBox registry.
 
     TARGETS can be paths to application spec files (config_*.yaml) or
     component names (as listed by 'qcb list components'). The registry
     must be running. Registration is idempotent.
     """
-    docker_project = DockerProject()
+    docker_project = DockerProject(config_name="prebuilt" if prebuilt_images else "development")
     spec_files = collect_spec_files(docker_project, targets)
 
     any_failed = False
     for spec_file in spec_files:
         docker_image = resolve_docker_image_for_spec_file(docker_project, spec_file)
+        if docker_image is None:
+            click.echo(f"× could not resolve a docker image for {str(spec_file)!r}")
+            any_failed = True
+            continue
         success, message = register_spec_file(spec_file, docker_image=docker_image)
         click.echo(("✔ " if success else "× ") + message)
         any_failed = any_failed or not success

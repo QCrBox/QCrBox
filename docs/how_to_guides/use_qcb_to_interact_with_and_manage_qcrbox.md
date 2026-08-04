@@ -100,8 +100,9 @@ you can watch its logs, exec into it, and iterate.
 
 To run QCrBox *for users* — e.g. behind the web frontend — application containers do not
 need to be running in advance. `qcb serve` builds and registers the selected applications
-but starts **only the core services**; the registry's orchestrator then spawns a container
-on demand (per user) when an application is actually used, and reaps it again after
+but starts only core services and selected services marked
+`x-qcrbox-lifecycle: always-on` (currently the quality display); the registry's
+orchestrator then spawns a container on demand (per user) and reaps it again after
 `QCRBOX__ORCHESTRATOR__IDLE_TIMEOUT` (default 30 min) of inactivity:
 
 ```

@@ -40,9 +40,10 @@ def _fill_default_build_values(build, build_deps):
 
 
 def warn_if_orchestrator_disabled(docker_project: DockerProject):
-    """Warn when on-demand mode is used but the registry's orchestrator is not
-    enabled in the active env file - registered applications would never be
-    spawned."""
+    """Warn when on-demand mode is used while the orchestrator is disabled.
+
+    In that state, registered applications would never be spawned.
+    """
     value = os.environ.get("QCRBOX__ORCHESTRATOR__ENABLED")
     if value is None:
         env_file_name = ".env.prod" if docker_project.config_name == "prebuilt" else ".env.dev"
@@ -70,8 +71,11 @@ def run_startup_tasks(
     components: list[str],
     on_demand: bool = False,
 ):
-    """Shared implementation of `qcb up` (pool containers) and `qcb serve`
-    (core services only; app containers are spawned on demand)."""
+    """Implement `qcb up` and `qcb serve` startup behavior.
+
+    Serve mode starts core and always-on services; application containers are
+    spawned on demand.
+    """
     build, build_deps = _fill_default_build_values(build, build_deps)
     docker_project = DockerProject(name=project_name, config_name="prebuilt" if prebuilt_images else "development")
 
@@ -83,7 +87,7 @@ def run_startup_tasks(
         build_tasks += populate_build_tasks(components, docker_project, with_deps=build_deps, dry_run=dry_run)
 
     if on_demand:
-        startup_action = (docker_project.start_up_core_services, (dry_run,))
+        startup_action = (docker_project.start_up_serving_services, (components, dry_run))
     else:
         startup_action = (docker_project.start_up_docker_containers, (components, dry_run))
 
@@ -210,9 +214,11 @@ def serve_components(
     project_name: str,
     components: list[str],
 ):
-    """Serve QCrBox: build and register the selected applications, but start
-    only the core services. Application containers are spawned on demand by
-    the registry's orchestrator (requires QCRBOX__ORCHESTRATOR__ENABLED=true).
+    """Build and register applications for on-demand QCrBox service.
+
+    Only core and selected always-on services start immediately. Application
+    containers are spawned by the registry orchestrator, which requires
+    QCRBOX__ORCHESTRATOR__ENABLED=true.
 
     Use 'qcb up' instead for container development, where the selected
     application containers are started directly and stay running.

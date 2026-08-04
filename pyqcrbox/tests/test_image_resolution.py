@@ -9,6 +9,7 @@ from pyqcrbox.cli.helpers.image_resolution import (
     interpolate_compose_value,
     resolve_docker_image_for_spec_file,
 )
+from pyqcrbox.cli.subcommands.register import find_spec_file_for_component
 
 REPO_ROOT = Path(__file__).parent.parent.parent
 
@@ -55,6 +56,26 @@ def test_resolve_image_for_olex2_with_historic_naming(docker_project):
     image = resolve_docker_image_for_spec_file(docker_project, spec_file)
     assert image is not None
     assert image.startswith("qcrbox/olex2-linux:")
+
+
+def test_resolve_prebuilt_image_uses_repository_and_tag(monkeypatch):
+    monkeypatch.setenv("QCRBOX_DOCKER_REPO", "registry.example/qcrbox")
+    monkeypatch.setenv("QCRBOX_DOCKER_TAG", "stakeholder-test")
+    docker_project = DockerProject(config_name="prebuilt")
+    spec_file = REPO_ROOT / "services" / "applications" / "mopro" / "config_mopro.yaml"
+
+    assert resolve_docker_image_for_spec_file(docker_project, spec_file) == (
+        "registry.example/qcrbox/mopro:stakeholder-test"
+    )
+
+
+def test_find_spec_for_prebuilt_component():
+    docker_project = DockerProject(config_name="prebuilt")
+
+    assert find_spec_file_for_component(docker_project, "olex2") == (
+        REPO_ROOT / "services" / "applications" / "olex2_linux" / "config_olex2.yaml"
+    )
+    assert find_spec_file_for_component(docker_project, "qcrbox_quality") is None
 
 
 def test_resolve_image_returns_none_for_unknown_directory(docker_project, tmp_path):
