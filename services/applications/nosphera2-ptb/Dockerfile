@@ -48,9 +48,9 @@ COPY --from=build-nosphera2 --chown=qcrbox:qcrbox --chmod=755 \
 # base image; install them system-wide so the loader can find them at their SONAME.
 COPY --from=build-nosphera2 --chmod=755 \
      /tmp/NoSpherA2/build/release-linux/bin/libiomp5.so \
-     /tmp/NoSpherA2/build/release-linux/bin/libtbb.so.12.16 \
+     /tmp/NoSpherA2/build/release-linux/bin/libtbb.so.12 \
      /usr/local/lib/
-RUN ln -sf /usr/local/lib/libtbb.so.12.16 /usr/local/lib/libtbb.so.12 && ldconfig
+RUN ldconfig
 
 # Download and install PTB
 RUN wget https://github.com/AK-Kleemiss/ptb/releases/download/v3.8-NoSpherA2/ptb_all.zip -O /tmp/ptb_all.zip && \
