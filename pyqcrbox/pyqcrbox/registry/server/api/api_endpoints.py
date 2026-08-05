@@ -105,9 +105,9 @@ async def authorize_gui_access(request: Request, current_user: str | None) -> Re
 
     Chained after the Authelia forwardAuth middleware on spawned GUI routers:
     Authelia authenticates the user (Remote-User), this endpoint authorizes the
-    user against the instance's owner. The target instance is identified by the
-    X-Forwarded-Host of the original request. Ownerless instances are open to
-    any authenticated user; owned instances only to their owner.
+    user against the instance's owner. New routes use one stable GUI hostname
+    and identify the instance by the first X-Forwarded-Uri path segment. The
+    hostname-only lookup remains as an upgrade compatibility fallback.
     """
     from pyqcrbox.services.persistence import SQLitePersistenceAdapter
 
@@ -115,13 +115,57 @@ async def authorize_gui_access(request: Request, current_user: str | None) -> Re
     if not forwarded_host or current_user is None:
         return Response(content={"status": "denied"}, status_code=403)
 
-    instance = await SQLitePersistenceAdapter().get_instance_by_gui_host(forwarded_host)
+    forwarded_uri = request.headers.get("x-forwarded-uri", "")
+    instance_path = forwarded_uri.lstrip("/").split("/", 1)[0]
+    gui_route = f"{forwarded_host}/{instance_path}" if instance_path else forwarded_host
+    persistence = SQLitePersistenceAdapter()
+    instance = await persistence.get_instance_by_gui_host(gui_route)
+    if instance is None and gui_route != forwarded_host:
+        instance = await persistence.get_instance_by_gui_host(forwarded_host)
     if instance is None:
         return Response(content={"status": "denied", "reason": "unknown host"}, status_code=403)
     if instance.owner_user_id is not None and instance.owner_user_id != current_user:
         return Response(content={"status": "denied", "reason": "not the owner"}, status_code=403)
 
     return Response(content={"status": "ok"}, status_code=200)
+
+
+@get(path="/gui/wait", media_type=MediaType.HTML, include_in_schema=False)
+async def wait_for_gui_route(request: Request, current_user: str | None) -> Response:
+    """Temporary target while Traefik is discovering a spawned GUI router.
+
+    The low-priority certificate-anchor router rewrites an otherwise unmatched
+    GUI path here. Only the recorded owner is shown the retry page. A meta
+    refresh reloads the browser's original URL; once Traefik has consumed the
+    Docker event, the higher-priority per-instance router handles that reload.
+    """
+    from pyqcrbox.services.persistence import SQLitePersistenceAdapter
+
+    forwarded_host = request.headers.get("x-forwarded-host")
+    original_path = request.headers.get("x-replaced-path", "")
+    instance_path = original_path.lstrip("/").split("/", 1)[0]
+    if not forwarded_host or not instance_path or current_user is None:
+        return Response(content="GUI route not found", media_type=MediaType.TEXT, status_code=404)
+
+    gui_route = f"{forwarded_host}/{instance_path}"
+    instance = await SQLitePersistenceAdapter().get_instance_by_gui_host(gui_route)
+    if instance is None:
+        return Response(content="GUI route not found", media_type=MediaType.TEXT, status_code=404)
+    if instance.owner_user_id is not None and instance.owner_user_id != current_user:
+        return Response(content="GUI access denied", media_type=MediaType.TEXT, status_code=403)
+
+    return Response(
+        content=(
+            "<!doctype html><html><head><meta charset='utf-8'>"
+            "<meta http-equiv='refresh' content='1'>"
+            "<meta name='viewport' content='width=device-width,initial-scale=1'>"
+            "<title>Starting QCrBox application</title></head>"
+            "<body><p>The application is starting. Retrying&hellip;</p></body></html>"
+        ),
+        media_type=MediaType.HTML,
+        headers={"Cache-Control": "no-store"},
+        status_code=200,
+    )
 
 
 @get(path="/", media_type=MediaType.JSON, include_in_schema=False)
@@ -1075,6 +1119,7 @@ api_router = Router(
         index,
         openapi_schema,
         authorize_gui_access,
+        wait_for_gui_route,
         # Applications
         list_applications,
         register_application,

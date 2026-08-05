@@ -424,7 +424,14 @@ done
 
 echo "==> Starting QCrBox backend (apps: ${APPS:-none})"
 if [ "$ON_DEMAND" = true ]; then
-    "${CORE_COMPOSE[@]}" up -d --no-build
+    CORE_UP_ARGS=(up -d --no-build)
+    if [ "$UPDATE" = true ]; then
+        # Local source transfer replaces bind-mounted configuration paths.
+        # Recreate core containers so Authelia, Traefik and registry changes
+        # are actually mounted; named account/data volumes remain untouched.
+        CORE_UP_ARGS+=(--force-recreate)
+    fi
+    "${CORE_COMPOSE[@]}" "${CORE_UP_ARGS[@]}"
     if [ "${#ALWAYS_ON_SERVICES[@]}" -gt 0 ]; then
         "${COMPOSE[@]}" up -d --no-build "${ALWAYS_ON_SERVICES[@]}"
     fi
@@ -437,6 +444,24 @@ timeout 300 bash -c 'until [ "$(docker ps --filter health=starting -q | wc -l)" 
 docker ps --format 'table {{.Names}}\t{{.Status}}'
 [ "$(docker ps --filter health=unhealthy -q | wc -l)" -eq 0 ] || {
     echo "ERROR: some containers are unhealthy" >&2; exit 1; }
+
+if [ "$TLS_CERT_RESOLVER" = "letsencrypt" ]; then
+    echo "==> Waiting for trusted certificate on gui.$DOMAIN"
+    GUI_CERT_READY=false
+    for _attempt in $(seq 1 60); do
+        if timeout 10 openssl s_client -connect 127.0.0.1:443 \
+            -servername "gui.$DOMAIN" -verify_return_error </dev/null 2>&1 \
+            | grep -q 'Verify return code: 0'; then
+            GUI_CERT_READY=true
+            break
+        fi
+        sleep 2
+    done
+    [ "$GUI_CERT_READY" = true ] || {
+        echo "ERROR: Traefik did not obtain a trusted certificate for gui.$DOMAIN" >&2
+        exit 1
+    }
+fi
 
 if [ "$ON_DEMAND" = true ] && [ "${#SPAWNABLE_SPECS[@]}" -gt 0 ]; then
     DOCKER_REPO=$(grep -m1 '^QCRBOX_DOCKER_REPO=' "$QCRBOX_DIR/.env.vm" | cut -d= -f2-)

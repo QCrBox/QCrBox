@@ -184,6 +184,13 @@ async def test_gui_url_lookup_by_private_inbox(adapter, registered_application):
         "qcrbox_client_0x01", "cafebabe" * 8, gui_host="dummy-cli-0x01.gui.qcrbox.localhost"
     )
     assert api_helpers.gui_url_for_private_inbox("_INBOX.gui.1") == "https://dummy-cli-0x01.gui.qcrbox.localhost/"
+
+    await adapter.set_instance_spawn_details(
+        "qcrbox_client_0x01", "cafebabe" * 8, gui_host="gui.qcrbox.localhost/dummy-cli-0x01"
+    )
+    assert api_helpers.gui_url_for_private_inbox("_INBOX.gui.1") == (
+        "https://gui.qcrbox.localhost/dummy-cli-0x01/"
+    )
     assert api_helpers.gui_url_for_private_inbox("_INBOX.unknown") is None
 
 

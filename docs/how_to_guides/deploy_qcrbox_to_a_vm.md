@@ -154,6 +154,14 @@ is removed after it loads successfully. The deployer
 also passes `--no-pull` to the remote provisioner, preventing a transferred tag
 from being replaced by a remotely published one.
 Add `--update` on later deployments to preserve accounts, data and secrets.
+Core containers are recreated during an update so transferred bind-mounted
+configuration takes effect; named account and data volumes are retained.
+
+Spawned desktop applications are exposed below one stable TLS hostname, for
+example `https://gui.qcrbox.example/olex2-108643ec/`. Traefik obtains that
+hostname's certificate during provisioning, then authenticates every request
+and asks the registry to verify that the signed-in user owns the requested
+instance. VNC ports are not published directly on the VM.
 
 If a retry is needed after the exact images have already loaded successfully,
 replace `--transfer-images` with `--reuse-remote-images`. This skips local

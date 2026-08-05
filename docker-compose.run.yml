@@ -302,6 +302,15 @@ services:
       # instance's owner (403 when the GUI belongs to another user).
       traefik.http.middlewares.qcrbox-instance-auth.forwardauth.address: http://qcrbox-registry:8000/api/auth/gui
       traefik.http.middlewares.qcrbox-instance-auth.forwardauth.trustForwardHeader: true
+
+      # Stable spawned-GUI certificate anchor. Per-instance routers use the
+      # same host with path matching and therefore reuse this certificate.
+      traefik.http.routers.gui-certificate-anchor.rule: Host(`gui.${QCRBOX_DOMAIN:-localhost.local}`)
+      traefik.http.routers.gui-certificate-anchor.entrypoints: websecure
+      traefik.http.routers.gui-certificate-anchor.middlewares: authelia-auth,qcrbox-gateway-token,gui-wait-rewrite
+      traefik.http.routers.gui-certificate-anchor.priority: 1
+      traefik.http.routers.gui-certificate-anchor.service: registry-service
+      traefik.http.middlewares.gui-wait-rewrite.replacepath.path: /api/gui/wait
     logging:
       driver: "syslog"
       options:

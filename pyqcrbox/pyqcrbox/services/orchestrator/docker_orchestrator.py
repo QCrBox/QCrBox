@@ -252,10 +252,11 @@ class DockerOrchestrator(ContainerOrchestrator):
         return instance
 
     def _build_gui_host(self, application_slug: str, client_id: str) -> str:
-        # A single DNS label (covered by the Authelia wildcard rule for *.gui.<domain>);
-        # slugs may contain characters that are invalid in hostnames (e.g. underscores).
+        # One stable TLS hostname plus a per-instance path avoids issuing a new
+        # certificate for every spawned container. Slugs are normalised for
+        # safe use in the route path.
         slug_label = re.sub(r"[^a-z0-9-]", "-", application_slug.lower()).strip("-")
-        return f"{slug_label}-{client_id[-8:]}.gui.{self._settings.gui_domain}"
+        return f"gui.{self._settings.gui_domain}/{slug_label}-{client_id[-8:]}"
 
     def _build_container_config(
         self,
@@ -310,29 +311,36 @@ class DockerOrchestrator(ContainerOrchestrator):
     def _build_traefik_labels(self, client_id: str, gui_host: str) -> dict[str, str]:
         """Per-instance Traefik route for the container's noVNC GUI.
 
-        Mirrors the static subdomain route pattern of the compose-started GUI
-        apps (router behind the `authelia-auth` forwardAuth middleware, plus a
-        redirect from the bare host to the noVNC page). Traefik's docker
-        provider picks the labels up automatically when the container starts.
+        Uses one stable GUI hostname with a per-instance path. The router is
+        protected by authentication and ownership forwardAuth middleware;
+        Traefik's Docker provider picks the labels up when the container starts.
         """
         name = f"qcrbox-gui-{client_id[-8:]}"
+        stable_host, instance_path = gui_host.split("/", 1)
+        path_prefix = f"/{instance_path}"
         vnc_url = (
-            f"https://{gui_host}/vnc.html?path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true"
+            f"https://{stable_host}{path_prefix}/vnc.html?path={instance_path}/vnc"
+            "&autoconnect=true&resize=remote&reconnect=true&show_dot=true"
         )
         return {
             "traefik.enable": "true",
-            f"traefik.http.routers.{name}.rule": f"Host(`{gui_host}`)",
+            f"traefik.http.routers.{name}.rule": (
+                f"Host(`{stable_host}`) && (Path(`{path_prefix}`) || PathPrefix(`{path_prefix}/`))"
+            ),
             f"traefik.http.routers.{name}.entrypoints": "websecure",
             # authelia-auth authenticates (injects Remote-User); qcrbox-gateway-token
             # proves the request came through Traefik; qcrbox-instance-auth authorizes
             # the user against the instance's owner (both defined on the registry
             # service's labels in docker-compose.*.yml).
             f"traefik.http.routers.{name}.middlewares": (
-                f"authelia-auth,qcrbox-gateway-token,qcrbox-instance-auth,{name}-redirect"
+                f"authelia-auth,qcrbox-gateway-token,qcrbox-instance-auth,{name}-redirect,{name}-strip"
             ),
             f"traefik.http.routers.{name}.service": name,
-            f"traefik.http.middlewares.{name}-redirect.redirectregex.regex": f"^https://{re.escape(gui_host)}/?$",
+            f"traefik.http.middlewares.{name}-redirect.redirectregex.regex": (
+                f"^https://{re.escape(stable_host + path_prefix)}/?$"
+            ),
             f"traefik.http.middlewares.{name}-redirect.redirectregex.replacement": vnc_url,
+            f"traefik.http.middlewares.{name}-strip.stripprefix.prefixes": path_prefix,
             f"traefik.http.services.{name}.loadbalancer.server.scheme": "http",
             f"traefik.http.services.{name}.loadbalancer.server.port": str(self._settings.gui_container_port),
         }

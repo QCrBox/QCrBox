@@ -198,9 +198,8 @@ class OrchestratorSettings(QCrBoxSettingsBaseModel):
     use_syslog_logging: bool = True
     syslog_address: str = "udp://127.0.0.1:514"
     label_prefix: str = "org.qcrbox"
-    # Per-instance GUI routing (interactive applications): spawned GUI containers
-    # get a Traefik route at https://<slug>-<id>.gui.<gui_domain>/ (covered by the
-    # Authelia wildcard rule for *.gui.<domain>).
+    # Spawned GUI containers use one stable TLS hostname and a private path:
+    # https://gui.<gui_domain>/<slug>-<id>/.
     gui_domain: str = "qcrbox.localhost"
     gui_container_port: int = 8080  # noVNC port exposed by base_novnc images
 

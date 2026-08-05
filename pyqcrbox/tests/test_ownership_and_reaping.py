@@ -17,6 +17,8 @@ from pyqcrbox.sql_models import ContainerInstanceStatusEnum
 from .test_application_registration_api import DUMMY_CLI_SPEC_FILE
 
 GUI_HOST = "dummy-cli-0xtest.gui.qcrbox.localhost"
+STABLE_GUI_HOST = "gui.qcrbox.localhost"
+STABLE_GUI_PATH = "/dummy-cli-0xtest"
 
 
 @pytest.fixture
@@ -49,13 +51,26 @@ def auth_client():
         yield client
 
 
-def gui_auth_status(client, forwarded_host=None, remote_user=None) -> int:
+def gui_auth_status(client, forwarded_host=None, remote_user=None, forwarded_uri=None) -> int:
     headers = {}
     if forwarded_host:
         headers["X-Forwarded-Host"] = forwarded_host
     if remote_user:
         headers["Remote-User"] = remote_user
+    if forwarded_uri:
+        headers["X-Forwarded-Uri"] = forwarded_uri
     return client.get("/api/auth/gui", headers=headers).status_code
+
+
+def gui_wait_response(client, forwarded_host, original_path, remote_user):
+    return client.get(
+        "/api/gui/wait",
+        headers={
+            "X-Forwarded-Host": forwarded_host,
+            "X-Replaced-Path": original_path,
+            "Remote-User": remote_user,
+        },
+    )
 
 
 @pytest.mark.anyio
@@ -68,6 +83,30 @@ async def test_gui_auth_owner_match(adapter, registered_application, auth_client
 async def test_gui_auth_owner_mismatch(adapter, registered_application, auth_client):
     await seed_instance(adapter, registered_application.id, owner="alice")
     assert gui_auth_status(auth_client, GUI_HOST, "bob") == 403
+
+
+@pytest.mark.anyio
+async def test_gui_auth_stable_host_uses_instance_path(adapter, registered_application, auth_client):
+    gui_route = f"{STABLE_GUI_HOST}{STABLE_GUI_PATH}"
+    await seed_instance(adapter, registered_application.id, owner="alice", gui_host=gui_route)
+
+    assert gui_auth_status(auth_client, STABLE_GUI_HOST, "alice", f"{STABLE_GUI_PATH}/vnc") == 200
+    assert gui_auth_status(auth_client, STABLE_GUI_HOST, "bob", f"{STABLE_GUI_PATH}/vnc") == 403
+    assert gui_auth_status(auth_client, STABLE_GUI_HOST, "alice", "/another-instance/vnc") == 403
+
+
+@pytest.mark.anyio
+async def test_gui_wait_page_retries_only_for_instance_owner(adapter, registered_application, auth_client):
+    gui_route = f"{STABLE_GUI_HOST}{STABLE_GUI_PATH}"
+    await seed_instance(adapter, registered_application.id, owner="alice", gui_host=gui_route)
+
+    response = gui_wait_response(auth_client, STABLE_GUI_HOST, f"{STABLE_GUI_PATH}/vnc.html", "alice")
+    assert response.status_code == 200
+    assert "http-equiv='refresh'" in response.text
+    assert response.headers["cache-control"] == "no-store"
+
+    assert gui_wait_response(auth_client, STABLE_GUI_HOST, STABLE_GUI_PATH, "bob").status_code == 403
+    assert gui_wait_response(auth_client, STABLE_GUI_HOST, "/unknown", "alice").status_code == 404
 
 
 @pytest.mark.anyio

@@ -219,20 +219,26 @@ async def test_gui_application_spawn_gets_traefik_route(adapter, clean_registry_
 
     config, _name = fake_docker.create_calls[0]
     suffix = client_id[-8:]
-    expected_host = f"dummy-gui-{suffix}.gui.qcrbox.localhost"
+    expected_host = "gui.qcrbox.localhost"
+    expected_path = f"/dummy-gui-{suffix}"
+    expected_route = f"{expected_host}{expected_path}"
     labels = config["Labels"]
     assert labels["traefik.enable"] == "true"
-    assert labels[f"traefik.http.routers.qcrbox-gui-{suffix}.rule"] == f"Host(`{expected_host}`)"
+    assert labels[f"traefik.http.routers.qcrbox-gui-{suffix}.rule"] == (
+        f"Host(`{expected_host}`) && (Path(`{expected_path}`) || PathPrefix(`{expected_path}/`))"
+    )
     assert labels[f"traefik.http.routers.qcrbox-gui-{suffix}.entrypoints"] == "websecure"
     assert labels[f"traefik.http.routers.qcrbox-gui-{suffix}.middlewares"] == (
-        f"authelia-auth,qcrbox-gateway-token,qcrbox-instance-auth,qcrbox-gui-{suffix}-redirect"
+        f"authelia-auth,qcrbox-gateway-token,qcrbox-instance-auth,"
+        f"qcrbox-gui-{suffix}-redirect,qcrbox-gui-{suffix}-strip"
     )
     assert labels[f"traefik.http.services.qcrbox-gui-{suffix}.loadbalancer.server.port"] == "8080"
     assert expected_host in labels[f"traefik.http.middlewares.qcrbox-gui-{suffix}-redirect.redirectregex.replacement"]
+    assert labels[f"traefik.http.middlewares.qcrbox-gui-{suffix}-strip.stripprefix.prefixes"] == expected_path
 
-    assert instance.gui_host == expected_host
+    assert instance.gui_host == expected_route
     stored = await adapter.get_instance_by_client_id(client_id)
-    assert stored.gui_host == expected_host
+    assert stored.gui_host == expected_route
 
 
 @pytest.mark.anyio

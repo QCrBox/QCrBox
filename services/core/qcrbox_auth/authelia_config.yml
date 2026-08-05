@@ -48,6 +48,8 @@ access_control:
       policy: one_factor
     # GUI applications expose full desktop sessions (shell-equivalent access);
     # consider switching to two_factor once users have enrolled TOTP.
+    - domain: 'gui.{{ env "QCRBOX_DOMAIN" }}'
+      policy: one_factor
     - domain: '*.gui.{{ env "QCRBOX_DOMAIN" }}'
       policy: one_factor
     # Administrative UIs: only members of the LLDAP admin group

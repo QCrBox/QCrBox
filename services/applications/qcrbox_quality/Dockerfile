@@ -14,7 +14,10 @@ ENV QCRBOX__REGISTRY__SERVER__PORT="8000"
 
 ENV QCRBOX_APPLICATION_DISPLAY_NAME="Qcrbox Quality"
 
-RUN micromamba install -n qcrbox -c conda-forge bokeh numpy django svcs && \
+# pyqcrbox already installs its pinned svcs/typing-extensions pair in the
+# base image. Installing svcs again through conda can upgrade only svcs and
+# leave an incompatible pip-installed typing_extensions behind.
+RUN micromamba install -n qcrbox -c conda-forge bokeh numpy django && \
     micromamba clean --all --yes
 RUN rm -f /opt/qcrbox/.idesktop/default.lnk
 COPY --chown=qcrbox:qcrbox \
@@ -42,3 +45,8 @@ ENV QCRBOX_APPLICATION_DISPLAY_NAME="DataDisplay"
 ENV QCRBOX__LOGGING__LOG_LEVEL="DEBUG"
 
 EXPOSE 8080
+
+# Supervisord staying alive is not sufficient: deployment and Traefik need to
+# know that the Django process is actually accepting requests.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --start-interval=1s \
+    CMD curl --fail --silent --show-error http://127.0.0.1:8080/ >/dev/null || exit 1
