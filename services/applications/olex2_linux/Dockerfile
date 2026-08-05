@@ -35,16 +35,29 @@ RUN cd /opt && \
 USER ${QCRBOX_USER}
 
 RUN cd /opt &&  \
-    cp /opt/olex2/start /opt/olex2/startc && \   
+    cp /opt/olex2/start /opt/olex2/startc && \
     #rm olex2-linux64_hl.zip && \
     # chmod +x olex2/olex2c-linux64 && \
     chmod +x olex2/startc && \
     ln -s /opt/olex2/lib/libssl.so.1.1 /opt/olex2/lib/libssl.so.10 && \
     ln -s /opt/olex2/lib/libcrypto.so.1.1 /opt/olex2/lib/libcrypto.so.10
 
+# bundled libopenblas.so.0 needs libgfortran.so.5, which numpy/scipy vendor
+# under an auditwheel-hashed filename in scipy.libs. libgfortran in turn
+# needs libquadmath, also present in scipy.libs under its real hashed name,
+# which resolves fine once scipy.libs is on LD_LIBRARY_PATH (added to
+# start/startc below) since auditwheel's own NEEDED entries reference that
+# exact hashed sibling filename. Only the plain libgfortran.so.5 SONAME
+# needs a symlink, since that's the name numpy's extension asks for.
+# Without this, numpy fails to import and olex2's Python-side init silently
+# aborts, leaving a GUI with no data loaded.
+RUN scipy_libs=/opt/olex2/lib/python3.8/site-packages/scipy.libs && \
+    ln -s "$(basename $(ls $scipy_libs/libgfortran-*.so.5.*))" "$scipy_libs/libgfortran.so.5"
+
 RUN sed -i 's|^#! /bin/sh|#! /bin/bash|' /opt/olex2/start && \
     sed -i 's|^./olex2 "$@" &$|./olex2 "$@"|' /opt/olex2/start && \
-    sed -i 's|./olex2 "$@"|./olex2c "$@" server 8899|' /opt/olex2/startc
+    sed -i 's|./olex2 "$@"|./olex2c "$@" server 8899|' /opt/olex2/startc && \
+    sed -i 's|\$bin_dir/lib:\$bin_dir/ilib:|$bin_dir/lib:$bin_dir/ilib:$bin_dir/lib/python3.8/site-packages/scipy.libs:|' /opt/olex2/start /opt/olex2/startc
 
 RUN mkdir -p ${QCRBOX_HOME}/.local/share && \
     mkdir -p ${QCRBOX_HOME}/.olex2/data/ && \

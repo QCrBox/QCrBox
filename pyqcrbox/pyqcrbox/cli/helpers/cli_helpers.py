@@ -35,6 +35,8 @@ def add_cli_option_to_enable_or_disable_components(f):
         "xharpy-gpaw",
         "qcrboxtools",
         "cod_check",
+        "discamb-matts",
+        "nosphera2-ptb",
     )
     DEFAULT_TEST_COMPONENTS = ("dummy_cli", "dummy_gui")
     DEFAULT_EXPLICITLY_ENABLED_COMPONENTS = ()

@@ -319,7 +319,7 @@ class DockerOrchestrator(ContainerOrchestrator):
         stable_host, instance_path = gui_host.split("/", 1)
         path_prefix = f"/{instance_path}"
         vnc_url = (
-            f"https://{stable_host}{path_prefix}/vnc.html?path={instance_path}/vnc"
+            f"https://{stable_host}{path_prefix}/vnc.html?path={path_prefix}/vnc"
             "&autoconnect=true&resize=remote&reconnect=true&show_dot=true"
         )
         return {
