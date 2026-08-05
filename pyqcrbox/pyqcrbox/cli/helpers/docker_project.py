@@ -47,7 +47,9 @@ class DockerProject:
     def build_single_docker_image(self, target_image: str, dry_run: bool = False):
         action_descr = "Building" if not dry_run else "Would build"
         logger.info(f"{action_descr} docker image: {target_image}", dry_run=dry_run)
-        self.run_docker_compose_command("build", target_image, dry_run=dry_run, capture_output=True)
+        # Docker builds can spend many minutes compiling. Stream BuildKit's
+        # progress so a healthy build does not look hung.
+        self.run_docker_compose_command("build", target_image, dry_run=dry_run, capture_output=False)
 
     def _construct_docker_compose_command(self, cmd: str, *cmd_args: str):
         if self.config_name == "prebuilt":
@@ -81,7 +83,13 @@ class DockerProject:
 
         if not dry_run:
             try:
-                proc = subprocess.run(full_cmd, env=custom_env, shell=False, check=False, capture_output=True)
+                proc = subprocess.run(
+                    full_cmd,
+                    env=custom_env,
+                    shell=False,
+                    check=False,
+                    capture_output=capture_output,
+                )
             except Exception as exc:
                 raise QCrBoxSubprocessError(f"Error when trying to run docker compose command: {exc}") from exc
 

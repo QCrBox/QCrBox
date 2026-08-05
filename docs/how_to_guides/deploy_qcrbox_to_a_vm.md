@@ -91,10 +91,6 @@ qcb build pyqcrbox
 qcb build base-ancestor
 qcb build registry qcrbox_quality mopro
 
-# The provisioner deliberately registers production-style exact references.
-docker tag qcrbox/registry:$TEST_TAG ghcr.io/qcrbox/registry:$TEST_TAG
-docker tag qcrbox/qcrbox_quality:$TEST_TAG ghcr.io/qcrbox/qcrbox_quality:$TEST_TAG
-docker tag qcrbox/mopro:$TEST_TAG ghcr.io/qcrbox/mopro:$TEST_TAG
 ```
 
 Build the frontend from the adjacent `QCrBoxFrontend` checkout. Before doing
@@ -105,9 +101,12 @@ checkout:
 rsync -a --delete --exclude=.git ../QCrBoxAPIClient/ ../QCrBoxFrontend/QCrBoxAPIClient/
 docker compose -f ../QCrBoxFrontend/docker-compose.yml \
     --project-directory ../QCrBoxFrontend --project-name qcrboxfrontend build server
-docker tag qcrboxfrontend-server:latest \
-    ghcr.io/qcrbox/qcrboxfrontend-server:$TEST_TAG
 ```
+
+If `qcb` and the frontend build produced `:latest` images rather than
+`:$TEST_TAG`, there is no need to tag every image manually. Tell the deployer
+which local source tag to use; it creates all exact deployment tags after
+validating the corresponding image exists.
 
 The transfer includes public runtime dependencies too. Pull any that are not
 already present locally:
@@ -128,19 +127,38 @@ bash scripts/deployment/deploy_qcrbox_ssh.sh \
     --host ubuntu@<public-ip> \
     --identity ~/.ssh/eosc_key \
     --version "$TEST_TAG" \
+    --local-image-tag latest \
     --apps "qcrbox_quality mopro" \
     --transfer-images --transfer-sources \
     --domain qcrbox.example.org --acme-email you@example.org
 ```
 
 No GHCR credentials are needed. The script validates every image before
-uploading and reports the first missing exact reference. Its archive name is
-derived from the image IDs, so rerunning after an interrupted upload resumes
-the same `rsync` transfer. It also passes `--no-pull` to the remote provisioner,
-preventing a transferred tag from being replaced by a remotely published one.
-The temporary image archive is created with mode `0600` and removed locally
-and remotely after it is loaded successfully.
+uploading and reports the first genuinely missing source image. When
+`--local-image-tag` is supplied, its local `qcrbox/*` images deliberately
+replace any existing exact deployment tags; this prevents an old
+`ghcr.io/qcrbox/*:<version>` alias from silently winning over a fresh `qcb
+build --all`. The unnamespaced `qcrboxfrontend-server:<tag>` image is treated
+the same way. The deployer compares a deterministic runtime fingerprint for
+each exact local tag with the same tag on the VM. This fingerprint covers the
+platform, runtime configuration, and ordered filesystem layers, while ignoring
+Docker build-history metadata that changes on otherwise equivalent rebuilds.
+Missing and materially changed images are archived; loaded images are verified
+against the expected fingerprint before provisioning. If everything already
+matches, packing, transfer, and loading are skipped. A mode-`0600`,
+rsync-friendly copy of the latest delta remains under `~/.cache/qcrbox/` on
+the VM so interrupted uploads can resume and subsequent deltas can reuse
+common compressed blocks. Remove that directory manually if disk space is
+more important than incremental transfer speed. The local temporary archive
+is removed after it loads successfully. The deployer
+also passes `--no-pull` to the remote provisioner, preventing a transferred tag
+from being replaced by a remotely published one.
 Add `--update` on later deployments to preserve accounts, data and secrets.
+
+If a retry is needed after the exact images have already loaded successfully,
+replace `--transfer-images` with `--reuse-remote-images`. This skips local
+packing and network transfer while retaining the provisioner's `--no-pull`
+guarantee. Use it only after confirming the VM has every required exact tag.
 
 ## GHCR authentication
 

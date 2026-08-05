@@ -3,8 +3,11 @@
 from pathlib import Path
 
 import pytest
+import yaml
 
 from pyqcrbox.cli.helpers import DockerProject
+from pyqcrbox.cli.helpers import compose_file_config as compose_file_config_module
+from pyqcrbox.cli.helpers.compose_file_config import ComposeFileConfig
 from pyqcrbox.cli.helpers.image_resolution import (
     interpolate_compose_value,
     resolve_docker_image_for_spec_file,
@@ -12,6 +15,20 @@ from pyqcrbox.cli.helpers.image_resolution import (
 from pyqcrbox.cli.subcommands.register import find_spec_file_for_component
 
 REPO_ROOT = Path(__file__).parent.parent.parent
+
+
+def test_prebuilt_config_locates_root_from_prebuilt_compose_files(monkeypatch):
+    compose_file = REPO_ROOT / "docker-compose.prebuilt.yml"
+    root_inputs = []
+
+    def record_root_inputs(*files):
+        root_inputs.extend(files)
+        return REPO_ROOT
+
+    monkeypatch.setattr(compose_file_config_module, "find_common_repo_root", record_root_inputs)
+    ComposeFileConfig(config_name="prebuilt", compose_files_prod=[compose_file])
+
+    assert root_inputs == [compose_file]
 
 
 def test_interpolate_plain_variable(monkeypatch):
@@ -82,3 +99,11 @@ def test_resolve_image_returns_none_for_unknown_directory(docker_project, tmp_pa
     spec_file = tmp_path / "config_unknown.yaml"
     spec_file.touch()
     assert resolve_docker_image_for_spec_file(docker_project, spec_file) is None
+
+
+def test_nosphera2_declares_generated_cif_as_output():
+    spec_file = REPO_ROOT / "services" / "applications" / "nosphera2-ptb" / "config_nosphera2-ptb.yaml"
+    command = yaml.safe_load(spec_file.read_text())["commands"][0]
+
+    assert "output_cif_name" not in {parameter["name"] for parameter in command["parameters"]}
+    assert "output_cif_name" in {output["name"] for output in command["outputs"]}

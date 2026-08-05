@@ -42,6 +42,7 @@ def _make_source_tree(tmp_path: Path) -> tuple[Path, Path, Path]:
         "services:\n  mopro:\n    image: ghcr.io/qcrbox/mopro:test\n"
     )
     (mopro / "config_mopro.yaml").write_text("name: MoPro\nslug: mopro\nversion: test\ncommands: []\n")
+    (mopro / "configure_mopro.py").write_text("raise RuntimeError('must not be mounted for registration')\n")
     return source, backend, frontend
 
 
@@ -60,6 +61,18 @@ def _make_fake_commands(tmp_path: Path) -> tuple[Path, Path]:
         "printf '%s\\n' \"$*\" >> \"$DOCKER_LOG\"\n"
         "if [[ \" $* \" == *' config --images '* ]]; then\n"
         "  printf '%s\\n' ghcr.io/qcrbox/registry:test ghcr.io/qcrbox/qcrbox_quality:test ghcr.io/qcrbox/mopro:test\n"
+        "fi\n"
+        "if [[ \" $* \" == *' register --prebuilt-images '* ]]; then\n"
+        "  for arg in \"$@\"; do\n"
+        "    if [[ \"$arg\" == type=bind,src=*,dst=/workspace,readonly ]]; then\n"
+        "      src=${arg#type=bind,src=}\n"
+        "      src=${src%,dst=/workspace,readonly}\n"
+        "      test \"$(stat -c %a \"$src\")\" = 755 || exit 96\n"
+        "      test -f \"$src/services/applications/mopro/config_mopro.yaml\" || exit 97\n"
+        "      test -f \"$src/services/applications/mopro/docker-compose.mopro.prebuilt.yml\" || exit 98\n"
+        "      test ! -e \"$src/services/applications/mopro/configure_mopro.py\" || exit 99\n"
+        "    fi\n"
+        "  done\n"
         "fi\n",
     )
     return fake_bin, docker_log
@@ -123,6 +136,7 @@ def test_fresh_and_update_on_demand_provisioning(tmp_path):
     assert not any(line.endswith("up -d --no-build mopro") for line in calls)
     registration = "register --prebuilt-images /workspace/services/applications/mopro/config_mopro.yaml"
     assert any(registration in line for line in calls)
+    assert not (backend / ".git").exists()
 
     original_secrets = {
         key: _env_value(backend / ".env.vm", key)
@@ -134,9 +148,14 @@ def test_fresh_and_update_on_demand_provisioning(tmp_path):
             "QCRBOX_GATEWAY_TOKEN",
         )
     }
+    credentials.unlink()
     result = _run_provisioner(source, fake_bin, docker_log, credentials, "--update")
     assert result.returncode == 0, result.stderr
     assert {key: _env_value(backend / ".env.vm", key) for key in original_secrets} == original_secrets
+    credentials_text = credentials.read_text()
+    assert "Web login" in credentials_text
+    assert f"QCRBOX_SERVICE_TOKEN={service_token}" in credentials_text
+    assert stat.S_IMODE(credentials.stat().st_mode) == 0o600
 
     backend_env = backend / ".env.vm"
     backend_env.write_text(
@@ -193,11 +212,31 @@ def test_ssh_deployer_supports_unpublished_local_transfer():
 
     assert "--transfer-images)  TRANSFER_IMAGES=true" in script
     assert "--transfer-sources) TRANSFER_SOURCES=true" in script
-    assert 'umask 077; docker save "${ALL_IMAGES[@]}"' in script
+    assert "--reuse-remote-images) REUSE_REMOTE_IMAGES=true" in script
+    assert "--local-image-tag)  LOCAL_IMAGE_TAG=" in script
+    assert 'docker tag "$local_source" "$image_ref"' in script
+    assert 'umask 077; docker save "${CHANGED_IMAGES[@]}" | gzip --rsyncable' in script
     assert "rsync --partial --inplace --chmod=F600" in script
+    assert 'Comparing local and remote runtime image fingerprints' in script
+    assert 'image_runtime_fingerprint()' in script
+    assert '{{json .Config}}|{{json .RootFS.Layers}}' in script
+    assert 'CHANGED_IMAGES+=("$image_ref")' in script
+    assert 'echo "    missing: $image_ref"' in script
+    assert 'docker save "${CHANGED_IMAGES[@]}"' in script
+    assert 'Verifying transferred runtime image fingerprints' in script
+    assert 'transferred image is still missing: $image_ref' in script
+    assert 'transferred runtime image mismatch for $image_ref' in script
+    assert 'All ${#ALL_IMAGES[@]} runtime images already match; skipping image transfer' in script
     assert "sudo docker load" in script
     assert "QCRBOX_DOCKER_TAG=\"$VERSION\"" in script
     assert '"$DEPLOY_REPO/qcrboxfrontend-server:$VERSION"' in script
     assert "--exclude='QCrBox/.env.vm'" in script
     assert "--exclude='QCrBoxFrontend/environment.env'" in script
+    assert 'if [ "$TRANSFER_IMAGES" = true ] || [ "$REUSE_REMOTE_IMAGES" = true ]' in script
     assert "PROVISION_IMAGE_ARGS+=(--no-pull)" in script
+    assert '.cache/qcrbox/images-delta.tar.gz' in script
+    assert "printf -v PROVISION_CMD_SHELL '%q '" in script
+    assert '"${SSH[@]}" "$PROVISION_CMD_SHELL"' in script
+    assert script.index('"qcrbox/$image_name:$LOCAL_IMAGE_TAG"') < script.index(
+        '"$DEPLOY_REPO/$image_name:$LOCAL_IMAGE_TAG"'
+    )

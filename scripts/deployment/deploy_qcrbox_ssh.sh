@@ -26,7 +26,8 @@
 #       --ghcr-user niolon --ghcr-token ghp_xxxx \
 #       [--identity ~/.ssh/eosc_key] [--domain qcrbox.example.org] \
 #       [--apps "olex2_linux dummy_gui"] \
-#       [--transfer-images] [--transfer-sources] \
+#       [--transfer-images | --reuse-remote-images] \
+#       [--local-image-tag latest] [--transfer-sources] \
 #       [--acme-email you@example.org | --tls-cert cert.pem --tls-key key.pem] \
 #       [--update] [--no-on-demand]
 #
@@ -40,6 +41,8 @@
 #   --frontend-branch <name>  clone a different branch for QCrBoxFrontend only
 #   --transfer-sources        copy the local QCrBox and QCrBoxFrontend trees
 #   --transfer-images         copy every locally tagged image needed to deploy
+#   --local-image-tag <tag>   source tag for local images (defaults to --version)
+#   --reuse-remote-images     skip transfer and use exact images already on VM
 #
 # Omit --version to deploy :latest images from the main branch.
 # Without --domain, qcrbox.<host-ip>.nip.io is used. For anything beyond a
@@ -61,7 +64,43 @@ GHCR_USER="${GHCR_USER:-}"
 GHCR_TOKEN="${GHCR_TOKEN:-}"
 TRANSFER_IMAGES=false
 TRANSFER_SOURCES=false
+REUSE_REMOTE_IMAGES=false
+LOCAL_IMAGE_TAG=""
 PROVISION_MODE_ARGS=()
+
+resolve_application_dir() {
+    local requested=$1 candidate spec slug
+    for candidate in \
+        "$QCRBOX_DIR/services/applications/$requested" \
+        "$QCRBOX_DIR/services/applications/${requested//-/_}" \
+        "$QCRBOX_DIR/services/applications/${requested//_/-}"; do
+        if [ -d "$candidate" ]; then
+            printf '%s\n' "$candidate"
+            return 0
+        fi
+    done
+
+    # Some established CLI component names are application slugs rather than
+    # directory names (notably `olex2` -> `olex2_linux`).
+    for spec in "$QCRBOX_DIR"/services/applications/*/config_*.yaml; do
+        [ -f "$spec" ] || continue
+        slug=$(sed -nE "s/^slug:[[:space:]]*['\"]?([^'\"[:space:]]+)['\"]?[[:space:]]*$/\1/p" "$spec" | head -1)
+        if [ "$slug" = "$requested" ]; then
+            dirname "$spec"
+            return 0
+        fi
+    done
+    return 1
+}
+
+image_runtime_fingerprint() {
+    # Docker image IDs include build history and timestamps, so clean rebuilds
+    # can have different IDs while producing identical runnable images. Hash
+    # only the platform, runtime configuration, and ordered filesystem layers.
+    docker image inspect --format \
+        '{{.Os}}/{{.Architecture}}|{{json .Config}}|{{json .RootFS.Layers}}' "$1" \
+        | sha256sum | cut -d' ' -f1
+}
 
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -79,6 +118,8 @@ while [ $# -gt 0 ]; do
         --ghcr-token)       GHCR_TOKEN="$2"; shift 2 ;;
         --transfer-images)  TRANSFER_IMAGES=true; shift ;;
         --transfer-sources) TRANSFER_SOURCES=true; shift ;;
+        --reuse-remote-images) REUSE_REMOTE_IMAGES=true; shift ;;
+        --local-image-tag)  LOCAL_IMAGE_TAG="$2"; shift 2 ;;
         --update)           PROVISION_MODE_ARGS+=(--update); shift ;;
         --no-on-demand)     PROVISION_MODE_ARGS+=(--no-on-demand); shift ;;
         *) echo "Unknown argument: $1" >&2; exit 1 ;;
@@ -86,6 +127,11 @@ while [ $# -gt 0 ]; do
 done
 
 [ -n "$HOST" ] || { echo "ERROR: --host user@address is required" >&2; exit 1; }
+LOCAL_IMAGE_TAG="${LOCAL_IMAGE_TAG:-$VERSION}"
+if [ "$TRANSFER_IMAGES" = true ] && [ "$REUSE_REMOTE_IMAGES" = true ]; then
+    echo "ERROR: --transfer-images and --reuse-remote-images are mutually exclusive" >&2
+    exit 1
+fi
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 QCRBOX_DIR=$(cd "$SCRIPT_DIR/../.." && pwd)
@@ -142,7 +188,15 @@ echo "    QCrBox:        $QCRBOX_REF"
 echo "    QCrBoxFrontend: $FRONTEND_REF"
 echo "    Image version:  $VERSION"
 echo "    Sources:        $([ "$TRANSFER_SOURCES" = true ] && echo 'local transfer' || echo 'GitHub clone')"
-echo "    Images:         $([ "$TRANSFER_IMAGES" = true ] && echo 'local transfer' || echo 'registry pull')"
+if [ "$TRANSFER_IMAGES" = true ]; then
+    IMAGE_MODE="local transfer"
+elif [ "$REUSE_REMOTE_IMAGES" = true ]; then
+    IMAGE_MODE="reuse remote"
+else
+    IMAGE_MODE="registry pull"
+fi
+echo "    Images:         $IMAGE_MODE"
+[ "$TRANSFER_IMAGES" = true ] && echo "    Local image tag: $LOCAL_IMAGE_TAG"
 
 # ----------------------------------------------------------------- docker ---
 echo "==> Installing docker on the VM (if missing)"
@@ -168,10 +222,8 @@ if [ "$TRANSFER_IMAGES" = true ]; then
 
     LOCAL_COMPOSE=(-f "$QCRBOX_DIR/docker-compose.prebuilt.yml")
     for app in $APPS; do
-        app_dir="$QCRBOX_DIR/services/applications/$app"
-        [ -d "$app_dir" ] || app_dir="$QCRBOX_DIR/services/applications/${app//-/_}"
-        [ -d "$app_dir" ] || app_dir="$QCRBOX_DIR/services/applications/${app//_/-}"
-        [ -d "$app_dir" ] || { echo "ERROR: application '$app' was not found" >&2; exit 1; }
+        app_dir=$(resolve_application_dir "$app") \
+            || { echo "ERROR: application '$app' was not found" >&2; exit 1; }
         app_compose=$(find "$app_dir" -maxdepth 1 -type f -name 'docker-compose.*.prebuilt.yml' -print -quit 2>/dev/null)
         [ -n "$app_compose" ] || { echo "ERROR: no prebuilt compose file for app '$app'" >&2; exit 1; }
         LOCAL_COMPOSE+=(-f "$app_compose")
@@ -192,32 +244,133 @@ if [ "$TRANSFER_IMAGES" = true ]; then
     mapfile -t ALL_IMAGES < <(printf '%s\n' "${ALL_IMAGES[@]}" | sed '/^$/d' | sort -u)
 
     for image_ref in "${ALL_IMAGES[@]}"; do
-        docker image inspect "$image_ref" >/dev/null 2>&1 || {
+        local_source=""
+        if [[ "$image_ref" == "$DEPLOY_REPO/"* ]]; then
+            image_name=${image_ref#"$DEPLOY_REPO/"}
+            image_name=${image_name%:*}
+            if [ "$image_name" = qcrboxfrontend-server ]; then
+                source_candidates=(
+                    "qcrboxfrontend-server:$LOCAL_IMAGE_TAG"
+                    "qcrbox/$image_name:$LOCAL_IMAGE_TAG"
+                    "$DEPLOY_REPO/$image_name:$LOCAL_IMAGE_TAG"
+                )
+            else
+                # qcb builds development images under qcrbox/. Prefer those
+                # over possibly stale registry aliases left by an older test.
+                source_candidates=(
+                    "qcrbox/$image_name:$LOCAL_IMAGE_TAG"
+                    "$DEPLOY_REPO/$image_name:$LOCAL_IMAGE_TAG"
+                )
+            fi
+            for source_ref in "${source_candidates[@]}"; do
+                if docker image inspect "$source_ref" >/dev/null 2>&1; then
+                    local_source="$source_ref"
+                    break
+                fi
+            done
+        fi
+
+        if [ -n "$local_source" ]; then
+            if [ "$local_source" != "$image_ref" ]; then
+                echo "==> Tagging local image $local_source as $image_ref"
+                docker tag "$local_source" "$image_ref"
+            fi
+        elif docker image inspect "$image_ref" >/dev/null 2>&1; then
+            # Third-party base images and an exact, already-prepared deployment
+            # image have no qcb development tag to prefer.
+            continue
+        else
             echo "ERROR: required image '$image_ref' is not present locally" >&2
-            echo "       Build or pull it and tag it with this exact reference before deploying." >&2
+            echo "       Build or pull it first. If it has another local tag, pass" >&2
+            echo "       --local-image-tag <tag> (for example, --local-image-tag latest)." >&2
             exit 1
-        }
+        fi
     done
 
-    # Name the archive from its image IDs, so rerunning after an interrupted
-    # upload safely reuses the same archive and rsync resumes it.
-    ids_hash=$(docker image inspect --format '{{.Id}}' "${ALL_IMAGES[@]}" | sha256sum | cut -c1-12)
-    TARBALL="/tmp/qcrbox-images-$ids_hash.tar.gz"
-    if [ ! -f "$TARBALL" ]; then
-        echo "==> Packing ${#ALL_IMAGES[@]} images into $TARBALL"
-        (umask 077; docker save "${ALL_IMAGES[@]}" | gzip --fast > "$TARBALL.partial")
-        mv "$TARBALL.partial" "$TARBALL"
+    echo "==> Comparing local and remote runtime image fingerprints"
+    declare -A REMOTE_IMAGE_FINGERPRINTS=()
+    while IFS=$'\t' read -r remote_ref remote_fingerprint; do
+        [ -n "$remote_ref" ] && REMOTE_IMAGE_FINGERPRINTS["$remote_ref"]="$remote_fingerprint"
+    done < <(
+        printf '%s\n' "${ALL_IMAGES[@]}" | "${SSH[@]}" '
+while IFS= read -r image_ref; do
+    if image_metadata=$(sudo docker image inspect \
+        --format "{{.Os}}/{{.Architecture}}|{{json .Config}}|{{json .RootFS.Layers}}" \
+        "$image_ref" 2>/dev/null); then
+        image_fingerprint=$(printf "%s\n" "$image_metadata" | sha256sum | cut -d" " -f1)
+        printf "%s\t%s\n" "$image_ref" "$image_fingerprint"
     else
-        echo "==> Reusing image archive $TARBALL"
+        printf "%s\t-\n" "$image_ref"
     fi
+done'
+    )
 
-    printf -v RSYNC_RSH '%q ' ssh "${SSH_OPTS[@]}"
-    echo "==> Transferring $(du -h "$TARBALL" | cut -f1) of images to the VM (resumable)"
-    rsync --partial --inplace --chmod=F600 --info=progress2 -e "$RSYNC_RSH" \
-        "$TARBALL" "$HOST:/tmp/qcrbox-images.tar.gz"
-    echo "==> Loading transferred images on the VM"
-    "${SSH[@]}" 'gunzip -c /tmp/qcrbox-images.tar.gz | sudo docker load && rm -f /tmp/qcrbox-images.tar.gz'
-    rm -f "$TARBALL"
+    CHANGED_IMAGES=()
+    for image_ref in "${ALL_IMAGES[@]}"; do
+        local_fingerprint=$(image_runtime_fingerprint "$image_ref")
+        remote_fingerprint=${REMOTE_IMAGE_FINGERPRINTS[$image_ref]:--}
+        if [ "$remote_fingerprint" = "-" ]; then
+            CHANGED_IMAGES+=("$image_ref")
+            echo "    missing: $image_ref"
+        elif [ "$remote_fingerprint" != "$local_fingerprint" ]; then
+            CHANGED_IMAGES+=("$image_ref")
+            echo "    changed: $image_ref"
+        fi
+    done
+
+    if [ "${#CHANGED_IMAGES[@]}" -eq 0 ]; then
+        echo "==> All ${#ALL_IMAGES[@]} runtime images already match; skipping image transfer"
+    else
+        echo "==> ${#CHANGED_IMAGES[@]} of ${#ALL_IMAGES[@]} images need transfer"
+        # Include references as well as IDs in the cache key: docker-save
+        # archives contain tag metadata, so equal image content under different
+        # deployment tags is not the same archive.
+        ids_hash=$(
+            for image_ref in "${CHANGED_IMAGES[@]}"; do
+                printf '%s=%s\n' "$image_ref" "$(docker image inspect --format '{{.Id}}' "$image_ref")"
+            done | sha256sum | cut -c1-12
+        )
+        TARBALL="/tmp/qcrbox-image-delta-$ids_hash.tar.gz"
+        if [ ! -f "$TARBALL" ]; then
+            echo "==> Packing ${#CHANGED_IMAGES[@]} changed images into $TARBALL"
+            (umask 077; docker save "${CHANGED_IMAGES[@]}" | gzip --rsyncable --fast > "$TARBALL.partial")
+            mv "$TARBALL.partial" "$TARBALL"
+        else
+            echo "==> Reusing image archive $TARBALL"
+        fi
+
+        printf -v RSYNC_RSH '%q ' ssh "${SSH_OPTS[@]}"
+        echo "==> Transferring $(du -h "$TARBALL" | cut -f1) of changed images to the VM (resumable)"
+        "${SSH[@]}" 'umask 077; mkdir -p "$HOME/.cache/qcrbox"; chmod 700 "$HOME/.cache/qcrbox"'
+        rsync --partial --inplace --chmod=F600 --info=progress2 -e "$RSYNC_RSH" \
+            "$TARBALL" "$HOST:.cache/qcrbox/images-delta.tar.gz"
+        echo "==> Loading changed images on the VM"
+        "${SSH[@]}" 'gunzip -c "$HOME/.cache/qcrbox/images-delta.tar.gz" | sudo docker load'
+
+        echo "==> Verifying transferred runtime image fingerprints"
+        TRANSFERRED_IMAGE_MANIFEST=""
+        for image_ref in "${CHANGED_IMAGES[@]}"; do
+            local_fingerprint=$(image_runtime_fingerprint "$image_ref")
+            TRANSFERRED_IMAGE_MANIFEST+="$image_ref"$'\t'"$local_fingerprint"$'\n'
+        done
+        printf '%s' "$TRANSFERRED_IMAGE_MANIFEST" | "${SSH[@]}" '
+while IFS="	" read -r image_ref expected_fingerprint; do
+    [ -n "$image_ref" ] || continue
+    image_metadata=$(sudo docker image inspect \
+        --format "{{.Os}}/{{.Architecture}}|{{json .Config}}|{{json .RootFS.Layers}}" \
+        "$image_ref" 2>/dev/null) || {
+        echo "ERROR: transferred image is still missing: $image_ref" >&2
+        exit 1
+    }
+    actual_fingerprint=$(printf "%s\n" "$image_metadata" | sha256sum | cut -d" " -f1)
+    if [ "$actual_fingerprint" != "$expected_fingerprint" ]; then
+        echo "ERROR: transferred runtime image mismatch for $image_ref" >&2
+        echo "       expected $expected_fingerprint, found $actual_fingerprint" >&2
+        exit 1
+    fi
+done'
+        rm -f "$TARBALL"
+    fi
 fi
 
 # ---------------------------------------------------------------- sources ---
@@ -295,13 +448,24 @@ fi
 
 echo "==> Running provisioner on the VM"
 PROVISION_IMAGE_ARGS=()
-[ "$TRANSFER_IMAGES" = true ] && PROVISION_IMAGE_ARGS+=(--no-pull)
-"${SSH[@]}" sudo bash /opt/qcrbox-src/QCrBox/scripts/deployment/provision_qcrbox.sh \
-    --domain "$DOMAIN" --source /opt/qcrbox-src --apps "$APPS" \
-    --version "$VERSION" \
-    ${PROVISION_TLS_ARGS[@]+"${PROVISION_TLS_ARGS[@]}"} \
-    ${PROVISION_IMAGE_ARGS[@]+"${PROVISION_IMAGE_ARGS[@]}"} \
-    ${PROVISION_MODE_ARGS[@]+"${PROVISION_MODE_ARGS[@]}"}
+if [ "$TRANSFER_IMAGES" = true ] || [ "$REUSE_REMOTE_IMAGES" = true ]; then
+    PROVISION_IMAGE_ARGS+=(--no-pull)
+fi
+PROVISION_CMD=(
+    sudo bash /opt/qcrbox-src/QCrBox/scripts/deployment/provision_qcrbox.sh
+    --domain "$DOMAIN"
+    --source /opt/qcrbox-src
+    --apps "$APPS"
+    --version "$VERSION"
+    "${PROVISION_TLS_ARGS[@]}"
+    "${PROVISION_IMAGE_ARGS[@]}"
+    "${PROVISION_MODE_ARGS[@]}"
+)
+# ssh joins separate command arguments with spaces before the remote shell sees
+# them, losing local array boundaries. Quote every argument into one remote
+# command string so a multi-application --apps value remains one argument.
+printf -v PROVISION_CMD_SHELL '%q ' "${PROVISION_CMD[@]}"
+"${SSH[@]}" "$PROVISION_CMD_SHELL"
 
 echo ""
 echo "=================================================================="

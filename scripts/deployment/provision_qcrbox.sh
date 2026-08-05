@@ -50,6 +50,29 @@ UPDATE=false
 ON_DEMAND=true
 PULL_IMAGES=true
 
+resolve_application_dir() {
+    local requested=$1 candidate spec slug
+    for candidate in \
+        "$QCRBOX_DIR/services/applications/$requested" \
+        "$QCRBOX_DIR/services/applications/${requested//-/_}" \
+        "$QCRBOX_DIR/services/applications/${requested//_/-}"; do
+        if [ -d "$candidate" ]; then
+            printf '%s\n' "$candidate"
+            return 0
+        fi
+    done
+
+    for spec in "$QCRBOX_DIR"/services/applications/*/config_*.yaml; do
+        [ -f "$spec" ] || continue
+        slug=$(sed -nE "s/^slug:[[:space:]]*['\"]?([^'\"[:space:]]+)['\"]?[[:space:]]*$/\1/p" "$spec" | head -1)
+        if [ "$slug" = "$requested" ]; then
+            dirname "$spec"
+            return 0
+        fi
+    done
+    return 1
+}
+
 while [ $# -gt 0 ]; do
     case "$1" in
         --domain)       DOMAIN="$2"; shift 2 ;;
@@ -354,11 +377,9 @@ CORE_COMPOSE=("${COMPOSE[@]}")
 ALWAYS_ON_SERVICES=()
 SPAWNABLE_SPECS=()
 for app in $APPS; do
-    # Accept any separator variant: exact name, then hyphens→underscores,
-    # then underscores→hyphens, so callers can use either form.
-    app_dir="$QCRBOX_DIR/services/applications/$app"
-    [ -d "$app_dir" ] || app_dir="$QCRBOX_DIR/services/applications/${app//-/_}"
-    [ -d "$app_dir" ] || app_dir="$QCRBOX_DIR/services/applications/${app//_/-}"
+    # Accept directory names, separator variants and application slugs.
+    app_dir=$(resolve_application_dir "$app") \
+        || { echo "ERROR: application '$app' was not found" >&2; exit 1; }
     app_compose=$(ls "$app_dir"/docker-compose.*.prebuilt.yml 2>/dev/null | head -1)
     [ -n "$app_compose" ] || { echo "ERROR: no prebuilt compose file for app '$app'" >&2; exit 1; }
     COMPOSE+=(-f "$app_compose")
@@ -421,16 +442,54 @@ if [ "$ON_DEMAND" = true ] && [ "${#SPAWNABLE_SPECS[@]}" -gt 0 ]; then
     DOCKER_REPO=$(grep -m1 '^QCRBOX_DOCKER_REPO=' "$QCRBOX_DIR/.env.vm" | cut -d= -f2-)
     REGISTRY_IMAGE="$DOCKER_REPO/registry:$VERSION"
     echo "==> Registering spawnable applications without starting pool containers"
+
+    # Do not expose application implementation modules to the registration
+    # container. Parsing a spec normally validates Python callables against
+    # their imported functions, but proprietary/runtime modules can require
+    # Wine, application binaries, and app-only environment variables. The
+    # registry only needs the specs and Compose metadata to record exact image
+    # references, so construct a minimal source snapshot. Import attempts then
+    # correctly raise ImportError and signature validation is deferred to the
+    # application container where its runtime is available.
+    REGISTRATION_WORKSPACE=$(mktemp -d /tmp/qcrbox-registration.XXXXXX)
+    # mktemp creates mode 0700, but the registry image deliberately runs qcb
+    # as the unprivileged qcrbox user (UID 1000). Only this sanitized temporary
+    # tree is made traversable; it is still mounted read-only in the container.
+    chmod 755 "$REGISTRATION_WORKSPACE"
+    cleanup_registration_workspace() {
+        rm -rf -- "$REGISTRATION_WORKSPACE"
+    }
+    trap cleanup_registration_workspace EXIT
+    cp "$QCRBOX_DIR/.env.prod" "$QCRBOX_DIR/docker-compose.prebuilt.yml" "$REGISTRATION_WORKSPACE/"
+    for container_spec in "${SPAWNABLE_SPECS[@]}"; do
+        relative_spec=${container_spec#/workspace/}
+        source_spec="$QCRBOX_DIR/$relative_spec"
+        source_app_dir=$(dirname "$source_spec")
+        registration_app_dir="$REGISTRATION_WORKSPACE/$(dirname "$relative_spec")"
+        mkdir -p "$registration_app_dir"
+        cp "$source_spec" "$registration_app_dir/"
+        for source_compose in "$source_app_dir"/docker-compose.*.prebuilt.yml; do
+            [ -f "$source_compose" ] || continue
+            cp "$source_compose" "$registration_app_dir/"
+        done
+    done
+    mkdir -p "$REGISTRATION_WORKSPACE/.git/objects" \
+        "$REGISTRATION_WORKSPACE/.git/refs/heads" "$REGISTRATION_WORKSPACE/.git/refs/tags"
+    printf 'ref: refs/heads/deployment\n' > "$REGISTRATION_WORKSPACE/.git/HEAD"
+    printf '[core]\n\trepositoryformatversion = 0\n\tbare = false\n' \
+        > "$REGISTRATION_WORKSPACE/.git/config"
     docker run --rm \
         --network qcrbox_qcrbox-net \
         --env QCRBOX__REGISTRY__SERVER__HOST=qcrbox-registry \
         --env QCRBOX__REGISTRY__SERVER__PORT=8000 \
         --env "QCRBOX_DOCKER_REPO=$DOCKER_REPO" \
         --env "QCRBOX_DOCKER_TAG=$VERSION" \
-        --mount "type=bind,src=$QCRBOX_DIR,dst=/workspace,readonly" \
+        --mount "type=bind,src=$REGISTRATION_WORKSPACE,dst=/workspace,readonly" \
         --workdir /workspace \
         --entrypoint /opt/conda/envs/qcrbox/bin/qcb \
         "$REGISTRY_IMAGE" register --prebuilt-images "${SPAWNABLE_SPECS[@]}"
+    cleanup_registration_workspace
+    trap - EXIT
 fi
 
 # ----------------------------------------------------------- start frontend
@@ -454,7 +513,19 @@ docker compose --project-name qcrboxfrontend \
 
 # ------------------------------------------------------------- credentials
 CRED_FILE=${QCRBOX_CREDENTIALS_FILE:-/root/qcrbox-credentials.txt}
-if [ "$UPDATE" = false ]; then
+if [ "$UPDATE" = true ] && [ ! -f "$CRED_FILE" ]; then
+    echo "==> Recovering missing credentials file from preserved environment"
+    ADMIN_PASSWORD=$(read_env_value "$QCRBOX_DIR/.env.vm" LLDAP_ADMIN_PASSWORD)
+    AUTHELIA_JWT_SECRET=$(read_env_value "$QCRBOX_DIR/.env.vm" AUTHELIA_JWT_SECRET)
+    AUTHELIA_SESSION_SECRET=$(read_env_value "$QCRBOX_DIR/.env.vm" AUTHELIA_SESSION_SECRET)
+    AUTHELIA_STORAGE_ENCRYPTION_KEY=$(read_env_value "$QCRBOX_DIR/.env.vm" AUTHELIA_STORAGE_ENCRYPTION_KEY)
+    LLDAP_JWT_SECRET=$(read_env_value "$QCRBOX_DIR/.env.vm" LLDAP_JWT_SECRET)
+    LLDAP_KEY_SEED=$(read_env_value "$QCRBOX_DIR/.env.vm" LLDAP_KEY_SEED)
+    DJANGO_SECRET_KEY=$(read_env_value "$FRONTEND_DIR/environment.env" DJANGO_SECRET_KEY)
+    POSTGRES_PASSWORD=$(read_env_value "$FRONTEND_DIR/environment.env" POSTGRES_PASSWORD)
+fi
+
+if [ "$UPDATE" = false ] || [ ! -f "$CRED_FILE" ]; then
 cat > "$CRED_FILE" <<EOF
 QCrBox installation credentials ($(date -u +%Y-%m-%dT%H:%M:%SZ))
 Domain: $DOMAIN

@@ -46,3 +46,13 @@ def test_serving_starts_core_and_selected_always_on_services(monkeypatch):
 
     assert calls == [("up", "-d", *project.core_services, "qcrbox_quality")]
     assert "mopro" not in calls[0]
+
+
+def test_build_streams_docker_progress(monkeypatch):
+    project = DockerProject()
+    calls = []
+    monkeypatch.setattr(project, "run_docker_compose_command", lambda *args, **kwargs: calls.append((args, kwargs)))
+
+    project.build_single_docker_image("nosphera2-ptb")
+
+    assert calls == [(('build', 'nosphera2-ptb'), {'dry_run': False, 'capture_output': False})]

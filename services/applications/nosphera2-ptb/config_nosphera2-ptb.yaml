@@ -59,6 +59,7 @@ commands:
         dtype: "str"
         description: "Comma separated lists of disorder groups that are in turn separated by semicolons. E.g. '1,2;3,4' says that groups 1 and 2 are mutually exclusive and 3 and 4 are mutually exclusive, but either can be combined with the other groups"
         default_value: "none"
+    outputs:
       - name: "output_cif_name"
         dtype: "QCrBox.output_cif"
         description: "Name of the CIF file exported back to QCrBox containing the calculated aspherical atomic form factors"

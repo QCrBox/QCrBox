@@ -60,7 +60,15 @@ class ComposeFileConfig:
                 "Arguments `compose_files_build`, `compose_files_runtime` and `compose_files_prod` cannot all be empty."
             )
 
-        self.repo_root = find_common_repo_root(*compose_files_build, *compose_files_runtime)
+        # Prebuilt configurations have neither build nor development-runtime
+        # files. Include their production Compose files when locating the
+        # repository root instead of falling back to this installed module's
+        # path (which is outside a source-snapshot mount in deployment).
+        self.repo_root = find_common_repo_root(
+            *compose_files_build,
+            *compose_files_runtime,
+            *compose_files_prod,
+        )
         self.compose_files_build = [Path(compose_file).resolve() for compose_file in compose_files_build]
         if compose_files_prod:
             self.compose_files_runtime = [Path(compose_file).resolve() for compose_file in compose_files_prod]
