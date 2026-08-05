@@ -284,23 +284,21 @@ class CifDataFileParameter(BaseParameter):
             raise OSError("CIF has not yet been exported to disk")
         output_cif_path = input_cif_path.parent / f"{input_cif_path.stem}-converted.cif"
 
-        # Set the return path to be the original input cif, which was written to
-        # disk. On failure below, we at least return the original cif.
-        return_path = input_cif_path
-
         try:
             logger.debug(f"Converting CIF to specific format with parameters: {transform_options}")
             settings = input_settings_from_spec(transform_options.spec, transform_options.entry_sets)
             cif_file_to_specific(input_cif_path, output_cif_path, settings)
-            return_path = output_cif_path
         except NoEntriesDeclaredError as exc:
             logger.warning(f"{transform_options.label} has no required or optional CIF entries defined: {exc}")
+            return str(input_cif_path)
         except (BaseException, Exception) as exc:  # QCrBoxTools uses BaseException as the exception subclass
-            logger.error(f"Unable to translate {transform_options.label} due to exception: {exc}")
+            exc_msg = f"Unable to translate {transform_options.label} due to exception: {exc}"
+            logger.error(exc_msg)
+            raise ValueError(exc_msg) from exc
 
         logger.debug(f"Returning {output_cif_path} from CifDataFileParameter.to_specific_format()")
 
-        return str(return_path)
+        return str(output_cif_path)
 
     @log_eel
     async def to_unified_format(
@@ -331,10 +329,9 @@ class CifDataFileParameter(BaseParameter):
         try:
             original_cif_text = await self._get_text_from_data_manager()
         except (BaseException, Exception) as exc:
-            logger.error(
-                f"Problem merging {str(exported_cif_path)} and {str(new_cif_path)} using {merge_options}: {exc}",
-            )
-            return new_cif_path
+            exc_msg = f"Problem merging {str(exported_cif_path)} and {str(new_cif_path)} using {merge_options}: {exc}"
+            logger.error(exc_msg)
+            raise ValueError(exc_msg) from exc
 
         if not merge_options.output_path:
             unified_cif_path = str(exported_cif_path.parent / f"{exported_cif_path.stem}.cif")
@@ -345,11 +342,6 @@ class CifDataFileParameter(BaseParameter):
             f"Merging the original CIF and {str(new_cif_path)} together at {unified_cif_path}: {merge_options}"
         )
 
-        # Set the return path to be the new cif which is being merged into the
-        # original cif (this CifDataFileParameter). In the case of a failure to
-        # create the unified cif, we at least return the new cif
-        return_path = new_cif_path
-
         try:
             settings = output_settings_from_spec(merge_options.spec, merge_options.entry_sets)
             cif_file_merge_to_unified(
@@ -358,16 +350,18 @@ class CifDataFileParameter(BaseParameter):
                 original_cif_text,
                 settings,
             )
-            logger.debug(f"CIFs merged successfully into file {unified_cif_path=}")
-            return_path = unified_cif_path
         except NoEntriesDeclaredError as exc:
             logger.warning(f"{merge_options.label} has no required or optional CIF entries defined: {exc}")
+            return str(new_cif_path)
         except (BaseException, Exception) as exc:
-            logger.error(f"Problem merging the original CIF and {str(new_cif_path)} using {merge_options}: {exc}")
+            exc_msg = f"Problem merging the original CIF and {str(new_cif_path)} using {merge_options}: {exc}"
+            logger.error(exc_msg)
+            raise ValueError(exc_msg) from exc
 
-        logger.debug(f"Returning {return_path} from CifDataFileParameter.to_unified_format()")
+        logger.debug(f"CIFs merged successfully into file {unified_cif_path=}")
+        logger.debug(f"Returning {unified_cif_path} from CifDataFileParameter.to_unified_format()")
 
-        return str(return_path)
+        return str(unified_cif_path)
 
     async def _get_text_from_data_manager(self) -> str:
         """Fetch this CIF's contents from the data manager as text (no disk I/O)."""
