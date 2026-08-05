@@ -254,7 +254,7 @@ def block_to_resolution_info(cif_block: block) -> Tuple[str, ...]:
 
 
 def call_nosphera2_ptb_single(work_folder: Path, xtb_file: Path, cif_block: block):
-    """Call NoSpherA2 with PTB to generate a TSCB file.
+    """Call NoSpherA2 with PTB to generate a tsc file.
 
     Args:
         xtb_file (Path): Path to the input XTB file.
@@ -288,7 +288,7 @@ def generate_wfn_names(disorder_groups: tuple[tuple[int, ...], ...]) -> list[str
     return wfn_names
 
 def call_nosphera2_ptb_disorder(work_folder: Path, xtb_files: list[Path], cif_block: block, disorder_groups: tuple[tuple[int, ...], ...]):
-    """Call NoSpherA2 with PTB to generate a TSCB file for disordered structures.
+    """Call NoSpherA2 with PTB to generate a tsc file for disordered structures.
 
     Args:
         xtb_files (list[Path]): List of paths to the input XTB files.
@@ -347,8 +347,8 @@ def generate_group_of_disorder_groups(disorder_groups_str: str) -> tuple[tuple[i
             groups.append(tuple(new_group))
     return tuple(product(*groups))
 
-def generate_tscb(input_cif: str, disorder_groups: str, output_cif_name: str) -> str:
-    """Generate a TSCB file from an input CIF file and export the resulting
+def generate_aff(input_cif: str, disorder_groups: str, output_cif_name: str) -> str:
+    """Generate a tsc file from an input CIF file and export the resulting
     aspherical atomic form factors as a CIF file.
 
     Args:
@@ -365,7 +365,7 @@ def generate_tscb(input_cif: str, disorder_groups: str, output_cif_name: str) ->
     generated_disorder_groups = generate_group_of_disorder_groups(disorder_groups)
 
     work_cif_path = work_folder / "work.cif"
-    cif_file_to_specific_by_yml(input_cif, work_cif_path, YAML_PATH, "generate_tscb", "input_cif")
+    cif_file_to_specific_by_yml(input_cif, work_cif_path, YAML_PATH, "generate_aff", "input_cif")
 
     cif_model = read_cif_safe(work_cif_path)
     cif_block, _ = cifdata_str_or_index(cif_model, 0)
@@ -394,7 +394,7 @@ def generate_tscb(input_cif: str, disorder_groups: str, output_cif_name: str) ->
         shutil.move(work_folder / "wfn.xtb", wfn_path)
 
     if len(wfn_file_names) == 1:
-        # Step 2: Call NoSpherA2 to generate TSCB
+        # Step 2: Call NoSpherA2 to generate tsc
         call_nosphera2_ptb_single(work_folder, work_folder / wfn_file_names[0], cif_block)
     else:
         call_nosphera2_ptb_disorder(
@@ -403,15 +403,20 @@ def generate_tscb(input_cif: str, disorder_groups: str, output_cif_name: str) ->
             cif_block, 
             generated_disorder_groups
         )
-
     generated_tscb = work_folder / "experimental.tscb"
+    labelled_tsc = work_folder / "labelled.tsc"
+    nph2_cif_path = work_folder / "input_nosphera2.cif"
 
-    if not generated_tscb.exists():
-        raise FileNotFoundError("NoSpherA2 did not produce the expected TSCB file.")
+    subprocess.run([
+        "NoSpherA2", "-tsc_labels", str(generated_tscb), str(nph2_cif_path),  str(labelled_tsc)
+    ])
+
+    if not labelled_tsc.exists():
+        raise FileNotFoundError("NoSpherA2 did not produce the expected tsc file.")
 
     # Export the aspherical atomic form factors as a CIF file, following the same
     # _aspheric_ff/_wfn_moiety schema produced by xharpy_gpaw's atom_form_fact_gpaw.
-    tsc_obj = read_tsc_file(generated_tscb)
+    tsc_obj = read_tsc_file(labelled_tsc)
     structure_cif_block = read_cif_as_unified(input_cif_path, 0)
     new_block = tsc_obj.to_cif(
         structure_cif_block,
@@ -424,7 +429,7 @@ def generate_tscb(input_cif: str, disorder_groups: str, output_cif_name: str) ->
     new_block.add_data_item("_wfns.method", "PTB")
 
     new_cif = cif()
-    new_cif["tscblock"] = new_block
+    new_cif["tsclock"] = new_block
     with open(output_cif_path, "w", encoding="UTF-8") as output_tsc_cif:
         output_tsc_cif.write(str(new_cif))
 

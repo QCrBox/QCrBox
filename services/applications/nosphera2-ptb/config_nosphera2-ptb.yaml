@@ -9,8 +9,8 @@ url: "https://github.com/AK-Kleemiss/NoSpherA2/"
 doi: 10.1039/D0SC05526C
 
 commands:
-  - name: "generate_tscb"
-    description: "Create a .tsc file from a given .cif file using NoSpherA2 and PTB"
+  - name: "generate_aff"
+    description: "Calculate the atomic form factors for a given structure using NoSpherA2 and PTB"
     implemented_as: "python_callable"
     import_path: "nosphera2_ptb_glue"
     parameters:
