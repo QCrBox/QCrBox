@@ -153,6 +153,8 @@ services:
     volumes:
       - ./services/core/qcrbox_auth/authelia_config.yml:/config/configuration.yml:ro
       - qcrbox-authelia-data:/config
+      # Overrides the default Authelia logo shown on the login page.
+      - ./services/core/qcrbox_auth/assets:/config/assets:ro
     environment:
       # Expand {{ env "..." }} references in authelia_config.yml. The variables
       # deliberately do not start with AUTHELIA_, so they don't clash with

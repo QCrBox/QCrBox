@@ -5,6 +5,8 @@
 # reserves for its native env-var-to-config mapping.
 server:
   address: 'tcp://0.0.0.0:9091'
+  # Overrides the default login page logo (logo.png) with QCrBox branding.
+  asset_path: /config/assets
   endpoints:
     enable_pprof: false
     enable_expvars: false
