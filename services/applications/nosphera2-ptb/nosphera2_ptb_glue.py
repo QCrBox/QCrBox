@@ -13,8 +13,6 @@ from qcrboxtools.cif.file_converter.tsc import read_tsc_file
 
 from itertools import product
 
-YAML_PATH = "/opt/qcrbox/config_nosphera2-ptb.yaml"
-
 NOSPHERA2_CMD = "/opt/qcrbox/bin/NoSpherA2"
 
 
@@ -364,10 +362,7 @@ def generate_aff(input_cif: str, disorder_groups: str, output_cif_name: str) -> 
 
     generated_disorder_groups = generate_group_of_disorder_groups(disorder_groups)
 
-    work_cif_path = work_folder / "work.cif"
-    cif_file_to_specific_by_yml(input_cif, work_cif_path, YAML_PATH, "generate_aff", "input_cif")
-
-    cif_model = read_cif_safe(work_cif_path)
+    cif_model = read_cif_safe(input_cif_path)
     cif_block, _ = cifdata_str_or_index(cif_model, 0)
 
     wfn_file_names = generate_wfn_names(generated_disorder_groups)
