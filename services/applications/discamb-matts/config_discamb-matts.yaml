@@ -1,0 +1,57 @@
+#
+# Configuration for the application 'discamb-matts'
+#
+name: "DiscambMATTS"
+slug: "discamb-matts"
+version: "2026-02-20"
+description: |
+  DiscambMATTS2tsc program is built upon the new version of DiSCaMB library and the MATTS database.
+  DiscambMATTS2tsc is available free of charge for non-commercial use, provided its use is acknowledged. 
+url: "https://4xeden.uw.edu.pl/software/discamb/"
+doi: "10.1107/S2053273319000482,10.1107/S1600576717015825"
+
+commands:
+  - name: "generate_aff"
+    description: "Using Discamb, generate TAAM form factors from the MATTS database."
+    implemented_as: "python_callable"
+    import_path: "discamb_matts_glue"
+    parameters:
+      - name: "input_cif"
+        dtype: "QCrBox.cif_data_file"
+        description: "Path to the input CIF file"
+        required_entries: [
+          "_atom_site_label",
+          "_atom_site_type_symbol",
+          "_atom_site_fract_x", 
+          "_atom_site_fract_y",
+          "_atom_site_fract_z",
+          "_cell_length_a", 
+          "_cell_length_b", 
+          "_cell_length_c",
+          "_cell_angle_alpha",
+          "_cell_angle_beta",
+          "_cell_angle_gamma",
+          "_cell_volume",
+          "_space_group_symop_operation_xyz",
+          one_of: [
+            ["_diffrn_refln_index_h", "_diffrn_refln_index_k", "_diffrn_refln_index_l"],
+            ["_refln_index_h", "_refln_index_k", "_refln_index_l"]
+          ]
+        ]
+    outputs:
+      - name: "output_cif_name"
+        dtype: "QCrBox.output_cif"
+        description: "Name of the CIF file exported back to QCrBox containing the calculated aspherical atomic form factors"
+        required_entries: [
+          "_wfn_moiety.id", "_wfn_moiety.atom_id",
+          "_wfn_moiety.asu_atom_site_label", "_wfn_moiety.atom_type_symbol",
+          "_wfn_moiety.symm_code", "_wfn_moiety.cartn_x",
+          "_wfn_moiety.cartn_y", "_wfn_moiety.cartn_z",
+          "_wfn_moiety.aff_index",
+          "_aspheric_ffs.source",
+          "_aspheric_ff.index_h", "_aspheric_ff.index_k", "_aspheric_ff.index_l",
+          "_aspheric_ff.form_factor_real", "_aspheric_ff.form_factor_imag"
+        ]
+
+
+qcrbox_yaml_spec_version: "0.1"

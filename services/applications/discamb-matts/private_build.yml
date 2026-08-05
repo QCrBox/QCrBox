@@ -1,0 +1,9 @@
+# Marks this app as requiring a private installer that cannot be distributed.
+# Place the file(s) listed below in this directory before building.
+# See docs/how_to_guides/obtain_licenced_components.md for the general pattern.
+requires:
+  - filename: discambMATTS2tsc_2026_02_20_linux
+    description: |
+      linux executable - obtain from Paulina Dominiak 
+      (free licence required for academic use, 
+      non-free licence required for commercial use)"

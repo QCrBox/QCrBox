@@ -424,7 +424,7 @@ def generate_aff(input_cif: str, disorder_groups: str, output_cif_name: str) -> 
     new_block.add_data_item("_wfns.method", "PTB")
 
     new_cif = cif()
-    new_cif["tsclock"] = new_block
+    new_cif["tscblock"] = new_block
     with open(output_cif_path, "w", encoding="UTF-8") as output_tsc_cif:
         output_tsc_cif.write(str(new_cif))
 
